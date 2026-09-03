@@ -272,11 +272,22 @@ test('canonical actions are preserved while eligible lessons gain supplemental S
     if (context.hasLessonArtifact && context.role === 'learner') {
       assert.deepEqual(supplemental, [{ id: 'practice_slate', label: 'Practice with Mr. Slate' }])
     } else if (item.lesson_key && context.role === 'facilitator' && item.historical_record !== true) {
-      assert.deepEqual(supplemental, [{ id: 'assign_slate', label: 'Assign Mr. Slate' }])
+      assert.deepEqual(supplemental, [{ id: 'schedule_slate', label: 'Schedule Mr. Slate' }])
     } else {
       assert.deepEqual(supplemental, [])
     }
   }
+})
+
+test('an instructional occurrence with existing Slate sessions can schedule another session', () => {
+  const item = {
+    item_type: 'lesson',
+    lesson_key: 'math/fractions.json',
+    has_slate_sessions: true,
+    slate_session_count: 2,
+  }
+  const actions = syllabusItemActionsFor({ item, role: 'facilitator', state: 'future_unfinished' })
+  assert.ok(actions.some((action) => action.id === 'schedule_slate'))
 })
 
 test('historical instructional actions preserve non-editable provenance and existing fail-closed handlers', () => {

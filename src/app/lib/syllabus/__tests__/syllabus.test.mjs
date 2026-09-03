@@ -1023,9 +1023,11 @@ test('authenticated has read-only Syllabus tables and commit execution remains s
   assert.doesNotMatch(sql, /grant execute on function public\.commit_syllabus_revision_activation\([^;]+to (?:public|anon|authenticated)/i)
 })
 
-test('the conservative subject editor does not offer free-form replacement or future activation dates', () => {
+test('the conservative subject editor keeps activation effective today while Slate scheduling has its own explicit date', () => {
   const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'syllabus', 'page.js'), 'utf8')
-  assert.doesNotMatch(source, /type="date"/)
+  assert.match(source, /Schedule Mr\. Slate/)
+  assert.match(source, /type="date"/)
+  assert.match(source, /scheduledDate/)
   assert.match(source, /Effective today/)
   assert.match(source, /disabled=\{referenced\}/)
   assert.match(source, /referencedSubjects\.has/)

@@ -55,7 +55,7 @@ test('facilitator-owned artifacts without learner association do not enter the l
   assert.deepEqual(items, [])
 })
 
-test('occurrence-bound Mr. Slate assignment renders as a separate supplemental event', () => {
+test('occurrence-bound Mr. Slate schedule renders on its own later date as a separate supplemental event', () => {
   const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     forecastItems: [forecastLesson()],
@@ -64,6 +64,8 @@ test('occurrence-bound Mr. Slate assignment renders as a separate supplemental e
       id: '22222222-2222-4222-8222-222222222222',
       lesson_key: 'generated/fractions.json',
       syllabus_occurrence_id: 'syllabus:forecast-1',
+      scheduled_date: '2026-09-10',
+      run_purpose: 'practice',
       assigned_at: '2026-09-01T12:00:00Z',
     }],
     today: '2026-09-07',
@@ -72,11 +74,137 @@ test('occurrence-bound Mr. Slate assignment renders as a separate supplemental e
   const lesson = items.find((item) => item.item_type === 'lesson')
   const slate = items.find((item) => item.item_type === 'slate_assignment')
   assert.equal(lesson.assigned_instructional_teacher, 'webb')
-  assert.equal(lesson.slate_assigned, true)
+  assert.equal(lesson.has_slate_sessions, true)
+  assert.equal(lesson.slate_session_count, 1)
   assert.equal(slate.title, 'Mr. Slate: Fractions')
   assert.equal(slate.parent_occurrence_id, lesson.occurrence_id)
   assert.equal(slate.practice_occurrence_id, lesson.occurrence_id)
+  assert.equal(slate.planned_date, '2026-09-10')
+  assert.equal(slate.run_purpose, 'practice')
+  assert.equal(slate.legacy_schedule_fallback, false)
+  assert.equal('instructional_teacher' in slate, false)
+})
+
+test('multiple supplemental Slate sessions remain independent for one instructional occurrence', () => {
+  const slateAssignments = [
+    {
+      id: '22222222-2222-4222-8222-222222222222',
+      lesson_key: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-1',
+      scheduled_date: '2026-09-11',
+      run_purpose: 'retention',
+      assigned_at: '2026-09-01T13:00:00Z',
+    },
+    {
+      id: '11111111-1111-4111-8111-111111111111',
+      lesson_key: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-1',
+      scheduled_date: '2026-09-04',
+      run_purpose: 'practice',
+      assigned_at: '2026-09-01T12:00:00Z',
+    },
+    {
+      id: '33333333-3333-4333-8333-333333333333',
+      lesson_key: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-1',
+      scheduled_date: '2026-09-11',
+      run_purpose: 'practice',
+      assigned_at: '2026-09-01T14:00:00Z',
+    },
+  ]
+  const compose = (assignments) => composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson({ planned_date: '2026-09-03' })],
+    associations: [association({ readiness_state: 'available', instructional_teacher: 'sonoma' })],
+    slateAssignments: assignments,
+    today: '2026-09-03',
+  })
+
+  const items = compose(slateAssignments)
+  const lesson = items.find((item) => item.item_type === 'lesson')
+  const slate = items.filter((item) => item.item_type === 'slate_assignment')
+  assert.equal(lesson.assigned_instructional_teacher, 'sonoma')
+  assert.equal(lesson.has_slate_sessions, true)
+  assert.equal(lesson.slate_session_count, 3)
+  assert.ok(syllabusItemActionsFor({ item: lesson, role: 'facilitator', state: 'today_unfinished' })
+    .some((action) => action.id === 'schedule_slate'))
+  assert.deepEqual(slate.map((item) => [
+    item.assignment_id,
+    item.planned_date,
+    item.run_purpose,
+    item.parent_occurrence_id,
+    item.practice_occurrence_id,
+  ]), [
+    ['11111111-1111-4111-8111-111111111111', '2026-09-04', 'practice', 'syllabus:forecast-1', 'syllabus:forecast-1'],
+    ['22222222-2222-4222-8222-222222222222', '2026-09-11', 'retention', 'syllabus:forecast-1', 'syllabus:forecast-1'],
+    ['33333333-3333-4333-8333-333333333333', '2026-09-11', 'practice', 'syllabus:forecast-1', 'syllabus:forecast-1'],
+  ])
+
+  const afterDeletingRetention = compose(slateAssignments.filter((assignment) => assignment.run_purpose !== 'retention'))
+  const remainingSlate = afterDeletingRetention.filter((item) => item.item_type === 'slate_assignment')
+  assert.deepEqual(remainingSlate.map((item) => item.assignment_id), [
+    '11111111-1111-4111-8111-111111111111',
+    '33333333-3333-4333-8333-333333333333',
+  ])
+  assert.equal(afterDeletingRetention.find((item) => item.item_type === 'lesson').slate_session_count, 2)
+})
+
+test('same-day scheduled Slate is still a separate deterministically ordered supplemental event', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson()],
+    associations: [association({ readiness_state: 'available', instructional_teacher: 'sonoma' })],
+    slateAssignments: [{
+      id: '22222222-2222-4222-8222-222222222222', lesson_key: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-1', scheduled_date: '2026-09-07', run_purpose: 'practice',
+    }],
+    today: '2026-09-07',
+  })
+  assert.deepEqual(items.map((item) => item.item_type), ['lesson', 'slate_assignment'])
+  assert.equal(items[1].planned_date, items[0].planned_date)
+  assert.equal(items[1].practice_occurrence_id, 'syllabus:forecast-1')
+})
+
+test('legacy Slate assignments without a scheduled date use only the deterministic parent-date fallback', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson()],
+    associations: [association({ readiness_state: 'available' })],
+    slateAssignments: [{ id: 'legacy', lesson_key: 'generated/fractions.json', syllabus_occurrence_id: 'syllabus:forecast-1' }],
+    today: '2026-09-07',
+  })
+  const lesson = items.find((item) => item.item_type === 'lesson')
+  const slate = items.find((item) => item.item_type === 'slate_assignment')
   assert.equal(slate.planned_date, lesson.planned_date)
+  assert.equal(slate.sort_order, Number(lesson.sort_order) + 0.5)
+  assert.equal(slate.legacy_schedule_fallback, true)
+  assert.equal(slate.run_purpose, 'practice')
+})
+
+test('a scheduled Slate session binds only its exact repeated instructional occurrence', () => {
+  const repeated = [
+    forecastLesson({ id: 'forecast-1', planned_date: '2026-09-07' }),
+    forecastLesson({ id: 'forecast-2', planned_date: '2026-09-14' }),
+  ]
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: repeated,
+    associations: [association({ readiness_state: 'available' })],
+    slateAssignments: [{
+      id: '22222222-2222-4222-8222-222222222222', lesson_key: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-2', scheduled_date: '2026-09-16', run_purpose: 'retention',
+    }],
+    today: '2026-09-07',
+  })
+  const lessons = items.filter((item) => item.item_type === 'lesson')
+  const slate = items.find((item) => item.item_type === 'slate_assignment')
+  assert.equal(lessons.find((item) => item.id === 'forecast-1').has_slate_sessions, false)
+  assert.equal(lessons.find((item) => item.id === 'forecast-1').slate_session_count, 0)
+  assert.equal(lessons.find((item) => item.id === 'forecast-2').has_slate_sessions, true)
+  assert.equal(lessons.find((item) => item.id === 'forecast-2').slate_session_count, 1)
+  assert.equal(slate.parent_occurrence_id, 'syllabus:forecast-2')
+  assert.equal(slate.practice_occurrence_id, 'syllabus:forecast-2')
+  assert.equal(slate.run_purpose, 'retention')
 })
 
 test('Mr. Slate stays supplemental in learner and facilitator Syllabus actions', () => {
@@ -85,7 +213,7 @@ test('Mr. Slate stays supplemental in learner and facilitator Syllabus actions',
   assert.deepEqual(learnerActions.map((action) => action.id), ['review', 'repeat', 'practice_slate'])
   assert.equal(learnerActions.at(-1).requires_pin, undefined)
   const facilitatorActions = syllabusItemActionsFor({ item, role: 'facilitator', state: 'today_unfinished', hasLessonArtifact: true })
-  assert.ok(facilitatorActions.some((action) => action.id === 'assign_slate'))
+  assert.ok(facilitatorActions.some((action) => action.id === 'schedule_slate'))
   assert.deepEqual(syllabusItemActionsFor({ item: { item_type: 'slate_assignment' }, role: 'learner' }), [{ id: 'practice_slate', label: 'Start Mr. Slate' }])
 })
 
@@ -1162,6 +1290,7 @@ test('SyllabusDocument renders teacher and Slate labels from the separated read-
   assert.match(document, /<option value="sonoma">Ms\. Sonoma<\/option>/)
   assert.match(document, /<option value="webb">Mrs\. Webb<\/option>/)
   assert.doesNotMatch(document, /<option value="slate">/i)
+  assert.match(document, /Scheduled Mr\. Slate supplemental session/)
   assert.match(document, /item\.historical_activity_annotations/)
   assert.match(document, /startedOccurrenceIds\.has\(String\(occurrenceKey\)\)/)
   assert.match(document, /instructionalCompletionAllowed = item\?\.placement_kind !== 'actual'/)
@@ -1172,6 +1301,16 @@ test('SyllabusDocument renders teacher and Slate labels from the separated read-
   assert.match(document, /facilitator-attested legacy Webb completion/)
   assert.doesNotMatch(document, /verified legacy Webb completion/i)
   assert.doesNotMatch(document, /localStorage|getItem\('selected_teacher'\)/)
+})
+
+test('scheduled and on-demand Slate launches preserve exact occurrence and distinct purpose behavior', () => {
+  const home = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
+  const slate = fs.readFileSync(path.resolve('src/app/session/slate/page.jsx'), 'utf8')
+  assert.match(home, /item\?\.practice_occurrence_id \|\| item\?\.occurrence_id/)
+  assert.match(home, /item\?\.item_type === 'slate_assignment' \? \(item\?\.run_purpose \|\| 'practice'\) : 'practice'/)
+  assert.match(home, /purpose=\$\{encodeURIComponent\(runPurpose\)\}/)
+  assert.match(slate, /slateRunPurpose\(searchParams\?\.get\('purpose'\)\)/)
+  assert.match(slate, /occurrenceId: routeOccurrenceId,[\s\S]*activityKind: 'slate_practice'/)
 })
 
 test('learner cards and start action make the server-assigned teacher conspicuous', () => {

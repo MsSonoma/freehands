@@ -941,7 +941,8 @@ function LessonsPageInner(){
     if (!lesson) return
     if (action?.id === 'practice_slate') {
       const occurrenceId = item?.practice_occurrence_id || item?.occurrence_id || ''
-      router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=practice`)
+      const runPurpose = item?.item_type === 'slate_assignment' ? (item?.run_purpose || 'practice') : 'practice'
+      router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=${encodeURIComponent(runPurpose)}`)
       return
     }
     let exceptionApproved = false

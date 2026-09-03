@@ -220,7 +220,7 @@ export function syllabusItemActionsFor({ item, ...actionContext }) {
   if (item?.item_type === 'slate_assignment') {
     return actionContext.role === 'learner'
       ? [{ id: 'practice_slate', label: 'Start Mr. Slate' }]
-      : (actionContext.role === 'facilitator' ? [{ id: 'unassign_slate', label: 'Remove assignment' }] : [])
+      : (actionContext.role === 'facilitator' ? [{ id: 'remove_slate_schedule', label: 'Remove scheduled session' }] : [])
   }
   if (
     actionContext.role === 'facilitator'
@@ -233,8 +233,8 @@ export function syllabusItemActionsFor({ item, ...actionContext }) {
   const actions = syllabusItemActions(actionContext)
   if ((item?.item_type || 'lesson') !== 'lesson') return actions
   if (actionContext.role === 'learner' && actionContext.hasLessonArtifact) return [...actions, { id: 'practice_slate', label: 'Practice with Mr. Slate' }]
-  if (actionContext.role === 'facilitator' && item?.lesson_key && item?.historical_record !== true && item?.slate_assigned !== true) {
-    return [...actions, { id: 'assign_slate', label: 'Assign Mr. Slate' }]
+  if (actionContext.role === 'facilitator' && item?.lesson_key && item?.historical_record !== true) {
+    return [...actions, { id: 'schedule_slate', label: 'Schedule Mr. Slate' }]
   }
   return actions
 }

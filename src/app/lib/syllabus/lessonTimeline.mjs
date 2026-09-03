@@ -1,6 +1,7 @@
 import { lessonKeyBasename, normalizeLessonKey, resolveLessonKeyAgainst } from '../lessonKeyNormalization.js'
 import { dateOnly } from './timeline.mjs'
 import { calendarDateInTimeZone } from '../calendarDate.mjs'
+import { slateRunPurpose } from '../slateLearningModel.mjs'
 import { latestExplicitLessonSessionEvent, lifecycleEventActualKind, resolveLessonSessionLifecycle } from '../lessonSessionLifecycle.mjs'
 import { normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotations.mjs'
@@ -8,6 +9,7 @@ import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotatio
 const DAY_MS = 86400000
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
 const FORECAST_HORIZON_DAYS = 371
+const SUPPLEMENTAL_SLATE_SORT_ORDER = 1_000_000
 const LEGACY_SESSION_V2_SONOMA_CUTOFF = Date.parse('2026-08-29T00:00:00.000Z')
 const SERVER_VERIFIED_LEGACY_PROVENANCE = 'server_verified_legacy_transcript_v1'
 
@@ -415,7 +417,7 @@ export function composeSyllabusLessonTimeline({
   const instructionalOutput = output.sort((left, right) => left.planned_date.localeCompare(right.planned_date)
     || Number(left.sort_order || 0) - Number(right.sort_order || 0)
     || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
-  const assignedParentIds = new Set()
+  const slateSessionCountsByParent = new Map()
   const assignmentEvents = []
   for (const assignment of slateAssignments || []) {
     const parentOccurrenceId = clean(assignment?.syllabus_occurrence_id)
@@ -428,23 +430,30 @@ export function composeSyllabusLessonTimeline({
     ))
     if (parents.length !== 1) continue
     const parent = parents[0]
-    assignedParentIds.add(clean(parent.occurrence_id || parent.id))
+    const scheduledDate = isoDate(assignment?.scheduled_date)
+    const hasAuthoritativeSchedule = validDate(scheduledDate)
+    const renderedParentId = clean(parent.occurrence_id || parent.id)
+    slateSessionCountsByParent.set(renderedParentId, (slateSessionCountsByParent.get(renderedParentId) || 0) + 1)
     assignmentEvents.push({
       id: `slate-assignment:${assignment.id}`,
       occurrence_id: `slate-assignment:${assignment.id}`,
       assignment_id: assignment.id,
       parent_occurrence_id: parentOccurrenceId,
-      practice_occurrence_id: clean(parent.occurrence_id || parent.id),
+      practice_occurrence_id: parentOccurrenceId,
       lesson_key: lessonKey,
       subject: parent.subject,
       title: `Mr. Slate: ${parent.title}`,
-      description: 'Assigned practice with Mr. Slate.',
-      planned_date: parent.planned_date,
-      sort_order: Number(parent.sort_order || 0) + 0.5,
+      description: 'Separately scheduled supplemental practice with Mr. Slate.',
+      planned_date: hasAuthoritativeSchedule ? scheduledDate : parent.planned_date,
+      sort_order: hasAuthoritativeSchedule ? SUPPLEMENTAL_SLATE_SORT_ORDER : Number(parent.sort_order || 0) + 0.5,
+      run_purpose: slateRunPurpose(assignment?.run_purpose),
+      legacy_schedule_fallback: !hasAuthoritativeSchedule,
+      supplemental: true,
       item_type: 'slate_assignment',
       placement_kind: 'slate_assignment',
       readiness_state: parent.readiness_state,
       assigned_at: assignment.assigned_at || assignment.created_at || null,
+      scheduled_at: assignment.assigned_at || assignment.created_at || null,
       is_explicit_schedule: false,
       is_provisional: false,
       needs_placement: false,
@@ -453,7 +462,8 @@ export function composeSyllabusLessonTimeline({
   }
   const ordered = [...instructionalOutput.map((item) => ({
     ...item,
-    slate_assigned: assignedParentIds.has(clean(item.occurrence_id || item.id)),
+    has_slate_sessions: slateSessionCountsByParent.has(clean(item.occurrence_id || item.id)),
+    slate_session_count: slateSessionCountsByParent.get(clean(item.occurrence_id || item.id)) || 0,
   })), ...assignmentEvents].sort((left, right) => left.planned_date.localeCompare(right.planned_date)
     || Number(left.sort_order || 0) - Number(right.sort_order || 0)
     || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))

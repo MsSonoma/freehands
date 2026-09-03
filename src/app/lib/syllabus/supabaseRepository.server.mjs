@@ -198,19 +198,22 @@ export function createSyllabusRepository(admin) {
         .order('assigned_at')
         .order('id')
       if (error?.code === '42P01') return []
-      throwOn(error, 'Failed to load Mr. Slate assignments')
+      throwOn(error, 'Failed to load scheduled Mr. Slate sessions')
       return data || []
     },
     async createSlateAssignment(row) {
       const result = await admin.from('syllabus_slate_assignments').insert(row).select('*').single()
       if (!result.error) return result.data
-      if (result.error.code !== '23505') throwOn(result.error, 'Failed to assign Mr. Slate')
+      if (result.error.code !== '23505') throwOn(result.error, 'Failed to schedule Mr. Slate')
       const { data, error } = await admin.from('syllabus_slate_assignments').select('*')
         .eq('facilitator_id', row.facilitator_id)
         .eq('learner_id', row.learner_id)
         .eq('syllabus_occurrence_id', row.syllabus_occurrence_id)
+        .eq('scheduled_date', row.scheduled_date)
+        .eq('run_purpose', row.run_purpose)
         .maybeSingle()
-      throwOn(error, 'Failed to read Mr. Slate assignment')
+      throwOn(error, 'Failed to read scheduled Mr. Slate session')
+      if (!data) throwOn(result.error, 'Failed to resolve the conflicting scheduled Mr. Slate session')
       return data
     },
     async deleteSlateAssignment(facilitatorId, learnerId, assignmentId) {
@@ -220,7 +223,7 @@ export function createSyllabusRepository(admin) {
         .eq('learner_id', learnerId)
         .select('id')
         .maybeSingle()
-      throwOn(error, 'Failed to remove Mr. Slate assignment')
+      throwOn(error, 'Failed to remove scheduled Mr. Slate session')
       return data
     },
     async listLegacyActivityRecords(facilitatorId, learnerId) {

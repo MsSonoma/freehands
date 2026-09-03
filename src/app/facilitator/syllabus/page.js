@@ -171,6 +171,7 @@ export default function SyllabusPage() {
   const [working, setWorking] = useState(false)
   const [teacherAssignmentBusy, setTeacherAssignmentBusy] = useState('')
   const [slateAssignmentBusy, setSlateAssignmentBusy] = useState('')
+  const [slateScheduler, setSlateScheduler] = useState(null)
   const [historicalActivityBusy, setHistoricalActivityBusy] = useState('')
   const [legacyWebbCompletions, setLegacyWebbCompletions] = useState({})
   const [error, setError] = useState('')
@@ -591,20 +592,23 @@ export default function SyllabusPage() {
   }
 
   async function handleLessonAction(item, action) {
-    if (action?.id === 'assign_slate' || action?.id === 'unassign_slate') {
+    if (action?.id === 'schedule_slate') {
+      setError('')
+      setSlateScheduler({ item, learnerId, resolvedToday: syllabus?.resolved_today, scheduledDate: '' })
+      return
+    }
+    if (action?.id === 'remove_slate_schedule') {
       const occurrenceKey = item?.source_occurrence_id || item?.occurrence_id || item?.id || ''
       setSlateAssignmentBusy(occurrenceKey)
       setError('')
       try {
         const response = await fetch('/api/syllabus/slate-assignments', {
-          method: action.id === 'assign_slate' ? 'POST' : 'DELETE',
+          method: 'DELETE',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-          body: JSON.stringify(action.id === 'assign_slate'
-            ? { learnerId, lessonKey: item.lesson_key, occurrenceId: occurrenceKey }
-            : { learnerId, assignmentId: item.assignment_id }),
+          body: JSON.stringify({ learnerId, assignmentId: item.assignment_id }),
         })
         const json = await response.json()
-        if (!response.ok) throw new Error(json.error || 'Could not update the Mr. Slate assignment')
+        if (!response.ok) throw new Error(json.error || 'Could not remove the scheduled Mr. Slate session')
         await loadCurrent()
       } catch (cause) {
         setError(cause.message)
@@ -627,6 +631,37 @@ export default function SyllabusPage() {
     })
     if (!allowed) return
     router.push(`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=DELIVERY&repeat=1`)
+  }
+
+  async function scheduleSlateSession() {
+    const item = slateScheduler?.item
+    const scheduledLearnerId = slateScheduler?.learnerId
+    const scheduledDate = dateOnly(slateScheduler?.scheduledDate)
+    const occurrenceKey = item?.source_occurrence_id || item?.occurrence_id || item?.id || ''
+    if (!scheduledLearnerId || !item?.lesson_key || !occurrenceKey || !scheduledDate) return
+    setSlateAssignmentBusy(occurrenceKey)
+    setError('')
+    try {
+      const response = await fetch('/api/syllabus/slate-assignments', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          learnerId: scheduledLearnerId,
+          lessonKey: item.lesson_key,
+          occurrenceId: occurrenceKey,
+          scheduledDate,
+          runPurpose: 'practice',
+        }),
+      })
+      const json = await response.json()
+      if (!response.ok) throw new Error(json.error || 'Could not schedule the Mr. Slate session')
+      setSlateScheduler(null)
+      await loadCurrent()
+    } catch (cause) {
+      setError(cause.message)
+    } finally {
+      setSlateAssignmentBusy('')
+    }
   }
 
   async function handleTeacherAssignment(item, instructionalTeacher) {
@@ -833,7 +868,7 @@ export default function SyllabusPage() {
               onLessonAction={handleLessonAction}
               onReviewHistory={openReviewHistory}
               actionCapabilities={{ reviewHistory: true, lessonActions: true }}
-              isActionDisabled={(item, actionId) => (actionId === 'materialize' && recoveryRequiredLineages.has(item.lineage_id)) || (['assign_slate', 'unassign_slate'].includes(actionId) && slateAssignmentBusy === (item.source_occurrence_id || item.occurrence_id || item.id))}
+              isActionDisabled={(item, actionId) => (actionId === 'materialize' && recoveryRequiredLineages.has(item.lineage_id)) || (['schedule_slate', 'remove_slate_schedule'].includes(actionId) && slateAssignmentBusy === (item.source_occurrence_id || item.occurrence_id || item.id))}
               onOpenPlanning={() => setPlanAheadOpen(true)}
               onEditSection={planningAccess.can_change_intent ? openSectionEditor : null}
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
@@ -855,6 +890,12 @@ export default function SyllabusPage() {
           </section></div>}
 
           {conceptEditor && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label="Edit forecast concept"><header><h2>Edit forecast concept</h2><button type="button" onClick={() => setConceptEditor(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<label>Title<input autoFocus value={conceptEditor.title} onChange={(event) => setConceptEditor({ ...conceptEditor, title: event.target.value })} /></label><label>Brief description<textarea rows={5} value={conceptEditor.description} onChange={(event) => setConceptEditor({ ...conceptEditor, description: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setConceptEditor(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working} onClick={saveConceptEditor}>Save as educator intent</button></footer></section></div>}
+
+          {slateScheduler && (() => {
+            const earliestDate = [dateOnly(slateScheduler.item?.planned_date), dateOnly(slateScheduler.resolvedToday)].filter(Boolean).sort().at(-1) || ''
+            const occurrenceKey = slateScheduler.item?.source_occurrence_id || slateScheduler.item?.occurrence_id || slateScheduler.item?.id || ''
+            return <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={`Schedule Mr. Slate for ${slateScheduler.item?.title || 'lesson'}`}><header><h2>Schedule Mr. Slate</h2><button type="button" onClick={() => setSlateScheduler(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<p>Schedule a separate supplemental practice session for <strong>{slateScheduler.item?.title}</strong>. This does not change the instructional teacher or complete the lesson.</p><label>Mr. Slate session date<input autoFocus type="date" min={earliestDate} value={slateScheduler.scheduledDate} onChange={(event) => setSlateScheduler({ ...slateScheduler, scheduledDate: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setSlateScheduler(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={!slateScheduler.scheduledDate || slateAssignmentBusy === occurrenceKey} onClick={scheduleSlateSession}>{slateAssignmentBusy === occurrenceKey ? 'Scheduling…' : 'Schedule supplemental session'}</button></footer></section></div>
+          })()}
 
           {planAheadOpen && <SyllabusPlanningWorkspace revision={syllabus.active_revision} items={[...(syllabus.forecast_items || []), ...(learningProposal?.forecast_items || [])]} today={syllabus.resolved_today} busy={working || Boolean(materializingLineage)} error={error} onClose={() => setPlanAheadOpen(false)} onCreate={(slot, values) => planningPost('create', { plannedDate: slot.planned_date, sortOrder: slot.sort_order, title: values.title, description: values.description })} onEdit={(item, values) => item.origin === 'learning_forecast' ? planningPost('edit_forecast', { proposalRevisionId: learningProposal.proposal_revision.id, lineageId: item.lineage_id, title: values.title, description: values.description }) : planningPost('edit', { lineageId: item.lineage_id, title: values.title, description: values.description })} onRemove={(item) => planningPost('remove', { lineageId: item.lineage_id })} onGenerate={materializeForecast} onSuggest={(slot) => planningPost('suggest', { slots: [{ planned_date: slot.planned_date, sort_order: slot.sort_order }] })} />}
 
