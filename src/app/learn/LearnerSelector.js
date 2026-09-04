@@ -4,10 +4,11 @@ import { useRouter } from 'next/navigation'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { DEMO_LEARNER, initializeDemoLearner, isDemoLearnerId } from './demoLearner.mjs'
+import { clearLearnerTargetOverrides, persistLearnerSelection } from './learnerSelection.mjs'
 
 // Contract:
 // - Props:
-//   - onSelect: function({ id, name, grade }) called when a learner is chosen
+//   - onSelect: function({ id, name, grade, humor_level }) called when a learner is chosen
 //   - compact: boolean to render smaller UI variant
 // - Behavior:
 //   - Loads learners from Supabase if configured, else from localStorage fallback
@@ -51,35 +52,18 @@ export default function LearnerSelector({ onSelect, compact = false }) {
   }, [])
 
   const pick = (l) => {
+    let selectedLearner = l
     try {
-      // Get current learner ID before changing it
-      const currentId = localStorage.getItem('learner_id')
-      
       // Set new learner info
       if (isDemoLearnerId(l.id)) {
+        const currentId = localStorage.getItem('learner_id')
         initializeDemoLearner(localStorage)
+        clearLearnerTargetOverrides(localStorage, currentId, l.id)
       } else {
-        localStorage.setItem('learner_id', l.id)
-        localStorage.setItem('learner_name', l.name)
-        if (l.grade != null) localStorage.setItem('learner_grade', String(l.grade))
-      }
-      
-      // Clear any global target overrides so learner-specific targets are used
-      localStorage.removeItem('target_comprehension')
-      localStorage.removeItem('target_exercise') 
-      localStorage.removeItem('target_worksheet')
-      localStorage.removeItem('target_test')
-      
-      // Also clear any learner-specific overrides for the previous learner
-      // This prevents override leakage between learners
-      if (currentId && currentId !== l.id) {
-        localStorage.removeItem(`target_comprehension_${currentId}`)
-        localStorage.removeItem(`target_exercise_${currentId}`)
-        localStorage.removeItem(`target_worksheet_${currentId}`)
-        localStorage.removeItem(`target_test_${currentId}`)
+        selectedLearner = persistLearnerSelection(localStorage, l)
       }
     } catch {}
-    onSelect?.(l)
+    onSelect?.(selectedLearner)
   }
 
   if (loading) {
@@ -149,7 +133,7 @@ export default function LearnerSelector({ onSelect, compact = false }) {
       {learners.map(l => (
         <button
           key={l.id}
-          onClick={() => pick({ id: l.id, name: l.name, grade: l.grade })}
+          onClick={() => pick({ id: l.id, name: l.name, grade: l.grade, humor_level: l.humor_level })}
           style={{
             padding: compact ? '6px 10px' : '10px 14px',
             border:'1px solid #e5e7eb', borderRadius:8, textAlign:'left'

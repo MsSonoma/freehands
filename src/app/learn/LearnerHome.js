@@ -1104,9 +1104,23 @@ function LessonsPageInner(){
     return () => { cancelled = true }
   }, [learnerId, snapshotLessons, lessonHistorySessions, syllabusModel.timeline_items, lessonsLoading, sessionGateReady])
 
+  const learnerSwitcher = (
+    <div data-learner-switcher style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14, color: '#655d54', fontSize: 14 }}>
+      <span>Learning with <strong style={{ color: '#2d2924' }}>{learnerName || 'your learner'}</strong></span>
+      <button
+        type="button"
+        onClick={() => router.push('/learners/select')}
+        style={{ padding: '7px 11px', border: '1px solid #cfc7b8', borderRadius: 8, background: '#fffdf8', color: '#51483f', fontWeight: 700, cursor: 'pointer', whiteSpace: 'nowrap' }}
+      >
+        Change learner
+      </button>
+    </div>
+  )
+
   if (!sessionGateReady) {
     return (
       <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>
+        {learnerSwitcher}
         <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'320px', gap:12, marginTop:32 }}>
           <div style={{
             width:48,
@@ -1125,6 +1139,7 @@ function LessonsPageInner(){
 
   return (
     <main style={{ padding: '16px 12px', maxWidth: 1100, margin: '0 auto' }}>
+      {learnerSwitcher}
       {showTutorial && (
         <PageTutorialOverlay
           steps={LESSONS_TUTORIAL_STEPS}
