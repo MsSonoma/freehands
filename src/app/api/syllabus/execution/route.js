@@ -78,6 +78,7 @@ export async function POST(request, deps = {}) {
       ok: true,
       authorization,
       occurrenceId: decision.scope.occurrenceId,
+      resumeBrowserSessionId: decision.resumeBrowserSessionId || null,
       lessonKey: decision.scope.lessonKey,
       instructionalTeacher: decision.instructionalTeacher,
       today: decision.calendar.today,

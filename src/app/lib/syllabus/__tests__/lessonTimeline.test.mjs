@@ -419,10 +419,11 @@ test('ended session with no terminal event is completed at ended_at', () => {
 })
 
 test('explicit incomplete event overrides ended_at completion fallback for its attempt', () => {
+  const browserSessionId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
   const item = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     associations: [association()],
-    sessions: [{ id: 'stale-session', lesson_id: 'generated/fractions.json', started_at: '2026-08-18T10:00:00Z', ended_at: '2026-08-18T11:00:00Z' }],
+    sessions: [{ id: 'stale-session', session_id: browserSessionId, lesson_id: 'generated/fractions.json', started_at: '2026-08-18T10:00:00Z', ended_at: '2026-08-18T11:00:00Z' }],
     sessionEvents: [{ session_id: 'stale-session', lesson_id: 'generated/fractions.json', event_type: 'incomplete', occurred_at: '2026-08-18T10:45:00Z' }],
     today: '2026-08-26',
   })[0]
@@ -430,6 +431,8 @@ test('explicit incomplete event overrides ended_at completion fallback for its a
   assert.equal(item.placement_kind, 'actual')
   assert.equal(item.actual_kind, 'incomplete')
   assert.equal(item.actual_at, '2026-08-18T10:45:00Z')
+  assert.equal(item.actual_browser_session_id, browserSessionId)
+  assert.notEqual(item.actual_browser_session_id, item.occurrence_id.replace(/^actual:/, ''))
 })
 
 for (const eventType of ['restarted', 'exited']) {

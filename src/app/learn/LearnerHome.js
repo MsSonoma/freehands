@@ -24,6 +24,7 @@ import {
   isDemoLearnerId,
 } from '@/app/learn/demoLearner.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '@/app/learn/snapshotProgress.mjs'
 
 const LESSONS_TUTORIAL_STEPS = [
   {
@@ -79,43 +80,6 @@ function normalizeApprovedLessonKeys(map = {}) {
   return { normalized, changed }
 }
 
-function snapshotHasMeaningfulProgress(snapshot) {
-  if (!snapshot || typeof snapshot !== 'object') return false
-
-  const phase = snapshot.phase || 'discussion'
-  const subPhase = snapshot.subPhase || 'greeting'
-  const resume = snapshot.resume || null
-
-  // CRITICAL: Don't treat 'congrats' or 'test' as meaningful progress
-  // Lesson is complete - no point resuming to "Complete Lesson" button
-  // Test phase includes both in-progress tests AND completed tests (testFinalPercent may be null)
-  if (phase === 'congrats' || phase === 'test') return false
-
-  if (snapshot.showBegin === false) return true
-  if (snapshot.qaAnswersUnlocked) return true
-
-  const progressedPhases = new Set(['teaching', 'comprehension', 'exercise', 'worksheet'])
-  if (progressedPhases.has(phase)) return true
-  if (resume && typeof resume === 'object') {
-    if (resume.phase && progressedPhases.has(resume.phase)) return true
-    if (resume.kind === 'question') return true
-  }
-
-  if (subPhase && subPhase !== 'greeting') return true
-
-  if (typeof snapshot.currentCompIndex === 'number' && snapshot.currentCompIndex > 0) return true
-  if (typeof snapshot.currentExIndex === 'number' && snapshot.currentExIndex > 0) return true
-  if (typeof snapshot.currentWorksheetIndex === 'number' && snapshot.currentWorksheetIndex > 0) return true
-  if (typeof snapshot.testActiveIndex === 'number' && snapshot.testActiveIndex > 0) return true
-  if (snapshot.currentCompProblem) return true
-  if (snapshot.currentExerciseProblem) return true
-
-  if (Array.isArray(snapshot.testUserAnswers) && snapshot.testUserAnswers.some(v => v != null && String(v).trim().length > 0)) return true
-  if (Array.isArray(snapshot.storyTranscript) && snapshot.storyTranscript.length > 0) return true
-
-  return false
-}
-
 function LessonsPageInner(){
   const router = useRouter()
   const [showTutorial, setShowTutorial] = useState(false)
@@ -142,6 +106,7 @@ function LessonsPageInner(){
   const [syllabusPayload, setSyllabusPayload] = useState(null)
   const [syllabusStatus, setSyllabusStatus] = useState('idle')
   const [syllabusError, setSyllabusError] = useState('')
+  const [syllabusLaunchError, setSyllabusLaunchError] = useState('')
   const [todaysCount, setTodaysCount] = useState(0)
   const [sessionLoading, setSessionLoading] = useState(false)
   const [goldenKeySelected, setGoldenKeySelected] = useState(false)
@@ -159,6 +124,7 @@ function LessonsPageInner(){
   const [editingNote, setEditingNote] = useState(null) // lesson key currently being edited
   const [saving, setSaving] = useState(false)
   const [lessonSnapshots, setLessonSnapshots] = useState({}) // { 'subject/lesson_file': true } - lessons with saved snapshots
+  const [syllabusSnapshotOccurrences, setSyllabusSnapshotOccurrences] = useState({})
   const [sessionGateReady, setSessionGateReady] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [showGoldenKeyToast, setShowGoldenKeyToast] = useState(false) // Show golden key earned notification
@@ -523,12 +489,20 @@ function LessonsPageInner(){
     return () => { cancelled = true }
   }, [learnerId])
 
-  // Back-fill metadata for history keys not already in allLessons/allGeneratedLessons
+  // Back-fill metadata for history and canonical Syllabus keys not already in
+  // allLessons/allGeneratedLessons. Incomplete historical attempts may no
+  // longer appear in the legacy in-progress cache, but still need an artifact
+  // lookup so their durable snapshots can be discovered and resumed.
   useEffect(() => {
     if (!learnerId || learnerId === 'demo') return
     const completedKeys = Object.keys(lessonHistoryLastCompleted || {})
     const inProgressKeys = Object.keys(lessonHistoryInProgress || {})
-    const allHistoryKeys = [...new Set([...completedKeys, ...inProgressKeys])]
+    const syllabusKeys = (
+      Array.isArray(syllabusPayload?.timeline_items)
+        ? syllabusPayload.timeline_items
+        : (Array.isArray(syllabusPayload?.forecast_items) ? syllabusPayload.forecast_items : [])
+    ).map((item) => item?.lesson_key).filter(Boolean)
+    const allHistoryKeys = [...new Set([...completedKeys, ...inProgressKeys, ...syllabusKeys])]
     if (allHistoryKeys.length === 0) return
 
     // Build the set of keys we already have metadata for
@@ -564,7 +538,7 @@ function LessonsPageInner(){
       } catch {}
     })()
     return () => { cancelled = true }
-  }, [learnerId, lessonHistoryLastCompleted, lessonHistoryInProgress, allLessons, allGeneratedLessons])
+  }, [learnerId, lessonHistoryLastCompleted, lessonHistoryInProgress, syllabusPayload, allLessons, allGeneratedLessons])
 
   useEffect(() => {
     if (!sessionGateReady) return
@@ -783,7 +757,7 @@ function LessonsPageInner(){
       setSessionLoading(true)
       const lessonKey = `${subject}/${fileBaseName}`
       try { sessionStorage.setItem('webb_pending_lesson_key', lessonKey) } catch {}
-      router.push(buildInstructionalSessionRoute({ learnerId, subject, fileName: fileBaseName, instructionalTeacher: currentTeacher, occurrenceId: syllabusOccurrence?.occurrence_id || '' }))
+      router.push(buildInstructionalSessionRoute({ learnerId, subject, fileName: fileBaseName, instructionalTeacher: currentTeacher, occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '' }))
       return
     }
 
@@ -794,7 +768,7 @@ function LessonsPageInner(){
       fileName: fileBaseName,
       instructionalTeacher: currentTeacher,
       goldenKey: goldenKeysEnabled === true && (goldenKeySelected || alreadyHasPendingKey),
-      occurrenceId: syllabusOccurrence?.occurrence_id || '',
+      occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '',
     })
     router.push(withKey)
   }
@@ -923,11 +897,20 @@ function LessonsPageInner(){
     })
     return map
   }, [allLessons, allGeneratedLessons, historyLessons])
-  const syllabusModel = resolveSyllabusReadModel(syllabusPayload)
+  const syllabusModel = useMemo(() => resolveSyllabusReadModel(syllabusPayload), [syllabusPayload])
+  const snapshotLessons = useMemo(() => snapshotCandidateLessons(
+    lessonsBySubject,
+    syllabusModel.timeline_items,
+    recentMetaLookup,
+  ), [lessonsBySubject, syllabusModel.timeline_items, recentMetaLookup])
 
   function syllabusLessonState(item) {
     const lessonKey = item?.lesson_key
-    const hasProgress = Boolean(lessonKey && (item?.readiness_state === 'in_progress' || lessonSnapshots[lessonKey] || lessonHistoryInProgress?.[lessonKey]))
+    const occurrenceId = item?.occurrence_id
+    const hasProgress = Boolean(lessonKey && (
+      item?.readiness_state === 'in_progress'
+      || (occurrenceId && syllabusSnapshotOccurrences[occurrenceId])
+    ))
     return {
       hasLessonArtifact: Boolean(lessonKey && recentMetaLookup[lessonKey]
         && (hasProgress || ['approved', 'available', 'in_progress', 'completed'].includes(item?.readiness_state))),
@@ -936,9 +919,13 @@ function LessonsPageInner(){
   }
 
   async function openSyllabusLesson(item, action = { id: 'view', requires_pin: false }) {
+    setSyllabusLaunchError('')
     const lessonKey = item?.lesson_key
     const lesson = lessonKey ? recentMetaLookup[lessonKey] : null
-    if (!lesson) return
+    if (!lesson) {
+      setSyllabusLaunchError('This lesson could not be opened because its prepared lesson file is unavailable.')
+      return
+    }
     if (action?.id === 'practice_slate') {
       const occurrenceId = item?.practice_occurrence_id || item?.occurrence_id || ''
       const runPurpose = item?.item_type === 'slate_assignment' ? (item?.run_purpose || 'practice') : 'practice'
@@ -949,15 +936,31 @@ function LessonsPageInner(){
     if (action?.requires_pin) {
       const completed = item.actual_kind === 'completed'
       const planned = new Date(`${dateOnly(item.planned_date)}T12:00:00.000Z`).toLocaleDateString(undefined, { weekday: 'long' })
-      exceptionApproved = await ensureFacilitatorPinException({
-        message: completed
-          ? `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to do it again.`
-          : `This lesson is planned for ${planned}. Enter the Facilitator PIN to do it today.`,
-      })
+      try {
+        exceptionApproved = await ensureFacilitatorPinException({
+          message: completed
+            ? `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to do it again.`
+            : `This lesson is planned for ${planned}. Enter the Facilitator PIN to do it today.`,
+        })
+      } catch (error) {
+        setSyllabusLaunchError(error?.message || 'The Facilitator PIN could not be verified. Please try again.')
+        return
+      }
       if (!exceptionApproved) return
     }
+    const resumeExistingWork = action?.syllabus_state === 'in_progress'
+    const executionOccurrenceId = resumeExistingWork && item?.source_occurrence_id
+      ? item.source_occurrence_id
+      : (item?.occurrence_id || '')
     const subject = lesson.isGenerated ? 'generated' : (lesson.subject || lessonKey.split('/')[0] || 'general')
-    setSelectedLesson({ l: lesson, subject, lessonKey, isDemo: false, syllabusItem: item, syllabusExceptionApproved: exceptionApproved })
+    setSelectedLesson({
+      l: lesson,
+      subject,
+      lessonKey,
+      isDemo: false,
+      syllabusItem: { ...item, execution_occurrence_id: executionOccurrenceId },
+      syllabusExceptionApproved: exceptionApproved,
+    })
     setOverlayNoteEditing(false)
   }
 
@@ -1023,30 +1026,26 @@ function LessonsPageInner(){
     if (!learnerId || lessonsLoading) return
 
     // Wait for lessons to be loaded with their IDs
-    const allLoadedLessons = Object.values(lessonsBySubject).flat()
-    if (allLoadedLessons.length === 0) return
+    if (snapshotLessons.length === 0) {
+      setLessonSnapshots({})
+      setSyllabusSnapshotOccurrences({})
+      return
+    }
 
     let cancelled = false
 
     ;(async () => {
       try {
         const supabase = getSupabaseClient()
-        if (!supabase) {
-          if (!cancelled) setLessonSnapshots({})
-          return
-        }
-
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        if (!token) {
-          if (!cancelled) setLessonSnapshots({})
-          return
-        }
+        const { data: { session } = {} } = await supabase?.auth?.getSession?.() || {}
+        const token = session?.access_token || ''
 
         const snapshotsFound = {}
+        const snapshotRecords = []
 
-        // Check each loaded lesson for a snapshot using its filename
-        for (const lesson of allLoadedLessons) {
+        // Mirror SnapshotService restore precedence: a valid local JSON object
+        // wins; the account-backed snapshot is the fallback for this lesson.
+        for (const lesson of snapshotLessons) {
           if (cancelled) break
 
           // Use filename without extension (matches how sessions save snapshots via URL param).
@@ -1055,30 +1054,55 @@ function LessonsPageInner(){
           const lessonId = lesson.file?.replace(/\.json$/i, '') || lesson.lessonKey?.split('/').pop()?.replace(/\.json$/i, '') || lesson.id
           if (!lessonId) continue
 
+          let localSnapshot = null
           try {
-            const res = await fetch(
-              `/api/snapshots?learner_id=${encodeURIComponent(learnerId)}&lesson_key=${encodeURIComponent(lessonId)}`,
-              { headers: { Authorization: `Bearer ${token}` } }
-            )
+            const raw = typeof window !== 'undefined'
+              ? localStorage.getItem(`atomic_snapshot:${learnerId}:${lessonId}`)
+              : null
+            const parsed = raw ? JSON.parse(raw) : null
+            if (parsed && typeof parsed === 'object') localSnapshot = parsed
+          } catch {}
 
-            if (res.ok) {
-              const { snapshot } = await res.json()
-              if (snapshot && snapshot.savedAt && snapshotHasMeaningfulProgress(snapshot)) {
-                snapshotsFound[lesson.lessonKey] = true
+          let serverSnapshot = null
+          try {
+            if (token) {
+              const res = await fetch(
+                `/api/snapshots?learner_id=${encodeURIComponent(learnerId)}&lesson_key=${encodeURIComponent(lessonId)}`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              )
+              if (res.ok) {
+                const payload = await res.json()
+                if (payload?.snapshot && typeof payload.snapshot === 'object') serverSnapshot = payload.snapshot
               }
             }
           } catch (e) {
           }
+
+          const snapshot = selectSnapshotForRestore(localSnapshot, serverSnapshot)
+          if (!snapshot) continue
+          snapshotRecords.push({ lessonKey: lesson.lessonKey, snapshot })
+          if (snapshotHasMeaningfulProgress(snapshot)) snapshotsFound[lesson.lessonKey] = true
         }
 
-        if (!cancelled) setLessonSnapshots(snapshotsFound)
+        if (!cancelled) {
+          setLessonSnapshots(snapshotsFound)
+          setSyllabusSnapshotOccurrences(bindSnapshotsToSyllabusOccurrences({
+            snapshotRecords,
+            sessions: lessonHistorySessions,
+            timelineItems: syllabusModel.timeline_items,
+            learnerId,
+          }))
+        }
       } catch (e) {
-        if (!cancelled) setLessonSnapshots({})
+        if (!cancelled) {
+          setLessonSnapshots({})
+          setSyllabusSnapshotOccurrences({})
+        }
       }
     })()
 
     return () => { cancelled = true }
-  }, [learnerId, lessonsBySubject, lessonsLoading, sessionGateReady])
+  }, [learnerId, snapshotLessons, lessonHistorySessions, syllabusModel.timeline_items, lessonsLoading, sessionGateReady])
 
   if (!sessionGateReady) {
     return (
@@ -1182,6 +1206,7 @@ function LessonsPageInner(){
           </div>
         )}
         {syllabusError && <p role="status" style={{ margin: '8px 0 0', color: '#7c5f25', fontSize: 13 }}>The Syllabus could not be opened, so the existing lesson library remains available. {syllabusError}</p>}
+        {syllabusLaunchError && <p role="alert" style={{ margin: '8px 0 0', color: '#991b1b', fontSize: 13 }}>{syllabusLaunchError}</p>}
       </section>
 
       {syllabusModel.kind !== 'active' && <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, margin: '0 0 10px' }}>

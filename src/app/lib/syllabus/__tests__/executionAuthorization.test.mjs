@@ -11,6 +11,7 @@ import { getActiveSyllabus } from '../revisions.server.mjs'
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
 const LEARNER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+const RESUME_BROWSER = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
 
 function repository({ forecast = [], sessions = [], events = [], timezone = 'America/New_York' } = {}) {
   return {
@@ -119,6 +120,7 @@ test('today Syllabus occurrence is authorized without legacy availability or Cal
   })
   assert.equal(decision.allowedWithoutPin, true)
   assert.equal(decision.reason, 'today')
+  assert.equal(decision.resumeBrowserSessionId, null)
 })
 
 test('Mr. Slate practice is authorized on demand without weakening instructional PIN rules', async () => {
@@ -303,6 +305,143 @@ test('direct session authorization PIN-gates future and completed historical occ
   const completed = await authorizeExecution(request({ learnerId: LEARNER, lessonKey: 'math/done.json', occurrenceId: 'actual:done' }), { ...baseDeps, repository: completedRepo })
   assert.equal(completed.status, 409)
   assert.equal((await completed.json()).reason, 'completed_repeat')
+})
+
+test('historical continuation authorizes and launches with the canonical source occurrence', async () => {
+  const original = forecast('resume-source', 'math/resume.json', '2026-08-20')
+  const resumeRepository = repository({
+    forecast: [original],
+    sessions: [{
+      id: 'resume-session',
+      session_id: RESUME_BROWSER,
+      learner_id: LEARNER,
+      lesson_id: original.lesson_key,
+      instructional_teacher: 'sonoma',
+      started_at: '2026-08-20T14:00:00Z',
+      ended_at: '2026-08-20T15:00:00Z',
+      last_activity_at: '2026-08-20T14:55:00Z',
+    }],
+    events: [
+      { id: 'resume-started', session_id: 'resume-session', learner_id: LEARNER, lesson_id: original.lesson_key, event_type: 'started', occurred_at: '2026-08-20T14:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:resume-source', instructional_teacher: 'sonoma' } },
+      { id: 'resume-incomplete', session_id: 'resume-session', learner_id: LEARNER, lesson_id: original.lesson_key, event_type: 'incomplete', occurred_at: '2026-08-20T15:00:00Z', metadata: { reason: 'auto-marked-stale' } },
+    ],
+  })
+  const deps = {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: resumeRepository,
+    now: new Date('2026-08-23T16:00:00Z'),
+    proofSecret: 'test-secret',
+    verifyFacilitatorPinForUser: async (_admin, _user, pin) => pin === '2468',
+  }
+
+  const denied = await authorizeExecution(request({
+    learnerId: LEARNER,
+    lessonKey: original.lesson_key,
+    occurrenceId: 'syllabus:resume-source',
+    exceptionPin: '0000',
+  }), deps)
+  assert.equal(denied.status, 403)
+
+  const allowed = await authorizeExecution(request({
+    learnerId: LEARNER,
+    lessonKey: original.lesson_key,
+    occurrenceId: 'syllabus:resume-source',
+    exceptionPin: '2468',
+  }), deps)
+  assert.equal(allowed.status, 200)
+  const result = await allowed.json()
+  assert.equal(result.occurrenceId, 'syllabus:resume-source')
+  assert.notEqual(result.occurrenceId, 'actual:resume-session')
+  assert.equal(result.resumeBrowserSessionId, RESUME_BROWSER)
+
+  const scopedCookie = (allowed.headers.get('set-cookie') || '').split(';')[0]
+  const sessions = fakeTransactionalStarter()
+  const started = await startExecution(request({
+    learnerId: LEARNER,
+    lessonId: original.lesson_key,
+    browserSessionId: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    occurrenceId: result.occurrenceId,
+  }, scopedCookie), startDeps(sessions))
+  assert.equal(started.status, 200)
+  assert.equal(sessions.state.calls[0].p_syllabus_occurrence_id, 'syllabus:resume-source')
+
+  const retry = await authorizeExecution(request({
+    learnerId: LEARNER,
+    lessonKey: original.lesson_key,
+    occurrenceId: 'actual:resume-session',
+    exceptionPin: '2468',
+  }), deps)
+  assert.equal(retry.status, 200)
+  assert.equal((await retry.json()).resumeBrowserSessionId, null)
+})
+
+test('completed source occurrence never grants snapshot resume authority', async () => {
+  const original = forecast('completed-source', 'math/completed-source.json', '2026-08-20')
+  const completedRepository = repository({
+    forecast: [original],
+    sessions: [{
+      id: 'completed-session',
+      session_id: RESUME_BROWSER,
+      learner_id: LEARNER,
+      lesson_id: original.lesson_key,
+      instructional_teacher: 'sonoma',
+      started_at: '2026-08-20T14:00:00Z',
+      ended_at: '2026-08-20T15:00:00Z',
+    }],
+    events: [
+      { id: 'completed-started', session_id: 'completed-session', learner_id: LEARNER, lesson_id: original.lesson_key, event_type: 'started', occurred_at: '2026-08-20T14:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:completed-source', instructional_teacher: 'sonoma' } },
+      { id: 'completed-event', session_id: 'completed-session', learner_id: LEARNER, lesson_id: original.lesson_key, event_type: 'completed', occurred_at: '2026-08-20T15:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:completed-source', instructional_teacher: 'sonoma' } },
+    ],
+  })
+  const response = await authorizeExecution(request({
+    learnerId: LEARNER,
+    lessonKey: original.lesson_key,
+    occurrenceId: 'syllabus:completed-source',
+    exceptionPin: '2468',
+  }), {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: completedRepository,
+    now: new Date('2026-08-23T16:00:00Z'),
+    proofSecret: 'test-secret',
+    verifyFacilitatorPinForUser: async () => true,
+  })
+  assert.equal(response.status, 200)
+  assert.equal((await response.json()).resumeBrowserSessionId, null)
+})
+
+test('non-instructional actual occurrence never grants snapshot resume authority', async () => {
+  const original = forecast('slate-source', 'math/slate-source.json', '2026-08-20')
+  const decision = await resolveSyllabusExecution({
+    repository: repository({
+      forecast: [original],
+      sessions: [{
+        id: 'slate-session',
+        session_id: RESUME_BROWSER,
+        learner_id: LEARNER,
+        lesson_id: original.lesson_key,
+        instructional_teacher: 'slate',
+        started_at: '2026-08-20T14:00:00Z',
+        last_activity_at: '2026-08-20T14:30:00Z',
+      }],
+      events: [{
+        id: 'slate-started',
+        session_id: 'slate-session',
+        learner_id: LEARNER,
+        lesson_id: original.lesson_key,
+        event_type: 'started',
+        occurred_at: '2026-08-20T14:00:00Z',
+        metadata: { syllabus_occurrence_id: 'syllabus:slate-source', instructional_teacher: 'slate' },
+      }],
+    }),
+    admin: {},
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    lessonKey: original.lesson_key,
+    occurrenceId: 'syllabus:slate-source',
+    now: new Date('2026-08-23T16:00:00Z'),
+  })
+  assert.notEqual(decision.occurrence.actual_instructional_teacher, 'sonoma')
+  assert.equal(decision.resumeBrowserSessionId, null)
 })
 
 test('protected start rejects raw takeover PIN and expired or missing scoped authorization', async () => {
@@ -576,6 +715,10 @@ test('session boundary uses server authorization and does not accept cached faci
   assert.match(tracking, /fetch\('\/api\/syllabus\/execution\/start'/)
   assert.doesNotMatch(tracking, /from\('lesson_sessions'\)[\s\S]{0,400}insert\(insertPayload\)/)
   assert.doesNotMatch(session, /localStorage\.setItem\([^\n]*exceptionPin|sessionStorage\.setItem\([^\n]*exceptionPin/)
+  assert.match(session, /setExecutionAuthorizationError\(cause\?\.message/)
+  assert.match(session, /executionAuthorization === 'denied'[\s\S]*\{executionAuthorizationError\}/)
+  assert.match(session, /setStartSessionError\(msg \|\| 'Unable to start\. Please try again\.'/)
+  assert.match(session, /\{startSessionError\}/)
 })
 
 test('transactional session-start migration locks, checks, replaces, and restricts execution in PostgreSQL', () => {

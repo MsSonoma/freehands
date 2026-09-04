@@ -119,9 +119,11 @@ test('Webb completion waits for canonical success while Slate never creates inst
 
 test('Sonoma success cleanup is downstream of canonical completion and exposes retry', () => {
   const sonoma = fs.readFileSync(path.resolve('src/app/session/v2/SessionPageV2.jsx'), 'utf8')
-  const handler = sonoma.slice(sonoma.indexOf("orchestrator.on('sessionComplete'"), sonoma.indexOf("orchestrator.on('sessionComplete'") + 1600)
+  const handler = sonoma.slice(sonoma.indexOf("orchestrator.on('sessionComplete'"), sonoma.indexOf("orchestrator.on('sessionComplete'") + 3000)
   assert.ok(handler.indexOf("await endTrackedSession('completed'") < handler.indexOf("setCurrentPhase('complete')"))
   assert.match(handler, /if \(!canonicalCompletion\)[\s\S]*setCompletionCommitState\('failed'\)[\s\S]*return/)
+  assert.ok(handler.indexOf('if (!canonicalCompletion)') < handler.indexOf('deleteSnapshot()'))
+  assert.ok(handler.indexOf("setCompletionCommitState('committed')") < handler.indexOf('deleteSnapshot()'))
   assert.match(sonoma, /Retry completion/)
 })
 

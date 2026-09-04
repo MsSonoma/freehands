@@ -20,6 +20,7 @@ import {
   timelineItemAction,
 } from '../timeline.mjs'
 import { syllabusAccessFromProfile } from '../entitlements.server.mjs'
+import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '../../../learn/snapshotProgress.mjs'
 
 const TEST_DIR = path.dirname(fileURLToPath(import.meta.url))
 
@@ -245,6 +246,204 @@ test('canonical actions are preserved while eligible lessons gain supplemental S
   }
 })
 
+test('canonical incomplete lifecycle and resumable progress coexist as Continue', () => {
+  for (const phase of ['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet']) {
+    const state = syllabusItemState({
+      item: { actual_kind: 'incomplete', planned_date: '2026-08-20' },
+      today: '2026-08-26',
+      hasProgress: true,
+    })
+    assert.equal(state, 'in_progress', phase)
+    assert.deepEqual(syllabusItemActions({ role: 'learner', state, hasLessonArtifact: true, isToday: false })[0], {
+      id: 'execute', label: 'Continue', requires_pin: true,
+    })
+  }
+
+  const noProgress = syllabusItemState({
+    item: { actual_kind: 'incomplete', planned_date: '2026-08-20' },
+    today: '2026-08-26',
+    hasProgress: false,
+  })
+  assert.equal(noProgress, 'incomplete_historical')
+  assert.equal(syllabusItemActions({ role: 'learner', state: noProgress, hasLessonArtifact: true })[1].label, 'Retry')
+})
+
+test('current V2 snapshots detect meaningful progress across instructional phases', () => {
+  const snapshots = [
+    { currentPhase: 'discussion', phaseData: { discussion: { turnCount: 2 } } },
+    { currentPhase: 'teaching', phaseData: { teaching: { stage: 'examples', sentenceIndex: 1 } } },
+    { currentPhase: 'comprehension', phaseData: { comprehension: { nextQuestionIndex: 1, answers: [{ isCorrect: true }] } } },
+    { currentPhase: 'exercise', phaseData: { exercise: { nextQuestionIndex: 1, answers: [{ isCorrect: false }] } } },
+    { currentPhase: 'worksheet', phaseData: { worksheet: { nextQuestionIndex: 1, answers: [{ isCorrect: true }] } } },
+    { currentPhase: 'test', phaseData: { test: { nextQuestionIndex: 2, answers: [{ isCorrect: true }, { isCorrect: false }] } } },
+  ]
+  snapshots.forEach((snapshot) => assert.equal(snapshotHasMeaningfulProgress(snapshot), true, snapshot.currentPhase))
+})
+
+test('evidence snapshots mirror Session V2 baseline and retention restore gates', () => {
+  assert.equal(snapshotHasMeaningfulProgress({
+    currentPhase: 'baseline',
+    phaseData: { baseline: { status: 'active', responses: [{ response: 'four' }] } },
+  }), true)
+  assert.equal(snapshotHasMeaningfulProgress({
+    currentPhase: 'baseline',
+    phaseData: { baseline: { status: 'complete', responses: [{ response: 'four' }], completedAt: '2026-08-20T11:00:00Z' } },
+  }), false)
+  assert.equal(snapshotHasMeaningfulProgress({
+    currentPhase: 'retention',
+    phaseData: { retention: { status: 'active', responses: [], plan: { selectedItems: [{ prompt: 'Recall it' }] } } },
+  }), true)
+  assert.equal(snapshotHasMeaningfulProgress({
+    currentPhase: 'retention',
+    phaseData: { retention: { status: 'eligible', responses: [{ response: 'answer' }], completedAt: '2026-08-20T11:00:00Z' } },
+  }), false)
+})
+
+function resumableSnapshot({ sessionId, lessonKey = 'repeated', lastUpdated }) {
+  return {
+    sessionId,
+    learnerId: 'learner-repeat',
+    lessonKey,
+    lastUpdated,
+    currentPhase: 'exercise',
+    phaseData: { exercise: { answers: [{ response: 'answer' }], nextQuestionIndex: 1 } },
+  }
+}
+
+function repeatedOccurrenceFixture() {
+  return {
+    learnerId: 'learner-repeat',
+    sessions: [
+      { id: 'tracked-a', session_id: 'browser-a', learner_id: 'learner-repeat', lesson_id: 'math/repeated.json', started_at: '2026-08-20T10:00:00Z' },
+      { id: 'tracked-b', session_id: 'browser-b', learner_id: 'learner-repeat', lesson_id: 'math/repeated.json', started_at: '2026-08-21T10:00:00Z' },
+    ],
+    timelineItems: [
+      { occurrence_id: 'actual:tracked-a', source_occurrence_id: 'syllabus:a', placement_kind: 'actual', actual_kind: 'incomplete', lesson_key: 'math/repeated.json' },
+      { occurrence_id: 'actual:tracked-b', source_occurrence_id: 'syllabus:b', placement_kind: 'actual', actual_kind: 'incomplete', lesson_key: 'math/repeated.json' },
+    ],
+  }
+}
+
+test('repeated lessons bind progress only to the snapshot browser session occurrence', () => {
+  const fixture = repeatedOccurrenceFixture()
+  const bind = (snapshot) => bindSnapshotsToSyllabusOccurrences({
+    ...fixture,
+    snapshotRecords: [{ lessonKey: 'math/repeated.json', snapshot }],
+  })
+
+  const boundA = bind(resumableSnapshot({ sessionId: 'browser-a', lastUpdated: '2026-08-20T10:30:00Z' }))
+  const boundB = bind(resumableSnapshot({ sessionId: 'browser-b', lastUpdated: '2026-08-21T10:30:00Z' }))
+  assert.deepEqual(boundA, { 'actual:tracked-a': true })
+  assert.deepEqual(boundB, { 'actual:tracked-b': true })
+  const stateA = syllabusItemState({ item: fixture.timelineItems[0], hasProgress: boundA['actual:tracked-a'] })
+  const stateBWhileAOwnsSnapshot = syllabusItemState({ item: fixture.timelineItems[1], hasProgress: boundA['actual:tracked-b'] })
+  assert.equal(syllabusItemActions({ role: 'learner', state: stateA, hasLessonArtifact: true })[0].label, 'Continue')
+  assert.equal(syllabusItemActions({ role: 'learner', state: stateBWhileAOwnsSnapshot, hasLessonArtifact: true })[1].label, 'Retry')
+  assert.deepEqual(bind(resumableSnapshot({ sessionId: 'missing-browser', lastUpdated: '2026-08-21T10:30:00Z' })), {})
+  assert.deepEqual(bind(resumableSnapshot({ sessionId: 'browser-a', lessonKey: 'different', lastUpdated: '2026-08-20T10:30:00Z' })), {})
+})
+
+test('reused browser session identity binds to the latest session not later than the snapshot', () => {
+  const fixture = repeatedOccurrenceFixture()
+  fixture.sessions[0].session_id = 'reused-browser'
+  fixture.sessions[1].session_id = 'reused-browser'
+
+  const early = bindSnapshotsToSyllabusOccurrences({
+    ...fixture,
+    snapshotRecords: [{ lessonKey: 'math/repeated.json', snapshot: resumableSnapshot({ sessionId: 'reused-browser', lastUpdated: '2026-08-20T12:00:00Z' }) }],
+  })
+  const late = bindSnapshotsToSyllabusOccurrences({
+    ...fixture,
+    snapshotRecords: [{ lessonKey: 'math/repeated.json', snapshot: resumableSnapshot({ sessionId: 'reused-browser', lastUpdated: '2026-08-21T12:00:00Z' }) }],
+  })
+  assert.deepEqual(early, { 'actual:tracked-a': true })
+  assert.deepEqual(late, { 'actual:tracked-b': true })
+})
+
+test('duplicate local and server facts bind one occurrence and auto-stale repeats stay isolated', () => {
+  const fixture = repeatedOccurrenceFixture()
+  const snapshot = resumableSnapshot({ sessionId: 'browser-a', lastUpdated: '2026-08-20T10:30:00Z' })
+  const bound = bindSnapshotsToSyllabusOccurrences({
+    ...fixture,
+    snapshotRecords: [
+      { lessonKey: 'math/repeated.json', snapshot },
+      { lessonKey: 'math/repeated.json', snapshot: { ...snapshot } },
+    ],
+  })
+  assert.deepEqual(bound, { 'actual:tracked-a': true })
+  assert.equal(syllabusItemState({ item: fixture.timelineItems[0], hasProgress: bound['actual:tracked-a'] }), 'in_progress')
+  assert.equal(syllabusItemState({ item: fixture.timelineItems[1], hasProgress: bound['actual:tracked-b'] }), 'incomplete_historical')
+  assert.equal(fixture.timelineItems[0].source_occurrence_id, 'syllabus:a')
+})
+
+test('snapshot source selection mirrors SnapshotService local-first restore behavior', () => {
+  const local = resumableSnapshot({ sessionId: 'browser-a', lastUpdated: '2026-08-20T10:30:00Z' })
+  const server = resumableSnapshot({ sessionId: 'browser-b', lastUpdated: '2026-08-21T10:30:00Z' })
+  assert.equal(selectSnapshotForRestore(local, server), local)
+  assert.equal(selectSnapshotForRestore(null, server), server)
+  assert.equal(selectSnapshotForRestore(null, null), null)
+})
+
+test('completed lesson and completed test checkpoints are not made resumable by stale snapshots', () => {
+  const completedTest = {
+    currentPhase: 'test',
+    completedPhases: ['test'],
+    phaseData: { test: { answers: [{ isCorrect: true }], completedAt: '2026-08-20T11:00:00Z' } },
+  }
+  assert.equal(snapshotHasMeaningfulProgress(completedTest), false)
+  assert.equal(snapshotHasMeaningfulProgress({ currentPhase: 'closing', phaseData: {} }), false)
+  assert.equal(syllabusItemState({
+    item: { actual_kind: 'completed', planned_date: '2026-08-20' },
+    today: '2026-08-26',
+    hasProgress: true,
+  }), 'completed_historical')
+})
+
+test('snapshot discovery includes historical Syllabus lessons outside the active library', () => {
+  const active = {
+    math: [{ lessonKey: 'math/current.json', file: 'current.json' }],
+    demo: [{ lessonKey: 'demo/example.json', file: 'example.json' }],
+  }
+  const historical = { lessonKey: 'history/past.json', file: 'past.json' }
+  const candidates = snapshotCandidateLessons(
+    active,
+    [{ lesson_key: 'history/past.json' }, { lesson_key: 'history/missing.json' }],
+    { 'history/past.json': historical },
+  )
+
+  assert.deepEqual(candidates.map((lesson) => lesson.lessonKey).sort(), [
+    'history/past.json',
+    'math/current.json',
+  ])
+})
+
+test('legacy auto-stale or explicit incomplete history cannot suppress independently valid progress', () => {
+  for (const terminalEvent of [
+    { event_type: 'incomplete', metadata: { reason: 'auto-marked-stale' } },
+    { event_type: 'incomplete', metadata: { reason: 'learner-exit' } },
+    { event_type: 'exited', metadata: {} },
+  ]) {
+    assert.equal(terminalEvent.event_type === 'completed', false)
+    assert.equal(syllabusItemState({
+      item: { actual_kind: 'incomplete', planned_date: '2026-08-20' },
+      today: '2026-08-26',
+      hasProgress: true,
+    }), 'in_progress')
+  }
+})
+
+test('learner continuation carries source occurrence while Retry and repeat keep a new-attempt identity', () => {
+  const document = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
+  const learner = fs.readFileSync(path.resolve(TEST_DIR, '../../../learn/LearnerHome.js'), 'utf8')
+  assert.match(document, /syllabus_state: state/)
+  assert.match(learner, /resumeExistingWork && item\?\.source_occurrence_id[\s\S]*item\.source_occurrence_id[\s\S]*item\?\.occurrence_id/)
+  assert.match(learner, /execution_occurrence_id \|\| syllabusOccurrence\?\.occurrence_id/)
+  assert.match(learner, /syllabusPayload\?\.timeline_items[\s\S]*allHistoryKeys = \[\.\.\.new Set\(\[\.\.\.completedKeys, \.\.\.inProgressKeys, \.\.\.syllabusKeys\]\)\]/)
+  assert.match(learner, /setSyllabusLaunchError/)
+  assert.match(learner, /role="alert"/)
+  assert.match(learner, /if \(!exceptionApproved\) return[\s\S]*const resumeExistingWork/)
+})
+
 test('an instructional occurrence with existing Slate sessions can schedule another session', () => {
   const item = {
     item_type: 'lesson',
@@ -267,7 +466,7 @@ test('historical instructional actions preserve non-editable provenance and exis
   assert.match(facilitatorPage, /action\?\.id !== 'repeat'/)
   assert.match(facilitatorPage, /ensureFacilitatorPinException/)
   assert.match(learnerHome, /if \(action\?\.requires_pin\)/)
-  assert.match(learnerHome, /occurrenceId: syllabusOccurrence\?\.occurrence_id \|\| ''/)
+  assert.match(learnerHome, /occurrenceId: syllabusOccurrence\?\.execution_occurrence_id \|\| syllabusOccurrence\?\.occurrence_id \|\| ''/)
 })
 
 test('new Syllabus UI source contains required readable labels and no mojibake', () => {

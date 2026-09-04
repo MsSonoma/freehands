@@ -172,8 +172,8 @@ export function weeklyPatternCapacity(pattern, day) {
 
 export function syllabusItemState({ item, today = new Date().toISOString().slice(0, 10), hasProgress = false }) {
   if (item?.actual_kind === 'completed') return 'completed_historical'
+  if (hasProgress || item?.actual_kind === 'in_progress') return 'in_progress'
   if (item?.actual_kind === 'incomplete') return 'incomplete_historical'
-  if (item?.actual_kind === 'in_progress' || (hasProgress && dateOnly(item?.planned_date) === dateOnly(today))) return 'in_progress'
   if (item?.needs_placement) return 'needs_placement'
   const plannedDate = dateOnly(item?.planned_date)
   if (plannedDate === dateOnly(today)) return 'today_unfinished'

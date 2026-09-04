@@ -10,6 +10,7 @@ export const SYLLABUS_EXECUTION_COOKIE = 'syllabus_execution'
 const PROOF_TTL_SECONDS = 120
 
 function clean(value) { return String(value || '').trim() }
+function isUuid(value) { return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(clean(value)) }
 function proofKey(secret) {
   if (!secret) throw new SyllabusError('Syllabus execution authorization is not configured', 500, 'EXECUTION_NOT_CONFIGURED')
   return createHmac('sha256', secret).update('ms-sonoma-syllabus-execution-v1').digest()
@@ -111,26 +112,43 @@ export async function resolveSyllabusExecution({
   const concreteKeys = timeline.map((item) => item.lesson_key).filter(Boolean)
   const normalizedKey = resolveLessonKeyAgainst(normalizeLessonKey(lessonKey), concreteKeys)
   const candidates = timeline.filter((item) => item.lesson_key === normalizedKey)
-  const occurrence = occurrenceId
-    ? candidates.find((item) => clean(item.occurrence_id) === clean(occurrenceId))
-    : (candidates.length === 1 ? candidates[0] : null)
+  const requestedOccurrenceId = clean(occurrenceId)
+  const directMatches = requestedOccurrenceId
+    ? candidates.filter((item) => clean(item.occurrence_id) === requestedOccurrenceId)
+    : []
+  const sourceMatches = requestedOccurrenceId
+    ? candidates.filter((item) => item?.placement_kind === 'actual' && clean(item.source_occurrence_id) === requestedOccurrenceId)
+    : []
+  const occurrence = sourceMatches.length === 1
+    ? sourceMatches[0]
+    : (sourceMatches.length === 0 && directMatches.length === 1
+        ? directMatches[0]
+        : (!requestedOccurrenceId && candidates.length === 1 ? candidates[0] : null))
   if (!occurrence) {
     throw new SyllabusError('The requested Syllabus occurrence is missing or ambiguous', 403, 'SYLLABUS_OCCURRENCE_REQUIRED')
   }
   const isToday = clean(occurrence.planned_date).slice(0, 10) === calendar.today
   const completedRepeat = occurrence.actual_kind === 'completed'
   const instructionalTeacher = normalizeInstructionalTeacher(occurrence.assigned_instructional_teacher || occurrence.instructional_teacher) || DEFAULT_INSTRUCTIONAL_TEACHER
+  const resumeBrowserSessionId = sourceMatches.length === 1
+    && occurrence?.placement_kind === 'actual'
+    && normalizeInstructionalTeacher(occurrence?.actual_instructional_teacher) === 'sonoma'
+    && !completedRepeat
+    && isUuid(occurrence?.actual_browser_session_id)
+      ? clean(occurrence.actual_browser_session_id)
+      : null
   return {
     allowedWithoutPin: isToday && !completedRepeat,
     requiresPin: !isToday || completedRepeat,
     reason: completedRepeat ? 'completed_repeat' : (!isToday ? 'non_today' : 'today'),
     occurrence,
+    resumeBrowserSessionId,
     instructionalTeacher,
     scope: {
       facilitatorId,
       learnerId,
       lessonKey: normalizedKey,
-      occurrenceId: occurrence.occurrence_id,
+      occurrenceId: requestedOccurrenceId || occurrence.occurrence_id,
       instructionalTeacher,
       today: calendar.today,
     },

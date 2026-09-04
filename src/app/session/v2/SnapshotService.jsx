@@ -392,6 +392,12 @@ export class SnapshotService {
   get snapshot() {
     return this.#snapshot;
   }
+
+  // Reject a loaded snapshot for this execution without deleting the durable
+  // lesson-scoped snapshot, which may belong to another Syllabus occurrence.
+  clearLoadedSnapshot() {
+    this.#snapshot = null;
+  }
   
   get lastSaveTime() {
     return this.#lastSaveTime;

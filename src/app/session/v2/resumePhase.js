@@ -59,3 +59,23 @@ export function deriveResumePhaseFromSnapshot(snapshot) {
 
   return best;
 }
+
+export function canRestoreSnapshotForExecution({
+  snapshot,
+  executionAuthorization,
+  authorizedOccurrenceId,
+  authorizedResumeBrowserSessionId,
+  subject,
+} = {}) {
+  if (!snapshot || executionAuthorization !== 'allowed') return false;
+  if (subject === 'demo' || String(authorizedOccurrenceId || '').startsWith('legacy:')) return true;
+  return Boolean(
+    authorizedResumeBrowserSessionId
+    && snapshot.sessionId
+    && snapshot.sessionId === authorizedResumeBrowserSessionId
+  );
+}
+
+export function rejectSnapshotForActiveExecution(service) {
+  service?.clearLoadedSnapshot?.();
+}

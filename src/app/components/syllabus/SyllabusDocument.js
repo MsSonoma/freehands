@@ -310,7 +310,7 @@ export default function SyllabusDocument({
                   if (action.id === 'history') return <button key={action.id} type="button" className={styles.lessonAction} disabled={disabled} onClick={() => onReviewHistory?.(item)}>{action.label}</button>
                   if (disabled) return <button key={action.id} type="button" className={styles.lessonAction} disabled>{action.label}{action.requires_pin ? ' · PIN' : ''}</button>
                   if (presentation === 'link') return <a key={action.id} className={styles.lessonAction} href={href}>{action.label}</a>
-                  return <button key={action.id} type="button" className={styles.lessonAction} onClick={() => (onLessonAction || onOpenLesson)?.(item, action)}>{action.label}{action.requires_pin ? ' · PIN' : ''}</button>
+                  return <button key={action.id} type="button" className={styles.lessonAction} onClick={() => (onLessonAction || onOpenLesson)?.(item, { ...action, syllabus_state: state })}>{action.label}{action.requires_pin ? ' · PIN' : ''}</button>
                 })}</div>
                 {role === 'learner' && week.state === 'now' && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}
                 {role === 'facilitator' && item.lesson_key && historicalActivityAllowed && typeof onRecordHistoricalActivity === 'function' && <HistoricalActivityControl

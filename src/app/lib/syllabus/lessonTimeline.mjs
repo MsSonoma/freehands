@@ -178,6 +178,7 @@ export function composeSyllabusLessonTimeline({
     const actual = {
       key,
       id: identity,
+      browserSessionId: clean(session?.session_id) || null,
       occurrenceId,
       instructionalTeacher: legacySessionV2SonomaCandidate ? 'sonoma' : historicalTeacher,
       storedInstructionalTeacher: session?.instructional_teacher ?? null,
@@ -336,6 +337,7 @@ export function composeSyllabusLessonTimeline({
       ...details, id: `actual:${actual.id}`, occurrence_id: `actual:${actual.id}`, planned_date: actualDate(actual.occurred_at), sort_order: capacity?.slot?.index ?? 0,
       item_type: 'lesson', placement_kind: 'actual', actual_kind: actual.kind, actual_at: actual.occurred_at,
       source_occurrence_id: actual.occurrenceId || null,
+      actual_browser_session_id: actual.browserSessionId || null,
       actual_instructional_teacher: actual.instructionalTeacher || null,
       stored_instructional_teacher: actual.storedInstructionalTeacher ?? null,
       actual_instructional_teacher_provenance: actual.instructionalTeacherProvenance || null,

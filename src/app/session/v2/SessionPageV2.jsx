@@ -38,7 +38,7 @@ import { ClosingPhase } from './ClosingPhase';
 import { DiscussionPhase } from './DiscussionPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
 import { SnapshotService } from './SnapshotService';
-import { deriveResumePhaseFromSnapshot } from './resumePhase';
+import { canRestoreSnapshotForExecution, deriveResumePhaseFromSnapshot, rejectSnapshotForActiveExecution } from './resumePhase';
 import { requireProtectedSessionCreation } from './protectedSessionBoundary.mjs';
 import { TimerService } from './TimerService';
 import { KeyboardService } from './KeyboardService';
@@ -576,6 +576,7 @@ function SessionPageV2Inner() {
   const [executionAuthorization, setExecutionAuthorization] = useState(subjectParam === 'demo' ? 'allowed' : 'pending');
   const [executionAuthorizationError, setExecutionAuthorizationError] = useState(null);
   const [authorizedOccurrenceId, setAuthorizedOccurrenceId] = useState('');
+  const [authorizedResumeBrowserSessionId, setAuthorizedResumeBrowserSessionId] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -586,6 +587,7 @@ function SessionPageV2Inner() {
       }
       setExecutionAuthorization('pending');
       setExecutionAuthorizationError(null);
+      setAuthorizedResumeBrowserSessionId(null);
       try {
         const learnerId = learnerIdParam || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : '');
         if (!learnerId || !lessonId) throw new Error('A learner and Syllabus lesson occurrence are required.');
@@ -611,10 +613,12 @@ function SessionPageV2Inner() {
         if (!result.response.ok || !result.json?.ok || !result.json?.occurrenceId || result.json?.instructionalTeacher !== 'sonoma') throw new Error(result.json?.error || 'This lesson is not assigned to Ms. Sonoma.');
         if (!cancelled) {
           setAuthorizedOccurrenceId(result.json.occurrenceId);
+          setAuthorizedResumeBrowserSessionId(result.json.resumeBrowserSessionId || null);
           setExecutionAuthorization('allowed');
         }
       } catch (cause) {
         if (!cancelled) {
+          setAuthorizedResumeBrowserSessionId(null);
           setExecutionAuthorization('denied');
           setExecutionAuthorizationError(cause?.message || 'This Syllabus occurrence is not authorized.');
         }
@@ -2186,10 +2190,12 @@ function SessionPageV2Inner() {
   
   // Initialize SnapshotService after lesson loads
   useEffect(() => {
-    if (!lessonData || !learnerProfile || !browserSessionId || !lessonKey) return;
+    if (executionAuthorization !== 'allowed' || !lessonData || !learnerProfile || !browserSessionId || !lessonKey) return;
 
     let cancelled = false;
     setSnapshotLoaded(false);
+    setResumePhase(null);
+    resumePhaseRef.current = null;
 
     const sessionId = browserSessionId;
     const learnerId = learnerProfile.id;
@@ -2209,8 +2215,19 @@ function SessionPageV2Inner() {
 
       snapshotServiceRef.current = service;
 
-      service.initialize().then(snapshot => {
+      service.initialize().then(loadedSnapshot => {
         if (cancelled) return;
+        const snapshot = canRestoreSnapshotForExecution({
+          snapshot: loadedSnapshot,
+          executionAuthorization,
+          authorizedOccurrenceId,
+          authorizedResumeBrowserSessionId,
+          subject: subjectParam,
+        }) ? loadedSnapshot : null;
+        if (loadedSnapshot && !snapshot) {
+          rejectSnapshotForActiveExecution(service);
+          addEvent('Ignored saved progress from a different Syllabus occurrence.');
+        }
         if (snapshot) {
           const normalizedResumePhase = deriveResumePhaseFromSnapshot(snapshot);
           const resumePhaseName = normalizedResumePhase || null;
@@ -2290,7 +2307,7 @@ function SessionPageV2Inner() {
       cancelled = true;
       snapshotServiceRef.current = null;
     };
-  }, [lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
+  }, [executionAuthorization, authorizedOccurrenceId, authorizedResumeBrowserSessionId, subjectParam, lessonData, learnerProfile, browserSessionId, lessonKey, resetTranscriptState, applyRestoredTimerStateToUi]);
 
   // Pre-Begin conflict watch: repeatedly checks for an active session on another device
   // every 4 seconds until the user clicks Begin/Resume (which starts real tracking + polling)

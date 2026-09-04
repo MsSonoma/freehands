@@ -28,6 +28,7 @@ test('learner-history GET is read-only even for a session that previously looked
   const supabase = createReadOnlySupabase({
     lesson_sessions: [{
       id: 'session-1',
+      session_id: 'browser-session-1',
       learner_id: 'learner-1',
       lesson_id: 'math/fractions.json',
       instructional_teacher: 'sonoma',
@@ -53,6 +54,7 @@ test('learner-history GET is read-only even for a session that previously looked
 
   assert.equal(response.status, 200)
   assert.equal(body.sessions[0].ended_at, null)
+  assert.equal(body.sessions[0].session_id, 'browser-session-1')
   assert.equal(body.sessions[0].status, 'in-progress')
   assert.equal(body.events.some((event) => event.event_type === 'incomplete'), false)
   assert.deepEqual(supabase.mutations, [])
