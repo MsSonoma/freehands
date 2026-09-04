@@ -8,9 +8,11 @@ import {
   classifySyllabusWeek,
   moveSyllabusWeek,
   moveSyllabusTimeline,
+  projectLearningForecastForWeek,
   resolveSyllabusReadModel,
   selectSyllabusWeek,
   startOfSyllabusWeek,
+  syllabusDayPresentation,
   syllabusEntitlementsFor,
   syllabusItemActions,
   syllabusItemActionsFor,
@@ -270,13 +272,37 @@ test('historical instructional actions preserve non-editable provenance and exis
 
 test('new Syllabus UI source contains required readable labels and no mojibake', () => {
   const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
-  for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / FORECAST', 'Ms. Sonoma / Living Syllabus', 'Previous week', 'This week', 'Next week', 'Locked / Upgrade to plan']) {
+  for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / FORECAST', 'Weekly learning plan', 'Previous week', 'This week', 'Next week', 'Plan ahead']) {
     assert.match(source, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
   assert.doesNotMatch(source, /\uFFFD|Ã|Â|â€|â€™|â†/u)
   assert.doesNotMatch(source, /Mastery proposals for general review|Mastery note|proposedReforecast/)
   assert.match(source, /week\.days\.map/)
   assert.doesNotMatch(source, /timeline\.weeks\.map/)
+})
+
+test('inactive learning forecast projects only into its exact selected target week without changing authority', () => {
+  const items = [
+    { id: 'a', lineage_id: 'lineage-a', origin: 'learning_forecast', lesson_key: null, planned_date: '2026-09-07', sort_order: 1 },
+    { id: 'b', lineage_id: 'lineage-b', origin: 'learning_forecast', lesson_key: null, planned_date: '2026-09-08', sort_order: 0 },
+    { id: 'active', lineage_id: 'active', origin: 'facilitator', lesson_key: null, planned_date: '2026-09-09', sort_order: 0 },
+    { id: 'ready', lineage_id: 'ready', origin: 'learning_forecast', lesson_key: 'generated/ready.json', planned_date: '2026-09-10', sort_order: 0 },
+  ]
+  assert.deepEqual(projectLearningForecastForWeek(items, { selectedWeekStart: '2026-08-31', targetWeekStart: '2026-09-07' }), [])
+  const projected = projectLearningForecastForWeek(items, { selectedWeekStart: '2026-09-09', targetWeekStart: '2026-09-07' })
+  assert.deepEqual(projected.map((item) => item.lineage_id), ['lineage-a', 'lineage-b'])
+  assert.ok(projected.every((item) => item.presentation_kind === 'suggested_inactive'))
+  assert.equal(items[0].presentation_kind, undefined)
+})
+
+test('active and suggested entries share deterministic exact-slot ordering inside a Syllabus day', () => {
+  const presentation = syllabusDayPresentation(
+    [{ occurrence_id: 'active-1', sort_order: 1 }, { occurrence_id: 'active-0', sort_order: 0 }],
+    [{ lineage_id: 'suggested-2', sort_order: 2 }, { lineage_id: 'suggested-1', sort_order: 1 }],
+  )
+  assert.deepEqual(presentation.map(({ kind, item }) => `${item.sort_order}:${kind}`), [
+    '0:active', '1:active', '1:suggested', '2:suggested',
+  ])
 })
 
 test('Free initial Syllabus establishment is review-only in the retained editor', () => {

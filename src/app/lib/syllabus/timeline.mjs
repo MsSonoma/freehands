@@ -93,6 +93,29 @@ export function selectSyllabusWeek(items = [], { weekStart, today = new Date().t
   }
 }
 
+export function projectLearningForecastForWeek(items = [], { selectedWeekStart, targetWeekStart } = {}) {
+  const selected = startOfSyllabusWeek(selectedWeekStart)
+  const target = startOfSyllabusWeek(targetWeekStart)
+  if (!selected || !target || selected !== target) return []
+  return (items || [])
+    .filter((item) => item?.origin === 'learning_forecast'
+      && !item?.lesson_key
+      && startOfSyllabusWeek(item?.planned_date) === target)
+    .map((item) => ({ ...item, presentation_kind: 'suggested_inactive' }))
+    .sort((left, right) => dateOnly(left.planned_date).localeCompare(dateOnly(right.planned_date))
+      || Number(left.sort_order || 0) - Number(right.sort_order || 0)
+      || String(left.lineage_id || left.id || '').localeCompare(String(right.lineage_id || right.id || '')))
+}
+
+export function syllabusDayPresentation(activeItems = [], suggestedItems = []) {
+  return [
+    ...(activeItems || []).map((item) => ({ kind: 'active', item })),
+    ...(suggestedItems || []).map((item) => ({ kind: 'suggested', item })),
+  ].sort((left, right) => Number(left.item?.sort_order || 0) - Number(right.item?.sort_order || 0)
+    || left.kind.localeCompare(right.kind)
+    || String(left.item?.occurrence_id || left.item?.lineage_id || left.item?.id || '').localeCompare(String(right.item?.occurrence_id || right.item?.lineage_id || right.item?.id || '')))
+}
+
 export function resolveSyllabusReadModel(payload) {
   if (!payload?.has_active_syllabus || !payload?.active_revision) {
     return { kind: 'fallback', source: 'legacy_compatibility', revision: null, forecast_items: [], timeline_items: [] }

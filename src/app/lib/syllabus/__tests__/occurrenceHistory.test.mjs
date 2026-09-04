@@ -272,7 +272,7 @@ test('Review History integration is read-only, local, exact-identity, and race g
   const routeSource = fs.readFileSync(path.resolve('src/app/api/facilitator/learners/[id]/lesson-history/[occurrenceId]/route.js'), 'utf8')
   assert.doesNotMatch(documentSource, /transcripts\?lessonKey/)
   assert.match(documentSource, /onReviewHistory\?\.\(item\)/)
-  assert.match(documentSource, /\[learnerId, today\]/)
+  assert.match(documentSource, /\[learnerId, restoreWeekStart, today\]/)
   assert.match(pageSource, /setHistoryOccurrenceId\(''\)/)
   assert.match(pageSource, /setPlanAheadOpen\(false\)[\s\S]*setHistoryOccurrenceId\(occurrenceId\)/)
   assert.match(overlaySource, /requestSequence\.current/)

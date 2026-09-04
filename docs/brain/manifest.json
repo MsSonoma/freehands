@@ -30,6 +30,9 @@
       "lineage-safe materialization",
       "forecast descriptions",
       "unified facilitator planning surface",
+      "single weekly planning document",
+      "in-week inactive forecast presentation",
+      "inline Plan Ahead mode",
       "exact-slot concept planning",
       "Plan Ahead 1-4 weeks",
       "/api/syllabus/planning",
@@ -47,7 +50,7 @@
       "separate Slate assignment events",
       "on-demand Slate practice"
     ],
-    "last_updated": "2026-09-03T20:54:51Z",
+    "last_updated": "2026-09-03T22:52:13Z",
     "status": "canonical"
   },
   "learner-home": {

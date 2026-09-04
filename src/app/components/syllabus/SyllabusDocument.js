@@ -4,9 +4,11 @@ import { useEffect, useMemo, useState } from 'react'
 import {
   dateOnly,
   moveSyllabusWeek,
+  projectLearningForecastForWeek,
   selectSyllabusWeek,
+  startOfSyllabusWeek,
+  syllabusDayPresentation,
   syllabusActionPresentation,
-  syllabusEntitlementsFor,
   syllabusItemActionsFor,
   syllabusItemState,
   weeklyPatternRows,
@@ -94,13 +96,28 @@ function HistoricalActivityControl({ item, legacyWebbCompletion, busy, onRecord 
   )
 }
 
+function ForecastSuggestion({ item, busy, replacing, recoveryRequired, onEdit, onReplace, onGenerate }) {
+  return <div className={styles.suggestedEntry} data-forecast-lineage={item.lineage_id}>
+    <div className={styles.entryBody}>
+      <p className={styles.subject}>{item.subject}</p>
+      <h4>{item.title}</h4>
+      {item.description && <p className={styles.description}>{item.description}</p>}
+      <span className={styles.suggestedLabel}>Suggested · not active</span>
+    </div>
+    <div className={styles.lessonActions}>
+      <button type="button" className={styles.suggestionAction} disabled={busy} onClick={() => onEdit?.(item)}>Edit</button>
+      <button type="button" className={styles.suggestionAction} disabled={busy || replacing} onClick={() => onReplace?.(item)}>{replacing ? 'Replacing…' : 'Replace'}</button>
+      <button type="button" className={styles.suggestionAction} disabled={busy || recoveryRequired} onClick={() => onGenerate?.(item)}>{recoveryRequired ? 'Recovery required' : 'Generate lesson'}</button>
+    </div>
+  </div>
+}
+
 export default function SyllabusDocument({
   revision,
   forecastItems,
   timelineItems = null,
   role,
   learnerId = '',
-  planTier = 'free',
   learnerName = '',
   lessonState = () => ({ hasLessonArtifact: false, hasProgress: false }),
   onOpenLesson = null,
@@ -113,23 +130,41 @@ export default function SyllabusDocument({
   onRecordHistoricalActivity = null,
   historicalActivityBusy = '',
   legacyWebbCompletions = {},
-  planningHref = '/facilitator/syllabus',
   onOpenPlanning = null,
   onEditSection = null,
+  proposedForecastItems = [],
+  proposedForecastTargetWeek = '',
+  proposalRevision = null,
+  forecastBusy = false,
+  forecastActionBusy = false,
+  forecastError = '',
+  forecastMessage = '',
+  replacingForecastLineage = '',
+  materializingForecastLineage = '',
+  isForecastRecoveryRequired = () => false,
+  onRetryForecast = null,
+  onEditForecast = null,
+  onReplaceForecast = null,
+  onGenerateForecast = null,
+  onUseForecast = null,
   actionCapabilities = {},
   onWeekChange = null,
+  restoreWeekStart = '',
   today = localCalendarDate(),
 }) {
   const visibleItems = Array.isArray(timelineItems) ? timelineItems : forecastItems
   const startedOccurrenceIds = useMemo(() => new Set(visibleItems
     .filter((item) => item?.placement_kind === 'actual' && item?.historical_record !== true && item?.source_occurrence_id)
     .map((item) => String(item.source_occurrence_id))), [visibleItems])
-  const [selectedWeekStart, setSelectedWeekStart] = useState(() => moveSyllabusWeek(null, 'now', today))
-  useEffect(() => setSelectedWeekStart(moveSyllabusWeek(null, 'now', today)), [learnerId, today])
+  const [selectedWeekStart, setSelectedWeekStart] = useState(() => startOfSyllabusWeek(restoreWeekStart) || moveSyllabusWeek(null, 'now', today))
+  useEffect(() => setSelectedWeekStart(startOfSyllabusWeek(restoreWeekStart) || moveSyllabusWeek(null, 'now', today)), [learnerId, restoreWeekStart, today])
   const week = useMemo(() => selectSyllabusWeek(visibleItems, { weekStart: selectedWeekStart, today }), [visibleItems, selectedWeekStart, today])
+  const projectedForecast = useMemo(() => projectLearningForecastForWeek(proposedForecastItems, {
+    selectedWeekStart: week.week_start,
+    targetWeekStart: proposedForecastTargetWeek,
+  }), [proposedForecastItems, proposedForecastTargetWeek, week.week_start])
   useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
   const copy = STATE_COPY[week.state]
-  const entitlements = syllabusEntitlementsFor({ role, planTier })
   const pattern = weeklyPatternRows(revision?.weekly_pattern)
   const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
   const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
@@ -152,11 +187,10 @@ export default function SyllabusDocument({
     <article className={styles.document} aria-label={`${learnerName || 'Learner'} Syllabus`}>
       <header className={styles.documentHeader}>
         <div>
-          <p className={styles.kicker}>Ms. Sonoma / Living Syllabus</p>
           <h2>{learnerName ? `${learnerName}'s Syllabus` : 'My Syllabus'}</h2>
-          <p>Past is a record. NOW is active. Future is a forecast.</p>
+          <p>Weekly learning plan</p>
         </div>
-        <div className={styles.revisionMark}>Active revision {revision?.revision_number || '—'}</div>
+        <div className={styles.revisionMark}>Revision {revision?.revision_number || '—'}</div>
       </header>
 
       <div className={styles.summaryRule}>
@@ -184,6 +218,7 @@ export default function SyllabusDocument({
         <button type="button" onClick={() => move('earlier')}>&larr; Previous week</button>
         <button type="button" className={week.state === 'now' ? styles.nowButton : ''} onClick={() => move('now')}>This week</button>
         <button type="button" onClick={() => move('later')}>Next week &rarr;</button>
+        {role === 'facilitator' && onOpenPlanning && <button type="button" className={styles.planAheadButton} onClick={onOpenPlanning}>Plan ahead</button>}
       </nav>
 
       <section className={`${styles.week} ${styles[week.state]}`} aria-live="polite">
@@ -197,10 +232,23 @@ export default function SyllabusDocument({
         </header>
 
         <div className={styles.entries} data-selected-week={week.week_start}>
-          {week.days.map((day) => <section className={styles.day} key={day.date} data-syllabus-day={day.date}>
+          {week.days.map((day) => {
+            const suggestions = projectedForecast.filter((item) => dateOnly(item.planned_date) === day.date)
+            const presentations = syllabusDayPresentation(day.items, suggestions)
+            return <section className={styles.day} key={day.date} data-syllabus-day={day.date}>
             <header><time dateTime={day.date}>{prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>{day.date === dateOnly(today) && <span>Today</span>}</header>
-            {day.items.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
-            {day.items.map((item) => {
+            {presentations.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
+            {presentations.map(({ kind, item }) => {
+            if (kind === 'suggested') return <ForecastSuggestion
+              key={item.lineage_id || item.id}
+              item={item}
+              busy={forecastBusy || forecastActionBusy || Boolean(materializingForecastLineage)}
+              replacing={replacingForecastLineage === item.lineage_id}
+              recoveryRequired={isForecastRecoveryRequired(item)}
+              onEdit={onEditForecast}
+              onReplace={onReplaceForecast}
+              onGenerate={onGenerateForecast}
+            />
             const currentLesson = lessonState(item) || {}
             const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
             const actions = syllabusItemActionsFor({ item, role, state, hasLessonArtifact: currentLesson.hasLessonArtifact, readinessState: item.readiness_state, isScheduled: item.is_explicit_schedule, isToday: dateOnly(item.planned_date) === dateOnly(today) })
@@ -274,18 +322,21 @@ export default function SyllabusDocument({
               </div>
             )
           })}
-          </section>)}
+          </section>
+          })}
         </div>
+
+        {week.week_start === startOfSyllabusWeek(proposedForecastTargetWeek) && role === 'facilitator' && <div className={styles.forecastStatus} data-proposal-revision={proposalRevision?.id || ''}>
+          {forecastBusy && <p role="status">Preparing suggestions for this week…</p>}
+          {!forecastBusy && forecastError && <div role="alert"><p>{forecastError}</p>{onRetryForecast && <button type="button" onClick={onRetryForecast}>Retry forecast</button>}</div>}
+          {!forecastBusy && !forecastError && projectedForecast.length === 0 && <p>{forecastMessage || 'No new suggestions are needed for this week.'}</p>}
+          {!forecastBusy && !forecastError && projectedForecast.length > 0 && <div className={styles.forecastDecision}>
+            <p><strong>Suggested weekly forecast</strong><span>Changeable until you use it.</span></p>
+            <button type="button" disabled={forecastActionBusy || Boolean(materializingForecastLineage) || typeof onUseForecast !== 'function'} onClick={onUseForecast}>Use this forecast</button>
+          </div>}
+        </div>}
       </section>
 
-      {week.state === 'future' && role === 'facilitator' && (
-        <div className={styles.futurePlanning}>
-          <div><strong>Future planning</strong><span>{entitlements.can_change_intent ? 'Use the current planning workflow while Syllabus editing matures.' : 'Visible on the free plan; planning changes are locked.'}</span></div>
-          {entitlements.can_change_intent
-            ? (onOpenPlanning ? <button type="button" onClick={onOpenPlanning}>Open planning</button> : <a href={planningHref}>Open planning</a>)
-            : <span className={styles.locked}>Locked / Upgrade to plan</span>}
-        </div>
-      )}
       {week.state === 'future' && role === 'learner' && <p className={styles.learnerFuture}>You can see where learning may go next. Your facilitator manages changes to this forecast.</p>}
     </article>
   )

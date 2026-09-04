@@ -3,7 +3,7 @@
 .header h1 { margin: 2px 0 5px; color: #111827; font: 700 32px/1.15 Montserrat, sans-serif; }
 .header p { margin: 0; color: #6b7280; }
 .eyebrow { color: rgb(199, 68, 46) !important; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.learnerPicker { display: grid; min-width: 240px; gap: 6px; color: #4b5563; font-size: 12px; font-weight: 700; }
+.learnerPicker { display: grid; min-width: 240px; margin-left:auto; gap: 6px; color: #4b5563; font-size: 12px; font-weight: 700; }
 .learnerPicker select, .section input, .section textarea, .actions input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; color: #111827; font: inherit; }
 .section textarea { resize: vertical; line-height: 1.5; }
 .error { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2; color: #991b1b; }

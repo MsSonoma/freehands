@@ -9,11 +9,9 @@ export default function SyllabusPlanningWorkspace({ revision, items, today, busy
   const [editor, setEditor] = useState(null)
   const plan = useMemo(() => buildPlanAhead({ weeklyPattern: revision.weekly_pattern, forecastItems: items, today, weeks }), [revision.weekly_pattern, items, today, weeks])
   useEffect(() => {
-    const priorOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     const onKeyDown = (event) => { if (event.key === 'Escape') editor ? setEditor(null) : onClose() }
     document.addEventListener('keydown', onKeyDown)
-    return () => { document.body.style.overflow = priorOverflow; document.removeEventListener('keydown', onKeyDown) }
+    return () => document.removeEventListener('keydown', onKeyDown)
   }, [editor, onClose])
   const startEditor = (slot, item = null) => setEditor({ slot, item, title: item?.title || '', description: item?.description || '' })
   const save = async () => {
@@ -25,9 +23,8 @@ export default function SyllabusPlanningWorkspace({ revision, items, today, busy
     const suggestion = await onSuggest(slot)
     if (suggestion) setEditor({ slot, item: null, title: suggestion.title, description: suggestion.description })
   }
-  return <div className={styles.backdrop} role="presentation">
-    <section className={styles.workspace} role="dialog" aria-modal="true" aria-label="Plan ahead in the Syllabus">
-      <header><div><p>SYLLABUS / PLAN AHEAD</p><h2>Plan intended progression</h2><span>The automatic evidence-informed forecast stays one week ahead. Farther weeks are explicit facilitator planning and do not assume future mastery.</span></div><button type="button" autoFocus onClick={onClose}>Close</button></header>
+  return <section className={styles.workspace} aria-label="Plan ahead in the Syllabus">
+      <header><div><p>SYLLABUS / PLAN AHEAD</p><h2>Plan intended progression</h2><span>The automatic evidence-informed forecast stays one week ahead. Farther weeks are explicit facilitator planning and do not assume future mastery.</span></div><button type="button" onClick={onClose}>&larr; Back to week view</button></header>
       {error && <p className={styles.error} role="alert">{error}</p>}
       <label className={styles.horizon}>Horizon<select value={weeks} onChange={(event) => setWeeks(Number(event.target.value))}>{[1, 2, 3, 4].map((value) => <option value={value} key={value}>{value} week{value === 1 ? '' : 's'}</option>)}</select></label>
       <div className={styles.weeks}>{plan.map((week) => <section key={week.week_start}><h3>Week of {week.week_start}</h3>{week.slots.map((slot) => <article key={slot.slot_key}>
@@ -40,6 +37,5 @@ export default function SyllabusPlanningWorkspace({ revision, items, today, busy
         </> : <><button type="button" disabled={busy || !canPlan} onClick={() => startEditor(slot)}>Create your own</button><button type="button" disabled={busy || !canSuggest} onClick={() => suggest(slot)}>Suggest with AI</button></>}</div>
       </article>)}</section>)}</div>
       {editor && <div className={styles.editor}><h3>{editor.item ? 'Edit planned concept' : 'Create lesson concept'}</h3><p>{editor.slot.subject} · {editor.slot.planned_date}</p><label>Title<input value={editor.title} onChange={(event) => setEditor({ ...editor, title: event.target.value })} /></label><label>Brief description<textarea rows={4} value={editor.description} onChange={(event) => setEditor({ ...editor, description: event.target.value })} /></label><div><button type="button" onClick={() => setEditor(null)}>Cancel</button><button type="button" disabled={busy || !editor.title.trim() || !editor.description.trim()} onClick={save}>Save to Syllabus</button></div></div>}
-    </section>
-  </div>
+  </section>
 }

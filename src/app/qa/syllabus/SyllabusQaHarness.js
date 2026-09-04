@@ -4,7 +4,7 @@ import { useCallback, useMemo, useRef, useState } from 'react'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusPlanningWorkspace from '@/app/components/syllabus/SyllabusPlanningWorkspace'
-import { addWeeklyPatternSlot, classifySyllabusWeek, removeWeeklyPatternSlot } from '@/app/lib/syllabus/timeline.mjs'
+import { addWeeklyPatternSlot, moveSyllabusWeek, removeWeeklyPatternSlot } from '@/app/lib/syllabus/timeline.mjs'
 import { createSyllabusQaFixture } from '@/app/lib/syllabus/qaFixtures.mjs'
 import { buildForecastViewIdentity, isCurrentForecastResponse } from '@/app/lib/syllabus/forecastRequestIdentity.mjs'
 import styles from './SyllabusQaHarness.module.css'
@@ -84,6 +84,7 @@ export default function SyllabusQaHarness() {
   const [busy, setBusy] = useState('')
   const [error, setError] = useState('')
   const [forecastStatus, setForecastStatus] = useState('ready')
+  const [forecastError, setForecastError] = useState('')
   const [forecastRequests, setForecastRequests] = useState(0)
   const [repairLineage, setRepairLineage] = useState('')
   const [materializationGenerations, setMaterializationGenerations] = useState(0)
@@ -95,11 +96,12 @@ export default function SyllabusQaHarness() {
   const scenario = SCENARIOS[scenarioId]
   const latency = LATENCIES[latencyId]
   const proposalItems = fixture.forecastProposal?.forecast_items || []
+  const targetForecastWeek = moveSyllabusWeek(null, 'later', fixture.resolvedToday)
 
   const reset = () => {
     setFixture(createSyllabusQaFixture())
     setSectionEditor(''); setConceptEditor(null); setPlanAheadOpen(false); setHistoryOccurrenceId('')
-    setSelectedWeek(''); setBusy(''); setError(''); setForecastStatus('ready'); setForecastRequests(0); setRepairLineage(''); setMaterializationGenerations(0)
+    setSelectedWeek(''); setBusy(''); setError(''); setForecastStatus('ready'); setForecastError(''); setForecastRequests(0); setRepairLineage(''); setMaterializationGenerations(0)
     forecastIdentity.current = ''; forecastViewIdentity.current = ''; forecastSequence.current = 0; operationBusy.current = ''
   }
 
@@ -114,21 +116,35 @@ export default function SyllabusQaHarness() {
 
   const onWeekChange = (weekStart) => {
     setSelectedWeek(weekStart)
-    forecastViewIdentity.current = buildForecastViewIdentity({ learnerId: fixture.learner.id, activeRevisionId: fixture.activeRevision.id, targetWeek: weekStart, selectedWeekStart: weekStart })
-    if (role !== 'facilitator' || classifySyllabusWeek(weekStart, fixture.resolvedToday) !== 'future') return
+    forecastViewIdentity.current = buildForecastViewIdentity({ learnerId: fixture.learner.id, activeRevisionId: fixture.activeRevision.id, targetWeek: targetForecastWeek, selectedWeekStart: weekStart })
+    if (role !== 'facilitator' || weekStart !== targetForecastWeek) return
     const identity = forecastViewIdentity.current
     if (forecastIdentity.current === identity) return
     forecastIdentity.current = identity
     const requestSequence = ++forecastSequence.current
-    setForecastRequests((value) => value + 1); setForecastStatus('loading'); setError('')
+    setForecastRequests((value) => value + 1); setForecastStatus('loading'); setForecastError('')
     waitForFixture(latency).then(() => {
       if (!isCurrentForecastResponse({ requestIdentity: identity, currentIdentity: forecastViewIdentity.current, requestSequence, currentSequence: forecastSequence.current })) return
-      if (scenarioId === 'forecast_failure') { setForecastStatus('error'); setError('The instructional forecast could not be prepared. The active Syllabus is unchanged.'); return }
+      if (scenarioId === 'forecast_failure') { setForecastStatus('error'); setForecastError('The instructional forecast could not be prepared. The active Syllabus is unchanged.'); return }
       setForecastStatus('ready')
     })
   }
 
   const retryForecast = () => { forecastIdentity.current = ''; onWeekChange(selectedWeek) }
+
+  const useForecast = () => {
+    setFixture((current) => ({
+      ...current,
+      activeRevision: nextRevision(current.activeRevision, {}),
+      timelineItems: [...current.timelineItems, ...current.forecastProposal.forecast_items.map((item) => ({
+        ...item,
+        occurrence_id: `syllabus:${item.lineage_id}`,
+        placement_kind: 'syllabus',
+        readiness_state: 'saved',
+      }))],
+      forecastProposal: { ...current.forecastProposal, forecast_items: [] },
+    }))
+  }
 
   const saveConcept = async (values) => {
     setBusy(`edit:${conceptEditor.lineage_id}`); setError(''); await waitForFixture(latency)
@@ -216,18 +232,17 @@ export default function SyllabusQaHarness() {
   return <main className={styles.page} data-qa-syllabus-harness data-scenario={scenarioId}>
     <aside className={styles.qaBar} aria-label="Syllabus QA fixture controls">
       <div><strong>Local Syllabus QA</strong><span>Ephemeral fixture · network-disabled adapter</span></div>
-      <label>View<select value={role} onChange={(event) => { forecastIdentity.current = ''; forecastViewIdentity.current = ''; forecastSequence.current++; setForecastStatus('ready'); setError(''); setRole(event.target.value); setSectionEditor(''); setConceptEditor(null); setPlanAheadOpen(false); setHistoryOccurrenceId('') }}><option value="facilitator">Facilitator</option><option value="learner">Learner</option></select></label>
-      <label>Scenario<select value={scenarioId} onChange={(event) => { setScenarioId(event.target.value); setSectionEditor(''); setConceptEditor(null); setPlanAheadOpen(false); setHistoryOccurrenceId(''); setError(''); setRepairLineage(''); setMaterializationGenerations(0); forecastIdentity.current = ''; forecastViewIdentity.current = ''; forecastSequence.current++ }}>{Object.entries(SCENARIOS).map(([id, value]) => <option key={id} value={id}>{value.label}</option>)}</select></label>
+      <label>View<select value={role} onChange={(event) => { forecastIdentity.current = ''; forecastViewIdentity.current = ''; forecastSequence.current++; setForecastStatus('ready'); setForecastError(''); setError(''); setRole(event.target.value); setSectionEditor(''); setConceptEditor(null); setPlanAheadOpen(false); setHistoryOccurrenceId('') }}><option value="facilitator">Facilitator</option><option value="learner">Learner</option></select></label>
+      <label>Scenario<select value={scenarioId} onChange={(event) => { setScenarioId(event.target.value); setSectionEditor(''); setConceptEditor(null); setPlanAheadOpen(false); setHistoryOccurrenceId(''); setError(''); setForecastError(''); setRepairLineage(''); setMaterializationGenerations(0); forecastIdentity.current = ''; forecastViewIdentity.current = ''; forecastSequence.current++ }}>{Object.entries(SCENARIOS).map(([id, value]) => <option key={id} value={id}>{value.label}</option>)}</select></label>
       <label>Latency<select value={latencyId} onChange={(event) => setLatencyId(event.target.value)}>{Object.keys(LATENCIES).map((id) => <option key={id} value={id}>{id}</option>)}</select></label>
       <button type="button" onClick={reset}>Reset fixture</button>
     </aside>
 
-    <header className={styles.header}><div><p>DEVELOPMENT-ONLY VERIFICATION</p><h1>{role === 'facilitator' ? 'Unified Syllabus' : 'Learner Syllabus'}</h1><span>{scenario.label} · revision {fixture.activeRevision.revision_number} · selected {selectedWeek || 'current week'}</span></div>{role === 'facilitator' && <div className={styles.quickActions}><button type="button" disabled={!planningAllowed} onClick={() => setPlanAheadOpen(true)}>Plan Ahead</button><button type="button" onClick={() => setHistoryOccurrenceId('actual:qa-session-fractions-a')}>History A</button><button type="button" onClick={runHistoryRace}>Race A→B</button></div>}</header>
+    <header className={styles.header}><div><p>DEVELOPMENT-ONLY VERIFICATION</p><h1>{role === 'facilitator' ? 'Unified Syllabus' : 'Learner Syllabus'}</h1><span>{scenario.label} · revision {fixture.activeRevision.revision_number} · selected {selectedWeek || 'current week'}</span></div>{role === 'facilitator' && <div className={styles.quickActions}><button type="button" onClick={() => setHistoryOccurrenceId('actual:qa-session-fractions-a')}>History A</button><button type="button" onClick={runHistoryRace}>Race A→B</button></div>}</header>
 
     {role === 'facilitator' && <section className={styles.telemetry} aria-label="QA request state">
       <span>Forecast: <strong>{forecastStatus}</strong></span><span>Requests: <strong data-qa-forecast-count>{forecastRequests}</strong></span><span>Busy: <strong>{busy || 'no'}</strong></span>
       <span>Canonical generations: <strong data-qa-materialization-generations>{materializationGenerations}</strong></span>
-      {forecastStatus === 'error' && <button type="button" onClick={retryForecast}>Retry forecast</button>}
       {repairLineage && scenarioId !== 'recovery_required' && <button type="button" disabled={Boolean(busy)} onClick={retryBinding}>Retry binding with preserved artifact</button>}
     </section>}
     {role === 'facilitator' && fixture.productionForecastEvidence?.[0] && <section className={styles.telemetry} aria-label="Production evidence forecast projection">
@@ -236,12 +251,7 @@ export default function SyllabusQaHarness() {
     </section>}
     {error && <p className={styles.error} role="alert">{error}</p>}
 
-    {role === 'facilitator' && proposalItems.length > 0 && <section className={styles.proposal} aria-label="Automatic one-week forecast">
-      <header><div><p>AUTOMATIC ONE-WEEK FORECAST</p><h2>Proposed instructional concepts</h2></div><span>Inactive · exact lineages</span></header>
-      <div>{proposalItems.map((item) => <article key={item.lineage_id}><strong>{item.subject}: {item.title}</strong><p>{item.description}</p><small>{item.planned_date} · {item.lineage_id}</small><div><button type="button" disabled={!planningAllowed || Boolean(busy)} onClick={() => setConceptEditor(item)}>Edit</button><button type="button" disabled={!planningAllowed || Boolean(busy)} onClick={() => replaceConcept(item)}>{busy === `replace:${item.lineage_id}` ? 'Replacing…' : 'Replace'}</button></div></article>)}</div>
-    </section>}
-
-    <SyllabusDocument
+    {planAheadOpen ? <SyllabusPlanningWorkspace revision={fixture.activeRevision} items={planItems} today={fixture.resolvedToday} busy={Boolean(busy)} error={error} canPlan={planningAllowed} canGenerate={scenario.generation} canSuggest={scenario.generation} onClose={() => setPlanAheadOpen(false)} onCreate={createConcept} onEdit={editPlanItem} onRemove={removePlanItem} onGenerate={materialize} onSuggest={suggest} /> : <SyllabusDocument
       revision={fixture.activeRevision}
       forecastItems={fixture.timelineItems}
       timelineItems={fixture.timelineItems}
@@ -251,7 +261,22 @@ export default function SyllabusQaHarness() {
       learnerName={fixture.learner.name}
       onEditSection={planningAllowed ? openSection : null}
       onOpenPlanning={planningAllowed ? () => setPlanAheadOpen(true) : null}
+      proposedForecastItems={role === 'facilitator' ? proposalItems : []}
+      proposedForecastTargetWeek={targetForecastWeek}
+      proposalRevision={fixture.forecastProposal}
+      forecastBusy={forecastStatus === 'loading'}
+      forecastActionBusy={Boolean(busy) || !planningAllowed}
+      forecastError={forecastError}
+      replacingForecastLineage={busy.startsWith('replace:') ? busy.slice('replace:'.length) : ''}
+      materializingForecastLineage={busy.startsWith('generate:') ? busy.slice('generate:'.length) : ''}
+      isForecastRecoveryRequired={(item) => repairLineage === item.lineage_id}
+      onRetryForecast={retryForecast}
+      onEditForecast={setConceptEditor}
+      onReplaceForecast={replaceConcept}
+      onGenerateForecast={materialize}
+      onUseForecast={useForecast}
       onWeekChange={onWeekChange}
+      restoreWeekStart={selectedWeek}
       onLessonAction={handleLessonAction}
       onReviewHistory={role === 'facilitator' ? (item) => setHistoryOccurrenceId(item.occurrence_id) : null}
       actionCapabilities={role === 'facilitator'
@@ -260,11 +285,10 @@ export default function SyllabusQaHarness() {
       resolveActionHref={() => null}
       isActionDisabled={(item, actionId) => actionId === 'materialize' && (!scenario.generation || Boolean(busy) || repairLineage === item.lineage_id)}
       today={fixture.resolvedToday}
-    />
+    />}
 
     {sectionEditor && <SectionEditor section={sectionEditor} revision={fixture.activeRevision} busy={Boolean(busy)} error={error} onCancel={() => { setSectionEditor(''); setError('') }} onSave={saveSection} />}
     {conceptEditor && <ConceptEditor item={conceptEditor} busy={Boolean(busy)} error={error} onCancel={() => { setConceptEditor(null); setError('') }} onSave={saveConcept} />}
-    {planAheadOpen && <SyllabusPlanningWorkspace revision={fixture.activeRevision} items={planItems} today={fixture.resolvedToday} busy={Boolean(busy)} error={error} canPlan={planningAllowed} canGenerate={scenario.generation} canSuggest={scenario.generation} onClose={() => setPlanAheadOpen(false)} onCreate={createConcept} onEdit={editPlanItem} onRemove={removePlanItem} onGenerate={materialize} onSuggest={suggest} />}
     {historyOccurrenceId && <LessonHistoryOverlay learnerId={fixture.learner.id} occurrenceId={historyOccurrenceId} pageIdentity={`${fixture.learner.id}:${fixture.activeRevision.id}`} onClose={() => setHistoryOccurrenceId('')} loadHistory={loadHistory} loadTranscript={loadTranscript} />}
   </main>
 }
