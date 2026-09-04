@@ -674,24 +674,38 @@ function EditLessonContent() {
                 {learners.map(learner => (
                   <button
                     key={learner.id}
-                    onClick={() => {
+                    onClick={async () => {
+                      const selectedAction = showLearnerSelect
                       setSelectedLearnerId(learner.id)
                       setSelectedLearner(learner)
                       setShowLearnerSelect(null)
                       
                       // Open the appropriate modal
-                      if (showLearnerSelect === 'notes') {
+                      if (selectedAction === 'notes') {
                         // Load existing note if any
                         const existingNote = (learner.lesson_notes || {})[lessonKey] || ''
                         setLessonNote(existingNote)
                         setShowNotes(true)
-                      } else if (showLearnerSelect === 'schedule') {
+                      } else if (selectedAction === 'schedule') {
                         setShowSchedule(true)
-                      } else if (showLearnerSelect === 'assign') {
-                        // Load current assignment status
-                        const isAssigned = !!(learner.approved_lessons || {})[lessonKey]
-                        setAssignedLearners(isAssigned ? [learner.id] : [])
-                        setShowAssign(true)
+                      } else if (selectedAction === 'assign') {
+                        try {
+                          setSaving(true)
+                          const supabase = getSupabaseClient()
+                          const { data: { session } } = await supabase.auth.getSession()
+                          const params = new URLSearchParams({ learnerId: learner.id, lessonKey })
+                          const response = await fetch(`/api/facilitator/learners/lesson-availability?${params}`, {
+                            headers: { 'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '' },
+                          })
+                          const result = await response.json().catch(() => null)
+                          if (!response.ok) throw new Error(result?.error || 'Failed to load learner lesson status')
+                          setAssignedLearners(result.currentlyBound ? [learner.id] : [])
+                          setShowAssign(true)
+                        } catch (err) {
+                          alert('Failed to load assignment: ' + (err.message || 'Unknown error'))
+                        } finally {
+                          setSaving(false)
+                        }
                       }
                     }}
                     style={{
@@ -1028,7 +1042,7 @@ function EditLessonContent() {
             
             <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16 }}>
               {assignedLearners.includes(selectedLearnerId) 
-                ? 'This lesson is currently available to this learner. Click to remove access.'
+                ? 'Remove this lesson from the learner\'s current and available lessons. The lesson itself and existing learning history will be preserved.'
                 : 'This lesson is not currently available to this learner. Click to grant access.'}
             </p>
             
@@ -1038,37 +1052,31 @@ function EditLessonContent() {
                   try {
                     setSaving(true)
                     const supabase = getSupabaseClient()
-                    
-                    // Load current approved lessons
-                    const { data: currentData } = await supabase
-                      .from('learners')
-                      .select('approved_lessons')
-                      .eq('id', selectedLearnerId)
-                      .maybeSingle()
-                    
-                    const updatedApproved = { ...(currentData?.approved_lessons || {}) }
-                    const isCurrentlyAssigned = !!updatedApproved[lessonKey]
-                    
-                    if (isCurrentlyAssigned) {
-                      delete updatedApproved[lessonKey]
-                    } else {
-                      updatedApproved[lessonKey] = true
-                    }
-                    
-                    const { error } = await supabase
-                      .from('learners')
-                      .update({ approved_lessons: updatedApproved })
-                      .eq('id', selectedLearnerId)
-                    
-                    if (error) throw error
-                    
+                    const { data: { session } } = await supabase.auth.getSession()
+                    const isCurrentlyAssigned = assignedLearners.includes(selectedLearnerId)
+                    const response = await fetch('/api/facilitator/learners/lesson-availability', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
+                      },
+                      body: JSON.stringify({
+                        learnerId: selectedLearnerId,
+                        lessonKey,
+                        available: !isCurrentlyAssigned,
+                      }),
+                    })
+                    const result = await response.json().catch(() => null)
+                    if (!response.ok) throw new Error(result?.error || 'Failed to update assignment')
+                    const updatedApproved = result?.approvedLessons || {}
+
                     // Update learners list
                     setLearners(prev => prev.map(l => 
                       l.id === selectedLearnerId ? { ...l, approved_lessons: updatedApproved } : l
                     ))
                     
                     alert(isCurrentlyAssigned 
-                      ? 'Lesson access removed' 
+                      ? 'Removed from learner. The lesson itself was not deleted, and existing learning history was preserved.'
                       : 'Lesson assigned successfully')
                     setShowAssign(false)
                   } catch (err) {
@@ -1090,7 +1098,7 @@ function EditLessonContent() {
                   fontSize: 14
                 }}
               >
-                {saving ? 'Updating...' : (assignedLearners.includes(selectedLearnerId) ? 'Remove Access' : 'Grant Access')}
+                {saving ? 'Updating...' : (assignedLearners.includes(selectedLearnerId) ? 'Remove from learner' : 'Grant Access')}
               </button>
               <button
                 onClick={() => setShowAssign(false)}
