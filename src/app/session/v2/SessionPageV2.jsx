@@ -33,6 +33,7 @@ import { ExercisePhase } from './ExercisePhase';
 import { ExerciseConversationPhase } from './ExerciseConversationPhase';
 import { WorksheetPhase } from './WorksheetPhase';
 import { TestPhase } from './TestPhase';
+import { randomizeMultipleChoiceAnswerOrder } from './assessmentChoiceOrder.mjs';
 import { ClosingPhase } from './ClosingPhase';
 import { DiscussionPhase } from './DiscussionPhase';
 import { PhaseOrchestrator } from './PhaseOrchestrator';
@@ -6277,6 +6278,12 @@ function SessionPageV2Inner() {
     const maxQuestions = targetCount > 0 ? targetCount : questions.length;
     if (maxQuestions && questions.length > maxQuestions) {
       questions = questions.slice(0, maxQuestions);
+    }
+
+    // Deal MC choices once per session. A resumed deck already contains its
+    // established permutation and is restored verbatim from the snapshot.
+    if (!savedTestQuestions) {
+      questions = randomizeMultipleChoiceAnswerOrder(questions);
     }
 
     const testTarget = questions.length;

@@ -43,3 +43,10 @@ test('learner-history and learner completion count consume the shared resolved s
   assert.match(slate, /filter\(s => s\.status === 'completed'/)
   assert.doesNotMatch(counselorCalendar, /endedAt \? 'completed'/)
 })
+
+test('learner-history source contains no educational-history writes', () => {
+  const route = fs.readFileSync(path.resolve('src/app/api/learner/lesson-history/route.js'), 'utf8')
+  assert.doesNotMatch(route, /STALE_MINUTES|auto-marked-stale/)
+  assert.doesNotMatch(route, /\.from\(['"]lesson_session_events['"]\)[\s\S]{0,200}\.insert\(/)
+  assert.doesNotMatch(route, /\.from\(['"]lesson_sessions['"]\)[\s\S]{0,200}\.update\(/)
+})

@@ -3,8 +3,8 @@
  * Includes similarity matching, synonym support, and unified correctness checking.
  */
 
-import { normalizeAnswer, tokenize, STOPWORDS } from './answerNormalization';
-import { isMultipleChoice, isTrueFalse } from './questionFormatting';
+import { normalizeAnswer, tokenize, STOPWORDS } from './answerNormalization.js';
+import { isMultipleChoice, isTrueFalse } from './questionFormatting.js';
 
 /**
  * Helper to tokenize from normalized text

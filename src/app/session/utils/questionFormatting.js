@@ -4,7 +4,7 @@
  * and handling answer validation logic.
  */
 
-import { normalizeAnswer } from './answerNormalization';
+import { normalizeAnswer } from './answerNormalization.js';
 
 /**
  * Format multiple choice options with letter labels

@@ -6,13 +6,13 @@
  * - SA/FIB: POST to /api/judge-short-answer, fallback to local judge on any error.
  */
 
-import { isAnswerCorrectLocal } from '../utils/answerEvaluation';
+import { isAnswerCorrectLocal } from '../utils/answerEvaluation.js';
 import {
   getOptionTextForLetter,
   isFillInBlank,
   isShortAnswerItem,
   letterForAnswer,
-} from '../utils/questionFormatting';
+} from '../utils/questionFormatting.js';
 
 function keepNonEmpty(v) {
   if (v == null) return false;

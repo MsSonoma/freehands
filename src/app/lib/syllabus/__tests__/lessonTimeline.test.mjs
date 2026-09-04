@@ -551,8 +551,9 @@ test('Syllabus terminal semantics remain aligned with the learner lesson-history
   const route = fs.readFileSync(path.resolve('src/app/api/learner/lesson-history/route.js'), 'utf8')
   assert.match(route, /resolveLessonSessionLifecycle/)
   assert.doesNotMatch(route, /status: endedAt \? 'completed' : 'in-progress'/)
-  assert.match(route, /event_type: 'incomplete'/)
-  assert.match(route, /session\.status = 'incomplete'/)
+  assert.doesNotMatch(route, /event_type: 'incomplete'/)
+  assert.doesNotMatch(route, /session\.status = 'incomplete'/)
+  assert.doesNotMatch(route, /auto-marked-stale|\.insert\(|\.update\(/)
 })
 
 test('draft, approved, and available readiness stays separate from placement', () => {

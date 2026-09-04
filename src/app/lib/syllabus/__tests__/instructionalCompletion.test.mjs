@@ -76,6 +76,29 @@ test('transactional completion contract is idempotent and rolls back partial com
   assert.match(migration, /revoke insert on table public\.lesson_session_events from authenticated/i)
 })
 
+test('canonical completion narrowly recovers the legacy auto-stale poison and preserves its evidence', () => {
+  const migration = fs.readFileSync(path.resolve('supabase/migrations/20260903190000_recover_legacy_auto_stale_completion.sql'), 'utf8')
+  assert.match(migration, /event_type in \('completed', 'incomplete', 'restarted', 'exited'\)[\s\S]*order by occurred_at desc, id desc/)
+  assert.match(migration, /v_terminal_event\.event_type = 'incomplete'/)
+  assert.match(migration, /metadata ->> 'reason' = 'auto-marked-stale'/)
+  assert.match(migration, /jsonb_typeof\(v_terminal_event\.metadata -> 'minutes_since_activity'\) = 'number'/)
+  assert.match(migration, /then \(v_terminal_event\.metadata ->> 'minutes_since_activity'\)::numeric >= 60/)
+  assert.match(migration, /v_terminal_event\.occurred_at = v_session\.ended_at/)
+  assert.match(migration, /v_session\.last_activity_at > v_session\.ended_at/)
+  assert.match(migration, /if not v_legacy_recovery then\s*return jsonb_build_object\('ok', false, 'state', 'already_ended'\)/)
+  assert.match(migration, /'supersedes_event_id'[\s\S]*v_terminal_event\.id/)
+  assert.match(migration, /'recovery_reason'[\s\S]*legacy-auto-marked-stale-after-later-activity/)
+  assert.doesNotMatch(migration, /delete from public\.lesson_session_events/i)
+})
+
+test('normal completion and retry remain canonical and idempotent after legacy recovery support', () => {
+  const migration = fs.readFileSync(path.resolve('supabase/migrations/20260903190000_recover_legacy_auto_stale_completion.sql'), 'utf8')
+  assert.ok(migration.indexOf("event_type = 'completed'") < migration.indexOf('if v_session.ended_at is not null'))
+  assert.match(migration, /if found then[\s\S]*'state', 'already_completed'/)
+  assert.match(migration, /case when v_legacy_recovery then 'completed_legacy_recovery' else 'completed' end/)
+  assert.match(migration, /insert into public\.lesson_session_events[\s\S]*'completed'/)
+})
+
 test('Webb completion waits for canonical success while Slate never creates instructional completion', () => {
   const webb = fs.readFileSync(path.resolve('src/app/session/webb/page.jsx'), 'utf8')
   const completion = webb.slice(webb.indexOf('async function handleCompleteLesson'), webb.indexOf('// ── Article passage'))
