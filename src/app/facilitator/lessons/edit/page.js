@@ -1042,18 +1042,17 @@ function EditLessonContent() {
             
             <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16 }}>
               {assignedLearners.includes(selectedLearnerId) 
-                ? 'Remove this lesson from the learner\'s current and available lessons. The lesson itself and existing learning history will be preserved.'
+                ? 'Already assigned. To remove it, open this learner\'s Syllabus and use the lesson preparation view.'
                 : 'This lesson is not currently available to this learner. Click to grant access.'}
             </p>
             
             <div style={{ display: 'flex', gap: 8 }}>
-              <button
+              {!assignedLearners.includes(selectedLearnerId) && <button
                 onClick={async () => {
                   try {
                     setSaving(true)
                     const supabase = getSupabaseClient()
                     const { data: { session } } = await supabase.auth.getSession()
-                    const isCurrentlyAssigned = assignedLearners.includes(selectedLearnerId)
                     const response = await fetch('/api/facilitator/learners/lesson-availability', {
                       method: 'POST',
                       headers: {
@@ -1063,7 +1062,7 @@ function EditLessonContent() {
                       body: JSON.stringify({
                         learnerId: selectedLearnerId,
                         lessonKey,
-                        available: !isCurrentlyAssigned,
+                        available: true,
                       }),
                     })
                     const result = await response.json().catch(() => null)
@@ -1075,9 +1074,7 @@ function EditLessonContent() {
                       l.id === selectedLearnerId ? { ...l, approved_lessons: updatedApproved } : l
                     ))
                     
-                    alert(isCurrentlyAssigned 
-                      ? 'Removed from learner. The lesson itself was not deleted, and existing learning history was preserved.'
-                      : 'Lesson assigned successfully')
+                    alert('Lesson assigned successfully')
                     setShowAssign(false)
                   } catch (err) {
                     alert('Failed to update assignment: ' + (err.message || 'Unknown error'))
@@ -1089,7 +1086,7 @@ function EditLessonContent() {
                 style={{
                   flex: 1,
                   padding: '10px',
-                  background: assignedLearners.includes(selectedLearnerId) ? '#dc2626' : '#059669',
+                  background: '#059669',
                   color: '#fff',
                   border: 'none',
                   borderRadius: 6,
@@ -1098,8 +1095,8 @@ function EditLessonContent() {
                   fontSize: 14
                 }}
               >
-                {saving ? 'Updating...' : (assignedLearners.includes(selectedLearnerId) ? 'Remove from learner' : 'Grant Access')}
-              </button>
+                {saving ? 'Updating...' : 'Grant Access'}
+              </button>}
               <button
                 onClick={() => setShowAssign(false)}
                 disabled={saving}

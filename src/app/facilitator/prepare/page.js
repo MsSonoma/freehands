@@ -231,8 +231,12 @@ export default function FacilitatorPreparePage() {
   const [scheduleDate, setScheduleDate] = useState(todayDate())
   const [scheduleId, setScheduleId] = useState('')
   const [originalScheduledDate, setOriginalScheduledDate] = useState('')
+  const [syllabusOccurrenceId, setSyllabusOccurrenceId] = useState('')
+  const [syllabusExpectedActiveRevisionId, setSyllabusExpectedActiveRevisionId] = useState('')
+  const [learnerLessonBound, setLearnerLessonBound] = useState(false)
   const [message, setMessage] = useState('')
   const [busy, setBusy] = useState(false)
+  const [removalBusy, setRemovalBusy] = useState(false)
   const [recoveryStage, setRecoveryStage] = useState('')
   const [missingLearnerId, setMissingLearnerId] = useState('')
   const [effectiveTier, setEffectiveTier] = useState('free')
@@ -287,8 +291,12 @@ export default function FacilitatorPreparePage() {
         const paramStage = params.get('stage') || ''
         const paramScheduleId = params.get('scheduleId') || ''
         const paramOriginalScheduledDate = params.get('originalScheduledDate') || ''
+        const paramOccurrenceId = params.get('occurrenceId') || ''
+        const paramExpectedActiveRevisionId = params.get('expectedActiveRevisionId') || ''
         setScheduleId(paramScheduleId)
         setOriginalScheduledDate(paramOriginalScheduledDate)
+        setSyllabusOccurrenceId(paramOccurrenceId)
+        setSyllabusExpectedActiveRevisionId(paramExpectedActiveRevisionId)
         if (paramOriginalScheduledDate) setScheduleDate(paramOriginalScheduledDate)
         if (paramLearnerId) setLearnerId(paramLearnerId)
         if (paramLessonKey) {
@@ -382,8 +390,31 @@ export default function FacilitatorPreparePage() {
     return () => { cancelled = true }
   }, [isAuthenticated, learnerId, lessonIdentity?.lessonKey, pinChecked])
 
+  useEffect(() => {
+    setLearnerLessonBound(false)
+    if (!pinChecked || !isAuthenticated || !learnerId || !lessonIdentity?.lessonKey) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const token = await getToken()
+        const params = new URLSearchParams({ learnerId, lessonKey: lessonIdentity.lessonKey })
+        const response = await fetch(`/api/facilitator/learners/lesson-availability?${params}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${token}` },
+        })
+        const json = await response.json().catch(() => ({}))
+        if (!response.ok) throw new Error(json?.error || 'Could not load learner lesson status')
+        if (!cancelled) setLearnerLessonBound(json?.currentlyBound === true)
+      } catch {
+        if (!cancelled) setLearnerLessonBound(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [isAuthenticated, learnerId, lessonIdentity?.lessonKey, pinChecked])
+
   const selectedLearner = useMemo(() => learners.find((learner) => learner.id === learnerId) || null, [learners, learnerId])
   const hasLearnerRecovery = !!recoveryStage && !!missingLearnerId
+  const exactOccurrenceIsProtected = syllabusOccurrenceId.startsWith('actual:') || syllabusOccurrenceId.startsWith('historical:')
 
   function snapshotIntentFor(nextLearnerId = learnerId) {
     if (intentSnapshot) return { ...intentSnapshot, learnerId: nextLearnerId }
@@ -519,13 +550,15 @@ export default function FacilitatorPreparePage() {
     return json
   }
 
-  async function preserveLessonAssociation(explicitLessonKey = lessonIdentity?.lessonKey, explicitTeacher = instructionalTeacher) {
+  async function preserveLessonAssociation(explicitLessonKey = lessonIdentity?.lessonKey, explicitTeacher = instructionalTeacher, action = null) {
     if (!selectedLearner || !explicitLessonKey) throw new Error('Choose a learner and lesson first.')
     const token = await getToken()
+    const payload = { learnerId, lessonKey: explicitLessonKey, instructionalTeacher: explicitTeacher }
+    if (action === 'save_for_later') payload.action = action
     const response = await fetch('/api/syllabus/lesson-associations', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-      body: JSON.stringify({ learnerId, lessonKey: explicitLessonKey, instructionalTeacher: explicitTeacher }),
+      body: JSON.stringify(payload),
     })
     const json = await response.json().catch(() => ({}))
     if (!response.ok) throw new Error(json?.error || 'Could not preserve this lesson in the learner Syllabus')
@@ -621,7 +654,7 @@ export default function FacilitatorPreparePage() {
     }
     setBusy(true)
     try {
-      await preserveLessonAssociation()
+      await preserveLessonAssociation(undefined, undefined, 'save_for_later')
       setMessage('The lesson is approved and remains in this learner\'s Syllabus forecast.')
       persist(STAGES.DELIVERY, { lessonIdentity })
       router.push('/facilitator')
@@ -659,6 +692,72 @@ export default function FacilitatorPreparePage() {
       setMessage(error?.message || 'Could not save the instructional teacher assignment')
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function removeExactSyllabusOccurrence() {
+    if (!selectedLearner || !lessonIdentity?.lessonKey || !syllabusOccurrenceId) {
+      setMessage('Choose a learner and a specific Syllabus occurrence first.')
+      return
+    }
+    const confirmed = window.confirm('This removes only this occurrence from the Syllabus. The lesson, other occurrences, and existing learning history remain.')
+    if (!confirmed) return
+    setRemovalBusy(true)
+    setMessage('')
+    try {
+      const token = await getToken()
+      const payload = {
+        learnerId,
+        lessonKey: lessonIdentity.lessonKey,
+        occurrenceId: syllabusOccurrenceId,
+      }
+      if (syllabusExpectedActiveRevisionId) {
+        payload.expectedActiveRevisionId = syllabusExpectedActiveRevisionId
+      }
+      const response = await fetch('/api/syllabus/lesson-occurrences', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify(payload),
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json?.error || 'Could not remove this Syllabus occurrence')
+      clearPreparationSnapshot()
+      router.push('/facilitator/syllabus')
+    } catch (error) {
+      setMessage(error?.message || 'Could not remove this Syllabus occurrence')
+    } finally {
+      setRemovalBusy(false)
+    }
+  }
+
+  async function removeLessonFromLearner() {
+    if (!selectedLearner || !lessonIdentity?.lessonKey || learnerLessonBound !== true) {
+      setMessage('This lesson is not currently bound to the selected learner.')
+      return
+    }
+    const confirmed = window.confirm("This removes the lesson from this learner's current and future plan and availability. The lesson itself and existing learning history remain.")
+    if (!confirmed) return
+    setRemovalBusy(true)
+    setMessage('')
+    try {
+      const token = await getToken()
+      const response = await fetch('/api/facilitator/learners/lesson-availability', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          learnerId,
+          lessonKey: lessonIdentity.lessonKey,
+          available: false,
+        }),
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json?.error || 'Could not remove this lesson from the learner')
+      clearPreparationSnapshot()
+      router.push('/facilitator/syllabus')
+    } catch (error) {
+      setMessage(error?.message || 'Could not remove this lesson from the learner')
+    } finally {
+      setRemovalBusy(false)
     }
   }
 
@@ -895,6 +994,35 @@ export default function FacilitatorPreparePage() {
             <div style={{ borderTop: '1px solid #e5e7eb', paddingTop: 14, color: '#4b5563', lineHeight: 1.5 }}>
               Scheduling is available on Standard. You can start this lesson now, make it available, or save it for later.{' '}
               <Link href="/facilitator/account/plan" style={{ color: 'rgb(199, 68, 46)', fontWeight: 700 }}>View plans</Link>
+            </div>
+          )}
+        </section>
+      )}
+
+      {selectedLearner && lessonIdentity?.lessonKey && !hasLearnerRecovery && [STAGES.DRAFT, STAGES.DELIVERY].includes(stage) && (syllabusOccurrenceId || learnerLessonBound === true) && (
+        <section style={{ display: 'grid', gap: 12, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
+          <h2 style={{ margin: 0, fontSize: 18 }}>Remove from learner planning</h2>
+          {syllabusOccurrenceId && (
+            <div style={{ display: 'grid', gap: 6, borderTop: '1px solid #e5e7eb', paddingTop: 12 }}>
+              <strong>Only this planned occurrence.</strong>
+              {exactOccurrenceIsProtected && (
+                <p style={{ margin: 0, color: '#6b7280', lineHeight: 1.5 }}>Completed and historical records are preserved and cannot be removed with this control.</p>
+              )}
+              <div>
+                <button type="button" onClick={removeExactSyllabusOccurrence} disabled={removalBusy || exactOccurrenceIsProtected} style={{ ...secondaryButton, opacity: removalBusy || exactOccurrenceIsProtected ? 0.6 : 1 }}>
+                  Remove this occurrence from Syllabus
+                </button>
+              </div>
+            </div>
+          )}
+          {learnerLessonBound === true && (
+            <div style={{ display: 'grid', gap: 6, borderTop: '1px solid #e5e7eb', paddingTop: 12 }}>
+              <strong>All current and future placements for this learner.</strong>
+              <div>
+                <button type="button" onClick={removeLessonFromLearner} disabled={removalBusy} style={{ ...secondaryButton, opacity: removalBusy ? 0.6 : 1 }}>
+                  Remove lesson from learner
+                </button>
+              </div>
             </div>
           )}
         </section>

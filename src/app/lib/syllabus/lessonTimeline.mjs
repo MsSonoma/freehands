@@ -134,6 +134,7 @@ export function composeSyllabusLessonTimeline({
     if (!entry) continue
     entry.association_id = association.id
     entry.association_source = association.association_source
+    entry.inferred_placement_suppressed = association.inferred_placement_suppressed
     entry.assigned_instructional_teacher = normalizeInstructionalTeacher(association.instructional_teacher) || 'sonoma'
     setReadiness(entry, association.readiness_state || 'saved')
   }
@@ -238,11 +239,11 @@ export function composeSyllabusLessonTimeline({
     let match = identities.size
       ? candidates.find((forecast) => identities.has(clean(forecast.row?.id)) || identities.has(clean(forecast.row?.lineage_id)))
       : null
-    if (!match) {
+    if (!match && identities.size === 0) {
       const exactDate = candidates.filter((forecast) => forecast.planned_date === schedule.planned_date)
       if (exactDate.length === 1) match = exactDate[0]
     }
-    if (!match && candidates.length === 1 && scheduleCountByKey.get(schedule.key) === 1) match = candidates[0]
+    if (!match && identities.size === 0 && candidates.length === 1 && scheduleCountByKey.get(schedule.key) === 1) match = candidates[0]
     if (match) {
       consumedForecasts.add(match)
       schedule.reconciled_forecast_id = clean(match.row?.id || match.row?.lineage_id)
@@ -391,7 +392,9 @@ export function composeSyllabusLessonTimeline({
   }
 
   const keysWithActualOrIntent = new Set([...actuals.map((actual) => actual.key), ...activeIntents.map((intent) => intent.key)])
-  const inferenceCandidates = [...metadata.values()].filter((entry) => !keysWithActualOrIntent.has(entry.lesson_key))
+  const inferenceCandidates = [...metadata.values()].filter((entry) => (
+    !keysWithActualOrIntent.has(entry.lesson_key) && entry.inferred_placement_suppressed !== true
+  ))
     .sort((left, right) => clean(left.association_id).localeCompare(clean(right.association_id)) || left.lesson_key.localeCompare(right.lesson_key))
   for (const entry of inferenceCandidates) {
     const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: entry.subject, afterDate: today, occupied })

@@ -17,6 +17,45 @@ A lesson enters the active Syllabus timeline only through a learner-specific lea
 
 Forecast items without a lesson artifact remain standalone Syllabus intentions. They are composed separately and do not depend on legacy availability.
 
+`syllabus_lesson_associations` remains learner-specific Syllabus membership and metadata when `inferred_placement_suppressed` is true. Literal boolean `true` suppresses only association-only provisional `inferred` or `needs_placement` synthesis; it does not remove the learner-to-lesson relationship or its readiness, subject, title, or instructional teacher. Explicit forecast, explicit schedule, actual, historical, and Slate authorities remain separate and continue to compose normally.
+
+All intended suppression-clear lifecycle paths are implemented: Schedule, Reschedule, Prepare Save for later, and Materialization. Explicit Schedule and Reschedule persist the schedule first, preserve or upsert the learner association second, and clear suppression to `false` third; only then does the request report success. Prepare's Save for later sends only the allowlisted semantic action `action: 'save_for_later'`; the server preserves or upserts the association and then clears suppression. The generic association POST remains suppression-neutral, the narrow suppression setter remains server-owned, and raw client suppression writes are rejected.
+
+Suppression does not clear for learner availability or Make available, Start now, Save draft and leave, instructional teacher changes, generic metadata or readiness preservation, or the generator association created before materialized forecast binding.
+
+These clear lifecycles are multi-write and retry-convergent, not atomic or transactional. Explicit schedule or bound forecast authority remains visible independently if a later suppression clear fails, while Save for later depends on the clear to restore provisional inference visibility. A failed clear makes the request fail, and stale suppression must be repaired by retry because it could matter after explicit authority later disappears.
+
+### Exact occurrence removal
+
+Exact Syllabus occurrence removal is implemented and verified in source. It depends on `supabase/migrations/20260904212950_add_syllabus_inferred_placement_suppression.sql` for durable inference-suppression state. Source presence alone is not production proof: database migration history and the deployed application commit must be verified separately before exact-removal behavior is described as available in production.
+
+The implementation distinguishes three identities: the lesson artifact, the learner assignment/availability relationship, and the Syllabus occurrence. Exact removal identifies the third as `learnerId + lessonKey + occurrenceId`, plus `expectedActiveRevisionId` only when replacement of the active revision is required. Dates are presentation and placement data, not occurrence identity. Occurrence authority is exact and namespaced:
+
+- `syllabus:<forecast-row-id>` uses the exact forecast row ID as authority.
+- `scheduled:<schedule-row-id>` uses the exact schedule row ID.
+- `inferred:<association-id>` uses the association identity and the implemented canonical fallback rules; `needs_placement` uses that same inferred association identity.
+- `actual` and `historical` records are protected and are not removable through this mutation.
+
+Lineage fallback exists only for genuinely ID-less active-revision forecast rows and must resolve uniquely. A `lineage_id` is not assumed to be globally unique. Ambiguous identity fails closed.
+
+Schedule/forecast reconciliation gives explicit schedule-to-forecast identities authority. When a schedule supplies explicit identities, it must match that exact forecast identity; a stale explicit identity cannot fall through to same-date or sole-candidate heuristics. Those heuristics remain available only when a schedule supplies no explicit identities. A successfully reconciled schedule receives `reconciled_forecast_id`. Removal of that reconciled occurrence removes the exact forecast row and the exact schedule row. Partial-failure retry converges on those identities without stealing a sibling forecast occurrence.
+
+`syllabus_lesson_associations.inferred_placement_suppressed` controls association-only synthesis. When false, the association may synthesize an `inferred` or `needs_placement` placement if no stronger authority exists. When true, the association remains, but that synthesis is suppressed; explicit forecast, schedule, actual/history, and Slate authority remain separate. Removal sets suppression to true for an explicitly removed inferred or `needs_placement` occurrence, removal of the final ordinary explicit forecast/schedule occurrence for the lesson, and final reconciled removal. It does not suppress inference globally while explicit same-key siblings remain.
+
+Verified re-entry restores suppression to false after explicit Schedule or Reschedule, Prepare Save for later, successful materialization after binding, and a reused materialization retry. Start now and Save draft and leave do not clear suppression.
+
+For a final explicit occurrence, all safe read-only validation and snapshot construction precede mutation. Suppression is then set to true before destructive removal. A suppression failure therefore leaves explicit authority untouched and retryable; if suppression succeeds and a later step fails, surviving explicit authority remains visible and retryable. Final reconciled ordering is suppression, then revision activation that removes the forecast, then exact schedule deletion. There is no durable `lesson_schedule` removal receipt or archive, and revision provenance is not a machine-authority removal receipt.
+
+`src/app/lib/syllabus/lessonOccurrenceRemoval.server.mjs` owns exact mutation semantics. Verified behavior includes canonical lesson-key and occurrence validation; active-Syllabus authority; already-started detection through a matching actual `source_occurrence_id`; rejection of actual, historical, and Slate placements; inferred/`needs_placement` suppression; exact forecast and schedule removal; reconciled forecast-plus-schedule removal; revision checks only when revision replacement is required; and fail-closed ambiguity with no silent broadening. A schedule-only removal may retry with a stale supplied expected revision because it performs no revision mutation. Its comprehensive service suite passes 38/38.
+
+The authenticated `DELETE /api/syllabus/lesson-occurrences` boundary accepts only `learnerId`, `lessonKey`, `occurrenceId`, and `expectedActiveRevisionId`. It rejects alternate client occurrence authority and delegates removal meaning to the server service; browser code does not mutate the database directly. Its route suite passes 27/27.
+
+`SyllabusDocument` passes exact occurrence authority into Prepare only from `item.occurrence_id` and the active revision `id`. Prepare carries them as ephemeral URL-scoped `syllabusOccurrenceId` and `syllabusExpectedActiveRevisionId`; neither is persisted in preparation snapshots or localStorage. The occurrence-context suite passes 11/11.
+
+Prepare exposes two intentionally different actions. `Remove this occurrence from Syllabus` calls the exact DELETE route and preserves the lesson artifact, sibling occurrences, and learning history; `actual:` and `historical:` presentations are disabled/protected, while the server remains final authority on removability. `Remove lesson from learner` uses the existing lesson-availability broad-removal path with `available: false` for current/future learner-level removal, appears only when server current-binding truth confirms the lesson is bound, and preserves the artifact and historical evidence. The removal UI suite passes 4/4, and the broad learner-removal backend suite passes 7/7.
+
+The lesson editor is grant-only for learner binding: an unbound learner receives `Grant Access` with `available: true`, while an already-bound learner sees the non-destructive `Already assigned` state. Broad learner removal no longer originates there. The separate artifact-level Delete Lesson behavior remains separate and unchanged.
+
 ### Instructional teacher authority
 
 `syllabus_lesson_associations.instructional_teacher` is the facilitator-owned current assignment for a learner and lesson. Its only values are `sonoma` and `webb`; existing and new associations default to Sonoma. Association writes that omit the teacher update readiness and metadata without resetting an existing Webb assignment. Prepare is the editing surface for viewing, changing, and explicitly saving this assignment.
@@ -46,7 +85,7 @@ The pure composer does not load generated lesson JSON or infer generated subject
 ### Placement and history
 
 - Explicit schedules and dated forecast items reserve capacity before provisional inference.
-- Association-only members may receive deterministic weekly-pattern inference.
+- Association-only members may receive deterministic weekly-pattern inference unless their association has literal boolean `inferred_placement_suppressed = true`.
 - Actual session evidence remains on its local-calendar activity date.
 - Completed history does not create a new future obligation unless later explicit intent proves a deliberate repeat.
 - Starting or completing a lesson upgrades readiness without erasing earlier occurrence history.
@@ -87,6 +126,10 @@ Carry-forward is intentionally a second repository operation: active educator in
 
 The service-role receipt UUID is also the trusted generator operation identity. Before the model call, it determines one exact facilitator-owned Storage path and generated lesson key. The artifact embeds the server-verified receipt, Syllabus, lineage, input hash, facilitator, and learner identities. A retry of a `generating` receipt is recovery-only: it may load and validate that exact artifact, associate it, atomically charge finite quota at most once while finalizing the receipt, and continue exact-lineage binding without a model call. It never scans Storage, matches titles, or regenerates by age. If the exact artifact is absent or mismatched, the receipt enters `recovery_required`; ordinary generation is disabled and the authorized response exposes only non-secret operation and lineage IDs for reconciliation. A successful binding retry rebases the still-current sibling remainder onto the bound revision. Forecasting, carry-forward, and materialization do not write `lesson_schedule`.
 
+Materialization clears inference suppression only after successful exact forecast binding establishes placement authority and the materialization receipt is successfully recorded with `status: 'bound'`. The generator association created during artifact generation or recovery does not clear suppression. After the bound receipt is durable, materialization clears the learner association's suppression to `false` before carry-forward and success. An already-bound reused materialization, identified by its existing `item.lesson_key`, retries the clear before returning `reused: true`, providing convergence when an earlier attempt bound successfully but suppression clearing failed.
+
+`LESSON_ASSOCIATION_NOT_FOUND` is a materialization-local no-op because no association means there is no suppression state to clear; the general setter continues to fail for a missing association outside this handling. Every other suppression-clear failure propagates and fails the request. Because binding and clearing are separate writes, such a failure does not roll back the already-bound forecast or relabel its successfully bound receipt as `binding_failed`; retry enters the already-bound `lesson_key` path and attempts the clear again.
+
 ### Unified facilitator planning surface
 
 The facilitator Syllabus is the primary interaction surface for Goals, Subjects, Weekly Pattern, Teaching Guidance, future lesson concepts, and explicit multiweek planning. These controls do not introduce a second planning record: saves create complete immutable Syllabus revisions through the same activation transaction and exact expected-active pointer check. Subject and weekly-pattern edits reuse canonical snapshot validation and capacity enforcement; historical occurrences remain derived from their existing session/event authority.
@@ -124,6 +167,11 @@ The active composer is not a replacement for the no-active-Syllabus compatibilit
 - Do not change weekly capacity, PIN gates, or execution authorization to repair composition.
 - Do not remove approved lesson keys from canonical resolution without proving legacy alias safety.
 - Do not change the no-active-Syllabus legacy compatibility behavior here.
+- Do not treat inference suppression as association removal or as authority to hide explicit forecast, schedule, actual, historical, or Slate representations.
+- Do not clear inference suppression at generator-association time; materialization clearing belongs after exact forecast binding and a durable bound receipt.
+- Do not turn the verified local exact-occurrence implementation into a production claim until its code is committed and deployed and the suppression migration is applied.
+- Do not broaden occurrence removal by date, title, lesson key alone, globally assumed lineage uniqueness, or fallback heuristics after a stale explicit reconciliation identity.
+- Do not describe revision provenance as a removal receipt; no durable `lesson_schedule` removal receipt or archive exists.
 - Do not replace contextual Review History with learner-wide transcript navigation.
 - Do not resolve repeated occurrence history by lesson key, title, subject, date, or latest session.
 - Do not make a normal Syllabus GET create forecasts; forecasting is an authenticated explicit POST.
@@ -137,6 +185,18 @@ The active composer is not a replacement for the no-active-Syllabus compatibilit
 ## Key Files
 
 - `src/app/lib/syllabus/lessonTimeline.mjs` - Active timeline membership, metadata, readiness, history, and placement composition.
+- `src/app/lib/syllabus/lessonAssociations.server.mjs` - Exact learner-association writes, including the narrow inference-suppression setter.
+- `supabase/migrations/20260904212950_add_syllabus_inferred_placement_suppression.sql` - Migration for durable association-only provisional inference-suppression state; production application must be verified from database migration history.
+- `src/app/lib/syllabus/__tests__/lessonInferenceSuppression.test.mjs` - Focused suppression, explicit-authority, helper, and migration regressions.
+- `src/app/lib/syllabus/lessonOccurrenceRemoval.server.mjs` - Verified server authority for exact occurrence removal and retry convergence.
+- `src/app/api/syllabus/lesson-occurrences/route.js` - Authenticated allowlisted exact-occurrence deletion boundary.
+- `src/app/components/syllabus/SyllabusDocument.js` - Exact occurrence and active-revision context propagation into Prepare.
+- `src/app/facilitator/prepare/page.js` - Ephemeral occurrence context and separate exact versus broad learner-removal actions.
+- `src/app/facilitator/lessons/edit/page.js` - Grant-only learner assignment state; artifact deletion remains separate.
+- `src/app/lib/syllabus/__tests__/lessonOccurrenceRemoval.test.mjs` - Exact-removal service coverage.
+- `src/app/lib/syllabus/__tests__/lessonOccurrenceRemovalRoute.test.mjs` - Authenticated route-boundary coverage.
+- `src/app/lib/syllabus/__tests__/lessonOccurrencePrepareContext.test.mjs` - Ephemeral exact-context propagation coverage.
+- `src/app/lib/syllabus/__tests__/lessonRemovalUi.test.mjs` - Exact versus broad removal UI coverage.
 - `src/app/api/syllabus/slate-assignments/route.js` - Facilitator-owned occurrence-exact add/remove boundary for supplemental Slate events.
 - `supabase/migrations/20260902161410_add_syllabus_slate_assignments.sql` - Durable occurrence-bound Slate assignment storage and grants.
 - `src/app/lib/syllabus/lessonTimelineInputs.server.mjs` - Shared read/execution input loading and fail-soft facilitator-artifact metadata enrichment.

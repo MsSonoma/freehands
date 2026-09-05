@@ -20,6 +20,7 @@ const NOW = new Date('2026-08-31T14:00:00.000Z')
 const LINEAGE_A = 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee'
 const LINEAGE_B = 'bbbbbbbb-cccc-4ddd-8eee-ffffffffffff'
 const LINEAGE_C = 'cccccccc-dddd-4eee-8fff-aaaaaaaaaaaa'
+const preserveInferenceSuppression = async () => {}
 
 function activeRevision() {
   return {
@@ -264,6 +265,7 @@ test('materializing one proposed lineage adopts only that concept and leaves sib
   const later = new Date('2026-09-03T14:00:00.000Z')
   let generatorCalls = 0
   const materialized = await materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: proposal.proposal_revision.id, lineageId: selected.lineage_id,
     expectedActiveRevisionId: ACTIVE, now: later,
@@ -278,6 +280,7 @@ test('materializing one proposed lineage adopts only that concept and leaves sib
   const sibling = proposedConcepts.find((row) => row.lineage_id !== selected.lineage_id)
   assert.equal(finalItems.some((row) => row.lineage_id === sibling.lineage_id), false)
   const retry = await materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: selected.lineage_id,
     expectedActiveRevisionId: materialized.syllabus.active_revision.id, now: later,
     generateLesson: async () => { generatorCalls++; return { lessonKey: 'generated/duplicate.json' } },
@@ -307,6 +310,7 @@ test('X then Y materialization carries exact remaining siblings forward and exha
   let lessonGeneratorCalls = 0
 
   const afterX = await materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: proposal.proposal_revision.id, lineageId: x.lineage_id,
     expectedActiveRevisionId: ACTIVE, now: NOW,
@@ -329,6 +333,7 @@ test('X then Y materialization carries exact remaining siblings forward and exha
   }), { code: 'FORECAST_PROPOSAL_STALE' })
 
   const afterY = await materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: p2.revision.id, lineageId: y.lineage_id,
     expectedActiveRevisionId: afterX.syllabus.active_revision.id, now: NOW,
@@ -414,6 +419,7 @@ test('generation failure leaves multi-sibling carry-forward current and independ
   const exact = ({ lineage_id, title, description, subject, planned_date, metadata }) => ({ lineage_id, title, description, subject, planned_date, metadata })
   let generatorCalls = 0
   await assert.rejects(materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: proposal.proposal_revision.id, lineageId: x.lineage_id,
     expectedActiveRevisionId: ACTIVE, now: NOW,
@@ -461,6 +467,7 @@ test('binding failure keeps B-based siblings current and retry reuses artifact b
   const exact = ({ lineage_id, title, description, subject, planned_date, metadata }) => ({ lineage_id, title, description, subject, planned_date, metadata })
   let generatorCalls = 0
   await assert.rejects(materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: proposal.proposal_revision.id, lineageId: x.lineage_id,
     expectedActiveRevisionId: ACTIVE, now: NOW,
@@ -482,6 +489,7 @@ test('binding failure keeps B-based siblings current and retry reuses artifact b
   assert.equal(repository.state.receipts[0].status, 'binding_failed')
 
   const retried = await materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     lineageId: x.lineage_id, expectedActiveRevisionId: activeBId, now: NOW,
     generateLesson: async () => { generatorCalls++; return { lessonKey: 'generated/duplicate.json' } },
@@ -512,6 +520,7 @@ test('failed first post-adoption carry preserves adoption and reconstructs witho
   repository.createLearningForecastCarryForwardProposal = async () => { throw new Error('temporary write failure') }
   let generatorCalls = 0
   await assert.rejects(materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: proposal.proposal_revision.id, lineageId: selected.lineage_id,
     expectedActiveRevisionId: ACTIVE, now: NOW, today: '2026-08-31',
@@ -551,6 +560,7 @@ test('materialization binds canonical lesson key to exact lineage and timeline h
   ] })
   let generatorCalls = 0
   const result = await materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_B,
     expectedActiveRevisionId: ACTIVE, now: NOW,
     generateLesson: async () => { generatorCalls++; return { lessonKey: 'generated/repeated_title.json' } },
@@ -565,15 +575,15 @@ test('materialization binds canonical lesson key to exact lineage and timeline h
 
 test('generation failure preserves planned concept and successful binding retry reuses artifact', async () => {
   const failed = forecastRepository({ forecast: [item({ origin: 'learning_forecast' })] })
-  await assert.rejects(materializeForecastOccurrence({ repository: failed, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson: async () => { throw new Error('offline') } }), { code: 'MATERIALIZATION_GENERATION_FAILED' })
+  await assert.rejects(materializeForecastOccurrence({ repository: failed, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson: async () => { throw new Error('offline') }, setInferenceSuppressed: preserveInferenceSuppression }), { code: 'MATERIALIZATION_GENERATION_FAILED' })
   assert.equal(failed.state.syllabus.active_revision_id, ACTIVE)
   assert.equal(failed.state.forecast[0].lesson_key, null)
 
   const retry = forecastRepository({ forecast: [item({ origin: 'learning_forecast' })] })
   retry.state.failCommitOnce = true
   let calls = 0
-  await assert.rejects(materializeForecastOccurrence({ repository: retry, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson: async () => { calls++; return { lessonKey: 'generated/fractions.json' } } }), { code: 'ACTIVATION_CONFLICT' })
-  const repaired = await materializeForecastOccurrence({ repository: retry, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson: async () => { calls++; return { lessonKey: 'generated/duplicate.json' } } })
+  await assert.rejects(materializeForecastOccurrence({ repository: retry, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson: async () => { calls++; return { lessonKey: 'generated/fractions.json' } }, setInferenceSuppressed: preserveInferenceSuppression }), { code: 'ACTIVATION_CONFLICT' })
+  const repaired = await materializeForecastOccurrence({ repository: retry, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson: async () => { calls++; return { lessonKey: 'generated/duplicate.json' } }, setInferenceSuppressed: preserveInferenceSuppression })
   assert.equal(calls, 1)
   assert.equal(repaired.lesson_key, 'generated/fractions.json')
 })
@@ -587,6 +597,7 @@ test('a generating receipt retry is recovery-only and binds the exact recovered 
   }
   let recoveryCalls = 0
   const result = await materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW,
     generateLesson: async ({ materializationOperation }) => {
       recoveryCalls++
@@ -609,6 +620,7 @@ test('true materialization ambiguity enters recovery-required without blind rege
   }
   let attempts = 0
   await assert.rejects(materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW,
     generateLesson: async ({ materializationOperation }) => {
       attempts++
@@ -632,6 +644,7 @@ test('missing authoritative learner grade fails before adoption or generation', 
   repository.state.learner.grade = null
   let generatorCalls = 0
   await assert.rejects(materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: proposal.proposal_revision.id, lineageId: selected.lineage_id,
     expectedActiveRevisionId: ACTIVE, now: NOW,
@@ -653,6 +666,7 @@ test('a newer active revision blocks proposed-lineage adoption before generation
   repository.state.syllabus.active_revision_id = 'newer-active-revision'
   let generatorCalls = 0
   await assert.rejects(materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
     proposalRevisionId: proposal.proposal_revision.id, lineageId: selected.lineage_id,
     expectedActiveRevisionId: ACTIVE, now: NOW,
@@ -665,8 +679,8 @@ test('a newer active revision blocks proposed-lineage adoption before generation
 test('unauthorized learner and active-revision conflicts fail closed', async () => {
   const repository = forecastRepository({ forecast: [item({ origin: 'learning_forecast' })] })
   const generateLesson = async () => ({ lessonKey: 'generated/nope.json' })
-  await assert.rejects(materializeForecastOccurrence({ repository, facilitatorId: OTHER, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson }), { code: 'FORECAST_OCCURRENCE_NOT_FOUND' })
-  await assert.rejects(materializeForecastOccurrence({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: 'stale', now: NOW, generateLesson }), { code: 'MATERIALIZATION_CONFLICT' })
+  await assert.rejects(materializeForecastOccurrence({ repository, facilitatorId: OTHER, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: ACTIVE, now: NOW, generateLesson, setInferenceSuppressed: preserveInferenceSuppression }), { code: 'FORECAST_OCCURRENCE_NOT_FOUND' })
+  await assert.rejects(materializeForecastOccurrence({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A, expectedActiveRevisionId: 'stale', now: NOW, generateLesson, setInferenceSuppressed: preserveInferenceSuppression }), { code: 'MATERIALIZATION_CONFLICT' })
 })
 
 test('migration generalizes proposal authority and adds durable materialization receipts', () => {

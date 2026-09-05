@@ -1,9 +1,35 @@
 import { createHash } from 'node:crypto'
 import { resolveCalendarContext } from '../calendarDate.mjs'
+import { setLessonAssociationInferenceSuppressed } from './lessonAssociations.server.mjs'
 import { adoptLearningForecastLineage, bindMaterializedForecast, carryForwardLearningForecastProposal, getActiveSyllabus } from './revisions.server.mjs'
 import { SyllabusError } from './schema.mjs'
 
 function clean(value) { return String(value || '').trim() }
+async function clearMaterializedLessonInferenceSuppression({
+  admin,
+  facilitatorId,
+  learnerId,
+  lessonKey,
+  setInferenceSuppressed,
+}) {
+  try {
+    await setInferenceSuppressed({
+      admin,
+      facilitatorId,
+      learnerId,
+      lessonKey,
+      suppressed: false,
+      verifyLearner: false,
+    })
+  } catch (error) {
+    if (error?.code === 'LESSON_ASSOCIATION_NOT_FOUND') {
+      return { cleared: false, association_missing: true }
+    }
+    throw error
+  }
+  return { cleared: true, association_missing: false }
+}
+
 function generationHash({ learnerId, activeRevision, item, learner }) {
   return createHash('sha256').update(JSON.stringify({
     learner_id: learnerId,
@@ -63,6 +89,7 @@ export async function materializeForecastOccurrence({
   expectedActiveRevisionId,
   proposalRevisionId = null,
   generateLesson,
+  setInferenceSuppressed = setLessonAssociationInferenceSuppressed,
   now = new Date(),
   fallbackTimeZone,
 }) {
@@ -164,6 +191,9 @@ export async function materializeForecastOccurrence({
   }
   const item = matches[0]
   if (item.lesson_key) {
+    await clearMaterializedLessonInferenceSuppression({
+      admin, facilitatorId, learnerId, lessonKey: item.lesson_key, setInferenceSuppressed,
+    })
     return {
       kind: 'materialized', reused: true, lesson_key: item.lesson_key, lineage_id: item.lineage_id,
       syllabus: await getActiveSyllabus({ repository, admin, facilitatorId, learnerId, now, fallbackTimeZone }),
@@ -238,6 +268,9 @@ export async function materializeForecastOccurrence({
     if (error instanceof SyllabusError) throw error
     throw new SyllabusError('The lesson was generated but could not be bound to its Syllabus lineage. Retry will reuse the generated lesson.', 409, 'MATERIALIZATION_BINDING_FAILED')
   }
+  await clearMaterializedLessonInferenceSuppression({
+    admin, facilitatorId, learnerId, lessonKey, setInferenceSuppressed,
+  })
   const carryForward = await attemptCarryForward(bound.active_revision.id)
 
   return {

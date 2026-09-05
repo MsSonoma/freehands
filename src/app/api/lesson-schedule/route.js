@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server.js'
 import { normalizeLessonKey } from '../../lib/lessonKeyNormalization.js'
 import { featuresForTier, resolveEffectiveTier } from '../../lib/entitlements.js'
 import { verifyFacilitatorLessonAccess } from '../../lib/serverLessonAccess.mjs'
-import { upsertLessonAssociation } from '../../lib/syllabus/lessonAssociations.server.mjs'
+import { setLessonAssociationInferenceSuppressed, upsertLessonAssociation } from '../../lib/syllabus/lessonAssociations.server.mjs'
 import { inspectLearnerSyllabusPlacement } from '../../lib/syllabus/capacity.mjs'
 import { verifyFacilitatorPinForUser } from '../../lib/facilitatorPin.server.mjs'
 import { resolveCalendarContext } from '../../lib/calendarDate.mjs'
@@ -270,6 +270,16 @@ export async function POST(request, deps = {}) {
       title: lessonAccess.title,
       readinessState: 'approved',
       associationSource: 'schedule',
+      verifyLearner: false,
+    })
+
+    const clearInferenceSuppression = deps.setLessonAssociationInferenceSuppressed || setLessonAssociationInferenceSuppressed
+    await clearInferenceSuppression({
+      admin: adminSupabase,
+      facilitatorId: user.id,
+      learnerId,
+      lessonKey: normalizedLessonKey,
+      suppressed: false,
       verifyLearner: false,
     })
 

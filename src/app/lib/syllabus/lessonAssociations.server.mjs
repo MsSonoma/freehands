@@ -25,6 +25,41 @@ export async function requireAssociationLearner(admin, facilitatorId, learnerId)
   return data
 }
 
+export async function setLessonAssociationInferenceSuppressed({
+  admin,
+  facilitatorId,
+  learnerId,
+  lessonKey,
+  suppressed,
+  verifyLearner = true,
+}) {
+  const canonicalKey = normalizeLessonKey(lessonKey)
+  if (!canonicalKey || !canonicalKey.includes('/')) {
+    throw new SyllabusError('A valid lesson key is required', 400, 'INVALID_LESSON_KEY')
+  }
+  if (typeof suppressed !== 'boolean') {
+    throw new SyllabusError('Inference suppression must be a boolean', 400, 'INVALID_LESSON_ASSOCIATION')
+  }
+  if (verifyLearner) await requireAssociationLearner(admin, facilitatorId, learnerId)
+
+  const { data, error } = await admin.from('syllabus_lesson_associations').update({
+    inferred_placement_suppressed: suppressed,
+    updated_at: new Date().toISOString(),
+  })
+    .eq('facilitator_id', facilitatorId)
+    .eq('learner_id', learnerId)
+    .eq('lesson_key', canonicalKey)
+    .select('*')
+    .maybeSingle()
+  if (error) {
+    throw new SyllabusError(error.message || 'Could not update learner lesson association', 500, 'LESSON_ASSOCIATION_FAILED')
+  }
+  if (!data) {
+    throw new SyllabusError('Learner lesson association not found', 404, 'LESSON_ASSOCIATION_NOT_FOUND')
+  }
+  return data
+}
+
 export async function upsertLessonAssociation({
   admin,
   facilitatorId,

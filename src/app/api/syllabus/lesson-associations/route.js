@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server.js'
 import { getSyllabusRequestContext } from '../../../lib/syllabus/request.server.mjs'
-import { requireAssociationLearner, upsertLessonAssociation } from '../../../lib/syllabus/lessonAssociations.server.mjs'
+import { requireAssociationLearner, setLessonAssociationInferenceSuppressed, upsertLessonAssociation } from '../../../lib/syllabus/lessonAssociations.server.mjs'
 import { SyllabusError, validateLearnerId } from '../../../lib/syllabus/schema.mjs'
 import { verifyFacilitatorLessonAccess } from '../../../lib/serverLessonAccess.mjs'
 import { normalizeLessonKey } from '../../../lib/lessonKeyNormalization.js'
@@ -39,6 +39,14 @@ export async function POST(request, deps = {}) {
     if (context.error) return NextResponse.json({ error: context.error }, { status: context.status })
     const body = await request.json().catch(() => null)
     const learnerId = validateLearnerId(body?.learnerId)
+    if (Object.prototype.hasOwnProperty.call(body || {}, 'suppressed')
+      || Object.prototype.hasOwnProperty.call(body || {}, 'inferred_placement_suppressed')) {
+      throw new SyllabusError('Suppression state is server-owned', 400, 'INVALID_LESSON_ASSOCIATION_MUTATION')
+    }
+    const action = String(body?.action || '').trim()
+    if (action && action !== 'save_for_later') {
+      throw new SyllabusError('Unsupported lesson association action', 400, 'INVALID_LESSON_ASSOCIATION_ACTION')
+    }
     const access = await verifyFacilitatorLessonAccess({
       admin: context.admin,
       userId: context.user.id,
@@ -59,10 +67,24 @@ export async function POST(request, deps = {}) {
       associationSource: 'prepare',
       instructionalTeacher: body?.instructionalTeacher,
     })
+    if (action === 'save_for_later') {
+      const clearInferenceSuppression = deps.setLessonAssociationInferenceSuppressed || setLessonAssociationInferenceSuppressed
+      await clearInferenceSuppression({
+        admin: context.admin,
+        facilitatorId: context.user.id,
+        learnerId,
+        lessonKey: access.lessonKey,
+        suppressed: false,
+        verifyLearner: false,
+      })
+    }
     return NextResponse.json({ ok: true, association })
   } catch (error) {
     const status = error instanceof SyllabusError ? error.status : 500
-    return NextResponse.json({ error: error.message || 'Internal server error' }, { status })
+    return NextResponse.json({
+      error: error.message || 'Internal server error',
+      ...(error instanceof SyllabusError ? { code: error.code } : {}),
+    }, { status })
   }
 }
 

@@ -73,11 +73,15 @@ test('available=false routes through the canonical removal service', () => {
   assert.match(route, /facilitatorId: user\.id/)
 })
 
-test('lesson editor uses server binding truth and clear Remove from learner preservation copy', () => {
+test('lesson editor uses server binding truth and remains grant-only for learner assignment', () => {
   const source = fs.readFileSync(new URL('../../../facilitator/lessons/edit/page.js', import.meta.url), 'utf8')
   assert.match(source, /lesson-availability\?\$\{params\}/)
   assert.match(source, /result\.currentlyBound \? \[learner\.id\] : \[\]/)
   assert.doesNotMatch(source, /\(learner\.approved_lessons \|\| \{\}\)\[lessonKey\]/)
-  assert.match(source, /Remove from learner/)
-  assert.match(source, /lesson itself was not deleted, and existing learning history was preserved/)
+  assert.match(source, /Already assigned/)
+  assert.match(source, /Grant Access/)
+  assert.match(source, /available:\s*true/)
+  assert.doesNotMatch(source, /Remove from learner/)
+  assert.doesNotMatch(source, /available:\s*false/)
+  assert.doesNotMatch(source, /available:\s*!\s*isCurrentlyAssigned/)
 })

@@ -178,7 +178,10 @@ export default function SyllabusDocument({
       const scheduleContext = actionId === 'reschedule'
         ? `&action=schedule&scheduleId=${encodeURIComponent(item.id || '')}&originalScheduledDate=${encodeURIComponent(item.original_scheduled_date || item.planned_date || '')}`
         : (actionId === 'schedule' ? '&action=schedule' : '')
-      return `/facilitator/prepare?learnerId=${learner}&lessonKey=${key}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}${scheduleContext}`
+      const occurrenceContext = typeof item.occurrence_id === 'string' && item.occurrence_id.trim()
+        ? `&occurrenceId=${encodeURIComponent(item.occurrence_id)}${revision?.id !== undefined && revision?.id !== null && String(revision.id).trim() ? `&expectedActiveRevisionId=${encodeURIComponent(revision.id)}` : ''}`
+        : ''
+      return `/facilitator/prepare?learnerId=${learner}&lessonKey=${key}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}${scheduleContext}${occurrenceContext}`
     }
     return null
   }
