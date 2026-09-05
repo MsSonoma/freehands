@@ -5,6 +5,7 @@ import { materializeForecastOccurrence, reconstructForecastCarryForward } from '
 import { getSyllabusRequestContext } from '../../../lib/syllabus/request.server.mjs'
 import { SyllabusError, validateLearnerId } from '../../../lib/syllabus/schema.mjs'
 import { createSyllabusRepository } from '../../../lib/syllabus/supabaseRepository.server.mjs'
+import { verifyFacilitatorLessonAccess } from '../../../lib/serverLessonAccess.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -39,6 +40,18 @@ export async function POST(request, deps = {}) {
     }
     const lineageId = validLineageId(body?.lineageId)
     if (!lineageId) throw new SyllabusError('A valid forecast lineage is required')
+    let existingLesson = null
+    if (body?.existingLessonKey != null) {
+      const access = await verifyFacilitatorLessonAccess({
+        admin: context.admin,
+        userId: context.user.id,
+        lessonKey: body.existingLessonKey,
+        fileExistsSync: deps.fileExistsSync,
+        unapprovedError: 'Approve the lesson content before using it in the Syllabus',
+      })
+      if (!access.ok) throw new SyllabusError(access.error || 'Lesson not found or unauthorized', 403, 'LESSON_NOT_ACCESSIBLE')
+      existingLesson = { lessonKey: access.lessonKey, title: access.title, subject: access.subject }
+    }
     const authorization = request.headers.get('authorization') || ''
     const generateLesson = deps.generateLesson || (async (spec) => {
       const { materializationOperation, ...generationSpec } = spec
@@ -61,7 +74,8 @@ export async function POST(request, deps = {}) {
       }
       return payload
     })
-    const result = await materializeForecastOccurrence({
+    const materialize = deps.materializeForecastOccurrence || materializeForecastOccurrence
+    const result = await materialize({
       repository,
       admin: context.admin,
       facilitatorId: context.user.id,
@@ -69,6 +83,7 @@ export async function POST(request, deps = {}) {
       lineageId,
       expectedActiveRevisionId: body?.expectedActiveRevisionId,
       proposalRevisionId: body?.proposalRevisionId || null,
+      existingLesson,
       generateLesson,
       now: deps.now || new Date(),
       fallbackTimeZone: context.user?.user_metadata?.timezone,

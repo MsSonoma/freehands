@@ -74,6 +74,9 @@ function forecastRepository({ forecast = [item()] } = {}) {
     async findLatestLearningForecastProposal(syllabusId, baseRevisionId) {
       return clone(state.revisions.filter((row) => row.syllabus_id === syllabusId && row.base_revision_id === baseRevisionId && row.proposal_kind === 'learning_forecast' && !row.activated_at).at(-1) || null)
     },
+    async findForecastMaterialization(syllabusId, lineageId) {
+      return clone(state.receipts.find((row) => row.syllabus_id === syllabusId && row.lineage_id === lineageId) || null)
+    },
     async replaceLearningForecastProposal({ syllabusId, expectedActiveRevisionId, planning, proposalKey }) {
       assert.equal(state.syllabus.active_revision_id, expectedActiveRevisionId)
       const existing = state.revisions.find((row) => row.proposal_kind === 'learning_forecast' && row.base_revision_id === expectedActiveRevisionId && !row.activated_at)
@@ -131,9 +134,134 @@ test('learning forecast schema accepts first-class description and distinct orig
   assert.equal(validated.forecast_items[0].description, 'Preserve this intent.')
 })
 
-test('unmaterialized learning intent exposes only exact materialization action', () => {
+test('unmaterialized learning intent exposes existing binding and generation only to facilitators', () => {
   const actions = syllabusItemActionsFor({ item: item({ origin: 'learning_forecast' }), role: 'facilitator', state: 'future_unfinished' })
-  assert.deepEqual(actions, [{ id: 'materialize', label: 'Generate lesson' }])
+  assert.deepEqual(actions, [{ id: 'use_existing', label: 'Use existing lesson' }, { id: 'materialize', label: 'Generate lesson' }])
+  assert.equal(syllabusItemActionsFor({ item: item({ origin: 'learning_forecast' }), role: 'learner', state: 'future_unfinished' }).some((action) => action.id === 'use_existing'), false)
+})
+
+test('existing lesson binds an active facilitator concept without generation or a receipt', async () => {
+  const repository = forecastRepository()
+  repository.state.learner.grade = null
+  let generatorCalls = 0
+  const result = await materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A,
+    expectedActiveRevisionId: ACTIVE, now: NOW, setInferenceSuppressed: preserveInferenceSuppression,
+    existingLesson: { lessonKey: 'math/fractions.json', title: 'Canonical Fractions', subject: 'math' },
+    generateLesson: async () => { generatorCalls++; throw new Error('must not generate') },
+  })
+  const bound = repository.state.forecast.find((row) => row.revision_id === result.syllabus.active_revision.id && row.lineage_id === LINEAGE_A)
+  assert.equal(result.kind, 'existing_lesson_bound')
+  assert.equal(bound.lesson_key, 'math/fractions.json')
+  assert.equal(bound.title, 'Canonical Fractions')
+  assert.equal(bound.subject, 'math')
+  assert.equal(bound.metadata.existing_lesson_binding.selected_by, 'facilitator')
+  assert.equal(bound.metadata.existing_lesson_binding.prior_concept.title, 'Educator-authored fractions')
+  assert.equal(generatorCalls, 0)
+  assert.equal(repository.state.receipts.length, 0)
+})
+
+test('existing lesson adopts one proposal lineage, preserves siblings, and uses canonical artifact metadata', async () => {
+  const repository = forecastRepository({ forecast: [] })
+  const proposal = await createLearningForecastProposal({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE,
+    reports: evidence(), now: NOW,
+    generateItems: async ({ slots }) => slots.map((slot) => ({ title: `${slot.subject} suggestion`, description: `Prior ${slot.subject} concept.` })),
+  })
+  const [selected, sibling] = proposal.forecast_items.filter((row) => row.origin === 'learning_forecast')
+  let generatorCalls = 0
+  const result = await materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
+    proposalRevisionId: proposal.proposal_revision.id, lineageId: selected.lineage_id,
+    expectedActiveRevisionId: ACTIVE, now: NOW, setInferenceSuppressed: preserveInferenceSuppression,
+    existingLesson: { lessonKey: `${selected.subject}/existing.json`, title: 'Canonical Existing Lesson', subject: selected.subject },
+    generateLesson: async () => { generatorCalls++; return { lessonKey: 'generated/incorrect.json' } },
+  })
+  const activeItem = result.syllabus.forecast_items.find((row) => row.lineage_id === selected.lineage_id)
+  assert.equal(activeItem.lesson_key, `${selected.subject}/existing.json`)
+  assert.equal(activeItem.title, 'Canonical Existing Lesson')
+  assert.equal(activeItem.subject, selected.subject)
+  assert.equal(activeItem.metadata.existing_lesson_binding.prior_concept.description, selected.description)
+  assert.deepEqual(result.syllabus.proposed_learning_forecast.forecast_items.map((row) => row.lineage_id), [sibling.lineage_id])
+  assert.equal(generatorCalls, 0)
+  assert.equal(repository.state.receipts.length, 0)
+})
+
+test('existing lesson cannot bypass unresolved materialization recovery before active mutation', async () => {
+  const repository = forecastRepository()
+  repository.state.receipts.push({ id: 'receipt-recovery', syllabus_id: SYLLABUS, lineage_id: LINEAGE_A, lesson_key: null, status: 'recovery_required' })
+  let generatorCalls = 0
+  await assert.rejects(materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A,
+    expectedActiveRevisionId: ACTIVE, now: NOW, setInferenceSuppressed: preserveInferenceSuppression,
+    existingLesson: { lessonKey: 'math/fractions.json', title: 'Fractions', subject: 'math' },
+    generateLesson: async () => { generatorCalls++ },
+  }), { code: 'MATERIALIZATION_RECOVERY_REQUIRED' })
+  assert.equal(repository.state.syllabus.active_revision_id, ACTIVE)
+  assert.equal(repository.state.writes, 0)
+  assert.equal(generatorCalls, 0)
+})
+
+test('proposal existing lesson recovery rejection precedes adoption and sibling carry-forward', async () => {
+  const repository = forecastRepository({ forecast: [] })
+  const proposal = await createLearningForecastProposal({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE,
+    reports: evidence(), now: NOW,
+    generateItems: async ({ slots }) => slots.map((slot) => ({ title: `${slot.subject} proposal`, description: `Exact ${slot.subject} proposal.` })),
+  })
+  const selected = proposal.forecast_items.find((row) => row.origin === 'learning_forecast')
+  repository.state.receipts.push({ id: 'proposal-recovery', syllabus_id: SYLLABUS, lineage_id: selected.lineage_id, lesson_key: null, status: 'recovery_required' })
+  const before = {
+    activeRevisionId: repository.state.syllabus.active_revision_id,
+    writes: repository.state.writes,
+    revisionCount: repository.state.revisions.length,
+    proposalActivatedAt: repository.state.revisions.find((row) => row.id === proposal.proposal_revision.id).activated_at,
+  }
+  let generatorCalls = 0
+  await assert.rejects(materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER,
+    proposalRevisionId: proposal.proposal_revision.id, lineageId: selected.lineage_id,
+    expectedActiveRevisionId: ACTIVE, now: NOW, setInferenceSuppressed: preserveInferenceSuppression,
+    existingLesson: { lessonKey: 'math/existing.json', title: 'Existing Lesson', subject: 'math' },
+    generateLesson: async () => { generatorCalls++ },
+  }), { code: 'MATERIALIZATION_RECOVERY_REQUIRED' })
+  assert.equal(repository.state.syllabus.active_revision_id, before.activeRevisionId)
+  assert.equal(repository.state.writes, before.writes)
+  assert.equal(repository.state.revisions.length, before.revisionCount)
+  assert.equal(repository.state.revisions.find((row) => row.id === proposal.proposal_revision.id).activated_at, before.proposalActivatedAt)
+  assert.equal((await repository.findLatestLearningForecastProposal(SYLLABUS, ACTIVE)).id, proposal.proposal_revision.id)
+  assert.equal(repository.state.revisions.filter((row) => row.base_revision_id !== ACTIVE && row.proposal_kind === 'learning_forecast').length, 0)
+  assert.equal(generatorCalls, 0)
+})
+
+test('same-key bound receipt permits existing binding without creating another receipt', async () => {
+  const repository = forecastRepository()
+  repository.state.receipts.push({ id: 'bound-same', syllabus_id: SYLLABUS, lineage_id: LINEAGE_A, lesson_key: 'math/fractions.json', status: 'bound' })
+  let generatorCalls = 0
+  const result = await materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A,
+    expectedActiveRevisionId: ACTIVE, now: NOW, setInferenceSuppressed: preserveInferenceSuppression,
+    existingLesson: { lessonKey: 'math/fractions.json', title: 'Fractions', subject: 'math' },
+    generateLesson: async () => { generatorCalls++ },
+  })
+  assert.equal(result.lesson_key, 'math/fractions.json')
+  assert.equal(repository.state.receipts.length, 1)
+  assert.equal(generatorCalls, 0)
+})
+
+test('different-key bound receipt cannot retarget an existing lesson occurrence', async () => {
+  const repository = forecastRepository()
+  repository.state.receipts.push({ id: 'bound-other', syllabus_id: SYLLABUS, lineage_id: LINEAGE_A, lesson_key: 'math/original.json', status: 'bound' })
+  const beforeRevisionCount = repository.state.revisions.length
+  await assert.rejects(materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A,
+    expectedActiveRevisionId: ACTIVE, now: NOW, setInferenceSuppressed: preserveInferenceSuppression,
+    existingLesson: { lessonKey: 'math/replacement.json', title: 'Replacement', subject: 'math' },
+    generateLesson: async () => { throw new Error('must not generate') },
+  }), { code: 'MATERIALIZATION_RECOVERY_REQUIRED' })
+  assert.equal(repository.state.syllabus.active_revision_id, ACTIVE)
+  assert.equal(repository.state.revisions.length, beforeRevisionCount)
+  assert.equal(repository.state.forecast[0].lesson_key, null)
 })
 
 test('weekly pattern owns next-week slot count and snapshot preserves existing intent', () => {

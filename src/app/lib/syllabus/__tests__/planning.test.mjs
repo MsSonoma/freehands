@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 import { buildPlanAhead } from '../planning.mjs'
-import { buildForecastViewIdentity, isCurrentForecastResponse } from '../forecastRequestIdentity.mjs'
+import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '../forecastRequestIdentity.mjs'
 import { createFacilitatorConcept, editFacilitatorConcept, replaceLearningForecastConcept } from '../planning.server.mjs'
 import { materializeForecastOccurrence } from '../materialization.server.mjs'
 import { syllabusActionPresentation } from '../timeline.mjs'
@@ -88,13 +88,18 @@ test('facilitator concept materialization delegates exact lineage and preserves 
   assert.equal(repo.state.receipts[0].status, 'generation_failed')
 })
 
-test('facilitator UI lazily POSTs forecast on future navigation, provides retry, and keeps learner document control-free', () => {
+test('facilitator UI automatically POSTs forecast after authoritative refresh, provides retry, and keeps learner document control-free', () => {
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   const learner = fs.readFileSync(new URL('../../../learn/LearnerHome.js', import.meta.url), 'utf8')
-  assert.match(facilitator, /selectedWeekStart !== targetWeek/)
+  const automaticEffectStart = facilitator.indexOf('useEffect(() => {\n    const activeId')
+  const automaticEffect = facilitator.slice(automaticEffectStart, facilitator.indexOf('  useEffect(() => {', automaticEffectStart + 1))
   assert.match(facilitator, /fetch\('\/api\/syllabus\/forecast'/)
-  assert.match(facilitator, /forecastAttempt\.current === identity/)
+  assert.match(facilitator, /setForecastRefreshSequence\(\(current\) => current \+ 1\)/)
+  assert.match(automaticEffect, /refreshSequence: forecastRefreshSequence/)
+  assert.match(automaticEffect, /forecastAttempt\.current === identity/)
+  assert.equal((automaticEffect.match(/createLearningForecast\(\{ automatic: true \}\)/g) || []).length, 1)
+  assert.doesNotMatch(automaticEffect, /selectedWeekStart|learningProposal/)
   assert.match(document, /Retry forecast/)
   assert.match(document, /role === 'facilitator' && onEditSection/)
   assert.doesNotMatch(learner, /onEditSection=/)
@@ -178,21 +183,31 @@ test('production Syllabus callers expose only host-supported action capabilities
   assert.match(document, /presentation === 'hidden'/)
   assert.doesNotMatch(home, /actionCapabilities=/)
   assert.match(home, /href: '\/facilitator\/syllabus'/)
-  assert.match(facilitator, /actionCapabilities=\{\{ reviewHistory: true, lessonActions: true \}\}/)
+  assert.match(facilitator, /actionCapabilities=\{\{ reviewHistory: true, lessonActions: true, scheduleLessons: canScheduleLessons \}\}/)
   assert.match(learner, /actionCapabilities=\{\{ openLesson: true \}\}/)
   assert.match(qa, /reviewHistory: true, lessonActions: true/)
 })
 
-test('production forecast responses require exact learner revision target week selected week and sequence', () => {
+test('production forecast identity ignores viewed week while protecting canonical identity and request sequence', () => {
   const weekA = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-07', selectedWeekStart: '2026-09-07' })
-  const weekB = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-07', selectedWeekStart: '2026-09-14' })
-  assert.notEqual(weekA, weekB)
-  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: weekB, requestSequence: 1, currentSequence: 1 }), false)
-  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: weekA, requestSequence: 1, currentSequence: 2 }), false)
-  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: weekA, requestSequence: 2, currentSequence: 2 }), true)
+  const sameForecastFromAnotherView = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-07', selectedWeekStart: '2026-09-14' })
+  const nextTarget = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-14', selectedWeekStart: '2026-09-07' })
+  const nextRevision = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: 'revision-2', targetWeek: '2026-09-07' })
+  const nextLearner = buildForecastViewIdentity({ learnerId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', activeRevisionId: ACTIVE, targetWeek: '2026-09-07' })
+  assert.equal(weekA, sameForecastFromAnotherView)
+  assert.equal(weekA, buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-07' }))
+  assert.notEqual(weekA, nextTarget)
+  assert.notEqual(weekA, nextRevision)
+  assert.notEqual(weekA, nextLearner)
+  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: nextTarget, requestSequence: 1, currentSequence: 1 }), false)
+  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: sameForecastFromAnotherView, requestSequence: 1, currentSequence: 2 }), false)
+  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: sameForecastFromAnotherView, requestSequence: 2, currentSequence: 2 }), true)
+  assert.equal(buildAutomaticForecastAttemptIdentity({ requestIdentity: weekA, refreshSequence: 1 }), `${weekA}:1`)
+  assert.equal(buildAutomaticForecastAttemptIdentity({ requestIdentity: sameForecastFromAnotherView, refreshSequence: 1 }), `${weekA}:1`)
+  assert.equal(buildAutomaticForecastAttemptIdentity({ requestIdentity: weekA, refreshSequence: 2 }), `${weekA}:2`)
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   assert.match(facilitator, /targetWeek: currentTargetForecastWeek/)
-  assert.match(facilitator, /selectedWeekStart/)
+  assert.doesNotMatch(facilitator.slice(facilitator.indexOf('forecastViewIdentity.current ='), facilitator.indexOf('const planningAccess')), /selectedWeekStart/)
   assert.match(facilitator, /forecastRequestSequence/)
   assert.match(facilitator, /if \(!responseIsCurrent\(\)\) return/)
   assert.match(facilitator, /forecastAttempt\.current === identity/)

@@ -88,6 +88,7 @@ export async function materializeForecastOccurrence({
   lineageId,
   expectedActiveRevisionId,
   proposalRevisionId = null,
+  existingLesson = null,
   generateLesson,
   setInferenceSuppressed = setLessonAssociationInferenceSuppressed,
   now = new Date(),
@@ -96,12 +97,24 @@ export async function materializeForecastOccurrence({
   const learner = await repository.findOwnedLearner(learnerId, facilitatorId)
   if (!learner) throw new SyllabusError('Learner not found or unauthorized', 404, 'FORECAST_OCCURRENCE_NOT_FOUND')
   const learnerGrade = clean(learner.grade)
-  if (!learnerGrade) {
+  if (!existingLesson && !learnerGrade) {
     throw new SyllabusError('Set an authoritative grade for this learner before generating the lesson.', 422, 'MATERIALIZATION_GRADE_REQUIRED')
   }
   let syllabus = await repository.findSyllabus(facilitatorId, learnerId)
   if (!syllabus?.active_revision_id || syllabus.active_revision_id !== expectedActiveRevisionId) {
     throw new SyllabusError('The active Syllabus changed before materialization.', 409, 'MATERIALIZATION_CONFLICT')
+  }
+  const existingLessonKey = clean(existingLesson?.lessonKey)
+  if (existingLesson) {
+    if (!existingLessonKey || !clean(existingLesson?.title) || !clean(existingLesson?.subject)) {
+      throw new SyllabusError('The selected lesson could not be verified.', 403, 'LESSON_NOT_ACCESSIBLE')
+    }
+    const priorReceipt = typeof repository.findForecastMaterialization === 'function'
+      ? await repository.findForecastMaterialization(syllabus.id, lineageId)
+      : null
+    if (priorReceipt && (priorReceipt.status !== 'bound' || clean(priorReceipt.lesson_key) !== existingLessonKey)) {
+      throw new SyllabusError('This forecast occurrence has unresolved lesson-generation recovery. Resolve that exact materialization before selecting another artifact.', 409, 'MATERIALIZATION_RECOVERY_REQUIRED')
+    }
   }
   const profileTimeZone = typeof repository.findFacilitatorTimeZone === 'function' ? await repository.findFacilitatorTimeZone(facilitatorId) : null
   const calendar = resolveCalendarContext({ now, profileTimeZone, fallbackTimeZone })
@@ -191,11 +204,41 @@ export async function materializeForecastOccurrence({
   }
   const item = matches[0]
   if (item.lesson_key) {
+    if (existingLesson && clean(item.lesson_key) !== existingLessonKey) {
+      throw new SyllabusError('This forecast occurrence is already bound to another lesson.', 409, 'FORECAST_ALREADY_MATERIALIZED')
+    }
     await clearMaterializedLessonInferenceSuppression({
       admin, facilitatorId, learnerId, lessonKey: item.lesson_key, setInferenceSuppressed,
     })
     return {
       kind: 'materialized', reused: true, lesson_key: item.lesson_key, lineage_id: item.lineage_id,
+      syllabus: await getActiveSyllabus({ repository, admin, facilitatorId, learnerId, now, fallbackTimeZone }),
+    }
+  }
+  if (existingLesson) {
+    const bound = await bindMaterializedForecast({
+      repository,
+      facilitatorId,
+      learnerId,
+      lineageId: item.lineage_id,
+      lessonKey: existingLessonKey,
+      lessonTitle: clean(existingLesson.title),
+      lessonSubject: clean(existingLesson.subject),
+      bindingProvenance: { selected_by: 'facilitator', binding_kind: 'existing_lesson' },
+      expectedActiveRevisionId: bindingRevisionId,
+      now,
+      today: calendar.today,
+    })
+    await clearMaterializedLessonInferenceSuppression({
+      admin, facilitatorId, learnerId, lessonKey: existingLessonKey, setInferenceSuppressed,
+    })
+    const carryForward = await attemptCarryForward(bound.active_revision.id)
+    return {
+      kind: 'existing_lesson_bound',
+      reused: false,
+      lesson_key: existingLessonKey,
+      lineage_id: item.lineage_id,
+      carry_forward: carryForward,
       syllabus: await getActiveSyllabus({ repository, admin, facilitatorId, learnerId, now, fallbackTimeZone }),
     }
   }

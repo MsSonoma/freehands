@@ -8,6 +8,7 @@ import { setLessonAssociationInferenceSuppressed, upsertLessonAssociation } from
 import { inspectLearnerSyllabusPlacement } from '../../lib/syllabus/capacity.mjs'
 import { verifyFacilitatorPinForUser } from '../../lib/facilitatorPin.server.mjs'
 import { resolveCalendarContext } from '../../lib/calendarDate.mjs'
+import { createSyllabusRepository } from '../../lib/syllabus/supabaseRepository.server.mjs'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -30,6 +31,29 @@ const normalizeScheduledDate = (value) => {
   }
 
   return str
+}
+
+const normalizeUuid = (value) => {
+  const text = String(value || '').trim()
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : null
+}
+
+export async function verifyScheduleForecastLineage({ repository, facilitatorId, learnerId, forecastLineageId, lessonKey }) {
+  const syllabus = await repository.findSyllabus(facilitatorId, learnerId)
+  if (!syllabus?.active_revision_id) return { ok: false, status: 409, error: 'The learner has no active Syllabus for this forecast lineage.' }
+  const [revision, items] = await Promise.all([
+    repository.findRevision(syllabus.active_revision_id, syllabus.id),
+    repository.listForecastItems(syllabus.active_revision_id),
+  ])
+  if (!revision) return { ok: false, status: 409, error: 'The active Syllabus revision could not be verified.' }
+  const matches = (items || []).filter((item) => String(item?.lineage_id || '') === forecastLineageId
+    && (item?.item_type || 'lesson') === 'lesson'
+    && ['learning_forecast', 'facilitator'].includes(item?.origin))
+  if (matches.length !== 1) return { ok: false, status: 409, error: 'The forecast lineage is stale, unrelated, or ambiguous.' }
+  if (normalizeLessonKey(matches[0].lesson_key) !== lessonKey) {
+    return { ok: false, status: 409, error: 'The forecast lineage is not bound to this lesson.' }
+  }
+  return { ok: true, lineageId: forecastLineageId, item: matches[0] }
 }
 
 export async function GET(request, deps = {}) {
@@ -155,6 +179,11 @@ export async function POST(request, deps = {}) {
     }
 
     const normalizedLessonKey = normalizeLessonKey(lessonKey)
+    const lineageWasSupplied = body?.forecastLineageId != null && String(body.forecastLineageId).trim() !== ''
+    const requestedForecastLineageId = lineageWasSupplied ? normalizeUuid(body.forecastLineageId) : null
+    if (lineageWasSupplied && !requestedForecastLineageId) {
+      return NextResponse.json({ error: 'forecastLineageId must be a valid UUID' }, { status: 400 })
+    }
 
     const authHeader = request.headers.get('authorization')
     
@@ -220,6 +249,34 @@ export async function POST(request, deps = {}) {
       if (existingError || !row) return NextResponse.json({ error: 'Schedule occurrence not found or unauthorized' }, { status: 404 })
       existingSchedule = row
     }
+    if (!existingSchedule) {
+      const { data: compatible, error: compatibleError } = await adminSupabase.from('lesson_schedule')
+        .select('*')
+        .eq('learner_id', learnerId)
+        .eq('lesson_key', normalizedLessonKey)
+        .eq('scheduled_date', normalizeScheduledDate(scheduledDate))
+        .or(`facilitator_id.eq.${user.id},facilitator_id.is.null`)
+        .maybeSingle()
+      if (compatibleError) return NextResponse.json({ error: compatibleError.message }, { status: 500 })
+      existingSchedule = compatible || null
+    }
+
+    const existingForecastLineageId = String(existingSchedule?.forecast_lineage_id || '').trim() || null
+    if (existingForecastLineageId && requestedForecastLineageId && existingForecastLineageId !== requestedForecastLineageId) {
+      return NextResponse.json({ error: 'This schedule occurrence is already linked to a different forecast lineage.' }, { status: 409 })
+    }
+    const forecastLineageId = existingForecastLineageId || requestedForecastLineageId
+    if (forecastLineageId) {
+      const repository = deps.syllabusRepository || createSyllabusRepository(adminSupabase)
+      const lineage = await verifyScheduleForecastLineage({
+        repository,
+        facilitatorId: user.id,
+        learnerId,
+        forecastLineageId,
+        lessonKey: normalizedLessonKey,
+      })
+      if (!lineage.ok) return NextResponse.json({ error: lineage.error }, { status: lineage.status })
+    }
 
     const inspectPlacement = deps.inspectLearnerSyllabusPlacement || inspectLearnerSyllabusPlacement
     const capacity = await inspectPlacement({
@@ -251,6 +308,7 @@ export async function POST(request, deps = {}) {
         learner_id: learnerId,
         lesson_key: normalizedLessonKey,
         scheduled_date: normalizeScheduledDate(scheduledDate),
+        ...(forecastLineageId ? { forecast_lineage_id: forecastLineageId } : {}),
     }
     const mutation = existingSchedule
       ? adminSupabase.from('lesson_schedule').update(schedulePayload).eq('id', existingSchedule.id)
@@ -258,6 +316,9 @@ export async function POST(request, deps = {}) {
     const { data, error } = await mutation.select().single()
 
     if (error) {
+      if (forecastLineageId && error.code === '23505') {
+        return NextResponse.json({ error: 'This forecast occurrence already has an explicit schedule.' }, { status: 409 })
+      }
       return NextResponse.json({ error: error.message }, { status: 500 })
     }
 

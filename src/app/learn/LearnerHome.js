@@ -22,9 +22,11 @@ import {
   getLessonListRequest,
   initializeDemoLearner,
   isDemoLearnerId,
+  shouldAutoShowLearnerTutorial,
 } from '@/app/learn/demoLearner.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '@/app/learn/snapshotProgress.mjs'
+import { resolveLearnerSyllabusPresentation } from '@/app/lib/syllabus/learnerPresentation.mjs'
 
 const LESSONS_TUTORIAL_STEPS = [
   {
@@ -84,16 +86,6 @@ function LessonsPageInner(){
   const router = useRouter()
   const [showTutorial, setShowTutorial] = useState(false)
 
-  // Auto-show tutorial on first visit
-  useEffect(() => {
-    try {
-      const storedLearnerId = localStorage.getItem('learner_id')
-      if (!isDemoLearnerId(storedLearnerId) && !localStorage.getItem('ms_lessons_tutorial_seen')) {
-        setShowTutorial(true)
-      }
-    } catch {}
-  }, [])
-
   const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': isoTimestamp } - lessons scheduled for today
   const [allLessons, setAllLessons] = useState({})
   const [availableLessons, setAvailableLessons] = useState({}) // { 'subject/lesson_file': true } - lessons marked as available by facilitator
@@ -105,6 +97,7 @@ function LessonsPageInner(){
   const [planTier, setPlanTier] = useState('free')
   const [syllabusPayload, setSyllabusPayload] = useState(null)
   const [syllabusStatus, setSyllabusStatus] = useState('idle')
+  const [syllabusDecisionLearnerId, setSyllabusDecisionLearnerId] = useState('')
   const [syllabusError, setSyllabusError] = useState('')
   const [syllabusLaunchError, setSyllabusLaunchError] = useState('')
   const [todaysCount, setTodaysCount] = useState(0)
@@ -262,17 +255,20 @@ function LessonsPageInner(){
     if (!learnerId) {
       setSyllabusPayload(null)
       setSyllabusStatus('idle')
+      setSyllabusDecisionLearnerId('')
       setSyllabusError('')
       return
     }
     if (isDemoLearnerId(learnerId)) {
       setSyllabusPayload(null)
       setSyllabusStatus('ready')
+      setSyllabusDecisionLearnerId(learnerId)
       setSyllabusError('')
       return
     }
     let cancelled = false
     setSyllabusStatus('loading')
+    setSyllabusDecisionLearnerId('')
     setSyllabusError('')
     ;(async () => {
       try {
@@ -292,7 +288,10 @@ function LessonsPageInner(){
           setSyllabusError(cause.message || 'Could not load the Syllabus')
         }
       } finally {
-        if (!cancelled) setSyllabusStatus('ready')
+        if (!cancelled) {
+          setSyllabusDecisionLearnerId(learnerId)
+          setSyllabusStatus('ready')
+        }
       }
     })()
     return () => { cancelled = true }
@@ -898,6 +897,29 @@ function LessonsPageInner(){
     return map
   }, [allLessons, allGeneratedLessons, historyLessons])
   const syllabusModel = useMemo(() => resolveSyllabusReadModel(syllabusPayload), [syllabusPayload])
+  const syllabusPresentation = resolveLearnerSyllabusPresentation({
+    learnerId,
+    demoLearner: isDemoLearnerId(learnerId),
+    syllabusStatus,
+    syllabusDecisionLearnerId,
+    syllabusKind: syllabusModel.kind,
+    selectedLesson: Boolean(selectedLesson),
+  })
+  useEffect(() => {
+    if (!syllabusPresentation.allowLegacyTutorial) {
+      setShowTutorial(false)
+      return
+    }
+    try {
+      setShowTutorial(shouldAutoShowLearnerTutorial({
+        learnerResolved: true,
+        learnerId,
+        tutorialSeen: Boolean(localStorage.getItem('ms_lessons_tutorial_seen')),
+      }))
+    } catch {
+      setShowTutorial(false)
+    }
+  }, [learnerId, syllabusPresentation.allowLegacyTutorial])
   const snapshotLessons = useMemo(() => snapshotCandidateLessons(
     lessonsBySubject,
     syllabusModel.timeline_items,
@@ -1121,18 +1143,20 @@ function LessonsPageInner(){
     return (
       <main style={{ padding:24, maxWidth:980, margin:'0 auto' }}>
         {learnerSwitcher}
-        <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'320px', gap:12, marginTop:32 }}>
-          <div style={{
-            width:48,
-            height:48,
-            border:'4px solid #e5e7eb',
-            borderTop:'4px solid #111',
-            borderRadius:'50%',
-            animation:'spin 1s linear infinite'
-          }}></div>
-          <p style={{ color:'#6b7280', fontSize:15, textAlign:'center' }}>Hang tight—enter the facilitator PIN to unlock lessons.</p>
-          <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
-        </div>
+        {syllabusPresentation.showOpening
+          ? <div style={{ minHeight: 220, display: 'grid', placeItems: 'center', border: '1px solid #ded8cb', background: '#fffdf8', color: '#6b7280' }}>Opening your Syllabus…</div>
+          : <div style={{ display:'flex', flexDirection:'column', alignItems:'center', justifyContent:'center', minHeight:'320px', gap:12, marginTop:32 }}>
+              <div style={{
+                width:48,
+                height:48,
+                border:'4px solid #e5e7eb',
+                borderTop:'4px solid #111',
+                borderRadius:'50%',
+                animation:'spin 1s linear infinite'
+              }}></div>
+              <p style={{ color:'#6b7280', fontSize:15, textAlign:'center' }}>Hang tight—enter the facilitator PIN to unlock lessons.</p>
+              <style>{`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}</style>
+            </div>}
       </main>
     )
   }
@@ -1140,7 +1164,7 @@ function LessonsPageInner(){
   return (
     <main style={{ padding: '16px 12px', maxWidth: 1100, margin: '0 auto' }}>
       {learnerSwitcher}
-      {showTutorial && (
+      {showTutorial && syllabusPresentation.allowLegacyTutorial && (
         <PageTutorialOverlay
           steps={LESSONS_TUTORIAL_STEPS}
           onClose={() => {
@@ -1197,8 +1221,8 @@ function LessonsPageInner(){
       )}
 
       <section aria-label="My active Syllabus" style={{ marginBottom: 28 }}>
-        {syllabusStatus === 'loading' && <div style={{ minHeight: 220, display: 'grid', placeItems: 'center', border: '1px solid #ded8cb', background: '#fffdf8', color: '#6b7280' }}>Opening your Syllabus…</div>}
-        {syllabusStatus === 'ready' && syllabusModel.kind === 'active' && (
+        {syllabusPresentation.showOpening && <div style={{ minHeight: 220, display: 'grid', placeItems: 'center', border: '1px solid #ded8cb', background: '#fffdf8', color: '#6b7280' }}>Opening your Syllabus…</div>}
+        {syllabusPresentation.showActiveSyllabus && (
           <SyllabusDocument
             revision={syllabusModel.revision}
             forecastItems={syllabusModel.forecast_items}
@@ -1213,24 +1237,24 @@ function LessonsPageInner(){
             today={syllabusModel.resolved_today}
           />
         )}
-        {syllabusStatus === 'ready' && syllabusModel.kind === 'fallback' && (
+        {syllabusPresentation.showFallbackMessage && (
           <div style={{ padding: '28px 30px', border: '1px solid #ded8cb', background: '#fffdf8', boxShadow: '0 12px 36px rgba(65,52,36,.08)' }}>
             <p style={{ margin: 0, color: '#9a4634', fontSize: 11, fontWeight: 800, letterSpacing: '.09em' }}>MY SYLLABUS</p>
             <h1 style={{ margin: '5px 0 8px', font: '500 30px Georgia, serif', color: '#2d2924' }}>{syllabusError ? 'Your Syllabus could not be opened' : 'Your learning place is being prepared'}</h1>
             <p style={{ margin: 0, maxWidth: 680, color: '#655d54', lineHeight: 1.6 }}>{syllabusError ? 'The existing lesson library remains available below.' : 'You can keep using the lesson library below. When your facilitator activates a Syllabus, this page will open centered on NOW.'}</p>
           </div>
         )}
-        {syllabusError && <p role="status" style={{ margin: '8px 0 0', color: '#7c5f25', fontSize: 13 }}>The Syllabus could not be opened, so the existing lesson library remains available. {syllabusError}</p>}
+        {syllabusPresentation.showFallbackMessage && syllabusError && <p role="status" style={{ margin: '8px 0 0', color: '#7c5f25', fontSize: 13 }}>The Syllabus could not be opened, so the existing lesson library remains available. {syllabusError}</p>}
         {syllabusLaunchError && <p role="alert" style={{ margin: '8px 0 0', color: '#991b1b', fontSize: 13 }}>{syllabusLaunchError}</p>}
       </section>
 
-      {syllabusModel.kind !== 'active' && <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, margin: '0 0 10px' }}>
+      {syllabusPresentation.showLegacyLibraryHeading && <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 16, margin: '0 0 10px' }}>
         <h2 style={{ margin: 0, fontSize: 17, color: '#252525' }}>Lesson library and learning tools</h2>
         <span style={{ color: '#7b7b7b', fontSize: 12 }}>Available while the Syllabus is being established</span>
       </div>}
 
       {/* ── Sidebar + Content layout ── */}
-      <div data-syllabus-supporting-library style={{ display: syllabusModel.kind === 'active' && !selectedLesson ? 'none' : 'flex', alignItems: 'flex-start', gap: 0 }}>
+      <div data-syllabus-supporting-library style={{ display: syllabusPresentation.showSupportingLibrary ? 'flex' : 'none', alignItems: 'flex-start', gap: 0 }}>
 
         {/* Sidebar */}
         <div style={{

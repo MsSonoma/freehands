@@ -258,6 +258,28 @@ test('exact syllabus row F is removed while same-key G and unrelated H survive',
   })
 })
 
+test('an unused planned Retry is exactly removable, but its started actual occurrence is protected', async () => {
+  const retry = forecast('retry-f', { title: 'Exact Removal Retry' })
+  const planned = syllabusTarget('retry-f')
+  const unused = harness({ timelineItems: [planned], forecastItems: [retry] })
+  const removed = await remove(unused, { occurrenceId: planned.occurrence_id })
+  assert.equal(removed.removedForecastOccurrence, true)
+  assert.deepEqual(unused.activationCalls[0].snapshot.forecast_items, [])
+
+  const actual = timelineItem({
+    occurrenceId: 'actual:retry-session',
+    id: 'retry-session',
+    placementKind: 'actual',
+    source_occurrence_id: planned.occurrence_id,
+  })
+  const started = harness({ timelineItems: [planned, actual], forecastItems: [retry] })
+  await rejectsWithoutMutation(
+    started,
+    { occurrenceId: planned.occurrence_id },
+    'SYLLABUS_OCCURRENCE_ALREADY_STARTED'
+  )
+})
+
 test('same-key explicit syllabus sibling prevents suppression', async () => {
   const h = harness({
     timelineItems: [syllabusTarget(), scheduledTarget('schedule-g')],

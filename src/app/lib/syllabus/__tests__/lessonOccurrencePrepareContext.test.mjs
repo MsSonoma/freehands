@@ -56,10 +56,10 @@ test('Prepare expectedActiveRevisionId comes from revision.id', () => {
   assert.match(occurrenceContextSource, /expectedActiveRevisionId=\$\{encodeURIComponent\(revision\.id\)\}/)
 })
 
-test('occurrence context shares the Prepare href with reschedule context', () => {
-  assert.match(actionHrefSource, /scheduleId=\$\{encodeURIComponent\(item\.id\s*\|\|\s*['"]{2}\)\}/)
-  assert.match(actionHrefSource, /originalScheduledDate=\$\{encodeURIComponent\([^}]+\)\}/)
-  assert.match(actionHrefSource, /facilitator\/prepare\?[^\r\n]+\$\{scheduleContext\}\$\{occurrenceContext\}/)
+test('schedule and reschedule stay native while other Prepare actions keep occurrence context', () => {
+  assert.match(actionHrefSource, /\['schedule', 'reschedule'\]\.includes\(actionId\)\) return null/)
+  assert.doesNotMatch(actionHrefSource, /scheduleId=|originalScheduledDate=/)
+  assert.match(actionHrefSource, /facilitator\/prepare\?[^\r\n]+\$\{occurrenceContext\}/)
 })
 
 test('item.id is not a fallback for occurrenceId', () => {

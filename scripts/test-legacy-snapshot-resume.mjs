@@ -47,8 +47,6 @@ test('SessionPageV2 treats loaded snapshots with unrecognized phase shape as fre
   assert.doesNotMatch(sessionSource, /Saved progress found, but its resume phase could not be recognized/)
   assert.doesNotMatch(sessionSource, /cannot determine where to resume/)
   assert.match(sessionSource, /const resumePhaseName = normalizedResumePhase \|\| null/)
-  assert.match(
-    sessionSource,
-    /audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase/,
-  )
+  assert.doesNotMatch(sessionSource, /Auto-start the session as soon as the page is ready/)
+  assert.match(sessionSource, /offerResume \? \([\s\S]*?\) : \([\s\S]*?'Begin'/)
 })

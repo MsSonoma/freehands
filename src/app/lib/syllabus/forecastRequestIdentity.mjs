@@ -1,8 +1,15 @@
 function clean(value) { return String(value || '').trim() }
 
-export function buildForecastViewIdentity({ learnerId, activeRevisionId, targetWeek, selectedWeekStart } = {}) {
-  const parts = [learnerId, activeRevisionId, targetWeek, selectedWeekStart].map(clean)
+export function buildForecastViewIdentity({ learnerId, activeRevisionId, targetWeek } = {}) {
+  const parts = [learnerId, activeRevisionId, targetWeek].map(clean)
   return parts.every(Boolean) ? parts.join(':') : ''
+}
+
+export function buildAutomaticForecastAttemptIdentity({ requestIdentity, refreshSequence } = {}) {
+  const identity = clean(requestIdentity)
+  return identity && Number.isInteger(refreshSequence) && refreshSequence > 0
+    ? `${identity}:${refreshSequence}`
+    : ''
 }
 
 export function isCurrentForecastResponse({ requestIdentity, currentIdentity, requestSequence, currentSequence } = {}) {

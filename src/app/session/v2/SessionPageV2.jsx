@@ -7379,14 +7379,6 @@ function SessionPageV2Inner() {
     }
   }, [startSession]);
 
-  // Auto-start the session as soon as the page is ready and no snapshot resume is pending.
-  // This eliminates the initial "Begin" click — user goes straight to "Begin Discussion".
-  useEffect(() => {
-    if (audioReady && snapshotLoaded && currentPhase === 'idle' && !resumePhase && baselineState === 'idle' && retentionState === 'idle') {
-      handleStartSessionClick();
-    }
-  }, [audioReady, snapshotLoaded, currentPhase, resumePhase, baselineState, retentionState, handleStartSessionClick]);
-
   // Auto-dismiss the objective complete toast after 3.5s
   useEffect(() => {
     if (!newlyCompletedDiscussionObj) return;
@@ -9212,70 +9204,85 @@ function SessionPageV2Inner() {
                     {discussionState === 'loading' ? 'Loading...' : 'Begin Discussion'}
                   </button>
                 )}
-                {needBeginDiscussion && currentPhase === 'idle' && offerResume && (
-                  <>
+                {needBeginDiscussion && currentPhase === 'idle' && (
+                  offerResume ? (
+                    <>
+                      <button
+                        type="button"
+                        style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
+                        onClick={() => handleStartSessionClick()}
+                        disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
+                      >
+                        {startSessionLoading ? 'Loading...' : 'Resume'}
+                      </button>
+                      <button
+                        type="button"
+                        style={{
+                          ...ctaStyle,
+                          background: '#374151',
+                          boxShadow: '0 2px 12px rgba(17,24,39,0.24)',
+                          opacity: (audioReady && snapshotLoaded) ? 1 : 0.5
+                        }}
+                        onClick={async () => {
+                          // Debounce: prevent concurrent executions from rapid taps
+                          if (startOverInProgressRef.current) return;
+                          startOverInProgressRef.current = true;
+                          try {
+                            // Stop any in-progress audio/video first so the engine is in a
+                            // clean state before the session restarts.
+                            try { audioEngineRef.current?.stop(); } catch {}
+                            try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
+                            resumePhaseRef.current = null;
+                            setResumePhase(null);
+                            resetTranscriptState();
+                            try { timerServiceRef.current?.reset?.(); } catch {}
+                            setCurrentTimerMode({ discussion: null, comprehension: null, exercise: null, worksheet: null, test: null });
+                            setTimerRefreshKey(k => k + 1);
+                            baselinePlanRef.current = null;
+                            baselineResponsesRef.current = [];
+                            setBaselinePlan(null);
+                            setBaselineIndex(0);
+                            setBaselineAnswer('');
+                            setBaselineMessage('');
+                            setBaselineState('idle');
+                            retentionPlanRef.current = null;
+                            retentionEligibilityRef.current = null;
+                            retentionResponsesRef.current = [];
+                            setRetentionPlan(null);
+                            setRetentionIndex(0);
+                            setRetentionAnswer('');
+                            setRetentionMessage('');
+                            setRetentionState('idle');
+                            masteryEligibilityRef.current = null;
+                            masteryAssistanceByExposureRef.current = new Map();
+                            masteryPriorNeedsRecoveryRef.current = false;
+                            masteryUsedIdentityKeysRef.current = new Set();
+                            // Start Over only resets durable progress. The learner must
+                            // deliberately click Begin before canonical history is reused.
+                            setCurrentPhase('idle');
+                            setDiscussionState('idle');
+                          } finally {
+                            startOverInProgressRef.current = false;
+                          }
+                        }}
+                        disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
+                      >
+                        Start Over
+                      </button>
+                    </>
+                  ) : (
                     <button
                       type="button"
                       style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
                       onClick={() => handleStartSessionClick()}
                       disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
                     >
-                      {startSessionLoading ? 'Loading...' : 'Resume'}
+                      {(audioReady && snapshotLoaded)
+                        ? (startSessionLoading ? 'Loading...' : 'Begin')
+                        : (!snapshotLoaded ? 'Loading session...' : 'Preparing audio...')
+                      }
                     </button>
-                    <button
-                      type="button"
-                      style={{
-                        ...ctaStyle,
-                        background: '#374151',
-                        boxShadow: '0 2px 12px rgba(17,24,39,0.24)',
-                        opacity: (audioReady && snapshotLoaded) ? 1 : 0.5
-                      }}
-                      onClick={async () => {
-                        // Debounce: prevent concurrent executions from rapid taps
-                        if (startOverInProgressRef.current) return;
-                        startOverInProgressRef.current = true;
-                        try {
-                          // Stop any in-progress audio/video first so the engine is in a
-                          // clean state before the session restarts.
-                          try { audioEngineRef.current?.stop(); } catch {}
-                          try { await snapshotServiceRef.current?.deleteSnapshot?.(); } catch {}
-                          resumePhaseRef.current = null;
-                          setResumePhase(null);
-                          resetTranscriptState();
-                          try { timerServiceRef.current?.reset?.(); } catch {}
-                          setCurrentTimerMode({ discussion: null, comprehension: null, exercise: null, worksheet: null, test: null });
-                          setTimerRefreshKey(k => k + 1);
-                          baselinePlanRef.current = null;
-                          baselineResponsesRef.current = [];
-                          setBaselinePlan(null);
-                          setBaselineIndex(0);
-                          setBaselineAnswer('');
-                          setBaselineMessage('');
-                          setBaselineState('idle');
-                          retentionPlanRef.current = null;
-                          retentionEligibilityRef.current = null;
-                          retentionResponsesRef.current = [];
-                          setRetentionPlan(null);
-                          setRetentionIndex(0);
-                          setRetentionAnswer('');
-                          setRetentionMessage('');
-                          setRetentionState('idle');
-                          masteryEligibilityRef.current = null;
-                          masteryAssistanceByExposureRef.current = new Map();
-                          masteryPriorNeedsRecoveryRef.current = false;
-                          masteryUsedIdentityKeysRef.current = new Set();
-                          // Auto-start will re-fire once resumePhase clears
-                          setCurrentPhase('idle');
-                          setDiscussionState('idle');
-                        } finally {
-                          startOverInProgressRef.current = false;
-                        }
-                      }}
-                      disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
-                    >
-                      Start Over
-                    </button>
-                  </>
+                  )
                 )}
                 {needBeginDiscussion && currentPhase === 'idle' && startSessionError ? (
                   <div style={{

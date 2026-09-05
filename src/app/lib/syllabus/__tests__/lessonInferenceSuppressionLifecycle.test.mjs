@@ -9,6 +9,8 @@ import { PATCH as patchAssociation, POST as preserveAssociation } from '../../..
 const FACILITATOR_ID = '11111111-1111-4111-8111-111111111111'
 const LEARNER_ID = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const LESSON_KEY = 'generated/fractions.json'
+const FORECAST_LINEAGE = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+const OTHER_LINEAGE = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
 
 function request(url, body) {
   return new Request(url, {
@@ -55,18 +57,29 @@ function learnerQuery() {
   }
 }
 
-function scheduleAdmin({ scheduled = null } = {}) {
-  const state = { association: null, operations: [], scheduled: scheduled ? structuredClone(scheduled) : null, scheduleWrites: 0 }
-  const scheduleMutation = (payload) => ({
-    eq() { return this },
-    select() { return this },
-    async single() {
-      state.operations.push('schedule')
-      state.scheduleWrites += 1
-      state.scheduled = { id: state.scheduled?.id || 'schedule-1', ...payload }
-      return { data: structuredClone(state.scheduled), error: null }
-    },
-  })
+function scheduleAdmin({ scheduled = null, schedules = null } = {}) {
+  const initialSchedules = schedules || (scheduled ? [scheduled] : [])
+  const state = { association: null, operations: [], scheduled: scheduled ? structuredClone(scheduled) : null, schedules: structuredClone(initialSchedules), scheduleWrites: 0 }
+  const scheduleMutation = (payload, kind) => {
+    const filters = []
+    return {
+      eq(column, value) { filters.push([column, value]); return this },
+      select() { return this },
+      async single() {
+        state.operations.push('schedule')
+        state.scheduleWrites += 1
+        const requestedId = filters.find(([column]) => column === 'id')?.[1]
+        const existingIndex = kind === 'update'
+          ? state.schedules.findIndex((row) => row.id === requestedId)
+          : state.schedules.findIndex((row) => row.learner_id === payload.learner_id && row.lesson_key === payload.lesson_key && row.scheduled_date === payload.scheduled_date)
+        const prior = existingIndex >= 0 ? state.schedules[existingIndex] : null
+        state.scheduled = { id: prior?.id || state.scheduled?.id || 'schedule-1', ...prior, ...payload }
+        if (existingIndex >= 0) state.schedules[existingIndex] = structuredClone(state.scheduled)
+        else state.schedules.push(structuredClone(state.scheduled))
+        return { data: structuredClone(state.scheduled), error: null }
+      },
+    }
+  }
   const admin = {
     state,
     auth: { async getUser() { return { data: { user: { id: FACILITATOR_ID } }, error: null } } },
@@ -99,23 +112,33 @@ function scheduleAdmin({ scheduled = null } = {}) {
             or() { return this },
             async maybeSingle() {
               const id = filters.find(([column]) => column === 'id')?.[1]
-              return { data: state.scheduled && (!id || state.scheduled.id === id) ? structuredClone(state.scheduled) : null, error: null }
+              const row = id ? state.schedules.find((item) => item.id === id) : state.schedules[0]
+              return { data: row ? structuredClone(row) : null, error: null }
             },
           }
         },
-        upsert(payload) { return scheduleMutation(payload) },
-        update(payload) { return scheduleMutation(payload) },
+        upsert(payload) { return scheduleMutation(payload, 'upsert') },
+        update(payload) { return scheduleMutation(payload, 'update') },
       }
     },
   }
   return admin
 }
 
-function scheduleDeps(admin, clear) {
+function forecastRepository({ lineageId = FORECAST_LINEAGE, lessonKey = LESSON_KEY } = {}) {
+  return {
+    async findSyllabus() { return { id: 'syllabus-1', active_revision_id: 'revision-1' } },
+    async findRevision() { return { id: 'revision-1' } },
+    async listForecastItems() { return lineageId ? [{ lineage_id: lineageId, lesson_key: lessonKey, item_type: 'lesson', origin: 'facilitator' }] : [] },
+  }
+}
+
+function scheduleDeps(admin, clear, syllabusRepository = null) {
   return {
     createClientImpl: () => admin,
     inspectLearnerSyllabusPlacement: async () => ({ allowed: true }),
     setLessonAssociationInferenceSuppressed: clear,
+    ...(syllabusRepository ? { syllabusRepository } : {}),
   }
 }
 
@@ -180,6 +203,80 @@ test('reschedule clears suppression after schedule and association mutations', a
   assert.equal(response.status, 200)
   assert.equal(admin.state.scheduled.scheduled_date, '2026-09-09')
   assert.deepEqual(admin.state.operations, ['schedule', 'association', 'clear'])
+})
+
+test('reschedule by schedule row ID moves only the selected same-key sibling', async () => {
+  const siblings = [
+    { id: 'schedule-1', facilitator_id: FACILITATOR_ID, learner_id: LEARNER_ID, lesson_key: LESSON_KEY, scheduled_date: '2026-09-08' },
+    { id: 'schedule-2', facilitator_id: FACILITATOR_ID, learner_id: LEARNER_ID, lesson_key: LESSON_KEY, scheduled_date: '2026-09-10' },
+  ]
+  const admin = scheduleAdmin({ schedules: siblings })
+  const response = await scheduleLesson(request('http://localhost/api/lesson-schedule', {
+    learnerId: LEARNER_ID,
+    lessonKey: LESSON_KEY,
+    scheduledDate: '2026-09-09',
+    scheduleId: 'schedule-1',
+  }), scheduleDeps(admin, async () => {}))
+
+  assert.equal(response.status, 200)
+  assert.deepEqual(admin.state.schedules.map(({ id, scheduled_date }) => ({ id, scheduled_date })), [
+    { id: 'schedule-1', scheduled_date: '2026-09-09' },
+    { id: 'schedule-2', scheduled_date: '2026-09-10' },
+  ])
+})
+
+test('valid forecast lineage is verified against the active Syllabus and stored on the schedule row', async () => {
+  const admin = scheduleAdmin()
+  const response = await scheduleLesson(request('http://localhost/api/lesson-schedule', {
+    learnerId: LEARNER_ID,
+    lessonKey: LESSON_KEY,
+    scheduledDate: '2026-09-08',
+    forecastLineageId: FORECAST_LINEAGE,
+  }), scheduleDeps(admin, async () => {}, forecastRepository()))
+  assert.equal(response.status, 200)
+  assert.equal(admin.state.scheduled.forecast_lineage_id, FORECAST_LINEAGE)
+})
+
+test('invalid, stale, and mismatched forecast lineage claims fail before schedule mutation', async () => {
+  for (const [forecastLineageId, repository, expectedStatus] of [
+    ['not-a-uuid', forecastRepository(), 400],
+    [FORECAST_LINEAGE, forecastRepository({ lineageId: null }), 409],
+    [FORECAST_LINEAGE, forecastRepository({ lessonKey: 'generated/other.json' }), 409],
+  ]) {
+    const admin = scheduleAdmin()
+    const response = await scheduleLesson(request('http://localhost/api/lesson-schedule', {
+      learnerId: LEARNER_ID,
+      lessonKey: LESSON_KEY,
+      scheduledDate: '2026-09-08',
+      forecastLineageId,
+    }), scheduleDeps(admin, async () => {}, repository))
+    assert.equal(response.status, expectedStatus)
+    assert.equal(admin.state.scheduleWrites, 0)
+  }
+})
+
+test('exact reschedule preserves forecast lineage and rejects retargeting', async () => {
+  const linked = { id: 'schedule-1', facilitator_id: FACILITATOR_ID, learner_id: LEARNER_ID, lesson_key: LESSON_KEY, scheduled_date: '2026-09-08', forecast_lineage_id: FORECAST_LINEAGE }
+  const admin = scheduleAdmin({ scheduled: linked })
+  const preserved = await scheduleLesson(request('http://localhost/api/lesson-schedule', {
+    learnerId: LEARNER_ID,
+    lessonKey: LESSON_KEY,
+    scheduledDate: '2026-09-11',
+    scheduleId: 'schedule-1',
+  }), scheduleDeps(admin, async () => {}, forecastRepository()))
+  assert.equal(preserved.status, 200)
+  assert.equal(admin.state.scheduled.forecast_lineage_id, FORECAST_LINEAGE)
+  assert.equal(admin.state.scheduled.scheduled_date, '2026-09-11')
+
+  const retargeted = await scheduleLesson(request('http://localhost/api/lesson-schedule', {
+    learnerId: LEARNER_ID,
+    lessonKey: LESSON_KEY,
+    scheduledDate: '2026-09-12',
+    scheduleId: 'schedule-1',
+    forecastLineageId: OTHER_LINEAGE,
+  }), scheduleDeps(admin, async () => {}, forecastRepository({ lineageId: OTHER_LINEAGE })))
+  assert.equal(retargeted.status, 409)
+  assert.equal(admin.state.scheduled.scheduled_date, '2026-09-11')
 })
 
 test('failed schedule clear reports failure after persistence and retry converges', async () => {

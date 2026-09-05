@@ -405,6 +405,36 @@ test('open session remains on its actual start date', () => {
   assert.equal(current.actual_kind, 'in_progress')
 })
 
+test('an unused Retry stays planned until canonical learner start creates an actual occurrence', () => {
+  const retry = forecastLesson({ id: 'retry-1', title: 'Fractions Retry' })
+  const inputs = {
+    activeRevision: REVISION,
+    forecastItems: [retry],
+    associations: [association({ readiness_state: 'available' })],
+    today: '2026-09-07',
+  }
+
+  const beforeStart = composeSyllabusLessonTimeline(inputs)
+  assert.deepEqual(beforeStart.map((item) => [item.occurrence_id, item.placement_kind]), [
+    ['syllabus:retry-1', 'syllabus'],
+  ])
+  assert.equal(beforeStart.some((item) => item.occurrence_id.startsWith('actual:')), false)
+
+  const afterStart = composeSyllabusLessonTimeline({
+    ...inputs,
+    sessions: [{
+      id: 'retry-session',
+      lesson_id: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:retry-1',
+      started_at: '2026-09-07T14:00:00Z',
+      ended_at: null,
+    }],
+  })
+  assert.deepEqual(afterStart.map((item) => [item.occurrence_id, item.placement_kind, item.source_occurrence_id]), [
+    ['actual:retry-session', 'actual', 'syllabus:retry-1'],
+  ])
+})
+
 test('ended session with no terminal event is completed at ended_at', () => {
   const ended = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
@@ -932,8 +962,8 @@ test('Prepare save-for-later persists learner presence and the learner page has 
   assert.match(prepare, /const payload = \{ learnerId, lessonKey: explicitLessonKey, instructionalTeacher: explicitTeacher \}/)
   assert.match(prepare, /if \(action === 'save_for_later'\) payload\.action = action/)
   assert.doesNotMatch(prepare, /const payload = \{[^}]*readinessState|const payload = \{[^}]*associationSource/)
-  assert.match(learner, /syllabusModel\.kind !== 'active' && <div[\s\S]*Lesson library and learning tools/)
-  assert.match(learner, /display: syllabusModel\.kind === 'active' && !selectedLesson \? 'none' : 'flex'/)
+  assert.match(learner, /syllabusPresentation\.showLegacyLibraryHeading && <div[\s\S]*Lesson library and learning tools/)
+  assert.match(learner, /display: syllabusPresentation\.showSupportingLibrary \? 'flex' : 'none'/)
 })
 
 test('active Syllabus composition does not live-read legacy planned lessons', () => {

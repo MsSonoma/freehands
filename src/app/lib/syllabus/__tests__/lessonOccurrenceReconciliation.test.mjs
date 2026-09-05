@@ -59,6 +59,21 @@ test('explicit forecast linkage reconciles only its exact forecast and preserves
   assert.ok(items.some((item) => item.occurrence_id === 'syllabus:forecast-g'))
 })
 
+test('a moved explicit schedule keeps consuming its exact lineage while the same-key sibling survives', () => {
+  const forecasts = [
+    { ...forecast('forecast-f', '2026-09-07'), lineage_id: 'lineage-f' },
+    { ...forecast('forecast-g', '2026-09-14'), lineage_id: 'lineage-g' },
+  ]
+  const items = compose({
+    forecasts,
+    schedules: [schedule({ scheduled_date: '2026-09-21', forecast_lineage_id: 'lineage-f' })],
+  })
+  const scheduled = items.find((item) => item.occurrence_id === 'scheduled:schedule-1')
+  assert.equal(scheduled.reconciled_forecast_id, 'forecast-f')
+  assert.equal(items.some((item) => item.occurrence_id === 'syllabus:forecast-f'), false)
+  assert.ok(items.some((item) => item.occurrence_id === 'syllabus:forecast-g'))
+})
+
 test('stale explicit forecast linkage does not steal the sole same-key sibling', () => {
   const items = compose({
     forecasts: [forecast('forecast-g', '2026-09-14')],

@@ -109,6 +109,15 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to claim forecast materialization')
       return data
     },
+    async findForecastMaterialization(syllabusId, lineageId) {
+      const { data, error } = await admin.from('syllabus_forecast_materializations')
+        .select('*')
+        .eq('syllabus_id', syllabusId)
+        .eq('lineage_id', lineageId)
+        .maybeSingle()
+      throwOn(error, 'Failed to inspect forecast materialization recovery')
+      return data
+    },
     async updateForecastMaterialization(receiptId, values) {
       const { data, error } = await admin.from('syllabus_forecast_materializations')
         .update({ ...values, updated_at: new Date().toISOString() })

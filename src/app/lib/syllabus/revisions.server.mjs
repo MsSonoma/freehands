@@ -427,6 +427,9 @@ export async function bindMaterializedForecast({
   learnerId,
   lineageId,
   lessonKey,
+  lessonTitle = '',
+  lessonSubject = '',
+  bindingProvenance = null,
   expectedActiveRevisionId,
   now = new Date(),
   today = now.toISOString().slice(0, 10),
@@ -449,9 +452,33 @@ export async function bindMaterializedForecast({
   if (matches[0].lesson_key === lessonKey) {
     return { syllabus, active_revision: activeRevision, forecast_items: forecastItems, reused: true }
   }
-  const nextItems = forecastItems.map((item) => String(item.lineage_id) === String(lineageId)
-    ? { ...item, lesson_key: lessonKey }
-    : item)
+  const nextItems = forecastItems.map((item) => {
+    if (String(item.lineage_id) !== String(lineageId)) return item
+    const canonicalTitle = String(lessonTitle || '').trim()
+    const canonicalSubject = String(lessonSubject || '').trim()
+    return {
+      ...item,
+      lesson_key: lessonKey,
+      ...(canonicalTitle ? { title: canonicalTitle } : {}),
+      ...(canonicalSubject ? { subject: canonicalSubject } : {}),
+      ...(bindingProvenance ? {
+        metadata: {
+          ...(item.metadata || {}),
+          existing_lesson_binding: {
+            version: 1,
+            lesson_key: lessonKey,
+            prior_concept: {
+              title: item.title,
+              subject: item.subject,
+              description: item.description || null,
+              origin: item.origin,
+            },
+            ...bindingProvenance,
+          },
+        },
+      } : {}),
+    }
+  })
   return persistSyllabusActivation({
     repository,
     facilitatorId,

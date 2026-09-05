@@ -217,8 +217,8 @@ export function syllabusItemActionsFor({ item, ...actionContext }) {
     && ['learning_forecast', 'facilitator'].includes(item?.origin)
     && !item?.lesson_key
   ) return item.origin === 'facilitator'
-    ? [{ id: 'edit_concept', label: 'Edit concept' }, { id: 'materialize', label: 'Generate lesson' }]
-    : [{ id: 'materialize', label: 'Generate lesson' }]
+    ? [{ id: 'edit_concept', label: 'Edit concept' }, { id: 'use_existing', label: 'Use existing lesson' }, { id: 'materialize', label: 'Generate lesson' }]
+    : [{ id: 'use_existing', label: 'Use existing lesson' }, { id: 'materialize', label: 'Generate lesson' }]
   const actions = syllabusItemActions(actionContext)
   if ((item?.item_type || 'lesson') !== 'lesson') return actions
   if (actionContext.role === 'learner' && actionContext.hasLessonArtifact) return [...actions, { id: 'practice_slate', label: 'Practice with Mr. Slate' }]

@@ -19,7 +19,7 @@
 .planAheadButton { margin-left:12px; padding:7px 12px!important; border-left:1px solid #cfc6b8!important; }
 .nowButton { padding:7px 14px!important; border:1px solid #ba4b36!important; background:#ba4b36!important; color:#fff!important; }
 .returnNow { display:block; margin:0 auto 10px; text-decoration:underline; }
-.week { margin-top:6px; border-top:4px solid #84796c; }
+.week { margin-top:6px; border-top:4px solid #84796c; scroll-margin-top:72px; }
 .week.now { border-color:#ba4b36; background:linear-gradient(90deg,rgba(186,75,54,.06),transparent 28%); }
 .week.future { border-color:#b9ab98; color:#564f47; }
 .weekHeader { display:flex; justify-content:space-between; gap:20px; align-items:flex-start; padding:22px 0 14px; border-bottom:1px solid #cfc6b8; }
@@ -30,6 +30,7 @@
 .day:last-child { border-right:0; }
 .day>header { min-height:42px; display:grid; gap:3px; color:#6d6359; font:700 11px Roboto,sans-serif; }
 .day>header span { color:#ba4b36; text-transform:uppercase; letter-spacing:.08em; font-size:9px; }
+.addLesson { justify-self:start; padding:3px 0; border:0; background:transparent; color:#6b382c; cursor:pointer; font:700 10px Montserrat,sans-serif; }
 .emptyDay { margin:10px 0 0; color:#9a9187; font:italic 11px Georgia,serif; }
 .entryRow { display:grid; gap:10px; align-items:start; margin-top:10px; padding:12px 0 0; border-top:1px solid #ded8cf; }
 .suggestedEntry { display:grid; gap:10px; align-items:start; margin-top:10px; padding:12px 8px 10px; border:1px dashed #9b8eb0; background:#faf7ff; }

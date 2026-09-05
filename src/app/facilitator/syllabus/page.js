@@ -7,18 +7,21 @@ import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusPlanningWorkspace from '@/app/components/syllabus/SyllabusPlanningWorkspace'
+import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { ensurePinAllowed, ensureFacilitatorPinException, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { addWeeklyPatternSlot, moveSyllabusWeek, removeWeeklyPatternSlot, syllabusEntitlementsFor, weeklyPatternCapacity } from '@/app/lib/syllabus/timeline.mjs'
-import { buildForecastViewIdentity, isCurrentForecastResponse } from '@/app/lib/syllabus/forecastRequestIdentity.mjs'
+import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '@/app/lib/syllabus/forecastRequestIdentity.mjs'
+import { buildLessonSchedulePayload, buildSchedulableLessonOptions, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import {
   normalizedTeachingGuidance,
   teachingGuidanceOverrideFrom,
   TEACHING_GUIDANCE_FIELDS,
   updateTeachingGuidanceList,
 } from '@/app/lib/syllabus/teachingGuidance.mjs'
-import { resolveEffectiveTier } from '@/app/lib/entitlements'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
+import { CORE_SUBJECTS } from '@/app/lib/subjects'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import styles from './syllabus.module.css'
 
@@ -176,6 +179,12 @@ export default function SyllabusPage() {
   const [conceptEditor, setConceptEditor] = useState(null)
   const [replacingLineage, setReplacingLineage] = useState('')
   const [historyOccurrenceId, setHistoryOccurrenceId] = useState('')
+  const [scheduleDialog, setScheduleDialog] = useState(null)
+  const [scheduleLessons, setScheduleLessons] = useState([])
+  const [scheduleCatalogLoading, setScheduleCatalogLoading] = useState(false)
+  const [scheduleBusy, setScheduleBusy] = useState(false)
+  const [scheduleError, setScheduleError] = useState('')
+  const [forecastRefreshSequence, setForecastRefreshSequence] = useState(0)
   const forecastAttempt = useRef('')
   const forecastRequestSequence = useRef(0)
   const forecastViewIdentity = useRef('')
@@ -189,9 +198,9 @@ export default function SyllabusPage() {
     learnerId,
     activeRevisionId: syllabus?.active_revision?.id,
     targetWeek: currentTargetForecastWeek,
-    selectedWeekStart,
   })
   const planningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier })
+  const canScheduleLessons = featuresForTier(planTier).lessonScheduling === true
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) return
@@ -246,6 +255,8 @@ export default function SyllabusPage() {
       const json = await response.json()
       if (!response.ok) throw new Error(json.error || 'Could not load Syllabus')
       if (sequence !== loadSequence.current || !pageIdentity.current.startsWith(`${id}:`)) return
+      forecastRequestSequence.current++
+      setForecastBusy(false)
       setSyllabus(json)
       setLegacyWebbCompletions(getWebbCompletionForLearner(id))
       setLearningProposal(json.proposed_learning_forecast ? {
@@ -256,6 +267,7 @@ export default function SyllabusPage() {
       setDraft(null)
       setNewSubject('')
       setAvailableSubjects([])
+      setForecastRefreshSequence((current) => current + 1)
     } catch (cause) {
       if (sequence === loadSequence.current) setError(cause.message)
     } finally {
@@ -267,33 +279,29 @@ export default function SyllabusPage() {
 
   useEffect(() => {
     const activeId = syllabus?.active_revision?.id
-    const targetWeek = currentTargetForecastWeek
-    if (!activeId || selectedWeekStart !== targetWeek || !planningAccess.can_change_intent) return
-    const identity = `${learnerId}:${activeId}:${targetWeek}`
-    if (forecastAttempt.current === identity) return
+    if (!activeId || !currentTargetForecastWeek || !planningAccess.can_change_intent) return
+    const identity = buildAutomaticForecastAttemptIdentity({
+      requestIdentity: forecastViewIdentity.current,
+      refreshSequence: forecastRefreshSequence,
+    })
+    if (!identity || forecastAttempt.current === identity) return
     forecastAttempt.current = identity
     createLearningForecast({ automatic: true })
-  }, [selectedWeekStart, syllabus?.active_revision?.id, syllabus?.resolved_today, learningProposal, learnerId, planningAccess.can_change_intent]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [forecastRefreshSequence, syllabus?.active_revision?.id, syllabus?.resolved_today, learnerId, planningAccess.can_change_intent]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!currentTargetForecastWeek || selectedWeekStart === currentTargetForecastWeek) return
-    forecastRequestSequence.current++
-    forecastAttempt.current = ''
-    setForecastBusy(false)
-  }, [currentTargetForecastWeek, selectedWeekStart])
-
-  useEffect(() => {
-    if (!editingSection && !conceptEditor) return
+    if (!editingSection && !conceptEditor && !scheduleDialog) return
     const priorOverflow = document.body.style.overflow
     document.body.style.overflow = 'hidden'
     const onKeyDown = (event) => {
       if (event.key !== 'Escape') return
-      if (conceptEditor) setConceptEditor(null)
+      if (scheduleDialog && !scheduleBusy) setScheduleDialog(null)
+      else if (conceptEditor) setConceptEditor(null)
       else { setEditingSection(''); setDraft(null) }
     }
     document.addEventListener('keydown', onKeyDown)
     return () => { document.body.style.overflow = priorOverflow; document.removeEventListener('keydown', onKeyDown) }
-  }, [editingSection, conceptEditor])
+  }, [editingSection, conceptEditor, scheduleDialog, scheduleBusy])
 
   async function buildSeed() {
     setWorking(true)
@@ -457,7 +465,7 @@ export default function SyllabusPage() {
     }
   }
 
-  async function materializeForecast(item, { proposal = null } = {}) {
+  async function materializeForecast(item, { proposal = null, existingLessonKey = '' } = {}) {
     const lineageId = item?.lineage_id
     if (!lineageId || recoveryRequiredLineages.has(lineageId)) return
     setMaterializingLineage(lineageId)
@@ -471,6 +479,7 @@ export default function SyllabusPage() {
           lineageId,
           expectedActiveRevisionId: syllabus.active_revision.id,
           ...(proposal ? { proposalRevisionId: proposal.proposal_revision.id } : {}),
+          ...(existingLessonKey ? { existingLessonKey } : {}),
         }),
       })
       const json = await response.json()
@@ -478,11 +487,13 @@ export default function SyllabusPage() {
         if (json?.code === 'MATERIALIZATION_RECOVERY_REQUIRED') {
           setRecoveryRequiredLineages((current) => new Set(current).add(lineageId))
         }
-        throw new Error(json.error || 'Could not generate this forecast lesson')
+        throw new Error(json.error || (existingLessonKey ? 'Could not bind this lesson to the forecast concept' : 'Could not generate this forecast lesson'))
       }
       await loadCurrent()
+      return true
     } catch (cause) {
       setError(cause.message)
+      return false
     } finally {
       setMaterializingLineage('')
     }
@@ -529,7 +540,70 @@ export default function SyllabusPage() {
     setDraft({ ...draft, weekly_pattern: removeWeeklyPatternSlot(draft.weekly_pattern, day, index) })
   }
 
+  async function openLessonPicker(scheduledDate, { mode = 'add', item = null, proposal = null } = {}) {
+    if (mode === 'add' ? !canScheduleLessons : !planningAccess.can_change_intent) return
+    setScheduleDialog({ mode, item, proposal, scheduledDate: dateOnly(scheduledDate) })
+    setScheduleCatalogLoading(true)
+    setScheduleError('')
+    try {
+      const [publicResults, ownedResponse] = await Promise.all([
+        Promise.all(CORE_SUBJECTS.map(async (subject) => {
+          const response = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+          return [subject, response.ok ? await response.json() : []]
+        })),
+        fetch('/api/facilitator/lessons/list', { cache: 'no-store', headers: { Authorization: `Bearer ${token}` } }),
+      ])
+      const publicLessonsBySubject = Object.fromEntries(publicResults.map(([subject, lessons]) => [subject, Array.isArray(lessons) ? lessons : []]))
+      const facilitatorLessons = ownedResponse.ok ? await ownedResponse.json() : []
+      setScheduleLessons(buildSchedulableLessonOptions({ publicLessonsBySubject, facilitatorLessons }))
+    } catch (cause) {
+      setScheduleLessons([])
+      setScheduleError(cause.message || 'Could not load ready lessons')
+    } finally {
+      setScheduleCatalogLoading(false)
+    }
+  }
+
+  async function saveLessonSchedule({ lessonKey, scheduledDate, scheduleId = '', forecastLineageId = '' }) {
+    if (!canScheduleLessons || !learnerId || !lessonKey || !dateOnly(scheduledDate)) return
+    const requestLearnerId = learnerId
+    const basePayload = buildLessonSchedulePayload({ learnerId: requestLearnerId, lessonKey, scheduledDate, scheduleId, forecastLineageId })
+    setScheduleBusy(true)
+    setScheduleError('')
+    try {
+      const { response, json } = await postLessonScheduleWithCapacityPin({
+        payload: basePayload,
+        postSchedule: (payload) => fetch('/api/lesson-schedule', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        }),
+        requestPin: (message) => requestFacilitatorPinException({ message }),
+      })
+      if (!response.ok) throw new Error(json.error || 'Could not schedule the lesson')
+      setScheduleDialog(null)
+      await loadCurrent(requestLearnerId)
+    } catch (cause) {
+      setScheduleError(cause.message || 'Could not schedule the lesson')
+    } finally {
+      setScheduleBusy(false)
+    }
+  }
+
   async function handleLessonAction(item, action) {
+    if (['schedule', 'reschedule'].includes(action?.id)) {
+      const moving = action.id === 'reschedule'
+      const scheduledDate = dateOnly(item?.original_scheduled_date || item?.planned_date)
+      const scheduleId = moving ? String(item?.id || '').trim() : ''
+      const eligible = canScheduleLessons
+        && item?.lesson_key
+        && scheduledDate >= dateOnly(syllabus?.resolved_today)
+        && (!moving || (item?.is_explicit_schedule === true && item?.placement_kind === 'scheduled' && scheduleId))
+      if (!eligible) return
+      setScheduleError('')
+      setScheduleDialog({ mode: action.id, item, scheduledDate, scheduleId })
+      return
+    }
     if (action?.id === 'schedule_slate') {
       setError('')
       setSlateScheduler({ item, learnerId, resolvedToday: syllabus?.resolved_today, scheduledDate: '' })
@@ -557,6 +631,10 @@ export default function SyllabusPage() {
     }
     if (action?.id === 'materialize' && item?.lineage_id) {
       await materializeForecast(item)
+      return
+    }
+    if (action?.id === 'use_existing' && item?.lineage_id && !recoveryRequiredLineages.has(item.lineage_id)) {
+      await openLessonPicker(item.planned_date, { mode: 'bind', item })
       return
     }
     if (action?.id === 'edit_concept' && item?.lineage_id) {
@@ -667,6 +745,8 @@ export default function SyllabusPage() {
     setConceptEditor(null)
     setPlanAheadOpen(false)
     setHistoryOccurrenceId('')
+    setScheduleDialog(null)
+    setScheduleError('')
     setRecoveryRequiredLineages(new Set())
     setError('')
     setForecastError('')
@@ -790,9 +870,10 @@ export default function SyllabusPage() {
               learnerName={selectedLearner?.name || ''}
               onLessonAction={handleLessonAction}
               onReviewHistory={openReviewHistory}
-              actionCapabilities={{ reviewHistory: true, lessonActions: true }}
-              isActionDisabled={(item, actionId) => (actionId === 'materialize' && recoveryRequiredLineages.has(item.lineage_id)) || (['schedule_slate', 'remove_slate_schedule'].includes(actionId) && slateAssignmentBusy === (item.source_occurrence_id || item.occurrence_id || item.id))}
+              actionCapabilities={{ reviewHistory: true, lessonActions: true, scheduleLessons: canScheduleLessons }}
+              isActionDisabled={(item, actionId) => (['schedule', 'reschedule'].includes(actionId) && scheduleBusy) || (actionId === 'use_existing' && !planningAccess.can_change_intent) || (['materialize', 'use_existing'].includes(actionId) && recoveryRequiredLineages.has(item.lineage_id)) || (['schedule_slate', 'remove_slate_schedule'].includes(actionId) && slateAssignmentBusy === (item.source_occurrence_id || item.occurrence_id || item.id))}
               onOpenPlanning={planningAccess.can_change_intent ? () => setPlanAheadOpen(true) : null}
+              onAddLesson={canScheduleLessons ? openLessonPicker : null}
               onEditSection={planningAccess.can_change_intent ? openSectionEditor : null}
               proposedForecastItems={learningProposal?.forecast_items || []}
               proposedForecastTargetWeek={currentTargetForecastWeek}
@@ -807,6 +888,7 @@ export default function SyllabusPage() {
               onRetryForecast={() => { forecastAttempt.current = ''; createLearningForecast() }}
               onEditForecast={(item) => setConceptEditor({ source: 'forecast', item, title: item.title, description: item.description || '' })}
               onReplaceForecast={replaceForecast}
+              onUseExistingForecast={planningAccess.can_change_intent ? (item) => openLessonPicker(item.planned_date, { mode: 'bind', item, proposal: learningProposal }) : null}
               onGenerateForecast={(item) => materializeForecast(item, { proposal: learningProposal })}
               onUseForecast={activateLearningProposal}
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
@@ -829,6 +911,23 @@ export default function SyllabusPage() {
           </section></div>}
 
           {conceptEditor && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label="Edit forecast concept"><header><h2>Edit forecast concept</h2><button type="button" onClick={() => setConceptEditor(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<label>Title<input autoFocus value={conceptEditor.title} onChange={(event) => setConceptEditor({ ...conceptEditor, title: event.target.value })} /></label><label>Brief description<textarea rows={5} value={conceptEditor.description} onChange={(event) => setConceptEditor({ ...conceptEditor, description: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setConceptEditor(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working} onClick={saveConceptEditor}>Save as educator intent</button></footer></section></div>}
+
+          {scheduleDialog && <SyllabusScheduleDialog
+            mode={scheduleDialog.mode}
+            scheduledDate={scheduleDialog.scheduledDate}
+            minimumDate={syllabus.resolved_today}
+            item={scheduleDialog.item}
+            lessons={scheduleLessons}
+            loading={scheduleCatalogLoading}
+            busy={scheduleBusy || Boolean(materializingLineage)}
+            error={scheduleError}
+            onClose={() => { setScheduleDialog(null); setScheduleError('') }}
+            onDateChange={(scheduledDate) => setScheduleDialog((current) => ({ ...current, scheduledDate }))}
+            onChooseLesson={(lesson) => scheduleDialog.mode === 'bind'
+              ? materializeForecast(scheduleDialog.item, { proposal: scheduleDialog.proposal, existingLessonKey: lesson.lessonKey }).then((bound) => { if (bound) setScheduleDialog(null) })
+              : saveLessonSchedule({ lessonKey: lesson.lessonKey, scheduledDate: scheduleDialog.scheduledDate })}
+            onSubmit={() => saveLessonSchedule({ lessonKey: scheduleDialog.item?.lesson_key, scheduledDate: scheduleDialog.scheduledDate, scheduleId: scheduleDialog.scheduleId, forecastLineageId: scheduleDialog.item?.forecast_lineage_id || scheduleDialog.item?.lineage_id || '' })}
+          />}
 
           {slateScheduler && (() => {
             const earliestDate = [dateOnly(slateScheduler.item?.planned_date), dateOnly(slateScheduler.resolvedToday)].filter(Boolean).sort().at(-1) || ''

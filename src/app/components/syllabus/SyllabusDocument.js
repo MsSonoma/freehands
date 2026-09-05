@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import {
   dateOnly,
   moveSyllabusWeek,
@@ -14,6 +14,8 @@ import {
   weeklyPatternRows,
 } from '@/app/lib/syllabus/timeline.mjs'
 import { instructionalTeacherLabel, normalizeInstructionalTeacher, syllabusTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling.mjs'
+import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/lib/syllabus/learnerPresentation.mjs'
 import styles from './SyllabusDocument.module.css'
 
 const STATE_COPY = {
@@ -96,7 +98,7 @@ function HistoricalActivityControl({ item, legacyWebbCompletion, busy, onRecord 
   )
 }
 
-function ForecastSuggestion({ item, busy, replacing, recoveryRequired, onEdit, onReplace, onGenerate }) {
+function ForecastSuggestion({ item, busy, replacing, recoveryRequired, onEdit, onReplace, onUseExisting, onGenerate }) {
   return <div className={styles.suggestedEntry} data-forecast-lineage={item.lineage_id}>
     <div className={styles.entryBody}>
       <p className={styles.subject}>{item.subject}</p>
@@ -107,6 +109,7 @@ function ForecastSuggestion({ item, busy, replacing, recoveryRequired, onEdit, o
     <div className={styles.lessonActions}>
       <button type="button" className={styles.suggestionAction} disabled={busy} onClick={() => onEdit?.(item)}>Edit</button>
       <button type="button" className={styles.suggestionAction} disabled={busy || replacing} onClick={() => onReplace?.(item)}>{replacing ? 'Replacing…' : 'Replace'}</button>
+      <button type="button" className={styles.suggestionAction} disabled={busy || recoveryRequired || typeof onUseExisting !== 'function'} onClick={() => onUseExisting?.(item)}>Use existing lesson</button>
       <button type="button" className={styles.suggestionAction} disabled={busy || recoveryRequired} onClick={() => onGenerate?.(item)}>{recoveryRequired ? 'Recovery required' : 'Generate lesson'}</button>
     </div>
   </div>
@@ -131,6 +134,7 @@ export default function SyllabusDocument({
   historicalActivityBusy = '',
   legacyWebbCompletions = {},
   onOpenPlanning = null,
+  onAddLesson = null,
   onEditSection = null,
   proposedForecastItems = [],
   proposedForecastTargetWeek = '',
@@ -145,6 +149,7 @@ export default function SyllabusDocument({
   onRetryForecast = null,
   onEditForecast = null,
   onReplaceForecast = null,
+  onUseExistingForecast = null,
   onGenerateForecast = null,
   onUseForecast = null,
   actionCapabilities = {},
@@ -157,8 +162,22 @@ export default function SyllabusDocument({
     .filter((item) => item?.placement_kind === 'actual' && item?.historical_record !== true && item?.source_occurrence_id)
     .map((item) => String(item.source_occurrence_id))), [visibleItems])
   const [selectedWeekStart, setSelectedWeekStart] = useState(() => startOfSyllabusWeek(restoreWeekStart) || moveSyllabusWeek(null, 'now', today))
+  const selectedWeekRef = useRef(null)
+  const establishedNowViewportKeyRef = useRef('')
   useEffect(() => setSelectedWeekStart(startOfSyllabusWeek(restoreWeekStart) || moveSyllabusWeek(null, 'now', today)), [learnerId, restoreWeekStart, today])
   const week = useMemo(() => selectSyllabusWeek(visibleItems, { weekStart: selectedWeekStart, today }), [visibleItems, selectedWeekStart, today])
+  const nowViewportKey = learnerNowViewportKey({
+    role,
+    learnerId,
+    revisionId: revision?.id || (revision?.revision_number ? `revision-${revision.revision_number}` : ''),
+    weekState: week.state,
+    weekStart: week.week_start,
+  })
+  useEffect(() => {
+    if (!shouldEstablishLearnerNowViewport(nowViewportKey, establishedNowViewportKeyRef.current) || !selectedWeekRef.current) return
+    establishedNowViewportKeyRef.current = nowViewportKey
+    selectedWeekRef.current.scrollIntoView({ block: 'start', inline: 'nearest' })
+  }, [nowViewportKey])
   const projectedForecast = useMemo(() => projectLearningForecastForWeek(proposedForecastItems, {
     selectedWeekStart: week.week_start,
     targetWeekStart: proposedForecastTargetWeek,
@@ -174,14 +193,12 @@ export default function SyllabusDocument({
     const key = encodeURIComponent(item.lesson_key)
     const learner = encodeURIComponent(learnerId)
     if (actionId === 'edit') return `/facilitator/lessons/edit?key=${key}`
-    if (['view', 'execute', 'prepare', 'schedule', 'reschedule', 'make_available'].includes(actionId)) {
-      const scheduleContext = actionId === 'reschedule'
-        ? `&action=schedule&scheduleId=${encodeURIComponent(item.id || '')}&originalScheduledDate=${encodeURIComponent(item.original_scheduled_date || item.planned_date || '')}`
-        : (actionId === 'schedule' ? '&action=schedule' : '')
+    if (['schedule', 'reschedule'].includes(actionId)) return null
+    if (['view', 'execute', 'prepare', 'make_available'].includes(actionId)) {
       const occurrenceContext = typeof item.occurrence_id === 'string' && item.occurrence_id.trim()
         ? `&occurrenceId=${encodeURIComponent(item.occurrence_id)}${revision?.id !== undefined && revision?.id !== null && String(revision.id).trim() ? `&expectedActiveRevisionId=${encodeURIComponent(revision.id)}` : ''}`
         : ''
-      return `/facilitator/prepare?learnerId=${learner}&lessonKey=${key}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}${scheduleContext}${occurrenceContext}`
+      return `/facilitator/prepare?learnerId=${learner}&lessonKey=${key}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}${occurrenceContext}`
     }
     return null
   }
@@ -224,7 +241,7 @@ export default function SyllabusDocument({
         {role === 'facilitator' && onOpenPlanning && <button type="button" className={styles.planAheadButton} onClick={onOpenPlanning}>Plan ahead</button>}
       </nav>
 
-      <section className={`${styles.week} ${styles[week.state]}`} aria-live="polite">
+      <section ref={selectedWeekRef} className={`${styles.week} ${styles[week.state]}`} data-syllabus-selected-week={week.week_start} aria-live="polite">
         <header className={styles.weekHeader}>
           <div>
             <p className={styles.stateLabel}>{copy.eyebrow}</p>
@@ -238,8 +255,14 @@ export default function SyllabusDocument({
           {week.days.map((day) => {
             const suggestions = projectedForecast.filter((item) => dateOnly(item.planned_date) === day.date)
             const presentations = syllabusDayPresentation(day.items, suggestions)
+            const addLessonAllowed = canAddLessonToSyllabusDay({
+              role,
+              day: day.date,
+              today,
+              schedulingAllowed: actionCapabilities.scheduleLessons === true && typeof onAddLesson === 'function',
+            })
             return <section className={styles.day} key={day.date} data-syllabus-day={day.date}>
-            <header><time dateTime={day.date}>{prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>{day.date === dateOnly(today) && <span>Today</span>}</header>
+            <header><time dateTime={day.date}>{prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>{day.date === dateOnly(today) && <span>Today</span>}{addLessonAllowed && <button type="button" className={styles.addLesson} onClick={() => onAddLesson(day.date)}>Add lesson</button>}</header>
             {presentations.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
             {presentations.map(({ kind, item }) => {
             if (kind === 'suggested') return <ForecastSuggestion
@@ -250,11 +273,13 @@ export default function SyllabusDocument({
               recoveryRequired={isForecastRecoveryRequired(item)}
               onEdit={onEditForecast}
               onReplace={onReplaceForecast}
+              onUseExisting={onUseExistingForecast}
               onGenerate={onGenerateForecast}
             />
             const currentLesson = lessonState(item) || {}
             const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
             const actions = syllabusItemActionsFor({ item, role, state, hasLessonArtifact: currentLesson.hasLessonArtifact, readinessState: item.readiness_state, isScheduled: item.is_explicit_schedule, isToday: dateOnly(item.planned_date) === dateOnly(today) })
+              .filter((action) => !['schedule', 'reschedule'].includes(action.id) || actionCapabilities.scheduleLessons === true)
             const occurrenceKey = item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`
             const assignedTeacher = normalizeInstructionalTeacher(item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'
             const historicalActivityAllowed = item.historical_record !== true
