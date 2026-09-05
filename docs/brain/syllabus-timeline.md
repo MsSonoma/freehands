@@ -198,7 +198,7 @@ The active composer is not a replacement for the no-active-Syllabus compatibilit
 - `src/app/lib/syllabus/__tests__/lessonOccurrencePrepareContext.test.mjs` - Ephemeral exact-context propagation coverage.
 - `src/app/lib/syllabus/__tests__/lessonRemovalUi.test.mjs` - Exact versus broad removal UI coverage.
 - `src/app/api/syllabus/slate-assignments/route.js` - Facilitator-owned occurrence-exact add/remove boundary for supplemental Slate events.
-- `supabase/migrations/20260902161410_add_syllabus_slate_assignments.sql` - Durable occurrence-bound Slate assignment storage and grants.
+- `supabase/migrations/20260902180608_add_syllabus_slate_assignments.sql` - Durable occurrence-bound Slate assignment storage and grants.
 - `src/app/lib/syllabus/lessonTimelineInputs.server.mjs` - Shared read/execution input loading and fail-soft facilitator-artifact metadata enrichment.
 - `src/app/lib/syllabus/revisions.server.mjs` - Loads legitimate membership/readiness inputs for the active read model.
 - `src/app/lib/syllabus/learningForecast.mjs` - Pure slot expansion, bounded evidence projection, deterministic input identity, and proposal snapshot construction.
@@ -211,7 +211,7 @@ The active composer is not a replacement for the no-active-Syllabus compatibilit
 - `src/app/api/syllabus/planning/route.js` - Authenticated, entitled planning mutation boundary.
 - `src/app/components/syllabus/SyllabusPlanningWorkspace.js` - Facilitator Plan Ahead document workspace.
 - `supabase/migrations/20260831201314_add_learning_forecast_foundation.sql` - Description, proposal-kind generalization, proposal RPC, and server-only materialization receipts.
-- `supabase/migrations/20260901160538_add_materialization_generation_recovery.sql` - Recovery receipt fields/state and service-role atomic artifact/quota finalization.
+- `supabase/migrations/20260902180558_add_materialization_generation_recovery.sql` - Recovery receipt fields/state and service-role atomic artifact/quota finalization.
 - `src/app/lib/syllabus/executionAuthorization.server.mjs` - Reuses the same composed membership for protected lesson execution decisions.
 - `src/app/lib/syllabus/timeline.mjs` - Active versus no-active-Syllabus read-model boundary.
 - `src/app/lib/syllabus/__tests__/lessonTimeline.test.mjs` - Membership, readiness, placement, history, metadata, and capacity regressions.

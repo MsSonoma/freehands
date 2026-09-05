@@ -112,7 +112,7 @@ test('new operation uses a distinct canonical identity and normal quota boundary
 })
 
 test('follow-up migration makes recovery explicit and quota finalization atomic and service-role-only', () => {
-  const sql = fs.readFileSync('supabase/migrations/20260901160538_add_materialization_generation_recovery.sql', 'utf8')
+  const sql = fs.readFileSync('supabase/migrations/20260902180558_add_materialization_generation_recovery.sql', 'utf8')
   assert.match(sql, /recovery_required/)
   assert.match(sql, /for update of materialization/i)
   assert.match(sql, /charged_at is null/i)

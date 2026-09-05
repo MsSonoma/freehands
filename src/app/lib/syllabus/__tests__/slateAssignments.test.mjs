@@ -243,7 +243,7 @@ test('removing a scheduled Slate session remains facilitator and learner scoped'
 })
 
 test('Slate assignment migration is RLS-protected and keeps writes service-role-only', () => {
-  const sql = fs.readFileSync('supabase/migrations/20260902161410_add_syllabus_slate_assignments.sql', 'utf8')
+  const sql = fs.readFileSync('supabase/migrations/20260902180608_add_syllabus_slate_assignments.sql', 'utf8')
   const scheduling = fs.readFileSync('supabase/migrations/20260903005713_schedule_syllabus_slate_sessions.sql', 'utf8')
   assert.match(sql, /enable row level security/i)
   assert.match(sql, /unique \(\s*facilitator_id,\s*learner_id,\s*syllabus_occurrence_id\s*\)/i)

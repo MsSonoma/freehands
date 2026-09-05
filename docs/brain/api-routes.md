@@ -181,7 +181,7 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 
 ### `/api/syllabus/slate-assignments`
 **Purpose**: Add or remove a separately visible Mr. Slate practice event for one exact lesson occurrence
-**Status**: Operational after `20260902161410_add_syllabus_slate_assignments.sql` is applied
+**Status**: Operational after `20260902180608_add_syllabus_slate_assignments.sql` is applied
 
 - **Location**: `src/app/api/syllabus/slate-assignments/route.js`
 - **Methods**: POST assigns by learner, lesson, and exact composed occurrence; DELETE removes by owned assignment ID.
@@ -191,7 +191,7 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 
 ### `/api/syllabus/forecast`
 **Purpose**: Create or reuse one inactive, next-week instructional learning forecast from canonical Syllabus intent and deterministic evidence summaries
-**Status**: Operational after `20260831201314_add_learning_forecast_foundation.sql` and `20260901160538_add_materialization_generation_recovery.sql` are applied
+**Status**: Operational after `20260831201314_add_learning_forecast_foundation.sql` and `20260902180558_add_materialization_generation_recovery.sql` are applied
 
 - **Location**: `src/app/api/syllabus/forecast/route.js`
 - **Method**: POST with `{ learnerId, expectedActiveRevisionId }`
