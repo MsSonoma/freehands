@@ -6,6 +6,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import textToSpeech from '@google-cloud/text-to-speech'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import { canonicalizeAiGeneratedLessonChoices } from '@/app/lib/aiGeneratedChoiceOrder.mjs'
 import {
   cohereGetUserAndClient,
   cohereEnsureThread,
@@ -1235,6 +1236,7 @@ async function executeLessonEdit(args, request, toolLog) {
     if (!lessonKey || !updates) {
       return { error: 'Missing lessonKey or updates' }
     }
+    const canonicalUpdates = canonicalizeAiGeneratedLessonChoices(updates)
     pushToolLog(toolLog, {
       name: 'edit_lesson',
       phase: 'start',
@@ -1249,7 +1251,7 @@ async function executeLessonEdit(args, request, toolLog) {
         'Content-Type': 'application/json',
         'Authorization': authHeader
       },
-      body: JSON.stringify({ lessonKey, updates })
+      body: JSON.stringify({ lessonKey, updates: canonicalUpdates })
     })
     
     const result = await editResponse.json()

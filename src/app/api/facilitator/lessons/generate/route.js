@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server.js'
 import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitlements.js'
 import { AI_MODEL } from '../../../../lib/aiModel.js'
+import { canonicalizeAiGeneratedLessonChoices } from '../../../../lib/aiGeneratedChoiceOrder.mjs'
 import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '../../../../lib/facilitatorPreparation.mjs'
 import { requireAssociationLearner, upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
 import {
@@ -79,14 +80,14 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "vocab": [{"term": "string", "definition": "string"}],
   "teachingNotes": "string",
   "baseline": [{"id": "baseline-1", "question": "short, low-pressure pre-instruction question", "expectedAny": ["answer"]}],
-  "retention": [{"id": "retention-1", "question": "legacy delayed retention question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
-  "dailyFollowup": [{"id": "daily-followup-1", "question": "daily follow-up question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
-  "weeklyReview": [{"id": "weekly-review-1", "question": "weekly review question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}],
+  "retention": [{"id": "retention-1", "question": "legacy delayed retention question", "choices": ["A", "B", "C", "D"], "correct": 2, "expectedAny": ["correct answer text"]}],
+  "dailyFollowup": [{"id": "daily-followup-1", "question": "daily follow-up question", "choices": ["A", "B", "C", "D"], "correct": 1, "expectedAny": ["correct answer text"]}],
+  "weeklyReview": [{"id": "weekly-review-1", "question": "weekly review question", "choices": ["A", "B", "C", "D"], "correct": 3, "expectedAny": ["correct answer text"]}],
   "truefalse": [{"question": "COMPLETE QUESTION TEXT HERE", "answer": true|false, "expectedAny": ["true"|"false"]}],
-  "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 0-3, "expectedAny": ["correct answer text"]}],
+  "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 2, "expectedAny": ["correct answer text"]}],
   "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
   "shortanswer": [{"question": "string", "expectedAny": ["answer"]}],
-  "test": [{"id": "reserved-test-1", "question": "held-out test question", "choices": ["A", "B", "C", "D"], "correct": 0, "expectedAny": ["correct answer text"]}]
+  "test": [{"id": "reserved-test-1", "question": "held-out test question", "choices": ["A", "B", "C", "D"], "correct": 1, "expectedAny": ["correct answer text"]}]
 }
 
 FACTUAL ACCURACY REQUIREMENTS:
@@ -104,6 +105,7 @@ CRITICAL REQUIREMENTS:
    - Must have EXACTLY 4 distinct choices (do NOT prefix with A), B), C), D) - just the text)
    - "correct" is the index (0, 1, 2, or 3) of the right answer
    - "expectedAny" contains the text of the correct choice
+   - Across every multiple-choice-capable pool, vary correct positions across 0, 1, 2, and 3; do not default answers to index 0
 4. Each question type needs at least 10 complete questions
 5. For shortanswer and fillintheblank items:
    - Include multiple acceptable answers in "expectedAny" array
@@ -211,16 +213,19 @@ async function callModel(prompt){
   }
 }
 
-function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, description }, userId) {
-  lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g, '_')
-  lesson.title = lesson.title || title
-  lesson.description = lesson.description || lesson.blurb || description || ''
-  lesson.grade = lesson.grade || grade
-  lesson.difficulty = lesson.difficulty || difficulty
-  lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
-  lesson.userId = userId
-  lesson.approved = false
-  return lesson
+function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, description }, userId, rng = Math.random) {
+  const normalizedLesson = {
+    ...lesson,
+    id: lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g, '_'),
+    title: lesson.title || title,
+    description: lesson.description || lesson.blurb || description || '',
+    grade: lesson.grade || grade,
+    difficulty: lesson.difficulty || difficulty,
+    subject: (lesson.subject || subject || '').toString().toLowerCase(),
+    userId,
+    approved: false,
+  }
+  return canonicalizeAiGeneratedLessonChoices(normalizedLesson, { rng })
 }
 
 async function verifiedMaterializationOperation(admin, raw, { facilitatorId, learnerId }) {
@@ -328,7 +333,7 @@ export async function POST(request, deps = {}){
             throw new MaterializationGenerationError(`You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.`, 'LESSON_GENERATION_QUOTA_EXHAUSTED', 429)
           }
           const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
-          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade, description }, user.id)
+          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade, description }, user.id, deps.choiceOrderRng)
         },
         createArtifact: async (identity, lesson) => {
           const { error } = await storage.upload(identity.storagePath, JSON.stringify(lesson, null, 2), {
@@ -396,18 +401,12 @@ export async function POST(request, deps = {}){
       return NextResponse.json({ error: `You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.` }, { status: 429 })
     }
     const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
-    const lesson = await (deps.callModel || callModel)(prompt)
-  // Normalize core fields
-    lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g,'_')
-    lesson.title = lesson.title || title
-    lesson.description = lesson.description || lesson.blurb || description || ''
-    lesson.grade = lesson.grade || grade
-    lesson.difficulty = lesson.difficulty || difficulty
-  // Persist subject for downstream approval/publishing
-    lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
-    // Store the creator's userId for filtering
-    lesson.userId = user.id
-    lesson.approved = false
+    const lesson = normalizedGeneratedLesson(
+      await (deps.callModel || callModel)(prompt),
+      { title, subject, difficulty, grade, description },
+      user.id,
+      deps.choiceOrderRng,
+    )
     
     const base = safeFileName(`${grade}_${lesson.title}_${difficulty}`)
     const file = `${base}.json`

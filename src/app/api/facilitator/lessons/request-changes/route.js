@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { resolveEffectiveTier, featuresForTier } from '@/app/lib/entitlements'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { canonicalizeAiGeneratedLessonChoices } from '@/app/lib/aiGeneratedChoiceOrder.mjs'
 import { buildCanonicalLessonIdentity } from '@/app/lib/facilitatorPreparation.mjs'
 
 export const dynamic = 'force-dynamic'
@@ -65,7 +66,7 @@ CRITICAL REQUIREMENTS - YOU MUST FOLLOW THESE EXACTLY:
    - Include the main answer, synonyms, alternative phrasings, and common variations
    - Example: ["photosynthesis", "making food", "food production", "creating energy from light"]
 3. True/false questions must have complete question text (not blank)
-4. Multiple choice must have exactly 4 distinct choices and a correct index (0-3)
+4. Multiple choice must have exactly 4 distinct choices and a correct index (0-3). Vary correct positions across 0, 1, 2, and 3; do not default answers to index 0
 5. Fill-in-the-blank questions must contain _____ placeholder
 
 Return the updated lesson as valid JSON only. No markdown. No commentary. Keep all existing fields unless the change request specifically modifies them. Ensure kid-safe language and age-appropriate content.`
@@ -146,10 +147,12 @@ export async function POST(request){
       updatedLesson.approved = false // Require re-approval
     }
     
+    const canonicalUpdatedLesson = canonicalizeAiGeneratedLessonChoices(updatedLesson)
+
     // Save updated lesson to Supabase Storage
     const { error: uploadError } = await supabase.storage
       .from('lessons')
-      .upload(storagePath, JSON.stringify(updatedLesson, null, 2), {
+      .upload(storagePath, JSON.stringify(canonicalUpdatedLesson, null, 2), {
         contentType: 'application/json',
         upsert: true
       })

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 import { createClient } from '@supabase/supabase-js'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { canonicalizeAiGeneratedChoiceItems } from '@/app/lib/aiGeneratedChoiceOrder.mjs'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 
 export const dynamic = 'force-dynamic'
@@ -100,14 +101,14 @@ Return ONLY a JSON object: {"items": [{"term": "...", "definition": "..."}, ...]
 
       multiplechoice: {
         system: `You are an expert curriculum writer creating multiple choice questions for elementary school lessons.
-Always return valid JSON as: {"items": [{"question": "...", "choices": ["A text", "B text", "C text", "D text"], "correct": 0}, ...]}
-"correct" is the 0-based index of the correct choice.`,
-        user: `Given this lesson, generate 2 multiple choice questions with 4 answer choices each. Questions should test key concepts from the lesson content at the appropriate grade level.
+Always return valid JSON as: {"items": [{"question": "...", "choices": ["A text", "B text", "C text", "D text"], "correct": 2}, ...]}
+"correct" is the 0-based index of the correct choice. Vary correct positions across 0, 1, 2, and 3; do not default answers to index 0.`,
+        user: `Given this lesson, generate 2 multiple choice questions with 4 answer choices each. Questions should test key concepts from the lesson content at the appropriate grade level. Vary where the correct answer appears across the four choices.
 
 LESSON:
 ${lessonContext}
 
-Return ONLY a JSON object: {"items": [{"question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0}, ...]}`,
+Return ONLY a JSON object: {"items": [{"question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 1}, ...]}`,
       },
 
       baseline: {
@@ -124,50 +125,50 @@ Return ONLY a JSON object: {"items": [{"id": "baseline-1", "question": "...", "e
 
       test: {
         system: `You are an expert curriculum writer creating reserved held-out Test questions for elementary school lessons.
-Always return valid JSON as: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
-Generate at least 6 items. Keep them distinct from baseline, instruction, worksheet, and practice items.`,
-        user: `Given this lesson, generate at least 6 reserved held-out Test questions. They must not duplicate any baseline or instructional practice question.
+Always return valid JSON as: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 2, "expectedAny": ["answer"]}, ...]}
+Generate at least 6 items. Keep them distinct from baseline, instruction, worksheet, and practice items. Vary correct positions across 0, 1, 2, and 3; do not default answers to index 0.`,
+        user: `Given this lesson, generate at least 6 reserved held-out Test questions. They must not duplicate any baseline or instructional practice question. Vary where correct answers appear across the four choices.
 
 LESSON:
 ${lessonContext}
 
-Return ONLY a JSON object: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+Return ONLY a JSON object: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 1, "expectedAny": ["answer"]}, ...]}`,
       },
 
       retention: {
         system: `You are an expert curriculum writer creating delayed-retention-reserved questions for elementary school lessons.
-Always return valid JSON as: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
-Generate exactly 2 items. Keep them distinct from baseline, instruction, worksheet, practice, and Test items.`,
-        user: `Given this lesson, generate exactly 2 delayed-retention-reserved questions. They must not duplicate any baseline, instructional practice, or Test question.
+Always return valid JSON as: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 3, "expectedAny": ["answer"]}, ...]}
+Generate exactly 2 items. Keep them distinct from baseline, instruction, worksheet, practice, and Test items. Vary correct positions across 0, 1, 2, and 3; do not default answers to index 0.`,
+        user: `Given this lesson, generate exactly 2 delayed-retention-reserved questions. They must not duplicate any baseline, instructional practice, or Test question. Vary where correct answers appear across the four choices.
 
 LESSON:
 ${lessonContext}
 
-Return ONLY a JSON object: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+Return ONLY a JSON object: {"items": [{"id": "retention-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 2, "expectedAny": ["answer"]}, ...]}`,
       },
 
       dailyFollowup: {
         system: `You are an expert curriculum writer creating Daily Follow-Up-reserved questions for elementary school lessons.
-Always return valid JSON as: {"items": [{"id": "daily-followup-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
-Generate exactly 2 items. Keep them distinct from baseline, instruction, worksheet, practice, Test, legacy retention, and Weekly Review items.`,
-        user: `Given this lesson, generate exactly 2 held-out Daily Follow-Up questions for a strict delayed retrieval opportunity. Do not duplicate any other question.
+Always return valid JSON as: {"items": [{"id": "daily-followup-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 1, "expectedAny": ["answer"]}, ...]}
+Generate exactly 2 items. Keep them distinct from baseline, instruction, worksheet, practice, Test, legacy retention, and Weekly Review items. Vary correct positions across 0, 1, 2, and 3; do not default answers to index 0.`,
+        user: `Given this lesson, generate exactly 2 held-out Daily Follow-Up questions for a strict delayed retrieval opportunity. Do not duplicate any other question. Vary where correct answers appear across the four choices.
 
 LESSON:
 ${lessonContext}
 
-Return ONLY a JSON object: {"items": [{"id": "daily-followup-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+Return ONLY a JSON object: {"items": [{"id": "daily-followup-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 3, "expectedAny": ["answer"]}, ...]}`,
       },
 
       weeklyReview: {
         system: `You are an expert curriculum writer creating Weekly Review-reserved questions for elementary school lessons.
-Always return valid JSON as: {"items": [{"id": "weekly-review-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}
-Generate exactly 5 items. Keep them distinct from baseline, instruction, worksheet, practice, Test, legacy retention, and Daily Follow-Up items.`,
-        user: `Given this lesson, generate exactly 5 held-out Weekly Review questions for later mixed retrieval. Do not duplicate any other question.
+Always return valid JSON as: {"items": [{"id": "weekly-review-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 2, "expectedAny": ["answer"]}, ...]}
+Generate exactly 5 items. Keep them distinct from baseline, instruction, worksheet, practice, Test, legacy retention, and Daily Follow-Up items. Vary correct positions across 0, 1, 2, and 3; do not default answers to index 0.`,
+        user: `Given this lesson, generate exactly 5 held-out Weekly Review questions for later mixed retrieval. Do not duplicate any other question. Vary where correct answers appear across the four choices.
 
 LESSON:
 ${lessonContext}
 
-Return ONLY a JSON object: {"items": [{"id": "weekly-review-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 0, "expectedAny": ["answer"]}, ...]}`,
+Return ONLY a JSON object: {"items": [{"id": "weekly-review-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 1, "expectedAny": ["answer"]}, ...]}`,
       },
 
       truefalse: {
@@ -226,7 +227,8 @@ Return ONLY a JSON object: {"items": [{"question": "The _____ is...", "expectedA
       return NextResponse.json({ error: 'AI returned invalid JSON' }, { status: 500 })
     }
 
-    const items = Array.isArray(parsed.items) ? parsed.items : []
+    const rawItems = Array.isArray(parsed.items) ? parsed.items : []
+    const items = canonicalizeAiGeneratedChoiceItems(rawItems)
     return NextResponse.json({ items })
 
   } catch (err) {
