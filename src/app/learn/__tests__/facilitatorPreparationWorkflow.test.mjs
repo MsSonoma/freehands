@@ -79,17 +79,29 @@ test('review settings ownership does not use a hard facilitator_id OR query', ()
   assert.match(source, /isUndefinedColumnOrTable/)
 })
 
-test('fresh draft is approved in canonical storage on the first request and preparation advances', async () => {
+test('fresh draft approval tolerates a stale post-write read and is idempotent after confirmation', async () => {
   const ownerId = 'facilitator-1'
   const file = 'fresh-draft.json'
   const canonicalPath = `facilitator-lessons/${ownerId}/${file}`
   const objects = new Map([[canonicalPath, JSON.stringify({ title: 'Fresh draft', approved: false, needsUpdate: true })]])
+  let pendingContent = null
+  let staleReadsRemaining = 0
   let delayedUpload = null
   const paths = []
+  const sleeps = []
   const lessonStorage = {
     async download(storagePath) {
       paths.push(['download', storagePath])
-      return { data: new Blob([objects.get(storagePath)]), error: null }
+      const canonicalStoragePath = storagePath.split('?')[0]
+      if (pendingContent) {
+        if (staleReadsRemaining > 0) {
+          staleReadsRemaining -= 1
+        } else {
+          objects.set(canonicalStoragePath, pendingContent)
+          pendingContent = null
+        }
+      }
+      return { data: new Blob([objects.get(canonicalStoragePath)]), error: null }
     },
     async upload(storagePath, content) {
       paths.push(['upload', storagePath])
@@ -98,7 +110,8 @@ test('fresh draft is approved in canonical storage on the first request and prep
     },
     async update(storagePath, content) {
       paths.push(['update', storagePath])
-      objects.set(storagePath, String(content))
+      pendingContent = String(content)
+      staleReadsRemaining = 1
       return { data: { path: storagePath }, error: null }
     },
   }
@@ -117,13 +130,18 @@ test('fresh draft is approved in canonical storage on the first request and prep
     },
   }
   const createClientImpl = () => supabase
+  const sleepImpl = async (ms) => { sleeps.push(ms) }
   const request = () => new Request('http://localhost/api/facilitator/lessons/approve', {
     method: 'POST',
     headers: { Authorization: 'Bearer token', 'Content-Type': 'application/json' },
     body: JSON.stringify({ file }),
   })
 
-  const firstResponse = await approveLessonRequest(request(), { createClientImpl })
+  const firstResponse = await approveLessonRequest(request(), {
+    createClientImpl,
+    sleepImpl,
+    approvalReadToken: 'first-request',
+  })
   const firstJson = await firstResponse.json()
   const storedAfterFirstRequest = JSON.parse(objects.get(canonicalPath))
   const approval = resolveConfirmedLessonApproval(firstJson)
@@ -134,27 +152,32 @@ test('fresh draft is approved in canonical storage on the first request and prep
   assert.equal(storedAfterFirstRequest.approved, true)
   assert.equal('needsUpdate' in storedAfterFirstRequest, false)
   assert.deepEqual(paths, [
-    ['download', canonicalPath],
+    ['download', `${canonicalPath}?approval=first-request-initial`],
     ['update', canonicalPath],
-    ['download', canonicalPath],
+    ['download', `${canonicalPath}?approval=first-request-confirm-0`],
+    ['download', `${canonicalPath}?approval=first-request-confirm-1`],
   ])
+  assert.deepEqual(sleeps, [50])
   assert.equal(delayedUpload, null)
   assert.equal(approval?.stage, FACILITATOR_PREPARATION_STAGES.DELIVERY)
   assert.equal(approval?.lessonIdentity?.storagePath, canonicalPath)
 
   paths.length = 0
-  const secondResponse = await approveLessonRequest(request(), { createClientImpl })
+  sleeps.length = 0
+  const secondResponse = await approveLessonRequest(request(), {
+    createClientImpl,
+    sleepImpl,
+    approvalReadToken: 'second-request',
+  })
   const secondJson = await secondResponse.json()
   assert.equal(secondResponse.status, 200)
   assert.equal(secondJson.approved, true)
   assert.equal(JSON.parse(objects.get(canonicalPath)).approved, true)
   assert.deepEqual(paths, [
-    ['download', canonicalPath],
-    ['update', canonicalPath],
-    ['download', canonicalPath],
+    ['download', `${canonicalPath}?approval=second-request-initial`],
   ])
+  assert.deepEqual(sleeps, [])
 })
-
 test('approval page renders lesson content review before the approve action', () => {
   const source = fs.readFileSync(
     path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),
@@ -168,6 +191,33 @@ test('approval page renders lesson content review before the approve action', ()
   assert.ok(contentIndex < buttonIndex)
 })
 
+test('approval page exposes a lesson title and compact description above the detailed review', () => {
+  const source = fs.readFileSync(
+    path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),
+    'utf8',
+  )
+  const generatorSource = fs.readFileSync(
+    path.resolve('src', 'app', 'api', 'facilitator', 'lessons', 'generate', 'route.js'),
+    'utf8',
+  )
+  const getSource = fs.readFileSync(
+    path.resolve('src', 'app', 'api', 'facilitator', 'lessons', 'get', 'route.js'),
+    'utf8',
+  )
+  const accessSource = fs.readFileSync(
+    path.resolve('src', 'app', 'lib', 'serverLessonAccess.mjs'),
+    'utf8',
+  )
+
+  assert.match(source, /data-testid="lesson-approval-overview"/)
+  assert.match(source, /const approvalLessonTitle = lessonDraft\?\.title \|\| proposal\?\.generationSpec\?\.title/)
+  assert.match(source, /lesson\?\.description/)
+  assert.match(source, /normalized\.length > 280/)
+  assert.match(generatorSource, /lesson\.description = lesson\.description \|\| lesson\.blurb \|\| description \|\| ''/)
+  assert.ok((generatorSource.match(/cacheControl: '0'/g) || []).length >= 2)
+  assert.match(getSource, /freshStoragePath = `\$\{storagePath\}\?fresh=/)
+  assert.match(accessSource, /freshStoragePath = `\$\{storagePath\}\?fresh=/)
+})
 test('approval page keeps long lesson review scrollable above visible controls', () => {
   const source = fs.readFileSync(
     path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),

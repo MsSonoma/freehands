@@ -78,6 +78,17 @@ function textValue(value) {
   return String(value)
 }
 
+function compactLessonDescription(lesson, proposal) {
+  const raw = textValue(
+    lesson?.description
+    || lesson?.blurb
+    || proposal?.generationSpec?.description
+    || lesson?.teachingNotes,
+  )
+  const normalized = raw.trim().replace(/\s+/g, ' ')
+  if (!normalized) return ''
+  return normalized.length > 280 ? `${normalized.slice(0, 277).trimEnd()}...` : normalized
+}
 function questionText(item) {
   return textValue(item?.question ?? item?.prompt ?? item?.Q ?? item?.q)
 }
@@ -415,6 +426,8 @@ export default function FacilitatorPreparePage() {
   const selectedLearner = useMemo(() => learners.find((learner) => learner.id === learnerId) || null, [learners, learnerId])
   const hasLearnerRecovery = !!recoveryStage && !!missingLearnerId
   const exactOccurrenceIsProtected = syllabusOccurrenceId.startsWith('actual:') || syllabusOccurrenceId.startsWith('historical:')
+  const approvalLessonTitle = lessonDraft?.title || proposal?.generationSpec?.title || lessonIdentity?.file?.replace(/\.json$/i, '') || 'Lesson'
+  const approvalLessonDescription = compactLessonDescription(lessonDraft, proposal)
 
   function snapshotIntentFor(nextLearnerId = learnerId) {
     if (intentSnapshot) return { ...intentSnapshot, learnerId: nextLearnerId }
@@ -928,6 +941,12 @@ export default function FacilitatorPreparePage() {
         <section style={{ display: 'flex', flexDirection: 'column', gap: 14, maxHeight: 'calc(100vh - 120px)', minHeight: 0, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>
           <h2 style={{ margin: 0, fontSize: 18 }}>Review draft</h2>
           {selectedLearner && <p style={{ margin: 0, color: '#374151', fontWeight: 700 }}>Learner: {selectedLearner.name}</p>}
+          <div data-testid="lesson-approval-overview" style={{ border: '1px solid #d1d5db', borderRadius: 8, padding: 14, background: '#f9fafb' }}>
+            <h3 style={{ margin: 0, fontSize: 20, color: '#111827' }}>{approvalLessonTitle}</h3>
+            <p style={{ margin: '6px 0 0', color: '#4b5563', lineHeight: 1.5 }}>
+              {approvalLessonDescription || 'Review the lesson content below before approving it for the learner.'}
+            </p>
+          </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', alignItems: 'end' }}>
             <label style={{ display: 'grid', gap: 4 }}>
               <span style={{ fontWeight: 700 }}>Instructional teacher</span>

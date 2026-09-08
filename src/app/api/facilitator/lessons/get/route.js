@@ -48,9 +48,10 @@ export async function GET(request){
     
     // Download from Supabase Storage using SDK
     const storagePath = `facilitator-lessons/${userId}/${fileName}`
+    const freshStoragePath = `${storagePath}?fresh=${Date.now()}-${Math.random().toString(36).slice(2)}`
     const { data: fileData, error: downloadError } = await supabase.storage
       .from('lessons')
-      .download(storagePath)
+      .download(freshStoragePath)
     
     if (downloadError || !fileData) {
       console.error('Lesson download error:', {

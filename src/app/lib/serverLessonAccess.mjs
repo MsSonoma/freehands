@@ -21,9 +21,11 @@ export async function verifyFacilitatorLessonAccess({
   if (!file || file.includes('..') || file.includes('\\')) return { ok: false, error: 'Invalid lesson key' }
 
   if (subject === 'generated') {
+    const storagePath = `facilitator-lessons/${userId}/${file}`
+    const freshStoragePath = `${storagePath}?fresh=${Date.now()}-${Math.random().toString(36).slice(2)}`
     const { data, error } = await admin.storage
       .from('lessons')
-      .download(`facilitator-lessons/${userId}/${file}`)
+      .download(freshStoragePath)
     if (error || !data) return { ok: false, error: 'Lesson not found or unauthorized' }
 
     try {

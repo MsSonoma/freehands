@@ -211,9 +211,10 @@ async function callModel(prompt){
   }
 }
 
-function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade }, userId) {
+function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, description }, userId) {
   lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g, '_')
   lesson.title = lesson.title || title
+  lesson.description = lesson.description || lesson.blurb || description || ''
   lesson.grade = lesson.grade || grade
   lesson.difficulty = lesson.difficulty || difficulty
   lesson.subject = (lesson.subject || subject || '').toString().toLowerCase()
@@ -327,11 +328,12 @@ export async function POST(request, deps = {}){
             throw new MaterializationGenerationError(`You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.`, 'LESSON_GENERATION_QUOTA_EXHAUSTED', 429)
           }
           const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
-          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade }, user.id)
+          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade, description }, user.id)
         },
         createArtifact: async (identity, lesson) => {
           const { error } = await storage.upload(identity.storagePath, JSON.stringify(lesson, null, 2), {
             contentType: 'application/json',
+            cacheControl: '0',
             upsert: false,
           })
           if (!error) return true
@@ -398,6 +400,7 @@ export async function POST(request, deps = {}){
   // Normalize core fields
     lesson.id = lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g,'_')
     lesson.title = lesson.title || title
+    lesson.description = lesson.description || lesson.blurb || description || ''
     lesson.grade = lesson.grade || grade
     lesson.difficulty = lesson.difficulty || difficulty
   // Persist subject for downstream approval/publishing
@@ -421,6 +424,7 @@ export async function POST(request, deps = {}){
           .from('lessons')
           .upload(storagePath, lessonJson, {
             contentType: 'application/json',
+            cacheControl: '0',
             upsert: true
           })
         

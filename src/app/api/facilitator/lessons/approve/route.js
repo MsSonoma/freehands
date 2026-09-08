@@ -42,6 +42,40 @@ async function readUserAndTier(request, { createClientImpl = null } = {}){
   }
 }
 
+function approvalReadToken() {
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`
+}
+
+function cacheBustedLessonPath(storagePath, token) {
+  return `${storagePath}?approval=${encodeURIComponent(token)}`
+}
+const APPROVAL_CONFIRMATION_DELAYS_MS = [0, 50, 150, 300, 600]
+
+function sleep(ms) {
+  return new Promise((resolve) => setTimeout(resolve, ms))
+}
+
+async function confirmApprovedLesson(lessonStorage, storagePath, { sleepImpl = sleep, cacheBustToken = approvalReadToken() } = {}) {
+  let lastError = null
+  let attempt = 0
+  for (const delayMs of APPROVAL_CONFIRMATION_DELAYS_MS) {
+    if (delayMs > 0) await sleepImpl(delayMs)
+    const readPath = cacheBustedLessonPath(storagePath, `${cacheBustToken}-confirm-${attempt}`)
+    attempt += 1
+    const { data, error } = await lessonStorage.download(readPath)
+    if (error || !data) {
+      lastError = error || new Error('Approval confirmation returned no lesson data')
+      continue
+    }
+    try {
+      const lesson = JSON.parse(await data.text())
+      if (lesson?.approved === true) return { lesson, error: null }
+    } catch (error) {
+      lastError = error
+    }
+  }
+  return { lesson: null, error: lastError }
+}
 export async function POST(request, deps = {}){
   const startTime = Date.now()
   const { user, plan_tier, supabase } = await readUserAndTier(request, deps)
@@ -57,7 +91,10 @@ export async function POST(request, deps = {}){
   try {
     const storagePath = `facilitator-lessons/${user.id}/${file}`
     const lessonStorage = supabase.storage.from('lessons')
-    const { data: fileData, error: downloadError } = await lessonStorage.download(storagePath)
+    const readToken = deps.approvalReadToken || approvalReadToken()
+    const { data: fileData, error: downloadError } = await lessonStorage.download(
+      cacheBustedLessonPath(storagePath, `${readToken}-initial`),
+    )
     
     if (downloadError || !fileData) {
       return NextResponse.json({ error:'Lesson not found in storage' }, { status: 404 })
@@ -66,34 +103,39 @@ export async function POST(request, deps = {}){
     const raw = await fileData.text()
     const js = JSON.parse(raw)
     
-    // Mark as approved and clear needsUpdate flag
-    js.approved = true
-    if (js.needsUpdate) delete js.needsUpdate
-    
-    const updatedContent = JSON.stringify(js, null, 2)
+    let confirmedLesson = js
+    const alreadyApproved = js.approved === true && js.needsUpdate !== true
 
-    // This object already exists. Use Storage's replacement operation so the
-    // successful write and the canonical readback refer to the same version.
-    const { error: updateError } = await lessonStorage.update(storagePath, updatedContent, {
+    if (!alreadyApproved) {
+      // Mark as approved and clear needsUpdate flag. Storage can briefly serve
+      // the previous object after a successful overwrite, so confirmation is
+      // bounded and retryable instead of treating the first stale read as loss.
+      js.approved = true
+      if (js.needsUpdate) delete js.needsUpdate
+
+      const updatedContent = JSON.stringify(js, null, 2)
+      const { error: updateError } = await lessonStorage.update(storagePath, updatedContent, {
         contentType: 'application/json',
-        cacheControl: '0'
+        cacheControl: '0',
       })
-    
-    if (updateError) {
-      return NextResponse.json({ error: 'Failed to update lesson' }, { status: 500 })
-    }
 
-    const { data: confirmedData, error: confirmError } = await lessonStorage.download(storagePath)
+      if (updateError) {
+        return NextResponse.json({ error: 'Failed to update lesson' }, { status: 500 })
+      }
 
-    if (confirmError || !confirmedData) {
-      return NextResponse.json({ error: 'Approval saved but could not be confirmed' }, { status: 500 })
+      const confirmation = await confirmApprovedLesson(lessonStorage, storagePath, {
+        sleepImpl: deps.sleepImpl,
+        cacheBustToken: readToken,
+      })
+      if (!confirmation.lesson) {
+        return NextResponse.json({
+          error: 'Approval was saved but storage has not reflected it yet. Please retry approval.',
+          code: 'APPROVAL_CONFIRMATION_DELAYED',
+          retryable: true,
+        }, { status: 503 })
+      }
+      confirmedLesson = confirmation.lesson
     }
-
-    const confirmedLesson = JSON.parse(await confirmedData.text())
-    if (confirmedLesson?.approved !== true) {
-      return NextResponse.json({ error: 'Approval did not persist' }, { status: 500 })
-    }
-    
     const totalTime = Date.now() - startTime
     const identity = buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
     return NextResponse.json({
