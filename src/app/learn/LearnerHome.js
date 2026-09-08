@@ -1856,8 +1856,8 @@ function LessonsPageInner(){
 
                   {/* Scrollable body */}
                   <div style={{ padding: '16px 20px', overflowY: 'auto', flex: 1 }}>
-                    {l.blurb && (
-                      <p style={{ margin: '0 0 16px', color: '#374151', fontSize: 15, lineHeight: 1.6 }}>{l.blurb}</p>
+                    {(l.blurb || syllabusItem?.description) && (
+                      <p style={{ margin: '0 0 16px', color: '#374151', fontSize: 15, lineHeight: 1.6 }}>{l.blurb || syllabusItem?.description}</p>
                     )}
 
                     {/* Golden Keys are a Sonoma instructional feature. */}

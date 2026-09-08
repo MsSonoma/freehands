@@ -295,7 +295,6 @@ export default function SyllabusDocument({
                 <div className={styles.entryBody}>
                   <p className={styles.subject}>{item.subject}</p>
                   <h4>{item.title}</h4>
-                  {item.description && <p className={styles.description}>{item.description}</p>}
                   {item.item_type === 'slate_assignment' && <span className={styles.statusLabel}>Scheduled Mr. Slate supplemental session</span>}
                   {(item.item_type || 'lesson') === 'lesson' && item.historical_record
                     ? (item.actual_instructional_teacher
