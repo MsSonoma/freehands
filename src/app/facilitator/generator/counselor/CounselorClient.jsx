@@ -2040,7 +2040,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
               }
             }
           } else if (action.type === 'report_planned_lessons') {
-            setLoadingThought('Loading planned lessons...')
+            setLoadingThought('Loading the Syllabus plan...')
 
             const supabase = getSupabaseClient()
             const { data: { session } } = await supabase.auth.getSession()
@@ -2050,40 +2050,42 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
               interceptResult.response = 'Please select a learner first.'
             } else {
               try {
-                const res = await fetch(`/api/planned-lessons?learnerId=${selectedLearnerId}`, {
+                const res = await fetch(`/api/syllabus?learnerId=${selectedLearnerId}`, {
                   headers: { 'Authorization': `Bearer ${token}` }
                 })
 
                 const js = await res.json().catch(() => null)
                 if (!res.ok) {
                   interceptResult.response = js?.error
-                    ? `I couldn't load planned lessons: ${js.error}`
-                    : "I couldn't load planned lessons. Please try again."
+                    ? `I couldn't load the Syllabus plan: ${js.error}`
+                    : "I couldn't load the Syllabus plan. Please try again."
+                } else if (!js?.has_active_syllabus) {
+                  interceptResult.response = `No active Syllabus is established yet for ${learnerName || 'this learner'}.`
                 } else {
-                  const planned = js?.plannedLessons && typeof js.plannedLessons === 'object'
-                    ? js.plannedLessons
-                    : {}
-
-                  const dates = Object.keys(planned).sort()
+                  const today = String(js?.resolved_today || '').slice(0, 10)
+                  const grouped = {}
+                  for (const item of (Array.isArray(js?.timeline_items) ? js.timeline_items : [])) {
+                    const date = String(item?.planned_date || '').slice(0, 10)
+                    if (!date || (today && date < today)) continue
+                    if (!grouped[date]) grouped[date] = []
+                    grouped[date].push(item)
+                  }
+                  const dates = Object.keys(grouped).sort()
                   if (!dates.length) {
-                    interceptResult.response = `No planned lessons are saved yet for ${learnerName || 'this learner'}.`
+                    interceptResult.response = `The active Syllabus has no current or future lesson occurrences for ${learnerName || 'this learner'}.`
                   } else {
                     const nextDates = dates.slice(0, 10)
-                    const lines = nextDates.map((d) => {
-                      const lessons = Array.isArray(planned?.[d]) ? planned[d] : []
-                      const titles = lessons
-                        .map((l) => String(l?.title || '').trim())
-                        .filter(Boolean)
-                        .slice(0, 2)
-                      const titleText = titles.length ? ` — ${titles.join(' | ')}${lessons.length > titles.length ? ' | …' : ''}` : ''
-                      return `${d}: ${lessons.length} lesson(s)${titleText}`
+                    const lines = nextDates.map((date) => {
+                      const items = grouped[date]
+                      const titles = items.map((item) => String(item?.title || '').trim()).filter(Boolean).slice(0, 2)
+                      const titleText = titles.length ? ` - ${titles.join(' | ')}${items.length > titles.length ? ' | ...' : ''}` : ''
+                      return `${date}: ${items.length} Syllabus item(s)${titleText}`
                     })
-
-                    interceptResult.response = `Planned lessons for ${learnerName || 'this learner'} (showing ${nextDates.length} of ${dates.length} dates):\n\n${lines.join('\n')}`
+                    interceptResult.response = `Syllabus plan for ${learnerName || 'this learner'} (showing ${nextDates.length} of ${dates.length} dates):\n\n${lines.join('\n')}`
                   }
                 }
               } catch {
-                interceptResult.response = "I couldn't load planned lessons. Please try again."
+                interceptResult.response = "I couldn't load the Syllabus plan. Please try again."
               }
             }
           } else if (action.type === 'report_lesson_schedule') {
@@ -3306,11 +3308,8 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
             <div style={{ display: activeScreen === 'calendar' ? 'block' : 'none', height: '100%' }}>
               <CalendarOverlay 
                 learnerId={selectedLearnerId}
-                learners={learners}
-                learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade}
                 accessToken={accessToken}
                 tier={tier}
-                canPlan={canPlan}
               />
             </div>
             <div style={{ display: activeScreen === 'lessons' ? 'block' : 'none', height: '100%' }}>

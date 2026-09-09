@@ -1,1589 +1,285 @@
-// Facilitator Calendar - Main scheduling interface
 'use client'
-import { useState, useEffect } from 'react'
+
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
-import { ensurePinAllowed } from '@/app/lib/pinGate'
-import GatedOverlay from '@/app/components/GatedOverlay'
-import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
-import LessonCalendar from './LessonCalendar'
-import LessonPicker from './LessonPicker'
-import LessonPlanner from './LessonPlanner'
-import DayViewOverlay from './DayViewOverlay'
-import LessonNotesModal from './LessonNotesModal'
-import VisualAidsManagerModal from './VisualAidsManagerModal'
-import PortfolioScansModal from './PortfolioScansModal'
-import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
-import GeneratePortfolioModal from './GeneratePortfolioModal'
-import { InlineExplainer } from '@/components/FacilitatorHelp'
-import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
+import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { featuresForTier } from '@/app/lib/entitlements'
 import { resolveCalendarLandingParams } from '@/app/lib/facilitatorCalendarLanding.mjs'
+import { groupSyllabusCalendarItems, syllabusCalendarSelection, syllabusCalendarItemCompleted } from '@/app/lib/syllabus/calendarProjection.mjs'
+import { instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
+import GatedOverlay from '@/app/components/GatedOverlay'
+import LessonCalendar from './LessonCalendar'
+import GeneratePortfolioModal from './GeneratePortfolioModal'
+
+function dateOnly(value) {
+  return String(value || '').slice(0, 10)
+}
+
+function prettyDate(value) {
+  const date = dateOnly(value)
+  if (!date) return ''
+  return new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })
+}
+
+function statusLabel(item) {
+  if (item?.actual_kind === 'completed' || item?.historical_record === true) return 'Completed'
+  if (item?.actual_kind === 'in_progress') return 'In progress'
+  if (item?.actual_kind === 'incomplete') return 'Incomplete'
+  if (item?.needs_placement) return 'Needs placement'
+  if (!item?.lesson_key) return 'Planned concept'
+  if (item?.item_type === 'slate_assignment') return 'Mr. Slate practice'
+  if (item?.readiness_state) return String(item.readiness_state).replaceAll('_', ' ')
+  return 'Planned'
+}
 
 export default function CalendarPage() {
   const router = useRouter()
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const params = new URLSearchParams(window.location.search)
-      const landing = resolveCalendarLandingParams(params)
-      setActiveTab(landing.activeTab)
-      if (landing.openPortfolio) setShowGeneratePortfolio(true)
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
-  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
-  const [pinChecked, setPinChecked] = useState(false)
-  const [authToken, setAuthToken] = useState('')
+  const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState('')
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const now = new Date()
-    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
-  })
-  const [scheduledLessons, setScheduledLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
-  const [scheduledForSelectedDate, setScheduledForSelectedDate] = useState([])
-  const [plannedLessons, setPlannedLessons] = useState({}) // Format: { 'YYYY-MM-DD': [{...}] }
+  const [accessToken, setAccessToken] = useState('')
+  const [planTier, setPlanTier] = useState('free')
+  const [syllabus, setSyllabus] = useState(null)
+  const [selectedDate, setSelectedDate] = useState('')
+  const [selectedLesson, setSelectedLesson] = useState(null)
+  const [noSchoolDates, setNoSchoolDates] = useState({})
   const [loading, setLoading] = useState(true)
-  const [tier, setTier] = useState('free')
-  const [canSchedule, setCanSchedule] = useState(false)
-  const [canPlan, setCanPlan] = useState(false)
-  const [tableExists, setTableExists] = useState(true)
-  const [rescheduling, setRescheduling] = useState(null) // Track which lesson is being rescheduled
-  const [activeTab, setActiveTab] = useState('scheduler') // 'scheduler', 'planner', or 'subjects'
-  const [customSubjects, setCustomSubjects] = useState([])
-  const [newSubjectName, setNewSubjectName] = useState('')
-  const [showDayView, setShowDayView] = useState(false)
-  const [noSchoolDates, setNoSchoolDates] = useState({}) // Format: { 'YYYY-MM-DD': 'reason' }
-
-  const loadCustomSubjects = async (token) => {
-    try {
-      const t = token || authToken
-      if (!t) return
-      const res = await fetch('/api/custom-subjects', { headers: { 'Authorization': `Bearer ${t}` } })
-      if (res.ok) {
-        const result = await res.json()
-        setCustomSubjects(result.subjects || [])
-      }
-    } catch (err) {
-      console.error('Error loading custom subjects:', err)
-    }
-  }
-
-  const handleAddCustomSubject = async () => {
-    if (!canPlan) { alert('Upgrade to Pro to manage custom subjects.'); return }
-    if (!newSubjectName.trim()) return
-    try {
-      const res = await fetch('/api/custom-subjects', {
-        method: 'POST',
-        headers: { 'Authorization': `Bearer ${authToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: newSubjectName.trim() })
-      })
-      if (res.ok) {
-        setNewSubjectName('')
-        await loadCustomSubjects()
-      } else {
-        const err = await res.json()
-        alert(err.error || 'Failed to create custom subject')
-      }
-    } catch (err) {
-      console.error('Error creating custom subject:', err)
-      alert('Failed to create custom subject')
-    }
-  }
-
-  const handleDeleteCustomSubject = async (subjectId) => {
-    if (!canPlan) { alert('Upgrade to Pro to manage custom subjects.'); return }
-    if (!confirm('Delete this custom subject?')) return
-    try {
-      const res = await fetch(`/api/custom-subjects?id=${subjectId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${authToken}` }
-      })
-      if (res.ok) await loadCustomSubjects()
-    } catch (err) {
-      console.error('Error deleting custom subject:', err)
-    }
-  }
-
-  const [notesItem, setNotesItem] = useState(null)
-  const [visualAidsItem, setVisualAidsItem] = useState(null)
-  const [portfolioScansItem, setPortfolioScansItem] = useState(null)
-  const [removeConfirmItem, setRemoveConfirmItem] = useState(null)
-  const [showGeneratePortfolio, setShowGeneratePortfolio] = useState(false)
-  const [revisionTarget, setRevisionTarget] = useState(null)
-  const [assignsOpenId, setAssignsOpenId] = useState(null)
-  const [assigning, setAssigning] = useState(false)
-  const [reschedulePickerItemId, setReschedulePickerItemId] = useState(null)
-  const [reschedulePickerMonth, setReschedulePickerMonth] = useState(() => { const n = new Date(); return { year: n.getFullYear(), month: n.getMonth() } })
-
-  const getLocalTodayStr = () => {
-    const now = new Date()
-    const year = now.getFullYear()
-    const month = String(now.getMonth() + 1).padStart(2, '0')
-    const day = String(now.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  const toLocalDateStr = (dateLike) => {
-    const dt = new Date(dateLike)
-    if (Number.isNaN(dt.getTime())) return null
-    const year = dt.getFullYear()
-    const month = String(dt.getMonth() + 1).padStart(2, '0')
-    const day = String(dt.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  const addDaysToDateStr = (dateStr, days) => {
-    try {
-      const [y, m, d] = String(dateStr || '').split('-').map(n => Number(n))
-      if (!y || !m || !d) return null
-      const dt = new Date(y, m - 1, d)
-      if (Number.isNaN(dt.getTime())) return null
-      dt.setDate(dt.getDate() + Number(days || 0))
-      const yy = dt.getFullYear()
-      const mm = String(dt.getMonth() + 1).padStart(2, '0')
-      const dd = String(dt.getDate()).padStart(2, '0')
-      return `${yy}-${mm}-${dd}`
-    } catch {
-      return null
-    }
-  }
-
-  // Canonical lesson id used for matching completion events to scheduled lessons.
-  // Completion rows often store a filename-ish id, while schedule stores subject/prefix paths.
-  // Canonicalize both to the same basename-without-extension.
-  const canonicalLessonId = (raw) => {
-    if (!raw) return null
-    const normalized = normalizeLessonKey(String(raw)) || String(raw)
-    const base = normalized.includes('/') ? normalized.split('/').pop() : normalized
-    const withoutExt = String(base || '').replace(/\.json$/i, '')
-    return withoutExt || null
-  }
-
-  // Check PIN requirement on mount
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const allowed = await ensurePinAllowed('facilitator-page');
-        if (!allowed) {
-          router.push('/');
-          return;
-        }
-        if (!cancelled) setPinChecked(true);
-      } catch (e) {
-        if (!cancelled) setPinChecked(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [router]);
+  const [error, setError] = useState('')
+  const [showPortfolio, setShowPortfolio] = useState(false)
 
   useEffect(() => {
-    if (!pinChecked) return;
-    checkAccess()
-  }, [pinChecked])
-
-  // Lock body scroll while on this page so the fixed-height layout never overflows
-  useEffect(() => {
-    document.body.style.overflowY = 'hidden'
-    return () => { document.body.style.overflowY = '' }
-  }, [])
-
-  // Send title to HeaderBar
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('ms:session:title', { detail: 'Lesson Calendar' }))
+    if (typeof window === 'undefined') return
+    const landing = resolveCalendarLandingParams(new URLSearchParams(window.location.search))
+    if (landing.redirectToSyllabus) {
+      router.replace('/facilitator/syllabus')
+      return
     }
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.dispatchEvent(new CustomEvent('ms:session:title', { detail: '' }))
-      }
-    }
+    if (landing.openPortfolio) setShowPortfolio(true)
+  }, [router])
+
+  useEffect(() => {
+    window.dispatchEvent(new CustomEvent('ms:session:title', { detail: 'Calendar' }))
+    return () => window.dispatchEvent(new CustomEvent('ms:session:title', { detail: '' }))
   }, [])
 
   useEffect(() => {
-    if (!pinChecked) return
-    if (!isAuthenticated) return
-    loadLearners()
-  }, [pinChecked, isAuthenticated])
-
-  useEffect(() => {
-    if (selectedLearnerId) {
-      loadSchedule()
-      loadPlannedLessons()
-      loadNoSchoolDates()
-      loadCustomSubjects()
-    }
-  }, [selectedLearnerId])
-
-  useEffect(() => {
-    const handleVisibilityChange = () => {
-      if (!document.hidden && selectedLearnerId) {
-        loadSchedule()
-        loadNoSchoolDates()
-      }
-    }
-
-    document.addEventListener('visibilitychange', handleVisibilityChange)
-    return () => document.removeEventListener('visibilitychange', handleVisibilityChange)
-  }, [selectedLearnerId])
-
-  useEffect(() => {
-    if (selectedDate && scheduledLessons[selectedDate]) {
-      setScheduledForSelectedDate(scheduledLessons[selectedDate])
-    } else {
-      setScheduledForSelectedDate([])
-    }
-  }, [selectedDate, scheduledLessons])
-
-  const checkAccess = async () => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      // Don't redirect - let the overlay handle it
-      if (!session?.user) {
-        setCanPlan(false)
-        setLoading(false)
-        return
-      }
-
-      let effectiveTier = 'free'
-
-      // Primary: direct profiles query (may be blocked by RLS)
+    if (authLoading || !isAuthenticated) return
+    let cancelled = false
+    ;(async () => {
+      setLoading(true)
+      setError('')
       try {
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('plan_tier, subscription_tier')
-          .eq('id', session.user.id)
-          .maybeSingle()
-        effectiveTier = resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier)
-      } catch { /* will fall back below */ }
-
-      // Fallback: quota API uses service role key and is RLS-immune
-      if (effectiveTier === 'free' && session?.access_token) {
-        try {
-          const qRes = await fetch('/api/lessons/quota', {
-            headers: { Authorization: `Bearer ${session.access_token}` }
-          })
-          if (qRes.ok) {
-            const qData = await qRes.json()
-            const TIER_RANK = { free: 0, trial: 1, standard: 2, pro: 3, lifetime: 4 }
-            const qTier = qData?.plan_tier || 'free'
-            if ((TIER_RANK[qTier] ?? 0) > (TIER_RANK[effectiveTier] ?? 0)) {
-              effectiveTier = qTier
-            }
-          }
-        } catch { /* ignore, use what we have */ }
-      }
-
-      setTier(effectiveTier)
-      
-      const ent = featuresForTier(effectiveTier)
-      setCanSchedule(Boolean(ent.lessonScheduling))
-      setCanPlan(Boolean(ent.lessonPlanner))
-      setLoading(false)
-    } catch (err) {
-      setCanSchedule(false)
-      setCanPlan(false)
-      setLoading(false)
-    }
-  }
-
-  const showViewOnlyNotice = () => {
-    alert('Scheduling requires a Standard (or higher) subscription. Upgrade to start scheduling lessons.')
-  }
-
-  const requirePlannerAccess = () => {
-    if (canSchedule) return true
-    showViewOnlyNotice()
-    return false
-  }
-
-  const handleAssignLesson = async (lessonKey, targetId) => {
-    if (!lessonKey) return
-    setAssigning(true)
-    try {
-      const supabase = getSupabaseClient()
-      const toAssign = targetId === 'all' ? learners : learners.filter(l => l.id === targetId)
-      for (const learner of toAssign) {
-        const { data: currentData } = await supabase
-          .from('learners')
-          .select('approved_lessons')
-          .eq('id', learner.id)
-          .maybeSingle()
-        const currentApproved = currentData?.approved_lessons || {}
-        const newApproved = { ...currentApproved, [lessonKey]: true }
-        await supabase.from('learners').update({ approved_lessons: newApproved }).eq('id', learner.id)
-      }
-    } catch {
-      // silent fail
-    } finally {
-      setAssigning(false)
-      setAssignsOpenId(null)
-    }
-  }
-
-  const PICKER_MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
-  const buildPickerDays = (year, month) => {
-    const fd = new Date(year, month, 1).getDay()
-    const dim = new Date(year, month + 1, 0).getDate()
-    const cells = []
-    for (let i = 0; i < fd; i++) cells.push(null)
-    for (let d = 1; d <= dim; d++) cells.push(d)
-    return cells
-  }
-
-  const loadLearners = async () => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { user } } = await supabase.auth.getUser()
-      if (!user) return
-
-      const { data, error } = await supabase
-        .from('learners')
-        .select('id, name, grade')
-        .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
-        .order('name')
-
-      if (error) throw error
-      setLearners(data || [])
-      
-      if (data && data.length > 0) {
-        setSelectedLearnerId(data[0].id)
-      }
-    } catch (err) {
-      // Silent fail
-    }
-  }
-
-  const loadSchedule = async () => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.access_token) {
-        return
-      }
-
-      if (session.access_token !== authToken) setAuthToken(session.access_token)
-
-      // Load the full schedule history for this learner.
-      // This enables retroactive backfills (from lesson_history) to show up on older months.
-      // We still filter past dates to only completed lessons after loading.
-      const response = await fetch(
-        `/api/lesson-schedule?learnerId=${selectedLearnerId}`,
-        {
-          headers: {
-            'authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      if (!response.ok) {
-        const errorText = await response.text()
-        let errorData = {}
-        try {
-          errorData = JSON.parse(errorText)
-        } catch {
-          // Silent fail on parse error
-        }
-        
-        if (errorData.error?.includes('lesson_schedule') || errorData.error?.includes('does not exist') || errorData.error?.includes('relation')) {
-          setScheduledLessons({})
-          setTableExists(false)
-          return
-        }
-        
-        if (response.status === 401) {
-          setScheduledLessons({})
-          return
-        }
-        
-        throw new Error(errorData.error || 'Failed to load schedule')
-      }
-      
-      setTableExists(true)
-
-      const data = await response.json()
-      const schedule = data.schedule || []
-
-      const todayStr = getLocalTodayStr()
-
-      // Build a completion lookup from lesson_session_events.
-      // Past scheduled dates will show only completed lessons.
-      // NOTE: Lessons may be completed after their scheduled date (make-up work).
-      // We treat a scheduled lesson as completed if it is completed on the same date OR within a short window after.
-      let completedKeySet = new Set()
-      let completedDatesByLesson = new Map()
-      let completionLookupFailed = false
-      try {
-        const pastSchedule = (schedule || []).filter(s => s?.scheduled_date && s.scheduled_date < todayStr)
-        const minPastDate = pastSchedule.reduce((min, s) => (min && min < s.scheduled_date ? min : s.scheduled_date), null)
-
-        if (pastSchedule.length > 0 && minPastDate) {
-          // IMPORTANT: Do not query lesson_session_events directly from the client.
-          // In some environments, RLS causes the query to return an empty array without an error,
-          // which hides all past schedule history. Use the admin-backed API endpoint instead.
-          const historyRes = await fetch(
-            `/api/learner/lesson-history?learner_id=${selectedLearnerId}&from=${encodeURIComponent(minPastDate)}&to=${encodeURIComponent(todayStr)}`
-          )
-          const historyJson = await historyRes.json().catch(() => null)
-
-          if (!historyRes.ok) {
-            completionLookupFailed = true
-          } else {
-            const events = Array.isArray(historyJson?.events) ? historyJson.events : []
-            for (const row of events) {
-              if (row?.event_type && row.event_type !== 'completed') continue
-              const completedDate = toLocalDateStr(row?.occurred_at)
-              const key = canonicalLessonId(row?.lesson_id)
-              if (!completedDate || !key) continue
-              completedKeySet.add(`${key}|${completedDate}`)
-              const prev = completedDatesByLesson.get(key) || []
-              prev.push(completedDate)
-              completedDatesByLesson.set(key, prev)
-            }
-
-            // De-dup + sort dates per lesson for stable comparisons.
-            for (const [k, dates] of completedDatesByLesson.entries()) {
-              const uniq = Array.from(new Set((dates || []).filter(Boolean))).sort()
-              completedDatesByLesson.set(k, uniq)
-            }
+        const supabase = getSupabaseClient()
+        const [{ data: { session } }, learnerRows] = await Promise.all([
+          supabase.auth.getSession(),
+          listLearners(),
+        ])
+        if (cancelled) return
+        const token = session?.access_token || ''
+        setAccessToken(token)
+        setLearners(Array.isArray(learnerRows) ? learnerRows : [])
+        setSelectedLearnerId((current) => current || learnerRows?.[0]?.id || '')
+        if (token) {
+          const quotaResponse = await fetch('/api/lessons/quota', { headers: { Authorization: `Bearer ${token}` } })
+          if (quotaResponse.ok) {
+            const quota = await quotaResponse.json().catch(() => ({}))
+            if (!cancelled) setPlanTier(quota?.plan_tier || 'free')
           }
         }
-      } catch {
-        // If completion lookup fails, fall back to showing schedule as-is.
-        completedKeySet = new Set()
-        completedDatesByLesson = new Map()
-        completionLookupFailed = true
+      } catch (cause) {
+        if (!cancelled) setError(cause?.message || 'Could not load Calendar')
+      } finally {
+        if (!cancelled) setLoading(false)
       }
+    })()
+    return () => { cancelled = true }
+  }, [authLoading, isAuthenticated])
 
-      const grouped = {}
-      schedule.forEach(item => {
-        const dateStr = item?.scheduled_date
-        const lessonKey = item?.lesson_key
-        if (!dateStr || !lessonKey) return
-
-        const isPast = dateStr < todayStr
-        const canonical = canonicalLessonId(lessonKey)
-        const direct = canonical ? completedKeySet.has(`${canonical}|${dateStr}`) : false
-        const windowEnd = addDaysToDateStr(dateStr, 7)
-        const makeup = (() => {
-          if (!canonical || !windowEnd) return false
-          const dates = completedDatesByLesson.get(canonical) || []
-          return dates.some(d => d > dateStr && d <= windowEnd)
-        })()
-        const completed = direct || makeup
-
-        // Always include all scheduled lessons (past or future).
-        // Completion status is annotated per lesson; filtering was over-aggressive
-        // and hid intentionally-scheduled past-date lessons from the calendar.
-        if (!grouped[dateStr]) grouped[dateStr] = []
-        grouped[dateStr].push({ ...item, completed })
+  const loadSyllabus = useCallback(async () => {
+    if (!selectedLearnerId || !accessToken) return
+    setError('')
+    try {
+      const response = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(selectedLearnerId)}`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${accessToken}` },
       })
-
-      setScheduledLessons(grouped)
-    } catch (err) {
-      setScheduledLessons({})
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json.error || 'Could not load the Syllabus calendar')
+      setSyllabus(json)
+      setSelectedDate((current) => current || json.resolved_today || '')
+    } catch (cause) {
+      setSyllabus(null)
+      setError(cause?.message || 'Could not load the Syllabus calendar')
     }
-  }
+  }, [accessToken, selectedLearnerId])
 
-  const loadPlannedLessons = async () => {
-    if (!selectedLearnerId) return
-    
+  const loadNoSchoolDates = useCallback(async () => {
+    if (!selectedLearnerId || !accessToken) return
     try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.access_token) return
-
-      const response = await fetch(
-        `/api/planned-lessons?learnerId=${selectedLearnerId}`,
-        {
-          headers: {
-            'authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      if (!response.ok) {
-        setPlannedLessons({})
-        return
-      }
-      
-      const data = await response.json()
-      setPlannedLessons(data.plannedLessons || {})
-    } catch (err) {
-      console.error('Error loading planned lessons:', err)
-      setPlannedLessons({})
-    }
-  }
-
-  const loadNoSchoolDates = async () => {
-    if (!selectedLearnerId) return
-    
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.access_token) return
-
-      const response = await fetch(
-        `/api/no-school-dates?learnerId=${selectedLearnerId}`,
-        {
-          headers: {
-            'authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
+      const response = await fetch(`/api/no-school-dates?learnerId=${encodeURIComponent(selectedLearnerId)}`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
       if (!response.ok) return
-      
-      const data = await response.json()
-      const dates = data.dates || []
-
+      const json = await response.json().catch(() => ({}))
       const grouped = {}
-      dates.forEach(item => {
-        grouped[item.date] = item.reason || ''
-      })
-
+      for (const row of json?.dates || []) {
+        const date = dateOnly(row?.date)
+        if (date) grouped[date] = row?.reason || ''
+      }
       setNoSchoolDates(grouped)
-    } catch (err) {
-      console.error('Error loading no-school dates:', err)
+    } catch {
+      setNoSchoolDates({})
     }
-  }
+  }, [accessToken, selectedLearnerId])
 
-  const savePlannedLessons = async (lessons) => {
-    if (!requirePlannerAccess()) return
-    // Strip empty date arrays from local state, but send the full object (including
-    // empty arrays) to the API so it knows to delete DB records for those dates.
-    const cleanedForState = Object.fromEntries(
-      Object.entries(lessons).filter(([, v]) => Array.isArray(v) && v.length > 0)
-    )
-    setPlannedLessons(cleanedForState)
-    
-    if (!selectedLearnerId) return
-    
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      
-      if (!session?.access_token) return
+  useEffect(() => {
+    if (!selectedLearnerId || !accessToken) return
+    setSelectedLesson(null)
+    setSelectedDate('')
+    void Promise.all([loadSyllabus(), loadNoSchoolDates()])
+  }, [accessToken, loadNoSchoolDates, loadSyllabus, selectedLearnerId])
 
-      const res = await fetch('/api/planned-lessons', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          learnerId: selectedLearnerId,
-          plannedLessons: lessons
-        })
-      })
-      if (!res.ok) {
-        const errData = await res.json().catch(() => null)
-        throw new Error(errData?.error || `Failed to save planned lessons (${res.status})`)
-      }
-    } catch (err) {
-      console.error('Error saving planned lessons:', err)
-      // Re-load from DB so local state stays in sync with what was actually persisted.
-      loadPlannedLessons()
+  useEffect(() => {
+    function refresh() {
+      if (document.hidden) return
+      void loadSyllabus()
     }
-  }
+    document.addEventListener('visibilitychange', refresh)
+    return () => document.removeEventListener('visibilitychange', refresh)
+  }, [loadSyllabus])
 
-  const handlePlannedLessonUpdate = (date, lessonId, updatedLesson) => {
-    if (!requirePlannerAccess()) return
-    const updated = { ...plannedLessons }
-    if (updated[date]) {
-      const index = updated[date].findIndex(l => l.id === lessonId)
-      if (index !== -1) {
-        updated[date][index] = updatedLesson
-        savePlannedLessons(updated)
-      }
+  const itemsByDate = useMemo(() => groupSyllabusCalendarItems(syllabus?.timeline_items || []), [syllabus?.timeline_items])
+  const selectedItems = selectedDate ? (itemsByDate[selectedDate] || []) : []
+  const activeRevisionId = String(syllabus?.active_revision?.id || '')
+  const resolvedToday = syllabus?.resolved_today || selectedDate || ''
+  const selectedLearner = learners.find((learner) => String(learner.id) === String(selectedLearnerId)) || null
+  const portfolioAllowed = featuresForTier(planTier).lessonPlanner === true
+
+  function selectCalendarItem(item) {
+    if (!item?.lesson_key) {
+      router.push('/facilitator/syllabus')
+      return
     }
+    setSelectedLesson(syllabusCalendarSelection(item, { today: resolvedToday }))
   }
-
-  const handlePlannedLessonRemove = (date, lessonId) => {
-    if (!requirePlannerAccess()) return
-    const updated = { ...plannedLessons }
-    if (updated[date]) {
-      updated[date] = updated[date].filter(l => l.id !== lessonId)
-      // Do NOT delete the key when the array is empty — savePlannedLessons sends
-      // the empty array to the API so it deletes the DB records for that date.
-      savePlannedLessons(updated)
-    }
-  }
-
-  const handlePlannedLessonAdd = (date, lesson) => {
-    if (!requirePlannerAccess()) return
-    const updated = { ...plannedLessons }
-    if (!updated[date]) updated[date] = []
-    updated[date] = [...updated[date], lesson]
-    savePlannedLessons(updated)
-  }
-
-  const handleScheduleLesson = async (lessonKey, date) => {
-    if (!requirePlannerAccess()) return
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) {
-        alert('Please log in to schedule lessons')
-        return
-      }
-
-      const response = await fetch('/api/lesson-schedule', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'authorization': `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({
-          learnerId: selectedLearnerId,
-          lessonKey,
-          scheduledDate: date,
-        }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json()
-        throw new Error(error.error || 'Failed to schedule lesson')
-      }
-
-      await loadSchedule()
-      alert('Lesson scheduled successfully!')
-    } catch (err) {
-      alert(err.message || 'Failed to schedule lesson')
-    }
-  }
-
-  const handleRemoveScheduledLesson = async (item, opts = {}) => {
-    if (!requirePlannerAccess()) return
-    if (!opts?.skipConfirm) {
-      if (!confirm('Remove this lesson from the schedule?')) return
-    }
-
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) return
-
-      const response = await fetch(
-        `/api/lesson-schedule?id=${item.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      if (!response.ok) throw new Error('Failed to remove lesson')
-
-      await loadSchedule()
-    } catch (err) {
-      alert('Failed to remove lesson')
-    }
-  }
-
-  const handleRescheduleLesson = async (item, newDate) => {
-    if (!requirePlannerAccess()) return
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) return
-
-      // Delete old schedule entry
-      const deleteResponse = await fetch(
-        `/api/lesson-schedule?id=${item.id}`,
-        {
-          method: 'DELETE',
-          headers: {
-            'authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-        }
-      )
-
-      if (!deleteResponse.ok) throw new Error('Failed to remove old schedule')
-
-      // Create new schedule entry with new date
-      const scheduleResponse = await fetch('/api/lesson-schedule', {
-        method: 'POST',
-        headers: {
-          'authorization': `Bearer ${session.access_token}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          learnerId: selectedLearnerId,
-          lessonKey: item.lesson_key,
-          scheduledDate: newDate
-        })
-      })
-
-      if (!scheduleResponse.ok) throw new Error('Failed to reschedule lesson')
-
-      setRescheduling(null)
-      setReschedulePickerItemId(null)
-      await loadSchedule()
-    } catch (err) {
-      alert('Failed to reschedule lesson')
-    }
-  }
-
-  const handleNoSchoolSet = async (date, reason) => {
-    if (!requirePlannerAccess()) return
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      if (!session?.access_token) return
-
-      if (reason === null) {
-        // Delete no-school date
-        const response = await fetch(
-          `/api/no-school-dates?learnerId=${selectedLearnerId}&date=${date}`,
-          {
-            method: 'DELETE',
-            headers: {
-              'authorization': `Bearer ${session.access_token}`,
-              'Content-Type': 'application/json',
-            },
-          }
-        )
-
-        if (!response.ok) throw new Error('Failed to remove no-school date')
-      } else {
-        // Set no-school date
-        const response = await fetch('/api/no-school-dates', {
-          method: 'POST',
-          headers: {
-            'authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            learnerId: selectedLearnerId,
-            date,
-            reason
-          })
-        })
-
-        if (!response.ok) throw new Error('Failed to set no-school date')
-      }
-
-      await loadNoSchoolDates()
-    } catch (err) {
-      console.error('Error setting no-school date:', err)
-      alert('Failed to update no-school date')
-    }
-  }
-
-  const handleDateSelect = (dateStr) => {
-    setSelectedDate(dateStr)
-    setShowDayView(true)
-  }
-
-  const advancedCalendarRequested = activeTab !== 'scheduler' || showGeneratePortfolio
-  const advancedCalendarLocked = advancedCalendarRequested && !canPlan
 
   if (authLoading || loading) {
-    return <div style={{ padding: '24px' }}><p>Loading…</p></div>
+    return <main style={{ maxWidth: 1200, margin: '0 auto', padding: 20 }}><p>Loading Calendar...</p></main>
   }
 
   return (
     <>
-      <div style={{ background: '#f9fafb', opacity: !isAuthenticated ? 0.5 : 1, pointerEvents: !isAuthenticated ? 'none' : 'auto' }}>
-      <div style={{ maxWidth: 1280, margin: '0 auto', padding: '4px 8px 0 8px' }}>
-
-        {/* Database Setup Warning */}
-        {!tableExists && (
-          <div className="bg-yellow-50 border border-yellow-300 rounded-lg p-4 mb-6">
-            <h3 className="text-yellow-800 font-semibold mb-2">Scheduling is temporarily unavailable</h3>
-            <p className="text-yellow-700 text-sm mb-3">
-              Scheduling is temporarily unavailable. Your lessons are unchanged.
-            </p>
+      <main style={{ maxWidth: 1280, margin: '0 auto', padding: '16px 18px 32px', display: 'grid', gap: 14 }}>
+        <header style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
+            <h1 style={{ margin: 0, fontSize: 24 }}>Calendar</h1>
+            <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 13 }}>A month view of the active Syllabus for this learner. Curriculum planning stays in Syllabus.</p>
           </div>
-        )}
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <button type="button" onClick={() => router.push('/facilitator/syllabus')} style={{ padding: '8px 12px', border: '1px solid #c7442e', borderRadius: 7, background: '#fff', color: '#c7442e', fontWeight: 800, cursor: 'pointer' }}>Open Syllabus</button>
+            <button type="button" onClick={() => portfolioAllowed ? setShowPortfolio(true) : router.push('/facilitator/account/plan')} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 7, background: '#fff', color: '#374151', fontWeight: 800, cursor: 'pointer' }}>{portfolioAllowed ? 'Portfolio' : 'Portfolio requires Pro'}</button>
+          </div>
+        </header>
 
-        {learners.length > 0 ? (
-          <>
-            {/* Two-panel layout: Stack on portrait, side-by-side on landscape */}
-            <style jsx>{`
-              .calendar-container {
-                display: flex;
-                flex-direction: column;
-                gap: 1rem;
-                align-items: stretch;
-              }
-              
-              @media (min-aspect-ratio: 1/1) {
-                .calendar-container {
-                  flex-direction: row;
-                  align-items: flex-start;
-                  height: calc(100vh - 80px);
-                  gap: 0.5rem;
-                  overflow: hidden;
-                }
-                .calendar-container > .calendar-panel {
-                  flex: 1;
-                  min-width: 0;
-                  overflow-y: auto;
-                  max-height: calc(100vh - 80px);
-                }
-                .calendar-container > .content-panel {
-                  flex: 1;
-                  min-width: 0;
-                  overflow-y: auto;
-                  max-height: calc(100vh - 80px);
-                }
-              }
-            `}</style>
-            <div className="calendar-container">
-              {/* Left Panel: Calendar */}
-              <div className="calendar-panel">
-                <LessonCalendar
-                  learnerId={selectedLearnerId}
-                  onDateSelect={handleDateSelect}
-                  scheduledLessons={activeTab === 'scheduler' ? scheduledLessons : plannedLessons}
-                  noSchoolDates={noSchoolDates}
-                  learners={learners}
-                  selectedLearnerId={selectedLearnerId}
-                  onLearnerChange={setSelectedLearnerId}
-                  isPlannedView={activeTab === 'planner'}
-                />
-              </div>
+        {error && <div role="alert" style={{ padding: 10, border: '1px solid #fecaca', borderRadius: 8, background: '#fef2f2', color: '#991b1b' }}>{error}</div>}
 
-              {/* Right Panel: Tabs for Scheduler and Planner */}
-              <div className="content-panel" style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
-
-                {isAuthenticated && !canSchedule && (
-                  <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
-                    <div className="flex items-center justify-between gap-3 flex-wrap">
-                      <div className="text-sm text-indigo-900">
-                        <strong>View-only mode.</strong> Standard is required to schedule or reschedule lessons. Pro unlocks the AI Lesson Planner.
-                      </div>
-                      <button
-                        type="button"
-                        onClick={() => router.push('/facilitator/account/plan')}
-                        className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-indigo-700"
-                      >
-                        Upgrade
-                      </button>
-                    </div>
-                  </div>
-                )}
-                
-                {advancedCalendarRequested && (
-                  <div className="bg-white border border-indigo-100 rounded-lg px-4 py-3" style={{ display: 'grid', gap: 10 }}>
-                    <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, flexWrap: 'wrap', alignItems: 'center' }}>
-                      <div>
-                        <div style={{ fontSize: 13, fontWeight: 800, color: '#312e81' }}>Advanced calendar tools</div>
-                        <div style={{ fontSize: 12, color: '#6b7280' }}>Scheduler is the default calendar view.</div>
-                      </div>
-                      <button type="button" onClick={() => { setActiveTab('scheduler'); setShowGeneratePortfolio(false); router.push('/facilitator/calendar') }} style={{ padding: '6px 10px', border: '1px solid #d1d5db', borderRadius: 6, background: '#fff', color: '#374151', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>
-                        Back to Scheduler
-                      </button>
-                    </div>
-                    {advancedCalendarLocked ? (
-                      <div className="bg-indigo-50 border border-indigo-200 rounded-lg px-4 py-3">
-                        <div className="flex items-center justify-between gap-3 flex-wrap">
-                          <div className="text-sm text-indigo-900">
-                            <strong>Pro required.</strong> Lesson Planner, custom subjects, and portfolio generation are advanced calendar tools.
-                          </div>
-                          <button type="button" onClick={() => router.push('/facilitator/account/plan')} className="bg-indigo-600 text-white px-3 py-1.5 rounded-md text-xs font-semibold hover:bg-indigo-700">
-                            View Plans
-                          </button>
-                        </div>
-                      </div>
-                    ) : (
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-                        <button type="button" onClick={() => { setActiveTab('planner'); setShowGeneratePortfolio(false); router.push('/facilitator/calendar?tab=planner') }} style={{ padding: '7px 10px', border: '1px solid #c7d2fe', borderRadius: 6, background: activeTab === 'planner' ? '#eef2ff' : '#fff', color: '#3730a3', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Lesson Planner</button>
-                        <button type="button" onClick={() => { setActiveTab('subjects'); setShowGeneratePortfolio(false); router.push('/facilitator/calendar?tab=subjects') }} style={{ padding: '7px 10px', border: '1px solid #c7d2fe', borderRadius: 6, background: activeTab === 'subjects' ? '#eef2ff' : '#fff', color: '#3730a3', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Custom Subjects</button>
-                        <button type="button" onClick={() => { setActiveTab('scheduler'); setShowGeneratePortfolio(true); router.push('/facilitator/calendar?portfolio=1') }} style={{ padding: '7px 10px', border: '1px solid #c7d2fe', borderRadius: 6, background: showGeneratePortfolio ? '#eef2ff' : '#fff', color: '#3730a3', fontWeight: 700, fontSize: 12, cursor: 'pointer' }}>Portfolio</button>
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                {/* Tab Content - Both tabs remain mounted, only visibility changes */}
-                <div style={{ display: activeTab === 'scheduler' ? 'block' : 'none' }}>
-                  {/* Date Header - only shows when date is selected */}
-                  {selectedDate && (
-                    <div style={{ 
-                      background: 'linear-gradient(to right, #dbeafe, #e0e7ff)', 
-                      borderRadius: '6px', 
-                      padding: '5px 10px',
-                      border: '1px solid #93c5fd'
-                    }}>
-                      <div style={{ fontSize: '13px', fontWeight: '700', color: '#1e40af', marginBottom: 0 }}>
-                        {new Date(selectedDate + 'T00:00:00').toLocaleDateString('en-US', {
-                          weekday: 'long',
-                          month: 'long',
-                          day: 'numeric'
-                        })}
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#3b82f6' }}>
-                        {scheduledForSelectedDate.length} scheduled
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Scheduled Lessons - Show first if any exist */}
-                  {selectedDate && scheduledForSelectedDate.length > 0 && (
-                    <div className="bg-white rounded-lg shadow-md border border-gray-300 overflow-hidden">
-                      <div style={{ background: '#f0fdf4', padding: '4px 10px', borderBottom: '1px solid #bbf7d0' }}>
-                        <h3 style={{ fontSize: '12px', fontWeight: '700', color: '#065f46', margin: 0 }}>
-                          Scheduled for This Day
-                        </h3>
-                      </div>
-                      <div>
-                        {scheduledForSelectedDate.map(item => {
-                          const [subject, filename] = item.lesson_key.split('/')
-                          const lessonName = filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
-                          const isPastSelectedDate = selectedDate < getLocalTodayStr()
-                          
-                          return (
-                            <div
-                              key={item.id}
-                              style={{
-                                display: 'flex',
-                                alignItems: 'center',
-                                gap: '8px',
-                                padding: '4px 10px',
-                                borderBottom: '1px solid #e5e7eb'
-                              }}
-                            >
-                              <div style={{ flex: '1', minWidth: 0 }}>
-                                <div style={{ fontSize: '13px', fontWeight: '600', color: '#111827' }}>
-                                  {lessonName}
-                                </div>
-                              </div>
-                              {isPastSelectedDate ? (
-                                <>
-                                  <button
-                                    onClick={() => setNotesItem({ ...item, lessonTitle: lessonName })}
-                                    style={{
-                                      padding: '3px 10px',
-                                      fontSize: '11px',
-                                      fontWeight: '600',
-                                      borderRadius: '4px',
-                                      border: 'none',
-                                      cursor: 'pointer',
-                                      background: '#f3f4f6',
-                                      color: '#111827',
-                                      transition: 'background 0.15s'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#e5e7eb'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = '#f3f4f6'}
-                                  >
-                                    Notes
-                                  </button>
-                                  <div style={{ position: 'relative' }}>
-                                    <button
-                                      onClick={() => setAssignsOpenId(assignsOpenId === item.id ? null : item.id)}
-                                      style={{
-                                        padding: '3px 10px',
-                                        fontSize: '11px',
-                                        fontWeight: '600',
-                                        borderRadius: '4px',
-                                        border: 'none',
-                                        cursor: 'pointer',
-                                        background: '#dcfce7',
-                                        color: '#166534',
-                                        transition: 'background 0.15s'
-                                      }}
-                                      onMouseEnter={(e) => e.currentTarget.style.background = '#bbf7d0'}
-                                      onMouseLeave={(e) => e.currentTarget.style.background = '#dcfce7'}
-                                    >
-                                      Assigns
-                                    </button>
-                                    {assignsOpenId === item.id && (
-                                      <>
-                                        <div
-                                          style={{ position: 'fixed', inset: 0, zIndex: 9 }}
-                                          onClick={() => setAssignsOpenId(null)}
-                                        />
-                                        <div style={{
-                                          position: 'absolute',
-                                          top: '100%',
-                                          right: 0,
-                                          background: '#fff',
-                                          border: '1px solid #e5e7eb',
-                                          borderRadius: '6px',
-                                          boxShadow: '0 4px 12px rgba(0,0,0,0.12)',
-                                          zIndex: 10,
-                                          minWidth: '150px',
-                                          overflow: 'hidden'
-                                        }}>
-                                          {learners.map(l => (
-                                            <button
-                                              key={l.id}
-                                              onClick={() => handleAssignLesson(item.lesson_key, l.id)}
-                                              disabled={assigning}
-                                              style={{
-                                                display: 'block',
-                                                width: '100%',
-                                                textAlign: 'left',
-                                                padding: '6px 12px',
-                                                fontSize: '12px',
-                                                border: 'none',
-                                                background: 'transparent',
-                                                cursor: assigning ? 'wait' : 'pointer',
-                                                color: '#111827'
-                                              }}
-                                              onMouseEnter={(e) => e.currentTarget.style.background = '#f3f4f6'}
-                                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                            >
-                                              {l.name}
-                                            </button>
-                                          ))}
-                                          {learners.length > 1 && (
-                                            <button
-                                              onClick={() => handleAssignLesson(item.lesson_key, 'all')}
-                                              disabled={assigning}
-                                              style={{
-                                                display: 'block',
-                                                width: '100%',
-                                                textAlign: 'left',
-                                                padding: '6px 12px',
-                                                fontSize: '12px',
-                                                border: 'none',
-                                                borderTop: '1px solid #e5e7eb',
-                                                background: 'transparent',
-                                                cursor: assigning ? 'wait' : 'pointer',
-                                                color: '#166534',
-                                                fontWeight: '600'
-                                              }}
-                                              onMouseEnter={(e) => e.currentTarget.style.background = '#f0fdf4'}
-                                              onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
-                                            >
-                                              All Learners
-                                            </button>
-                                          )}
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={() => setPortfolioScansItem({ ...item, lessonTitle: lessonName })}
-                                    style={{
-                                      padding: '3px 10px',
-                                      fontSize: '11px',
-                                      fontWeight: '600',
-                                      borderRadius: '4px',
-                                      border: 'none',
-                                      cursor: 'pointer',
-                                      background: '#f5f3ff',
-                                      color: '#5b21b6',
-                                      transition: 'background 0.15s'
-                                    }}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#ede9fe'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = '#f5f3ff'}
-                                  >
-                                    Add Images
-                                  </button>
-                                  <div style={{ position: 'relative' }}>
-                                    <button
-                                      onClick={() => {
-                                        if (!requirePlannerAccess()) return
-                                        const n = new Date()
-                                        setReschedulePickerMonth({ year: n.getFullYear(), month: n.getMonth() })
-                                        setReschedulePickerItemId(reschedulePickerItemId === item.id ? null : item.id)
-                                      }}
-                                      style={{
-                                        padding: '3px 10px',
-                                        fontSize: '11px',
-                                        fontWeight: '600',
-                                        borderRadius: '4px',
-                                        border: 'none',
-                                        cursor: canPlan ? 'pointer' : 'not-allowed',
-                                        background: '#eff6ff',
-                                        color: '#1e40af',
-                                        transition: 'background 0.15s'
-                                      }}
-                                      disabled={!canPlan}
-                                      title="Reschedule"
-                                    >
-                                      📅
-                                    </button>
-                                    {reschedulePickerItemId === item.id && (
-                                      <>
-                                        <div
-                                          style={{ position: 'fixed', inset: 0, zIndex: 9 }}
-                                          onClick={() => setReschedulePickerItemId(null)}
-                                        />
-                                        <div style={{
-                                          position: 'absolute',
-                                          bottom: '100%',
-                                          right: 0,
-                                          background: '#fff',
-                                          border: '1px solid #e5e7eb',
-                                          borderRadius: 8,
-                                          boxShadow: '0 4px 16px rgba(0,0,0,0.15)',
-                                          zIndex: 10,
-                                          padding: 10,
-                                          width: 220,
-                                          marginBottom: 4
-                                        }}>
-                                          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-                                            <button
-                                              onClick={(e) => { e.stopPropagation(); setReschedulePickerMonth(pm => { const d = new Date(pm.year, pm.month - 1, 1); return { year: d.getFullYear(), month: d.getMonth() } }) }}
-                                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px', color: '#374151' }}
-                                            >‹</button>
-                                            <span style={{ fontSize: 12, fontWeight: 600, color: '#1f2937' }}>
-                                              {PICKER_MONTHS[reschedulePickerMonth.month]} {reschedulePickerMonth.year}
-                                            </span>
-                                            <button
-                                              onClick={(e) => { e.stopPropagation(); setReschedulePickerMonth(pm => { const d = new Date(pm.year, pm.month + 1, 1); return { year: d.getFullYear(), month: d.getMonth() } }) }}
-                                              style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, padding: '0 4px', color: '#374151' }}
-                                            >›</button>
-                                          </div>
-                                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2, marginBottom: 4 }}>
-                                            {['Su','Mo','Tu','We','Th','Fr','Sa'].map(d => (
-                                              <div key={d} style={{ fontSize: 9, fontWeight: 600, textAlign: 'center', color: '#9ca3af' }}>{d}</div>
-                                            ))}
-                                          </div>
-                                          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gap: 2 }}>
-                                            {buildPickerDays(reschedulePickerMonth.year, reschedulePickerMonth.month).map((day, i) => (
-                                              <button
-                                                key={i}
-                                                onClick={(e) => {
-                                                  e.stopPropagation()
-                                                  if (!day) return
-                                                  const mm = String(reschedulePickerMonth.month + 1).padStart(2, '0')
-                                                  const dd = String(day).padStart(2, '0')
-                                                  handleRescheduleLesson(item, `${reschedulePickerMonth.year}-${mm}-${dd}`)
-                                                }}
-                                                disabled={!day}
-                                                style={{
-                                                  padding: '3px 0',
-                                                  fontSize: 11,
-                                                  background: !day ? 'transparent' : '#f9fafb',
-                                                  border: 'none',
-                                                  borderRadius: 4,
-                                                  cursor: day ? 'pointer' : 'default',
-                                                  color: day ? '#1f2937' : 'transparent',
-                                                  textAlign: 'center'
-                                                }}
-                                                onMouseEnter={(e) => { if (day) { e.currentTarget.style.background = '#2563eb'; e.currentTarget.style.color = '#fff' } }}
-                                                onMouseLeave={(e) => { if (day) { e.currentTarget.style.background = '#f9fafb'; e.currentTarget.style.color = '#1f2937' } }}
-                                              >
-                                                {day || ''}
-                                              </button>
-                                            ))}
-                                          </div>
-                                        </div>
-                                      </>
-                                    )}
-                                  </div>
-                                  <button
-                                    onClick={() => {
-                                      if (!requirePlannerAccess()) return
-                                      setRemoveConfirmItem({ ...item, lessonTitle: lessonName })
-                                    }}
-                                    style={{
-                                      padding: '3px 10px',
-                                      fontSize: '11px',
-                                      fontWeight: '600',
-                                      borderRadius: '4px',
-                                      border: 'none',
-                                      cursor: canPlan ? 'pointer' : 'not-allowed',
-                                      background: '#fee2e2',
-                                      color: '#991b1b',
-                                      transition: 'background 0.15s'
-                                    }}
-                                    disabled={!canPlan}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
-                                  >
-                                    🗑️
-                                  </button>
-                                </>
-                              ) : (
-                                <>
-                                  {String(item.lesson_key || '').startsWith('generated/') && <button
-                                    type="button"
-                                    onClick={() => setRevisionTarget({ lessonKey: item.lesson_key, title: lessonName })}
-                                    style={{ padding: '3px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '4px', border: '1px solid #f0c9c0', cursor: 'pointer', background: '#fff', color: '#c7442e' }}
-                                  >
-                                    Regenerate with changes
-                                  </button>}
-                                  <button
-                                    onClick={() => {
-                                      if (!requirePlannerAccess()) return
-                                      setRescheduling(item.id)
-                                    }}
-                                    style={{
-                                      padding: '3px 10px',
-                                      fontSize: '11px',
-                                      fontWeight: '600',
-                                      borderRadius: '4px',
-                                      border: 'none',
-                                      cursor: canPlan ? 'pointer' : 'not-allowed',
-                                      background: '#eff6ff',
-                                      color: '#1e40af',
-                                      transition: 'background 0.15s'
-                                    }}
-                                    disabled={!canPlan}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#dbeafe'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = '#eff6ff'}
-                                  >
-                                    Reschedule
-                                  </button>
-                                  <button
-                                    onClick={() => handleRemoveScheduledLesson(item)}
-                                    style={{
-                                      padding: '3px 10px',
-                                      fontSize: '11px',
-                                      fontWeight: '600',
-                                      borderRadius: '4px',
-                                      border: 'none',
-                                      cursor: canPlan ? 'pointer' : 'not-allowed',
-                                      background: '#fee2e2',
-                                      color: '#991b1b',
-                                      transition: 'background 0.15s'
-                                    }}
-                                    disabled={!canPlan}
-                                    onMouseEnter={(e) => e.currentTarget.style.background = '#fecaca'}
-                                    onMouseLeave={(e) => e.currentTarget.style.background = '#fee2e2'}
-                                  >
-                                    Remove
-                                  </button>
-                                </>
-                              )}
-                            </div>
-                          )
-                        })}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Lesson Picker */}
-                  <LessonPicker
-                    learnerId={selectedLearnerId}
-                    selectedDate={selectedDate}
-                    onScheduleLesson={handleScheduleLesson}
-                    scheduledLessonsForDate={scheduledForSelectedDate}
-                  />
-                </div>
-
-                <div style={{ display: activeTab === 'planner' ? 'block' : 'none' }}>
-                  {canPlan && (
-                    <LessonPlanner
-                      learnerId={selectedLearnerId}
-                      learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade || '3rd'}
-                      tier={tier}
-                      canPlan={canPlan}
-                      selectedDate={selectedDate}
-                      plannedLessons={plannedLessons}
-                      onPlannedLessonsChange={savePlannedLessons}
-                      onLessonGenerated={loadSchedule}
-                      customSubjects={customSubjects}
-                    />
-                  )}
-                </div>
-
-                <div style={{ display: activeTab === 'subjects' ? 'block' : 'none' }}>
-                  {canPlan && <div style={{ padding: '12px 0', display: 'flex', flexDirection: 'column', gap: 16 }}>
-                    <p style={{ fontSize: 13, color: '#6b7280', margin: 0 }}>
-                      Add custom subjects to include in your weekly lesson pattern.
-                    </p>
-                    <div style={{ display: 'flex', gap: 8 }}>
-                      <input
-                        type="text"
-                        value={newSubjectName}
-                        onChange={(e) => setNewSubjectName(e.target.value)}
-                        placeholder="Enter new subject name"
-                        onKeyPress={(e) => e.key === 'Enter' && handleAddCustomSubject()}
-                        style={{
-                          flex: 1,
-                          padding: 8,
-                          border: '1px solid #d1d5db',
-                          borderRadius: 6,
-                          fontSize: 13
-                        }}
-                      />
-                      <button
-                        onClick={handleAddCustomSubject}
-                        disabled={!newSubjectName.trim()}
-                        style={{
-                          padding: '8px 16px',
-                          fontSize: 13,
-                          fontWeight: 600,
-                          borderRadius: 6,
-                          border: 'none',
-                          background: newSubjectName.trim() ? '#2563eb' : '#9ca3af',
-                          color: '#fff',
-                          cursor: newSubjectName.trim() ? 'pointer' : 'not-allowed'
-                        }}
-                      >
-                        Add
-                      </button>
-                    </div>
-                    {customSubjects.length > 0 ? (
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-                        {customSubjects.map(subject => (
-                          <div
-                            key={subject.id}
-                            style={{
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: 6,
-                              padding: '6px 10px',
-                              background: '#f3f4f6',
-                              borderRadius: 6,
-                              fontSize: 12,
-                              fontWeight: 500,
-                              color: '#374151'
-                            }}
-                          >
-                            {subject.name}
-                            <button
-                              onClick={() => handleDeleteCustomSubject(subject.id)}
-                              style={{
-                                background: 'none',
-                                border: 'none',
-                                color: '#ef4444',
-                                cursor: 'pointer',
-                                fontSize: 14,
-                                padding: 0,
-                                lineHeight: 1
-                              }}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    ) : (
-                      <p style={{ fontSize: 13, color: '#9ca3af', margin: 0 }}>No custom subjects yet.</p>
-                    )}
-                  </div>}
-                </div>
-              </div>
-            </div>
-
-            {/* Reschedule popup modal - outside tabs */}
-            {rescheduling && scheduledForSelectedDate.find(item => item.id === rescheduling) && (
-              <div 
-                style={{ 
-                  position: 'fixed',
-                  top: 0,
-                  left: 0,
-                  right: 0,
-                  bottom: 0,
-                  background: 'rgba(0,0,0,0.3)',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  zIndex: 10000
-                }}
-                onClick={() => setRescheduling(null)}
-              >
-                <div 
-                  style={{
-                    background: '#fff',
-                    borderRadius: 8,
-                    padding: 20,
-                    boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
-                    maxWidth: 320,
-                    width: '90%'
-                  }}
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <div style={{ fontSize: 16, fontWeight: 600, marginBottom: 12, color: '#1f2937' }}>
-                    📅 Reschedule Lesson
-                  </div>
-                  <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 16 }}>
-                    {(() => {
-                      const item = scheduledForSelectedDate.find(item => item.id === rescheduling)
-                      const parts = item.lesson_key?.split('/')
-                      const filename = parts?.[1] || item.lesson_key
-                      return filename?.replace('.json', '').replace(/_/g, ' ') || item.lesson_key
-                    })()}
-                  </div>
-                  
-                  <input
-                    type="date"
-                    defaultValue={selectedDate}
-                    style={{
-                      width: '100%',
-                      padding: '10px',
-                      border: '1px solid #d1d5db',
-                      borderRadius: 6,
-                      fontSize: 14,
-                      marginBottom: 16,
-                      boxSizing: 'border-box'
-                    }}
-                    id="reschedule-date"
-                  />
-
-                  <div style={{ display: 'flex', gap: 8 }}>
-                    <button
-                      onClick={() => {
-                        const dateInput = document.getElementById('reschedule-date')
-                        if (dateInput?.value) {
-                          const item = scheduledForSelectedDate.find(item => item.id === rescheduling)
-                          handleRescheduleLesson(item, dateInput.value)
-                        }
-                      }}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        border: 'none',
-                        borderRadius: 6,
-                        background: '#2563eb',
-                        color: '#fff',
-                        fontSize: 14,
-                        fontWeight: 600,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Reschedule
-                    </button>
-                    <button
-                      onClick={() => setRescheduling(null)}
-                      style={{
-                        flex: 1,
-                        padding: '10px',
-                        border: '1px solid #d1d5db',
-                        borderRadius: 6,
-                        background: '#fff',
-                        color: '#374151',
-                        fontSize: 14,
-                        cursor: 'pointer'
-                      }}
-                    >
-                      Cancel
-                    </button>
-                  </div>
-                </div>
-              </div>
-            )}
-
-            <LessonNotesModal
-              open={!!notesItem}
-              onClose={() => setNotesItem(null)}
-              learnerId={selectedLearnerId}
-              lessonKey={notesItem?.lesson_key}
-              lessonTitle={notesItem?.lessonTitle || 'Lesson Notes'}
-            />
-
-            <VisualAidsManagerModal
-              open={!!visualAidsItem}
-              onClose={() => setVisualAidsItem(null)}
-              learnerId={selectedLearnerId}
-              lessonKey={visualAidsItem?.lesson_key}
-              lessonTitle={visualAidsItem?.lessonTitle || 'Visual Aids'}
-              authToken={authToken}
-            />
-
-            <PortfolioScansModal
-              open={!!portfolioScansItem}
-              onClose={() => setPortfolioScansItem(null)}
-              learnerId={selectedLearnerId}
-              lessonKey={portfolioScansItem?.lesson_key}
-              lessonTitle={portfolioScansItem?.lessonTitle || 'Lesson'}
-              authToken={authToken}
-            />
-
-            <TypedRemoveConfirmModal
-              open={!!removeConfirmItem}
-              onClose={() => setRemoveConfirmItem(null)}
-              title="Remove lesson?"
-              description="This cannot be undone. Type remove to confirm."
-              confirmWord="remove"
-              confirmLabel="Remove"
-              onConfirm={async () => {
-                if (!removeConfirmItem) return
-                await handleRemoveScheduledLesson(removeConfirmItem, { skipConfirm: true })
-              }}
-            />
-
-            <LessonRevisionDialog
-              open={Boolean(revisionTarget)}
-              lessonKey={revisionTarget?.lessonKey || ''}
-              lessonTitle={revisionTarget?.title || 'lesson'}
-              accessToken={authToken}
-              onClose={() => setRevisionTarget(null)}
-              onRevised={async () => { await loadSchedule() }}
-            />
-
-            <GeneratePortfolioModal
-              open={showGeneratePortfolio && canPlan}
-              onClose={() => setShowGeneratePortfolio(false)}
-              learnerId={selectedLearnerId}
-              learnerName={learners.find(l => l.id === selectedLearnerId)?.name || ''}
-              authToken={authToken}
-              portal
-            />
-
-            {/* Day View Overlay */}
-            {showDayView && selectedDate && (
-              <DayViewOverlay
-                selectedDate={selectedDate}
-                scheduledLessons={scheduledLessons[selectedDate] || []}
-                plannedLessons={plannedLessons[selectedDate] || []}
-                learnerId={selectedLearnerId}
-                learners={learners}
-                learnerGrade={learners.find(l => l.id === selectedLearnerId)?.grade || '3rd'}
-                tier={tier}
-                noSchoolReason={noSchoolDates[selectedDate] || null}
-                onClose={() => setShowDayView(false)}
-                onLessonGenerated={(newEntry) => {
-                  // Immediately inject the new entry so it appears before loadSchedule completes.
-                  if (newEntry?.lesson_key && newEntry?.scheduled_date) {
-                    setScheduledLessons(prev => {
-                      const dateKey = newEntry.scheduled_date
-                      const existing = prev[dateKey] || []
-                      const alreadyPresent = existing.some(l => l.lesson_key === newEntry.lesson_key)
-                      if (alreadyPresent) return prev
-                      return { ...prev, [dateKey]: [...existing, { ...newEntry, completed: false }] }
-                    })
-                  }
-                  loadSchedule()
-                  loadNoSchoolDates()
-                }}
-                onNoSchoolSet={handleNoSchoolSet}
-                onPlannedLessonUpdate={handlePlannedLessonUpdate}
-                onPlannedLessonRemove={handlePlannedLessonRemove}
-                onPlannedLessonAdd={handlePlannedLessonAdd}
-              />
-            )}
-          </>
+        {learners.length === 0 ? (
+          <section style={{ padding: 24, border: '1px solid #e5e7eb', borderRadius: 10, background: '#fff' }}>
+            <p>No learners found.</p>
+            <button type="button" onClick={() => router.push('/facilitator/learners')} style={{ padding: '8px 12px' }}>Manage learners</button>
+          </section>
         ) : (
-          <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-8 text-center">
-            <p className="text-gray-600">No learners found. Add learners first.</p>
-            <button
-              onClick={() => router.push('/facilitator/learners')}
-              className="mt-4 bg-blue-500 text-white px-6 py-2 rounded-lg hover:bg-blue-600 transition"
-            >
-              Manage Learners
-            </button>
+          <div style={{ display: 'grid', gridTemplateColumns: 'minmax(0, 1.6fr) minmax(280px, 0.8fr)', gap: 14, alignItems: 'start' }}>
+            <LessonCalendar
+              itemsByDate={itemsByDate}
+              noSchoolDates={noSchoolDates}
+              learners={learners}
+              selectedLearnerId={selectedLearnerId}
+              selectedDate={selectedDate}
+              onLearnerChange={setSelectedLearnerId}
+              onDateSelect={setSelectedDate}
+              onItemSelect={selectCalendarItem}
+            />
+
+            <aside style={{ border: '1px solid #d1d5db', borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
+              <header style={{ padding: 12, borderBottom: '1px solid #e5e7eb' }}>
+                <strong>{selectedDate ? prettyDate(selectedDate) : 'Select a date'}</strong>
+                {selectedDate && <div style={{ marginTop: 3, fontSize: 12, color: '#6b7280' }}>{selectedItems.length} Syllabus {selectedItems.length === 1 ? 'item' : 'items'}</div>}
+              </header>
+              <div style={{ padding: 10, display: 'grid', gap: 8 }}>
+                {selectedDate && noSchoolDates[selectedDate] !== undefined && (
+                  <div style={{ padding: 9, borderRadius: 7, background: '#fffbeb', color: '#92400e', fontSize: 12 }}>
+                    Legacy Calendar note: No school{noSchoolDates[selectedDate] ? ` - ${noSchoolDates[selectedDate]}` : ''}. This note is displayed here but does not author the Syllabus.
+                  </div>
+                )}
+                {!syllabus?.has_active_syllabus && (
+                  <div style={{ padding: 10, border: '1px solid #e5e7eb', borderRadius: 8 }}>
+                    <strong>No active Syllabus</strong>
+                    <p style={{ margin: '5px 0 10px', color: '#6b7280', fontSize: 12 }}>Calendar no longer creates a separate lesson plan. Establish the learner plan in Syllabus.</p>
+                    <button type="button" onClick={() => router.push('/facilitator/syllabus')} style={{ padding: '7px 10px', border: '1px solid #c7442e', borderRadius: 6, background: '#fff', color: '#c7442e', fontWeight: 700 }}>Open Syllabus</button>
+                  </div>
+                )}
+                {syllabus?.has_active_syllabus && selectedItems.length === 0 && <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Nothing is placed on this date in the active Syllabus.</p>}
+                {selectedItems.map((item) => {
+                  const teacher = normalizeInstructionalTeacher(item?.assigned_instructional_teacher || item?.instructional_teacher)
+                  const clickable = Boolean(item?.lesson_key)
+                  return (
+                    <button
+                      type="button"
+                      key={item.occurrence_id || item.id || `${item.title}-${item.sort_order}`}
+                      onClick={() => selectCalendarItem(item)}
+                      style={{ width: '100%', textAlign: 'left', padding: 10, border: '1px solid #e5e7eb', borderRadius: 8, background: syllabusCalendarItemCompleted(item) ? '#f9fafb' : '#fff', cursor: 'pointer' }}
+                    >
+                      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
+                        <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#6b7280' }}>{item.subject || 'Lesson'}</span>
+                        <span style={{ fontSize: 10, color: '#6b7280' }}>{statusLabel(item)}</span>
+                      </div>
+                      <div style={{ marginTop: 3, fontWeight: 800, color: '#111827' }}>{item.title || 'Untitled lesson'}</div>
+                      {teacher && item.item_type !== 'slate_assignment' && <div style={{ marginTop: 4, fontSize: 11, color: '#6b7280' }}>{instructionalTeacherLabel(teacher)}</div>}
+                      {!clickable && <div style={{ marginTop: 5, fontSize: 11, color: '#c7442e' }}>Open in Syllabus to prepare this concept</div>}
+                    </button>
+                  )
+                })}
+              </div>
+            </aside>
           </div>
         )}
-      </div>
-    </div>
-    
-    <GatedOverlay
-      show={!isAuthenticated}
-      gateType="auth"
-      feature="Lesson Calendar"
-      emoji="📅"
-      description="Sign in to schedule lessons, plan learning activities, and track completion over time."
-      benefits={[
-        'Schedule lessons in advance for each learner',
-        'View all scheduled lessons in a monthly calendar',
-        'Track lesson completion and attendance',
-        'Set up recurring lesson schedules'
-      ]}
-    />
+      </main>
+
+      {selectedLesson && (
+        <FacilitatorSyllabusLessonOverlay
+          selection={selectedLesson}
+          learnerId={selectedLearnerId}
+          accessToken={accessToken}
+          planTier={planTier}
+          resolvedToday={resolvedToday}
+          activeRevisionId={activeRevisionId}
+          onChanged={loadSyllabus}
+          onClose={() => setSelectedLesson(null)}
+          canChangeIntent={false}
+        />
+      )}
+
+      <GeneratePortfolioModal
+        open={showPortfolio && portfolioAllowed}
+        onClose={() => setShowPortfolio(false)}
+        learnerId={selectedLearnerId}
+        learnerName={selectedLearner?.name || ''}
+        authToken={accessToken}
+        portal
+      />
+
+      <GatedOverlay
+        show={!isAuthenticated}
+        gateType={gateType || 'auth'}
+        feature="Calendar"
+        description="Sign in to view the learner's Syllabus by month and date."
+        benefits={['See planned and completed Syllabus occurrences by date', 'Open lesson details from the Calendar', 'Keep curriculum authorship in one Syllabus']}
+      />
     </>
   )
 }

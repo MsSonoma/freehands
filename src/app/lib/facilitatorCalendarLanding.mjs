@@ -1,13 +1,12 @@
-export const CALENDAR_TABS = Object.freeze(['scheduler', 'planner', 'subjects'])
+export const LEGACY_CALENDAR_AUTHORING_TABS = Object.freeze(['planner', 'subjects'])
 
 export function resolveCalendarLandingParams(params) {
   const reader = params instanceof URLSearchParams
     ? params
     : new URLSearchParams(params || '')
-  const requestedTab = reader.get('tab') || 'scheduler'
-  const activeTab = CALENDAR_TABS.includes(requestedTab) ? requestedTab : 'scheduler'
+  const requestedTab = reader.get('tab') || ''
   return {
-    activeTab,
     openPortfolio: reader.get('portfolio') === '1',
+    redirectToSyllabus: LEGACY_CALENDAR_AUTHORING_TABS.includes(requestedTab),
   }
 }

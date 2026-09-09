@@ -44,31 +44,31 @@ test('request-changes resets shared state before writing revised content', () =>
   assert.ok(source.indexOf('await synchronize({') < source.indexOf('lessonStorage.update('))
 })
 
-test('all generated lesson surfaces use the shared regeneration dialog', () => {
-  const files = [
+test('generated lesson authoring surfaces share the canonical regeneration dialog', () => {
+  const directDialogFiles = [
     '../../components/syllabus/FacilitatorSyllabusLessonOverlay.js',
     '../../facilitator/prepare/page.js',
     '../../facilitator/generator/page.js',
     '../../facilitator/lessons/page.js',
-    '../../facilitator/calendar/page.js',
-    '../../facilitator/calendar/DayViewOverlay.jsx',
     '../../facilitator/generator/counselor/overlays/GeneratedLessonsOverlay.jsx',
   ]
-  for (const path of files) {
+  for (const path of directDialogFiles) {
     const source = fs.readFileSync(new URL(path, import.meta.url), 'utf8')
     assert.match(source, /LessonRevisionDialog/, path)
     assert.match(source, /Regenerate with changes|revisionTarget|revisionOpen/, path)
   }
+  const calendar = fs.readFileSync(new URL('../../facilitator/calendar/page.js', import.meta.url), 'utf8')
+  assert.match(calendar, /FacilitatorSyllabusLessonOverlay/)
+  assert.match(calendar, /syllabusCalendarSelection/)
+  assert.doesNotMatch(calendar, /LessonRevisionDialog/)
 })
 
-test('calendar distinguishes concept revision from generated lesson regeneration', () => {
-  const source = fs.readFileSync(new URL('../../facilitator/calendar/DayViewOverlay.jsx', import.meta.url), 'utf8')
-  assert.match(source, /Lesson plan revision notes \(optional\)/)
-  assert.match(source, /Revise lesson plan/)
-  assert.match(source, /Regenerate with changes/)
-  assert.doesNotMatch(source, /Redo prompt update \(optional\)/)
+test('calendar surfaces no longer own lesson-plan revision', () => {
+  const calendar = fs.readFileSync(new URL('../../facilitator/calendar/page.js', import.meta.url), 'utf8')
   const mentorCalendar = fs.readFileSync(new URL('../../facilitator/generator/counselor/overlays/CalendarOverlay.jsx', import.meta.url), 'utf8')
-  assert.match(mentorCalendar, /Lesson plan revision notes \(optional\)/)
-  assert.match(mentorCalendar, /Revise lesson plan/)
-  assert.doesNotMatch(mentorCalendar, /Redo prompt update \(optional\)/)
+  for (const source of [calendar, mentorCalendar]) {
+    assert.doesNotMatch(source, /Revise lesson plan|Lesson plan revision notes|LessonPlanner|\/api\/planned-lessons/)
+    assert.match(source, /FacilitatorSyllabusLessonOverlay/)
+    assert.match(source, /\/api\/syllabus\?learnerId=/)
+  }
 })

@@ -1,359 +1,103 @@
-// Calendar component for lesson scheduling
 'use client'
-import { useState, useEffect, useRef } from 'react'
 
-export default function LessonCalendar({ learnerId, onDateSelect, scheduledLessons = {}, noSchoolDates = {}, learners = [], selectedLearnerId, onLearnerChange, isPlannedView = false }) {
-  const [currentMonth, setCurrentMonth] = useState(new Date())
-  const [selectedDate, setSelectedDate] = useState(null)
+import { useState } from 'react'
+import { syllabusCalendarItemCompleted } from '@/app/lib/syllabus/calendarProjection.mjs'
 
-  const autoFocusedLearnerRef = useRef(null)
+function localDateString(date) {
+  const year = date.getFullYear()
+  const month = String(date.getMonth() + 1).padStart(2, '0')
+  const day = String(date.getDate()).padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
 
-  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
-    'July', 'August', 'September', 'October', 'November', 'December']
-  
+export default function LessonCalendar({
+  itemsByDate = {},
+  noSchoolDates = {},
+  learners = [],
+  selectedLearnerId = '',
+  selectedDate = '',
+  onLearnerChange,
+  onDateSelect,
+  onItemSelect,
+}) {
+  const [currentMonth, setCurrentMonth] = useState(() => {
+    const base = selectedDate ? new Date(`${selectedDate}T12:00:00`) : new Date()
+    return Number.isNaN(base.getTime()) ? new Date() : base
+  })
+  const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
   const currentYear = currentMonth.getFullYear()
   const currentMonthIndex = currentMonth.getMonth()
-  
-  // Generate year options (current year ± 2 years)
-  const yearOptions = []
   const thisYear = new Date().getFullYear()
-  for (let y = thisYear - 1; y <= thisYear + 2; y++) {
-    yearOptions.push(y)
+  const yearOptions = Array.from({ length: 5 }, (_, index) => thisYear - 1 + index)
+  const totalDays = new Date(currentYear, currentMonthIndex + 1, 0).getDate()
+  const firstDay = new Date(currentYear, currentMonthIndex, 1).getDay()
+  const calendarDays = [
+    ...Array.from({ length: firstDay }, () => null),
+    ...Array.from({ length: totalDays }, (_, index) => index + 1),
+  ]
+  const today = localDateString(new Date())
+
+  function changeMonth(offset) {
+    setCurrentMonth(new Date(currentYear, currentMonthIndex + offset, 1))
   }
-  
-  const daysInMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate()
-  }
-
-  const toLocalDateStr = (dateLike) => {
-    const dt = new Date(dateLike)
-    if (Number.isNaN(dt.getTime())) return null
-    const year = dt.getFullYear()
-    const month = String(dt.getMonth() + 1).padStart(2, '0')
-    const day = String(dt.getDate()).padStart(2, '0')
-    return `${year}-${month}-${day}`
-  }
-
-  const firstDayOfMonth = (date) => {
-    return new Date(date.getFullYear(), date.getMonth(), 1).getDay()
-  }
-
-  const generateCalendarDays = () => {
-    const days = []
-    const totalDays = daysInMonth(currentMonth)
-    const firstDay = firstDayOfMonth(currentMonth)
-    
-    // Add empty cells for days before month starts
-    for (let i = 0; i < firstDay; i++) {
-      days.push({ day: null, date: null })
-    }
-    
-    // Add days of the month
-    for (let day = 1; day <= totalDays; day++) {
-      const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day)
-      const dateStr = toLocalDateStr(date)
-      days.push({ day, date: dateStr })
-    }
-    
-    return days
-  }
-
-  const handleMonthChange = (e) => {
-    const newMonth = parseInt(e.target.value)
-    setCurrentMonth(new Date(currentYear, newMonth))
-  }
-
-  const handleYearChange = (e) => {
-    const newYear = parseInt(e.target.value)
-    setCurrentMonth(new Date(newYear, currentMonthIndex))
-  }
-
-  const handleMonthUp = () => {
-    const newMonth = new Date(currentYear, currentMonthIndex + 1)
-    setCurrentMonth(newMonth)
-  }
-
-  const handleMonthDown = () => {
-    const newMonth = new Date(currentYear, currentMonthIndex - 1)
-    setCurrentMonth(newMonth)
-  }
-
-  const handleDateClick = (dateStr) => {
-    if (!dateStr) return
-    setSelectedDate(dateStr)
-    onDateSelect(dateStr)
-  }
-
-  // Calculate today using local timezone
-  const now = new Date()
-  const year = now.getFullYear()
-  const month = String(now.getMonth() + 1).padStart(2, '0')
-  const day = String(now.getDate()).padStart(2, '0')
-  const today = `${year}-${month}-${day}`
-  const calendarDays = generateCalendarDays()
-  const numRows = Math.ceil(calendarDays.length / 7)
-
-  // Auto-focus the month to the most recent scheduled date for the selected learner.
-  // This makes retroactive completed lessons visible immediately (e.g., Dec 2025) instead
-  // of defaulting to the current month which may have no history markers.
-  useEffect(() => {
-    if (!selectedLearnerId) return
-    if (isPlannedView) return
-    if (autoFocusedLearnerRef.current === selectedLearnerId) return
-
-    const keys = Object.keys(scheduledLessons || {})
-    if (keys.length === 0) return
-
-    const pastKeys = keys.filter((k) => k && k <= today).sort()
-    const target = (pastKeys.length ? pastKeys[pastKeys.length - 1] : keys.sort()[keys.length - 1])
-    if (!target) return
-
-    const [y, m] = String(target).split('-')
-    const yearNum = Number.parseInt(y, 10)
-    const monthNum = Number.parseInt(m, 10)
-    if (!Number.isFinite(yearNum) || !Number.isFinite(monthNum)) return
-
-    setCurrentMonth(new Date(yearNum, monthNum - 1, 1))
-    autoFocusedLearnerRef.current = selectedLearnerId
-  }, [selectedLearnerId, isPlannedView, scheduledLessons, today])
 
   return (
-    <div className="bg-white rounded-lg shadow-md border border-gray-500 overflow-hidden">
-      {/* Calendar Header with Learner Selector */}
-      <div style={{ 
-        padding: '6px 8px', 
-        background: 'linear-gradient(to right, #eff6ff, #eef2ff)',
-        borderBottom: '1px solid #e5e7eb'
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          gap: 4, 
-          justifyContent: 'center', 
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          maxWidth: '100%'
-        }}>
-          {/* Learner Selector */}
-          {learners.length > 0 && (
-            <select
-              value={selectedLearnerId}
-              onChange={(e) => onLearnerChange(e.target.value)}
-              style={{
-                padding: '4px 8px',
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 6,
-                background: '#fff',
-                border: '1px solid #d1d5db',
-                cursor: 'pointer',
-                minWidth: '120px',
-                maxWidth: '160px',
-                flex: '1 1 auto'
-              }}
-            >
-              {learners.map(learner => (
-                <option key={learner.id} value={learner.id}>
-                  {learner.name} {learner.grade ? `(Grade ${learner.grade})` : ''}
-                </option>
-              ))}
-            </select>
-          )}
-          
-          <select
-            value={currentMonthIndex}
-            onChange={handleMonthChange}
-            style={{
-              padding: '4px 8px',
-              fontSize: 12,
-              fontWeight: 600,
-              borderRadius: 6,
-              background: '#fff',
-              border: '1px solid #d1d5db',
-              cursor: 'pointer',
-              minWidth: '100px',
-              maxWidth: '140px',
-              flex: '1 1 auto'
-            }}
-          >
-            {monthNames.map((month, idx) => (
-              <option key={idx} value={idx}>
-                {month}
-              </option>
-            ))}
+    <section style={{ background: '#fff', border: '1px solid #d1d5db', borderRadius: 12, overflow: 'hidden' }}>
+      <header style={{ padding: 12, borderBottom: '1px solid #e5e7eb', display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+        {learners.length > 0 && (
+          <select value={selectedLearnerId} onChange={(event) => onLearnerChange?.(event.target.value)} style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 7, fontWeight: 700 }}>
+            {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}{learner.grade ? ` (Grade ${learner.grade})` : ''}</option>)}
           </select>
-          
-          <select
-            value={currentYear}
-            onChange={handleYearChange}
-            style={{
-              padding: '4px 8px',
-              fontSize: 12,
-              fontWeight: 600,
-              borderRadius: 6,
-              background: '#fff',
-              border: '1px solid #d1d5db',
-              cursor: 'pointer',
-              minWidth: '80px',
-              maxWidth: '100px',
-              flex: '0 1 auto'
-            }}
-          >
-            {yearOptions.map(year => (
-              <option key={year} value={year}>
-                {year}
-              </option>
-            ))}
-          </select>
+        )}
+        <button type="button" onClick={() => changeMonth(-1)} aria-label="Previous month" style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 7, background: '#fff', cursor: 'pointer' }}>&lt;</button>
+        <select value={currentMonthIndex} onChange={(event) => setCurrentMonth(new Date(currentYear, Number(event.target.value), 1))} style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 7, fontWeight: 700 }}>
+          {monthNames.map((month, index) => <option key={month} value={index}>{month}</option>)}
+        </select>
+        <select value={currentYear} onChange={(event) => setCurrentMonth(new Date(Number(event.target.value), currentMonthIndex, 1))} style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 7, fontWeight: 700 }}>
+          {yearOptions.map((year) => <option key={year} value={year}>{year}</option>)}
+        </select>
+        <button type="button" onClick={() => changeMonth(1)} aria-label="Next month" style={{ padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 7, background: '#fff', cursor: 'pointer' }}>&gt;</button>
+        <button type="button" onClick={() => setCurrentMonth(new Date())} style={{ marginLeft: 'auto', padding: '7px 10px', border: '1px solid #d1d5db', borderRadius: 7, background: '#fff', cursor: 'pointer', fontWeight: 700 }}>Today</button>
+      </header>
 
-          {/* Month navigation arrows */}
-          <div style={{ display: 'flex', gap: 4, flex: '0 0 auto' }}>
-            <button
-              onClick={handleMonthDown}
-              style={{
-                padding: '3px 8px',
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 4,
-                background: '#fff',
-                border: '1px solid #d1d5db',
-                cursor: 'pointer',
-                lineHeight: 1
-              }}
-              title="Previous month"
-            >
-              ◀
-            </button>
-            <button
-              onClick={handleMonthUp}
-              style={{
-                padding: '3px 8px',
-                fontSize: 12,
-                fontWeight: 600,
-                borderRadius: 4,
-                background: '#fff',
-                border: '1px solid #d1d5db',
-                cursor: 'pointer',
-                lineHeight: 1
-              }}
-              title="Next month"
-            >
-              ▶
-            </button>
-          </div>
+      <div style={{ padding: 10 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 4, marginBottom: 4 }}>
+          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map((day) => <div key={day} style={{ textAlign: 'center', fontSize: 11, fontWeight: 800, color: '#6b7280', padding: 4 }}>{day}</div>)}
         </div>
-      </div>
-
-      {/* Calendar Table */}
-      <div style={{ padding: 8 }}>
-        {/* Day Headers */}
-        <div style={{ 
-          display: 'grid', 
-          gridTemplateColumns: 'repeat(7, 1fr)', 
-          gap: 2,
-          marginBottom: 4
-        }}>
-          {['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'].map(day => (
-            <div key={day} style={{ 
-              textAlign: 'center', 
-              fontSize: 10,
-              fontWeight: 700,
-              color: '#6b7280',
-              padding: '2px 0'
-            }}>
-              {day}
-            </div>
-          ))}
-        </div>
-
-        {/* Calendar Days Grid */}
-        <div style={{ aspectRatio: '7/5', width: '100%' }}>
-          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', gridTemplateRows: `repeat(${numRows}, 1fr)`, gap: 2, height: '100%' }}>
-            {calendarDays.map((item, idx) => {
-              if (!item.day) {
-                return <div key={idx} style={{ minHeight: 0, background: 'transparent' }} />
-            }
-
-            const dateStr = item.date
-            const lessonsForDate = scheduledLessons[dateStr] || []
-            const lessonCount = lessonsForDate.length || 0
-            const isToday = dateStr === today
-            const isSelected = dateStr === selectedDate
-            const isPast = dateStr < today
-            const isNoSchool = noSchoolDates[dateStr] !== undefined
-            const allCompleted = !isPlannedView && lessonCount > 0 && lessonsForDate.every((l) => l?.completed === true)
-
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, minmax(0, 1fr))', gap: 4 }}>
+          {calendarDays.map((day, index) => {
+            if (!day) return <div key={`empty-${index}`} style={{ minHeight: 112 }} />
+            const date = localDateString(new Date(currentYear, currentMonthIndex, day))
+            const items = itemsByDate[date] || []
+            const isSelected = date === selectedDate
+            const isToday = date === today
+            const noSchool = noSchoolDates[date] !== undefined
+            const allCompleted = items.length > 0 && items.every(syllabusCalendarItemCompleted)
             return (
-              <button
-                key={idx}
-                onClick={() => handleDateClick(dateStr)}
-                style={{
-                  minHeight: 0,
-                  border: isSelected ? '2px solid' : '1px solid',
-                  borderColor: isSelected ? '#1f2937' : isNoSchool ? '#f59e0b' : isToday ? '#10b981' : '#e5e7eb',
-                  borderRadius: 6,
-                  background: isNoSchool
-                    ? '#fef3c7'
-                    : isToday
-                      ? '#d1fae5'
-                      : lessonCount > 0
-                        ? (isPlannedView ? '#dbeafe' : (allCompleted ? '#f3f4f6' : '#fef3c7'))
-                        : '#fff',
-                  cursor: 'pointer',
-                  fontSize: 12,
-                  fontWeight: lessonCount > 0 ? 700 : 400,
-                  color: isPast ? '#9ca3af' : '#1f2937',
-                  position: 'relative',
-                  transition: 'all 0.15s',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  alignItems: 'flex-start',
-                  justifyContent: 'flex-start',
-                  padding: '4px'
-                }}
-                onMouseEnter={(e) => {
-                  e.currentTarget.style.transform = 'scale(1.05)'
-                  e.currentTarget.style.boxShadow = '0 2px 4px rgba(0,0,0,0.1)'
-                }}
-                onMouseLeave={(e) => {
-                  e.currentTarget.style.transform = 'scale(1)'
-                  e.currentTarget.style.boxShadow = 'none'
-                }}
-              >
-                <span style={{ 
-                  fontSize: '14px', 
-                  fontWeight: '600',
-                  color: isToday ? '#10b981' : isPast ? '#9ca3af' : '#1f2937'
-                }}>
-                  {item.day}
-                </span>
-                {isNoSchool && (
-                  <div style={{
-                    position: 'absolute',
-                    top: 4,
-                    right: 4,
-                    fontSize: 10
-                  }}>
-                    🚫
-                  </div>
-                )}
-                {lessonCount > 0 && (
-                  <div style={{
-                    position: 'absolute',
-                    bottom: 4,
-                    left: '50%',
-                    transform: 'translateX(-50%)',
-                    width: 4,
-                    height: 4,
-                    borderRadius: '50%',
-                    background: isPlannedView ? '#3b82f6' : (allCompleted ? '#9ca3af' : '#f59e0b')
-                  }} />
-                )}
-              </button>
+              <div key={date} style={{ minHeight: 112, padding: 6, border: isSelected ? '2px solid #111827' : '1px solid #e5e7eb', borderRadius: 8, background: noSchool ? '#fffbeb' : isToday ? '#f0fdf4' : '#fff', overflow: 'hidden' }}>
+                <button type="button" onClick={() => onDateSelect?.(date)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: 0, padding: 0, background: 'transparent', cursor: 'pointer', textAlign: 'left' }}>
+                  <strong style={{ fontSize: 13, color: isToday ? '#166534' : '#111827' }}>{day}</strong>
+                  {noSchool ? <span style={{ fontSize: 9, color: '#92400e' }}>No school</span> : items.length > 0 ? <span style={{ fontSize: 9, color: allCompleted ? '#6b7280' : '#374151' }}>{items.length}</span> : null}
+                </button>
+                <div style={{ display: 'grid', gap: 3, marginTop: 5 }}>
+                  {items.slice(0, 3).map((item) => (
+                    <button
+                      type="button"
+                      key={item.occurrence_id || item.id || `${item.title}-${item.sort_order}`}
+                      onClick={() => item.lesson_key ? onItemSelect?.(item) : onDateSelect?.(date)}
+                      title={item.lesson_key ? `Open ${item.title || 'lesson'}` : 'Open this planned concept in the Syllabus'}
+                      style={{ border: '1px solid #e5e7eb', borderRadius: 5, padding: '3px 5px', background: syllabusCalendarItemCompleted(item) ? '#f3f4f6' : item.readiness_state === 'draft' ? '#fff7ed' : '#f9fafb', color: '#1f2937', cursor: 'pointer', textAlign: 'left', fontSize: 9, lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
+                    >
+                      {item.item_type === 'slate_assignment' ? 'Mr. Slate: ' : ''}{item.title || item.subject || 'Planned lesson'}
+                    </button>
+                  ))}
+                  {items.length > 3 && <button type="button" onClick={() => onDateSelect?.(date)} style={{ border: 0, padding: 0, background: 'transparent', textAlign: 'left', fontSize: 9, color: '#6b7280', cursor: 'pointer' }}>+{items.length - 3} more</button>}
+                </div>
+              </div>
             )
           })}
-          </div>
         </div>
       </div>
-    </div>
+    </section>
   )
 }

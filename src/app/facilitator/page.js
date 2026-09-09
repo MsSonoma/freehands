@@ -299,8 +299,6 @@ export default function FacilitatorPage() {
     { label: 'Detailed lesson builder', href: '/facilitator/generator?advanced=1' },
     { label: 'Lesson Library', href: '/facilitator/lessons', icon: '📚' },
     { label: 'Calendar', href: '/facilitator/calendar', icon: '📅' },
-    { label: 'Lesson Planner', href: '/facilitator/calendar?tab=planner', icon: '📅' },
-    { label: 'Custom Subjects', href: '/facilitator/calendar?tab=subjects' },
     { label: 'Portfolio tools', href: '/facilitator/calendar?portfolio=1' },
     { label: 'Account', href: '/facilitator/account', icon: '⚙️' },
     { label: 'Mr. Mentor', href: '/facilitator/mr-mentor', icon: '🧠' },

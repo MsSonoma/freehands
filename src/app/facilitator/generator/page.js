@@ -925,10 +925,10 @@ export default function LessonMakerPage(){
 
       {/* ── Planner promo card ── */}
       <div
-        onClick={() => router.push('/facilitator/calendar?tab=planner')}
+        onClick={() => router.push('/facilitator/syllabus')}
         role="button"
         tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/calendar?tab=planner')}
+        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/syllabus')}
         style={{
           marginTop: 20,
           padding: '16px 22px',
@@ -945,14 +945,14 @@ export default function LessonMakerPage(){
       >
         <div>
           <div style={{ fontWeight: 700, fontSize: 15, color: '#1e40af', marginBottom: 3 }}>
-            📅 Want to generate whole weeks of lessons at once?
+            📅 Want to build whole weeks of learning at once?
           </div>
           <div style={{ fontSize: 13, color: '#4b5563' }}>
-            The Lesson Planner builds a full curriculum calendar for you — automatically.
+            The Syllabus builds the learner plan, weekly pattern, and lesson forecast in one place — automatically.
           </div>
         </div>
         <div style={{ fontSize: 13, fontWeight: 700, color: '#2563eb', whiteSpace: 'nowrap' }}>
-          Open Planner →
+          Open Syllabus →
         </div>
       </div>
     </main>
