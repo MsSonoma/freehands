@@ -1743,7 +1743,7 @@ function WebbPageInner() {
           const firstRemainingIndex = objectives.findIndex((_, i) => !writingReady.has(i))
           if (firstRemainingIndex !== -1) {
             const status = evaluationStatus[firstRemainingIndex]
-            if (status === 'partial' || status === 'incorrect') {
+            if (status === 'partial' || status === 'incorrect' || status === 'reproduced') {
               masteryStatus = status
               assistanceTargetIndex = firstRemainingIndex
             }

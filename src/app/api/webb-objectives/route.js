@@ -52,10 +52,12 @@ async function generateObjectives(apiKey, lesson) {
 
   const system =
     `You are a curriculum designer. Given a list of assessment questions for a school lesson, ` +
-    `derive 5 to 8 core comprehension objectives. Each objective should be a clear, ` +
-    `student-facing statement of what the learner needs to understand — written as ` +
+    `derive 5 to 8 ATOMIC core comprehension objectives. Each objective must assess ONE central idea, relationship, process, or skill only. ` +
+    `Do not combine a definition with a cause, effect, example, application, condition, or second fact in the same objective. ` +
+    `If related details are independently important, split them into separate objectives; if that would create more than eight, keep only the eight most instructionally important concepts. ` +
+    `Each objective should be a clear, student-facing statement of what the learner needs to understand — written as ` +
     `"The learner can explain..." or "The learner understands...". ` +
-    `Consolidate overlapping questions into a single objective. ` +
+    `Overlapping questions may point to the same atomic concept, but never merge distinct concepts merely to reduce the count. ` +
     `Do NOT number them. Return one objective per line, nothing else.`
 
   const user =
@@ -69,36 +71,41 @@ async function generateObjectives(apiKey, lesson) {
 
 // ── Check whether the student just demonstrated any uncompleted objectives ────
 // Returns comprehension state plus exact, source-verified learner notes.
-async function checkObjectives(apiKey, objectives, coveredIndices, conversation, lesson = {}, quick = false, priorObjectiveEvidence = {}, priorPromptExposure = {}, noteReadyIndices = []) {
+async function checkObjectives(apiKey, objectives, progressionIndices, conversation, lesson = {}, quick = false, priorObjectiveEvidence = {}, priorPromptExposure = {}, noteReadyIndices = null) {
+  // Webb explicitly supplies noteReadyIndices because writing requires a source-verified learner note.
+  // Sonoma does not; its progression gate is the completed/comprehension indices it supplies.
+  const completionGate = Array.isArray(noteReadyIndices) ? noteReadyIndices : progressionIndices
   const incomplete = objectives
     .map((obj, i) => ({ obj, i }))
-    .filter(({ i }) => !noteReadyIndices.includes(i))
+    .filter(({ i }) => !completionGate.includes(i))
 
   if (!incomplete.length) return { newlyCovered: [], newlyUnderstood: [], newlyCompleted: [], learnerNotes: {}, qualifyingText: {}, objectiveEvidence: priorObjectiveEvidence }
 
-  // quick=true  → only last 2 user turns (inline pre-check before webb-chat)
-  // quick=false → last 20 messages (~10 turns) for catch-up / video-research checks
-  const windowSize = quick ? 4 : 20
-  const recentTurns = conversation.slice(-windowSize)
-    .filter(m => m.role === 'user')
-    .map(m => ({ idx: conversation.indexOf(m), text: String(m.content || '').trim() }))
+  // Keep enough recent learner language for a genuine paraphrase to remain visible across a short exchange.
+  // The selected evidence is still one exact learner message so notes and mastery provenance stay auditable.
+  const windowSize = quick ? 8 : 30
+  const startIndex = Math.max(0, conversation.length - windowSize)
+  const recentTurns = conversation.slice(startIndex)
+    .map((m, offset) => ({ message: m, idx: startIndex + offset }))
+    .filter(({ message }) => message.role === 'user')
+    .map(({ message, idx }) => ({ idx, text: String(message.content || '').trim() }))
     .filter(t => t.text)
 
   if (!recentTurns.length) return { newlyCovered: [], newlyUnderstood: [], newlyCompleted: [], learnerNotes: {}, qualifyingText: {}, objectiveEvidence: priorObjectiveEvidence }
 
   const system =
-    `You are evaluating whether a student has mastered lesson objectives. ` +
-    `Evaluate meaning flexibly, but correctness strictly. ` +
-    `The student may use any age-appropriate wording, paraphrase, explanation, or valid example. NEVER require exact terminology, a memorized definition, or wording that matches the lesson. ` +
-    `Judge semantic meaning, not textual similarity. A materially correct explanation that differs from the lesson wording should pass. ` +
-    `An objective is correct only when the student's own words materially and accurately demonstrate the objective, are sufficient to show understanding, and contain no material misconception or contradiction. ` +
-    `Do not infer missing understanding merely because a response is related to the topic. Partial, vague, guessed, or conceptually wrong answers are NOT complete. ` +
-    `Use the instructional lesson context to help judge meaning and factual or conceptual correctness, never as a required answer key. ` +
+    `You are evaluating whether a student has demonstrated comprehension of lesson concepts. ` +
+    `Judge semantic meaning generously enough for normal child language, while keeping factual and conceptual correctness strict. ` +
+    `The student may use any age-appropriate wording, paraphrase, short explanation, fragment, or valid example. NEVER require exact terminology, a memorized definition, a polished sentence, or wording that matches the lesson. ` +
+    `Judge the CENTRAL CONCEPT, not clause-by-clause coverage. A response is ACCURACY "correct" when it accurately communicates the essential idea, relationship, process, or skill strongly enough to show understanding and contains no material misconception or contradiction. ` +
+    `Do NOT require every modifier, example, consequence, application, condition, or secondary detail named in an objective. If an older objective accidentally combines several ideas, identify its primary concept and do not withhold credit merely because secondary detail was omitted. ` +
+    `Use ACCURACY "partial" only when an ESSENTIAL part of the central concept is missing, ambiguous, or incomplete. A brief but semantically sufficient child answer is correct, not partial. ` +
+    `Use the instructional lesson context to judge meaning and factual correctness, never as a required answer key. ` +
     `For each remaining objective that the recent student messages address enough to evaluate, output one line: OBJECTIVE_INDEX|ACCURACY|SENTENCE_OK|MESSAGE_INDEX|STUDENT_QUOTE ` +
-    `where ACCURACY is exactly "correct", "partial", or "incorrect". Judge ACCURACY from conceptual meaning alone, independently of grammar or sentence form. A fragment may be ACCURACY "correct" when it contains the full materially correct concept; SENTENCE_OK must separately reject the fragment. Never downgrade ACCURACY merely because the response is not a complete sentence or has poor grammar. ` +
+    `where ACCURACY is exactly "correct", "partial", or "incorrect". Judge ACCURACY from conceptual meaning alone, independently of grammar or sentence form. A fragment may be ACCURACY "correct" when it contains the central concept; SENTENCE_OK must separately judge whether it is essay-ready. ` +
     `SENTENCE_OK is "yes" only when the student's quoted response is a complete, grammatically coherent sentence suitable for the child's essay with at most minor spelling, capitalization, or punctuation fixes. ` +
     `Use SENTENCE_OK "no" for a fragment, single word, phrase, materially broken grammar, garbled or repeated wording, or anything that would require rephrasing, restructuring, or adding missing words. ` +
-    `MESSAGE_INDEX must be the bracketed index of the one student message that demonstrates the objective. STUDENT_QUOTE must be a verbatim excerpt from that same message. Never combine text from multiple messages and never paraphrase it. ` +
+    `MESSAGE_INDEX must be the bracketed index of the strongest single student message that carries the central concept. You may use the learner's other recent messages only as conversational context, but never manufacture or paraphrase evidence. STUDENT_QUOTE must be a verbatim excerpt from that selected message. ` +
     `If a response contains a material contradiction or misconception, do not cherry-pick one correct phrase and call the objective correct. ` +
     `If no remaining objective is addressed enough to evaluate, return "none".`
 
@@ -110,9 +117,10 @@ async function checkObjectives(apiKey, objectives, coveredIndices, conversation,
     `Instructional lesson context (use for meaning and correctness, never as required wording):\n${lessonContext}\n\nRemaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
     300, 0)
 
-  const parsed = parseComprehensionEvaluations({ raw, objectives, understoodIndices: noteReadyIndices, conversation })
+  const parsed = parseComprehensionEvaluations({ raw, objectives, understoodIndices: completionGate, conversation })
   const objectiveEvidence = { ...(priorObjectiveEvidence || {}) }
-  const learnerNotes = { ...parsed.learnerNotes }
+  const learnerNotes = {}
+  const evaluationStatus = { ...(parsed.evaluationStatus || {}) }
   const newlyCovered = []
   const newlyUnderstood = []
 
@@ -128,27 +136,34 @@ async function checkObjectives(apiKey, objectives, coveredIndices, conversation,
     })
     if (!classification) continue
     objectiveEvidence[index] = classification
-    if (classification.coverage === 'covered' && !coveredIndices.includes(index)) {
+    if (classification.coverage === 'covered' && !progressionIndices.includes(index)) {
       newlyCovered.push(index)
     }
-    if (classification.comprehension === 'demonstrated') newlyUnderstood.push(index)
+    if (classification.latestAttempt?.reproduction) {
+      evaluationStatus[index] = 'reproduced'
+    }
+    if (classification.comprehension === 'demonstrated') {
+      if (!completionGate.includes(index)) newlyUnderstood.push(index)
+      const note = parsed.learnerNotes?.[index]
+      if (note) learnerNotes[index] = note
+    }
   }
-  const qualifyingText = Object.fromEntries(Object.entries(learnerNotes).filter(([, note]) => note).map(([index, note]) => [index, note.text]))
+  const qualifyingText = Object.fromEntries(Object.entries(learnerNotes).map(([index, note]) => [index, note.text]))
 
   return {
     newlyCovered,
     newlyUnderstood,
-    // Compatibility alias: legacy callers used completion for progression.
-    newlyCompleted: newlyCovered,
+    // Discussion progression follows demonstrated comprehension, not mere exposure or reproduction.
+    newlyCompleted: newlyUnderstood,
     learnerNotes,
     qualifyingText,
     sentenceQuality: parsed.sentenceQuality,
-    evaluationStatus: parsed.evaluationStatus,
+    evaluationStatus,
     objectiveEvidence,
   }
 }
 
-// ── Evaluate a learner's writing attempt without rewriting it ─────────────────
+// Evaluate a learner writing attempt without rewriting it.
 async function checkWriting(apiKey, objective, note, text, lesson) {
   const system =
     `You evaluate a student's proposed essay sentence. Judge two facts independently: ` +
@@ -202,7 +217,9 @@ export async function POST(req) {
         body.quick || false,
         body.objectiveEvidence || {},
         body.priorPromptExposure || {},
-        body.noteReadyIndices || [],
+        Object.prototype.hasOwnProperty.call(body, 'noteReadyIndices')
+          ? (Array.isArray(body.noteReadyIndices) ? body.noteReadyIndices : [])
+          : null,
       )
 
       return NextResponse.json({

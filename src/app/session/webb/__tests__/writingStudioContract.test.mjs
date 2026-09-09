@@ -9,7 +9,8 @@ const model = fs.readFileSync(new URL('../../../lib/webbLearningModel.mjs', impo
 
 test('objective coverage cannot fabricate a writing note', () => {
   assert.match(route, /noteReadyIndices/)
-  assert.match(route, /filter\(\(\{ i \}\) => !noteReadyIndices\.includes\(i\)\)/)
+  assert.match(route, /const completionGate = Array\.isArray\(noteReadyIndices\) \? noteReadyIndices : progressionIndices/)
+  assert.match(route, /filter\(\(\{ i \}\) => !completionGate\.includes\(i\)\)/)
   assert.doesNotMatch(route, /createVerbatimLearnerRecord/)
   assert.match(page, /mergeValidLearnerNotes/)
   assert.match(page, /Let's save that to our notes\./)

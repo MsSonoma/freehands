@@ -41,7 +41,7 @@ function buildOverviewSystem(lesson, vocab = []) {
   return lines.filter(Boolean).join('\n')
 }
 
-function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = false, learnerName = 'student') {
+function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = false, learnerName = 'student', objectiveStatus = null) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary school'
@@ -82,9 +82,23 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
       `1. NEVER list, enumerate, preview, or hint at the above checkpoints to the student. Do not say "we'll cover", "we need to talk about", "topics include", or anything that reveals there's a list.`,
       `2. Focus ONLY on checkpoint #1 in this reply. Do not mention or allude to any others.`,
       `3. End your reply with ONE focused question that invites the student to explain checkpoint #1 in their own words.`,
-      `4. If the student's last message already addresses checkpoint #1 (even partially), acknowledge it warmly and pivot your question toward checkpoint #2.`,
+      `4. Treat the remaining-checkpoints list as authoritative. If checkpoint #1 is still listed, do NOT pivot to #2 just because the latest response is related or partial. Build on what is genuinely correct and ask one lighter follow-up about the same central concept.`,
       `5. Bridge naturally: "That's interesting! Can you tell me more about..." or "Speaking of that, what do you know about..."`,
       `6. Never sound like a quiz. Sound warm, curious, and natural.`,
+    )
+  }
+
+  if (objectiveStatus === 'reproduced') {
+    lines.push(
+      `\nThe evaluator found that the learner's latest answer is materially correct but closely reproduces wording that was already supplied. Do NOT call it wrong, and do NOT restate the definition or sentence again. Acknowledge that they found the right idea, then ask ONE small transfer question about the same concept: a simple example, consequence, comparison, or "what would happen if" question. This gives the learner a chance to show meaning in their own language rather than repeat yours.`,
+    )
+  } else if (objectiveStatus === 'partial') {
+    lines.push(
+      `\nThe evaluator found the latest response PARTIAL. Acknowledge the part that is actually correct, then ask ONE small question for the essential missing part of the central concept. Do not demand extra details that are merely examples, modifiers, or secondary consequences.`,
+    )
+  } else if (objectiveStatus === 'incorrect') {
+    lines.push(
+      `\nThe evaluator found the latest response INCORRECT. Calmly correct the specific misconception, then ask ONE simpler question about the same central concept. Do not use praise that implies the incorrect answer was correct.`,
     )
   }
 
@@ -114,6 +128,7 @@ export async function POST(request) {
     messages,
     remainingObjectives,
     allObjectivesMet,
+    objectiveStatus,
   } = body
   const lesson = buildInstructionalLessonView(rawLesson)
 
@@ -172,6 +187,7 @@ export async function POST(request) {
     remainingObjectives || [],
     allObjectivesMet === true,
     learnerName || 'student',
+    objectiveStatus || null,
   )
 
   try {

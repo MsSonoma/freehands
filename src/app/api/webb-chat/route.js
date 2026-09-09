@@ -107,6 +107,10 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
     lines.push(
       `\nThe mastery evaluator has already determined that the student's latest response to goal #1 is INCORRECT. Treat that classification as authoritative; do not re-grade it. Do NOT use generic or qualified praise for an incorrect response or for any of its wording; never call it a "good start", "on the right track", "close", "almost", "great", or similar. If there is a genuinely correct factual element, state only that element neutrally and immediately contrast it with what is missing or wrong, for example: "A sentence does use words, but words alone do not make it complete." Otherwise move directly to a calm correction. Briefly explain the key correction without shaming the student, then ask them to try again in their own words. Kindness must not imply that an incorrect answer was correct.`,
     )
+  } else if (masteryStatus === 'reproduced') {
+    lines.push(
+      `\nThe evaluator found that the student's latest answer is materially correct but closely reproduces wording Mrs. Webb already supplied. Do NOT call it wrong, and do NOT repeat the target definition or sentence again. Acknowledge that they found the right idea, then ask ONE small transfer question about the same concept, such as a simple example, comparison, consequence, or what-would-happen question. The learner should demonstrate the meaning without being asked to recite the wording again.`,
+    )
   }
 
   if (assessmentPush) {

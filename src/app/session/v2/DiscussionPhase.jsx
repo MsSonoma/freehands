@@ -223,6 +223,7 @@ export class DiscussionPhase {
 
     // Check objectives against recent conversation
     let newlyCompleted = [];
+    let objectiveStatus = null;
     if (this.#objectives.length > 0) {
       try {
         const res = await fetch(WEBB_OBJECTIVES_URL, {
@@ -233,6 +234,7 @@ export class DiscussionPhase {
             objectives:       this.#objectives,
             completedIndices: this.#completedIndices,
             conversation:     this.#chatHistory.map(m => ({ role: m.role, content: m.content })),
+            lesson:           this.#lessonData,
             quick:            true,
           }),
         });
@@ -241,9 +243,11 @@ export class DiscussionPhase {
           const data = await res.json();
           if (Array.isArray(data.newlyCompleted) && data.newlyCompleted.length) {
             newlyCompleted = data.newlyCompleted;
-            this.#completedIndices = [...this.#completedIndices, ...newlyCompleted];
+            this.#completedIndices = [...new Set([...this.#completedIndices, ...newlyCompleted])];
             this.#emitStateChange();
           }
+          const firstRemainingIndex = this.#objectives.findIndex((_, i) => !this.#completedIndices.includes(i));
+          if (firstRemainingIndex >= 0) objectiveStatus = data.evaluationStatus?.[firstRemainingIndex] || null;
         }
       } catch (err) {
         console.warn('[DiscussionPhase] Objective check failed:', err);
@@ -280,6 +284,7 @@ export class DiscussionPhase {
           messages:            this.#chatHistory.map(m => ({ role: m.role, content: m.content })),
           remainingObjectives,
           allObjectivesMet:    allMet,
+          objectiveStatus,
         }),
       });
       if (gen !== this.#submitGen || this.#destroyed) return;
