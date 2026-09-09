@@ -191,11 +191,19 @@ test('approval page renders lesson content review before the approve action', ()
   assert.ok(contentIndex < buttonIndex)
 })
 
-test('approval page exposes a lesson title and compact description above the detailed review', () => {
+test('approval page shows the lesson title and blurb once inside the detailed review', () => {
   const source = fs.readFileSync(
     path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),
     'utf8',
   )
+
+  assert.doesNotMatch(source, /lesson-approval-overview/)
+  assert.doesNotMatch(source, /compactLessonDescription/)
+  assert.ok(source.includes("const title = lesson?.title || 'Lesson content'"))
+  assert.ok(source.includes('lesson?.blurb && <p'))
+})
+
+test('generated approval content freshness contract remains independently covered', () => {
   const generatorSource = fs.readFileSync(
     path.resolve('src', 'app', 'api', 'facilitator', 'lessons', 'generate', 'route.js'),
     'utf8',
@@ -209,22 +217,24 @@ test('approval page exposes a lesson title and compact description above the det
     'utf8',
   )
 
-  assert.match(source, /data-testid="lesson-approval-overview"/)
-  assert.match(source, /const approvalLessonTitle = lessonDraft\?\.title \|\| proposal\?\.generationSpec\?\.title/)
-  assert.match(source, /lesson\?\.description/)
-  assert.match(source, /normalized\.length > 280/)
   assert.match(generatorSource, /lesson\.description = lesson\.description \|\| lesson\.blurb \|\| description \|\| ''/)
   assert.ok((generatorSource.match(/cacheControl: '0'/g) || []).length >= 2)
   assert.match(getSource, /freshStoragePath = `\$\{storagePath\}\?fresh=/)
   assert.match(accessSource, /freshStoragePath = `\$\{storagePath\}\?fresh=/)
 })
-test('approval page keeps long lesson review scrollable above visible controls', () => {
+
+test('approval page keeps only lesson content scrollable while the draft section remains in normal document flow', () => {
   const source = fs.readFileSync(
     path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),
     'utf8',
   )
+  const draftStart = source.indexOf("stage === STAGES.DRAFT")
+  const draftEnd = source.indexOf("stage === STAGES.DELIVERY", draftStart)
+  const draftSource = source.slice(draftStart, draftEnd)
 
-  assert.match(source, /maxHeight: 'calc\(100vh - 120px\)'/)
-  assert.match(source, /overflowY: 'auto'/)
-  assert.match(source, /flexShrink: 0/)
+  assert.doesNotMatch(draftSource, /maxHeight: 'calc\(100vh - 120px\)'/)
+  assert.match(draftSource, /data-testid="lesson-content-scroll-pane"/)
+  assert.match(draftSource, /maxHeight: '60vh'/)
+  assert.match(draftSource, /overflowY: 'auto'/)
+  assert.match(draftSource, /flexShrink: 0/)
 })
