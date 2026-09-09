@@ -9,7 +9,6 @@ import {
   startOfSyllabusWeek,
   syllabusDayPresentation,
   syllabusItemState,
-  weeklyPatternRows,
 } from '@/app/lib/syllabus/timeline.mjs'
 import { instructionalTeacherLabel, normalizeInstructionalTeacher, syllabusTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling.mjs'
@@ -17,10 +16,13 @@ import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/
 import styles from './SyllabusDocument.module.css'
 
 const STATE_COPY = {
-  past: { eyebrow: 'PAST / SYLLABUS RECORD', title: 'Learning record', note: 'Actual learner starts, completions, and incomplete work appear here. Detailed evidence belongs in History and Portfolio.' },
-  now: { eyebrow: 'NOW / YOU ARE HERE', title: 'This week', note: 'The current educational position.' },
-  future: { eyebrow: 'FUTURE / FORECAST', title: 'A week ahead', note: 'This is an intention and may change as learning unfolds.' },
+  past: { eyebrow: 'PAST / SYLLABUS RECORD', title: 'Learning record' },
+  now: { eyebrow: 'NOW / YOU ARE HERE', title: 'This week' },
+  future: { eyebrow: 'FUTURE / FORECAST', title: 'A week ahead' },
 }
+
+const PLAN_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+const PLAN_DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' }
 
 function prettyDate(value, options) {
   return new Date(`${dateOnly(value)}T12:00:00.000Z`).toLocaleDateString(undefined, { timeZone: 'UTC', ...options })
@@ -32,6 +34,11 @@ function localCalendarDate(now = new Date()) {
 
 function subjectName(subject) {
   return String(typeof subject === 'string' ? subject : subject?.name || '').trim()
+}
+
+function weeklyPatternSubjects(pattern, day) {
+  const entries = Array.isArray(pattern?.[day]) ? pattern[day] : []
+  return entries.map((entry) => String(typeof entry === 'string' ? entry : entry?.subject || '').trim()).filter(Boolean)
 }
 
 function teachingGuidanceSummary(guidance) {
@@ -122,8 +129,8 @@ export default function SyllabusDocument({
   }), [proposedForecastItems, proposedForecastTargetWeek, week.week_start])
   useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
   const copy = STATE_COPY[week.state]
-  const pattern = weeklyPatternRows(revision?.weekly_pattern)
   const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
+  const weekRangeLabel = `${prettyDate(week.days[0]?.date || week.week_start, { month: 'short', day: 'numeric' })} - ${prettyDate(week.days.at(-1)?.date || week.week_start, { month: 'short', day: 'numeric', year: 'numeric' })}`
   const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
   return (
     <article className={styles.document} aria-label={`${learnerName || 'Learner'} Syllabus`}>
@@ -132,28 +139,32 @@ export default function SyllabusDocument({
           <h2>{learnerName ? `${learnerName}'s Syllabus` : 'My Syllabus'}</h2>
           <p>Weekly learning plan</p>
         </div>
-        <div className={styles.revisionMark}>Revision {revision?.revision_number || '—'}</div>
       </header>
-
-      <div className={styles.summaryRule}>
-        <section>
-          <h3>Goals {role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('goals')}>Edit</button>}</h3>
-          <p>{revision?.goals?.legacy_notes || 'No goal notes are recorded yet.'}</p>
-        </section>
-        <section>
-          <h3>Subjects {role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('subjects')}>Manage</button>}</h3>
-          <p>{(revision?.subjects || []).map(subjectName).filter(Boolean).join(' / ') || 'No subjects declared.'}</p>
-        </section>
-      </div>
-
-      <details className={styles.pattern}>
-        <summary>Weekly pattern {role === 'facilitator' && onEditSection && <button type="button" onClick={(event) => { event.preventDefault(); onEditSection('weekly_pattern') }}>Edit</button>}</summary>
-        <div>{pattern.map((row) => <p key={row.day}><strong>{row.day}</strong><span>{row.subjects.join(' / ')}</span></p>)}</div>
-      </details>
-
-      <details className={styles.pattern}>
-        <summary>Teaching guidance {role === 'facilitator' && onEditSection && <button type="button" onClick={(event) => { event.preventDefault(); onEditSection('teaching_guidance') }}>Edit</button>}</summary>
-        <div>{guidanceSummary.length ? guidanceSummary.map((value) => <p key={value}>{value}</p>) : <p>No curriculum preferences are currently saved.</p>}</div>
+      <details className={styles.planDetails}>
+        <summary>Plan details</summary>
+        <div className={styles.planDetailsBody}>
+          <section className={styles.planSection}>
+            <div className={styles.planSectionHeading}><h3>Goals</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('goals')}>Edit</button>}</div>
+            <p>{revision?.goals?.legacy_notes || 'No goal notes are recorded yet.'}</p>
+          </section>
+          <section className={styles.planSection}>
+            <div className={styles.planSectionHeading}><h3>Subjects</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('subjects')}>Edit</button>}</div>
+            <p>{(revision?.subjects || []).map(subjectName).filter(Boolean).join(' / ') || 'No subjects declared.'}</p>
+          </section>
+          <section className={`${styles.planSection} ${styles.planPatternSection}`}>
+            <div className={styles.planSectionHeading}><h3>Weekly pattern</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('weekly_pattern')}>Edit</button>}</div>
+            <div className={styles.planPatternScroller}><div className={styles.planPatternGrid}>
+              {PLAN_DAYS.map((day) => {
+                const subjects = weeklyPatternSubjects(revision?.weekly_pattern, day)
+                return <div className={styles.planPatternDay} key={day}><strong>{PLAN_DAY_LABELS[day]}</strong><span>{subjects.length ? subjects.join(' / ') : <>&mdash;</>}</span></div>
+              })}
+            </div></div>
+          </section>
+          <section className={styles.planSection}>
+            <div className={styles.planSectionHeading}><h3>Teaching guidance</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('teaching_guidance')}>Edit</button>}</div>
+            <div className={styles.guidanceSummary}>{guidanceSummary.length ? guidanceSummary.map((value) => <p key={value}>{value}</p>) : <p>No curriculum preferences are currently saved.</p>}</div>
+          </section>
+        </div>
       </details>
 
       <nav className={styles.timelineNav} aria-label="Syllabus timeline navigation">
@@ -168,9 +179,8 @@ export default function SyllabusDocument({
           <div>
             <p className={styles.stateLabel}>{copy.eyebrow}</p>
             <h3>{copy.title}</h3>
-            <p>{copy.note}</p>
           </div>
-          <time dateTime={week.week_start}>Week of {prettyDate(week.week_start, { month: 'long', day: 'numeric', year: 'numeric' })}</time>
+          <time dateTime={week.week_start}>{weekRangeLabel}</time>
         </header>
 
         <div className={styles.entries} data-selected-week={week.week_start}>

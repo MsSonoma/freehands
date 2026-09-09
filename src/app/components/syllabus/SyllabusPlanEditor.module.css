@@ -1,0 +1,45 @@
+.backdrop { position:fixed; inset:0; z-index:1150; display:grid; place-items:center; padding:18px; background:rgba(17,24,39,.48); }
+.editor { width:min(920px,100%); max-height:calc(100vh - 36px); overflow:hidden; display:flex; flex-direction:column; border-radius:14px; background:#fff; box-shadow:0 24px 70px rgba(0,0,0,.28); color:#111827; font-family:Roboto,Arial,sans-serif; }
+.editor > header { display:flex; align-items:flex-start; justify-content:space-between; gap:16px; padding:18px 20px 13px; border-bottom:1px solid #e5e7eb; }
+.editor > header p { margin:0; color:#9a4634; font-size:11px; font-weight:800; text-transform:uppercase; letter-spacing:.06em; }
+.editor > header h2 { margin:3px 0 0; font-size:22px; }
+.editor > header button { border:0; background:transparent; color:#6b7280; cursor:pointer; font-weight:700; }
+.body { overflow:auto; padding:18px 20px; }
+.error { margin:14px 20px 0; padding:10px 12px; border:1px solid #f0b4ad; border-radius:8px; background:#fff5f4; color:#8a241f; font-size:13px; }
+.fullField { display:grid; gap:7px; color:#4b5563; font-size:12px; font-weight:700; }
+.fullField textarea,.addSubject input,.dayCell select,.guidanceItem input { box-sizing:border-box; width:100%; padding:9px; border:1px solid #d1d5db; border-radius:7px; background:#fff; color:#111827; font:inherit; }
+.subjectEditor { display:grid; gap:8px; margin:0 0 12px; padding:0; list-style:none; }
+.subjectEditor li { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:9px 10px; border:1px solid #e5e7eb; border-radius:8px; }
+.subjectEditor span { display:grid; gap:2px; font-weight:700; }
+.subjectEditor small { color:#6b7280; font-size:11px; font-weight:400; }
+.subjectEditor button,.guidanceItem button { border:0; background:transparent; color:#b42318; cursor:pointer; font-weight:700; }
+.subjectEditor button:disabled { color:#9ca3af; cursor:not-allowed; }
+.addSubject { display:flex; gap:8px; }
+.addSubject input { min-width:0; }
+.addSubject button,.patternAdd button { min-height:38px; padding:7px 10px; border:1px solid #d1d5db; border-radius:7px; background:#fff; cursor:pointer; font-weight:700; }
+.help { margin:0 0 12px; color:#6b7280; font-size:13px; line-height:1.45; }
+.weekScroller { overflow-x:auto; padding-bottom:4px; }
+.weekGrid { min-width:760px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border:1px solid #ded8cf; border-radius:10px; overflow:hidden; }
+.dayCell { min-width:0; padding:10px 8px; border-right:1px solid #ded8cf; background:#fffdf8; }
+.dayCell:last-child { border-right:0; }
+.dayCell > strong { display:block; margin-bottom:8px; color:#6b382c; font-size:12px; text-align:center; text-transform:uppercase; }
+.dayCell ul { display:grid; gap:6px; margin:0 0 8px; padding:0; list-style:none; }
+.dayCell li { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:4px; align-items:center; }
+.dayCell li button { width:28px; height:34px; border:0; background:transparent; color:#b42318; cursor:pointer; font-size:18px; }
+.dayCell select { padding:7px 5px; font-size:12px; }
+.patternAdd { display:grid; gap:5px; }
+.patternAdd button { min-height:32px; padding:5px 7px; font-size:11px; }
+.guidanceEditor { display:grid; gap:20px; }
+.guidanceEditor section + section { padding-top:18px; border-top:1px solid #e5e7eb; }
+.guidanceEditor h3 { margin:0 0 12px; color:#374151; font-size:14px; }
+.guidanceField { display:grid; gap:7px; margin-bottom:14px; }
+.guidanceField > strong { color:#374151; font-size:12px; }
+.guidanceItem { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:7px; }
+.guidanceAdd { justify-self:start; padding:0; border:0; background:transparent; color:#6b382c; cursor:pointer; font-weight:700; }
+.muted { color:#6b7280; font-size:12px; }
+.editor > footer { display:flex; justify-content:flex-end; gap:10px; padding:13px 20px 17px; border-top:1px solid #e5e7eb; }
+.secondary,.primary { min-height:40px; padding:8px 14px; border-radius:8px; cursor:pointer; font-weight:800; }
+.secondary { border:1px solid #d1d5db; background:#fff; color:#374151; }
+.primary { border:1px solid #c7442e; background:#c7442e; color:#fff; }
+.editor button:disabled { opacity:.55; cursor:wait; }
+@media (max-width:600px) { .backdrop { padding:7px; } .editor { max-height:calc(100vh - 14px); } .editor > header,.body,.editor > footer { padding-left:14px; padding-right:14px; } .editor > footer { flex-direction:column-reverse; } .primary,.secondary { width:100%; } .weekGrid { min-width:700px; } }

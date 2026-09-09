@@ -18,7 +18,8 @@ import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
-import { resolveSyllabusReadModel } from '@/app/lib/syllabus/timeline.mjs'
+import SyllabusPlanEditor from '@/app/components/syllabus/SyllabusPlanEditor'
+import { resolveSyllabusReadModel, syllabusEntitlementsFor } from '@/app/lib/syllabus/timeline.mjs'
 import { resolveEffectiveTier } from '@/app/lib/entitlements'
 import styles from './facilitatorHome.module.css'
 
@@ -47,6 +48,7 @@ export default function FacilitatorPage() {
   const [scheduleWarning, setScheduleWarning] = useState('')
   const [learnerRetry, setLearnerRetry] = useState(0)
   const [selectedSyllabusLesson, setSelectedSyllabusLesson] = useState(null)
+  const [editingSyllabusSection, setEditingSyllabusSection] = useState('')
   const [syllabusRefreshSequence, setSyllabusRefreshSequence] = useState(0)
 
   useEffect(() => {
@@ -305,6 +307,7 @@ export default function FacilitatorPage() {
   ]
   const selectedLearner = learners.find((learner) => String(learner.id) === String(learnerId))
   const syllabusModel = resolveSyllabusReadModel(syllabusPayload)
+  const syllabusPlanningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier: plan })
 
   function openHomeSyllabusLesson(item) {
     if (!item?.lesson_key) return
@@ -324,7 +327,7 @@ export default function FacilitatorPage() {
           <p className={styles.pageSubtitle}>The active Syllabus is the center of the learner&apos;s educational work.</p>
         </div>
         {learners.length > 0 && <label className={styles.learnerPicker}>Learner
-          <select value={learnerId} onChange={(event) => { setSelectedSyllabusLesson(null); setLearnerId(event.target.value); localStorage.setItem('learner_id', event.target.value) }}>
+          <select value={learnerId} onChange={(event) => { setSelectedSyllabusLesson(null); setEditingSyllabusSection(''); setLearnerId(event.target.value); localStorage.setItem('learner_id', event.target.value) }}>
             {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}</option>)}
           </select>
         </label>}
@@ -345,6 +348,7 @@ export default function FacilitatorPage() {
             learnerId={learnerId}
             planTier={plan}
             onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
+            onEditSection={syllabusPlanningAccess.can_change_intent ? setEditingSyllabusSection : null}
           />
         )}
         {syllabusStatus === 'ready' && learnerId && !syllabusError && syllabusModel.kind === 'fallback' && (
@@ -356,6 +360,17 @@ export default function FacilitatorPage() {
           </div>
         )}
       </section>
+
+      {editingSyllabusSection && syllabusModel.kind === 'active' && <SyllabusPlanEditor
+        section={editingSyllabusSection}
+        revision={syllabusModel.revision}
+        forecastItems={syllabusModel.forecast_items || []}
+        learnerId={learnerId}
+        accessToken={authToken}
+        today={syllabusPayload?.resolved_today || ''}
+        onClose={() => setEditingSyllabusSection('')}
+        onSaved={() => setSyllabusRefreshSequence((value) => value + 1)}
+      />}
 
       {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
         selection={selectedSyllabusLesson}

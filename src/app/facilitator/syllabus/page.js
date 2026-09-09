@@ -6,6 +6,7 @@ import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
 import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
+import SyllabusPlanEditor from '@/app/components/syllabus/SyllabusPlanEditor'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusPlanningWorkspace from '@/app/components/syllabus/SyllabusPlanningWorkspace'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
@@ -395,9 +396,7 @@ export default function SyllabusPage() {
   }
 
   function openSectionEditor(section) {
-    setDraft(activeToDraft(syllabus.active_revision, syllabus.forecast_items, syllabus.resolved_today))
     setEditingSection(section)
-    setNewSubject('')
   }
 
   async function planningPost(action, payload = {}) {
@@ -949,14 +948,16 @@ export default function SyllabusPage() {
             legacyWebbCompletion={legacyWebbCompletions[selectedSyllabusLesson.item?.lesson_key]}
           />}
 
-          {editingSection && draft && syllabus?.has_active_syllabus && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={`Edit ${sectionLabel(editingSection)}`}><header><h2>{sectionLabel(editingSection)}</h2><button type="button" onClick={() => { setEditingSection(''); setDraft(null) }}>Close</button></header>
-            {error && <div className={styles.error} role="alert">{error}</div>}
-            {editingSection === 'goals' && <label>Goals<textarea rows={8} value={draft.goals?.legacy_notes || ''} onChange={(event) => setDraft({ ...draft, goals: { ...draft.goals, legacy_notes: event.target.value } })} /></label>}
-            {editingSection === 'subjects' && <><ul className={styles.subjectEditor}>{draft.subjects.map((subject) => { const referenced = referencedSubjects.has(subject.name.toLocaleLowerCase()); return <li key={subject.name}><span>{subject.name}{referenced && <small>Used by weekly pattern or future intent</small>}</span><button type="button" disabled={referenced} onClick={() => removeDraftSubject(subject.name)}>Remove</button></li> })}</ul><div className={styles.addSubject}><input value={newSubject} onChange={(event) => setNewSubject(event.target.value)} placeholder="Custom subject" /><button type="button" className={styles.secondaryButton} onClick={addDraftSubject}>Add</button></div></>}
-            {editingSection === 'weekly_pattern' && <div className={styles.weekPattern}>{DAYS.map((day) => <div key={day} className={styles.patternDay}><strong>{DAY_LABELS[day]}</strong><ul>{(draft.weekly_pattern?.[day] || []).map((item, index) => <li key={`${day}-${index}`}><select value={typeof item === 'string' ? item : item.subject} onChange={(event) => { const next = structuredClone(draft.weekly_pattern); next[day][index] = { subject: event.target.value }; setDraft({ ...draft, weekly_pattern: next }) }}>{draft.subjects.map((subject) => <option key={subject.name}>{subject.name}</option>)}</select><button type="button" onClick={() => removePatternSlot(day, index)}>Remove</button></li>)}</ul><div className={styles.patternAdd}><select value={slotSubjects[day] || draft.subjects?.[0]?.name || ''} onChange={(event) => setSlotSubjects({ ...slotSubjects, [day]: event.target.value })}>{draft.subjects.map((subject) => <option key={subject.name}>{subject.name}</option>)}</select><button type="button" onClick={() => addPatternSlot(day)}>Add slot</button></div></div>)}</div>}
-            {editingSection === 'teaching_guidance' && <div className={styles.guidanceEditor}><section><h3>All subjects</h3>{TEACHING_GUIDANCE_FIELDS.map((field) => <GuidanceListEditor key={field.globalKey} field={field} values={guidanceValues(draft.teaching_guidance, field)} onChange={(values) => updateDraftGuidance(field, values)} />)}</section>{guidanceSubjects.map((subject) => <section key={subject}><h3>{subjectLabel(subject)}</h3>{TEACHING_GUIDANCE_FIELDS.map((field) => <GuidanceListEditor key={field.subjectKey} field={field} subject={subject} values={guidanceValues(draft.teaching_guidance, field, subject)} onChange={(values) => updateDraftGuidance(field, values, subject)} />)}</section>)}</div>}
-            <footer><button type="button" className={styles.secondaryButton} onClick={() => { setEditingSection(''); setDraft(null) }}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working} onClick={activate}>{working ? 'Saving…' : 'Save Syllabus revision'}</button></footer>
-          </section></div>}
+          {editingSection && syllabus?.has_active_syllabus && <SyllabusPlanEditor
+            section={editingSection}
+            revision={syllabus.active_revision}
+            forecastItems={syllabus.forecast_items || []}
+            learnerId={learnerId}
+            accessToken={token}
+            today={syllabus.resolved_today || ''}
+            onClose={() => setEditingSection('')}
+            onSaved={() => loadCurrent()}
+          />}
 
           {conceptEditor && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label="Edit forecast concept"><header><h2>Edit forecast concept</h2><button type="button" onClick={() => setConceptEditor(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<label>Title<input autoFocus value={conceptEditor.title} onChange={(event) => setConceptEditor({ ...conceptEditor, title: event.target.value })} /></label><label>Brief description<textarea rows={5} value={conceptEditor.description} onChange={(event) => setConceptEditor({ ...conceptEditor, description: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setConceptEditor(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working} onClick={saveConceptEditor}>Save as educator intent</button></footer></section></div>}
 
