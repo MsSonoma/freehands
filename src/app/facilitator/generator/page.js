@@ -5,6 +5,7 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import Toast from '@/components/Toast'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
@@ -50,6 +51,7 @@ export default function LessonMakerPage(){
   const [quotaLoading, setQuotaLoading] = useState(true)
   const [toast, setToast] = useState(null) // { message, type }
   const [generatedLessonKey, setGeneratedLessonKey] = useState(null) // Track last generated lesson
+  const [revisionOpen, setRevisionOpen] = useState(false)
   const [learners, setLearners] = useState([])
   const [intendedLearnerId, setIntendedLearnerId] = useState('')
 
@@ -863,6 +865,25 @@ export default function LessonMakerPage(){
             {generatedLessonKey && (
               <button
                 type="button"
+                onClick={() => setRevisionOpen(true)}
+                style={{
+                  background: '#fff',
+                  border: '1px solid #c7442e',
+                  borderRadius: 8,
+                  cursor: 'pointer',
+                  color: '#c7442e',
+                  fontSize: 13,
+                  fontWeight: 700,
+                  padding: '8px 14px',
+                }}
+              >
+                Regenerate with changes
+              </button>
+            )}
+
+            {generatedLessonKey && (
+              <button
+                type="button"
                 onClick={() => {
                   setGeneratedLessonKey(null)
                   setForm({ grade: '', difficulty: 'intermediate', subject: 'math', title: '', description: '', notes: '', vocab: '' })
@@ -935,6 +956,17 @@ export default function LessonMakerPage(){
         </div>
       </div>
     </main>
+
+    <LessonRevisionDialog
+      open={revisionOpen}
+      lessonKey={generatedLessonKey || ''}
+      lessonTitle={form.title || 'lesson'}
+      onClose={() => setRevisionOpen(false)}
+      onRevised={async () => {
+        setMessage('')
+        setToast({ message: 'Lesson regenerated and returned to draft for review', type: 'success' })
+      }}
+    />
 
     <GatedOverlay
       show={showGate}

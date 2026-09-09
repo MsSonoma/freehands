@@ -9,6 +9,7 @@ import LessonNotesModal from './LessonNotesModal'
 import VisualAidsManagerModal from './VisualAidsManagerModal'
 import PortfolioScansModal from './PortfolioScansModal'
 import TypedRemoveConfirmModal from './TypedRemoveConfirmModal'
+import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 
 const CORE_SUBJECTS_DV = ['math', 'language arts', 'science', 'social studies', 'general']
 
@@ -60,6 +61,7 @@ export default function DayViewOverlay({
   const [visualAidsLesson, setVisualAidsLesson] = useState(null)
   const [portfolioScansLesson, setPortfolioScansLesson] = useState(null)
   const [removeConfirmLesson, setRemoveConfirmLesson] = useState(null)
+  const [revisionTarget, setRevisionTarget] = useState(null)
   const [assignsOpenKey, setAssignsOpenKey] = useState(null)
   const [assigning, setAssigning] = useState(false)
   const [reschedulePickerKey, setReschedulePickerKey] = useState(null)
@@ -1629,6 +1631,13 @@ export default function DayViewOverlay({
                       </div>
                     ) : (
                       <div style={{ display: 'flex', gap: 8 }}>
+                        {String(lesson.lesson_key || '').startsWith('generated/') && <button
+                          type="button"
+                          onClick={() => setRevisionTarget({ lessonKey: lesson.lesson_key, title: lessonName })}
+                          style={{ padding: '6px 12px', fontSize: 12, fontWeight: 700, background: '#fff', color: '#c7442e', border: '1px solid #f0c9c0', borderRadius: 4, cursor: 'pointer', whiteSpace: 'nowrap' }}
+                        >
+                          Regenerate with changes
+                        </button>}
                         <button
                           onClick={() => handleEditClick(lesson)}
                           style={{
@@ -1801,7 +1810,7 @@ export default function DayViewOverlay({
 
                     <div style={{ marginTop: 10 }}>
                       <div style={{ fontSize: 11, fontWeight: 700, color: '#1e40af', marginBottom: 4 }}>
-                        Redo prompt update (optional)
+                        Lesson plan revision notes (optional)
                       </div>
                       <textarea
                         value={
@@ -1842,7 +1851,7 @@ export default function DayViewOverlay({
                         }}
                       />
                       <div style={{ fontSize: 11, color: '#6b7280', marginTop: 4 }}>
-                        This text is added to the GPT prompt when you click Redo.
+                        These notes guide the next lesson-plan revision.
                       </div>
                     </div>
                   </div>
@@ -1879,7 +1888,7 @@ export default function DayViewOverlay({
                         whiteSpace: 'nowrap'
                       }}
                     >
-                      {redoingLesson === lesson.id ? 'Redoing...' : 'Redo'}
+                      {redoingLesson === lesson.id ? 'Revising...' : 'Revise lesson plan'}
                     </button>
                     <button
                       onClick={() => handleRemoveClick(lesson)}
@@ -1951,6 +1960,15 @@ export default function DayViewOverlay({
         lessonTitle={portfolioScansLesson?.lessonTitle || 'Lesson'}
         authToken={authToken}
         zIndex={10027}
+      />
+
+      <LessonRevisionDialog
+        open={Boolean(revisionTarget)}
+        lessonKey={revisionTarget?.lessonKey || ''}
+        lessonTitle={revisionTarget?.title || 'lesson'}
+        accessToken={authToken}
+        onClose={() => setRevisionTarget(null)}
+        onRevised={async () => { if (onLessonGenerated) await onLessonGenerated() }}
       />
 
       <TypedRemoveConfirmModal

@@ -9,6 +9,7 @@ import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
+import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
@@ -59,6 +60,7 @@ export default function FacilitatorLessonsPage() {
   const [learnerDataLoading, setLearnerDataLoading] = useState(false) // Loading learner-specific data
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
+  const [revisionTarget, setRevisionTarget] = useState(null)
 
   const {
     sessions: lessonHistorySessions,
@@ -966,6 +968,9 @@ export default function FacilitatorLessonsPage() {
                               More
                             </summary>
                             <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 4, display: 'grid', gap: 6, minWidth: 190, padding: 8, border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}>
+                              {isOwned && <button type="button" onClick={() => setRevisionTarget({ lessonKey, title: lesson.title || 'lesson' })} style={{ textAlign: 'left', padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#c7442e', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
+                                Regenerate with changes
+                              </button>}
                               <button type="button" onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)} style={{ textAlign: 'left', padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' }}>
                                 Edit
                               </button>
@@ -1109,6 +1114,17 @@ export default function FacilitatorLessonsPage() {
       </div>
       </div>
     </main>
+
+    <LessonRevisionDialog
+      open={Boolean(revisionTarget)}
+      lessonKey={revisionTarget?.lessonKey || ''}
+      lessonTitle={revisionTarget?.title || 'lesson'}
+      onClose={() => setRevisionTarget(null)}
+      onRevised={async () => {
+        await refreshOwnedLessons()
+        setRefreshTrigger((value) => value + 1)
+      }}
+    />
 
     <LessonHistoryModal
       open={showHistoryModal}

@@ -2473,9 +2473,9 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
                               background: (!selectedDate || redoingLesson === lesson.id) ? '#e5e7eb' : '#fff7ed',
                               color: (!selectedDate || redoingLesson === lesson.id) ? '#9ca3af' : '#9a3412'
                             }}
-                            title={!selectedDate ? 'Select a date first' : 'Regenerate outline'}
+                            title={!selectedDate ? 'Select a date first' : 'Revise lesson plan'}
                           >
-                            {redoingLesson === lesson.id ? 'Redoing...' : 'Redo'}
+                            {redoingLesson === lesson.id ? 'Revising...' : 'Revise lesson plan'}
                           </button>
                           <button
                             type="button"
@@ -2511,7 +2511,7 @@ export default function CalendarOverlay({ learnerId, learnerGrade, tier, canPlan
 
                       <div style={{ marginTop: 8 }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: '#1e40af', marginBottom: 4 }}>
-                          Redo prompt update (optional)
+                          Lesson plan revision notes (optional)
                         </div>
                         <textarea
                           value={

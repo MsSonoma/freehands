@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
+import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
 import { ensureFacilitatorPinException, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { featuresForTier } from '@/app/lib/entitlements'
@@ -98,6 +99,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [historyOpen, setHistoryOpen] = useState(false)
   const [slateEditorOpen, setSlateEditorOpen] = useState(false)
   const [slateDate, setSlateDate] = useState('')
+  const [revisionOpen, setRevisionOpen] = useState(false)
 
   useEffect(() => {
     if (!item) return
@@ -113,6 +115,7 @@ export default function FacilitatorSyllabusLessonOverlay({
     setHistoryOpen(false)
     setSlateEditorOpen(false)
     setSlateDate('')
+    setRevisionOpen(false)
   }, [item, selection?.assignedTeacher])
 
   if (!item) return null
@@ -134,6 +137,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const teacherEditable = isLesson && item.lesson_key && selection.teacherEditable && (typeof onTeacherAssignment === 'function' || coreAuthority)
   const canDeliver = isLesson && item.lesson_key && !isDraft && !isHistorical && coreAuthority
   const canEditOwnedLesson = isLesson && String(item.lesson_key || '').startsWith('generated/') && !isHistorical
+  const canRegenerateOwnedLesson = canEditOwnedLesson && coreAuthority
   const canScheduleSlateCore = isLesson && item.lesson_key && !isDraft && !isHistorical && coreAuthority
   const canRepeat = selection.syllabus_state === 'completed_historical' && isLesson && item.lesson_key && (typeof onRepeat === 'function' || coreAuthority)
   const availableToLearner = localAvailable || item.readiness_state === 'available'
@@ -388,6 +392,7 @@ export default function FacilitatorSyllabusLessonOverlay({
             {historyAvailable && <button type="button" onClick={openHistory}>Review history</button>}
             {schedulingAvailable && <button type="button" disabled={coreBusy === 'schedule'} onClick={openSchedule}>{localExplicitSchedule ? 'Reschedule' : 'Schedule'}</button>}
             {canDeliver && !availableToLearner && <button type="button" disabled={coreBusy === 'availability'} onClick={() => void handleMakeAvailable()}>{coreBusy === 'availability' ? 'Making available...' : 'Make available'}</button>}
+            {canRegenerateOwnedLesson && <button type="button" onClick={() => setRevisionOpen(true)}>Regenerate with changes</button>}
             {canEditOwnedLesson && <button type="button" onClick={editLesson}>{isDraft ? 'Edit draft' : 'Edit lesson'}</button>}
             {isLesson && item.lesson_key && !isDraft && item.historical_record !== true && (typeof onScheduleSlate === 'function' || canScheduleSlateCore) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={openSlateScheduler}>Schedule Mr. Slate</button>}
             {isSlateAssignment && (typeof onRemoveSlateSchedule === 'function' || coreAuthority) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={() => void removeSlateSchedule()}>Remove scheduled session</button>}
@@ -409,6 +414,18 @@ export default function FacilitatorSyllabusLessonOverlay({
       onDateChange={(scheduledDate) => setScheduleDialog((current) => ({ ...current, scheduledDate }))}
       onSubmit={() => void saveSchedule()}
     />}
+    <LessonRevisionDialog
+      open={revisionOpen}
+      lessonKey={item.lesson_key}
+      lessonTitle={item.title || 'lesson'}
+      accessToken={accessToken}
+      onClose={() => setRevisionOpen(false)}
+      onRevised={async () => {
+        setLocalAvailable(false)
+        await refreshAfterChange()
+        onClose?.()
+      }}
+    />
     {historyOpen && historyOccurrenceId && <LessonHistoryOverlay
       learnerId={learnerId}
       occurrenceId={historyOccurrenceId}

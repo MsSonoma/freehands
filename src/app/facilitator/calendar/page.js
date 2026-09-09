@@ -7,6 +7,7 @@ import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 import LessonCalendar from './LessonCalendar'
 import LessonPicker from './LessonPicker'
 import LessonPlanner from './LessonPlanner'
@@ -110,6 +111,7 @@ export default function CalendarPage() {
   const [portfolioScansItem, setPortfolioScansItem] = useState(null)
   const [removeConfirmItem, setRemoveConfirmItem] = useState(null)
   const [showGeneratePortfolio, setShowGeneratePortfolio] = useState(false)
+  const [revisionTarget, setRevisionTarget] = useState(null)
   const [assignsOpenId, setAssignsOpenId] = useState(null)
   const [assigning, setAssigning] = useState(false)
   const [reschedulePickerItemId, setReschedulePickerItemId] = useState(null)
@@ -1205,6 +1207,13 @@ export default function CalendarPage() {
                                 </>
                               ) : (
                                 <>
+                                  {String(item.lesson_key || '').startsWith('generated/') && <button
+                                    type="button"
+                                    onClick={() => setRevisionTarget({ lessonKey: item.lesson_key, title: lessonName })}
+                                    style={{ padding: '3px 10px', fontSize: '11px', fontWeight: '700', borderRadius: '4px', border: '1px solid #f0c9c0', cursor: 'pointer', background: '#fff', color: '#c7442e' }}
+                                  >
+                                    Regenerate with changes
+                                  </button>}
                                   <button
                                     onClick={() => {
                                       if (!requirePlannerAccess()) return
@@ -1495,6 +1504,15 @@ export default function CalendarPage() {
                 if (!removeConfirmItem) return
                 await handleRemoveScheduledLesson(removeConfirmItem, { skipConfirm: true })
               }}
+            />
+
+            <LessonRevisionDialog
+              open={Boolean(revisionTarget)}
+              lessonKey={revisionTarget?.lessonKey || ''}
+              lessonTitle={revisionTarget?.title || 'lesson'}
+              accessToken={authToken}
+              onClose={() => setRevisionTarget(null)}
+              onRevised={async () => { await loadSchedule() }}
             />
 
             <GeneratePortfolioModal

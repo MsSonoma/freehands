@@ -9,6 +9,7 @@ import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { preparationDeliveryActionsForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 import {
   FACILITATOR_PREPARATION_STAGES,
   FACILITATOR_PREPARATION_VERSION,
@@ -226,6 +227,7 @@ export default function FacilitatorPreparePage() {
   const [lessonIdentity, setLessonIdentity] = useState(null)
   const [instructionalTeacher, setInstructionalTeacher] = useState('sonoma')
   const [lessonDraft, setLessonDraft] = useState(null)
+  const [revisionOpen, setRevisionOpen] = useState(false)
   const [lessonContentLoading, setLessonContentLoading] = useState(false)
   const [lessonContentError, setLessonContentError] = useState('')
   const [scheduleDate, setScheduleDate] = useState(todayDate())
@@ -506,6 +508,16 @@ export default function FacilitatorPreparePage() {
     } finally {
       setBusy(false)
     }
+  }
+
+  async function handleLessonRevised(result) {
+    const nextIdentity = result?.identity || lessonIdentity
+    if (!nextIdentity?.file || !result?.lesson) throw new Error('The regenerated lesson could not be loaded for review')
+    setLessonIdentity(nextIdentity)
+    setLessonDraft({ ...result.lesson, __file: nextIdentity.file })
+    setStage(STAGES.DRAFT)
+    persist(STAGES.DRAFT, { lessonIdentity: nextIdentity })
+    setMessage('The lesson was regenerated from your feedback and returned to draft for review.')
   }
 
   async function approveLesson() {
@@ -955,6 +967,7 @@ export default function FacilitatorPreparePage() {
           </div>
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', flexShrink: 0, borderTop: '1px solid #e5e7eb', paddingTop: 14, background: '#fff' }}>
             <button type="button" onClick={approveLesson} disabled={busy || !selectedLearner || lessonContentLoading || !lessonDraft} style={button}>{busy ? 'Approving...' : 'Approve lesson content'}</button>
+            <button type="button" onClick={() => setRevisionOpen(true)} disabled={busy || !lessonIdentity?.lessonKey} style={secondaryButton}>Regenerate with changes</button>
             <Link href={`/facilitator/lessons/edit?key=${encodeURIComponent(lessonIdentity.lessonKey)}`} style={{ ...secondaryButton, textDecoration: 'none' }}>Edit draft</Link>
             <button type="button" onClick={saveDraftAndLeave} style={secondaryButton}>Save and leave</button>
             <button type="button" onClick={abandonFlow} style={secondaryButton}>Discard draft setup</button>
@@ -977,6 +990,7 @@ export default function FacilitatorPreparePage() {
             <button type="button" onClick={saveInstructionalTeacher} disabled={busy || !selectedLearner} style={secondaryButton}>Save teacher assignment</button>
           </div>
           <p style={{ margin: 0, color: '#4b5563' }}>The lesson content is approved. Choose when the learner receives it.</p>
+          <div><button type="button" onClick={() => setRevisionOpen(true)} disabled={busy || !lessonIdentity?.lessonKey} style={secondaryButton}>Regenerate with changes</button></div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 10 }}>
             {deliveryActions.startNow && <button type="button" onClick={startNow} disabled={busy || !selectedLearner} style={button}>Start now</button>}
             {deliveryActions.makeAvailable && <button type="button" onClick={makeAvailable} disabled={busy || !selectedLearner} style={secondaryButton}>Make available</button>}
@@ -998,6 +1012,14 @@ export default function FacilitatorPreparePage() {
           )}
         </section>
       )}
+
+      <LessonRevisionDialog
+        open={revisionOpen}
+        lessonKey={lessonIdentity?.lessonKey || ''}
+        lessonTitle={lessonDraft?.title || proposal?.generationSpec?.title || 'lesson'}
+        onClose={() => setRevisionOpen(false)}
+        onRevised={handleLessonRevised}
+      />
 
       {selectedLearner && lessonIdentity?.lessonKey && !hasLearnerRecovery && [STAGES.DRAFT, STAGES.DELIVERY].includes(stage) && (syllabusOccurrenceId || learnerLessonBound === true) && (
         <section style={{ display: 'grid', gap: 12, border: '1px solid #e5e7eb', borderRadius: 8, padding: 18, background: '#fff' }}>

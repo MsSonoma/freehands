@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import LessonEditor from '@/components/LessonEditor'
+import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 
 export default function GeneratedLessonsOverlay({ learnerId }) {
@@ -14,8 +15,7 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
   const [busyItems, setBusyItems] = useState({})
   const [error, setError] = useState('')
   const [success, setSuccess] = useState('')
-  const [changeRequests, setChangeRequests] = useState({})
-  const [showChangeModal, setShowChangeModal] = useState(null)
+  const [revisionTarget, setRevisionTarget] = useState(null)
   const [editingLesson, setEditingLesson] = useState(null)
   const [busy, setBusy] = useState(false)
   
@@ -337,47 +337,6 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
     }
   }
 
-  const handleRequestChanges = async () => {
-    if (!showChangeModal) return
-    const { file, userId } = showChangeModal
-    const changeRequest = changeRequests[file] || ''
-    if (!changeRequest.trim()) {
-      setError('Please describe the changes you want')
-      return
-    }
-    setBusy(true)
-    setError('')
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      const res = await fetch('/api/facilitator/lessons/request-changes', {
-        method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          ...(token ? { Authorization: `Bearer ${token}` } : {})
-        },
-        body: JSON.stringify({ file, changeRequest, userId })
-      })
-      const js = await res.json().catch(() => null)
-      if (!res.ok) {
-        setError(js?.error || 'Request changes failed')
-        return
-      }
-      setShowChangeModal(null)
-      setChangeRequests(prev => {
-        const next = { ...prev }
-        delete next[file]
-        return next
-      })
-      setSuccess('✓ Changes requested!')
-      setTimeout(() => setSuccess(''), 3000)
-      await loadLessons()
-    } finally {
-      setBusy(false)
-    }
-  }
-
   const subjects = useMemo(() => ['all', ...subjectNames], [subjectNames])
   const grades = ['all', 'K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
@@ -456,87 +415,6 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
               onGenerateNotesFromDescription={handleGenerateNotesFromDescription}
               generatingNotesFromDescription={generatingNotesFromDescription}
             />
-          </div>
-        </div>
-      ) : showChangeModal ? (
-        /* Change request modal */
-        <div style={{ height: '100%', display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-          <div style={{ 
-            padding: '12px 16px', 
-            background: 'linear-gradient(to right, #eff6ff, #eef2ff)',
-            borderBottom: '1px solid #e5e7eb',
-            flexShrink: 0
-          }}>
-            <div style={{ fontSize: 14, fontWeight: 700, color: '#1f2937', marginBottom: 8 }}>
-              Request Changes
-            </div>
-          </div>
-          <div style={{ flex: 1, padding: 16, overflowY: 'auto' }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 600, marginBottom: 6, color: '#374151' }}>
-              Describe the changes you want:
-            </label>
-            <textarea
-              value={changeRequests[showChangeModal.file] || ''}
-              onChange={(e) => setChangeRequests(prev => ({ ...prev, [showChangeModal.file]: e.target.value }))}
-              placeholder="e.g., Make the examples more challenging, add more vocabulary..."
-              rows={6}
-              style={{
-                width: '100%',
-                padding: '8px 10px',
-                fontSize: 12,
-                border: '1px solid #d1d5db',
-                borderRadius: 6,
-                fontFamily: 'inherit',
-                resize: 'vertical'
-              }}
-            />
-            {error && (
-              <div style={{ 
-                marginTop: 8,
-                padding: 8,
-                background: '#fee2e2',
-                color: '#991b1b',
-                borderRadius: 6,
-                fontSize: 11
-              }}>
-                {error}
-              </div>
-            )}
-            <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-              <button
-                onClick={handleRequestChanges}
-                disabled={busy}
-                style={{
-                  flex: 1,
-                  padding: '8px 12px',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  background: busy ? '#d1d5db' : '#3b82f6',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: busy ? 'not-allowed' : 'pointer'
-                }}
-              >
-                {busy ? 'Requesting...' : 'Request Changes'}
-              </button>
-              <button
-                onClick={() => setShowChangeModal(null)}
-                disabled={busy}
-                style={{
-                  padding: '8px 12px',
-                  fontSize: 12,
-                  fontWeight: 700,
-                  background: '#6b7280',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: busy ? 'not-allowed' : 'pointer'
-                }}
-              >
-                Cancel
-              </button>
-            </div>
           </div>
         </div>
       ) : (
@@ -706,20 +584,8 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
                       {isBusy === 'editing' ? '...' : '✏️ Edit'}
                     </button>
                     <button
-                      onClick={() => setShowChangeModal({ file: item.file, userId: item.userId })}
-                      disabled={!!isBusy}
-                      style={{
-                        padding: '4px 8px',
-                        fontSize: 10,
-                        fontWeight: 700,
-                        background: isBusy ? '#d1d5db' : '#3b82f6',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: 4,
-                        cursor: isBusy ? 'not-allowed' : 'pointer'
-                      }}
-                    >
-                      🔄 Request Changes
+                      onClick={() =>
+                      Regenerate with changes
                     </button>
                     <button
                       onClick={() => handleDelete(item.file, item.userId)}
@@ -774,6 +640,17 @@ export default function GeneratedLessonsOverlay({ learnerId }) {
       </div>
         </>
       )}
+    <LessonRevisionDialog
+      open={Boolean(revisionTarget)}
+      lessonKey={revisionTarget?.lessonKey || ''}
+      lessonTitle={revisionTarget?.title || 'lesson'}
+      onClose={() => setRevisionTarget(null)}
+      onRevised={async () => {
+        setSuccess('Lesson regenerated and returned to draft for review')
+        setTimeout(() => setSuccess(''), 3000)
+        await loadLessons()
+      }}
+    />
     </div>
   )
 }
