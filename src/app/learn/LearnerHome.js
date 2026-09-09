@@ -913,10 +913,6 @@ function LessonsPageInner(){
     setSyllabusLaunchError('')
     const lessonKey = item?.lesson_key || ''
     const preparedLesson = lessonKey ? recentMetaLookup[lessonKey] : null
-    if (lessonKey && !preparedLesson) {
-      setSyllabusLaunchError('This lesson could not be opened because its prepared lesson file is unavailable.')
-      return
-    }
     const lesson = preparedLesson || {
       title: item?.title || 'Planned lesson',
       blurb: item?.description || '',
@@ -1843,7 +1839,7 @@ function LessonsPageInner(){
                     )}
 
                     {/* Golden Keys are a Sonoma instructional feature. */}
-                    {goldenKeysEnabled === true && !isDemo && !!lessonKey && !isSlateSyllabusAssignment && assignedInstructionalTeacher === 'sonoma' && (() => {
+                    {goldenKeysEnabled === true && !isDemo && !!lessonKey && syllabusItem?.has_lesson_artifact !== false && !isSlateSyllabusAssignment && assignedInstructionalTeacher === 'sonoma' && (() => {
                       const keyOn = goldenKeySelected || hasActiveKey
                       const facilitatorOnly = hasActiveKey && !goldenKeySelected
                       return (
@@ -1950,6 +1946,11 @@ function LessonsPageInner(){
                     >
                       {syllabusItem?.item_type === 'slate_assignment' ? 'Start Mr. Slate' : (hasSnapshot ? `Continue with ${instructionalTeacherLabel(assignedInstructionalTeacher)}` : `Start with ${instructionalTeacherLabel(assignedInstructionalTeacher)}`)}
                     </button>
+                    {syllabusItem?.has_lesson_artifact === false && (
+                      <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 13, marginTop: 8, marginBottom: 0 }}>
+                        Lesson details are available, but this lesson is still being prepared.
+                      </p>
+                    )}
                     {capped && (
                       <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, marginTop: 8, marginBottom: 0 }}>
                         Daily lesson limit reached

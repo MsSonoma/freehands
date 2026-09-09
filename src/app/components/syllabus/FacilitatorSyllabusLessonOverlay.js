@@ -50,7 +50,7 @@ export default function FacilitatorSyllabusLessonOverlay({ selection, onClose, o
   const readiness = String(item.readiness_state || '').replaceAll('_', ' ')
   const primaryLabel = item.readiness_state === 'draft' ? 'Prepare lesson' : 'Review lesson'
   const historyAvailable = typeof onReviewHistory === 'function' && ['completed_historical', 'incomplete_historical', 'in_progress'].includes(selection.syllabus_state)
-  const schedulingAvailable = canScheduleLessons && isLesson && item.lesson_key && item.historical_record !== true
+  const schedulingAvailable = canScheduleLessons && typeof onSchedule === 'function' && isLesson && item.lesson_key && item.historical_record !== true
 
   return <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.() }}>
     <section className={styles.overlay} role="dialog" aria-modal="true" aria-label={`Lesson details for ${item.title || 'lesson'}`}>
@@ -63,19 +63,19 @@ export default function FacilitatorSyllabusLessonOverlay({ selection, onClose, o
           {selection.currentLesson?.hasProgress && <div><dt>Progress</dt><dd>In progress</dd></div>}
           {isSlateAssignment && <div><dt>Type</dt><dd>Scheduled Mr. Slate supplemental session</dd></div>}
         </dl>
-        {isLesson && item.lesson_key && selection.teacherEditable && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy} onChange={(event) => onTeacherAssignment?.(item, event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
-                {isConcept && <section className={styles.detailSection}><h3>Planned concept</h3><p>{selection.recoveryRequired ? 'This concept needs recovery before a lesson can be generated or bound.' : 'This concept is part of the Syllabus but does not yet have a prepared lesson file.'}</p><div className={styles.secondaryActions}>{canChangeIntent && <button type="button" onClick={() => onEditConcept?.(item)}>Edit concept</button>}{selection.suggested && <button type="button" disabled={replacing} onClick={() => onReplace?.(item)}>{replacing ? 'Replacing...' : 'Replace suggestion'}</button>}{canChangeIntent && <button type="button" disabled={selection.recoveryRequired} onClick={() => onUseExisting?.(item)}>Use existing lesson</button>}<button type="button" disabled={selection.recoveryRequired} onClick={() => onGenerate?.(item)}>Generate lesson</button></div></section>}
+        {isLesson && item.lesson_key && selection.teacherEditable && typeof onTeacherAssignment === 'function' && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy} onChange={(event) => onTeacherAssignment?.(item, event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
+                {isConcept && <section className={styles.detailSection}><h3>Planned concept</h3><p>{selection.recoveryRequired ? 'This concept needs recovery before a lesson can be generated or bound.' : 'This concept is part of the Syllabus but does not yet have a prepared lesson file.'}</p><div className={styles.secondaryActions}>{canChangeIntent && typeof onEditConcept === 'function' && <button type="button" onClick={() => onEditConcept(item)}>Edit concept</button>}{selection.suggested && typeof onReplace === 'function' && <button type="button" disabled={replacing} onClick={() => onReplace(item)}>{replacing ? 'Replacing...' : 'Replace suggestion'}</button>}{canChangeIntent && typeof onUseExisting === 'function' && <button type="button" disabled={selection.recoveryRequired} onClick={() => onUseExisting(item)}>Use existing lesson</button>}{typeof onGenerate === 'function' && <button type="button" disabled={selection.recoveryRequired} onClick={() => onGenerate(item)}>Generate lesson</button>}</div></section>}
         {isLesson && item.lesson_key && selection.historicalActivityAllowed && typeof onRecordHistoricalActivity === 'function' && <HistoricalActivityControl item={item} legacyWebbCompletion={legacyWebbCompletion} busy={historicalActivityBusy} onRecord={onRecordHistoricalActivity} />}
       </div>
       <footer>
         <div className={styles.secondaryActions}>
           {historyAvailable && <button type="button" onClick={() => onReviewHistory(item)}>Review history</button>}
           {schedulingAvailable && <button type="button" onClick={() => onSchedule?.(item)}>{item.is_explicit_schedule ? 'Reschedule' : 'Schedule'}</button>}
-          {isLesson && item.lesson_key && item.historical_record !== true && <button type="button" disabled={slateBusy} onClick={() => onScheduleSlate?.(item)}>Schedule Mr. Slate</button>}
-          {isSlateAssignment && <button type="button" disabled={slateBusy} onClick={() => onRemoveSlateSchedule?.(item)}>Remove scheduled session</button>}
-          {selection.syllabus_state === 'completed_historical' && isLesson && item.lesson_key && <button type="button" onClick={() => onRepeat?.(item)}>Prepare repeat</button>}
+          {isLesson && item.lesson_key && item.historical_record !== true && typeof onScheduleSlate === 'function' && <button type="button" disabled={slateBusy} onClick={() => onScheduleSlate(item)}>Schedule Mr. Slate</button>}
+          {isSlateAssignment && typeof onRemoveSlateSchedule === 'function' && <button type="button" disabled={slateBusy} onClick={() => onRemoveSlateSchedule(item)}>Remove scheduled session</button>}
+          {selection.syllabus_state === 'completed_historical' && isLesson && item.lesson_key && typeof onRepeat === 'function' && <button type="button" onClick={() => onRepeat(item)}>Prepare repeat</button>}
         </div>
-        {isLesson && item.lesson_key && <button type="button" className={styles.primary} onClick={() => onOpenLesson?.(item, selection)}>{primaryLabel}</button>}
+        {isLesson && item.lesson_key && typeof onOpenLesson === 'function' && <button type="button" className={styles.primary} onClick={() => onOpenLesson(item, selection)}>{primaryLabel}</button>}
       </footer>
     </section>
   </div>

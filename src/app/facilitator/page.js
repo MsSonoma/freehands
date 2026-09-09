@@ -17,6 +17,7 @@ import { readPreparationSnapshot } from './prepare/preparationSnapshot'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
+import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
 import { resolveSyllabusReadModel } from '@/app/lib/syllabus/timeline.mjs'
 import { resolveEffectiveTier } from '@/app/lib/entitlements'
 import styles from './facilitatorHome.module.css'
@@ -45,6 +46,7 @@ export default function FacilitatorPage() {
   const [learnerError, setLearnerError] = useState('')
   const [scheduleWarning, setScheduleWarning] = useState('')
   const [learnerRetry, setLearnerRetry] = useState(0)
+  const [selectedSyllabusLesson, setSelectedSyllabusLesson] = useState(null)
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) return
@@ -303,6 +305,16 @@ export default function FacilitatorPage() {
   const selectedLearner = learners.find((learner) => String(learner.id) === String(learnerId))
   const syllabusModel = resolveSyllabusReadModel(syllabusPayload)
 
+  function openHomeSyllabusLesson(item) {
+    if (!item?.lesson_key) return
+    const occurrenceId = String(item.occurrence_id || '').trim()
+    const revisionId = String(syllabusModel.revision?.id || '').trim()
+    const occurrenceContext = occurrenceId
+      ? `&occurrenceId=${encodeURIComponent(occurrenceId)}${revisionId ? `&expectedActiveRevisionId=${encodeURIComponent(revisionId)}` : ''}`
+      : ''
+    router.push(`${PREPARE_PATH}?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}${occurrenceContext}`)
+  }
+
   return (
     <main className={styles.page}>
       <header className={styles.pageHeader}>
@@ -311,7 +323,7 @@ export default function FacilitatorPage() {
           <p className={styles.pageSubtitle}>The active Syllabus is the center of the learner&apos;s educational work.</p>
         </div>
         {learners.length > 0 && <label className={styles.learnerPicker}>Learner
-          <select value={learnerId} onChange={(event) => { setLearnerId(event.target.value); localStorage.setItem('learner_id', event.target.value) }}>
+          <select value={learnerId} onChange={(event) => { setSelectedSyllabusLesson(null); setLearnerId(event.target.value); localStorage.setItem('learner_id', event.target.value) }}>
             {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}</option>)}
           </select>
         </label>}
@@ -331,6 +343,7 @@ export default function FacilitatorPage() {
             role="facilitator"
             learnerId={learnerId}
             planTier={plan}
+            onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
           />
         )}
         {syllabusStatus === 'ready' && learnerId && !syllabusError && syllabusModel.kind === 'fallback' && (
@@ -342,6 +355,12 @@ export default function FacilitatorPage() {
           </div>
         )}
       </section>
+
+      {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
+        selection={selectedSyllabusLesson}
+        onClose={() => setSelectedSyllabusLesson(null)}
+        onOpenLesson={(item) => openHomeSyllabusLesson(item)}
+      />}
 
       <section className={styles.primaryCard}>
         <div className={styles.primaryLayout}>
