@@ -2,8 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
-const syllabusDocumentSource = fs.readFileSync(
-  new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url),
+const facilitatorPageSource = fs.readFileSync(
+  new URL('../../../facilitator/syllabus/page.js', import.meta.url),
   'utf8',
 )
 const prepareSource = fs.readFileSync(
@@ -20,15 +20,15 @@ function sourceBetween(source, startMarker, endMarker) {
   return normalizedSource.slice(start, end)
 }
 
-const actionHrefSource = sourceBetween(
-  syllabusDocumentSource,
-  'const actionHref = (item, actionId) => {',
-  '\n\n  return (',
+const lessonWorkflowSource = sourceBetween(
+  facilitatorPageSource,
+  'function openFacilitatorLessonWorkflow(item) {',
+  '\n\n  function openReviewHistory',
 )
 const occurrenceContextSource = sourceBetween(
-  actionHrefSource,
-  'const occurrenceContext =',
-  '\n      return `/facilitator/prepare?',
+  lessonWorkflowSource,
+  'const occurrenceId =',
+  '\n    router.push',
 )
 const initialUrlParsingSource = sourceBetween(
   prepareSource,
@@ -47,19 +47,19 @@ const reassignmentSource = sourceBetween(
 )
 
 test('Prepare occurrenceId comes only from a non-empty item.occurrence_id', () => {
-  assert.match(occurrenceContextSource, /typeof\s+item\.occurrence_id\s*===\s*['"]string['"]/)
-  assert.match(occurrenceContextSource, /item\.occurrence_id\.trim\(\)/)
-  assert.match(occurrenceContextSource, /occurrenceId=\$\{encodeURIComponent\(item\.occurrence_id\)\}/)
+  assert.match(occurrenceContextSource, /String\(item\.occurrence_id \|\| ''\)\.trim\(\)/)
+  assert.match(occurrenceContextSource, /occurrenceId=\$\{encodeURIComponent\(occurrenceId\)\}/)
 })
 
 test('Prepare expectedActiveRevisionId comes from revision.id', () => {
-  assert.match(occurrenceContextSource, /expectedActiveRevisionId=\$\{encodeURIComponent\(revision\.id\)\}/)
+  assert.match(lessonWorkflowSource, /const revisionId = String\(syllabus\?\.active_revision\?\.id \|\| ''\)\.trim\(\)/)
+  assert.match(occurrenceContextSource, /expectedActiveRevisionId=\$\{encodeURIComponent\(revisionId\)\}/)
 })
 
-test('schedule and reschedule stay native while other Prepare actions keep occurrence context', () => {
-  assert.match(actionHrefSource, /\['schedule', 'reschedule'\]\.includes\(actionId\)\) return null/)
-  assert.doesNotMatch(actionHrefSource, /scheduleId=|originalScheduledDate=/)
-  assert.match(actionHrefSource, /facilitator\/prepare\?[^\r\n]+\$\{occurrenceContext\}/)
+test('schedule and reschedule stay native while the detail-overlay Prepare workflow keeps occurrence context', () => {
+  assert.match(facilitatorPageSource, /if \(\['schedule', 'reschedule'\]\.includes\(action\?\.id\)\)/)
+  assert.doesNotMatch(lessonWorkflowSource, /scheduleId=|originalScheduledDate=/)
+  assert.match(lessonWorkflowSource, /facilitator\/prepare\?[^\r\n]+\$\{occurrenceContext\}/)
 })
 
 test('item.id is not a fallback for occurrenceId', () => {

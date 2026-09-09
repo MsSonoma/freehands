@@ -909,37 +909,20 @@ function LessonsPageInner(){
     }
   }
 
-  async function openSyllabusLesson(item, action = { id: 'view', requires_pin: false }) {
+  async function openSyllabusLesson(item, context = {}) {
     setSyllabusLaunchError('')
-    const lessonKey = item?.lesson_key
-    const lesson = lessonKey ? recentMetaLookup[lessonKey] : null
-    if (!lesson) {
+    const lessonKey = item?.lesson_key || ''
+    const preparedLesson = lessonKey ? recentMetaLookup[lessonKey] : null
+    if (lessonKey && !preparedLesson) {
       setSyllabusLaunchError('This lesson could not be opened because its prepared lesson file is unavailable.')
       return
     }
-    if (action?.id === 'practice_slate') {
-      const occurrenceId = item?.practice_occurrence_id || item?.occurrence_id || ''
-      const runPurpose = item?.item_type === 'slate_assignment' ? (item?.run_purpose || 'practice') : 'practice'
-      router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=${encodeURIComponent(runPurpose)}`)
-      return
+    const lesson = preparedLesson || {
+      title: item?.title || 'Planned lesson',
+      blurb: item?.description || '',
+      subject: item?.subject || 'general',
     }
-    let exceptionApproved = false
-    if (action?.requires_pin) {
-      const completed = item.actual_kind === 'completed'
-      const planned = new Date(`${dateOnly(item.planned_date)}T12:00:00.000Z`).toLocaleDateString(undefined, { weekday: 'long' })
-      try {
-        exceptionApproved = await ensureFacilitatorPinException({
-          message: completed
-            ? `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to do it again.`
-            : `This lesson is planned for ${planned}. Enter the Facilitator PIN to do it today.`,
-        })
-      } catch (error) {
-        setSyllabusLaunchError(error?.message || 'The Facilitator PIN could not be verified. Please try again.')
-        return
-      }
-      if (!exceptionApproved) return
-    }
-    const resumeExistingWork = action?.syllabus_state === 'in_progress'
+    const resumeExistingWork = context?.syllabus_state === 'in_progress'
     const executionOccurrenceId = resumeExistingWork && item?.source_occurrence_id
       ? item.source_occurrence_id
       : (item?.occurrence_id || '')
@@ -949,8 +932,13 @@ function LessonsPageInner(){
       subject,
       lessonKey,
       isDemo: false,
-      syllabusItem: { ...item, execution_occurrence_id: executionOccurrenceId },
-      syllabusExceptionApproved: exceptionApproved,
+      syllabusItem: {
+        ...item,
+        execution_occurrence_id: executionOccurrenceId,
+        syllabus_state: context?.syllabus_state || '',
+        has_lesson_artifact: Boolean(preparedLesson) && context?.currentLesson?.hasLessonArtifact !== false,
+      },
+      syllabusExceptionApproved: false,
     })
     setOverlayNoteEditing(false)
   }
@@ -1201,8 +1189,7 @@ function LessonsPageInner(){
             planTier={planTier}
             learnerName={learnerName || ''}
             lessonState={syllabusLessonState}
-            onOpenLesson={openSyllabusLesson}
-            actionCapabilities={{ openLesson: true }}
+            onSelectLesson={(item, context) => openSyllabusLesson(item, context)}
             today={syllabusModel.resolved_today}
           />
         )}
@@ -1695,6 +1682,7 @@ function LessonsPageInner(){
             const cap = ent.lessonsPerDay
             const capped = !isDemo && Number.isFinite(cap) && todaysCount >= cap
             const assignedInstructionalTeacher = isDemo ? 'sonoma' : (syllabusItem?.assigned_instructional_teacher || syllabusItem?.instructional_teacher || l.instructional_teacher || 'sonoma')
+            const isSlateSyllabusAssignment = syllabusItem?.item_type === 'slate_assignment'
             const hasSnapshot = (() => {
               if (isDemo) return false
               if (assignedInstructionalTeacher === 'webb') {
@@ -1720,6 +1708,31 @@ function LessonsPageInner(){
 
             const handleStartLesson = async () => {
               if (isDemo) { openLesson('demo', l.file); return }
+              if (syllabusItem?.item_type === 'slate_assignment') {
+                const occurrenceId = syllabusItem?.practice_occurrence_id || syllabusItem?.occurrence_id || ''
+                const runPurpose = syllabusItem?.run_purpose || 'practice'
+                router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=${encodeURIComponent(runPurpose)}`)
+                return
+              }
+              if (syllabusItem?.has_lesson_artifact === false) {
+                alert('This lesson is still being prepared.')
+                return
+              }
+              const syllabusState = syllabusItem?.syllabus_state || ''
+              const plannedToday = String(syllabusItem?.planned_date || '').slice(0, 10) === localCalendarDate()
+              const requiresSyllabusPin = syllabusState === 'completed_historical'
+                || syllabusState === 'future_unfinished'
+                || syllabusState === 'incomplete_historical'
+                || (syllabusState === 'in_progress' && !plannedToday)
+              if (syllabusItem && requiresSyllabusPin && !syllabusExceptionApproved) {
+                const completed = syllabusState === 'completed_historical'
+                const allowed = await ensureFacilitatorPinException({
+                  message: completed
+                    ? `You already completed ${l.title || 'this lesson'}. Enter the Facilitator PIN to do it again.`
+                    : `This lesson is not the current scheduled lesson. Enter the Facilitator PIN to start it now.`,
+                })
+                if (!allowed) return
+              }
               // PIN gate for lessons not currently active (not approved/scheduled)
               if (!syllabusItem && !activeSet.has(lessonKey) && !syllabusExceptionApproved) {
                 const ok = await ensurePinAllowed('facilitator-key')
@@ -1783,7 +1796,7 @@ function LessonsPageInner(){
                           }
                           {isScheduled && <span style={{ fontSize: 11, background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>📅 Scheduled</span>}
                         </div>
-                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>Instructional teacher: {instructionalTeacherLabel(assignedInstructionalTeacher)}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{isSlateSyllabusAssignment ? 'Practice teacher: Mr. Slate' : <>Instructional teacher: {instructionalTeacherLabel(assignedInstructionalTeacher)}</>}</div>
                         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111', lineHeight: 1.25 }}>
                           {l.title}
                         </h2>
@@ -1830,7 +1843,7 @@ function LessonsPageInner(){
                     )}
 
                     {/* Golden Keys are a Sonoma instructional feature. */}
-                    {goldenKeysEnabled === true && !isDemo && assignedInstructionalTeacher === 'sonoma' && (() => {
+                    {goldenKeysEnabled === true && !isDemo && !!lessonKey && !isSlateSyllabusAssignment && assignedInstructionalTeacher === 'sonoma' && (() => {
                       const keyOn = goldenKeySelected || hasActiveKey
                       const facilitatorOnly = hasActiveKey && !goldenKeySelected
                       return (
@@ -1855,6 +1868,17 @@ function LessonsPageInner(){
                       )
                     })()}
 
+                    {!isDemo && syllabusItem?.item_type !== 'slate_assignment' && syllabusItem?.has_lesson_artifact !== false && (
+                      <button
+                        onClick={() => {
+                          const occurrenceId = syllabusItem?.practice_occurrence_id || syllabusItem?.occurrence_id || ''
+                          router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=practice`)
+                        }}
+                        style={{ fontSize: 13, color: '#5b21b6', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginBottom: 16 }}
+                      >
+                        Practice with Mr. Slate
+                      </button>
+                    )}
                     {/* History */}
                     {(inProgressAt || lastCompletedAt) && (
                       <div style={{ fontSize: 13, color: '#6b7280', marginBottom: 16, display: 'flex', gap: 12, flexWrap: 'wrap' }}>
@@ -1864,7 +1888,7 @@ function LessonsPageInner(){
                     )}
 
                     {/* View all attempts link */}
-                    {!isDemo && (
+                    {!isDemo && !!lessonKey && (
                       <button
                         onClick={() => setShowLessonDetailHistory({ lessonKey, title: l.title })}
                         style={{ fontSize: 13, color: '#6b7280', background: 'none', border: '1px solid #e5e7eb', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', marginBottom: 16 }}
@@ -1880,7 +1904,7 @@ function LessonsPageInner(){
                         <div style={{ whiteSpace: 'pre-wrap' }}>{noteText}</div>
                       </div>
                     )}
-                    {!overlayNoteEditing && !isDemo && (
+                    {!overlayNoteEditing && !isDemo && !!lessonKey && (
                       <button
                         onClick={() => setOverlayNoteEditing(true)}
                         style={{ fontSize: 13, color: '#6b7280', background: 'none', border: '1px solid #e5e7eb', borderRadius: 8, padding: '5px 10px', cursor: 'pointer', marginBottom: 16 }}
@@ -1920,11 +1944,11 @@ function LessonsPageInner(){
                   {/* Footer with action button */}
                   <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6' }}>
                     <button
-                      style={capped ? btnDisabled : btn}
-                      disabled={capped}
+                      style={(capped || syllabusItem?.has_lesson_artifact === false) ? btnDisabled : btn}
+                      disabled={capped || syllabusItem?.has_lesson_artifact === false}
                       onClick={handleStartLesson}
                     >
-                      {!isDemo && !activeSet.has(lessonKey) ? '🔒 ' : ''}{hasSnapshot ? `Continue with ${instructionalTeacherLabel(assignedInstructionalTeacher)}` : `Start with ${instructionalTeacherLabel(assignedInstructionalTeacher)}`}
+                      {syllabusItem?.item_type === 'slate_assignment' ? 'Start Mr. Slate' : (hasSnapshot ? `Continue with ${instructionalTeacherLabel(assignedInstructionalTeacher)}` : `Start with ${instructionalTeacherLabel(assignedInstructionalTeacher)}`)}
                     </button>
                     {capped && (
                       <p style={{ textAlign: 'center', color: '#9ca3af', fontSize: 13, marginTop: 8, marginBottom: 0 }}>

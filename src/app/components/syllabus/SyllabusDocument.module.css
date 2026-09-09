@@ -36,22 +36,9 @@
 .suggestedEntry { display:grid; gap:10px; align-items:start; margin-top:10px; padding:12px 8px 10px; border:1px dashed #9b8eb0; background:#faf7ff; }
 .suggestedEntry h4 { margin:3px 0 0; font-size:16px; font-weight:500; overflow-wrap:anywhere; }
 .suggestedLabel { display:inline-block; margin-top:7px; color:#6d4d86; font:700 11px Roboto,sans-serif; }
-.suggestionAction { display:inline-flex; min-height:34px; align-items:center; justify-content:center; padding:6px 8px; border:1px solid #79618c; background:#fff; color:#5f3f77; cursor:pointer; font:700 10px Montserrat,sans-serif; }
 .entryBody h4 { margin:3px 0 0; font-size:16px; font-weight:500; overflow-wrap:anywhere; }.subject { margin:0;color:#6b382c; }
-.description { margin:6px 0 0; color:#655d54; font:12px/1.45 Roboto,sans-serif; }
 .statusLabel,.placementLabel,.preparing { display:inline-block; margin:6px 8px 0 0; color:#756b61; font:700 11px Roboto,sans-serif; text-transform:capitalize; }
 .placementLabel { font-weight:500; font-style:italic; text-transform:none; }
-.lessonActions { display:flex; flex-wrap:wrap; gap:5px; }
-.lessonAction { display:inline-flex; min-height:36px; align-items:center; justify-content:center; padding:6px 9px; border:1px solid #6b382c; background:#6b382c; color:#fff; cursor:pointer; font:700 10px Montserrat,sans-serif; text-decoration:none; text-align:center; }
-.teacherControl { display:grid; gap:4px; margin-top:7px; color:#655d54; font:700 11px Roboto,sans-serif; }
-.teacherControl select { width:100%; min-width:0; padding:6px 7px; border:1px solid #b9ab98; background:#fffdf8; color:#2d2924; font:600 12px Roboto,sans-serif; }
-.historicalControl { border-top:1px dashed #cfc6b8; padding-top:8px; font:12px Roboto,sans-serif; }
-.historicalControl summary { color:#6b382c; cursor:pointer; font-weight:700; }
-.historicalControl label { display:grid; gap:3px; margin-top:7px; }
-.historicalControl select,.historicalControl input { min-width:0; padding:6px; border:1px solid #cfc6b8; background:#fff; font:12px Roboto,sans-serif; }
-.historicalControl button { margin-top:7px; padding:6px 8px; border:1px solid #6b382c; background:#fff; color:#6b382c; cursor:pointer; font-weight:700; }
-.historicalControl button:disabled { opacity:.55; cursor:wait; }
-.historicalControl small { display:block; margin-top:7px; color:#756b61; line-height:1.35; }
 .emptyWeek { margin:0;padding:28px 0;color:#7b7268;font-style:italic; }
 .forecastStatus,.learnerFuture { margin-top:20px; padding:14px 0; border-top:1px solid #cfc6b8; font:13px Roboto,sans-serif; }
 .forecastStatus p { margin:0; }
@@ -61,3 +48,9 @@
 .forecastDecision p { display:grid; gap:3px; }.forecastDecision span { color:#756b61; }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }
 @media (max-width:680px) { .documentHeader,.weekHeader,.forecastDecision { flex-direction:column; }.summaryRule,.pattern div { grid-template-columns:1fr; }.entryRow { grid-template-columns:1fr;gap:7px; }.revisionMark { white-space:normal; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:11px; }.planAheadButton { grid-column:1 / -1; justify-self:stretch; margin:0; border:1px solid #cfc6b8!important; } }
+
+.selectableEntry { grid-template-columns:minmax(0,1fr) auto; cursor:pointer; border-radius:8px; padding:12px 8px 10px; margin-left:-8px; margin-right:-8px; transition:background .15s ease, box-shadow .15s ease; }
+.selectableEntry:hover { background:#faf7f2; }
+.selectableEntry:focus-visible { outline:2px solid #9a4634; outline-offset:2px; }
+.entryChevron { align-self:center; color:#9a9187; font:24px/1 Georgia,serif; }
+.selectableEntry .preparing { grid-column:1 / -1; }

@@ -436,12 +436,16 @@ test('learner continuation carries source occurrence while Retry and repeat keep
   const document = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
   const learner = fs.readFileSync(path.resolve(TEST_DIR, '../../../learn/LearnerHome.js'), 'utf8')
   assert.match(document, /syllabus_state: state/)
+  assert.match(learner, /const resumeExistingWork = context\?\.syllabus_state === 'in_progress'/)
   assert.match(learner, /resumeExistingWork && item\?\.source_occurrence_id[\s\S]*item\.source_occurrence_id[\s\S]*item\?\.occurrence_id/)
   assert.match(learner, /execution_occurrence_id \|\| syllabusOccurrence\?\.occurrence_id/)
   assert.match(learner, /syllabusPayload\?\.timeline_items[\s\S]*allHistoryKeys = \[\.\.\.new Set\(\[\.\.\.completedKeys, \.\.\.inProgressKeys, \.\.\.syllabusKeys\]\)\]/)
   assert.match(learner, /setSyllabusLaunchError/)
   assert.match(learner, /role="alert"/)
-  assert.match(learner, /if \(!exceptionApproved\) return[\s\S]*const resumeExistingWork/)
+  assert.match(learner, /const requiresSyllabusPin = syllabusState === 'completed_historical'/)
+  assert.match(learner, /ensureFacilitatorPinException/)
+  const selectionFunction = learner.slice(learner.indexOf('async function openSyllabusLesson'), learner.indexOf('// Recent tab:'))
+  assert.doesNotMatch(selectionFunction, /ensureFacilitatorPinException|ensurePinAllowed/)
 })
 
 test('an instructional occurrence with existing Slate sessions can schedule another session', () => {
@@ -457,15 +461,17 @@ test('an instructional occurrence with existing Slate sessions can schedule anot
 
 test('historical instructional actions preserve non-editable provenance and existing fail-closed handlers', () => {
   const document = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
+  const overlay = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js'), 'utf8')
   const facilitatorPage = fs.readFileSync(path.resolve(TEST_DIR, '../../../facilitator/syllabus/page.js'), 'utf8')
   const learnerHome = fs.readFileSync(path.resolve(TEST_DIR, '../../../learn/LearnerHome.js'), 'utf8')
-  assert.match(document, /syllabusItemActionsFor\(\{ item, role, state/)
-  assert.doesNotMatch(document, /item\.historical_record \? \[\] : syllabusItemActions/)
   assert.match(document, /const historicalActivityAllowed = item\.historical_record !== true/)
   assert.match(document, /const teacherEditable = role === 'facilitator'[\s\S]*item\.historical_record !== true/)
+  assert.doesNotMatch(document, /HistoricalActivityControl/)
+  assert.match(overlay, /HistoricalActivityControl/)
   assert.match(facilitatorPage, /action\?\.id !== 'repeat'/)
   assert.match(facilitatorPage, /ensureFacilitatorPinException/)
-  assert.match(learnerHome, /if \(action\?\.requires_pin\)/)
+  assert.match(learnerHome, /const requiresSyllabusPin = syllabusState === 'completed_historical'/)
+  assert.match(learnerHome, /ensureFacilitatorPinException/)
   assert.match(learnerHome, /occurrenceId: syllabusOccurrence\?\.execution_occurrence_id \|\| syllabusOccurrence\?\.occurrence_id \|\| ''/)
 })
 

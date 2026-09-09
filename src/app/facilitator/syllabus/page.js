@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
+import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusPlanningWorkspace from '@/app/components/syllabus/SyllabusPlanningWorkspace'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
@@ -179,6 +180,7 @@ export default function SyllabusPage() {
   const [conceptEditor, setConceptEditor] = useState(null)
   const [replacingLineage, setReplacingLineage] = useState('')
   const [historyOccurrenceId, setHistoryOccurrenceId] = useState('')
+  const [selectedSyllabusLesson, setSelectedSyllabusLesson] = useState(null)
   const [scheduleDialog, setScheduleDialog] = useState(null)
   const [scheduleLessons, setScheduleLessons] = useState([])
   const [scheduleCatalogLoading, setScheduleCatalogLoading] = useState(false)
@@ -745,12 +747,26 @@ export default function SyllabusPage() {
     setConceptEditor(null)
     setPlanAheadOpen(false)
     setHistoryOccurrenceId('')
+    setSelectedSyllabusLesson(null)
     setScheduleDialog(null)
     setScheduleError('')
     setRecoveryRequiredLineages(new Set())
     setError('')
     setForecastError('')
     localStorage.setItem('learner_id', nextLearnerId)
+  }
+
+  function openFacilitatorLessonWorkflow(item) {
+    if (!item?.lesson_key) return
+    const learner = encodeURIComponent(learnerId)
+    const key = encodeURIComponent(item.lesson_key)
+    const stage = item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'
+    const occurrenceId = String(item.occurrence_id || '').trim()
+    const revisionId = String(syllabus?.active_revision?.id || '').trim()
+    const occurrenceContext = occurrenceId
+      ? `&occurrenceId=${encodeURIComponent(occurrenceId)}${revisionId ? `&expectedActiveRevisionId=${encodeURIComponent(revisionId)}` : ''}`
+      : ''
+    router.push(`/facilitator/prepare?learnerId=${learner}&lessonKey=${key}&stage=${stage}${occurrenceContext}`)
   }
 
   function openReviewHistory(item) {
@@ -760,6 +776,7 @@ export default function SyllabusPage() {
     setDraft(null)
     setConceptEditor(null)
     setPlanAheadOpen(false)
+    setSelectedSyllabusLesson(null)
     setHistoryOccurrenceId(occurrenceId)
   }
 
@@ -868,10 +885,8 @@ export default function SyllabusPage() {
               learnerId={learnerId}
               planTier={planTier}
               learnerName={selectedLearner?.name || ''}
-              onLessonAction={handleLessonAction}
-              onReviewHistory={openReviewHistory}
-              actionCapabilities={{ reviewHistory: true, lessonActions: true, scheduleLessons: canScheduleLessons }}
-              isActionDisabled={(item, actionId) => (['schedule', 'reschedule'].includes(actionId) && scheduleBusy) || (actionId === 'use_existing' && !planningAccess.can_change_intent) || (['materialize', 'use_existing'].includes(actionId) && recoveryRequiredLineages.has(item.lineage_id)) || (['schedule_slate', 'remove_slate_schedule'].includes(actionId) && slateAssignmentBusy === (item.source_occurrence_id || item.occurrence_id || item.id))}
+              onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
+              canScheduleLessons={canScheduleLessons}
               onOpenPlanning={planningAccess.can_change_intent ? () => setPlanAheadOpen(true) : null}
               onAddLesson={canScheduleLessons ? openLessonPicker : null}
               onEditSection={planningAccess.can_change_intent ? openSectionEditor : null}
@@ -886,20 +901,47 @@ export default function SyllabusPage() {
               materializingForecastLineage={materializingLineage}
               isForecastRecoveryRequired={(item) => recoveryRequiredLineages.has(item.lineage_id)}
               onRetryForecast={() => { forecastAttempt.current = ''; createLearningForecast() }}
-              onEditForecast={(item) => setConceptEditor({ source: 'forecast', item, title: item.title, description: item.description || '' })}
-              onReplaceForecast={replaceForecast}
-              onUseExistingForecast={planningAccess.can_change_intent ? (item) => openLessonPicker(item.planned_date, { mode: 'bind', item, proposal: learningProposal }) : null}
-              onGenerateForecast={(item) => materializeForecast(item, { proposal: learningProposal })}
+
               onUseForecast={activateLearningProposal}
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
               restoreWeekStart={selectedWeekStart}
-              onTeacherAssignment={handleTeacherAssignment}
-              teacherAssignmentBusy={teacherAssignmentBusy}
-              onRecordHistoricalActivity={handleRecordHistoricalActivity}
-              historicalActivityBusy={historicalActivityBusy}
-              legacyWebbCompletions={legacyWebbCompletions}
               today={syllabus.resolved_today}
             />)}
+
+          {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
+            selection={selectedSyllabusLesson}
+            onClose={() => setSelectedSyllabusLesson(null)}
+            onOpenLesson={(item) => openFacilitatorLessonWorkflow(item)}
+            onTeacherAssignment={async (item, teacher) => { setSelectedSyllabusLesson(null); await handleTeacherAssignment(item, teacher) }}
+            teacherBusy={teacherAssignmentBusy === selectedSyllabusLesson.occurrenceKey}
+            canScheduleLessons={canScheduleLessons}
+            onSchedule={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: item.is_explicit_schedule ? 'reschedule' : 'schedule' }) }}
+            onReviewHistory={(item) => openReviewHistory(item)}
+            onRepeat={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: 'repeat' }) }}
+            onScheduleSlate={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: 'schedule_slate' }) }}
+            onRemoveSlateSchedule={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: 'remove_slate_schedule' }) }}
+            slateBusy={slateAssignmentBusy === selectedSyllabusLesson.occurrenceKey}
+            onEditConcept={(item) => {
+              setSelectedSyllabusLesson(null)
+              if (item.origin === 'learning_forecast') setConceptEditor({ source: 'forecast', item, title: item.title, description: item.description || '' })
+              else void handleLessonAction(item, { id: 'edit_concept' })
+            }}
+            onReplace={(item) => { setSelectedSyllabusLesson(null); void replaceForecast(item) }}
+            replacing={replacingLineage === selectedSyllabusLesson.item?.lineage_id}
+            onUseExisting={(item) => {
+              setSelectedSyllabusLesson(null)
+              if (item.origin === 'learning_forecast') void openLessonPicker(item.planned_date, { mode: 'bind', item, proposal: learningProposal })
+              else void handleLessonAction(item, { id: 'use_existing' })
+            }}
+            onGenerate={(item) => {
+              setSelectedSyllabusLesson(null)
+              void materializeForecast(item, { proposal: item.origin === 'learning_forecast' ? learningProposal : null })
+            }}
+            canChangeIntent={planningAccess.can_change_intent}
+            onRecordHistoricalActivity={async (item, activity) => { setSelectedSyllabusLesson(null); await handleRecordHistoricalActivity(item, activity) }}
+            historicalActivityBusy={historicalActivityBusy === selectedSyllabusLesson.occurrenceKey}
+            legacyWebbCompletion={legacyWebbCompletions[selectedSyllabusLesson.item?.lesson_key]}
+          />}
 
           {editingSection && draft && syllabus?.has_active_syllabus && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={`Edit ${sectionLabel(editingSection)}`}><header><h2>{sectionLabel(editingSection)}</h2><button type="button" onClick={() => { setEditingSection(''); setDraft(null) }}>Close</button></header>
             {error && <div className={styles.error} role="alert">{error}</div>}
