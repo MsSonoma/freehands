@@ -47,6 +47,7 @@ export default function FacilitatorPage() {
   const [scheduleWarning, setScheduleWarning] = useState('')
   const [learnerRetry, setLearnerRetry] = useState(0)
   const [selectedSyllabusLesson, setSelectedSyllabusLesson] = useState(null)
+  const [syllabusRefreshSequence, setSyllabusRefreshSequence] = useState(0)
 
   useEffect(() => {
     if (authLoading || !isAuthenticated) return
@@ -173,7 +174,7 @@ export default function FacilitatorPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [authToken, learnerId, sessionStatus])
+  }, [authToken, learnerId, sessionStatus, syllabusRefreshSequence])
 
   useEffect(() => {
     if (!pinChecked || !isAuthenticated || sessionStatus !== 'ready') return
@@ -358,6 +359,12 @@ export default function FacilitatorPage() {
 
       {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
         selection={selectedSyllabusLesson}
+        learnerId={learnerId}
+        accessToken={authToken}
+        planTier={plan}
+        resolvedToday={syllabusPayload?.resolved_today || ''}
+        activeRevisionId={syllabusModel.revision?.id || ''}
+        onChanged={() => setSyllabusRefreshSequence((value) => value + 1)}
         onClose={() => setSelectedSyllabusLesson(null)}
         onOpenLesson={(item) => openHomeSyllabusLesson(item)}
       />}

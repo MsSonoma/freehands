@@ -910,16 +910,22 @@ export default function SyllabusPage() {
 
           {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
             selection={selectedSyllabusLesson}
+            learnerId={learnerId}
+            accessToken={token}
+            planTier={planTier}
+            resolvedToday={syllabus?.resolved_today || ''}
+            activeRevisionId={syllabus?.active_revision?.id || ''}
+            onChanged={() => loadCurrent()}
             onClose={() => setSelectedSyllabusLesson(null)}
             onOpenLesson={(item) => openFacilitatorLessonWorkflow(item)}
-            onTeacherAssignment={async (item, teacher) => { setSelectedSyllabusLesson(null); await handleTeacherAssignment(item, teacher) }}
+            onTeacherAssignment={(item, teacher) => handleTeacherAssignment(item, teacher)}
             teacherBusy={teacherAssignmentBusy === selectedSyllabusLesson.occurrenceKey}
             canScheduleLessons={canScheduleLessons}
-            onSchedule={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: item.is_explicit_schedule ? 'reschedule' : 'schedule' }) }}
+            onSchedule={(item) => { void handleLessonAction(item, { id: item.is_explicit_schedule ? 'reschedule' : 'schedule' }) }}
             onReviewHistory={(item) => openReviewHistory(item)}
             onRepeat={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: 'repeat' }) }}
-            onScheduleSlate={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: 'schedule_slate' }) }}
-            onRemoveSlateSchedule={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: 'remove_slate_schedule' }) }}
+            onScheduleSlate={(item) => { void handleLessonAction(item, { id: 'schedule_slate' }) }}
+            onRemoveSlateSchedule={(item) => { void handleLessonAction(item, { id: 'remove_slate_schedule' }) }}
             slateBusy={slateAssignmentBusy === selectedSyllabusLesson.occurrenceKey}
             onEditConcept={(item) => {
               setSelectedSyllabusLesson(null)

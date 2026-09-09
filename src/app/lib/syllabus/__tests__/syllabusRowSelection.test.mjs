@@ -37,27 +37,37 @@ test('learner Syllabus selection opens detail first and applies PIN only when st
   assert.match(learnerSource, /Practice with Mr\. Slate/)
 })
 
-test('facilitator Syllabus uses one detail overlay and one state-aware primary lesson workflow', () => {
+test('facilitator lesson overlay is the operational control center after row selection', () => {
   assert.match(facilitatorSource, /onSelectLesson=\{\(item, context\) => setSelectedSyllabusLesson\(\{ item, \.\.\.context \}\)\}/)
   assert.match(facilitatorSource, /<FacilitatorSyllabusLessonOverlay/)
-  assert.match(overlaySource, /const primaryLabel = item\.readiness_state === 'draft' \? 'Prepare lesson' : 'Review lesson'/)
-  for (const control of ['Assigned teacher', 'Review history', 'Schedule Mr. Slate', 'Record historical activity']) {
+  for (const control of ['Assigned teacher', 'Start now', 'Make available', 'Edit lesson', 'Schedule Mr. Slate', 'Review history', 'Review & approve draft']) {
     assert.match(overlaySource, new RegExp(control.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
-  assert.doesNotMatch(overlaySource, />Open</)
-  assert.doesNotMatch(overlaySource, />Make available</)
+  assert.match(overlaySource, /fetch\('\/api\/facilitator\/learners\/lesson-availability'/)
+  assert.match(overlaySource, /fetch\('\/api\/syllabus\/lesson-associations'/)
+  assert.match(overlaySource, /postLessonScheduleWithCapacityPin/)
+  assert.match(overlaySource, /buildInstructionalSessionRoute/)
+  assert.match(overlaySource, /instructionalTeacher: assignedTeacher/)
+  assert.match(overlaySource, /occurrenceId,/)
+  assert.match(overlaySource, /item\.readiness_state === 'draft'/)
+  assert.doesNotMatch(overlaySource, /'Prepare lesson' : 'Review lesson'/)
 })
-
-test('every production Syllabus surface supplies a real lesson-detail opening path', () => {
+test('every production facilitator Syllabus surface supplies the same operational overlay authority context', () => {
   assert.match(facilitatorHomeSource, /onSelectLesson=\{\(item, context\) => setSelectedSyllabusLesson\(\{ item, \.\.\.context \}\)\}/)
   assert.match(facilitatorHomeSource, /<FacilitatorSyllabusLessonOverlay/)
-  assert.match(facilitatorHomeSource, /onOpenLesson=\{\(item\) => openHomeSyllabusLesson\(item\)\}/)
-  assert.match(facilitatorSource, /onSelectLesson=\{\(item, context\) => setSelectedSyllabusLesson/)
+  for (const prop of ['learnerId={learnerId}', 'accessToken={authToken}', 'planTier={plan}', "resolvedToday={syllabusPayload?.resolved_today || ''}", "activeRevisionId={syllabusModel.revision?.id || ''}"]) {
+    assert.ok(facilitatorHomeSource.includes(prop), `Facilitator Home missing ${prop}`)
+  }
+  for (const prop of ['learnerId={learnerId}', 'accessToken={token}', 'planTier={planTier}', "resolvedToday={syllabus?.resolved_today || ''}", "activeRevisionId={syllabus?.active_revision?.id || ''}"]) {
+    assert.ok(facilitatorSource.includes(prop), `Dedicated Syllabus missing ${prop}`)
+  }
   assert.match(learnerSource, /onSelectLesson=\{\(item, context\) => openSyllabusLesson\(item, context\)\}/)
 })
-
-test('shared facilitator detail overlay hides controls when a host does not supply their authority handler', () => {
-  for (const handler of ['onTeacherAssignment', 'onSchedule', 'onScheduleSlate', 'onRemoveSlateSchedule', 'onRepeat', 'onOpenLesson', 'onGenerate']) {
-    assert.match(overlaySource, new RegExp('typeof ' + handler + ' === [\"\']function[\"\']'))
-  }
+test('shared facilitator overlay can fall back to server-owned core operations without host-specific handlers', () => {
+  assert.match(overlaySource, /const coreAuthority = Boolean\(learnerId && accessToken && item\.lesson_key\)/)
+  assert.match(overlaySource, /typeof onTeacherAssignment === 'function' \|\| coreAuthority/)
+  assert.match(overlaySource, /typeof onSchedule === 'function' \|\| coreAuthority/)
+  assert.match(overlaySource, /typeof onReviewHistory === 'function' \|\| coreAuthority/)
+  assert.match(overlaySource, /typeof onRepeat === 'function' \|\| coreAuthority/)
+  assert.match(overlaySource, /typeof onScheduleSlate === 'function' \|\| canScheduleSlateCore/)
 })

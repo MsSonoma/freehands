@@ -24,3 +24,8 @@
 .primary { min-height:40px; padding:9px 15px; border:1px solid #c7442e; border-radius:8px; background:#c7442e; color:#fff; cursor:pointer; font-weight:800; white-space:nowrap; }
 .overlay button:disabled { opacity:.55; cursor:wait; }
 @media (max-width:600px) { .backdrop { padding:8px; } .overlay { max-height:calc(100vh - 16px); } .overlay > footer { align-items:stretch; flex-direction:column-reverse; } .primary { width:100%; } }
+
+.statusMessage, .errorMessage { margin:0 0 14px; padding:10px 12px; border-radius:8px; font-size:13px; line-height:1.45; }
+.statusMessage { border:1px solid #d1d5db; background:#f9fafb; color:#374151; }
+.errorMessage { border:1px solid #f0c9c0; background:#fff7f5; color:#7f1d1d; }
+.field input { width:100%; box-sizing:border-box; padding:9px; border:1px solid #d1d5db; border-radius:7px; background:#fff; color:#111827; font:inherit; }
