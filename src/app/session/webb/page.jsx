@@ -2,6 +2,7 @@
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
+import WebbWritingStudio from './WebbWritingStudio'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
@@ -24,6 +25,14 @@ import {
   sanitizeWritingGuidance,
 } from '@/app/lib/webbLearningModel.mjs'
 import {
+  WEBB_WRITING_SUBPHASES,
+  hasAllWritingReadyNotes,
+  isWritingReadyNote,
+  latestWritingAttempt,
+  normalizeWritingSubphase,
+  writingReadyNoteIndices,
+} from '@/app/lib/webbWritingFlow.mjs'
+import {
   WEBB_ASSISTANCE_TYPES,
   addWebbAssistance,
   detectsAnswerRequest,
@@ -40,6 +49,10 @@ if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style
     '@keyframes webb-bounce { 0%,80%,100% { transform:translateY(0) } 40% { transform:translateY(-5px) } }',
     '@keyframes webb-tablet-in { 0% { opacity:0; transform:translateX(-50%) scale(0.88) } 100% { opacity:1; transform:translateX(-50%) scale(1) } }',
     '@keyframes webb-tablet-out { 0% { opacity:1; transform:translateX(-50%) scale(1) } 100% { opacity:0; transform:translateX(-50%) scale(0.92) } }',
+    '@keyframes webb-writing-paper-in { from { opacity:0; transform:translateY(18px) scale(0.985) } to { opacity:1; transform:translateY(0) scale(1) } }',
+    '@keyframes webb-writing-focus-in { from { opacity:0; transform:scale(0.96) } to { opacity:1; transform:scale(1) } }',
+    '@keyframes webb-writing-attempt-aside { from { opacity:0; transform:translateX(18px) } to { opacity:1; transform:translateX(0) } }',
+    '@keyframes webb-writing-glow { 0% { transform:scale(0.985); filter:brightness(1) } 45% { transform:scale(1.015); filter:brightness(1.04) } 100% { transform:scale(1); filter:brightness(1) } }',
   ].join(' ')
   document.head.appendChild(s)
 }
@@ -227,8 +240,11 @@ function WebbPageInner() {
   const [understoodObj,       setUnderstoodObj]      = useState([]) // comprehension demonstrated, possibly assisted
   const [objectiveEvidence,   setObjectiveEvidence]  = useState({}) // covered/understood/mastered/retained provenance
   const [learnerNotes,        setLearnerNotes]       = useState({})  // Record<idx, verbatim note + source provenance>
+  const learnerNotesRef                              = useRef({})
   const [writingMode,         setWritingMode]        = useState(false)
   const [writingIndex,        setWritingIndex]       = useState(0)
+  const [writingSubphase,     setWritingSubphase]    = useState(WEBB_WRITING_SUBPHASES.IDLE)
+  const [writingDraft,        setWritingDraft]       = useState('')
   const [writingAttempts,     setWritingAttempts]    = useState({}) // Record<idx, verbatim attempt[]>
   const [acceptedSentences,   setAcceptedSentences]  = useState({}) // Record<idx, accepted verbatim attempt>
   const [newlySavedNote,  setNewlySavedNote] = useState(null) // {idx, text} — drives tablet toast
@@ -244,6 +260,11 @@ function WebbPageInner() {
   const [justCompletedLesson, setJustCompletedLesson] = useState(null) // lesson title shown as completion toast
   const [completionState, setCompletionState] = useState('idle') // idle | saving | failed
   const [completionError, setCompletionError] = useState('')
+
+  useEffect(() => {
+    learnerNotesRef.current = learnerNotes
+  }, [learnerNotes])
+
   const canonicalSessionRef = useRef(null)
   const masteryEvidenceClientRef = useRef(null)
   const priorObjectiveExposureRef = useRef({})
@@ -510,9 +531,13 @@ function WebbPageInner() {
       setCoveredObj(saved.coveredObj || [])
       setUnderstoodObj(saved.understoodObj || [])
       setObjectiveEvidence(saved.objectiveEvidence || {})
-      setLearnerNotes(saved.learnerNotes || {})
+      const restoredNotes = saved.learnerNotes || {}
+      learnerNotesRef.current = restoredNotes
+      setLearnerNotes(restoredNotes)
       setWritingMode(!!saved.writingMode)
       setWritingIndex(saved.writingIndex || 0)
+      setWritingSubphase(normalizeWritingSubphase(saved.writingSubphase, !!saved.writingMode))
+      setWritingDraft(String(saved.writingDraft || ''))
       setWritingAttempts(saved.writingAttempts || {})
       setAcceptedSentences(saved.acceptedSentences || {})
       if (saved.essay) setEssay(saved.essay)
@@ -547,10 +572,10 @@ function WebbPageInner() {
         snapshotVersion: WEBB_SNAPSHOT_VERSION,
         webbSessionStartedAt: webbSessionStartRef.current,
         selectedLesson, chatMessages, transcript, objectives, coveredObj, understoodObj, objectiveEvidence, learnerNotes,
-        writingMode, writingIndex, writingAttempts, acceptedSentences, essay, essayMode,
+        writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, essay, essayMode,
       }))
     } catch { /* ignore quota errors */ }
-  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, coveredObj, understoodObj, objectiveEvidence, learnerNotes, writingMode, writingIndex, writingAttempts, acceptedSentences, essay, essayMode])
+  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, coveredObj, understoodObj, objectiveEvidence, learnerNotes, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, essay, essayMode])
 
   // Redirect to the canonical learner home when lesson list is shown.
   useEffect(() => {
@@ -874,7 +899,7 @@ function WebbPageInner() {
     }
 
     setInterpretingVideo(true)
-    const targetIndex = objectives.findIndex((_, index) => !coveredObj.includes(index))
+    const targetIndex = objectives.findIndex((_, index) => !isWritingReadyNote(learnerNotesRef.current[index]))
     if (targetIndex >= 0) markObjectiveAssistance(targetIndex, WEBB_ASSISTANCE_TYPES.VISUAL_EXPOSURE)
     setMediaOverlay('video')
     setVideoMoments([])
@@ -888,7 +913,7 @@ function WebbPageInner() {
           grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
           learnerName:      learnerName.current || '',
           objectives,
-          completedIndices: coveredObj,
+          completedIndices: writingReadyNoteIndices(objectives, learnerNotesRef.current),
         }),
       })
       const data = await res.json()
@@ -927,7 +952,7 @@ function WebbPageInner() {
 
       // ── Assessment push: ask the student to demonstrate objective comprehension ──
       // Build snapshot of remaining objectives at the moment the tour ends
-      const remaining = objectives.filter((_, i) => !coveredObj.includes(i))
+      const remaining = objectives.filter((_, i) => !isWritingReadyNote(learnerNotesRef.current[i]))
       try {
         const assessRes = await fetch('/api/webb-chat', {
           method: 'POST',
@@ -1104,9 +1129,12 @@ function WebbPageInner() {
     setUnderstoodObj([])
     setObjectiveEvidence({})
     setNewlySavedNote(null)
+    learnerNotesRef.current = {}
     setLearnerNotes({})
     setWritingMode(false)
     setWritingIndex(0)
+    setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
+    setWritingDraft('')
     setWritingAttempts({})
     setAcceptedSentences({})
     setExpandedObj(null)
@@ -1242,37 +1270,60 @@ function WebbPageInner() {
     }
   }
 
-  // ── Objectives: check after each student turn ─────────────────────────
-  // Runs in the background after a normal chat turn; never blocks the UI.
-  const checkObjectivesAfterTurn = useCallback(async (updatedMessages, currentObjectives, currentCovered) => {
+  function mergeValidLearnerNotes(notes = {}) {
+    const validNotes = Object.fromEntries(
+      Object.entries(notes || {}).filter(([, note]) => isWritingReadyNote(note)),
+    )
+    const priorNotes = learnerNotesRef.current || {}
+    const freshIndices = Object.keys(validNotes)
+      .map(Number)
+      .filter(index => Number.isInteger(index) && !isWritingReadyNote(priorNotes[index]))
+
+    if (Object.keys(validNotes).length) {
+      const nextNotes = { ...priorNotes, ...validNotes }
+      learnerNotesRef.current = nextNotes
+      setLearnerNotes(nextNotes)
+    }
+
+    if (freshIndices.length) {
+      const firstIndex = freshIndices[0]
+      setNewlySavedNote({ idx: firstIndex, text: validNotes[firstIndex].text })
+      addMsg("Let's save that to our notes.")
+    }
+
+    return { nextNotes: learnerNotesRef.current || priorNotes, freshIndices }
+  }
+
+  // Check after each student turn. Instructional coverage and writing readiness are separate:
+  // a covered goal remains in the evaluator until a source-verified learner note exists.
+  const checkObjectivesAfterTurn = useCallback(async (updatedMessages, currentObjectives, currentCovered, currentNotes = learnerNotesRef.current) => {
     if (!currentObjectives.length) return
-    if (currentCovered.length >= currentObjectives.length) return
+    const noteReadyIndices = writingReadyNoteIndices(currentObjectives, currentNotes)
+    if (noteReadyIndices.length >= currentObjectives.length) return
     if (checkingObjRef.current) {
-      // A check is already in-flight — park the latest args so we retry once it finishes.
-      // Using the latest args (most recent conversation) means we never lose a qualifying turn.
-      pendingCheckRef.current = { updatedMessages, currentObjectives, currentCovered }
+      pendingCheckRef.current = { updatedMessages, currentObjectives, currentCovered, currentNotes: learnerNotesRef.current }
       return
     }
     checkingObjRef.current = true
     pendingCheckRef.current = null
     try {
-      const res  = await fetch('/api/webb-objectives', {
+      const res = await fetch('/api/webb-objectives', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          action:           'check',
-          objectives:       currentObjectives,
-          coveredIndices:    currentCovered,
+          action: 'check',
+          objectives: currentObjectives,
+          coveredIndices: currentCovered,
+          noteReadyIndices,
           objectiveEvidence,
           priorPromptExposure: priorObjectiveExposureRef.current,
-          conversation:     updatedMessages,
-          lesson:           selectedLesson,
+          conversation: updatedMessages,
+          lesson: selectedLesson,
         }),
       })
       const data = await res.json()
       const newly = data.newlyCovered || data.newlyCompleted || []
       const newlyUnderstood = data.newlyUnderstood || []
-      const notes = data.learnerNotes || {}
       const nextEvidence = data.objectiveEvidence || {}
       for (const [rawIndex, classification] of Object.entries(nextEvidence)) {
         const index = Number(rawIndex)
@@ -1283,24 +1334,16 @@ function WebbPageInner() {
       if (newlyUnderstood.length) {
         setUnderstoodObj(prev => [...new Set([...prev, ...newlyUnderstood])])
       }
+      mergeValidLearnerNotes(data.learnerNotes || {})
       if (newly.length) {
-        setLearnerNotes(prev => ({ ...prev, ...notes }))
-        setCoveredObj(prev => {
-          const next = [...new Set([...prev, ...newly])]
-          const firstIdx = newly.find(i => !prev.includes(i))
-          if (firstIdx !== undefined) {
-            setNewlySavedNote({ idx: firstIdx, text: notes[firstIdx]?.text || '' })
-          }
-          return next
-        })
+        setCoveredObj(prev => [...new Set([...prev, ...newly])])
       }
     } catch { /* fail silently */ }
     checkingObjRef.current = false
-    // If a check was parked while we were running, execute it now.
     if (pendingCheckRef.current) {
       const pending = pendingCheckRef.current
       pendingCheckRef.current = null
-      checkObjectivesAfterTurn(pending.updatedMessages, pending.currentObjectives, pending.currentCovered)
+      checkObjectivesAfterTurn(pending.updatedMessages, pending.currentObjectives, pending.currentCovered, learnerNotesRef.current)
     }
   }, [selectedLesson, objectiveEvidence])
 
@@ -1339,9 +1382,12 @@ function WebbPageInner() {
     setUnderstoodObj([])
     setObjectiveEvidence({})
     setNewlySavedNote(null)
+    learnerNotesRef.current = {}
     setLearnerNotes({})
     setWritingMode(false)
     setWritingIndex(0)
+    setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
+    setWritingDraft('')
     setWritingAttempts({})
     setAcceptedSentences({})
     setExpandedObj(null)
@@ -1405,7 +1451,95 @@ function WebbPageInner() {
     generateObjectives(lesson)
   }, [preloadResources, generateObjectives, learnerId, routeLearnerId, routeOccurrenceId, adoptWebbTrackedSession, startWebbSessionPolling])
 
-  // ── Send chat message ─────────────────────────────────────────────────
+  async function submitWritingAttempt(text) {
+    if (webbExecutionFencedRef.current || !writingMode || writingEvaluating || chatLoading) return
+    const trimmed = String(text || '').trim()
+    if (!trimmed) return
+
+    const note = learnerNotesRef.current[writingIndex]
+    if (!isWritingReadyNote(note)) return
+
+    addStudentLine(trimmed)
+    const userMsg = {
+      role: 'user',
+      content: trimmed,
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `webb-${Date.now()}`,
+      createdAt: new Date().toISOString(),
+    }
+    const nextHistory = [...chatMessages, userMsg]
+    setChatMessages(nextHistory)
+    setWritingEvaluating(true)
+    setChatLoading(true)
+
+    try {
+      const evaluationRes = await fetch('/api/webb-objectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'check-writing',
+          objective: objectives[writingIndex],
+          note: note.text,
+          text: trimmed,
+          lesson: selectedLesson,
+        }),
+      })
+      if (!evaluationRes.ok) throw new Error('Writing evaluation failed')
+      const evaluation = await evaluationRes.json()
+      const attempt = createWritingAttempt({
+        objectiveIndex: writingIndex,
+        text: trimmed,
+        message: userMsg,
+        accuracy: evaluation.accuracy,
+        sentenceOk: evaluation.sentenceOk,
+      })
+      setWritingAttempts(prev => ({
+        ...prev,
+        [writingIndex]: [...(prev[writingIndex] || []), attempt],
+      }))
+      setWritingDraft('')
+
+      if (attempt.accepted) {
+        const nextAccepted = { ...acceptedSentences, [writingIndex]: attempt }
+        setAcceptedSentences(nextAccepted)
+        setWritingSubphase(WEBB_WRITING_SUBPHASES.COMMITTED)
+        const reply = "That sentence is ready. Let's add it to your essay."
+        setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+        addMsg(reply)
+      } else {
+        setWritingSubphase(WEBB_WRITING_SUBPHASES.REVIEW)
+        let reply = sanitizeWritingGuidance('')
+        try {
+          const guidanceRes = await fetch('/api/webb-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              messages: nextHistory,
+              lesson: selectedLesson,
+              writingMode: true,
+              writingNote: note.text,
+              writingEvaluation: { accuracy: evaluation.accuracy, sentenceOk: evaluation.sentenceOk },
+            }),
+          })
+          if (guidanceRes.ok) {
+            const guidance = await guidanceRes.json()
+            reply = sanitizeWritingGuidance(guidance.reply)
+          }
+        } catch { /* safe retry copy remains */ }
+        setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+        addMsg(reply)
+      }
+    } catch {
+      const reply = 'I could not review that sentence just yet. Your words are still here, so please try submitting it again.'
+      setWritingDraft(trimmed)
+      setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+      addMsg(reply)
+    } finally {
+      setWritingEvaluating(false)
+      setChatLoading(false)
+    }
+  }
+
+  // Normal research/chat dispatcher. Writing Studio submissions bypass every UI-intent intercept.
   const sendMessage = useCallback(async (text) => {
     if (webbExecutionFencedRef.current) return
     if (!text.trim() || chatLoading) return
@@ -1554,101 +1688,36 @@ function WebbPageInner() {
     setChatMessages(nextHistory)
     setChatLoading(true)
     try {
-      if (writingMode) {
-        setWritingEvaluating(true)
-        const note = learnerNotes[writingIndex]
-        const evaluationRes = await fetch('/api/webb-objectives', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            action: 'check-writing',
-            objective: objectives[writingIndex],
-            note: note?.text || '',
-            text,
-            lesson: selectedLesson,
-          }),
-        })
-        const evaluation = await evaluationRes.json()
-        const attempt = createWritingAttempt({
-          objectiveIndex: writingIndex,
-          text,
-          message: userMsg,
-          accuracy: evaluation.accuracy,
-          sentenceOk: evaluation.sentenceOk,
-        })
-        setWritingAttempts(prev => ({
-          ...prev,
-          [writingIndex]: [...(prev[writingIndex] || []), attempt],
-        }))
-
-        if (attempt.accepted) {
-          const nextAccepted = { ...acceptedSentences, [writingIndex]: attempt }
-          setAcceptedSentences(nextAccepted)
-          const nextIndex = nextWritingObjectiveIndex(objectives, nextAccepted)
-          if (nextIndex === -1) {
-            const finalEssay = assembleLearnerEssay(objectives, nextAccepted)
-            const reply = 'You turned every rough note into your own writing. Your essay is ready!'
-            setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
-            addMsg(reply)
-            setEssay(finalEssay)
-            setWritingMode(false)
-            setEssayMode(!!finalEssay)
-          } else {
-            const reply = `That sentence is ready for your essay. Here is your next note: “${learnerNotes[nextIndex]?.text || ''}” How could you turn that thought into a complete sentence?`
-            setWritingIndex(nextIndex)
-            setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
-            addMsg(reply)
-          }
-        } else {
-          const guidanceRes = await fetch('/api/webb-chat', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              messages: nextHistory,
-              lesson: selectedLesson,
-              writingMode: true,
-              writingNote: note?.text || '',
-              writingEvaluation: { accuracy: evaluation.accuracy, sentenceOk: evaluation.sentenceOk },
-            }),
-          })
-          const guidance = await guidanceRes.json()
-          const reply = sanitizeWritingGuidance(guidance.reply)
-          setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
-          addMsg(reply)
-        }
-        setWritingEvaluating(false)
-        setChatLoading(false)
-        return
-      }
-
-      // ── Step 1: check objectives NOW (before calling webb-chat) ──────────
+      // Step 1: check objectives NOW (before calling webb-chat) ──────────
       // This ensures webb-chat receives the correct remaining-objectives list
       // (i.e. already-completed objectives are excluded) so Mrs. Webb's very
       // next question targets the NEXT incomplete goal, not the one just shown.
       let freshCovered = [...coveredObj]
+      let nextLearnerNotes = learnerNotesRef.current || learnerNotes
+      let writingReady = new Set(writingReadyNoteIndices(objectives, nextLearnerNotes))
       let masteryStatus = null
       let assistanceTargetIndex = null
       const answerRequested = detectsAnswerRequest(text)
-      if (objectives.length && coveredObj.length < objectives.length) {
+      if (objectives.length && writingReady.size < objectives.length) {
         try {
           const checkRes = await fetch('/api/webb-objectives', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
-              action:           'check',
+              action: 'check',
               objectives,
               coveredIndices: coveredObj,
+              noteReadyIndices: [...writingReady],
               objectiveEvidence,
               priorPromptExposure: priorObjectiveExposureRef.current,
-              conversation:     nextHistory,
-              lesson:           selectedLesson,
-              quick:            true,   // only scan last 2 user turns — keeps this fast
+              conversation: nextHistory,
+              lesson: selectedLesson,
+              quick: true,
             }),
           })
           const checkData = await checkRes.json()
           const newly = checkData.newlyCovered || checkData.newlyCompleted || []
           const newlyUnderstood = checkData.newlyUnderstood || []
-          const notes = checkData.learnerNotes || {}
           const evaluationStatus = checkData.evaluationStatus || {}
           const nextEvidence = checkData.objectiveEvidence || objectiveEvidence
 
@@ -1662,21 +1731,16 @@ function WebbPageInner() {
             setUnderstoodObj(prev => [...new Set([...prev, ...newlyUnderstood])])
           }
 
+          const merged = mergeValidLearnerNotes(checkData.learnerNotes || {})
+          nextLearnerNotes = merged.nextNotes
+          writingReady = new Set(writingReadyNoteIndices(objectives, nextLearnerNotes))
+
           if (newly.length) {
-            const firstNew = newly.find(i => !coveredObj.includes(i))
             freshCovered = [...new Set([...coveredObj, ...newly])]
-
-            setLearnerNotes(prev => ({ ...prev, ...notes }))
             setCoveredObj(freshCovered)
-
-            if (firstNew !== undefined) {
-              setNewlySavedNote({ idx: firstNew, text: notes[firstNew]?.text || '' })
-            }
           }
 
-          const firstRemainingIndex =
-            objectives.findIndex((_, i) => !freshCovered.includes(i))
-
+          const firstRemainingIndex = objectives.findIndex((_, i) => !writingReady.has(i))
           if (firstRemainingIndex !== -1) {
             const status = evaluationStatus[firstRemainingIndex]
             if (status === 'partial' || status === 'incorrect') {
@@ -1685,12 +1749,12 @@ function WebbPageInner() {
             }
           }
           if (answerRequested && assistanceTargetIndex === null) {
-            assistanceTargetIndex = objectives.findIndex((_, i) => !freshCovered.includes(i))
+            assistanceTargetIndex = objectives.findIndex((_, i) => !writingReady.has(i))
           }
-        } catch { /* fail silently — chat still proceeds */ }
+        } catch { /* fail silently - chat still proceeds */ }
       }
 
-      // ── Step 2: call webb-chat with the freshly-updated remaining list ───
+      // Call Webb with note readiness, not coverage, as the composition boundary.
       const res = await fetch('/api/webb-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -1701,8 +1765,8 @@ function WebbPageInner() {
             video:   videoResource   || null,
             article: articleResource ? { title: articleResource.title, source: articleResource.source } : null,
           },
-          remainingObjectives: objectives.filter((_, i) => !freshCovered.includes(i)),
-          allObjectivesMet: objectives.length > 0 && freshCovered.length >= objectives.length,
+          remainingObjectives: objectives.filter((_, i) => !writingReady.has(i)),
+          allObjectivesMet: objectives.length > 0 && writingReady.size >= objectives.length,
           masteryStatus,
         }),
       })
@@ -1761,7 +1825,7 @@ function WebbPageInner() {
       .join('. ')
     // Narrow search to remaining (incomplete) objectives
     const remaining = objectives
-      .filter((_, i) => !coveredObj.includes(i))
+      .filter((_, i) => !isWritingReadyNote(learnerNotesRef.current[i]))
       .join('; ')
     const contextWithObj = [remaining, recentContext].filter(Boolean).join('. ')
     try {
@@ -1772,7 +1836,7 @@ function WebbPageInner() {
           lesson: selectedLesson,
           type,
           context: contextWithObj,
-          objectives:             objectives.filter((_, i) => !coveredObj.includes(i)),
+          objectives:             objectives.filter((_, i) => !isWritingReadyNote(learnerNotesRef.current[i])),
           excludeSourceId:        type === 'article' ? (articleResource?.sourceId || '') : undefined,
           preferredSources:       type === 'article' ? articleSources : undefined,
           excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
@@ -1832,7 +1896,7 @@ function WebbPageInner() {
                 grade:            selectedLesson?.grade,
                 learnerName:      learnerName.current || '',
                 objectives,
-                completedIndices: coveredObj,
+                completedIndices: writingReadyNoteIndices(objectives, learnerNotesRef.current),
               }),
             })
             const d = await r.json()
@@ -2025,7 +2089,7 @@ function WebbPageInner() {
 
   // ── Begin the distinct composition stage from verbatim learner notes ──
   async function handleStartWriting() {
-    if (writingEvaluating || coveredObj.length !== objectives.length) return
+    if (writingEvaluating || !hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return
     const nextIndex = nextWritingObjectiveIndex(objectives, acceptedSentences)
     if (nextIndex === -1) {
       const finalEssay = assembleLearnerEssay(objectives, acceptedSentences)
@@ -2033,15 +2097,55 @@ function WebbPageInner() {
       setEssayMode(!!finalEssay)
       return
     }
+    const note = learnerNotesRef.current[nextIndex]
+    if (!isWritingReadyNote(note)) return
     setWritingIndex(nextIndex)
     setWritingMode(true)
+    setWritingSubphase(WEBB_WRITING_SUBPHASES.BLANK)
+    setWritingDraft('')
     setEssayMode(false)
-    const reply = `You already know the material. Now we’ll turn your rough notes into writing, one at a time. Your first note is: “${learnerNotes[nextIndex]?.text || ''}” How could you turn that thought into a complete sentence for someone reading your essay?`
+    const reply = "You have your notes. Now we'll build your essay one sentence at a time."
     setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
     addMsg(reply)
   }
 
-  // ── Complete lesson via Mrs. Webb ─────────────────────────────────────
+  function handleWritingBlankComplete() {
+    if (!writingMode || writingSubphase !== WEBB_WRITING_SUBPHASES.BLANK) return
+    const note = learnerNotesRef.current[writingIndex]
+    if (!isWritingReadyNote(note)) return
+    setWritingSubphase(WEBB_WRITING_SUBPHASES.FOCUS)
+    const reply = "Let's work with just this note. Turn it into one complete sentence in your own words."
+    setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    addMsg(reply)
+  }
+
+  useEffect(() => {
+    if (!writingMode || writingSubphase !== WEBB_WRITING_SUBPHASES.COMMITTED) return undefined
+    const timer = setTimeout(() => {
+      const nextIndex = nextWritingObjectiveIndex(objectives, acceptedSentences)
+      if (nextIndex === -1) {
+        const finalEssay = assembleLearnerEssay(objectives, acceptedSentences)
+        const reply = 'You turned every rough note into your own writing. Your essay is ready!'
+        setEssay(finalEssay)
+        setWritingMode(false)
+        setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
+        setWritingDraft('')
+        setEssayMode(!!finalEssay)
+        setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+        addMsg(reply)
+        return
+      }
+      setWritingIndex(nextIndex)
+      setWritingSubphase(WEBB_WRITING_SUBPHASES.FOCUS)
+      setWritingDraft('')
+      const reply = "Now let's use the next note. Turn just that note into one complete sentence."
+      setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      addMsg(reply)
+    }, 1900)
+    return () => clearTimeout(timer)
+  }, [writingMode, writingSubphase, objectives, acceptedSentences])
+
+  // Complete lesson via Mrs. Webb ─────────────────────────────────────
   async function handleCompleteLesson() {
     if (webbExecutionFencedRef.current) return
     if (!learnerId || !selectedLesson || completionState === 'saving') return
@@ -2142,7 +2246,7 @@ function WebbPageInner() {
   async function interpretArticle() {
     if (!articleResource?.html || interpretingArticle) return
     setInterpretingArticle(true)
-    const targetIndex = objectives.findIndex((_, index) => !coveredObj.includes(index))
+    const targetIndex = objectives.findIndex((_, index) => !isWritingReadyNote(learnerNotesRef.current[index]))
     if (targetIndex >= 0) markObjectiveAssistance(targetIndex, WEBB_ASSISTANCE_TYPES.VISUAL_EXPOSURE)
     // Ensure article overlay is open so the iframe exists in the DOM
     setMediaOverlay('article')
@@ -2159,7 +2263,7 @@ function WebbPageInner() {
           grade:            selectedLesson?.grade ? `Grade ${selectedLesson.grade}` : 'elementary',
           learnerName:      learnerName.current || '',
           objectives,
-          completedIndices: coveredObj,
+          completedIndices: writingReadyNoteIndices(objectives, learnerNotesRef.current),
         }),
       })
       const data = await res.json()
@@ -2436,6 +2540,8 @@ function WebbPageInner() {
       : null
 
   const isChatting = phase === PHASE.CHATTING
+  const writingReadyCount = writingReadyNoteIndices(objectives, learnerNotes).length
+  const writingGuidance = [...transcript].reverse().find(message => message?.role === 'assistant')?.text || ''
 
   // ── Guard: never show the retired lesson-selection shell while loading ─
   // During initial load (listLoading=true) the page is still in PHASE.LIST.
@@ -2477,13 +2583,13 @@ function WebbPageInner() {
                 style={{
                   ...headerBtn,
                   display: 'flex', alignItems: 'center', gap: 5,
-                  background: coveredObj.length === objectives.length
+                  background: writingReadyCount === objectives.length
                     ? 'rgba(13,148,136,0.45)'
                     : 'rgba(255,255,255,0.15)',
                 }}
               >
                 <span style={{ fontSize: 14 }}>&#9989;</span>
-                <span style={{ fontSize: 12 }}>{coveredObj.length}/{objectives.length}</span>
+                <span style={{ fontSize: 12 }}>{writingReadyCount}/{objectives.length}</span>
               </button>
             )}
             {isChatting && (
@@ -2762,29 +2868,10 @@ function WebbPageInner() {
         </div>
       </div>
 
-      {/* Footer: chat input */}
-      {isChatting && (
+      {/* Footer: normal chat input. Writing uses the isolated full-screen studio. */}
+      {isChatting && !writingMode && (
         <div style={footerStyle}>
-          {writingMode && (
-            <div style={{ marginBottom: 10, background: '#ecfeff', border: '1px solid #99f6e4', borderRadius: 10, padding: '10px 12px' }}>
-              <div style={{ color: '#0f766e', fontWeight: 800, fontSize: 11, textTransform: 'uppercase', letterSpacing: 1 }}>Your notes</div>
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap', marginTop: 6 }}>
-                {objectives.map((_, index) => (
-                  <span key={index} style={{
-                    background: index === writingIndex ? '#0d9488' : '#fff',
-                    color: index === writingIndex ? '#fff' : '#475569',
-                    border: '1px solid #99f6e4', borderRadius: 999, padding: '3px 8px', fontSize: 11,
-                    textDecoration: acceptedSentences[index] ? 'line-through' : 'none',
-                  }}>{learnerNotes[index]?.text || 'Note unavailable'}</span>
-                ))}
-              </div>
-              <div style={{ color: '#334155', fontSize: 13, marginTop: 8 }}>
-                <strong>Your note:</strong> “{learnerNotes[writingIndex]?.text || ''}”
-              </div>
-            </div>
-          )}
-          {/* Composition starts only after comprehension is complete. */}
-          {objectives.length > 0 && coveredObj.length === objectives.length && !writingMode && !essayMode && (
+          {hasAllWritingReadyNotes(objectives, learnerNotes) && !essayMode && (
             <div style={{ marginBottom: 10 }}>
               <button
                 type="button"
@@ -2801,10 +2888,6 @@ function WebbPageInner() {
                   fontWeight: 800,
                   fontSize: 14,
                   fontFamily: 'inherit',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  gap: 6,
                 }}
               >
                 {Object.keys(acceptedSentences).length === objectives.length ? 'View my essay' : 'Start writing from my notes'}
@@ -3199,7 +3282,7 @@ function WebbPageInner() {
             }}>
               <div>
                 <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
-                <div style={{ color: '#94a3b8', fontSize: 12 }}>{coveredObj.length} of {objectives.length} completed</div>
+                <div style={{ color: '#94a3b8', fontSize: 12 }}>{writingReadyCount} of {objectives.length} ready for writing</div>
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 {/* Gear button — settings */}
@@ -3235,7 +3318,7 @@ function WebbPageInner() {
             <div style={{ height: 4, background: '#1e293b', flexShrink: 0 }}>
               <div style={{
                 height: '100%',
-                width: `${objectives.length ? (coveredObj.length / objectives.length) * 100 : 0}%`,
+                width: `${objectives.length ? (writingReadyCount / objectives.length) * 100 : 0}%`,
                 background: '#0d9488',
                 transition: 'width 0.4s ease',
                 borderRadius: '0 2px 2px 0',
@@ -3244,7 +3327,8 @@ function WebbPageInner() {
             {/* Objectives list — accordion */}
             <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
               {objectives.map((obj, i) => {
-                const done = coveredObj.includes(i)
+                const noteReady = isWritingReadyNote(learnerNotes[i])
+                const done = noteReady
                 const open = expandedObj === i
                 return (
                   <div key={i} style={{ borderBottom: '1px solid #1e293b' }}>
@@ -3280,7 +3364,7 @@ function WebbPageInner() {
                             fontSize: 13,
                             lineHeight: 1.6,
                           }}>
-                            &ldquo;{learnerNotes[i]?.text || '...'}&rdquo;
+                            &ldquo;{learnerNotes[i].text}&rdquo;
                           </blockquote>
                         ) : (
                           <button
@@ -3300,8 +3384,8 @@ function WebbPageInner() {
                   </div>
                 )
               })}
-              {/* Composition button — appears when comprehension is complete */}
-              {objectives.length > 0 && coveredObj.length === objectives.length && !writingMode && (
+              {/* Composition unlocks only when every objective has a source-verified learner note. */}
+              {hasAllWritingReadyNotes(objectives, learnerNotes) && !writingMode && (
                 <div style={{ padding: '16px 20px 4px' }}>
                   <button
                     type="button"
@@ -3323,6 +3407,22 @@ function WebbPageInner() {
         </div>,
         document.body
       )}
+
+      <WebbWritingStudio
+        open={isChatting && writingMode}
+        subphase={writingSubphase}
+        note={learnerNotes[writingIndex]}
+        draft={writingDraft}
+        previousAttempt={latestWritingAttempt(writingAttempts, writingIndex)}
+        acceptedSentences={acceptedSentences}
+        activeIndex={writingIndex}
+        totalSentences={objectives.length}
+        guidance={writingGuidance}
+        evaluating={writingEvaluating}
+        onDraftChange={setWritingDraft}
+        onSubmit={submitWritingAttempt}
+        onBlankComplete={handleWritingBlankComplete}
+      />
 
       {/* Essay full-screen overlay */}
       {essayMode && essay && createPortal(
@@ -3457,7 +3557,7 @@ function WebbPageInner() {
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
                 <span style={{ fontSize: 22 }}>✅</span>
-                <span style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Note saved</span>
+                <span style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Goal achieved &middot; Note saved</span>
               </div>
               <p style={{
                 color: '#e2e8f0', fontSize: 13, lineHeight: 1.6,
@@ -3468,7 +3568,7 @@ function WebbPageInner() {
                 {objectives.map((_, i) => (
                   <div key={i} style={{
                     width: 10, height: 10, borderRadius: '50%',
-                    background: coveredObj.includes(i) ? '#0d9488' : '#374151',
+                    background: isWritingReadyNote(learnerNotes[i]) ? '#0d9488' : '#374151',
                     transition: 'background 0.3s',
                   }} />
                 ))}

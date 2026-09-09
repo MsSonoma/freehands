@@ -1,4 +1,6 @@
-export const WEBB_SNAPSHOT_VERSION = 3
+import { normalizeWritingSubphase } from './webbWritingFlow.mjs'
+
+export const WEBB_SNAPSHOT_VERSION = 4
 
 function asIndex(value) {
   const parsed = Number.parseInt(value, 10)
@@ -174,6 +176,25 @@ export function migrateWebbSnapshot(saved = {}) {
       acceptedSentences: saved.acceptedSentences || {},
       writingMode: !!saved.writingMode,
       writingIndex: asIndex(saved.writingIndex) ?? 0,
+      writingSubphase: normalizeWritingSubphase(saved.writingSubphase, !!saved.writingMode),
+      writingDraft: String(saved.writingDraft || ''),
+    }
+  }
+
+  if (saved.snapshotVersion === 3) {
+    return {
+      ...saved,
+      snapshotVersion: WEBB_SNAPSHOT_VERSION,
+      understoodObj: saved.understoodObj || [],
+      coveredObj: saved.coveredObj || [],
+      objectiveEvidence: saved.objectiveEvidence || {},
+      learnerNotes: saved.learnerNotes || {},
+      writingAttempts: saved.writingAttempts || {},
+      acceptedSentences: saved.acceptedSentences || {},
+      writingMode: !!saved.writingMode,
+      writingIndex: asIndex(saved.writingIndex) ?? 0,
+      writingSubphase: normalizeWritingSubphase(saved.writingSubphase, !!saved.writingMode),
+      writingDraft: String(saved.writingDraft || ''),
     }
   }
 
@@ -201,6 +222,8 @@ export function migrateWebbSnapshot(saved = {}) {
       acceptedSentences: saved.acceptedSentences || {},
       writingMode: !!saved.writingMode,
       writingIndex: asIndex(saved.writingIndex) ?? 0,
+      writingSubphase: normalizeWritingSubphase(saved.writingSubphase, !!saved.writingMode),
+      writingDraft: String(saved.writingDraft || ''),
     }
   }
 
@@ -252,6 +275,8 @@ export function migrateWebbSnapshot(saved = {}) {
     acceptedSentences: {},
     writingMode: false,
     writingIndex: 0,
+    writingSubphase: normalizeWritingSubphase('', false),
+    writingDraft: '',
     essay: null,
     essayMode: false,
   }

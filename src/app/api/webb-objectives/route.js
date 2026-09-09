@@ -12,7 +12,7 @@
  */
 import { NextResponse } from 'next/server'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
-import { createVerbatimLearnerRecord, parseComprehensionEvaluations } from '@/app/lib/webbLearningModel.mjs'
+import { parseComprehensionEvaluations } from '@/app/lib/webbLearningModel.mjs'
 import { classifyWebbObjectiveAttempt } from '@/app/lib/webbMasteryModel.mjs'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
@@ -69,10 +69,10 @@ async function generateObjectives(apiKey, lesson) {
 
 // ── Check whether the student just demonstrated any uncompleted objectives ────
 // Returns comprehension state plus exact, source-verified learner notes.
-async function checkObjectives(apiKey, objectives, coveredIndices, conversation, lesson = {}, quick = false, priorObjectiveEvidence = {}, priorPromptExposure = {}) {
+async function checkObjectives(apiKey, objectives, coveredIndices, conversation, lesson = {}, quick = false, priorObjectiveEvidence = {}, priorPromptExposure = {}, noteReadyIndices = []) {
   const incomplete = objectives
     .map((obj, i) => ({ obj, i }))
-    .filter(({ i }) => !coveredIndices.includes(i))
+    .filter(({ i }) => !noteReadyIndices.includes(i))
 
   if (!incomplete.length) return { newlyCovered: [], newlyUnderstood: [], newlyCompleted: [], learnerNotes: {}, qualifyingText: {}, objectiveEvidence: priorObjectiveEvidence }
 
@@ -110,7 +110,7 @@ async function checkObjectives(apiKey, objectives, coveredIndices, conversation,
     `Instructional lesson context (use for meaning and correctness, never as required wording):\n${lessonContext}\n\nRemaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
     300, 0)
 
-  const parsed = parseComprehensionEvaluations({ raw, objectives, understoodIndices: coveredIndices, conversation })
+  const parsed = parseComprehensionEvaluations({ raw, objectives, understoodIndices: noteReadyIndices, conversation })
   const objectiveEvidence = { ...(priorObjectiveEvidence || {}) }
   const learnerNotes = { ...parsed.learnerNotes }
   const newlyCovered = []
@@ -128,11 +128,8 @@ async function checkObjectives(apiKey, objectives, coveredIndices, conversation,
     })
     if (!classification) continue
     objectiveEvidence[index] = classification
-    if (classification.coverage === 'covered') {
+    if (classification.coverage === 'covered' && !coveredIndices.includes(index)) {
       newlyCovered.push(index)
-      if (!learnerNotes[index]) {
-        learnerNotes[index] = createVerbatimLearnerRecord({ objectiveIndex: index, evaluation, conversation })
-      }
     }
     if (classification.comprehension === 'demonstrated') newlyUnderstood.push(index)
   }
@@ -205,6 +202,7 @@ export async function POST(req) {
         body.quick || false,
         body.objectiveEvidence || {},
         body.priorPromptExposure || {},
+        body.noteReadyIndices || [],
       )
 
       return NextResponse.json({

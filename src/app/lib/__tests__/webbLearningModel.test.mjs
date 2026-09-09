@@ -125,3 +125,24 @@ test('v2 resume restores comprehension, notes, attempts, accepted sentences, and
   assert.equal(restored.writingMode, true)
   assert.equal(restored.writingIndex, 1)
 })
+
+
+test('v3 resume migrates into explicit writing subphases without losing learner work', () => {
+  const restored = migrateWebbSnapshot({
+    snapshotVersion: 3,
+    objectives: ['one'],
+    understoodObj: [0],
+    coveredObj: [0],
+    objectiveEvidence: { 0: { coverage: 'covered' } },
+    learnerNotes: { 0: { text: 'rough note', accuracy: 'correct', provenance: 'learner-message' } },
+    writingAttempts: { 0: [{ text: 'first try', accepted: false }] },
+    acceptedSentences: {},
+    writingMode: true,
+    writingIndex: 0,
+  })
+  assert.equal(restored.snapshotVersion, 4)
+  assert.equal(restored.writingSubphase, 'focus')
+  assert.equal(restored.writingDraft, '')
+  assert.equal(restored.learnerNotes[0].text, 'rough note')
+  assert.equal(restored.writingAttempts[0][0].text, 'first try')
+})
