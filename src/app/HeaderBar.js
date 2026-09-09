@@ -7,6 +7,15 @@ import { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { ensurePinAllowed, setInFacilitatorSection } from '@/app/lib/pinGate';
 
+const FACILITATOR_MENU_ITEMS = Object.freeze([
+  { label: 'Syllabus', href: '/facilitator/syllabus', primary: true },
+  { label: 'Month View', href: '/facilitator/calendar' },
+  { label: 'Learners', href: '/facilitator/learners' },
+  { label: 'Lesson Library', href: '/facilitator/lessons' },
+  { label: 'Mr. Mentor', href: '/facilitator/mr-mentor' },
+  { label: 'Notifications', href: '/facilitator/notifications', dividerBefore: true },
+  { label: 'Account', href: '/facilitator/account' },
+]);
 export default function HeaderBar() {
 	const pathname = usePathname() || '/';
 	const router = useRouter();
@@ -454,6 +463,20 @@ export default function HeaderBar() {
 		return true;
 	}, [pathname, router]);
 
+	const handleFacilitatorMenuItemClick = useCallback(async (event, href, { mobile = false } = {}) => {
+		if (pathname.startsWith('/session')) {
+			event.preventDefault();
+			const ok = await goWithPin(href);
+			if (!ok) return;
+		}
+		if (mobile) {
+			setNavOpen(false);
+			setHamburgerFacilitatorOpen(false);
+		} else {
+			setFacilitatorMenuOpen(false);
+		}
+	}, [pathname, goWithPin]);
+
 	const handleBack = useCallback(async () => {
 		if (backHref) {
 			await goWithPin(backHref);
@@ -721,12 +744,21 @@ export default function HeaderBar() {
 										</button>
 										{hamburgerFacilitatorOpen && (
 											<div style={{ background:'#f9fafb', borderTop:'1px solid #e5e7eb' }}>
-												<Link href="/facilitator/account" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/account'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">⚙️</span>Account</Link>
-												<Link href="/facilitator/notifications" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/notifications'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">🔔</span>Notifications</Link>
-												<Link href="/facilitator/learners" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/learners'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">👥</span>Learners</Link>
-												<Link href="/facilitator/lessons" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/lessons'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">📚</span>Lessons</Link>
-												<Link href="/facilitator/calendar" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/calendar'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">📅</span>Calendar</Link>
-												<Link href="/facilitator/mr-mentor" role="menuitem" onClick={async (e) => { if (pathname.startsWith('/session')) { e.preventDefault(); const ok = await goWithPin('/facilitator/mr-mentor'); if (ok) { setNavOpen(false); setHamburgerFacilitatorOpen(false); } return; } setNavOpen(false); setHamburgerFacilitatorOpen(false); }} style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px 10px 24px', textDecoration:'none', fontWeight:600, color:'#111', fontSize:'0.9rem' }}><span aria-hidden="true">🧠</span>Mr. Mentor</Link>
+												{FACILITATOR_MENU_ITEMS.map((item, index) => (
+	<Link
+		key={item.href}
+		href={item.href}
+		role="menuitem"
+		onClick={(event) => { void handleFacilitatorMenuItemClick(event, item.href, { mobile: true }); }}
+		style={{
+			display:'flex', width:'100%', alignItems:'center', padding:'10px 12px 10px 24px',
+			textDecoration:'none', fontWeight:item.primary ? 700 : 600, color:item.primary ? '#c7442e' : '#111', fontSize:'0.9rem',
+			borderTop:item.dividerBefore ? '1px solid #d1d5db' : (index > 0 ? '1px solid #f3f4f6' : 'none')
+		}}
+	>
+		{item.label}
+	</Link>
+))}
 											</div>
 										)}
 									</div>
@@ -859,108 +891,21 @@ export default function HeaderBar() {
 										onMouseLeave={closeFacilitatorMenuSoon}
 										style={{ position:'absolute', right:0, top:'100%', background:'#fff', border:'1px solid #e5e7eb', borderRadius:10, boxShadow:'0 8px 24px rgba(0,0,0,0.12)', minWidth:160, overflow:'hidden', zIndex:1400 }}
 									>
-										<Link
-											href="/facilitator/account"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/facilitator/account');
-													if (ok) setFacilitatorMenuOpen(false);
-													return;
-												}
-												setFacilitatorMenuOpen(false);
-											}}
-											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111' }}
-										>
-											<span aria-hidden="true">⚙️</span>
-											Account
-										</Link>
-										<Link
-											href="/facilitator/notifications"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/facilitator/notifications');
-													if (ok) setFacilitatorMenuOpen(false);
-													return;
-												}
-												setFacilitatorMenuOpen(false);
-											}}
-											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
-										>
-											<span aria-hidden="true">🔔</span>
-											Notifications
-										</Link>
-										<Link
-											href="/facilitator/learners"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/facilitator/learners');
-													if (ok) setFacilitatorMenuOpen(false);
-													return;
-												}
-												setFacilitatorMenuOpen(false);
-											}}
-											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
-										>
-											<span aria-hidden="true">👥</span>
-											Learners
-										</Link>
-										<Link
-											href="/facilitator/lessons"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/facilitator/lessons');
-													if (ok) setFacilitatorMenuOpen(false);
-													return;
-												}
-												setFacilitatorMenuOpen(false);
-											}}
-											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
-										>
-											<span aria-hidden="true">📚</span>
-											Lessons
-										</Link>
-										<Link
-											href="/facilitator/calendar"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/facilitator/calendar');
-													if (ok) setFacilitatorMenuOpen(false);
-													return;
-												}
-												setFacilitatorMenuOpen(false);
-											}}
-											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
-										>
-											<span aria-hidden="true">📅</span>
-											Calendar
-										</Link>
-										<Link
-											href="/facilitator/mr-mentor"
-											role="menuitem"
-											onClick={async (e) => {
-												if (pathname.startsWith('/session')) {
-													e.preventDefault();
-													const ok = await goWithPin('/facilitator/mr-mentor');
-													if (ok) setFacilitatorMenuOpen(false);
-													return;
-												}
-												setFacilitatorMenuOpen(false);
-											}}
-											style={{ display:'flex', width:'100%', alignItems:'center', gap:8, padding:'10px 12px', textDecoration:'none', fontWeight:600, color:'#111', borderTop:'1px solid #f3f4f6' }}
-										>
-											<span aria-hidden="true">🧠</span>
-											Mr. Mentor
-										</Link>
+										{FACILITATOR_MENU_ITEMS.map((item, index) => (
+	<Link
+		key={item.href}
+		href={item.href}
+		role="menuitem"
+		onClick={(event) => { void handleFacilitatorMenuItemClick(event, item.href); }}
+		style={{
+			display:'flex', width:'100%', alignItems:'center', padding:'10px 12px', textDecoration:'none',
+			fontWeight:item.primary ? 700 : 600, color:item.primary ? '#c7442e' : '#111',
+			borderTop:item.dividerBefore ? '1px solid #d1d5db' : (index > 0 ? '1px solid #f3f4f6' : 'none')
+		}}
+	>
+		{item.label}
+	</Link>
+))}
 									</div>
 								)}
 							</div>
