@@ -45,7 +45,10 @@ export default function CounselorClient() {
   const [accessToken, setAccessToken] = useState(null)
   
   // Session management state
-  const [sessionId, setSessionId] = useState(null)
+  const [sessionId, setSessionId] = useState(() => {
+    if (typeof window === 'undefined') return null
+    try { return sessionStorage.getItem('mr_mentor_execution_session_id') || null } catch { return null }
+  })
   const [sessionLoading, setSessionLoading] = useState(true)
   const [showTakeoverDialog, setShowTakeoverDialog] = useState(false)
   const [conflictingSession, setConflictingSession] = useState(null)
@@ -180,18 +183,15 @@ export default function CounselorClient() {
   }, [])
 
   const persistSessionIdentifier = useCallback((id) => {
-    // Intentionally no-op: ownership is now server-backed (device cookie), not localStorage.
-    void id
-  }, [])
-
-  const clearPersistedSessionIdentifier = useCallback(() => {
-    // Intentionally no-op: ownership is now server-backed (device cookie), not localStorage.
+    if (!id || typeof window === 'undefined') return
+    try { sessionStorage.setItem('mr_mentor_execution_session_id', id) } catch {}
   }, [])
 
   const assignSessionIdentifier = useCallback((id) => {
     if (!id) return
+    persistSessionIdentifier(id)
     setSessionId(id)
-  }, [])
+  }, [persistSessionIdentifier])
 
   // (startSessionPolling defined later, after session setup hooks)
 
@@ -448,7 +448,7 @@ export default function CounselorClient() {
     }
   }, [])
 
-  // Ownership is server-backed (device cookie). The active session_id is loaded from /api/mentor-session.
+  // Ownership is server-backed and requires both the HttpOnly device cookie and this tab execution id.
   // Do not persist any ownership tokens in localStorage/sessionStorage.
   useEffect(() => {}, [])
 
@@ -535,7 +535,7 @@ export default function CounselorClient() {
           // Fetch the active session to show in takeover dialog
           ;(async () => {
             try {
-              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
+              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(mySessionId)}`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
               })
               if (checkRes.ok) {
@@ -617,8 +617,11 @@ export default function CounselorClient() {
     console.log('[Mr. Mentor] Initializing subject:', subjectKey)
     setSessionLoading(true)
 
+    const localExecutionSessionId = sessionId || generateSessionIdentifier()
+    if (!sessionId) assignSessionIdentifier(localExecutionSessionId)
+
     try {
-      const checkRes = await fetchWithTimeout(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
+      const checkRes = await fetchWithTimeout(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(localExecutionSessionId)}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
@@ -665,13 +668,20 @@ export default function CounselorClient() {
           body: JSON.stringify({
             deviceName,
             action: 'initialize',
-            subjectKey
+            subjectKey,
+            sessionId: localExecutionSessionId
           })
         }, 15000)
 
         const createData = await createRes.json().catch(() => ({}))
 
         if (!createRes.ok) {
+          if (createRes.status === 409 && createData?.existingSession) {
+            setConflictingSession(createData.existingSession)
+            setShowTakeoverDialog(true)
+            setSessionLoading(false)
+            return
+          }
           throw new Error(createData?.error || 'Failed to initialize mentor session')
         }
 
@@ -691,13 +701,13 @@ export default function CounselorClient() {
         let convHistory = []
         if (useCohereChronograph && accessToken) {
           try {
-            let chronRes = await fetchWithTimeout(`/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`, {
+            let chronRes = await fetchWithTimeout(`/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal&sessionId=${encodeURIComponent(localExecutionSessionId)}`, {
               headers: { 'Authorization': `Bearer ${accessToken}` },
               cache: 'no-store'
             }, 15000)
 
             if (!chronRes.ok) {
-              chronRes = await fetchWithTimeout(`/api/mentor-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`, {
+              chronRes = await fetchWithTimeout(`/api/mentor-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal&sessionId=${encodeURIComponent(localExecutionSessionId)}`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` },
                 cache: 'no-store'
               }, 15000)
@@ -756,13 +766,13 @@ export default function CounselorClient() {
       let convHistory = []
       if (useCohereChronograph && accessToken) {
         try {
-          let chronRes = await fetchWithTimeout(`/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`, {
+          let chronRes = await fetchWithTimeout(`/api/thought-hub-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal&sessionId=${encodeURIComponent(localExecutionSessionId)}`, {
             headers: { 'Authorization': `Bearer ${accessToken}` },
             cache: 'no-store'
           }, 15000)
 
           if (!chronRes.ok) {
-            chronRes = await fetchWithTimeout(`/api/mentor-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal`, {
+            chronRes = await fetchWithTimeout(`/api/mentor-chronograph?subjectKey=${encodeURIComponent(subjectKey)}&mode=minimal&sessionId=${encodeURIComponent(localExecutionSessionId)}`, {
               headers: { 'Authorization': `Bearer ${accessToken}` },
               cache: 'no-store'
             }, 15000)
@@ -816,7 +826,7 @@ export default function CounselorClient() {
         initInFlightSubjectRef.current = null
       }
     }
-  }, [sessionId, accessToken, hasAccess, tierChecked, subjectKey, assignSessionIdentifier, startRealtimeSubscription])
+  }, [sessionId, accessToken, hasAccess, tierChecked, subjectKey, assignSessionIdentifier, generateSessionIdentifier, startRealtimeSubscription])
 
   // Initialize session when all dependencies are ready
   useEffect(() => {
@@ -870,6 +880,7 @@ export default function CounselorClient() {
         
         const payload = {
           subjectKey,
+          sessionId,
           conversationHistory,
           draftSummary,
           tokenCount: currentSessionTokens,
@@ -897,7 +908,7 @@ export default function CounselorClient() {
         console.log('[Mr. Mentor] PATCH response:', { ok: response.ok, status: response.status, result })
         
         // Handle lockout - session was taken over by another device
-        if (response.status === 410 || response.status === 403) {
+        if (response.status === 410 || response.status === 409) {
           console.log('[Mr. Mentor] Session taken over (410) - showing PIN overlay')
           
           initializedSessionIdRef.current = null
@@ -912,7 +923,7 @@ export default function CounselorClient() {
           // Fetch the active session to show in takeover dialog
           ;(async () => {
             try {
-              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
+              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(sessionId || '')}`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
               })
               if (checkRes.ok) {
@@ -942,7 +953,7 @@ export default function CounselorClient() {
 
     const checkSessionStatus = async () => {
       try {
-        const res = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
+        const res = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(sessionId || '')}`, {
           headers: { 'Authorization': `Bearer ${accessToken}` }
         })
         
@@ -1007,6 +1018,7 @@ export default function CounselorClient() {
     
     try {
       const deviceName = `${navigator.platform || 'Unknown'} - ${navigator.userAgent.split(/[()]/)[1] || 'Browser'}`
+      const nextExecutionSessionId = generateSessionIdentifier()
       
       console.log('[Takeover Client] Requesting takeover for subject:', subjectKey)
       
@@ -1020,7 +1032,9 @@ export default function CounselorClient() {
           deviceName,
           pinCode,
           action: 'takeover',
-          subjectKey
+          subjectKey,
+          sessionId: nextExecutionSessionId,
+          expectedConflictId: conflictingSession?.id || null
         })
       })
       
@@ -1034,50 +1048,34 @@ export default function CounselorClient() {
       })
       
       if (!res.ok) {
+        if (data?.existingSession) setConflictingSession(data.existingSession)
         throw new Error(data.error || 'Failed to take over session')
       }
 
       if (data.session?.session_id) {
-        setSessionId(data.session.session_id)
+        assignSessionIdentifier(data.session.session_id)
       }
       
-      // ATOMIC GATE: Only load conversation if database is newer than local
-      if (data.session?.conversation_history && Array.isArray(data.session.conversation_history)) {
-        // Use last_local_update_at if available, fallback to last_activity_at
-        const dbTimestamp = new Date(data.session.last_local_update_at || data.session.last_activity_at).getTime()
-        const localTimestamp = lastLocalUpdateTimestamp.current
-
-        console.log('[Takeover] Timestamp comparison:', { dbTimestamp, localTimestamp, willLoad: dbTimestamp > localTimestamp })
-
-        if (dbTimestamp > localTimestamp) {
-          // Database is newer - safe to load
-          const history = data.session.conversation_history
-          console.log('[Takeover Client] Loading conversation from takeover:', {
-            conversationLength: history.length,
-            tokenCount: data.session.token_count || 0,
-            hasDraft: !!data.session.draft_summary
-          })
-          setConversationHistory(history)
-          setDraftSummary(data.session.draft_summary || '')
-          setCurrentSessionTokens(data.session.token_count || 0)
-          lastLocalUpdateTimestamp.current = dbTimestamp
-          
-          // Display last message
-          if (history.length > 0) {
-            const lastMsg = history[history.length - 1]
-            if (lastMsg.role === 'assistant') {
-              setCaptionText(lastMsg.content)
-              const sentences = splitIntoSentences(lastMsg.content)
-              setCaptionSentences(sentences)
-              setCaptionIndex(sentences.length - 1)
-            }
-          }
-        } else {
-          // Database is stale - keep local conversation
-          console.warn('[Takeover] Ignoring stale database conversation')
+      // After an authorized takeover, the durable server conversation is canonical.
+      const history = Array.isArray(data.session?.conversation_history) ? data.session.conversation_history : []
+      setConversationHistory(history)
+      setDraftSummary(data.session?.draft_summary || '')
+      setCurrentSessionTokens(data.session?.token_count || 0)
+      const dbTimestamp = new Date(data.session?.last_local_update_at || data.session?.last_activity_at || Date.now()).getTime()
+      lastLocalUpdateTimestamp.current = Number.isFinite(dbTimestamp) ? dbTimestamp : Date.now()
+      if (history.length > 0) {
+        const lastMsg = history[history.length - 1]
+        if (lastMsg.role === 'assistant') {
+          setCaptionText(lastMsg.content)
+          const sentences = splitIntoSentences(lastMsg.content)
+          setCaptionSentences(sentences)
+          setCaptionIndex(sentences.length - 1)
         }
+      } else {
+        setCaptionText('')
+        setCaptionSentences([])
+        setCaptionIndex(0)
       }
-      
       setShowTakeoverDialog(false)
       setConflictingSession(null)
       setSessionLoading(false)
@@ -2845,7 +2843,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
     // Clear current subject conversation in database
     if (accessToken) {
       try {
-        await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}`, {
+        await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(sessionId || '')}`, {
           method: 'DELETE',
           headers: {
             'Authorization': `Bearer ${accessToken}`
@@ -2895,8 +2893,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
     setConflictingSession(null)
     setShowTakeoverDialog(false)
 
-    // Don't generate new session ID yet - wait until user actually starts typing
-    clearPersistedSessionIdentifier()
+    // Conversation reset does not release or replace the temporary execution lease.
     initializedSessionIdRef.current = null
   }
 

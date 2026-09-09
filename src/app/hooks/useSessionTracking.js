@@ -14,7 +14,7 @@ import {
   logRepeatEvent,
   addFacilitatorNote,
   addTranscriptLine,
-  checkSessionStatus,
+  heartbeatLessonSession,
 } from '@/app/lib/sessionTracking';
 import { getSupabaseClient } from '@/app/lib/supabaseClient';
 
@@ -24,16 +24,16 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient';
  * @param {boolean} autoStart - Whether to auto-start session on mount
  * @param {function} onSessionTakenOver - Callback when session is taken over by another device
  */
-export function useSessionTracking(learnerId, lessonId, autoStart = true, onSessionTakenOver) {
+export function useSessionTracking(learnerId, lessonId, autoStart = true, onSessionTakenOver, onSessionEnded) {
   const [sessionId, setSessionId] = useState(null);
   const [tracking, setTracking] = useState(false);
   const [conflictingSession, setConflictingSession] = useState(null);
   const sessionIdRef = useRef(null);
-  const sessionMetaRef = useRef({ learnerId, lessonId, occurrenceId: null, instructionalTeacher: null });
+  const sessionMetaRef = useRef({ learnerId, lessonId, browserSessionId: null, occurrenceId: null, instructionalTeacher: null });
   const pollIntervalRef = useRef(null);
   const realtimeChannelRef = useRef(null);
   const isMountedRef = useRef(true);
-  const takenOverRef = useRef(false); // guard: fire callback once per takeover
+  const terminalHandledRef = useRef(false); // guard: handle each ownership-ending transition once
 
   const startSession = async (browserSessionId = null, deviceName = null, takeoverPin = null, expectedConflictingSessionId = null, occurrenceId = null, instructionalTeacher = null) => {
     if (!learnerId || !lessonId) {
@@ -73,7 +73,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       if (result?.id) {
         sessionIdRef.current = result.id;
         setSessionId(result.id);
-        sessionMetaRef.current = { learnerId, lessonId, occurrenceId, instructionalTeacher };
+        sessionMetaRef.current = { learnerId, lessonId, browserSessionId, occurrenceId, instructionalTeacher };
         console.log('[SESSION] sessionIdRef.current set to:', result.id);
         return result;
       }
@@ -104,7 +104,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     if (success) {
       sessionIdRef.current = null;
       setSessionId(null);
-      sessionMetaRef.current = { learnerId, lessonId, occurrenceId: null, instructionalTeacher: null };
+      sessionMetaRef.current = { learnerId, lessonId, browserSessionId: null, occurrenceId: null, instructionalTeacher: null };
     }
 
     return success;
@@ -134,9 +134,8 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     return await addTranscriptLine(sessionIdRef.current, speaker, text);
   };
 
-  // Start takeover detection: Realtime subscription (instant) + polling fallback (15s)
+  // Watch exact execution ownership: Realtime is immediate; heartbeat is the 15s fallback and lease renewal.
   const startPolling = useCallback(() => {
-    // --- Teardown any previous watchers ---
     if (pollIntervalRef.current) {
       clearInterval(pollIntervalRef.current);
       pollIntervalRef.current = null;
@@ -149,13 +148,9 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
 
     const currentSessionId = sessionIdRef.current;
     if (!currentSessionId) return;
-    takenOverRef.current = false;
+    terminalHandledRef.current = false;
 
-    const handleTakenOver = (sessionRow) => {
-      if (!isMountedRef.current || takenOverRef.current) return;
-      takenOverRef.current = true;
-
-      // Stop all watchers
+    const stopWatchers = () => {
       if (pollIntervalRef.current) {
         clearInterval(pollIntervalRef.current);
         pollIntervalRef.current = null;
@@ -164,21 +159,31 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
         supabase.removeChannel(realtimeChannelRef.current);
         realtimeChannelRef.current = null;
       }
-
-      sessionIdRef.current = null;
-      setSessionId(null);
-      setConflictingSession(sessionRow);
-
-      if (typeof onSessionTakenOver === 'function') {
-        onSessionTakenOver(sessionRow);
-      }
     };
 
-    // --- Realtime: primary (instant) ---
+    const handleOwnershipEnded = (sessionRow, rawReason) => {
+      if (!isMountedRef.current || terminalHandledRef.current) return;
+      terminalHandledRef.current = true;
+      stopWatchers();
+
+      const reason = String(rawReason || sessionRow?.ended_reason || 'ended').trim().toLowerCase();
+      sessionIdRef.current = null;
+      setSessionId(null);
+
+      if (reason === 'taken_over') {
+        setConflictingSession(sessionRow || null);
+        if (typeof onSessionTakenOver === 'function') onSessionTakenOver(sessionRow || null);
+        return;
+      }
+
+      setConflictingSession(null);
+      if (typeof onSessionEnded === 'function') onSessionEnded(sessionRow || null, reason);
+    };
+
     if (supabase) {
       try {
         const channel = supabase
-          .channel(`session-takeover:${currentSessionId}`)
+          .channel(`session-ownership:${currentSessionId}`)
           .on(
             'postgres_changes',
             {
@@ -188,40 +193,54 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
               filter: `id=eq.${currentSessionId}`,
             },
             (payload) => {
-              // ended_at being set means another device took over
               if (payload.new?.ended_at != null) {
-                console.log('[SESSION TAKEOVER] Realtime: session ended by another device');
-                handleTakenOver(payload.new);
+                handleOwnershipEnded(payload.new, payload.new?.ended_reason || 'ended');
               }
             }
           )
           .subscribe((status) => {
-            console.log('[SESSION TAKEOVER] Realtime channel status:', status);
+            console.log('[SESSION OWNERSHIP] Realtime channel status:', status);
           });
         realtimeChannelRef.current = channel;
       } catch (err) {
-        console.warn('[SESSION TAKEOVER] Realtime subscribe failed, falling back to poll only:', err);
+        console.warn('[SESSION OWNERSHIP] Realtime subscribe failed, heartbeat remains active:', err);
       }
     }
 
-    // --- Polling: fallback (15s) ---
-    // Catches the case where the Realtime WS is dropped/unreliable.
-    pollIntervalRef.current = setInterval(async () => {
+    const heartbeat = async () => {
       const sid = sessionIdRef.current;
-      if (!sid || !isMountedRef.current || takenOverRef.current) return;
+      const meta = sessionMetaRef.current;
+      if (!sid || !meta?.learnerId || !meta?.browserSessionId || !isMountedRef.current || terminalHandledRef.current) return;
       try {
-        const { active, session } = await checkSessionStatus(sid);
-        if (!isMountedRef.current || takenOverRef.current) return;
-        if (!active && session) {
-          console.log('[SESSION TAKEOVER] Poll fallback: session closed by another device');
-          handleTakenOver(session);
+        const result = await heartbeatLessonSession(sid, meta.learnerId, meta.browserSessionId);
+        if (!isMountedRef.current || terminalHandledRef.current) return;
+        if (result?.active === false && (result?.endedReason || result?.state === 'ownership_mismatch')) {
+          handleOwnershipEnded(result.session, result.endedReason || result.state);
         }
       } catch (err) {
-        console.error('[SESSION TAKEOVER] Poll fallback error:', err);
+        console.error('[SESSION OWNERSHIP] Heartbeat error:', err);
       }
-    }, 15000);
-  }, [onSessionTakenOver]);
+    };
 
+    void heartbeat();
+    pollIntervalRef.current = setInterval(heartbeat, 15000);
+  }, [onSessionTakenOver, onSessionEnded]);
+  // Adopt a protected session created by another canonical client path (Mrs. Webb).
+  // This keeps ownership monitoring shared without duplicating the start transaction.
+  const adoptSession = useCallback((adoptedSessionId, browserSessionId, meta = {}) => {
+    if (!adoptedSessionId || !browserSessionId) return null;
+    sessionIdRef.current = adoptedSessionId;
+    setSessionId(adoptedSessionId);
+    terminalHandledRef.current = false;
+    sessionMetaRef.current = {
+      learnerId: meta.learnerId || learnerId,
+      lessonId: meta.lessonId || lessonId,
+      browserSessionId,
+      occurrenceId: meta.occurrenceId || null,
+      instructionalTeacher: meta.instructionalTeacher || null,
+    };
+    return adoptedSessionId;
+  }, [learnerId, lessonId]);
   // Stop all takeover watchers
   const stopPolling = useCallback(() => {
     if (pollIntervalRef.current) {
@@ -264,6 +283,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     tracking,
     conflictingSession,
     startSession,
+    adoptSession,
     endSession,
     logRepeat,
     addNote,

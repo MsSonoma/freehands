@@ -24,6 +24,7 @@ import { createBrowserClient } from '@supabase/ssr';
 import { getSupabaseClient } from '@/app/lib/supabaseClient';
 import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi';
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
+import { applyGoldenKeyToLesson, finalizeGoldenKeyForSession } from '@/app/lib/goldenKeyClient';
 import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
 import SessionTimer from '../components/SessionTimer';
 import { AudioEngine } from './AudioEngine';
@@ -985,20 +986,43 @@ function SessionPageV2Inner() {
 
   // Session tracking (lesson_sessions + lesson_session_events)
   const [showTakeoverDialog, setShowTakeoverDialog] = useState(false);
+  const trackedExecutionSessionIdRef = useRef(null);
   const [conflictingSession, setConflictingSession] = useState(null);
   // true when this device was notified by polling that it was taken over (vs. this device arriving at a conflict)
   const [isTakenOverNotification, setIsTakenOverNotification] = useState(false);
+  const [executionEndedReason, setExecutionEndedReason] = useState(null);
+  const executionFencedRef = useRef(false);
+
+  const fenceInstructionalExecution = useCallback((reason = 'ownership-lost') => {
+    executionFencedRef.current = true;
+    if (typeof window !== 'undefined') window.__PREVENT_SNAPSHOT_SAVE__ = true;
+    try { snapshotServiceRef.current?.fenceWrites?.(reason); } catch {}
+    try { timerServiceRef.current?.pause?.(); } catch {}
+    try { audioEngineRef.current?.stop?.(); } catch {}
+    try { orchestratorRef.current?.destroy?.(); } catch {}
+  }, []);
 
   // Stable callback so startPolling's useCallback dep doesn't change every render.
   // Without this, every SessionPageV2 re-render (e.g. timer tick) recreates this
   // function, which recreates startPolling, which triggers the useSessionTracking
   // autoStart useEffect cleanup (stopPolling) — destroying the Realtime subscription.
   const handleSessionTakenOver = useCallback((session) => {
+    fenceInstructionalExecution('taken_over');
+    setExecutionEndedReason(null);
     setIsTakenOverNotification(true);
     setConflictingSession(session);
     setShowTakeoverDialog(true);
-  }, []);
+  }, [fenceInstructionalExecution]);
 
+  const handleSessionEnded = useCallback((session, reason) => {
+    const normalized = String(reason || session?.ended_reason || '').trim().toLowerCase();
+    if (!normalized || normalized === 'completed') return;
+    fenceInstructionalExecution(normalized);
+    setExecutionEndedReason(normalized);
+    setIsTakenOverNotification(false);
+    setConflictingSession(null);
+    setShowTakeoverDialog(false);
+  }, [fenceInstructionalExecution]);
   const {
     startSession: startTrackedSession,
     endSession: endTrackedSession,
@@ -1008,7 +1032,8 @@ function SessionPageV2Inner() {
     learnerProfile?.id || null,
     goldenKeyLessonKey || null,
     false,
-    handleSessionTakenOver
+    handleSessionTakenOver,
+    handleSessionEnded
   );
   
   // Phase timer state (loaded from learner profile)
@@ -1034,6 +1059,7 @@ function SessionPageV2Inner() {
   const [isGoldenKeySuspended, setIsGoldenKeySuspended] = useState(false);
   const goldenKeyBonusRef = useRef(0);
   const hasGoldenKeyRef = useRef(false);
+  const isGoldenKeySuspendedRef = useRef(false);
   const goldenKeyLessonKeyRef = useRef('');
   const [timerPaused, setTimerPaused] = useState(false);
   
@@ -1111,6 +1137,28 @@ function SessionPageV2Inner() {
   useEffect(() => {
     hasGoldenKeyRef.current = !!hasGoldenKey;
   }, [hasGoldenKey]);
+  useEffect(() => {
+    isGoldenKeySuspendedRef.current = !!isGoldenKeySuspended;
+  }, [isGoldenKeySuspended]);
+  const persistGoldenKeyFeatureState = useCallback((trigger, { applied, suspended, bonusMinutes } = {}) => {
+    try {
+      const svc = snapshotServiceRef.current;
+      if (!svc || svc.writesFenced) return;
+      const prior = svc.snapshot?.featureState || {};
+      const timerState = timerServiceRef.current?.getState?.() || svc.snapshot?.timerState || null;
+      void svc.saveProgress(trigger || 'golden-key-state', {
+        timerState,
+        featureState: {
+          ...prior,
+          goldenKey: {
+            applied: applied === true,
+            suspended: suspended === true,
+            bonusMinutes: Math.max(0, Number(bonusMinutes || 0)),
+          },
+        },
+      });
+    } catch {}
+  }, []);
 
   useEffect(() => {
     goldenKeyLessonKeyRef.current = String(goldenKeyLessonKey || '');
@@ -1719,29 +1767,17 @@ function SessionPageV2Inner() {
           setHasGoldenKey(true);
           setIsGoldenKeySuspended(false);
           setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-        } else if (learner.golden_keys_enabled && goldenKeyFromUrl) {
-          // Golden key consumed on /learn; session must persist the per-lesson flag.
-          setHasGoldenKey(true);
-          setIsGoldenKeySuspended(false);
-          setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-          try {
-            const { updateLearner } = await import('@/app/facilitator/learners/clientApi');
-            await updateLearner(learner.id, {
-              active_golden_keys: {
-                ...(activeKeys || {}),
-                [goldenKeyLessonKey]: true,
-              },
-            });
-          } catch (err) {
-            console.warn('[SessionPageV2] Failed to persist golden key from URL:', err);
-          }
         } else {
+          // The URL flag is compatibility/display metadata only. Durable lesson
+          // ownership must already exist in active_golden_keys before session load.
           setHasGoldenKey(false);
           setIsGoldenKeySuspended(false);
           setGoldenKeyBonus(0);
         }
-        
-        addEvent(`ðŸ‘¤ Loaded learner: ${learner.name}`);
+        if (goldenKeyFromUrl && !activeKeys[goldenKeyLessonKey]) {
+          console.warn('[SessionPageV2] Ignoring uncommitted Golden Key URL flag.');
+        }
+                addEvent(`ðŸ‘¤ Loaded learner: ${learner.name}`);
         setLearnerLoading(false);
       } catch (err) {
         console.error('[SessionPageV2] Learner load error:', err);
@@ -1776,14 +1812,31 @@ function SessionPageV2Inner() {
         setGoldenKeysEnabled(coerced);
         goldenKeysEnabledRef.current = coerced;
         try { timerServiceRef.current?.setGoldenKeysEnabled?.(coerced); } catch {}
-        if (!coerced) {
-          setGoldenKeyEligible(false);
-          setHasGoldenKey(false);
-          setIsGoldenKeySuspended(false);
+
+        const durableActive = !!learnerProfileRef.current?.active_golden_keys?.[goldenKeyLessonKeyRef.current];
+        const applied = hasGoldenKeyRef.current || durableActive;
+        const suspended = isGoldenKeySuspendedRef.current;
+        if (applied && !hasGoldenKeyRef.current) setHasGoldenKey(true);
+        if (!coerced) setGoldenKeyEligible(false);
+
+        const pt = phaseTimersRef.current;
+        if (pt && timerServiceRef.current) {
+          const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
+          const bonusMinutes = coerced && applied && !suspended ? Math.max(0, Number(pt.golden_key_bonus_min || 0)) : 0;
+          const bonusSec = bonusMinutes * 60;
+          setGoldenKeyBonus(bonusMinutes);
+          timerServiceRef.current.setPlayTimerLimits({
+            comprehension: m2s(pt.comprehension_play_min) + bonusSec,
+            exercise: m2s(pt.exercise_play_min) + bonusSec,
+            worksheet: m2s(pt.worksheet_play_min) + bonusSec,
+            test: m2s(pt.test_play_min) + bonusSec,
+          });
+          persistGoldenKeyFeatureState('golden-key-feature-toggle', { applied, suspended, bonusMinutes });
+          setTimerRefreshKey(k => k + 1);
+        } else if (!coerced) {
           setGoldenKeyBonus(0);
         }
       }
-
       const nextPlayFlags = {
         comprehension: ('play_comprehension_enabled' in patch) ? patch.play_comprehension_enabled : undefined,
         exercise: ('play_exercise_enabled' in patch) ? patch.play_exercise_enabled : undefined,
@@ -2270,6 +2323,15 @@ function SessionPageV2Inner() {
             resetTranscriptState({ persist: true });
           }
 
+          const snapshotGoldenKey = snapshot?.featureState?.goldenKey;
+          const durableGoldenKey = !!learnerProfile?.active_golden_keys?.[goldenKeyLessonKey];
+          if (durableGoldenKey && snapshotGoldenKey?.applied === true) {
+            const suspended = snapshotGoldenKey.suspended === true;
+            const bonusMinutes = suspended ? 0 : Math.max(0, Number(snapshotGoldenKey.bonusMinutes ?? phaseTimersRef.current?.golden_key_bonus_min ?? 0));
+            setHasGoldenKey(true);
+            setIsGoldenKeySuspended(suspended);
+            setGoldenKeyBonus(bonusMinutes);
+          }
           if (snapshot.timerState) {
             // Keep UI timer mode aligned with the restored timer engine state.
             applyRestoredTimerStateToUi(snapshot.timerState, 'snapshot-load');
@@ -3288,62 +3350,32 @@ function SessionPageV2Inner() {
   }, [lessonKey, persistTimerStateNow]);
 
   const handleApplyGoldenKeyForLesson = useCallback(async () => {
-    if (goldenKeysEnabledRef.current === false) return;
-    if (!lessonKey) return;
-
-    const learnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
-    if (!learnerId || learnerId === 'demo') return;
-
-    // If already applied locally, don't reapply.
-    if (hasGoldenKey) return;
+    if (goldenKeysEnabledRef.current === false || hasGoldenKeyRef.current) return;
+    const learnerId = sessionLearnerIdRef.current || learnerProfileRef.current?.id || null;
+    const appliedKey = goldenKeyLessonKeyRef.current || goldenKeyLessonKey || null;
+    if (!learnerId || learnerId === 'demo' || !appliedKey) return;
 
     try {
-      const learner = await getLearner(learnerId);
-      if (!learner) return;
+      const applied = await applyGoldenKeyToLesson({ learnerId, lessonKey: appliedKey });
+      if (applied?.ok !== true) return;
 
-      if (!goldenKeyLessonKey) return;
-
-      const activeKeys = { ...(learner.active_golden_keys || {}) };
-      if (activeKeys[goldenKeyLessonKey]) {
-        setHasGoldenKey(true);
-        setIsGoldenKeySuspended(false);
-        const timers = loadPhaseTimersForLearner(learner);
-        setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
-        setTimerRefreshKey(k => k + 1);
-        if (timerServiceRef.current) {
-          const bonusSec = goldenKeysEnabledRef.current ? (timers.golden_key_bonus_min || 0) * 60 : 0;
-          const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
-          timerServiceRef.current.setPlayTimerLimits({
-            comprehension: m2s(timers.comprehension_play_min) + bonusSec,
-            exercise: m2s(timers.exercise_play_min) + bonusSec,
-            worksheet: m2s(timers.worksheet_play_min) + bonusSec,
-            test: m2s(timers.test_play_min) + bonusSec,
-          });
-        }
-        persistTimerStateNow('golden-key-applied');
-        return;
-      }
-
-      const available = Number(learner.golden_keys || 0);
-      if (!Number.isFinite(available) || available <= 0) {
-        return;
-      }
-
-      activeKeys[goldenKeyLessonKey] = true;
-      const updated = await updateLearner(learnerId, {
-        golden_keys: available - 1,
-        active_golden_keys: activeKeys
-      });
-
-      // Reflect in local session state.
-      setLearnerProfile(updated || learner);
+      const currentLearner = learnerProfileRef.current || learnerProfile || {};
+      const nextLearner = {
+        ...currentLearner,
+        ...(Number.isFinite(Number(applied.goldenKeys)) ? { golden_keys: Number(applied.goldenKeys) } : {}),
+        active_golden_keys: applied.activeGoldenKeys || { ...(currentLearner.active_golden_keys || {}), [appliedKey]: true },
+      };
+      learnerProfileRef.current = nextLearner;
+      setLearnerProfile(nextLearner);
       setHasGoldenKey(true);
       setIsGoldenKeySuspended(false);
-      const timers = loadPhaseTimersForLearner(updated || learner);
-      setGoldenKeyBonus(timers.golden_key_bonus_min || 0);
+
+      const timers = loadPhaseTimersForLearner(nextLearner);
+      const bonusMinutes = Math.max(0, Number(applied.goldenKeyBonusMin ?? timers.golden_key_bonus_min ?? 0));
+      setGoldenKeyBonus(bonusMinutes);
       setTimerRefreshKey(k => k + 1);
       if (timerServiceRef.current) {
-        const bonusSec = goldenKeysEnabledRef.current ? (timers.golden_key_bonus_min || 0) * 60 : 0;
+        const bonusSec = goldenKeysEnabledRef.current ? bonusMinutes * 60 : 0;
         const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
         timerServiceRef.current.setPlayTimerLimits({
           comprehension: m2s(timers.comprehension_play_min) + bonusSec,
@@ -3352,21 +3384,20 @@ function SessionPageV2Inner() {
           test: m2s(timers.test_play_min) + bonusSec,
         });
       }
-      persistTimerStateNow('golden-key-applied');
+      persistGoldenKeyFeatureState('golden-key-applied', { applied: true, suspended: false, bonusMinutes });
     } catch (err) {
       console.warn('[SessionPageV2] Failed to apply golden key:', err);
     }
-  }, [hasGoldenKey, lessonKey, goldenKeyLessonKey, learnerProfile, persistTimerStateNow]);
+  }, [goldenKeyLessonKey, learnerProfile, persistGoldenKeyFeatureState]);
 
   const handleSuspendGoldenKey = useCallback(() => {
-    if (goldenKeysEnabledRef.current === false) return;
-    if (!hasGoldenKey) return;
+    if (goldenKeysEnabledRef.current === false || !hasGoldenKeyRef.current) return;
     setIsGoldenKeySuspended(true);
     setGoldenKeyBonus(0);
     setTimerRefreshKey(k => k + 1);
-    if (timerServiceRef.current && phaseTimersRef.current) {
+    const pt = phaseTimersRef.current;
+    if (timerServiceRef.current && pt) {
       const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
-      const pt = phaseTimersRef.current;
       timerServiceRef.current.setPlayTimerLimits({
         comprehension: m2s(pt.comprehension_play_min),
         exercise: m2s(pt.exercise_play_min),
@@ -3374,33 +3405,29 @@ function SessionPageV2Inner() {
         test: m2s(pt.test_play_min),
       });
     }
-    persistTimerStateNow('golden-key-suspended');
-  }, [hasGoldenKey, persistTimerStateNow]);
+    persistGoldenKeyFeatureState('golden-key-suspended', { applied: true, suspended: true, bonusMinutes: 0 });
+  }, [persistGoldenKeyFeatureState]);
 
   const handleUnsuspendGoldenKey = useCallback(() => {
-    if (goldenKeysEnabledRef.current === false) return;
-    if (!hasGoldenKey) return;
+    if (goldenKeysEnabledRef.current === false || !hasGoldenKeyRef.current) return;
+    const pt = phaseTimersRef.current || phaseTimers;
+    const bonusMinutes = Math.max(0, Number(pt?.golden_key_bonus_min || 0));
     setIsGoldenKeySuspended(false);
-    if (phaseTimers) {
-      setGoldenKeyBonus(phaseTimers.golden_key_bonus_min || 5);
-    }
+    setGoldenKeyBonus(bonusMinutes);
     setTimerRefreshKey(k => k + 1);
-    if (timerServiceRef.current && phaseTimers) {
-      const bonusSec = goldenKeysEnabledRef.current
-        ? ((phaseTimers.golden_key_bonus_min || 5) * 60)
-        : 0;
+    if (timerServiceRef.current && pt) {
+      const bonusSec = bonusMinutes * 60;
       const m2s = (m) => Math.max(0, Number(m || 0)) * 60;
       timerServiceRef.current.setPlayTimerLimits({
-        comprehension: m2s(phaseTimers.comprehension_play_min) + bonusSec,
-        exercise: m2s(phaseTimers.exercise_play_min) + bonusSec,
-        worksheet: m2s(phaseTimers.worksheet_play_min) + bonusSec,
-        test: m2s(phaseTimers.test_play_min) + bonusSec,
+        comprehension: m2s(pt.comprehension_play_min) + bonusSec,
+        exercise: m2s(pt.exercise_play_min) + bonusSec,
+        worksheet: m2s(pt.worksheet_play_min) + bonusSec,
+        test: m2s(pt.test_play_min) + bonusSec,
       });
     }
-    persistTimerStateNow('golden-key-unsuspended');
-  }, [hasGoldenKey, phaseTimers, persistTimerStateNow]);
-  
-  // Start play timer for a phase (called when phase begins)
+    persistGoldenKeyFeatureState('golden-key-unsuspended', { applied: true, suspended: false, bonusMinutes });
+  }, [phaseTimers, persistGoldenKeyFeatureState]);
+    // Start play timer for a phase (called when phase begins)
   const startPhasePlayTimer = useCallback((phaseName) => {
     if (!phaseName) return;
     setCurrentTimerMode(prev => ({
@@ -5056,68 +5083,44 @@ function SessionPageV2Inner() {
         }
       }
       
-      // Pass golden key earned status for notification on lessons page
+      // Finalize Golden Key inventory against the exact completed execution.
+      // The server transaction is idempotent, so retries cannot double-award or double-consume.
       const earnedKey = (goldenKeysEnabledRef.current !== false)
         ? (timerServiceRef.current?.getGoldenKeyStatus()?.eligible || false)
         : false;
-
-      // If golden key was earned, persist it to the learner inventory (Supabase)
-      // NOTE: The toast on /learn is driven by sessionStorage; that alone does NOT update the DB.
-      if (earnedKey) {
-        const awardLearnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
-        if (awardLearnerId && awardLearnerId !== 'demo') {
-          try {
-            const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
-            const learner = await getLearner(awardLearnerId);
-            if (learner) {
-              await updateLearner(awardLearnerId, {
-                name: learner.name,
-                grade: learner.grade,
-                targets: {
-                  comprehension: learner.comprehension,
-                  exercise: learner.exercise,
-                  worksheet: learner.worksheet,
-                  test: learner.test
-                },
-                session_timer_minutes: learner.session_timer_minutes,
-                golden_keys: (learner.golden_keys || 0) + 1
-              });
-              addEvent('🔑 Golden Key awarded (saved to learner inventory)');
-            }
-          } catch (err) {
-            console.error('[SessionPageV2] Failed to persist golden key award:', err);
-          }
-        }
-      }
-
-      if (earnedKey && typeof window !== 'undefined') {
+      let awardedKey = false;
+      const finalizeLearnerId = learnerProfileRef.current?.id || learnerProfile?.id || null;
+      const finalizeLessonKey = goldenKeyLessonKeyRef.current || goldenKeyLessonKey || null;
+      const executionSessionId = trackedExecutionSessionIdRef.current;
+      if (finalizeLearnerId && finalizeLearnerId !== 'demo' && finalizeLessonKey && executionSessionId && browserSessionId) {
         try {
-          sessionStorage.setItem('just_earned_golden_key', 'true');
-        } catch {}
-      }
-
-      // Clear active golden key for this lesson when the lesson is completed (V1 parity).
-      // This ensures the key persists across exits/resumes until completion, but does not stick forever after completion.
-      if (goldenKeysEnabledRef.current !== false && hasGoldenKeyRef.current) {
-        const appliedKey = goldenKeyLessonKeyRef.current;
-        const clearLearnerId = learnerProfile?.id || (typeof window !== 'undefined' ? localStorage.getItem('learner_id') : null);
-        if (appliedKey && clearLearnerId && clearLearnerId !== 'demo') {
-          try {
-            const { getLearner, updateLearner } = await import('@/app/facilitator/learners/clientApi');
-            const learner = await getLearner(clearLearnerId);
-            if (learner) {
-              const activeKeys = { ...(learner.active_golden_keys || {}) };
-              if (activeKeys[appliedKey]) {
-                delete activeKeys[appliedKey];
-                await updateLearner(clearLearnerId, { active_golden_keys: activeKeys });
-              }
-            }
-          } catch (err) {
-            console.warn('[SessionPageV2] Failed to clear active golden key on completion:', err);
+          const finalized = await finalizeGoldenKeyForSession({
+            learnerId: finalizeLearnerId,
+            lessonKey: finalizeLessonKey,
+            executionSessionId,
+            browserSessionId,
+            awardEarnedKey: earnedKey,
+          });
+          awardedKey = finalized?.awardedEarnedKey === true;
+          if (awardedKey) addEvent('Golden Key earned and saved to learner inventory.');
+          if (finalized?.consumedAppliedKey === true) addEvent('Applied Golden Key closed with lesson completion.');
+          if (learnerProfileRef.current) {
+            const nextLearner = {
+              ...learnerProfileRef.current,
+              ...(Number.isFinite(Number(finalized?.goldenKeys)) ? { golden_keys: Number(finalized.goldenKeys) } : {}),
+              ...(finalized?.activeGoldenKeys && typeof finalized.activeGoldenKeys === 'object' ? { active_golden_keys: finalized.activeGoldenKeys } : {}),
+            };
+            learnerProfileRef.current = nextLearner;
+            setLearnerProfile(nextLearner);
           }
+        } catch (err) {
+          console.error('[SessionPageV2] Failed to finalize Golden Key lifecycle:', err);
         }
       }
 
+      if (awardedKey && typeof window !== 'undefined') {
+        try { sessionStorage.setItem('just_earned_golden_key', 'true'); } catch {}
+      }
       try {
         await masteryEvidenceClientRef.current?.recordSessionEnded({
           reason: 'completed',
@@ -7149,6 +7152,13 @@ function SessionPageV2Inner() {
         return;
       }
       trackedSessionIdForEvidence = sessionResult.id;
+      trackedExecutionSessionIdRef.current = sessionResult.id;
+      snapshotServiceRef.current?.bindExecutionOwner?.({
+        executionSessionId: sessionResult.id,
+        browserSessionId,
+      });
+      executionFencedRef.current = false;
+      if (typeof window !== 'undefined') delete window.__PREVENT_SNAPSHOT_SAVE__;
       try { startSessionPolling?.(); } catch {}
     }
 
@@ -7413,6 +7423,11 @@ function SessionPageV2Inner() {
     if (!result?.id || result?.conflict) {
       throw new Error('Unable to take over this lesson session. The existing session is still active.');
     }
+    trackedExecutionSessionIdRef.current = result.id;
+    snapshotServiceRef.current?.bindExecutionOwner?.({
+      executionSessionId: result.id,
+      browserSessionId,
+    });
     try { startSessionPolling?.(); } catch {}
 
     // Clear local snapshot so reload pulls the latest remote snapshot.
@@ -9990,6 +10005,21 @@ function SessionPageV2Inner() {
         </div>
       ) : null}
 
+      {executionEndedReason && !showTakeoverDialog && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(15, 23, 42, 0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ maxWidth: 480, background: '#fff', borderRadius: 12, padding: 24, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
+            <h2 style={{ marginTop: 0 }}>Lesson session paused</h2>
+            <p style={{ lineHeight: 1.5 }}>
+              {executionEndedReason === 'expired'
+                ? 'This lesson was inactive long enough for its execution lock to be released. Your saved work is still available.'
+                : 'This browser no longer owns the active lesson execution. Your saved work has been protected.'}
+            </p>
+            <button type="button" onClick={() => { window.location.href = '/learn'; }} style={{ padding: '10px 16px', borderRadius: 8, border: 0, cursor: 'pointer' }}>
+              Return to learner home
+            </button>
+          </div>
+        </div>
+      )}
       {showTakeoverDialog && (
         <SessionTakeoverDialog
           existingSession={conflictingSession}

@@ -187,6 +187,44 @@ async function dbDeleteSnapshot(db, userId, learnerId, lessonKey) {
   return { ok: true };
 }
 
+function normalizeUuid(value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(normalized)
+    ? normalized
+    : null;
+}
+
+async function verifySnapshotExecutionOwner(svc, { learnerId, executionSessionId, browserSessionId, allowCompleted = false } = {}) {
+  const rowId = normalizeUuid(executionSessionId);
+  const browserId = normalizeUuid(browserSessionId);
+  if (!svc || !learnerId || !rowId || !browserId) {
+    return { ok: false, state: 'identity_invalid', endedReason: null, session: null };
+  }
+  const { data, error } = await svc
+    .from('lesson_sessions')
+    .select('id, learner_id, session_id, ended_at, ended_reason')
+    .eq('id', rowId)
+    .eq('learner_id', learnerId)
+    .maybeSingle();
+  if (error || !data) return { ok: false, state: 'session_missing', endedReason: null, session: null };
+  if (data.session_id !== browserId) {
+    return { ok: false, state: 'ownership_mismatch', endedReason: data.ended_reason || null, session: data };
+  }
+  if (data.ended_at == null) return { ok: true, state: 'active', endedReason: null, session: data };
+  if (allowCompleted && data.ended_reason === 'completed') {
+    return { ok: true, state: 'completed', endedReason: 'completed', session: data };
+  }
+  return { ok: false, state: 'ended', endedReason: data.ended_reason || 'ended', session: data };
+}
+
+function snapshotOwnershipLost(result) {
+  return NextResponse.json({
+    ok: false,
+    code: 'SNAPSHOT_OWNERSHIP_LOST',
+    state: result?.state || 'ownership_lost',
+    endedReason: result?.endedReason || null,
+  }, { status: 409 });
+}
 function normalizeSnapshotShape(obj) {
   const out = obj && typeof obj === 'object' ? { ...obj } : {};
   out.savedAt = new Date().toISOString();
@@ -237,8 +275,23 @@ export async function POST(req) {
     const learner_id = typeof body?.learner_id === 'string' && body.learner_id ? body.learner_id : null;
     const lesson_key = typeof body?.lesson_key === 'string' && body.lesson_key ? body.lesson_key : null;
     const data = body?.data && typeof body.data === 'object' ? body.data : null;
+    const requireExecutionOwner = body?.require_execution_owner === true;
+    const executionSessionId = body?.execution_session_id;
+    const browserSessionId = body?.browser_session_id;
     if (!learner_id || !lesson_key || !data) {
       return NextResponse.json({ error: 'learner_id, lesson_key, data required' }, { status: 400 });
+    }
+    if (requireExecutionOwner) {
+      const { svc } = getClients() || {};
+      if (!svc) {
+        return NextResponse.json({ ok: false, code: 'SNAPSHOT_OWNERSHIP_UNAVAILABLE' }, { status: 503 });
+      }
+      const ownership = await verifySnapshotExecutionOwner(svc, {
+        learnerId: learner_id,
+        executionSessionId,
+        browserSessionId,
+      });
+      if (!ownership.ok) return snapshotOwnershipLost(ownership);
     }
     const payload = normalizeSnapshotShape(data);
 
@@ -290,8 +343,35 @@ export async function DELETE(req) {
     const url = new URL(req.url);
     const learnerId = url.searchParams.get('learner_id') || url.searchParams.get('learnerId');
     const lessonKey = url.searchParams.get('lesson_key') || url.searchParams.get('lessonKey');
+    const requireExecutionOwner = url.searchParams.get('require_execution_owner') === '1';
+    const executionSessionId = url.searchParams.get('execution_session_id');
+    const browserSessionId = url.searchParams.get('browser_session_id');
     if (!learnerId || !lessonKey) return NextResponse.json({ ok: true });
 
+    if (requireExecutionOwner) {
+      const { svc } = getClients() || {};
+      if (!svc) {
+        return NextResponse.json({ ok: false, code: 'SNAPSHOT_OWNERSHIP_UNAVAILABLE' }, { status: 503 });
+      }
+      const ownership = await verifySnapshotExecutionOwner(svc, {
+        learnerId,
+        executionSessionId,
+        browserSessionId,
+        allowCompleted: true,
+      });
+      if (!ownership.ok) return snapshotOwnershipLost(ownership);
+
+      // A completed execution may delete only the snapshot it actually produced.
+      // If a newer execution already saved progress under the lesson-scoped key,
+      // preserve that newer snapshot instead of letting completion cleanup erase it.
+      if (ownership.state === 'completed') {
+        const current = await dbGetSnapshot(db, user.id, learnerId, lessonKey);
+        const currentBrowserId = current?.data?.sessionId || null;
+        if (!current.error && currentBrowserId && currentBrowserId !== normalizeUuid(browserSessionId)) {
+          return snapshotOwnershipLost({ state: 'newer_snapshot_present', endedReason: 'completed' });
+        }
+      }
+    }
     const del = await dbDeleteSnapshot(db, user.id, learnerId, lessonKey);
     if (del.ok) return NextResponse.json({ ok: true });
     if (!isUndefinedColumnOrTable(del.error)) {

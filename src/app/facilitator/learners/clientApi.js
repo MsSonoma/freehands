@@ -417,13 +417,10 @@ function normalizeRow(row) {
 function toFlatTargets(obj) {
   const t = obj.targets || obj;
   const result = {
-    comprehension: Number(t.comprehension),
-    exercise: Number(t.exercise),
-    worksheet: Number(t.worksheet),
-    test: Number(t.test),
-    session_timer_minutes: obj.session_timer_minutes !== undefined ? Number(obj.session_timer_minutes) : undefined,
-    golden_keys: obj.golden_keys !== undefined ? Number(obj.golden_keys) : undefined,
-    active_golden_keys: obj.active_golden_keys !== undefined ? obj.active_golden_keys : undefined,
+    ...(t.comprehension !== undefined ? { comprehension: Number(t.comprehension) } : {}),
+    ...(t.exercise !== undefined ? { exercise: Number(t.exercise) } : {}),
+    ...(t.worksheet !== undefined ? { worksheet: Number(t.worksheet) } : {}),
+    ...(t.test !== undefined ? { test: Number(t.test) } : {}),
   };
   const humor = resolveHumorLevel(obj.humor_level ?? t.humor_level ?? null, null);
   if (typeof humor === 'string') {
@@ -431,7 +428,6 @@ function toFlatTargets(obj) {
   }
   return result;
 }
-
 function createLocal(payload) {
   const list = readLocal();
   const id = Date.now().toString(36);
@@ -465,8 +461,8 @@ function updateLocal(id, updates) {
     const humorLevel = flatHumorLevel ?? (updates.humor_level !== undefined ? resolveHumorLevel(updates.humor_level, DEFAULT_HUMOR_LEVEL) : (list[idx].humor_level ?? DEFAULT_HUMOR_LEVEL));
     const updated = { 
       ...list[idx], 
-      name: updates.name, 
-      grade: updates.grade, 
+      ...(updates.name !== undefined ? { name: updates.name } : {}),
+      ...(updates.grade !== undefined ? { grade: updates.grade } : {}),
       ...targetValues,
       ...(updates.session_timer_minutes !== undefined ? { session_timer_minutes: Number(updates.session_timer_minutes) } : {}),
       ...(updates.golden_keys !== undefined ? { golden_keys: Number(updates.golden_keys) } : {}),
@@ -478,6 +474,13 @@ function updateLocal(id, updates) {
       ...(updates.fill_in_fun_disabled !== undefined ? { fill_in_fun_disabled: !!updates.fill_in_fun_disabled } : {}),
       ...(updates.auto_advance_phases !== undefined ? { auto_advance_phases: !!updates.auto_advance_phases } : {}),
       ...(updates.tts_unskippable !== undefined ? { tts_unskippable: !!updates.tts_unskippable } : {}),
+      ...(updates.golden_keys_enabled !== undefined ? { golden_keys_enabled: !!updates.golden_keys_enabled } : {}),
+      ...(updates.play_comprehension_enabled !== undefined ? { play_comprehension_enabled: !!updates.play_comprehension_enabled } : {}),
+      ...(updates.play_exercise_enabled !== undefined ? { play_exercise_enabled: !!updates.play_exercise_enabled } : {}),
+      ...(updates.play_worksheet_enabled !== undefined ? { play_worksheet_enabled: !!updates.play_worksheet_enabled } : {}),
+      ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
+      ...(updates.play_timers_enabled !== undefined ? { play_timers_enabled: !!updates.play_timers_enabled } : {}),
+      ...(updates.play_dependent_on_work !== undefined ? { play_dependent_on_work: !!updates.play_dependent_on_work } : {}),
     };
     list[idx] = updated; writeLocal(list); return updated;
   }

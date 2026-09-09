@@ -4,11 +4,11 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
-import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi'
 import { ensurePinAllowed, ensureFacilitatorPinException } from '@/app/lib/pinGate'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 import { getActiveLessonSession } from '@/app/lib/sessionTracking'
+import { applyGoldenKeyToLesson } from '@/app/lib/goldenKeyClient'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
@@ -103,14 +103,6 @@ function LessonsPageInner(){
   const [todaysCount, setTodaysCount] = useState(0)
   const [sessionLoading, setSessionLoading] = useState(false)
   const [goldenKeySelected, setGoldenKeySelected] = useState(false)
-  const [pendingKeyLessonKey, setPendingKeyLessonKey] = useState(() => {
-    if (typeof window === 'undefined') return null
-    try {
-      const raw = sessionStorage.getItem('golden_key_pending_lesson')
-      if (!raw) return null
-      return JSON.parse(raw).lessonKey || null
-    } catch { return null }
-  })
   const [activeGoldenKeys, setActiveGoldenKeys] = useState({}) // Track lessons with active golden keys
   const [refreshTrigger, setRefreshTrigger] = useState(0) // Used to force refresh at midnight and on schedule changes
   const [lessonNotes, setLessonNotes] = useState({}) // { 'subject/lesson_file': 'note text' }
@@ -312,20 +304,7 @@ function LessonsPageInner(){
   }, [learnerId])
 
   // Clear pending golden key once the target lesson is detected as completed
-  useEffect(() => {
-    if (!lessonHistoryLastCompleted) return
-    try {
-      const raw = sessionStorage.getItem('golden_key_pending_lesson')
-      if (!raw) return
-      const { lessonKey, startedAt } = JSON.parse(raw)
-      const completedAt = lessonHistoryLastCompleted[lessonKey]
-      if (completedAt && new Date(completedAt).getTime() > startedAt) {
-        sessionStorage.removeItem('golden_key_pending_lesson')
-        setGoldenKeySelected(false)
-        setPendingKeyLessonKey(null)
-      }
-    } catch {}
-  }, [lessonHistoryLastCompleted])
+
 
   // Check for golden key earned notification
   useEffect(() => {
@@ -360,8 +339,6 @@ function LessonsPageInner(){
       setGoldenKeysEnabled(enabled);
       if (!enabled) {
         setGoldenKeySelected(false);
-        setPendingKeyLessonKey(null);
-        try { sessionStorage.removeItem('golden_key_pending_lesson') } catch {}
         setShowGoldenKeyToast(false);
       }
     });
@@ -718,40 +695,32 @@ function LessonsPageInner(){
       } catch {}
     }
 
-    // Handle golden key consumption - decrement from database
+    // Golden Key selection is intent only. The actual key is atomically assigned
+    // to the exact Sonoma lesson at launch, so canceling selection never spends inventory.
     const thisLessonKey = `${subject}/${fileBaseName}`
-    const alreadyHasPendingKey = pendingKeyLessonKey === thisLessonKey
     const currentTeacher = isDemoLearnerId(learnerId)
       ? 'sonoma'
       : (syllabusOccurrence?.assigned_instructional_teacher || syllabusOccurrence?.instructional_teacher || 'sonoma')
-    if (currentTeacher === 'sonoma' && goldenKeysEnabled === true && (goldenKeySelected || alreadyHasPendingKey) && learnerId) {
-      if (goldenKeySelected && !alreadyHasPendingKey) {
-        // First application — decrement DB and lock key to this lesson
-        try {
-          const learner = await getLearner(learnerId)
-          if (learner && learner.golden_keys > 0) {
-            await updateLearner(learnerId, {
-              name: learner.name,
-              grade: learner.grade,
-              targets: {
-                comprehension: learner.comprehension,
-                exercise: learner.exercise,
-                worksheet: learner.worksheet,
-                test: learner.test
-              },
-              session_timer_minutes: learner.session_timer_minutes,
-              golden_keys: learner.golden_keys - 1
-            })
-          }
-        } catch (e) {
+    let launchHasGoldenKey = currentTeacher === 'sonoma' && activeGoldenKeys[thisLessonKey] === true
+    if (currentTeacher === 'sonoma' && goldenKeysEnabled === true && goldenKeySelected && learnerId && learnerId !== 'demo') {
+      try {
+        const applied = await applyGoldenKeyToLesson({ learnerId, lessonKey: thisLessonKey })
+        launchHasGoldenKey = applied?.ok === true
+        if (launchHasGoldenKey) {
+          setActiveGoldenKeys(applied.activeGoldenKeys || { ...activeGoldenKeys, [thisLessonKey]: true })
+          setGoldenKeySelected(false)
         }
-        // Persist the pending key across navigation — clears only when lesson is completed
-        try { sessionStorage.setItem('golden_key_pending_lesson', JSON.stringify({ lessonKey: thisLessonKey, startedAt: Date.now() })) } catch {}
-        setPendingKeyLessonKey(thisLessonKey)
+      } catch (error) {
+        const message = error?.code === 'no_keys'
+          ? 'No Golden Keys are available to apply.'
+          : error?.code === 'disabled'
+            ? 'Golden Keys are currently turned off for this learner.'
+            : 'The Golden Key could not be applied. The lesson has not started yet.'
+        alert(message)
+        setSessionLoading(false)
+        return
       }
-      // If alreadyHasPendingKey, key was already spent — just re-pass URL param without decrementing
     }
-
     if (currentTeacher === 'webb') {
       setSessionLoading(true)
       const lessonKey = `${subject}/${fileBaseName}`
@@ -766,7 +735,7 @@ function LessonsPageInner(){
       subject,
       fileName: fileBaseName,
       instructionalTeacher: currentTeacher,
-      goldenKey: goldenKeysEnabled === true && (goldenKeySelected || alreadyHasPendingKey),
+      goldenKey: goldenKeysEnabled === true && launchHasGoldenKey,
       occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '',
     })
     router.push(withKey)
@@ -1862,22 +1831,14 @@ function LessonsPageInner(){
 
                     {/* Golden Keys are a Sonoma instructional feature. */}
                     {goldenKeysEnabled === true && !isDemo && assignedInstructionalTeacher === 'sonoma' && (() => {
-                      const keyOn = goldenKeySelected || pendingKeyLessonKey === lessonKey || hasActiveKey
-                      const facilitatorOnly = hasActiveKey && !goldenKeySelected && pendingKeyLessonKey !== lessonKey
+                      const keyOn = goldenKeySelected || hasActiveKey
+                      const facilitatorOnly = hasActiveKey && !goldenKeySelected
                       return (
                         <button
                           onClick={() => {
-                            if (facilitatorOnly) return // facilitator-set, not learner-togglable
-                            if (pendingKeyLessonKey === lessonKey) {
-                              // Key was already applied to this lesson — remove the pending entry
-                              try { sessionStorage.removeItem('golden_key_pending_lesson') } catch {}
-                              setPendingKeyLessonKey(null)
-                              setGoldenKeySelected(false)
-                            } else {
-                              setGoldenKeySelected(prev => !prev)
-                            }
-                          }}
-                          title={facilitatorOnly ? 'Golden Key applied by facilitator' : keyOn ? 'Golden Key active — click to remove' : 'Apply a Golden Key to this lesson'}
+                            if (facilitatorOnly) return // already assigned to this lesson; do not spend/cancel it here
+                            setGoldenKeySelected(prev => !prev)
+                          }}                          title={facilitatorOnly ? 'Golden Key applied by facilitator' : keyOn ? 'Golden Key active — click to remove' : 'Apply a Golden Key to this lesson'}
                           style={{
                             display: 'inline-flex', alignItems: 'center', gap: 6,
                             background: keyOn ? '#fef3c7' : '#f3f4f6',

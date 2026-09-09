@@ -6,6 +6,7 @@ import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { endLessonSession } from '@/app/lib/sessionTracking'
+import { useSessionTracking } from '@/app/hooks/useSessionTracking'
 import { getProtectedBrowserSessionId, startProtectedInstructionalSession } from '@/app/lib/syllabus/executionClient'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { ASSESSMENT_ROLES } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
@@ -361,6 +362,48 @@ function WebbPageInner() {
   const [engineState, setEngineState] = useState('idle')
   const [isMuted, setIsMuted]         = useState(false)
   const isMutedRef                    = useRef(false)
+  const [webbOwnershipEndedReason, setWebbOwnershipEndedReason] = useState(null)
+  const webbExecutionFencedRef = useRef(false)
+  const currentWebbLessonKey = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id || null
+
+  const freezeWebbExecution = useCallback((reason) => {
+    webbExecutionFencedRef.current = true
+    setChatLoading(false)
+    ttsQueueRef.current = []
+    ttsGenRef.current += 1
+    try {
+      if (ttsCurrentRef.current) {
+        ttsCurrentRef.current.pause()
+        ttsCurrentRef.current.onended = null
+        ttsCurrentRef.current = null
+      }
+    } catch {}
+    try { if (videoRef.current) videoRef.current.pause() } catch {}
+    setEngineState('idle')
+    setWebbOwnershipEndedReason(String(reason || 'ownership-lost'))
+  }, [])
+
+  const handleWebbTakenOver = useCallback(() => {
+    freezeWebbExecution('taken_over')
+  }, [freezeWebbExecution])
+
+  const handleWebbSessionEnded = useCallback((session, reason) => {
+    const normalized = String(reason || session?.ended_reason || '').trim().toLowerCase()
+    if (!normalized || normalized === 'completed') return
+    freezeWebbExecution(normalized)
+  }, [freezeWebbExecution])
+
+  const {
+    adoptSession: adoptWebbTrackedSession,
+    startPolling: startWebbSessionPolling,
+    stopPolling: stopWebbSessionPolling,
+  } = useSessionTracking(
+    routeLearnerId || learnerId,
+    currentWebbLessonKey,
+    false,
+    handleWebbTakenOver,
+    handleWebbSessionEnded,
+  )
 
   // ── YouTube player commands (via IFrame API postMessage) ──────────────
   function ytCmd(func, args = []) {
@@ -447,6 +490,16 @@ function WebbPageInner() {
         requestPin: requestFacilitatorPinException,
       })
       canonicalSessionRef.current = { id: tracked.id, learnerId: routeLearnerId || learnerId, lessonKey, occurrenceId: tracked.occurrenceId }
+      const browserSessionId = getProtectedBrowserSessionId()
+      adoptWebbTrackedSession(tracked.id, browserSessionId, {
+        learnerId: routeLearnerId || learnerId,
+        lessonId: lessonKey,
+        occurrenceId: tracked.occurrenceId,
+        instructionalTeacher: 'webb',
+      })
+      webbExecutionFencedRef.current = false
+      setWebbOwnershipEndedReason(null)
+      startWebbSessionPolling()
       webbSessionStartRef.current = saved.webbSessionStartedAt || new Date().toISOString()
       await initializeWebbEvidence(canonicalSessionRef.current, selectedLesson)
       setChatMessages(saved.chatMessages || [])
@@ -484,6 +537,7 @@ function WebbPageInner() {
 
   // ── Session persistence: save on state change ─────────────────────────
   useEffect(() => {
+    if (webbExecutionFencedRef.current) return
     if (offerResume) return // never wipe storage while the resume prompt is visible
     if (phase !== PHASE.CHATTING || !selectedLesson) return // nothing to save
     const key = snapKey(selectedLesson)
@@ -508,6 +562,7 @@ function WebbPageInner() {
   // ── Supabase transcript auto-save (Mrs. Webb) ─────────────────────────
   // Debounced: fires 3 s after the last transcript change while chatting.
   useEffect(() => {
+    if (webbExecutionFencedRef.current) return
     if (phase !== PHASE.CHATTING || !selectedLesson || !transcript.length) return
     const tid = setTimeout(async () => {
       try {
@@ -1304,6 +1359,16 @@ function WebbPageInner() {
         requestPin: requestFacilitatorPinException,
       })
       canonicalSessionRef.current = { id: tracked.id, learnerId: routeLearnerId || learnerId, lessonKey, occurrenceId: tracked.occurrenceId }
+      const browserSessionId = getProtectedBrowserSessionId()
+      adoptWebbTrackedSession(tracked.id, browserSessionId, {
+        learnerId: routeLearnerId || learnerId,
+        lessonId: lessonKey,
+        occurrenceId: tracked.occurrenceId,
+        instructionalTeacher: 'webb',
+      })
+      webbExecutionFencedRef.current = false
+      setWebbOwnershipEndedReason(null)
+      startWebbSessionPolling()
       await initializeWebbEvidence(canonicalSessionRef.current, lesson)
     } catch (cause) {
       setPageError(cause?.message || 'Could not securely start this lesson.')
@@ -1338,10 +1403,11 @@ function WebbPageInner() {
     // Preload media + generate objectives in background
     preloadResources(lesson)
     generateObjectives(lesson)
-  }, [preloadResources, generateObjectives, learnerId, routeLearnerId, routeOccurrenceId])
+  }, [preloadResources, generateObjectives, learnerId, routeLearnerId, routeOccurrenceId, adoptWebbTrackedSession, startWebbSessionPolling])
 
   // ── Send chat message ─────────────────────────────────────────────────
   const sendMessage = useCallback(async (text) => {
+    if (webbExecutionFencedRef.current) return
     if (!text.trim() || chatLoading) return
     addStudentLine(text)
 
@@ -1977,6 +2043,7 @@ function WebbPageInner() {
 
   // ── Complete lesson via Mrs. Webb ─────────────────────────────────────
   async function handleCompleteLesson() {
+    if (webbExecutionFencedRef.current) return
     if (!learnerId || !selectedLesson || completionState === 'saving') return
     const tracked = canonicalSessionRef.current
     if (!tracked?.id) {
@@ -1999,6 +2066,7 @@ function WebbPageInner() {
       setCompletionError('Your work is safe, but lesson completion could not be recorded. Please try again.')
       return
     }
+    stopWebbSessionPolling()
     const currentSummary = summarizeWebbMastery(objectives, objectiveEvidence)
     const previousSummary = getWebbCompletionForLearner(learnerId)?.[lk]?.masterySummary || null
     const masterySummary = mergeWebbMasterySummaries(previousSummary, currentSummary)
@@ -2435,6 +2503,21 @@ function WebbPageInner() {
       {pageError && (
         <div style={{ background: '#fef2f2', borderBottom: '1px solid #fca5a5', color: C.danger, padding: '8px 16px', fontSize: 13, textAlign: 'center', flexShrink: 0 }}>
           {pageError}
+        </div>
+      )}
+      {webbOwnershipEndedReason && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 10000, background: 'rgba(15,23,42,0.72)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+          <div style={{ maxWidth: 480, background: '#fff', borderRadius: 14, padding: 24, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.28)' }}>
+            <h2 style={{ marginTop: 0 }}>Mrs. Webb session paused</h2>
+            <p style={{ lineHeight: 1.5 }}>
+              {webbOwnershipEndedReason === 'taken_over'
+                ? 'This lesson was continued on another device. This browser has stopped changing the learner\'s work.'
+                : 'This browser no longer owns the active lesson execution. The learner\'s saved work is still available.'}
+            </p>
+            <button type="button" onClick={() => { window.location.href = '/learn' }} style={{ padding: '10px 16px', borderRadius: 8, border: 0, cursor: 'pointer' }}>
+              Return to learner home
+            </button>
+          </div>
         </div>
       )}
 

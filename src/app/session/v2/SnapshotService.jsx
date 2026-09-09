@@ -26,6 +26,10 @@ export class SnapshotService {
   #lessonKey = null;
   #supabaseClient = null;
   #forceLocalStorage = false;
+  #executionSessionId = null;
+  #executionBrowserSessionId = null;
+  #writesFenced = false;
+  #fenceReason = null;
   
   #snapshot = null;
   #lastSaveTime = null;
@@ -146,10 +150,23 @@ export class SnapshotService {
           'Content-Type': 'application/json',
           Accept: 'application/json'
         },
-        body: JSON.stringify({ learner_id: this.#learnerId, lesson_key: this.#lessonKey, data: snapshot })
+        body: JSON.stringify({
+          learner_id: this.#learnerId,
+          lesson_key: this.#lessonKey,
+          data: snapshot,
+          ...(this.#executionSessionId && this.#executionBrowserSessionId ? {
+            require_execution_owner: true,
+            execution_session_id: this.#executionSessionId,
+            browser_session_id: this.#executionBrowserSessionId,
+          } : {}),
+        })
       });
-      if (!resp.ok) return { ok: false };
       const json = await resp.json().catch(() => null);
+      if (resp.status === 409 && json?.code === 'SNAPSHOT_OWNERSHIP_LOST') {
+        this.fenceWrites(json?.endedReason || json?.state || 'ownership-lost');
+        return { ok: false, ownershipLost: true };
+      }
+      if (!resp.ok) return { ok: false };
       if (json && json.ok === false) return { ok: false };
       return { ok: true };
     } catch (err) {
@@ -163,11 +180,20 @@ export class SnapshotService {
     if (!token) return { ok: false, skipped: true };
 
     try {
-      const url = this.#buildSnapshotApiUrl();
+      const baseUrl = this.#buildSnapshotApiUrl();
+      const ownershipQuery = this.#executionSessionId && this.#executionBrowserSessionId
+        ? `&require_execution_owner=1&execution_session_id=${encodeURIComponent(this.#executionSessionId)}&browser_session_id=${encodeURIComponent(this.#executionBrowserSessionId)}`
+        : '';
+      const url = `${baseUrl}${ownershipQuery}`;
       const resp = await fetch(url, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
+      const json = await resp.json().catch(() => null);
+      if (resp.status === 409 && json?.code === 'SNAPSHOT_OWNERSHIP_LOST') {
+        this.fenceWrites(json?.endedReason || json?.state || 'ownership-lost');
+        return { ok: false, ownershipLost: true };
+      }
       return { ok: resp.ok };
     } catch (err) {
       console.error('[SnapshotService] Server delete error:', this.#formatErrorForLog(err), err);
@@ -218,6 +244,7 @@ export class SnapshotService {
   
   // Public API: Save phase completion
   async savePhaseCompletion(phase, phaseData = {}) {
+    if (this.#writesFenced) return { success: false, blocked: true, ownershipLost: true };
     // Check prevention flag (set during lesson cleanup)
     if (typeof window !== 'undefined' && window.__PREVENT_SNAPSHOT_SAVE__) {
       console.log('[SnapshotService] Snapshot save blocked by cleanup flag');
@@ -253,6 +280,9 @@ export class SnapshotService {
       const transcript = (phaseData && typeof phaseData === 'object' && Object.prototype.hasOwnProperty.call(phaseData, 'transcript'))
         ? (phaseData.transcript || null)
         : (this.#snapshot?.transcript || null);
+      const featureState = (phaseData && typeof phaseData === 'object' && Object.prototype.hasOwnProperty.call(phaseData, 'featureState'))
+        ? (phaseData.featureState || null)
+        : (this.#snapshot?.featureState || null);
 
       const snapshot = {
         sessionId: this.#sessionId,
@@ -263,6 +293,7 @@ export class SnapshotService {
         phaseData: allPhaseData,
         transcript,
         timerState,
+        featureState,
         lastUpdated: new Date().toISOString()
       };
 
@@ -271,7 +302,10 @@ export class SnapshotService {
 
       // Best-effort server save (cross-device restore).
       if (this.#supabaseClient && !this.#forceLocalStorage) {
-        await this.#persistSnapshotToServer(snapshot);
+        const persisted = await this.#persistSnapshotToServer(snapshot);
+        if (persisted?.ownershipLost || this.#writesFenced) {
+          return { success: false, blocked: true, ownershipLost: true };
+        }
       }
 
       this.#snapshot = snapshot;
@@ -289,6 +323,7 @@ export class SnapshotService {
   // Public API: Save progress incrementally (granular saves for V1 parity)
   // Called after each user action (sentence completion, question answered, etc.)
   async saveProgress(trigger = 'action', updateData = {}) {
+    if (this.#writesFenced) return { success: false, blocked: true, ownershipLost: true };
     // Check prevention flag (set during lesson cleanup)
     if (typeof window !== 'undefined' && window.__PREVENT_SNAPSHOT_SAVE__) {
       console.log('[SnapshotService] Snapshot save blocked by cleanup flag');
@@ -327,6 +362,9 @@ export class SnapshotService {
       const transcript = (mergedUpdate && typeof mergedUpdate === 'object' && Object.prototype.hasOwnProperty.call(mergedUpdate, 'transcript'))
         ? (mergedUpdate.transcript || null)
         : (this.#snapshot?.transcript || null);
+      const featureState = (mergedUpdate && typeof mergedUpdate === 'object' && Object.prototype.hasOwnProperty.call(mergedUpdate, 'featureState'))
+        ? (mergedUpdate.featureState || null)
+        : (this.#snapshot?.featureState || null);
 
       const snapshot = {
         sessionId: this.#sessionId,
@@ -339,6 +377,7 @@ export class SnapshotService {
         timerState: (mergedUpdate && typeof mergedUpdate === 'object' && 'timerState' in mergedUpdate)
           ? (mergedUpdate.timerState || null)
           : (this.#snapshot?.timerState || null),
+        featureState,
         lastUpdated: new Date().toISOString()
       };
 
@@ -347,7 +386,10 @@ export class SnapshotService {
 
       // Best-effort server save (cross-device restore).
       if (this.#supabaseClient && !this.#forceLocalStorage) {
-        await this.#persistSnapshotToServer(snapshot);
+        const persisted = await this.#persistSnapshotToServer(snapshot);
+        if (persisted?.ownershipLost || this.#writesFenced) {
+          return { success: false, blocked: true, ownershipLost: true };
+        }
       }
 
       this.#snapshot = snapshot;
@@ -388,6 +430,32 @@ export class SnapshotService {
     this.#snapshot = null;
   }
   
+  // Bind durable snapshot writes to the concrete protected lesson execution.
+  // Passive pre-Begin snapshot reads remain unfenced so resume can be offered.
+  bindExecutionOwner({ executionSessionId, browserSessionId } = {}) {
+    if (!executionSessionId || !browserSessionId) {
+      throw new Error('Snapshot execution ownership requires session and browser identities');
+    }
+    this.#executionSessionId = executionSessionId;
+    this.#executionBrowserSessionId = browserSessionId;
+    this.#writesFenced = false;
+    this.#fenceReason = null;
+  }
+
+  fenceWrites(reason = 'ownership-lost') {
+    this.#writesFenced = true;
+    this.#fenceReason = String(reason || 'ownership-lost');
+    this.#snapshot = null;
+    this.#deleteFromLocalStorage();
+  }
+
+  get writesFenced() {
+    return this.#writesFenced;
+  }
+
+  get fenceReason() {
+    return this.#fenceReason;
+  }
   // Getters
   get snapshot() {
     return this.#snapshot;

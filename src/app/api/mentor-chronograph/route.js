@@ -35,6 +35,7 @@ export async function GET(req) {
 
     const { searchParams } = new URL(req.url)
     const subjectKey = (searchParams.get('subjectKey') || '').trim()
+    const sessionId = (searchParams.get('sessionId') || '').trim()
     const sector = (searchParams.get('sector') || 'both').trim()
     const mode = (searchParams.get('mode') || 'minimal').trim()
     const ingestFallback = (searchParams.get('ingestFallback') || '1').trim() !== '0'
@@ -53,6 +54,7 @@ export async function GET(req) {
         const origin = new URL(req.url).origin
         const legacyUrl = new URL('/api/mentor-session', origin)
         legacyUrl.searchParams.set('subjectKey', subjectKey)
+        if (sessionId) legacyUrl.searchParams.set('sessionId', sessionId)
 
         const legacyRes = await fetch(legacyUrl.toString(), {
           method: 'GET',
@@ -102,6 +104,7 @@ export async function GET(req) {
                 },
                 body: JSON.stringify({
                   subjectKey,
+                  sessionId,
                   conversationHistory: [],
                   lastLocalUpdateAt: new Date().toISOString()
                 })

@@ -111,16 +111,58 @@ async function verifyLearnerOwnership(admin, userId, learnerId) {
   return !error && !!data?.id;
 }
 
-async function verifyLessonSession(admin, { sessionId, learnerId }) {
+async function verifyLessonSession(admin, { sessionId, learnerId, browserSessionId = null }) {
   const { data, error } = await admin
     .from('lesson_sessions')
-    .select('id, learner_id')
+    .select('id, learner_id, session_id, ended_at, ended_reason')
     .eq('id', sessionId)
     .eq('learner_id', learnerId)
     .maybeSingle();
-  return !error && !!data?.id;
+  if (error || !data?.id || data.ended_at != null) return false;
+  if (browserSessionId && data.session_id !== browserSessionId) return false;
+  return true;
 }
 
+function isSlateEvidenceSession(session) {
+  return String(session?.session_id || '').startsWith('slate:')
+    && String(session?.teaching_protocol_version || '') === 'slate-mastery-retention-v1';
+}
+
+async function verifyEvidenceExecutionOwner(admin, evidenceSession, { allowCompleted = false } = {}) {
+  if (!evidenceSession || isSlateEvidenceSession(evidenceSession)) return { ok: true, state: 'not-instructional-lock' };
+  const trackedSessionId = normalizeOptionalText(evidenceSession.session_id);
+  const browserSessionId = normalizeOptionalText(evidenceSession.browser_session_id);
+  if (!isUuid(trackedSessionId) || !isUuid(browserSessionId)) {
+    // Historical evidence rows may predate browser ownership capture. Current
+    // Sonoma/Webb sessions always carry both IDs and are fenced below.
+    return { ok: true, state: 'legacy-unfenced' };
+  }
+  const { data, error } = await admin
+    .from('lesson_sessions')
+    .select('id, learner_id, session_id, ended_at, ended_reason')
+    .eq('id', trackedSessionId)
+    .eq('learner_id', evidenceSession.learner_id)
+    .maybeSingle();
+  if (error || !data) return { ok: false, state: 'session_missing', endedReason: null };
+  if (data.session_id !== browserSessionId) {
+    return { ok: false, state: 'ownership_mismatch', endedReason: data.ended_reason || null };
+  }
+  if (data.ended_at == null) return { ok: true, state: 'active', endedReason: null };
+  if (allowCompleted && data.ended_reason === 'completed') {
+    return { ok: true, state: 'completed', endedReason: 'completed' };
+  }
+  return { ok: false, state: 'ended', endedReason: data.ended_reason || 'ended' };
+}
+
+function evidenceOwnershipLost(result) {
+  return NextResponse.json({
+    ok: false,
+    error: 'Instructional execution ownership was lost',
+    code: 'EVIDENCE_OWNERSHIP_LOST',
+    state: result?.state || 'ownership_lost',
+    endedReason: result?.endedReason || null,
+  }, { status: 409 });
+}
 function badRequest(message) {
   return NextResponse.json({ ok: false, error: message }, { status: 400 });
 }
@@ -386,6 +428,7 @@ async function handleCreateSession({ request, body, user, admin, now, proofSecre
   const hasTrackedSession = await verifyLessonSession(admin, {
     sessionId: session.session_id,
     learnerId: session.learner_id,
+    browserSessionId: session.browser_session_id,
   });
   const isSlateActivity = verifySlateActivityProof({
     request,
@@ -450,6 +493,10 @@ async function handleRecordEvent({ body, user, admin }) {
     .maybeSingle();
 
   if (sessionError || !evidenceSession) return forbidden('Evidence session not found or unauthorized');
+  const execution = await verifyEvidenceExecutionOwner(admin, evidenceSession, {
+    allowCompleted: event.event_type === STAGE_1_EVIDENCE_EVENT_TYPES.SESSION_ENDED,
+  });
+  if (!execution.ok) return evidenceOwnershipLost(execution);
 
   const provider = resolveEvidenceSessionProvenance(evidenceSession);
   const payload = {
@@ -531,6 +578,20 @@ async function handleRecordEvent({ body, user, admin }) {
 
 async function handleFinalizeSession({ body, user, admin }) {
   const finalization = normalizeFinalizeBody(body);
+  const { data: evidenceSession, error: readError } = await admin
+    .from('learning_evidence_sessions')
+    .select('*')
+    .eq('id', finalization.evidenceSessionId)
+    .eq('facilitator_id', user.id)
+    .maybeSingle();
+  if (readError) {
+    return NextResponse.json({ ok: false, error: readError.message || 'Evidence session read failed' }, { status: 500 });
+  }
+  if (!evidenceSession) return forbidden('Evidence session not found or unauthorized');
+
+  const execution = await verifyEvidenceExecutionOwner(admin, evidenceSession, { allowCompleted: true });
+  if (!execution.ok) return evidenceOwnershipLost(execution);
+
   const { data, error } = await admin
     .from('learning_evidence_sessions')
     .update({
@@ -550,11 +611,22 @@ async function handleFinalizeSession({ body, user, admin }) {
 
   return NextResponse.json({ ok: true, evidence_session: data });
 }
-
 async function handleUpdateBaselineStatus({ body, user, admin }) {
   const evidenceSessionId = normalizeRequiredText(body?.evidence_session_id, 'evidence_session_id');
   const baselineStatus = assertOptionalBaselineStatus(body?.baseline_status);
   if (!baselineStatus) throw new Error('baseline_status required');
+  const { data: evidenceSession, error: sessionError } = await admin
+    .from('learning_evidence_sessions')
+    .select('*')
+    .eq('id', evidenceSessionId)
+    .eq('facilitator_id', user.id)
+    .maybeSingle();
+  if (sessionError) {
+    return NextResponse.json({ ok: false, error: sessionError.message || 'Evidence session read failed' }, { status: 500 });
+  }
+  if (!evidenceSession) return forbidden('Evidence session not found or unauthorized');
+  const execution = await verifyEvidenceExecutionOwner(admin, evidenceSession);
+  if (!execution.ok) return evidenceOwnershipLost(execution);
   const updates = {
     baseline_protocol_version: assertOptionalIdentityVersion(
       body?.baseline_protocol_version,

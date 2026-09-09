@@ -17,25 +17,30 @@ const SESSION_EVENT_TYPES = {
 const STALE_EXIT_MINUTES = 60;
 
 /**
- * Check-only: returns conflict info if another device owns an active session for this learner+lesson.
+ * Check-only: returns conflict info if another browser owns any active
+ * instructional execution for this learner. Same-browser lesson changes are
+ * ordinary moves and do not require takeover authorization.
  * Does NOT create or modify any session rows.
  */
 export async function checkLessonSessionConflict(learnerId, lessonId, browserSessionId) {
   if (!learnerId || !lessonId || !browserSessionId || !hasSupabaseEnv()) return null;
   const supabase = getSupabaseClient();
-  const { data: existingActive } = await supabase
+  const { data: activeRows, error } = await supabase
     .from('lesson_sessions')
-    .select('id, session_id, device_name, last_activity_at, started_at')
+    .select('id, session_id, device_name, last_activity_at, started_at, lesson_id, instructional_teacher')
     .eq('learner_id', learnerId)
-    .eq('lesson_id', lessonId)
     .is('ended_at', null)
-    .maybeSingle();
-  if (existingActive && existingActive.session_id !== browserSessionId) {
-    return { conflict: true, existingSession: existingActive };
+    .order('last_activity_at', { ascending: false, nullsFirst: false })
+    .order('started_at', { ascending: false });
+  if (error) return { conflict: false };
+  const foreignOwner = Array.isArray(activeRows)
+    ? activeRows.find((row) => row?.session_id && row.session_id !== browserSessionId)
+    : null;
+  if (foreignOwner) {
+    return { conflict: true, existingSession: foreignOwner };
   }
   return { conflict: false };
 }
-
 /**
  * Start a new lesson session
  * 
@@ -224,6 +229,39 @@ export async function addTranscriptLine(sessionId, speaker, text) {
 }
 
 /**
+ * Renew the exact browser-owned instructional execution lease.
+ * The server returns an explicit terminal reason when ownership has ended.
+ */
+export async function heartbeatLessonSession(sessionId, learnerId, browserSessionId) {
+  if (!sessionId || !learnerId || !browserSessionId || !hasSupabaseEnv()) {
+    return { ok: false, active: false, session: null, endedReason: null };
+  }
+  try {
+    const supabase = getSupabaseClient();
+    const { data: sessionResult } = await supabase.auth.getSession();
+    const token = sessionResult?.session?.access_token;
+    if (!token) return { ok: false, active: false, session: null, endedReason: null };
+    const response = await fetch('/api/syllabus/execution/heartbeat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ sessionId, learnerId, browserSessionId }),
+    });
+    const payload = await response.json().catch(() => null);
+    if (!payload || typeof payload !== 'object') {
+      return { ok: false, active: false, session: null, endedReason: null };
+    }
+    return {
+      ok: response.ok && payload.ok !== false,
+      active: payload.active === true,
+      session: payload.session || null,
+      endedReason: payload.endedReason || payload.session?.ended_reason || null,
+      state: payload.state || null,
+    };
+  } catch {
+    return { ok: false, active: false, session: null, endedReason: null };
+  }
+}
+/**
  * Check if a session is still active (not taken over by another device)
  * 
  * @param {string} sessionId - Session ID
@@ -239,7 +277,7 @@ export async function checkSessionStatus(sessionId) {
   try {
     const { data, error } = await supabase
       .from('lesson_sessions')
-      .select('id, learner_id, lesson_id, started_at, ended_at')
+      .select('id, learner_id, lesson_id, session_id, device_name, started_at, last_activity_at, ended_at, ended_reason')
       .eq('id', sessionId)
       .maybeSingle();
 
