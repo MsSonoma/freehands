@@ -84,6 +84,8 @@ export class DiscussionPhase {
       this.#chatHistory = resumeHistory.map(l => ({
         role:    l.role === 'user' ? 'user' : 'assistant',
         content: String(l.content || l.text || ''),
+        ...(l.kind ? { kind: l.kind } : {}),
+        ...(l.featureId ? { featureId: l.featureId } : {}),
       }));
       this.#completedIndices = Array.isArray(options.resumeCompletedIndices)
         ? [...options.resumeCompletedIndices]
@@ -233,7 +235,7 @@ export class DiscussionPhase {
             action: 'check',
             objectives:       this.#objectives,
             completedIndices: this.#completedIndices,
-            conversation:     this.#chatHistory.map(m => ({ role: m.role, content: m.content })),
+            conversation:     this.#chatHistory.filter(m => m.kind !== 'product_help').map(m => ({ role: m.role, content: m.content })),
             lesson:           this.#lessonData,
             quick:            true,
           }),
@@ -301,7 +303,7 @@ export class DiscussionPhase {
     // Fallback reply
     if (!replyText) {
       replyText = allMet
-        ? `Excellent work, ${this.#learnerName}! You've mastered this lesson. Time for the Exercise!`
+        ? `Excellent work, ${this.#learnerName}! You showed that you understand the ideas we discussed.`
         : `Great thinking! Can you tell me more about what you've learned?`;
     }
 
@@ -346,6 +348,24 @@ export class DiscussionPhase {
         this.#emitStateChange();
       }
     }
+  }
+
+  recordSyntheticExchange(userText, assistantText, { kind = 'product_help', featureId = null } = {}) {
+    if (this.#destroyed) return
+    const user = String(userText || '').trim()
+    const assistant = String(assistantText || '').trim()
+    if (!user || !assistant) return
+
+    // A product-help turn belongs to conversational continuity, not mastery evidence.
+    ++this.#submitGen
+    try { this.#audioEngine.stop() } catch {}
+    this.#removeAudioEndListener()
+    this.#chatHistory.push({ role: 'user', content: user, kind, featureId })
+    this.#eventBus.emit('discussionMessage', { role: 'user', text: user, kind, featureId })
+    this.#chatHistory.push({ role: 'assistant', content: assistant, kind, featureId })
+    this.#eventBus.emit('discussionMessage', { role: 'assistant', text: assistant, kind, featureId })
+    this.#state = 'chatting'
+    this.#emitStateChange()
   }
 
   skip() {

@@ -40,6 +40,7 @@ export class OpeningActionsController {
   #difficulty;
 
   #actionNonce = 0;
+  #askHistory = [];
 
   #fillInFunTemplatePromise = null;
   
@@ -81,6 +82,7 @@ export class OpeningActionsController {
   async startAsk() {
     this.#actionNonce += 1;
     this.#currentAction = 'ask';
+    this.#askHistory = [];
     this.#actionState = {
       stage: 'awaiting-input', // 'awaiting-input' | 'confirming' | 'generating' | 'complete'
       question: '',
@@ -136,6 +138,10 @@ export class OpeningActionsController {
         question ? `The learner asked: "${question}".` : '',
         vocabChunk || '',
         problemChunk || '',
+        this.#askHistory.length
+          ? `Conversation continuity (internal; do not quote this label):\n${this.#askHistory.slice(-4).map(turn => `${turn.role === 'assistant' ? 'Ms. Sonoma' : 'Learner'}: ${turn.content}`).join('\n')}`
+          : '',
+        this.#askHistory.length ? 'Treat the prior Ms. Sonoma lines as words you already said, including application-delivered feature scripts. Do not repeat them. Continue naturally.' : '',
         'Answer their question directly in 2-3 short sentences. Give a real, specific answer.',
         'Use the provided vocab meanings when relevant so words with multiple definitions stay on-topic.',
         'Be warm and age-appropriate. Do not use filler phrases like "That\'s a great question" or "Keep thinking about it" — just answer.',
@@ -173,6 +179,7 @@ export class OpeningActionsController {
       
       this.#actionState.answer = answer;
       this.#actionState.stage = 'complete';
+      this.#askHistory.push({ role: 'user', content: String(question || '') }, { role: 'assistant', content: answer });
 
       if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
         return { success: false, cancelled: true };
@@ -201,6 +208,7 @@ export class OpeningActionsController {
       const fallback = 'That\'s a great question! Keep thinking about it.';
       this.#actionState.answer = fallback;
       this.#actionState.stage = 'complete';
+      this.#askHistory.push({ role: 'user', content: String(question || '') }, { role: 'assistant', content: fallback });
 
       if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
         return { success: false, cancelled: true };
@@ -229,6 +237,23 @@ export class OpeningActionsController {
   /**
    * Cancel Ask action
    */
+  recordSyntheticAskAnswer(question, answer, { featureId = null } = {}) {
+    if (this.#currentAction !== 'ask') return { success: false, error: 'Ask action not active' };
+    const userText = String(question || '').trim();
+    const assistantText = String(answer || '').trim();
+    if (!userText || !assistantText) return { success: false, error: 'Question and answer required' };
+    this.#actionNonce += 1;
+    try { this.#audioEngine.stop(); } catch {}
+    this.#askHistory.push(
+      { role: 'user', content: userText, kind: 'product_help', featureId },
+      { role: 'assistant', content: assistantText, kind: 'product_help', featureId },
+    );
+    this.#actionState.question = userText;
+    this.#actionState.answer = assistantText;
+    this.#actionState.stage = 'complete';
+    return { success: true, answer: assistantText };
+  }
+
   cancelAsk() {
     if (this.#currentAction !== 'ask') return;
 

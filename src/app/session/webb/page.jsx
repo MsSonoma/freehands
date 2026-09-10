@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import WebbWritingStudio from './WebbWritingStudio'
 import TypingConversationContext from '../components/TypingConversationContext'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
+import FeatureHelpToast from '../components/FeatureHelpToast'
+import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
 import {
   emptyWebbObjectiveState, reconcileWebbObjectiveState, mergeWebbObjectiveResult,
   webbObjectiveProgress, createWebbObjectiveQueue,
@@ -91,100 +93,6 @@ function makeWebbObjectiveItem(objective, index, sessionId = 'unknown-session') 
 }
 
 // ── UI FAQ: feature explanations in Mrs. Webb's voice ─────────────────────────
-const UI_FAQ = {
-  video: {
-    keywords: ['the video', 'a video', 'watch video', 'play video', 'open video', 'video button', 'movie', 'film', 'youtube', 'player'],
-    confirm: 'Are you wondering about the video feature?',
-    answer: 'To watch a video, just tap the video button — it looks like ▶ — at the bottom of my screen. That opens a little video player with play, pause, and a timeline. The video is picked specially for your lesson!',
-    location: 'tap the ▶ button at the bottom of my screen',
-    actionPrompt: 'Want me to open the video for you right now?',
-    actionSlug: 'video',
-  },
-  article: {
-    keywords: ['the article', 'an article', 'read article', 'open article', 'article button', 'wiki', 'wikipedia'],
-    confirm: 'Are you wondering about the article feature?',
-    answer: 'The article button — it looks like 📖 — opens a Wikipedia article about your lesson right inside this screen. It is a great way to read a bit more about what we are studying!',
-    location: 'tap the 📖 button at the bottom of my screen',
-    actionPrompt: 'Would you like me to open the article for you?',
-    actionSlug: 'article',
-  },
-  keypart: {
-    keywords: ['key part', 'highlight', 'important part', 'read aloud', 'interpret', 'magnify', 'underline', 'find the'],
-    confirm: 'Are you wondering about the Key part feature?',
-    answer: 'The Key part button — it looks like a magnifying glass — lives in the video and article toolbar. Tap it and I will find the most important parts, highlight them, and walk you through them one by one. It is like having me point to the page!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  move: {
-    keywords: ['move', 'arrow', 'switch side', 'other side', 'reposition', 'swap', 'slide'],
-    confirm: 'Are you wondering how to move the video or article window?',
-    answer: 'The arrow button in the toolbar slides the video or article window between two spots — over my camera or over our chat. Just tap the arrow and it jumps to the other side!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  fullscreen: {
-    keywords: ['fullscreen', 'full screen', 'bigger', 'expand', 'large', 'maximize', 'enlarge'],
-    confirm: 'Are you wondering how to make the video or article bigger?',
-    answer: 'The expand icon in the toolbar — four little arrows pointing outward — makes the video or article fill the whole screen. Tap it again to go back to normal.',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  refresh: {
-    keywords: ['refresh', 'different video', 'different article', 'try another', 'new video', 'new article', 'change video', 'change article'],
-    confirm: 'Are you wondering how to get a different video or article?',
-    answer: 'The little ↻ button in the top-left of the toolbar loads a brand-new video or article for your lesson. Just tap it and I will find something different!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  mute: {
-    keywords: ['mute', 'volume', 'sound', 'quiet', 'loud', 'speaker', 'audio', 'hear me', 'voice'],
-    confirm: 'Are you wondering about the sound or mute feature?',
-    answer: 'There is a speaker icon at the bottom right of the screen that mutes or unmutes my voice. Inside the video player there is a separate mute button just for the video. So you can control each one independently!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  close: {
-    keywords: ['close', 'hide', 'get rid of', 'remove', 'dismiss', 'go away', 'shut'],
-    confirm: 'Are you wondering how to close the video or article?',
-    answer: 'The ✕ button in the top-right corner of the toolbar closes the video or article window. You can reopen it any time by tapping the ▶ or 📖 button again!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  skip: {
-    keywords: ['skip', 'skip question', 'next question', 'pass', 'skip button'],
-    confirm: 'Are you wondering about the Skip button?',
-    answer: 'The Skip button at the bottom right of the screen lets you move past a question if you are stuck or want to come back to it later. It is totally okay to skip — curiosity goes at your own pace!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  exit: {
-    keywords: ['exit', 'go back', 'leave', 'quit', 'finish', 'end session', 'stop session', 'how do i leave'],
-    confirm: 'Are you wondering how to exit or go back?',
-    answer: 'The back arrow at the very top-left takes you back to the lesson list. There is also an Exit button that will check for a PIN before closing — that is just so a lesson does not end by accident!',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-  help: {
-    keywords: ['help me', 'i need help', 'what can you do', 'what can i do', 'what buttons', 'features', 'how does this work', 'what is this', 'how do i use'],
-    confirm: 'Are you asking for a quick tour of what I can do?',
-    answer: 'Sure! At the bottom of my screen you will find a ▶ video button and a 📖 article button — those pull up extra learning materials just for your lesson. Once open, the toolbar has a ↻ refresh for new content, an arrow to move the window around, a fullscreen button, and a ✕ to close it. The article even has a Key part button that highlights the most important sentences and reads them to you. And the speaker icon in the corner mutes my voice. What would you like to try first?',
-    actionPrompt: null,
-    actionSlug: null,
-  },
-}
-
-function detectUiQuestion(text) {
-  const lower = text.toLowerCase()
-  const isQuestion =
-    lower.includes('?') ||
-    /\b(how|what|where|why|which|explain|describe|tell me|show me|can i|can we|can you|do i|does|what is|what's|button|feature|work|use|want to|would like|wanna|i'd like|let me|let's|i need)\b/.test(lower)
-  if (!isQuestion) return null
-  for (const [slug, cfg] of Object.entries(UI_FAQ)) {
-    if (cfg.keywords.some(kw => lower.includes(kw))) return slug
-  }
-  return null
-}
-
 function detectSeekIntent(text) {
   return /\b(show me|play|jump to|skip to|go to|take me to|find|rewind to|fast forward to|seek to)\b.{0,60}\b(part|section|moment|clip|bit|where|when|about|with|that shows|that explains|on|of)\b/i.test(text)
     || /\b(show me|play)\s+the\s+(part|section|bit|moment|clip)\b/i.test(text)
@@ -205,15 +113,6 @@ function detectVideoTrouble(text) {
 
 const VIDEO_TROUBLE_MSG = "Oh, I think I might know what's happening! 📺 A black or empty space where the video should be usually means YouTube is blocked on your device. This can happen when Screen Time or parental controls are turned on \u2014 those settings block YouTube everywhere, including here. To fix it, a parent or guardian can go to Screen Time (on iPhone or iPad), find the content restrictions, and add \u2018youtube.com\u2019 and \u2018youtube-nocookie.com\u2019 to the allowed websites list. Once that's updated, close this page, come back, and the video should work! In the meantime we can keep going with our lesson. 😊"
 
-function isYes(text) {
-  return /^\s*(yes|yeah|yep|yup|sure|ok|okay|please|do it|go ahead|open it|show me|definitely|of course|affirmative|sounds good|great|cool|alright|why not|let'?s go|uh huh|mhm|yea|ya|k|👍)\b/i.test(text)
-}
-
-function isNo(text) {
-  return /^\s*(no|nope|nah|never ?mind|not now|don'?t|that'?s ok|i'?m good|no thanks|no thank you|skip it|forget it|it'?s fine|cancel|nvm|👎)\b/i.test(text)
-}
-
-// ── Root page ─────────────────────────────────────────────────────────────────
 function WebbPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
@@ -348,9 +247,9 @@ function WebbPageInner() {
   const passageEls             = useRef([])     // highlight <span>s created by interpretArticle
   const userScrolledArticleRef = useRef(false)  // true after a manual scroll in the article
   const programmaticScrollRef  = useRef(false)  // true during our own scrollIntoView calls
-  // UI FAQ intercept state
-  const uiFaqPendingRef       = useRef(null)  // slug of feature being confirmed
-  const uiFaqActionPendingRef = useRef(false) // waiting for action yes/no
+  // Product-help detection is UI state, not conversational state.
+  const [pendingFeatureHelp, setPendingFeatureHelp] = useState(null)
+  const featureHelpReplayRef = useRef(null)
 
   // Reset all player state whenever a new video arrives
   useEffect(() => {
@@ -1713,7 +1612,8 @@ function WebbPageInner() {
     saveLearningSnapshot({ chatMessages: nextHistory, objectives: currentObjectives })
     try {
       const priorProgress = webbObjectiveProgress(currentObjectives, learningStateRef.current)
-      const checked = await checkObjectivesAfterTurn(nextHistory, currentObjectives, null, {
+      const evidenceHistory = nextHistory.filter(message => message?.kind !== 'product_help')
+      const checked = await checkObjectivesAfterTurn(evidenceHistory, currentObjectives, null, {
         recoverNotes: recoverNotes || priorProgress.missingNoteIndices.length > 0,
       })
       if (!checked || !active()) return
@@ -1771,7 +1671,10 @@ function WebbPageInner() {
   async function sendMessage(text) {
     if (webbExecutionFencedRef.current || phase !== PHASE.CHATTING || !objectives.length || checkError || writingMode || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH) return
     if (!text.trim() || chatLoading) return
-    addStudentLine(text)
+    const replay = featureHelpReplayRef.current?.message === text ? featureHelpReplayRef.current : null
+    if (replay) featureHelpReplayRef.current = null
+    if (pendingFeatureHelp?.message && pendingFeatureHelp.message !== text) setPendingFeatureHelp(null)
+    if (!replay?.studentLineAdded) addStudentLine(text)
 
     // ── Video trouble intercept ───────────────────────────────────────────
     // Catches "black screen", "video not working", etc. and gives a canned
@@ -1784,50 +1687,7 @@ function WebbPageInner() {
 
 
     // ── UI FAQ intercept ──────────────────────────────────────────────────
-    // Phase 2: action yes/no ("Want me to open it?")
-    if (uiFaqActionPendingRef.current && uiFaqPendingRef.current) {
-      if (!isYes(text) && !isNo(text)) {
-        // Unrecognized — clear FAQ state and fall through to AI chat
-        uiFaqPendingRef.current = null
-        uiFaqActionPendingRef.current = false
-      } else {
-        const slug = uiFaqPendingRef.current
-        uiFaqPendingRef.current = null
-        uiFaqActionPendingRef.current = false
-        if (isYes(text)) {
-          addMsg('Sure thing! Opening it for you now.')
-          if (slug === 'video')   setMediaOverlay('video')
-          if (slug === 'article') setMediaOverlay('article')
-        } else {
-          addMsg("No problem! Just let me know if you need anything else.")
-        }
-        return
-      }
-    }
-    // Phase 1: feature confirmation yes/no ("Are you wondering about X?")
-    if (uiFaqPendingRef.current) {
-      if (!isYes(text) && !isNo(text)) {
-        // Unrecognized — clear FAQ state and fall through to AI chat
-        uiFaqPendingRef.current = null
-      } else {
-        const slug = uiFaqPendingRef.current
-        const cfg  = UI_FAQ[slug]
-        if (isNo(text)) {
-          uiFaqPendingRef.current = null
-          addMsg("No problem! Ask me anything else about our lesson.")
-        } else {
-          addMsg(cfg.answer)
-          if (cfg.actionSlug && cfg.actionPrompt) {
-            uiFaqActionPendingRef.current = true
-            setTimeout(() => addMsg(cfg.actionPrompt), 150)
-          } else {
-            uiFaqPendingRef.current = null
-          }
-        }
-        return
-      }
-    }
-    // ── Seek intent: "show me the part where..." ─────────────────────────
+    // Existing seek behavior gets first chance when a resource is already open.
     if (detectSeekIntent(text) && mediaOverlay === 'video') {
       if (!videoMoments.length) {
         // Moments not loaded yet — suggest Key Part
@@ -1874,38 +1734,16 @@ function WebbPageInner() {
       return
     }
 
-    // Phase 0: detect a UI question / feature intent
-    const uiSlug = detectUiQuestion(text)
-    if (uiSlug) {
-      const cfg = UI_FAQ[uiSlug]
-      uiFaqPendingRef.current = uiSlug
-      if (cfg.actionSlug) {
-        // Action-capable feature: name the resource, give button location, ask to open
-        // Jump straight to action-pending phase (skip the generic confirm → answer steps)
-        uiFaqActionPendingRef.current = true
-        let intro
-        if (uiSlug === 'video') {
-          const title = videoResource?.title && !videoResource?.unavailable
-            ? `"${videoResource.title}"`
-            : 'one picked just for your lesson'
-          intro = `There's a video for you — ${title}! To watch it, ${cfg.location}. Want me to open it for you right now?`
-        } else if (uiSlug === 'article') {
-          const title = articleResource?.title
-            ? `"${articleResource.title}"`
-            : 'one about your lesson topic'
-          intro = `There's a Wikipedia article ready for you — ${title}! To read it, ${cfg.location}. Would you like me to open it for you?`
-        } else {
-          // Generic fallback for any future actionSlug entries
-          intro = `${cfg.answer} ${cfg.actionPrompt}`
-        }
-        addMsg(intro)
-      } else {
-        // Non-action feature: standard confirm → answer flow
-        addMsg(cfg.confirm)
+    // Feature questions pause here. The application asks through a toast; the teacher says nothing yet.
+    if (!replay?.bypass) {
+      const suggestion = detectProductHelp(text, { surface: 'webb' })
+      if (suggestion) {
+        setPendingFeatureHelp({ message: text, suggestion })
+        return
       }
-      return
     }
-    // ── Normal API call ───────────────────────────────────────────────────
+
+    // Normal API call
     const userMsg = {
       role: 'user',
       content: text,
@@ -1919,6 +1757,29 @@ function WebbPageInner() {
   }
 
   // ── Refresh a media resource (context-aware) ──────────────────────────
+  function dismissFeatureHelp() {
+    const pending = pendingFeatureHelp
+    if (!pending?.message) return
+    setPendingFeatureHelp(null)
+    featureHelpReplayRef.current = { message: pending.message, bypass: true, studentLineAdded: true }
+    setTimeout(() => { void sendMessage(pending.message) }, 0)
+  }
+
+  async function confirmFeatureHelp(featureId) {
+    const pending = pendingFeatureHelp
+    const feature = getProductHelpFeature(featureId)
+    const script = getProductHelpScript(featureId)
+    if (!pending?.message || !feature || !script) return
+    setPendingFeatureHelp(null)
+    const now = new Date().toISOString()
+    const userMsg = { ...productHelpHistoryMessage('user', pending.message, featureId), id: `webb-help-user-${Date.now()}`, createdAt: now }
+    const assistantMsg = { ...productHelpHistoryMessage('assistant', script, featureId), id: `webb-help-assistant-${Date.now()}`, createdAt: now }
+    const finalHistory = [...chatMessages, userMsg, assistantMsg]
+    setChatMessages(finalHistory)
+    saveLearningSnapshot({ chatMessages: finalHistory, objectives })
+    addMsg(script)
+  }
+
   async function refreshMedia(type) {
     // Video refreshes count the same as opens — one per two objectives completed.
     if (type === 'video') {
@@ -2747,6 +2608,11 @@ function WebbPageInner() {
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div style={{ height: typingViewport.typing && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+      <FeatureHelpToast
+        suggestion={pendingFeatureHelp?.suggestion || null}
+        onConfirm={confirmFeatureHelp}
+        onDismiss={dismissFeatureHelp}
+      />
 
       {/* Header */}
       <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>

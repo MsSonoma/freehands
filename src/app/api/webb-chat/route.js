@@ -5,7 +5,7 @@
  * Safety-validates student input before forwarding.
  */
 import { NextResponse } from 'next/server'
-import { validateInput } from '@/lib/contentSafety'
+import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
 import { buildWritingGuidanceInstructions } from '@/app/lib/webbLearningModel.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
@@ -224,16 +224,9 @@ export async function POST(req) {
       return NextResponse.json({ reply })
     }
 
-    // Safety-check the last user message
+    // Classify sensitive turns without treating educational vocabulary as a veto.
     const lastUser = [...messages].reverse().find(m => m.role === 'user')
-    if (lastUser) {
-      const check = validateInput(String(lastUser.content || ''), 'general')
-      if (!check.safe) {
-        return NextResponse.json({
-          reply: "Let's keep our conversation focused on the lesson! What would you like to know?",
-        })
-      }
-    }
+    const safetyClassification = classifyConversationSafety(String(lastUser?.content || ''), { educational: true }).classification
 
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
@@ -241,7 +234,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, completedObjectives, writingReady) },
+      { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, completedObjectives, writingReady)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

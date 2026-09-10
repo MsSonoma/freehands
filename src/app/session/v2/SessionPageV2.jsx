@@ -59,6 +59,8 @@ import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import CaptionPanel from '../components/CaptionPanel';
+import FeatureHelpToast from '../components/FeatureHelpToast';
+import { detectProductHelp, getProductHelpFeature, getProductHelpScript } from '@/app/lib/productHelp.mjs';
 import TypingConversationContext from '../components/TypingConversationContext';
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
@@ -835,6 +837,7 @@ function SessionPageV2Inner() {
   const [discussionActivity, setDiscussionActivity] = useState(null);
   const [discussionPrompt, setDiscussionPrompt] = useState('');
   const [discussionResponse, setDiscussionResponse] = useState('');
+  const [pendingFeatureHelp, setPendingFeatureHelp] = useState(null);
   const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
   const [discussionObjectivesInfo, setDiscussionObjectivesInfo] = useState({ completed: 0, total: 0 });
   const [discussionObjectivesList, setDiscussionObjectivesList] = useState([]);
@@ -850,6 +853,7 @@ function SessionPageV2Inner() {
   const [openingActionInput, setOpeningActionInput] = useState('');
   const [openingActionBusy, setOpeningActionBusy] = useState(false);
   const openingActionBusyRef = useRef(false);
+  const openingAskFeatureReplayRef = useRef(null);
   const [askAnswerShortcutLoading, setAskAnswerShortcutLoading] = useState(false);
   const askAnswerShortcutLoadingRef = useRef(false);
   const [openingActionError, setOpeningActionError] = useState('');
@@ -1346,7 +1350,12 @@ function SessionPageV2Inner() {
     const role = line?.role === 'user' ? 'user' : 'assistant';
     const phase = line?.phase !== undefined ? line.phase : (currentPhaseRef.current || undefined);
     setTranscriptLines((prev) => {
-      const newLine = { text, role, ...(phase ? { phase } : {}) };
+      const newLine = {
+        text, role,
+        ...(phase ? { phase } : {}),
+        ...(line?.kind ? { kind: line.kind } : {}),
+        ...(line?.featureId ? { featureId: line.featureId } : {}),
+      };
       const next = [...prev, newLine];
       const nextActive = updateActive || role === 'assistant' ? next.length - 1 : activeCaptionIndex;
       if (updateActive || role === 'assistant') {
@@ -4239,15 +4248,27 @@ function SessionPageV2Inner() {
     const controller = openingActionsControllerRef.current;
     if (!controller) return;
     if (openingActionBusyRef.current) return;
-    const question = openingActionInput.trim();
+    const featureReplay = openingAskFeatureReplayRef.current;
+    openingAskFeatureReplayRef.current = null;
+    const question = String(featureReplay?.message ?? openingActionInput).trim();
+    if (pendingFeatureHelp?.message && pendingFeatureHelp.message !== question) setPendingFeatureHelp(null);
     if (!question) {
       setOpeningActionError('Enter a question first.');
       return;
     }
+    if (!featureReplay?.bypass) {
+      const suggestion = detectProductHelp(question, { surface: 'sonoma' });
+      if (suggestion) {
+        try { audioEngineRef.current?.stop(); } catch {}
+        setPendingFeatureHelp({ message: question, suggestion, phase: 'opening-ask' });
+        setOpeningActionInput('');
+        return;
+      }
+    }
     openingActionBusyRef.current = true;
     setOpeningActionBusy(true);
     setOpeningActionError('');
-    // Record the learner's question in the transcript (teacher reply comes via captionChange)
+    // Normal Ask questions are mastery assistance; product-help scripts never reach this branch.
     appendTranscriptLine({ text: question, role: 'user', phase: currentPhaseRef.current || undefined }, { immediate: true });
     try {
       const askContext = buildAskContext();
@@ -4276,7 +4297,7 @@ function SessionPageV2Inner() {
       openingActionBusyRef.current = false;
       setOpeningActionBusy(false);
     }
-  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext, addMasteryAssistanceForItem]);
+  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext, addMasteryAssistanceForItem, appendTranscriptLine, pendingFeatureHelp]);
 
   const handleOpeningAskWhatsTheAnswer = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -4780,7 +4801,7 @@ function SessionPageV2Inner() {
         setTranscriptLines((prev) => {
           const last = prev[prev.length - 1];
           const isDuplicate = last && last.role !== 'user' && last.text === text;
-          const nextActive = idxFromEvent ?? (isDuplicate ? prev.length - 1 : prev.length);
+          const nextActive = isDuplicate ? prev.length - 1 : (idxFromEvent ?? prev.length);
           if (isDuplicate) {
             setActiveCaptionIndex(nextActive);
             persistTranscriptState(prev, nextActive);
@@ -5304,7 +5325,7 @@ function SessionPageV2Inner() {
       grade: (learnerProfile?.grade || lessonData?.grade || '').toString(),
       // Resume: pass saved conversation history so the overview is skipped
       resumeHistory: isDiscussionResume
-        ? transcriptLinesRef.current.map(l => ({ role: l.role, content: l.text }))
+        ? transcriptLinesRef.current.map(l => ({ role: l.role, content: l.text, ...(l.kind ? { kind: l.kind } : {}), ...(l.featureId ? { featureId: l.featureId } : {}) }))
         : [],
       resumeCompletedIndices: isDiscussionResume
         ? discussionCompletedIndicesRef.current
@@ -5356,7 +5377,7 @@ function SessionPageV2Inner() {
 
     // discussionMessage — append each chat turn to the transcript and snap immediately
     const unsubMessage = eventBusRef.current.on('discussionMessage', (data) => {
-      appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' }, { immediate: true });
+      appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant', kind: data.kind || null, featureId: data.featureId || null }, { immediate: true });
       // Save completed-objective state alongside each sentence so resume is accurate
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.saveProgress('discussion-sentence', {
@@ -7611,8 +7632,53 @@ function SessionPageV2Inner() {
   // Discussion handlers
   const submitDiscussionResponse = () => {
     if (!discussionPhaseRef.current) return;
-    discussionPhaseRef.current.submitMessage(discussionResponse);
+    const message = String(discussionResponse || '').trim();
+    if (!message) return;
+    if (pendingFeatureHelp?.message && pendingFeatureHelp.message !== message) setPendingFeatureHelp(null);
+    const suggestion = detectProductHelp(message, { surface: 'sonoma' });
+    if (suggestion) {
+      try { audioEngineRef.current?.stop(); } catch {}
+      setPendingFeatureHelp({ message, suggestion, phase: 'discussion' });
+      setDiscussionResponse('');
+      return;
+    }
+    discussionPhaseRef.current.submitMessage(message);
     setDiscussionResponse(''); // Clear input after submit
+  };
+
+  const dismissFeatureHelp = () => {
+    const pending = pendingFeatureHelp;
+    if (!pending?.message) return;
+    setPendingFeatureHelp(null);
+    if (pending.phase === 'discussion') {
+      discussionPhaseRef.current?.submitMessage(pending.message);
+    } else if (pending.phase === 'opening-ask') {
+      openingAskFeatureReplayRef.current = { message: pending.message, bypass: true };
+      setTimeout(() => { void handleOpeningAskSubmit(); }, 0);
+    }
+  };
+
+  const confirmFeatureHelp = async (featureId) => {
+    const pending = pendingFeatureHelp;
+    const feature = getProductHelpFeature(featureId);
+    const script = getProductHelpScript(featureId);
+    if (!pending?.message || !feature || !script) return;
+    setPendingFeatureHelp(null);
+    if (pending.phase === 'discussion') {
+      discussionPhaseRef.current?.recordSyntheticExchange(pending.message, script, { kind: 'product_help', featureId });
+    } else if (pending.phase === 'opening-ask') {
+      appendTranscriptLine({ text: pending.message, role: 'user', kind: 'product_help', featureId }, { immediate: true });
+      appendTranscriptLine({ text: script, role: 'assistant', kind: 'product_help', featureId }, { immediate: true });
+      openingActionsControllerRef.current?.recordSyntheticAskAnswer(pending.message, script, { featureId });
+      syncOpeningActionState();
+    } else {
+      appendTranscriptLine({ text: pending.message, role: 'user', kind: 'product_help', featureId }, { immediate: true });
+      appendTranscriptLine({ text: script, role: 'assistant', kind: 'product_help', featureId }, { immediate: true });
+    }
+    try {
+      const audio = await fetchTTS(script);
+      await audioEngineRef.current?.playAudio(audio || '', [script]);
+    } catch {}
   };
   
   const skipDiscussion = () => {
@@ -7870,6 +7936,11 @@ function SessionPageV2Inner() {
   
   return (
     <>
+      <FeatureHelpToast
+        suggestion={pendingFeatureHelp?.suggestion || null}
+        onConfirm={confirmFeatureHelp}
+        onDismiss={dismissFeatureHelp}
+      />
       {/* Tutorial overlay */}
       {showTutorial && (
         <PageTutorialOverlay

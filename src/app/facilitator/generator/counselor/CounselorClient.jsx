@@ -15,6 +15,8 @@ import LessonMakerOverlay from './overlays/LessonMakerOverlay'
 import MentorThoughtBubble from './MentorThoughtBubble'
 import SessionTakeoverDialog from './SessionTakeoverDialog'
 import MentorInterceptor from './MentorInterceptor'
+import FeatureHelpToast from '@/app/session/components/FeatureHelpToast'
+import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
 
 function fetchWithTimeout(url, options, timeoutMs = 15000) {
   const controller = new AbortController()
@@ -116,6 +118,8 @@ export default function CounselorClient() {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
   const [pendingConfirmationTool, setPendingConfirmationTool] = useState(null)
+  const [pendingFeatureHelp, setPendingFeatureHelp] = useState(null)
+  const featureHelpReplayRef = useRef(null)
   
   // MentorInterceptor instance
   const interceptorRef = useRef(null)
@@ -1562,12 +1566,6 @@ export default function CounselorClient() {
       return "Searching through our conversation history..."
     }
     
-    if (flow === 'faq') {
-      if (awaitingInput === 'faq_feature_select') return "Looking up feature information..."
-      if (awaitingInput === 'faq_feature_confirm') return "Preparing the explanation..."
-      return "Searching the knowledge base..."
-    }
-    
     if (awaitingInput === 'lesson_selection') {
       return "Reviewing lesson options..."
     }
@@ -1582,8 +1580,26 @@ export default function CounselorClient() {
 
   // Send message to Mr. Mentor
   const sendMessage = useCallback(async () => {
-    const message = userInput.trim()
+    const featureReplay = featureHelpReplayRef.current
+    featureHelpReplayRef.current = null
+    const message = String(featureReplay?.message ?? userInput).trim()
     if (!message || loading) return
+    if (pendingFeatureHelp?.message && pendingFeatureHelp.message !== message) setPendingFeatureHelp(null)
+
+    const interceptorBusy = Boolean(
+      pendingConfirmationTool ||
+      interceptorRef.current?.state?.flow ||
+      interceptorRef.current?.state?.awaitingInput ||
+      interceptorRef.current?.state?.awaitingConfirmation
+    )
+    if (!featureReplay?.bypass && !interceptorBusy) {
+      const suggestion = detectProductHelp(message, { surface: 'mentor' })
+      if (suggestion) {
+        setUserInput('')
+        setPendingFeatureHelp({ message, suggestion })
+        return
+      }
+    }
 
     // Flags for generation confirmation flow
     let generationConfirmed = false
@@ -2706,7 +2722,42 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
       setLoading(false)
       setLoadingThought(null)
     }
-  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp, learners, loadAllLessons, getLoadingThought])
+  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp, learners, loadAllLessons, getLoadingThought, pendingConfirmationTool, pendingFeatureHelp])
+
+  const dismissFeatureHelp = useCallback(() => {
+    const pending = pendingFeatureHelp
+    if (!pending?.message) return
+    setPendingFeatureHelp(null)
+    featureHelpReplayRef.current = { message: pending.message, bypass: true }
+    setTimeout(() => sendMessage(), 0)
+  }, [pendingFeatureHelp, sendMessage])
+
+  const confirmFeatureHelp = useCallback(async (featureId) => {
+    const pending = pendingFeatureHelp
+    const feature = getProductHelpFeature(featureId)
+    const script = getProductHelpScript(featureId)
+    if (!pending?.message || !feature || !script) return
+    setPendingFeatureHelp(null)
+    const finalHistory = [
+      ...conversationHistory,
+      productHelpHistoryMessage('user', pending.message, featureId),
+      productHelpHistoryMessage('assistant', script, featureId),
+    ]
+    setConversationHistory(finalHistory)
+    setCaptionText(script)
+    setCaptionSentences(splitIntoSentences(script))
+    setCaptionIndex(0)
+    try {
+      const ttsResponse = await fetch('/api/mentor-tts', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: script }),
+      })
+      if (ttsResponse.ok) {
+        const ttsData = await ttsResponse.json()
+        if (ttsData.audio) void playAudio(ttsData.audio)
+      }
+    } catch {}
+  }, [pendingFeatureHelp, conversationHistory, playAudio])
 
   // Helper: Update draft summary after each exchange (not saved to memory until approved)
   const updateDraftSummary = async (conversationHistory, token) => {
@@ -3080,6 +3131,11 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
       background: '#f9fafb',
       overflow: 'hidden'
     }}>
+      <FeatureHelpToast
+        suggestion={pendingFeatureHelp?.suggestion || null}
+        onConfirm={confirmFeatureHelp}
+        onDismiss={dismissFeatureHelp}
+      />
       {mentorAllowanceBanner && (
         <div style={{ padding: '0 16px', marginBottom: 12 }}>
           {mentorAllowanceBanner}

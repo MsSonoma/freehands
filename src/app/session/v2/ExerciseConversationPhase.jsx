@@ -219,7 +219,7 @@ export class ExerciseConversationPhase {
       }
     } catch {}
     // Fallbacks
-    if (isCorrect && isLastQuestion)  return `Excellent work, ${this.#learnerName}! You've completed the exercise!`
+    if (isCorrect && isLastQuestion)  return `Excellent work, ${this.#learnerName}!`
     if (isCorrect)                    return `That's right! Great job!`
     if (attemptNumber >= 3)           return `The correct answer is: ${correctAnswer}. Keep it up!`
     return `Good try! Think carefully and give it another shot.`

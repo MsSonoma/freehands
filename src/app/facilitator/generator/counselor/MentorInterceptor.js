@@ -6,7 +6,7 @@
  * - Parameter gathering for generation/scheduling/editing
  * - Confirmation flows
  * - Conversation memory search
- * - FAQ and feature explanations
+ * - Product-help report routing; descriptive help is handled by the shared UI toast
  * 
  * Only forwards to API when:
  * - User explicitly bypasses ("Different issue")
@@ -16,7 +16,6 @@
 
 import {
   searchMentorFeatures,
-  getMentorFeatureById,
   shouldTreatAsReportQuery,
   isLikelyAppFeatureQuery
 } from '@/lib/mentor/featureRegistry'
@@ -1085,99 +1084,6 @@ export class MentorInterceptor {
       }
     }
     
-    // Handle FAQ feature confirmation
-    if (this.state.awaitingInput === 'faq_feature_confirm') {
-      const featureId = this.state.context.selectedFeatureId
-      const feature = getMentorFeatureById(featureId)
-      
-      if (!feature) {
-        this.reset()
-        return {
-          handled: true,
-          response: "I couldn't find that feature. What else can I help you with?"
-        }
-      }
-      
-      // Check if user confirmed by saying the feature name
-      const normalized = normalizeText(userMessage)
-      const normalizedTitle = normalizeText(feature.title)
-      
-      if (normalized.includes(normalizedTitle) || normalizedTitle.includes(normalized) || detectConfirmation(userMessage) === 'yes') {
-        // User confirmed - provide explanation
-        this.reset()
-        
-        let response = `${feature.title}: ${feature.description}\n\n`
-        response += `${feature.howToUse}`
-        
-        if (feature.relatedFeatures && feature.relatedFeatures.length > 0) {
-          response += `\n\nThis is related to: ${feature.relatedFeatures.map(id => {
-            const related = getMentorFeatureById(id)
-            return related ? related.title : id
-          }).join(', ')}.`
-        }
-        
-        return {
-          handled: true,
-          response
-        }
-      } else if (detectConfirmation(userMessage) === 'no') {
-        // User rejected - reset
-        this.reset()
-        return {
-          handled: true,
-          response: "No problem. What else would you like to know about?"
-        }
-      } else {
-        // Unclear - ask again
-        return {
-          handled: true,
-          response: `Are you asking about ${feature.title}? Please say yes, no, or the feature name to confirm.`
-        }
-      }
-    }
-    
-    // Handle FAQ feature selection (when multiple matches)
-    if (this.state.awaitingInput === 'faq_feature_select') {
-      const candidates = this.state.context.faqCandidates || []
-      
-      // Try to match by number
-      const numberMatch = userMessage.match(/\b(\d+)\b/)
-      if (numberMatch) {
-        const index = parseInt(numberMatch[1]) - 1
-        if (index >= 0 && index < candidates.length) {
-          const featureId = candidates[index]
-          this.state.context.selectedFeatureId = featureId
-          this.state.awaitingInput = 'faq_feature_confirm'
-          
-          const feature = getMentorFeatureById(featureId)
-          return {
-            handled: true,
-            response: `You selected ${feature.title}. Is that correct?`
-          }
-        }
-      }
-      
-      // Try to match by feature name
-      const normalizedInput = normalizeText(userMessage)
-      for (const featureId of candidates) {
-        const feature = getMentorFeatureById(featureId)
-        if (feature && normalizeText(feature.title).includes(normalizedInput)) {
-          this.state.context.selectedFeatureId = featureId
-          this.state.awaitingInput = 'faq_feature_confirm'
-          
-          return {
-            handled: true,
-            response: `You selected ${feature.title}. Is that correct?`
-          }
-        }
-      }
-      
-      return {
-        handled: true,
-        response: "I couldn't match that to one of the options. Could you try saying the number or exact feature name?"
-      }
-    }
-    
     // Handle post-assign confirmation
     if (this.state.awaitingInput === 'assign_post_confirm') {
       const confirmation = detectConfirmation(userMessage)
@@ -1984,86 +1890,48 @@ export class MentorInterceptor {
    * Handle FAQ and feature explanation requests
    */
   async handleFaq(userMessage, context) {
-    // Search for matching features (FAQ + report-capable registry entries)
+    // Product explanations are confirmed by the shared UI toast before they
+    // enter conversation history. This interceptor retains deterministic
+    // current-state reports and action routing.
     const matches = searchMentorFeatures(userMessage)
-    
-    if (matches.length === 0) {
-      // No matches.
-      // Only log blindspot when the question looks like an app/feature query.
-      // Otherwise (personal advice phrased as "what is/how do I") we should just converse.
-      const shouldLogBlindspot = isLikelyAppFeatureQuery(userMessage)
+    const wantsReport = shouldTreatAsReportQuery(userMessage, context)
+    const reportMatch = wantsReport
+      ? matches.find(match => match?.feature?.report?.actionType)
+      : null
 
-      return {
-        handled: false,
-        apiForward: shouldLogBlindspot
-          ? {
-              message: userMessage,
-              context: {
-                mentor_blindspot: {
-                  kind: 'feature_registry',
-                  query: String(userMessage || ''),
-                  created_at: new Date().toISOString()
-                }
-              }
-            }
-          : { message: userMessage }
+    if (reportMatch) {
+      const feature = reportMatch.feature
+      if (feature.report.requiresLearner && !context?.selectedLearnerId) {
+        return { handled: true, response: 'Please select a learner first, then I can show the current settings.' }
       }
-    }
-    
-    if (matches.length === 1) {
-      // Single match - ask for confirmation before explaining
-      const match = matches[0]
-      const feature = match.feature
-
-      // If the feature supports reporting and the user seems to want current state, do that.
-      if (feature?.report?.actionType && shouldTreatAsReportQuery(userMessage, context)) {
-        if (feature.report.requiresLearner && !context?.selectedLearnerId) {
-          return {
-            handled: true,
-            response: 'Please select a learner first, then I can show the current settings.'
-          }
-        }
-
-        const targetLabel = feature.report.requiresLearner
-          ? ` for ${context?.learnerName || 'this learner'}`
-          : ''
-
-        return {
-          handled: true,
-          action: {
-            type: feature.report.actionType,
-            learnerId: context?.selectedLearnerId || null
-          },
-          response: `Checking ${feature.title.toLowerCase()}${targetLabel}...`
-        }
-      }
-
-      this.state.flow = 'faq'
-      this.state.awaitingInput = 'faq_feature_confirm'
-      this.state.context.selectedFeatureId = feature.id
-      
+      const targetLabel = feature.report.requiresLearner
+        ? ` for ${context?.learnerName || 'this learner'}`
+        : ''
       return {
         handled: true,
-        response: `It looks like you're asking about ${feature.title}. Is that correct?`
+        action: {
+          type: feature.report.actionType,
+          learnerId: context?.selectedLearnerId || null,
+        },
+        response: `Checking ${feature.title.toLowerCase()}${targetLabel}...`,
       }
     }
-    
-    // Multiple matches - list candidates
-    this.state.flow = 'faq'
-    this.state.awaitingInput = 'faq_feature_select'
-    
-    const topMatches = matches.slice(0, 5)
-    const featureList = topMatches.map((m, idx) => `${idx + 1}. ${m.feature.title}`).join('\n')
-    
-    // Store all match IDs for selection
-    this.state.context.faqCandidates = topMatches.map(m => m.feature.id)
-    
-    let response = `I found several features that might match what you're asking about:\n\n${featureList}\n\n`
-    response += `Which one would you like to learn about? You can say the name or number.`
-    
+
+    const shouldLogBlindspot = matches.length === 0 && isLikelyAppFeatureQuery(userMessage)
     return {
-      handled: true,
-      response
+      handled: false,
+      apiForward: shouldLogBlindspot
+        ? {
+            message: userMessage,
+            context: {
+              mentor_blindspot: {
+                kind: 'feature_registry',
+                query: String(userMessage || ''),
+                created_at: new Date().toISOString(),
+              },
+            },
+          }
+        : { message: userMessage },
     }
   }
   

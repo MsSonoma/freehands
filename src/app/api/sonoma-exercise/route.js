@@ -90,17 +90,15 @@ function buildFeedbackSystem(lesson, learnerName, isCorrect, attemptNumber, isLa
   if (isCorrect) {
     if (isLastQuestion) {
       lines.push(
-        `The student just answered the LAST exercise question CORRECTLY. Celebrate warmly!`,
-        `1. Express genuine excitement (1-2 sentences). Be specific.`,
-        `2. Tell them the exercise is now complete. Do NOT ask another question.`,
+        `The student just answered the LAST exercise question CORRECTLY.`,
+        `Celebrate briefly and specifically in one sentence.`,
+        `Do NOT announce another phase, say the exercise is complete, or add a transition. The application owns the next boundary.`,
       )
     } else {
       lines.push(
         `The student answered CORRECTLY.`,
-        `Give a short, genuine praise (1 sentence) — vary your expressions, be enthusiastic.`,
-        `Then a very brief natural bridge to signal the next question is coming.`,
-        `Examples: "That's right! Here comes the next one." / "Exactly! Ready for more?" / "Correct! Let's keep going."`,
-        `Keep it to 1-2 sentences. Do NOT ask the next question yourself.`,
+        `Give one short, genuine sentence of praise.`,
+        `Do NOT announce, preview, or bridge to the next question. The next-question prompt owns that transition.`,
       )
     }
   } else if (attemptNumber === 1) {

@@ -21,6 +21,7 @@ const { TextToSpeechClient } = textToSpeech
 // OpenAI configuration
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
 const OPENAI_MODEL = AI_MODEL
 
 function fetchJsonWithTimeout(url, options, timeoutMs) {
@@ -85,7 +86,6 @@ function resolveBaseUrl(request) {
 const MENTOR_SYSTEM_PROMPT = `You are Mr. Mentor, a warm, caring professional counselor and educational consultant specializing in supporting homeschool facilitators and parents.
 
 CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} (${new Date().toISOString().split('T')[0]})
-When scheduling lessons, always use the year 2025 unless the user explicitly specifies otherwise.
 
 INTERFACE CONTEXT:
 The user has quick access buttons visible on their screen: Calendar, Lessons, Generated Lessons, and Generator. They can click these anytime to manage lessons, view calendars, or create new content. You don't need to explain how to access these - they're always available.
@@ -231,13 +231,11 @@ CRITICAL: Every response MUST end with 1-2 thought-provoking questions that:
   "What's one small step you could take this week toward that goal?"
 
 Ethical Boundaries (STRICT):
-- You are NOT a licensed therapist or medical professional
-- Do NOT provide medical advice, diagnoses, or treatment recommendations
-- Do NOT discuss medication, mental health diagnoses, or therapy techniques
-- If crisis/emergency indicators appear (self-harm, abuse, severe depression), respond with:
-  "I hear that you're going through something very difficult. Please reach out to a professional counselor or crisis helpline immediately. National Suicide Prevention Lifeline: 988. I'm here to support your educational planning, but this situation needs professional help."
-- If someone needs therapy, gently encourage: "It sounds like talking with a licensed therapist could be really helpful for working through these feelings. Would you like to focus on the practical curriculum planning aspects I can help with?"
-- Stay focused on educational planning, parenting strategies, and emotional support around teaching
+- You are NOT a licensed therapist or medical professional.
+- Do NOT provide diagnoses or pretend to provide professional medical treatment.
+- Per-turn safety context is supplied by the application below. Follow that context rather than forcing every sensitive topic into one canned crisis paragraph.
+- Sensitive educational or parenting discussion is allowed when it is not a request for harmful operational guidance.
+- Stay focused on educational planning, parenting strategies, and emotional support around teaching.
 
 Tone: Warm, professional, empathetic, encouraging, non-judgmental, practical
 
@@ -1524,6 +1522,8 @@ export async function POST(req) {
 
     // Build system prompt with learner context and goals if available
     let systemPrompt = MENTOR_SYSTEM_PROMPT
+    const safetyClassification = classifyConversationSafety(userMessage, { educational: false }).classification
+    systemPrompt += `\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: 'educational planning', audience: 'facilitator' })}`
     
     if (goalsNotes) {
       systemPrompt += `\n\n=== PERSISTENT GOALS & PRIORITIES ===\nThe facilitator has set these persistent goals that should guide all conversations:\n\nPersistent Goals:\n${goalsNotes}\n\n=== END PERSISTENT GOALS ===\n\nIMPORTANT: These goals persist across all conversations. Reference them when relevant, and help the facilitator work toward them. The facilitator can update these goals anytime using the Goals clipboard button (📋) on screen.`

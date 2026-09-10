@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server'
 import fs from 'node:fs'
 import path from 'node:path'
 import textToSpeech from '@google-cloud/text-to-speech'
-import { validateInput, validateOutput, hardenInstructions, getFallbackResponse } from '@/lib/contentSafety'
+import { validateInput, validateOutput, hardenInstructions, getFallbackResponse, classifyConversationSafety } from '@/lib/contentSafety'
 import { AI_MODEL } from '@/app/lib/aiModel'
 
 // Providers
@@ -224,11 +224,15 @@ export async function POST(req) {
       return NextResponse.json({ error: 'Instructions are required.' }, { status: 400 })
     }
 
-    // CONTENT SAFETY: Validate learner input if present
+    const safetyClassification = trimmedInnertext
+      ? classifyConversationSafety(trimmedInnertext, { educational: true }).classification
+      : 'normal'
+
+    // CONTENT SAFETY: Validate learner input length if present. Subject matter is classified, not keyword-blocked.
     if (trimmedInnertext) {
       const inputValidation = validateInput(trimmedInnertext, 'general')
       if (!inputValidation.safe) {
-        const fallback = getFallbackResponse('input_rejected')
+        const fallback = getFallbackResponse(inputValidation.reason)
         return NextResponse.json({ reply: fallback, audio: null }, { status: 200 })
       }
     }
@@ -264,7 +268,7 @@ export async function POST(req) {
       }
     }
     // CONTENT SAFETY: Harden instructions with safety preamble
-    const hardenedInstructions = hardenInstructions(trimmedInstructions, lessonTopic || 'educational content', [])
+    const hardenedInstructions = hardenInstructions(trimmedInstructions, lessonTopic || 'educational content', [], safetyClassification)
     
     // Minimal user payload: single user message containing instructions + (optional) innertext
     const combined = trimmedInnertext

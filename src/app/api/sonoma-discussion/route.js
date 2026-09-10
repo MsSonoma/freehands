@@ -9,7 +9,7 @@
  *   → { text: string }  — next Ms. Sonoma chat reply
  */
 import { NextResponse } from 'next/server'
-import { validateInput } from '@/lib/contentSafety'
+import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
@@ -60,12 +60,12 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
 
   if (allObjectivesMet) {
     lines.push(
-      `\nThe student has just demonstrated ALL of the lesson's learning goals — amazing work!`,
+      `\nThe student has just demonstrated ALL of the lesson's learning goals.`,
       `Your ONLY job in this response:`,
-      `1. Celebrate warmly and specifically (1-2 sentences). Be genuinely excited for them.`,
-      `2. Tell them it's now time to move on to the Exercise — use exactly the phrase "time for the Exercise".`,
-      `3. Do NOT ask any question. The discussion is complete.`,
-      `Keep it to 2-3 sentences. Natural spoken language — no markdown, no bullet points.`,
+      `1. Acknowledge what the learner demonstrated and celebrate it warmly in 1-2 sentences.`,
+      `2. Do NOT announce the next phase, say that you are moving on, or add a transition. The application owns the next boundary.`,
+      `3. Do NOT ask any question. This discussion response is complete.`,
+      `Keep it to 1-2 sentences. Natural spoken language with no markdown or bullet points.`,
     )
     return lines.filter(Boolean).join('\n')
   }
@@ -173,22 +173,18 @@ export async function POST(request) {
     return NextResponse.json({ error: 'lesson and messages required' }, { status: 400 })
   }
 
-  // Validate last user message for safety
+  // Classify sensitive turns without treating educational vocabulary as a veto.
   const lastUserMsg = [...messages].reverse().find(m => m.role === 'user')
-  if (lastUserMsg?.content) {
-    const { safe, reason } = validateInput(lastUserMsg.content)
-    if (!safe) {
-      return NextResponse.json({ error: 'Message flagged', reason }, { status: 400 })
-    }
-  }
+  const safetyClassification = classifyConversationSafety(lastUserMsg?.content || '', { educational: true }).classification
 
-  const system = buildChatSystem(
+  const baseSystem = buildChatSystem(
     lesson,
     remainingObjectives || [],
     allObjectivesMet === true,
     learnerName || 'student',
     objectiveStatus || null,
   )
+  const system = `${baseSystem}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}`
 
   try {
     const res = await fetch(OPENAI_URL, {
