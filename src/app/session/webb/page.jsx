@@ -1558,7 +1558,10 @@ function WebbPageInner() {
         const nextAccepted = { ...acceptedSentences, [writingIndex]: attempt }
         setAcceptedSentences(nextAccepted)
         setWritingSubphase(WEBB_WRITING_SUBPHASES.COMMITTED)
-        const reply = "That sentence is ready. Let's add it to your essay."
+        const hasNextSentence = nextWritingObjectiveIndex(objectives, nextAccepted) !== -1
+        const reply = hasNextSentence
+          ? "That sentence is ready. It's here in your essay. Copy it down, then choose Next sentence when you're ready."
+          : "That sentence is ready. It's here in your essay. Copy it down, then choose Finish essay when you're ready."
         setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
         addMsg(reply)
       } else {
@@ -2138,33 +2141,32 @@ function WebbPageInner() {
     addMsg(reply)
   }
 
-  useEffect(() => {
-    if (!writingMode || writingSubphase !== WEBB_WRITING_SUBPHASES.COMMITTED) return undefined
-    const run = runGenerationRef.current
-    const timer = setTimeout(() => {
-      if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
-      const nextIndex = nextWritingObjectiveIndex(objectives, acceptedSentences)
-      if (nextIndex === -1) {
-        const finalEssay = assembleLearnerEssay(objectives, acceptedSentences)
-        const reply = 'You turned every rough note into your own writing. Your essay is ready!'
-        setEssay(finalEssay)
-        setWritingMode(false)
-        setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
-        setWritingDraft('')
-        setEssayMode(!!finalEssay)
-        setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
-        addMsg(reply)
-        return
-      }
-      setWritingIndex(nextIndex)
-      setWritingSubphase(WEBB_WRITING_SUBPHASES.FOCUS)
+  function handleNextWritingSentence() {
+    if (webbExecutionFencedRef.current || !writingMode || writingEvaluating || chatLoading) return
+    if (writingSubphase !== WEBB_WRITING_SUBPHASES.COMMITTED) return
+    const accepted = acceptedSentences?.[writingIndex]
+    if (!accepted?.accepted || accepted.provenance !== 'learner-message' || !String(accepted.text || '').trim()) return
+    const nextIndex = nextWritingObjectiveIndex(objectives, acceptedSentences)
+    if (nextIndex === -1) {
+      const finalEssay = assembleLearnerEssay(objectives, acceptedSentences)
+      if (!finalEssay) return
+      const reply = 'You turned every rough note into your own writing. Your essay is ready!'
+      setEssay(finalEssay)
+      setWritingMode(false)
+      setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
       setWritingDraft('')
-      const reply = "Now let's use the next note. Turn just that note into one complete sentence."
+      setEssayMode(true)
       setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
       addMsg(reply)
-    }, 1900)
-    return () => clearTimeout(timer)
-  }, [writingMode, writingSubphase, objectives, acceptedSentences])
+      return
+    }
+    setWritingIndex(nextIndex)
+    setWritingSubphase(WEBB_WRITING_SUBPHASES.FOCUS)
+    setWritingDraft('')
+    const reply = "Now let's use the next note. Turn just that note into one complete sentence."
+    setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    addMsg(reply)
+  }
 
   // Complete lesson via Mrs. Webb ─────────────────────────────────────
   async function handleCompleteLesson() {
@@ -3458,6 +3460,7 @@ function WebbPageInner() {
         open={isChatting && writingMode}
         subphase={writingSubphase}
         note={learnerNotes[writingIndex]}
+        objective={objectives[writingIndex]}
         draft={writingDraft}
         previousAttempt={latestWritingAttempt(writingAttempts, writingIndex)}
         acceptedSentences={acceptedSentences}
@@ -3468,6 +3471,8 @@ function WebbPageInner() {
         onDraftChange={setWritingDraft}
         onSubmit={submitWritingAttempt}
         onBlankComplete={handleWritingBlankComplete}
+        onNextSentence={handleNextWritingSentence}
+        isLastSentence={nextWritingObjectiveIndex(objectives, acceptedSentences) === -1}
       />
 
       {/* Essay full-screen overlay */}

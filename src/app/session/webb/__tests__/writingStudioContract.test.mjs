@@ -26,13 +26,21 @@ test('composition needs source-verified notes while discussion uses demonstrated
   assert.doesNotMatch(page, /Note unavailable/)
 })
 
-test('writing studio isolates one note and one attempt while preserving comparison and commit views', () => {
+test('writing studio keeps objective context and learner-controlled commit gates', () => {
   assert.match(page, /<WebbWritingStudio/)
+  assert.match(page, /objective=\{objectives\[writingIndex\]\}/)
+  assert.match(studio, />\s*What you showed\s*</)
+  assert.match(studio, /\{currentObjective\}/)
   assert.match(studio, />\s*Your note\s*</)
   assert.match(studio, />\s*Previous attempt\s*</)
   assert.match(studio, /'Try again'/)
   assert.match(studio, />\s*Your essay so far\s*</)
   assert.match(studio, /webb-writing-glow/)
+  assert.match(studio, /'Next sentence'/)
+  assert.match(studio, /'Finish essay'/)
+  assert.match(page, /function handleNextWritingSentence\(\)/)
+  assert.match(page, /onNextSentence=\{handleNextWritingSentence\}/)
+  assert.doesNotMatch(page, /setTimeout\(\(\) => \{[\s\S]{0,500}WEBB_WRITING_SUBPHASES\.COMMITTED/)
   assert.doesNotMatch(studio, /learnerNotes/)
 })
 

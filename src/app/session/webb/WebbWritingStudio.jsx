@@ -45,6 +45,7 @@ export default function WebbWritingStudio({
   open,
   subphase,
   note,
+  objective,
   draft,
   previousAttempt,
   acceptedSentences,
@@ -55,6 +56,8 @@ export default function WebbWritingStudio({
   onDraftChange,
   onSubmit,
   onBlankComplete,
+  onNextSentence,
+  isLastSentence,
 }) {
   const inputRef = useRef(null)
   const blankCompleteRef = useRef(onBlankComplete)
@@ -79,6 +82,7 @@ export default function WebbWritingStudio({
   if (!open || typeof document === 'undefined') return null
 
   const currentNote = String(note?.text || '').trim()
+  const currentObjective = String(objective || '').trim()
   const currentDraft = String(draft || '')
   const priorText = String(previousAttempt?.text || '').trim()
   const entries = Object.entries(acceptedSentences || {})
@@ -131,6 +135,16 @@ export default function WebbWritingStudio({
               padding: 'clamp(24px, 5vw, 44px)',
               boxShadow: '0 20px 55px rgba(15,23,42,0.12)',
             }}>
+              {currentObjective && (
+                <div style={{ marginBottom: 26, paddingBottom: 22, borderBottom: '1px solid #e7e0d2' }}>
+                  <div style={{ color: '#64748b', fontSize: 11, fontWeight: 900, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 8 }}>
+                    What you showed
+                  </div>
+                  <div style={{ color: '#334155', fontSize: 'clamp(15px, 2.4vw, 19px)', lineHeight: 1.55, fontWeight: 650 }}>
+                    {currentObjective}
+                  </div>
+                </div>
+              )}
               <div style={{ color: '#0f766e', fontSize: 11, fontWeight: 900, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 10 }}>
                 Your note
               </div>
@@ -220,6 +234,24 @@ export default function WebbWritingStudio({
       {subphase === WEBB_WRITING_SUBPHASES.COMMITTED && (
         <div style={{ animation: 'webb-writing-paper-in 0.4s ease both' }}>
           <GuidanceTranscript text={guidance} />
+          <div style={{ width: 'min(92vw, 820px)', margin: '0 auto 18px' }}>
+            {currentObjective && (
+              <div style={{ background: '#fffdf7', border: '1px solid #ded6c7', borderRadius: 12, padding: '18px 20px' }}>
+                <div style={{ color: '#64748b', fontSize: 10, fontWeight: 900, letterSpacing: 1.3, textTransform: 'uppercase', marginBottom: 7 }}>
+                  What you showed
+                </div>
+                <div style={{ color: '#334155', fontSize: 16, lineHeight: 1.5, fontWeight: 650, marginBottom: 12 }}>
+                  {currentObjective}
+                </div>
+                <div style={{ color: '#0f766e', fontSize: 10, fontWeight: 900, letterSpacing: 1.3, textTransform: 'uppercase', marginBottom: 6 }}>
+                  Your note
+                </div>
+                <div style={{ color: '#475569', fontSize: 15, lineHeight: 1.5 }}>
+                  {currentNote}
+                </div>
+              </div>
+            )}
+          </div>
           <Paper>
             <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: 'uppercase' }}>
               Your essay so far
@@ -243,6 +275,19 @@ export default function WebbWritingStudio({
               ))}
             </div>
           </Paper>
+          <div style={{ width: 'min(92vw, 820px)', margin: '20px auto 0' }}>
+            <button
+              type="button"
+              onClick={() => onNextSentence?.()}
+              style={{
+                width: '100%', border: 0, borderRadius: 12, padding: '14px 18px',
+                background: '#0d9488', color: '#fff', fontWeight: 850, fontSize: 16,
+                cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              {isLastSentence ? 'Finish essay' : 'Next sentence'}
+            </button>
+          </div>
         </div>
       )}
     </div>,
