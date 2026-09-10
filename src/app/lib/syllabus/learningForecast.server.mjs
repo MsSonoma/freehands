@@ -45,6 +45,7 @@ export async function createLearningForecastProposal({
     forecastItems: inputs.forecastItems,
     timelineItems,
     reports: authorizedReports,
+    learnerGrade: learner.grade || null,
     today: calendar.today,
   })
   const existing = await repository.findLatestLearningForecastProposal(syllabus.id, activeRevision.id)
@@ -64,6 +65,7 @@ export async function createLearningForecastProposal({
     generatedItems = await generateItems({
       slots: plan.unfilled_slots,
       context: {
+        learner: { grade: learner.grade || null },
         syllabus: {
           goals: activeRevision.goals,
           subjects: activeRevision.subjects,
@@ -71,6 +73,7 @@ export async function createLearningForecastProposal({
           planning_policy: activeRevision.planning_policy,
         },
         evidence_summaries: plan.evidence_context,
+        subject_breadth: plan.subject_breadth,
       },
     })
   } catch {

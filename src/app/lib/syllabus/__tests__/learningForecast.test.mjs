@@ -367,12 +367,16 @@ test('identical authoritative inputs reuse the sole learning proposal; changed e
   const repository = forecastRepository()
   let modelCalls = 0
   let capturedContext
-  const generateItems = async ({ slots, context }) => { modelCalls++; capturedContext = context; return slots.map(() => ({ title: 'Energy transfer', description: 'Trace energy through a simple system.' })) }
+  const generateItems = async ({ slots, context }) => { modelCalls++; capturedContext = context; return slots.map(() => ({ title: 'Energy transfer', description: 'Trace energy through a simple system.', planning_move: 'branch', strand: 'physical science', planning_reason: '' })) }
   const invoke = (reports) => createLearningForecastProposal({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, reports, generateItems, now: NOW })
   const first = await invoke(evidence())
   assert.equal(first.reused, false)
   assert.equal(repository.state.syllabus.active_revision_id, ACTIVE)
   assert.equal(capturedContext.evidence_summaries[0].learning_summary.headline, 'Ready to progress')
+  assert.equal(capturedContext.learner.grade, '5th')
+  assert.equal(capturedContext.subject_breadth.learner_grade, '5th')
+  assert.equal(capturedContext.subject_breadth.subjects[0].subject, 'science')
+  assert.ok(capturedContext.subject_breadth.subjects[0].broad_strands.includes('physical science'))
   assert.equal(JSON.stringify(capturedContext).includes('SECRET RAW TRANSCRIPT'), false)
   const second = await invoke(evidence())
   assert.equal(second.reused, true)
@@ -381,6 +385,8 @@ test('identical authoritative inputs reuse the sole learning proposal; changed e
   assert.equal(third.reused, false)
   assert.equal(modelCalls, 2)
   assert.equal(repository.state.revisions.filter((row) => row.proposal_kind === 'learning_forecast' && !row.activated_at).length, 1)
+  const generatedForecast = repository.state.forecast.find((row) => row.origin === 'learning_forecast' && row.metadata?.learning_forecast?.strand === 'physical science')
+  assert.equal(generatedForecast.metadata.learning_forecast.planning_move, 'branch')
   assert.equal(repository.state.revisions.some((row) => row.proposal_kind === 'mastery_reforecast'), false)
 })
 

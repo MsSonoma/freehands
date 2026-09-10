@@ -1,8 +1,10 @@
 import { createHash } from 'node:crypto'
 import { addSyllabusDays, startOfSyllabusWeek } from './timeline.mjs'
-import { instructionalEvidenceContext } from './evidenceProjection.mjs'
+import { subjectBalancedInstructionalEvidenceContext } from './evidenceProjection.mjs'
+import { buildSubjectBreadthContext, forecastPlanningMetadata } from './learningBreadth.mjs'
 
 export { instructionalEvidenceContext } from './evidenceProjection.mjs'
+export { buildSubjectBreadthContext } from './learningBreadth.mjs'
 
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
 
@@ -35,10 +37,11 @@ export function instructionalSlotsForWeek(weeklyPattern, weekStart) {
   return slots
 }
 
-function inputIdentity({ activeRevision, forecastItems, timelineItems, reports, targetWeekStart, targetWeekEnd }) {
+function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWeekStart, targetWeekEnd, learnerGrade, evidenceContext, subjectBreadth }) {
   return createHash('sha256').update(JSON.stringify({
     active_revision_id: activeRevision.id,
     target_week: [targetWeekStart, targetWeekEnd],
+    learner_grade: clean(learnerGrade) || null,
     goals: activeRevision.goals,
     subjects: activeRevision.subjects,
     weekly_pattern: activeRevision.weekly_pattern,
@@ -54,6 +57,7 @@ function inputIdentity({ activeRevision, forecastItems, timelineItems, reports, 
       item_type: item.item_type,
       origin: item.origin,
       sort_order: item.sort_order,
+      planning: forecastPlanningMetadata(item?.metadata?.learning_forecast || {}),
     })),
     occupied_timeline: timelineItems.filter((item) => {
       const date = String(item?.planned_date || '').slice(0, 10)
@@ -62,14 +66,16 @@ function inputIdentity({ activeRevision, forecastItems, timelineItems, reports, 
       occurrence_id: item.occurrence_id || item.id,
       planned_date: String(item.planned_date).slice(0, 10),
       subject: item.subject,
+      title: item.title || null,
       sort_order: item.sort_order,
       lesson_key: item.lesson_key || null,
     })),
-    evidence: instructionalEvidenceContext(reports),
+    evidence: evidenceContext,
+    subject_breadth: subjectBreadth,
   })).digest('hex')
 }
 
-export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], timelineItems = [], reports = [], today }) {
+export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], timelineItems = [], reports = [], learnerGrade = null, today }) {
   if (!activeRevision?.id) throw new Error('An active Syllabus revision is required')
   const targetWeekStart = nextInstructionalForecastWeek(today)
   const targetWeekEnd = addSyllabusDays(targetWeekStart, 6)
@@ -79,14 +85,29 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
     return date >= targetWeekStart && date <= targetWeekEnd
   }).map((item) => `${String(item.planned_date).slice(0, 10)}:${Number(item.sort_order || 0)}`))
   const unfilledSlots = slots.filter((slot) => !occupied.has(`${slot.planned_date}:${slot.sort_order}`))
-  const proposalKey = inputIdentity({ activeRevision, forecastItems, timelineItems, reports, targetWeekStart, targetWeekEnd })
+  const requestedSubjects = unfilledSlots.map((slot) => slot.subject)
+  const evidenceContext = subjectBalancedInstructionalEvidenceContext(reports, requestedSubjects, { perSubjectLimit: 8 })
+  const subjectBreadth = buildSubjectBreadthContext({
+    learnerGrade,
+    slots: unfilledSlots,
+    reports,
+    forecastItems,
+    timelineItems,
+    today,
+    perSubjectEvidenceLimit: 8,
+  })
+  const proposalKey = inputIdentity({
+    activeRevision, forecastItems, timelineItems, targetWeekStart, targetWeekEnd,
+    learnerGrade, evidenceContext, subjectBreadth,
+  })
   return {
     proposal_key: proposalKey,
     target_week_start: targetWeekStart,
     target_week_end: targetWeekEnd,
     slots,
     unfilled_slots: unfilledSlots,
-    evidence_context: instructionalEvidenceContext(reports),
+    evidence_context: evidenceContext,
+    subject_breadth: subjectBreadth,
   }
 }
 
@@ -98,6 +119,7 @@ export function buildLearningForecastSnapshot({ activeRevision, forecastItems = 
     const description = clean(generated.description).slice(0, 2000)
     if (!title || !description) throw new Error('Forecast model returned an incomplete instructional forecast')
     if (duplicatesSlateAuthority(`${title} ${description}`)) throw new Error('Forecast model crossed the instructional authority boundary')
+    const planningMetadata = forecastPlanningMetadata(generated)
     return {
       lineage_id: stableUuid(`${plan.proposal_key}:${slot.planned_date}:${slot.sort_order}:${slot.subject.toLocaleLowerCase()}`),
       planned_date: slot.planned_date,
@@ -113,6 +135,7 @@ export function buildLearningForecastSnapshot({ activeRevision, forecastItems = 
           proposal_key: plan.proposal_key,
           base_revision_id: activeRevision.id,
           target_week_start: plan.target_week_start,
+          ...planningMetadata,
         },
       },
     }

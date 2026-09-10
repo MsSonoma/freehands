@@ -1,6 +1,7 @@
 import { createHash, randomUUID } from 'node:crypto'
 import { loadRecentMasteryReports } from './masteryReports.server.mjs'
-import { instructionalEvidenceContext } from './learningForecast.mjs'
+import { subjectBalancedInstructionalEvidenceContext } from './evidenceProjection.mjs'
+import { buildSubjectBreadthContext, forecastPlanningMetadata } from './learningBreadth.mjs'
 import { canonicalSlotFor, syllabusSlotKey } from './planning.mjs'
 import { activateSyllabus, carryForwardLearningForecastProposal } from './revisions.server.mjs'
 import { SyllabusError, validateSnapshot } from './schema.mjs'
@@ -36,6 +37,29 @@ function conceptFields(input) {
   const description = clean(input?.description, 2000)
   if (!title || !description) throw new SyllabusError('A title and brief description are required.', 400, 'INVALID_CONCEPT')
   return { title, description }
+}
+
+function planningGenerationContext({ current, slots, reports, forecastItems, syllabusExtra = {}, today = null }) {
+  const subjects = slots.map((slot) => slot.subject)
+  return {
+    learner: { grade: current.learner.grade || null },
+    syllabus: {
+      goals: current.revision.goals,
+      subjects: current.revision.subjects,
+      teaching_guidance: current.revision.teaching_guidance,
+      planning_policy: current.revision.planning_policy,
+      ...syllabusExtra,
+    },
+    evidence_summaries: subjectBalancedInstructionalEvidenceContext(reports, subjects, { perSubjectLimit: 8 }),
+    subject_breadth: buildSubjectBreadthContext({
+      learnerGrade: current.learner.grade || null,
+      slots,
+      reports,
+      forecastItems,
+      today,
+      perSubjectEvidenceLimit: 8,
+    }),
+  }
 }
 
 export async function createFacilitatorConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, plannedDate, sortOrder, title, description, now = new Date(), today = now.toISOString().slice(0, 10) }) {
@@ -102,14 +126,39 @@ export async function replaceLearningForecastConcept({ repository, facilitatorId
   const selected = matches[0]
   const requestedChange = clean(changeRequest, 2000)
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
+  const replacementSlots = [{ planned_date: selected.planned_date, subject: selected.subject, sort_order: selected.sort_order }]
   let generated
   try {
-    generated = (await generateItems({ slots: [{ planned_date: selected.planned_date, subject: selected.subject, sort_order: selected.sort_order }], context: { syllabus: { goals: current.revision.goals, subjects: current.revision.subjects, teaching_guidance: current.revision.teaching_guidance, planning_policy: current.revision.planning_policy, already_planned_concepts: proposalItems.map(({ planned_date, subject, title }) => ({ planned_date, subject, title })), current_forecast: { title: selected.title, description: selected.description || '' }, facilitator_change_request: requestedChange || null, replacement_mode: requestedChange ? 'facilitator_directed' : 'fresh_alternative' }, evidence_summaries: instructionalEvidenceContext(authorizedReports) } }))[0]
+    generated = (await generateItems({
+      slots: replacementSlots,
+      context: planningGenerationContext({
+        current,
+        slots: replacementSlots,
+        reports: authorizedReports,
+        forecastItems: proposalItems,
+        today,
+        syllabusExtra: {
+          already_planned_concepts: proposalItems.map(({ planned_date, subject, title, metadata }) => ({ planned_date, subject, title, ...(metadata?.learning_forecast?.strand ? { strand: metadata.learning_forecast.strand } : {}) })),
+          current_forecast: { title: selected.title, description: selected.description || '', ...(selected.metadata?.learning_forecast?.strand ? { strand: selected.metadata.learning_forecast.strand } : {}) },
+          facilitator_change_request: requestedChange || null,
+          replacement_mode: requestedChange ? 'facilitator_directed' : 'fresh_alternative',
+        },
+      }),
+    }))[0]
   } catch { throw new SyllabusError('A replacement idea could not be generated. The current forecast was preserved.', 502, 'FORECAST_REPLACEMENT_FAILED') }
   const fields = conceptFields(generated)
-  const replacement = { ...selected, ...fields, metadata: { ...(selected.metadata || {}), learning_forecast_replacement: { version: 1, source_proposal_revision_id: proposal.id, facilitator_change_request: requestedChange || null } } }
+  const planningMetadata = forecastPlanningMetadata(generated)
+  const replacement = {
+    ...selected,
+    ...fields,
+    metadata: {
+      ...(selected.metadata || {}),
+      learning_forecast: { ...(selected.metadata?.learning_forecast || {}), ...planningMetadata },
+      learning_forecast_replacement: { version: 1, source_proposal_revision_id: proposal.id, facilitator_change_request: requestedChange || null },
+    },
+  }
   const planning = validateSnapshot(snapshot(current.revision, proposalItems.map((item) => String(item.lineage_id) === String(lineageId) ? replacement : item), today, `Replaced instructional forecast concept ${lineageId}`), { today, allowLegacyOrigins: true })
-  const proposalKey = `learning-forecast-replace-v1:${createHash('sha256').update(JSON.stringify({ source: proposal.id, lineageId, title: fields.title, description: fields.description, facilitator_change_request: requestedChange || null })).digest('hex')}`
+  const proposalKey = `learning-forecast-replace-v2:${createHash('sha256').update(JSON.stringify({ source: proposal.id, lineageId, title: fields.title, description: fields.description, planning: planningMetadata, facilitator_change_request: requestedChange || null })).digest('hex')}`
   const result = await repository.replaceLearningForecastProposal({ syllabusId: current.syllabus.id, expectedActiveRevisionId, planning, proposalKey })
   return { kind: 'proposal', reused: result.reused === true, active_revision_id: expectedActiveRevisionId, proposal_revision: result.revision, forecast_items: await repository.listForecastItems(result.revision.id) }
 }
@@ -119,6 +168,26 @@ export async function suggestPlanAheadConcepts({ repository, facilitatorId, lear
   const requested = (Array.isArray(slots) ? slots : []).slice(0, 28).map((slot) => canonicalSlotFor({ weeklyPattern: current.revision.weekly_pattern, plannedDate: slot.planned_date, sortOrder: slot.sort_order })).filter(Boolean)
   if (!requested.length) throw new SyllabusError('Select at least one valid Plan Ahead slot.', 400, 'PLANNING_SLOT_INVALID')
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
-  const generated = await generateItems({ slots: requested, context: { syllabus: { goals: current.revision.goals, subjects: current.revision.subjects, weekly_pattern: current.revision.weekly_pattern, teaching_guidance: current.revision.teaching_guidance, already_planned_concepts: current.items.map(({ planned_date, subject, title }) => ({ planned_date, subject, title })), planning_boundary: 'Intended progression only; do not assume future completion or future mastery.' }, evidence_summaries: instructionalEvidenceContext(authorizedReports) } })
-  return { suggestions: requested.map((slot, index) => ({ ...slot, ...conceptFields(generated[index]), provisional: true })) }
+  const generated = await generateItems({
+    slots: requested,
+    context: planningGenerationContext({
+      current,
+      slots: requested,
+      reports: authorizedReports,
+      forecastItems: current.items,
+      syllabusExtra: {
+        weekly_pattern: current.revision.weekly_pattern,
+        already_planned_concepts: current.items.map(({ planned_date, subject, title, metadata }) => ({ planned_date, subject, title, ...(metadata?.learning_forecast?.strand ? { strand: metadata.learning_forecast.strand } : {}) })),
+        planning_boundary: 'Intended instructional progression only; do not assume future completion or future mastery.',
+      },
+    }),
+  })
+  return {
+    suggestions: requested.map((slot, index) => ({
+      ...slot,
+      ...conceptFields(generated[index]),
+      planning: forecastPlanningMetadata(generated[index]),
+      provisional: true,
+    })),
+  }
 }
