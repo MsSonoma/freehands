@@ -75,10 +75,10 @@ export default function FacilitatorSyllabusLessonOverlay({
   onRemoveSlateSchedule,
   slateBusy = false,
   onEditConcept,
-  onReplace,
   onUseExisting,
   onGenerate,
-  replacing = false,
+  onGenerateWithChanges,
+  onCreateOwnLesson,
   canChangeIntent = false,
   onRecordHistoricalActivity,
   historicalActivityBusy = false,
@@ -100,6 +100,8 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [slateEditorOpen, setSlateEditorOpen] = useState(false)
   const [slateDate, setSlateDate] = useState('')
   const [revisionOpen, setRevisionOpen] = useState(false)
+  const [forecastChangeOpen, setForecastChangeOpen] = useState(false)
+  const [forecastChangeRequest, setForecastChangeRequest] = useState('')
 
   useEffect(() => {
     if (!item) return
@@ -116,6 +118,8 @@ export default function FacilitatorSyllabusLessonOverlay({
     setSlateEditorOpen(false)
     setSlateDate('')
     setRevisionOpen(false)
+    setForecastChangeOpen(false)
+    setForecastChangeRequest('')
   }, [item, selection?.assignedTeacher])
 
   if (!item) return null
@@ -124,6 +128,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const isLesson = itemType === 'lesson'
   const isSlateAssignment = itemType === 'slate_assignment'
   const isConcept = isLesson && !item.lesson_key
+  const isForecastGhost = isConcept && selection.suggested === true && item.origin === 'learning_forecast'
   const readiness = String(item.readiness_state || '').replaceAll('_', ' ')
   const isDraft = item.readiness_state === 'draft'
   const isHistorical = item.historical_record === true || item.placement_kind === 'historical' || item.placement_kind === 'actual'
@@ -367,6 +372,22 @@ export default function FacilitatorSyllabusLessonOverlay({
     router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(item.lesson_key)}`)
   }
 
+  async function generateForecastWithChanges() {
+    const request = forecastChangeRequest.trim()
+    if (!isForecastGhost || !request || typeof onGenerateWithChanges !== 'function') return
+    setCoreBusy('forecast-change')
+    setCoreError('')
+    setMessage('')
+    try {
+      const generated = await onGenerateWithChanges(item, request)
+      if (!generated) throw new Error('The revised forecast lesson could not be generated.')
+      onClose?.()
+    } catch (cause) {
+      setCoreError(cause.message || 'The revised forecast lesson could not be generated.')
+    } finally {
+      setCoreBusy('')
+    }
+  }
   return <>
     <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.() }}>
       <section className={styles.overlay} role="dialog" aria-modal="true" aria-label={`Lesson details for ${item.title || 'lesson'}`}>
@@ -383,7 +404,25 @@ export default function FacilitatorSyllabusLessonOverlay({
             {isSlateAssignment && <div><dt>Type</dt><dd>Scheduled Mr. Slate supplemental session</dd></div>}
           </dl>
           {teacherEditable && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy || coreBusy === 'teacher'} onChange={(event) => void handleTeacherChange(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
-          {isConcept && <section className={styles.detailSection}><h3>Planned concept</h3><p>{selection.recoveryRequired ? 'This concept needs recovery before a lesson can be generated or bound.' : 'This concept is part of the Syllabus but does not yet have a prepared lesson file.'}</p><div className={styles.secondaryActions}>{canChangeIntent && typeof onEditConcept === 'function' && <button type="button" onClick={() => onEditConcept(item)}>Edit concept</button>}{selection.suggested && typeof onReplace === 'function' && <button type="button" disabled={replacing} onClick={() => onReplace(item)}>{replacing ? 'Replacing...' : 'Replace suggestion'}</button>}{canChangeIntent && typeof onUseExisting === 'function' && <button type="button" disabled={selection.recoveryRequired} onClick={() => onUseExisting(item)}>Use existing lesson</button>}{typeof onGenerate === 'function' && <button type="button" disabled={selection.recoveryRequired} onClick={() => onGenerate(item)}>Generate lesson</button>}</div></section>}
+          {isConcept && <section className={styles.detailSection}>
+            {isForecastGhost ? <>
+              <h3>Forecast lesson</h3>
+              <p>{selection.recoveryRequired ? 'This forecast needs recovery before a lesson can be generated.' : 'This is a one-week-ahead lesson recommendation. No lesson file has been generated yet.'}</p>
+              <div className={styles.forecastChoices}>
+                {typeof onGenerate === 'function' && <button type="button" className={styles.primary} disabled={selection.recoveryRequired || coreBusy === 'forecast-change'} onClick={() => onGenerate(item)}>Generate lesson</button>}
+                {typeof onGenerateWithChanges === 'function' && <button type="button" disabled={selection.recoveryRequired || coreBusy === 'forecast-change'} onClick={() => setForecastChangeOpen((open) => !open)}>Generate with changes</button>}
+                {canChangeIntent && typeof onCreateOwnLesson === 'function' && <button type="button" disabled={selection.recoveryRequired || coreBusy === 'forecast-change'} onClick={() => onCreateOwnLesson(item)}>Create your own lesson</button>}
+              </div>
+              {forecastChangeOpen && <div className={styles.forecastChange}>
+                <label className={styles.field}>What would you like to change?<textarea autoFocus rows={4} value={forecastChangeRequest} onChange={(event) => setForecastChangeRequest(event.target.value)} placeholder="For example: make it more hands-on, or review cold fronts first." /></label>
+                <div className={styles.secondaryActions}><button type="button" disabled={coreBusy === 'forecast-change'} onClick={() => { setForecastChangeOpen(false); setForecastChangeRequest('') }}>Cancel</button><button type="button" className={styles.primary} disabled={!forecastChangeRequest.trim() || coreBusy === 'forecast-change'} onClick={() => void generateForecastWithChanges()}>{coreBusy === 'forecast-change' ? 'Generating...' : 'Generate with changes'}</button></div>
+              </div>}
+            </> : <>
+              <h3>Planned concept</h3>
+              <p>{selection.recoveryRequired ? 'This concept needs recovery before a lesson can be generated or bound.' : 'This concept is part of the Syllabus but does not yet have a prepared lesson file.'}</p>
+              <div className={styles.secondaryActions}>{canChangeIntent && typeof onEditConcept === 'function' && <button type="button" onClick={() => onEditConcept(item)}>Edit concept</button>}{canChangeIntent && typeof onUseExisting === 'function' && <button type="button" disabled={selection.recoveryRequired} onClick={() => onUseExisting(item)}>Use existing lesson</button>}{typeof onGenerate === 'function' && <button type="button" disabled={selection.recoveryRequired} onClick={() => onGenerate(item)}>Generate lesson</button>}</div>
+            </>}
+          </section>}
           {slateEditorOpen && <section className={styles.detailSection}><h3>Schedule Mr. Slate</h3><p>Schedule a separate supplemental practice session. This does not change the instructional teacher or complete the lesson.</p><label className={styles.field}>Mr. Slate session date<input type="date" min={[dateOnly(displayedDate), dateOnly(resolvedToday)].filter(Boolean).sort().at(-1) || ''} value={slateDate} onChange={(event) => setSlateDate(event.target.value)} /></label><div className={styles.secondaryActions}><button type="button" onClick={() => setSlateEditorOpen(false)}>Cancel</button><button type="button" disabled={!slateDate || coreBusy === 'slate'} onClick={() => void saveSlateSchedule()}>{coreBusy === 'slate' ? 'Scheduling...' : 'Schedule supplemental session'}</button></div></section>}
           {isLesson && item.lesson_key && selection.historicalActivityAllowed && typeof onRecordHistoricalActivity === 'function' && <HistoricalActivityControl item={item} legacyWebbCompletion={legacyWebbCompletion} busy={historicalActivityBusy} onRecord={onRecordHistoricalActivity} />}
         </div>

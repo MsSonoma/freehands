@@ -54,21 +54,21 @@ function teachingGuidanceSummary(guidance) {
   return values
 }
 
-function ForecastSuggestion({ item, busy, replacing, recoveryRequired, onSelect }) {
-  const disabled = busy || replacing
+function ForecastSuggestion({ item, busy, recoveryRequired, onSelect }) {
+  const disabled = busy
   return <div
     className={`${styles.suggestedEntry} ${onSelect && !disabled ? styles.selectableEntry : ''}`}
     data-forecast-lineage={item.lineage_id}
     role={onSelect && !disabled ? 'button' : undefined}
     tabIndex={onSelect && !disabled ? 0 : undefined}
-    aria-label={onSelect && !disabled ? `Open details for suggested ${item.title}` : undefined}
+    aria-label={onSelect && !disabled ? `Open forecast lesson details for ${item.title}` : undefined}
     onClick={onSelect && !disabled ? () => onSelect(item, { suggested: true, recoveryRequired }) : undefined}
     onKeyDown={onSelect && !disabled ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(item, { suggested: true, recoveryRequired }) } } : undefined}
   >
     <div className={styles.entryBody}>
       <p className={styles.subject}>{item.subject}</p>
       <h4>{item.title}</h4>
-      <span className={styles.suggestedLabel}>{recoveryRequired ? 'Recovery required' : 'Suggested ? not active'}</span>
+      <span className={styles.suggestedLabel}>{recoveryRequired ? 'Recovery required' : 'Forecast lesson - not generated'}</span>
     </div>
     {onSelect && !disabled && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
   </div>
@@ -88,16 +88,11 @@ export default function SyllabusDocument({
   onEditSection = null,
   proposedForecastItems = [],
   proposedForecastTargetWeek = '',
-  proposalRevision = null,
   forecastBusy = false,
-  forecastActionBusy = false,
   forecastError = '',
   forecastMessage = '',
-  replacingForecastLineage = '',
   materializingForecastLineage = '',
   isForecastRecoveryRequired = () => false,
-  onRetryForecast = null,
-  onUseForecast = null,
   onWeekChange = null,
   restoreWeekStart = '',
   today = localCalendarDate(),
@@ -200,8 +195,7 @@ export default function SyllabusDocument({
             if (kind === 'suggested') return <ForecastSuggestion
               key={item.lineage_id || item.id}
               item={item}
-              busy={forecastBusy || forecastActionBusy || Boolean(materializingForecastLineage)}
-              replacing={replacingForecastLineage === item.lineage_id}
+              busy={forecastBusy || Boolean(materializingForecastLineage)}
               recoveryRequired={isForecastRecoveryRequired(item)}
               onSelect={role === 'facilitator' && onSelectLesson ? onSelectLesson : null}
             />
@@ -257,15 +251,10 @@ export default function SyllabusDocument({
           </section>
           })}
         </div>
-
-        {week.week_start === startOfSyllabusWeek(proposedForecastTargetWeek) && role === 'facilitator' && <div className={styles.forecastStatus} data-proposal-revision={proposalRevision?.id || ''}>
-          {forecastBusy && <p role="status">Preparing suggestions for this week…</p>}
-          {!forecastBusy && forecastError && <div role="alert"><p>{forecastError}</p>{onRetryForecast && <button type="button" onClick={onRetryForecast}>Retry forecast</button>}</div>}
-          {!forecastBusy && !forecastError && projectedForecast.length === 0 && <p>{forecastMessage || 'No new suggestions are needed for this week.'}</p>}
-          {!forecastBusy && !forecastError && projectedForecast.length > 0 && <div className={styles.forecastDecision}>
-            <p><strong>Suggested weekly forecast</strong><span>Changeable until you use it.</span></p>
-            <button type="button" disabled={forecastActionBusy || Boolean(materializingForecastLineage) || typeof onUseForecast !== 'function'} onClick={onUseForecast}>Use this forecast</button>
-          </div>}
+        {week.week_start === startOfSyllabusWeek(proposedForecastTargetWeek) && role === 'facilitator' && (forecastBusy || forecastError || (!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage)) && <div className={styles.forecastStatus}>
+          {forecastBusy && <p role="status">Preparing next week&apos;s lesson forecast...</p>}
+          {!forecastBusy && forecastError && <p role="alert">Next week&apos;s forecast could not be prepared. It will try again when the Syllabus reloads.</p>}
+          {!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage && <p>{forecastMessage}</p>}
         </div>}
       </section>
 

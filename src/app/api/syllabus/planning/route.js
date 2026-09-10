@@ -39,7 +39,7 @@ export async function POST(request, deps = {}) {
     else if (body?.action === 'edit_forecast') result = await editLearningForecastConcept({ ...common, proposalRevisionId: body.proposalRevisionId, lineageId: body.lineageId, title: body.title, description: body.description })
     else if (body?.action === 'replace_forecast') result = await replaceLearningForecastConcept({
       ...common, proposalRevisionId: body.proposalRevisionId, lineageId: body.lineageId,
-      reports: deps.reports, loadReports: deps.loadReports, generateItems: deps.generateItems || generateInstructionalForecastItems,
+      changeRequest: body.changeRequest, reports: deps.reports, loadReports: deps.loadReports, generateItems: deps.generateItems || generateInstructionalForecastItems,
       resolveLesson: (lessonKey) => loadLessonForFollowUp({ lessonKey, facilitatorId: context.user.id, admin: context.admin }),
     })
     else if (body?.action === 'suggest') result = await suggestPlanAheadConcepts({

@@ -430,43 +430,39 @@ export default function SyllabusPage() {
 
   async function saveConceptEditor() {
     if (!conceptEditor) return
+    if (conceptEditor.source === 'forecast-own') {
+      const proposalRevisionId = learningProposal?.proposal_revision?.id
+      if (!proposalRevisionId) return setError('This forecast changed. Reload the Syllabus and try again.')
+      const result = await planningPost('edit_forecast', { proposalRevisionId, lineageId: conceptEditor.item.lineage_id, title: conceptEditor.title, description: conceptEditor.description })
+      const edited = result?.forecast_items?.find((item) => String(item.lineage_id) === String(conceptEditor.item.lineage_id))
+      if (!result?.active_revision?.id || !edited) return
+      const generated = await materializeForecast(edited, { expectedActiveRevisionId: result.active_revision.id })
+      if (generated) setConceptEditor(null)
+      return
+    }
     const result = conceptEditor.source === 'forecast'
       ? await planningPost('edit_forecast', { proposalRevisionId: learningProposal.proposal_revision.id, lineageId: conceptEditor.item.lineage_id, title: conceptEditor.title, description: conceptEditor.description })
       : await planningPost('edit', { lineageId: conceptEditor.item.lineage_id, title: conceptEditor.title, description: conceptEditor.description })
     if (result) setConceptEditor(null)
   }
 
-  async function replaceForecast(item) {
-    if (!item?.lineage_id || replacingLineage) return null
+  async function generateForecastWithChanges(item, changeRequest) {
+    if (!item?.lineage_id || replacingLineage || !learningProposal?.proposal_revision?.id) return false
     setReplacingLineage(item.lineage_id)
-    try { return await planningPost('replace_forecast', { proposalRevisionId: learningProposal.proposal_revision.id, lineageId: item.lineage_id }) }
-    finally { setReplacingLineage('') }
-  }
-
-  async function activateLearningProposal() {
-    setWorking(true)
-    setError('')
     try {
-      const response = await fetch('/api/syllabus/activate', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          learnerId,
-          proposalRevisionId: learningProposal.proposal_revision.id,
-          expectedActiveRevisionId: syllabus.active_revision.id,
-        }),
+      const replacement = await planningPost('replace_forecast', { proposalRevisionId: learningProposal.proposal_revision.id, lineageId: item.lineage_id, changeRequest })
+      const revised = replacement?.forecast_items?.find((candidate) => String(candidate.lineage_id) === String(item.lineage_id))
+      if (!replacement?.proposal_revision?.id || !revised) return false
+      return await materializeForecast(revised, {
+        proposal: { proposal_revision: replacement.proposal_revision, forecast_items: replacement.forecast_items || [] },
+        expectedActiveRevisionId: replacement.active_revision_id || syllabus.active_revision.id,
       })
-      const json = await response.json()
-      if (!response.ok) throw new Error(json.error || 'Could not adopt the forecast')
-      await loadCurrent()
-    } catch (cause) {
-      setError(cause.message)
     } finally {
-      setWorking(false)
+      setReplacingLineage('')
     }
   }
 
-  async function materializeForecast(item, { proposal = null, existingLessonKey = '' } = {}) {
+  async function materializeForecast(item, { proposal = null, existingLessonKey = '', expectedActiveRevisionId = syllabus?.active_revision?.id } = {}) {
     const lineageId = item?.lineage_id
     if (!lineageId || recoveryRequiredLineages.has(lineageId)) return
     setMaterializingLineage(lineageId)
@@ -478,7 +474,7 @@ export default function SyllabusPage() {
         body: JSON.stringify({
           learnerId,
           lineageId,
-          expectedActiveRevisionId: syllabus.active_revision.id,
+          expectedActiveRevisionId,
           ...(proposal ? { proposalRevisionId: proposal.proposal_revision.id } : {}),
           ...(existingLessonKey ? { existingLessonKey } : {}),
         }),
@@ -891,17 +887,12 @@ export default function SyllabusPage() {
               onEditSection={planningAccess.can_change_intent ? openSectionEditor : null}
               proposedForecastItems={learningProposal?.forecast_items || []}
               proposedForecastTargetWeek={currentTargetForecastWeek}
-              proposalRevision={learningProposal?.proposal_revision || null}
               forecastBusy={forecastBusy}
-              forecastActionBusy={working}
               forecastError={forecastError}
               forecastMessage={learningMessage}
-              replacingForecastLineage={replacingLineage}
               materializingForecastLineage={materializingLineage}
               isForecastRecoveryRequired={(item) => recoveryRequiredLineages.has(item.lineage_id)}
-              onRetryForecast={() => { forecastAttempt.current = ''; createLearningForecast() }}
 
-              onUseForecast={activateLearningProposal}
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
               restoreWeekStart={selectedWeekStart}
               today={syllabus.resolved_today}
@@ -928,19 +919,20 @@ export default function SyllabusPage() {
             slateBusy={slateAssignmentBusy === selectedSyllabusLesson.occurrenceKey}
             onEditConcept={(item) => {
               setSelectedSyllabusLesson(null)
-              if (item.origin === 'learning_forecast') setConceptEditor({ source: 'forecast', item, title: item.title, description: item.description || '' })
-              else void handleLessonAction(item, { id: 'edit_concept' })
+              void handleLessonAction(item, { id: 'edit_concept' })
             }}
-            onReplace={(item) => { setSelectedSyllabusLesson(null); void replaceForecast(item) }}
-            replacing={replacingLineage === selectedSyllabusLesson.item?.lineage_id}
             onUseExisting={(item) => {
               setSelectedSyllabusLesson(null)
-              if (item.origin === 'learning_forecast') void openLessonPicker(item.planned_date, { mode: 'bind', item, proposal: learningProposal })
-              else void handleLessonAction(item, { id: 'use_existing' })
+              void handleLessonAction(item, { id: 'use_existing' })
             }}
             onGenerate={(item) => {
               setSelectedSyllabusLesson(null)
               void materializeForecast(item, { proposal: item.origin === 'learning_forecast' ? learningProposal : null })
+            }}
+            onGenerateWithChanges={(item, changeRequest) => generateForecastWithChanges(item, changeRequest)}
+            onCreateOwnLesson={(item) => {
+              setSelectedSyllabusLesson(null)
+              setConceptEditor({ source: 'forecast-own', item, title: item.title || '', description: item.description || '' })
             }}
             canChangeIntent={planningAccess.can_change_intent}
             onRecordHistoricalActivity={async (item, activity) => { setSelectedSyllabusLesson(null); await handleRecordHistoricalActivity(item, activity) }}
@@ -959,7 +951,7 @@ export default function SyllabusPage() {
             onSaved={() => loadCurrent()}
           />}
 
-          {conceptEditor && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label="Edit forecast concept"><header><h2>Edit forecast concept</h2><button type="button" onClick={() => setConceptEditor(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<label>Title<input autoFocus value={conceptEditor.title} onChange={(event) => setConceptEditor({ ...conceptEditor, title: event.target.value })} /></label><label>Brief description<textarea rows={5} value={conceptEditor.description} onChange={(event) => setConceptEditor({ ...conceptEditor, description: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setConceptEditor(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working} onClick={saveConceptEditor}>Save as educator intent</button></footer></section></div>}
+          {conceptEditor && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={conceptEditor.source === 'forecast-own' ? 'Create your own lesson' : 'Edit forecast concept'}><header><h2>{conceptEditor.source === 'forecast-own' ? 'Create your own lesson' : 'Edit forecast concept'}</h2><button type="button" onClick={() => setConceptEditor(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<label>Title<input autoFocus value={conceptEditor.title} onChange={(event) => setConceptEditor({ ...conceptEditor, title: event.target.value })} /></label><label>Brief description<textarea rows={5} value={conceptEditor.description} onChange={(event) => setConceptEditor({ ...conceptEditor, description: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setConceptEditor(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working || Boolean(materializingLineage) || !conceptEditor.title.trim() || !conceptEditor.description.trim()} onClick={saveConceptEditor}>{conceptEditor.source === 'forecast-own' ? (materializingLineage ? 'Generating...' : 'Generate my lesson') : 'Save as educator intent'}</button></footer></section></div>}
 
           {scheduleDialog && <SyllabusScheduleDialog
             mode={scheduleDialog.mode}

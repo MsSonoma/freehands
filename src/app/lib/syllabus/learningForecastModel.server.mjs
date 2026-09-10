@@ -11,10 +11,10 @@ export async function generateInstructionalForecastItems({ slots, context, fetch
       temperature: 0.35,
       response_format: { type: 'json_object' },
       messages: [
-        { role: 'system', content: 'Return only valid JSON. You propose instructional progression titles and concise descriptions. Do not create review, recovery, retention, assessment, schedule, date, subject, ownership, or permission decisions.' },
+        { role: 'system', content: 'Return only valid JSON. You propose instructional progression titles and concise descriptions. When syllabus.facilitator_change_request is present, revise syllabus.current_forecast to honor that facilitator direction while keeping the server-owned subject and slot. Do not create review, recovery, retention, assessment, schedule, date, subject, ownership, or permission decisions.' },
         { role: 'user', content: JSON.stringify({
           task: 'Return {"items":[{"title":"...","description":"..."}]} with exactly one item per server-owned slot, in the same order.',
-          constraints: 'Each item must be a new instructional progression step. Do not duplicate Daily Follow-Up, Weekly Review, Mr. Slate recovery, retention, or mastery checks.',
+          constraints: 'Each item must be a new instructional progression step. If a facilitator change request is present, make the smallest coherent change that satisfies it rather than inventing an unrelated lesson. Do not duplicate Daily Follow-Up, Weekly Review, Mr. Slate recovery, retention, or mastery checks.',
           slots: slots.map((slot) => ({ subject: slot.subject })),
           syllabus: context.syllabus,
           evidence_summaries: context.evidence_summaries,

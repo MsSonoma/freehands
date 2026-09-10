@@ -91,7 +91,7 @@ export async function editLearningForecastConcept({ repository, facilitatorId, l
   }
 }
 
-export async function replaceLearningForecastConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, proposalRevisionId, lineageId, generateItems, reports, loadReports = loadRecentMasteryReports, resolveLesson, now = new Date(), today = now.toISOString().slice(0, 10) }) {
+export async function replaceLearningForecastConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, proposalRevisionId, lineageId, changeRequest = '', generateItems, reports, loadReports = loadRecentMasteryReports, resolveLesson, now = new Date(), today = now.toISOString().slice(0, 10) }) {
   const current = await currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId })
   const proposal = await repository.findRevision(proposalRevisionId, current.syllabus.id)
   const canonical = await repository.findLatestLearningForecastProposal(current.syllabus.id, current.revision.id)
@@ -100,15 +100,16 @@ export async function replaceLearningForecastConcept({ repository, facilitatorId
   const matches = proposalItems.filter((item) => String(item.lineage_id) === String(lineageId) && item.origin === 'learning_forecast' && !item.lesson_key)
   if (matches.length !== 1) throw new SyllabusError('Only an exact provisional forecast concept can be replaced.', 409, 'FORECAST_PROPOSAL_STALE')
   const selected = matches[0]
+  const requestedChange = clean(changeRequest, 2000)
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
   let generated
   try {
-    generated = (await generateItems({ slots: [{ planned_date: selected.planned_date, subject: selected.subject, sort_order: selected.sort_order }], context: { syllabus: { goals: current.revision.goals, subjects: current.revision.subjects, teaching_guidance: current.revision.teaching_guidance, planning_policy: current.revision.planning_policy, already_planned_concepts: proposalItems.map(({ planned_date, subject, title }) => ({ planned_date, subject, title })) }, evidence_summaries: instructionalEvidenceContext(authorizedReports) } }))[0]
+    generated = (await generateItems({ slots: [{ planned_date: selected.planned_date, subject: selected.subject, sort_order: selected.sort_order }], context: { syllabus: { goals: current.revision.goals, subjects: current.revision.subjects, teaching_guidance: current.revision.teaching_guidance, planning_policy: current.revision.planning_policy, already_planned_concepts: proposalItems.map(({ planned_date, subject, title }) => ({ planned_date, subject, title })), current_forecast: { title: selected.title, description: selected.description || '' }, facilitator_change_request: requestedChange || null, replacement_mode: requestedChange ? 'facilitator_directed' : 'fresh_alternative' }, evidence_summaries: instructionalEvidenceContext(authorizedReports) } }))[0]
   } catch { throw new SyllabusError('A replacement idea could not be generated. The current forecast was preserved.', 502, 'FORECAST_REPLACEMENT_FAILED') }
   const fields = conceptFields(generated)
-  const replacement = { ...selected, ...fields, metadata: { ...(selected.metadata || {}), learning_forecast_replacement: { version: 1, source_proposal_revision_id: proposal.id } } }
+  const replacement = { ...selected, ...fields, metadata: { ...(selected.metadata || {}), learning_forecast_replacement: { version: 1, source_proposal_revision_id: proposal.id, facilitator_change_request: requestedChange || null } } }
   const planning = validateSnapshot(snapshot(current.revision, proposalItems.map((item) => String(item.lineage_id) === String(lineageId) ? replacement : item), today, `Replaced instructional forecast concept ${lineageId}`), { today, allowLegacyOrigins: true })
-  const proposalKey = `learning-forecast-replace-v1:${createHash('sha256').update(JSON.stringify({ source: proposal.id, lineageId, title: fields.title, description: fields.description })).digest('hex')}`
+  const proposalKey = `learning-forecast-replace-v1:${createHash('sha256').update(JSON.stringify({ source: proposal.id, lineageId, title: fields.title, description: fields.description, facilitator_change_request: requestedChange || null })).digest('hex')}`
   const result = await repository.replaceLearningForecastProposal({ syllabusId: current.syllabus.id, expectedActiveRevisionId, planning, proposalKey })
   return { kind: 'proposal', reused: result.reused === true, active_revision_id: expectedActiveRevisionId, proposal_revision: result.revision, forecast_items: await repository.listForecastItems(result.revision.id) }
 }

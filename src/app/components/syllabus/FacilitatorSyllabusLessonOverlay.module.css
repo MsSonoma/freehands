@@ -29,3 +29,9 @@
 .statusMessage { border:1px solid #d1d5db; background:#f9fafb; color:#374151; }
 .errorMessage { border:1px solid #f0c9c0; background:#fff7f5; color:#7f1d1d; }
 .field input { width:100%; box-sizing:border-box; padding:9px; border:1px solid #d1d5db; border-radius:7px; background:#fff; color:#111827; font:inherit; }
+
+.forecastChoices { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+.forecastChoices button { min-height:40px; padding:9px 13px; border:1px solid #d1d5db; border-radius:8px; background:#fff; color:#374151; cursor:pointer; font-weight:750; }
+.forecastChoices .primary { border-color:#c7442e; background:#c7442e; color:#fff; }
+.forecastChange { margin-top:14px; padding:14px; border:1px solid #ded8cf; border-radius:10px; background:#faf9f7; }
+.forecastChange textarea { width:100%; box-sizing:border-box; resize:vertical; min-height:90px; padding:9px; border:1px solid #d1d5db; border-radius:7px; background:#fff; color:#111827; font:inherit; }

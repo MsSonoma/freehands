@@ -39,23 +39,21 @@
 .addLesson { justify-self:start; padding:2px 0; border:0; background:transparent; color:#6b382c; cursor:pointer; font:700 10px Montserrat,sans-serif; }
 .emptyDay { margin:7px 0 0; color:#9a9187; font:italic 11px Georgia,serif; }
 .entryRow { display:grid; gap:8px; align-items:start; margin-top:7px; padding:9px 0 0; border-top:1px solid #ded8cf; }
-.suggestedEntry { display:grid; gap:8px; align-items:start; margin-top:7px; padding:9px 7px 8px; border:1px dashed #9b8eb0; background:#faf7ff; }
-.suggestedEntry h4 { margin:2px 0 0; font-size:15px; font-weight:500; overflow-wrap:anywhere; }
-.suggestedLabel { display:inline-block; margin-top:5px; color:#6d4d86; font:700 10px Roboto,sans-serif; }
+.suggestedEntry { display:grid; gap:8px; align-items:start; margin-top:7px; padding:9px 7px 8px; border:1px dashed #c9c5bf; background:#f1f0ed; color:#77716a; opacity:.76; }
+.suggestedEntry h4 { margin:2px 0 0; color:#615c56; font-size:15px; font-weight:500; overflow-wrap:anywhere; }
+.suggestedLabel { display:inline-block; margin-top:5px; color:#817b74; font:700 10px Roboto,sans-serif; }
 .entryBody h4 { margin:2px 0 0; font-size:15px; font-weight:500; overflow-wrap:anywhere; }.subject { margin:0;color:#6b382c; }
 .statusLabel,.placementLabel,.preparing { display:inline-block; margin:5px 6px 0 0; color:#756b61; font:700 10px Roboto,sans-serif; text-transform:capitalize; }
 .placementLabel { font-weight:500; font-style:italic; text-transform:none; }
 .emptyWeek { margin:0;padding:22px 0;color:#7b7268;font-style:italic; }
 .forecastStatus,.learnerFuture { margin-top:14px; padding:10px 0; border-top:1px solid #cfc6b8; font:12px Roboto,sans-serif; }
 .forecastStatus p { margin:0; }
-.forecastStatus [role="alert"] { display:flex; align-items:center; justify-content:space-between; gap:16px; color:#8a241f; }
-.forecastStatus button { min-height:34px; padding:6px 10px; border:1px solid #79618c; background:#fff; color:#5f3f77; cursor:pointer; font-weight:700; }
-.forecastDecision { display:flex; align-items:center; justify-content:space-between; gap:16px; }
-.forecastDecision p { display:grid; gap:3px; }.forecastDecision span { color:#756b61; }
+.forecastStatus [role="alert"] { color:#8a241f; }
 .selectableEntry { grid-template-columns:minmax(0,1fr) auto; cursor:pointer; border-radius:8px; padding:9px 7px 8px; margin-left:-7px; margin-right:-7px; transition:background .15s ease, box-shadow .15s ease; }
 .selectableEntry:hover { background:#faf7f2; }
+.suggestedEntry.selectableEntry:hover { background:#e9e7e2; opacity:.9; }
 .selectableEntry:focus-visible { outline:2px solid #9a4634; outline-offset:2px; }
 .entryChevron { align-self:center; color:#9a9187; font:22px/1 Georgia,serif; }
 .selectableEntry .preparing { grid-column:1 / -1; }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }
-@media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader,.forecastDecision { align-items:stretch; flex-direction:column; gap:7px; } .planDetailsBody { grid-template-columns:1fr; } .planPatternSection { grid-column:auto; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; }.planAheadButton { grid-column:1 / -1; justify-self:stretch; margin:0; border:1px solid #cfc6b8!important; } .weekHeader time { white-space:normal; } }
+@media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader { align-items:stretch; flex-direction:column; gap:7px; } .planDetailsBody { grid-template-columns:1fr; } .planPatternSection { grid-column:auto; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; }.planAheadButton { grid-column:1 / -1; justify-self:stretch; margin:0; border:1px solid #cfc6b8!important; } .weekHeader time { white-space:normal; } }
