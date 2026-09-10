@@ -3,6 +3,8 @@
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
 import { WEBB_WRITING_SUBPHASES } from '@/app/lib/webbWritingFlow.mjs'
+import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
+import TypingConversationContext from '../components/TypingConversationContext'
 
 function GuidanceTranscript({ text }) {
   if (!String(text || '').trim()) return null
@@ -58,8 +60,10 @@ export default function WebbWritingStudio({
   onBlankComplete,
   onNextSentence,
   isLastSentence,
+  recentEntries = [],
 }) {
   const inputRef = useRef(null)
+  const typingViewport = useTypingViewport()
   const blankCompleteRef = useRef(onBlankComplete)
 
   useEffect(() => {
@@ -75,7 +79,8 @@ export default function WebbWritingStudio({
   useEffect(() => {
     if (!open) return
     if (![WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(subphase)) return
-    const timer = setTimeout(() => inputRef.current?.focus(), 120)
+    if (!shouldAutoFocusTextInput()) return undefined
+    const timer = setTimeout(() => inputRef.current?.focus({ preventScroll: true }), 120)
     return () => clearTimeout(timer)
   }, [open, subphase, activeIndex])
 
@@ -99,14 +104,27 @@ export default function WebbWritingStudio({
   return createPortal(
     <div style={{
       position: 'fixed',
-      inset: 0,
+      ...(typingViewport.typing && typingViewport.visualHeight ? {
+        top: typingViewport.offsetTop, left: typingViewport.offsetLeft,
+        width: typingViewport.visualWidth || '100%', height: typingViewport.visualHeight,
+        right: 'auto', bottom: 'auto',
+      } : { inset: 0 }),
       zIndex: 1400,
       background: '#f1eee7',
       overflowY: 'auto',
-      padding: 'clamp(20px, 4vw, 42px) 16px 56px',
+      padding: typingViewport.typing ? '8px 8px 16px' : 'clamp(20px, 4vw, 42px) 16px 56px',
       boxSizing: 'border-box',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
+      <div style={{ position: typingViewport.typing ? 'sticky' : 'static', top: 0, zIndex: 4 }}>
+        <TypingConversationContext
+          entries={recentEntries}
+          visible={typingViewport.typing}
+          maxItems={6}
+          teacherLabel="Mrs. Webb"
+          accent="#0d9488"
+        />
+      </div>
       {subphase === WEBB_WRITING_SUBPHASES.BLANK && (
         <div style={{ animation: 'webb-writing-paper-in 0.55s ease both' }}>
           <GuidanceTranscript text={guidance} />

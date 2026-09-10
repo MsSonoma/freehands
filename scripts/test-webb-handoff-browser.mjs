@@ -143,7 +143,13 @@ try {
   const tab = await (await fetch(`http://127.0.0.1:${debugPort}/json/new?about:blank`, { method: 'PUT' })).json()
   cdp = new CDP(tab.webSocketDebuggerUrl); await cdp.ready
   await cdp.send('Runtime.enable'); await cdp.send('Page.enable')
-  if (process.env.WEBB_QA_MOBILE === '1') await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
+  const ipadLandscapeQa = process.env.WEBB_QA_IPAD_LANDSCAPE === '1'
+  const touchQa = process.env.WEBB_QA_MOBILE === '1' || ipadLandscapeQa
+  if (ipadLandscapeQa) {
+    await cdp.send('Emulation.setDeviceMetricsOverride', { width: 1024, height: 768, deviceScaleFactor: 1, mobile: true })
+    await cdp.send('Emulation.setUserAgentOverride', { userAgent: 'Mozilla/5.0 (iPad; CPU OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1' })
+  } else if (process.env.WEBB_QA_MOBILE === '1') await cdp.send('Emulation.setDeviceMetricsOverride', { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
+  if (touchQa) await cdp.send('Emulation.setTouchEmulationEnabled', { enabled: true, maxTouchPoints: 5 })
   cdp.on('Runtime.exceptionThrown', p => runtimeErrors.push(p.exceptionDetails.exception?.description || p.exceptionDetails.text))
   cdp.on('Fetch.requestPaused', intercept)
   await cdp.send('Fetch.enable', { patterns: [{ urlPattern: '*', requestStage: 'Request' }] })
@@ -151,6 +157,26 @@ try {
   await until(() => generateCount === 1, 'generation started')
   assert.equal(await cdp.eval(`!!document.querySelector('textarea[aria-label="Chat with Mrs. Webb"]')`), false)
   await ready(); pass('startup waits for objective readiness')
+  if (touchQa) {
+    assert.notEqual(await cdp.eval(`document.activeElement?.getAttribute?.('aria-label')`), 'Chat with Mrs. Webb')
+    await cdp.eval(`(() => { const input=document.querySelector('textarea[aria-label=\"Chat with Mrs. Webb\"]'); input?.focus(); input?.dispatchEvent(new FocusEvent('focusin', { bubbles:true })); })()`)
+    await until(() => cdp.eval(`document.activeElement?.getAttribute?.('aria-label') === 'Chat with Mrs. Webb'`), 'touch focus modeled')
+    await until(() => cdp.eval(`!!document.querySelector('[data-ms-typing-context]')`), 'focus keeps context visible')
+    // Headless Chrome has no software keyboard. Shrink the viewport to model the visualViewport resize mobile browsers send when it opens.
+    const keyboardMetrics = ipadLandscapeQa
+      ? { width: 1024, height: 420, deviceScaleFactor: 1, mobile: true }
+      : { width: 390, height: 520, deviceScaleFactor: 1, mobile: true }
+    await cdp.send('Emulation.setDeviceMetricsOverride', keyboardMetrics)
+    const keyboardHeightLimit = ipadLandscapeQa ? 430 : 530
+    await until(() => cdp.eval(`window.visualViewport?.height <= ${keyboardHeightLimit}`), 'simulated touch keyboard viewport')
+    await until(() => cdp.eval(`!!document.querySelector('[data-ms-typing-context]')`), 'touch typing context')
+    assert.equal(await cdp.eval(`document.querySelector('[data-ms-typing-context]')?.textContent.includes('What do you already know about The Magic Finger?')`), true)
+    await until(() => cdp.eval(`(() => { const panel=document.querySelector('[data-ms-typing-context]'); const input=document.querySelector('textarea[aria-label=\"Chat with Mrs. Webb\"]'); const bottom=(window.visualViewport?.offsetTop||0)+(window.visualViewport?.height||window.innerHeight); return !!panel && !!input && panel.getBoundingClientRect().bottom <= bottom + 1 && input.getBoundingClientRect().bottom <= bottom + 1 })()`), 'typing controls fit the visible viewport')
+    await cdp.send('Emulation.setDeviceMetricsOverride', ipadLandscapeQa
+      ? { width: 1024, height: 768, deviceScaleFactor: 1, mobile: true }
+      : { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
+    pass('touch typing keeps recent conversation visible without automatic keyboard focus')
+  }
   const answer = 'Roald Dahl wrote the magic finger'
   await type(answer)
   await until(() => cdp.eval(`${snapshotExpression}?.learnerNotes?.[0]?.text === ${JSON.stringify(answer)}`), 'original note saved')
@@ -165,6 +191,14 @@ try {
   await until(() => cdp.eval(`!!document.querySelector('#webb-writing-attempt')`), 'writing focus')
   assert.equal(await cdp.eval(`document.body.textContent.includes(${JSON.stringify(AUTHOR)})`), true)
   assert.equal(await cdp.eval(`document.body.textContent.includes('What you showed')`), true)
+  if (touchQa) {
+    assert.notEqual(await cdp.eval(`document.activeElement?.id`), 'webb-writing-attempt')
+    await cdp.eval(`(() => { const input=document.querySelector('#webb-writing-attempt'); input?.focus(); input?.dispatchEvent(new FocusEvent('focusin', { bubbles:true })); })()`)
+    await until(() => cdp.eval(`!!document.querySelector('[data-ms-typing-context]')`), 'writing keeps recent context visible')
+    assert.equal(await cdp.eval(`document.querySelector('[data-ms-typing-context]')?.textContent.includes('a girl')`), true)
+    assert.equal(await cdp.eval(`parseFloat(getComputedStyle(document.querySelector('#webb-writing-attempt')).fontSize) >= 16`), true)
+    pass('writing studio preserves recent conversation while typing')
+  }
   await type('Roald Dahl wrote The Magic Finger.', '#webb-writing-attempt')
   await until(() => cdp.eval(`${snapshotExpression}?.writingIndex === 0 && ${snapshotExpression}?.writingSubphase === 'committed'`), 'approved sentence held')
   assert.equal(await cdp.eval(`document.body.textContent.includes('Roald Dahl wrote The Magic Finger.')`), true)

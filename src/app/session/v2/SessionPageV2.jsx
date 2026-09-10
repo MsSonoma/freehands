@@ -59,6 +59,8 @@ import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import CaptionPanel from '../components/CaptionPanel';
+import TypingConversationContext from '../components/TypingConversationContext';
+import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
 import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js';
@@ -499,6 +501,7 @@ export { SessionPageV2Inner };
 function SessionPageV2Inner() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const typingViewport = useTypingViewport();
   const [showTutorial, setShowTutorial] = useState(false);
 
   // Auto-show session tutorial on first visit
@@ -542,6 +545,7 @@ function SessionPageV2Inner() {
   const keyboardServiceRef = useRef(null);
   const teachingControllerRef = useRef(null);
   const answerInputRef = useRef(null);
+  const openingActionInputRef = useRef(null);
   const openingActionsControllerRef = useRef(null);
   const askReturnQuestionRef = useRef('');
   const askExitSpeechLockRef = useRef(false);
@@ -1449,11 +1453,17 @@ function SessionPageV2Inner() {
     };
   }, [lessonData, lessonKey, lessonId]);
 
-  // Reset opening action input/errors when switching action types
+  // Reset opening action input/errors when switching action types. Desktop keeps focus convenience;
+  // touch devices wait for an intentional tap so iPadOS does not cover the lesson with the keyboard.
   useEffect(() => {
     setOpeningActionInput('');
     setOpeningActionError('');
     setOpeningActionBusy(false);
+    if (!openingActionType || !shouldAutoFocusTextInput()) return undefined;
+    const frame = requestAnimationFrame(() => {
+      try { openingActionInputRef.current?.focus({ preventScroll: true }); } catch {}
+    });
+    return () => cancelAnimationFrame(frame);
   }, [openingActionType]);
   
   // Compute timeline highlight based on current phase
@@ -1474,8 +1484,9 @@ function SessionPageV2Inner() {
     return currentPhase;
   })();
 
-  // Autofocus answer input when awaiting an answer in any Q&A phase (footer parity)
+  // Desktop keeps keyboard-style focus convenience. Touch devices never summon the software keyboard automatically.
   useEffect(() => {
+    if (!shouldAutoFocusTextInput()) return;
     const awaiting =
       (currentPhase === 'comprehension' && comprehensionState === 'awaiting-answer') ||
       (currentPhase === 'exercise' && exerciseState === 'awaiting-answer') ||
@@ -4529,9 +4540,13 @@ function SessionPageV2Inner() {
   useEffect(() => {
     const calcVideoHeight = () => {
       try {
-        const w = window.innerWidth;
-        const h = window.innerHeight;
-        const isLandscape = w > h;
+        const vv = window.visualViewport || null;
+        const layoutW = window.innerWidth;
+        const layoutH = window.innerHeight;
+        const h = vv?.height || layoutH;
+        // Keyboard height must not change device orientation. A portrait iPad can become wider
+        // than the visible keyboard viewport, but it is still a portrait session.
+        const isLandscape = layoutW > layoutH;
         setIsMobileLandscape(isLandscape);
         setIsShortHeight(h <= 500);
         
@@ -7835,7 +7850,7 @@ function SessionPageV2Inner() {
   const timelineLandscapeHeight = 'clamp(40px, 6vh, 56px)';
   
   const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: '100vh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: `calc(${timelineLandscapeHeight} + 12px)`, '--msSideBySideH': msSideBySideH }
+    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: typingViewport.typing && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: `calc(${timelineLandscapeHeight} + 12px)`, '--msSideBySideH': msSideBySideH }
     : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape
@@ -8368,12 +8383,19 @@ function SessionPageV2Inner() {
         position: 'fixed',
         left: 0,
         right: 0,
-        bottom: 0,
+        bottom: typingViewport.typing ? `${typingViewport.keyboardInset}px` : 0,
         zIndex: 999,
         background: '#ffffff',
         borderTop: '1px solid #e5e7eb',
         boxShadow: '0 -4px 20px rgba(0,0,0,0.06)'
       }}>
+        <TypingConversationContext
+          entries={transcriptLines}
+          visible={typingViewport.typing}
+          maxItems={6}
+          teacherLabel="Ms. Sonoma"
+          accent="#c7442e"
+        />
         <div style={{
           margin: '0 auto',
           width: '100%',
@@ -8631,6 +8653,7 @@ function SessionPageV2Inner() {
             const renderInputRow = (placeholder, onEnterSend) => (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                 <input
+                  ref={openingActionInputRef}
                   type="text"
                   value={openingActionInput}
                   onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -8640,9 +8663,8 @@ function SessionPageV2Inner() {
                     }
                   }}
                   placeholder={placeholder}
-                  style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: 10 }}
+                  style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: 10, fontSize: 16 }}
                   disabled={openingActionBusy}
-                  autoFocus
                 />
               </div>
             );
@@ -8663,6 +8685,7 @@ function SessionPageV2Inner() {
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                       <div style={{ flex: '1 1 220px', minWidth: 0 }}>
                         <input
+                          ref={openingActionInputRef}
                           type="text"
                           value={openingActionInput}
                           onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -8674,8 +8697,7 @@ function SessionPageV2Inner() {
                             }
                           }}
                           placeholder="Ask Ms. Sonoma..."
-                          style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
-                          autoFocus
+                          style={{ width: '100%', border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: 16 }}
                           disabled={openingActionBusy}
                         />
                       </div>
@@ -8771,6 +8793,7 @@ function SessionPageV2Inner() {
                       <div style={{ marginBottom: 6, fontSize: '0.85rem', color: '#6b7280' }}>What would you like the poem to be about?</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <input
+                          ref={openingActionInputRef}
                           type="text"
                           value={openingActionInput}
                           onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -8780,8 +8803,7 @@ function SessionPageV2Inner() {
                             }
                           }}
                           placeholder="e.g., dinosaurs, space, friendship..."
-                          style={{ flex: 1, padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: '0.9rem' }}
-                          autoFocus
+                          style={{ flex: 1, padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 16 }}
                         />
                         <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningPoemSubmit} disabled={!openingActionInput.trim()}>
                           Send
@@ -8872,6 +8894,7 @@ function SessionPageV2Inner() {
                         )}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <input
+                            ref={openingActionInputRef}
                             type="text"
                             value={openingActionInput}
                             onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -8881,8 +8904,7 @@ function SessionPageV2Inner() {
                               }
                             }}
                             placeholder="Your answer..."
-                            style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
-                            autoFocus
+                            style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: 16 }}
                           />
                           <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningStoryContinue} disabled={!openingActionInput.trim()}>
                             Send
@@ -8918,6 +8940,7 @@ function SessionPageV2Inner() {
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <input
+                        ref={openingActionInputRef}
                         type="text"
                         value={openingActionInput}
                         onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -8929,8 +8952,7 @@ function SessionPageV2Inner() {
                           }
                         }}
                         placeholder={currentWordType ? `Type a ${currentWordType.toLowerCase()}` : 'Type a word'}
-                        style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: '0.9rem' }}
-                        autoFocus
+                        style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: 16 }}
                         disabled={openingActionBusy || !currentWordType}
                       />
                       <button
@@ -9489,7 +9511,7 @@ function SessionPageV2Inner() {
                   padding: '10px 16px',
                   border: '1px solid #bdbdbd',
                   borderRadius: 6,
-                  fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                  fontSize: 'max(16px, clamp(0.95rem, 1.6vw, 1.05rem))',
                   outline: 'none',
                   background: '#fff',
                   color: '#111827',
@@ -9559,7 +9581,7 @@ function SessionPageV2Inner() {
                   padding: '10px 16px',
                   border: '1px solid #bdbdbd',
                   borderRadius: 6,
-                  fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                  fontSize: 'max(16px, clamp(0.95rem, 1.6vw, 1.05rem))',
                   outline: 'none',
                   background: '#fff',
                   color: '#111827',
@@ -9819,7 +9841,6 @@ function SessionPageV2Inner() {
                     </button>
                     <input
                       ref={answerInputRef}
-                      autoFocus
                       type="text"
                       placeholder="Type your answer..."
                       value={currentValue}
@@ -9828,7 +9849,7 @@ function SessionPageV2Inner() {
                         padding: '10px 16px',
                         border: '1px solid #bdbdbd',
                         borderRadius: 6,
-                        fontSize: 'clamp(0.95rem, 1.6vw, 1.05rem)',
+                        fontSize: 'max(16px, clamp(0.95rem, 1.6vw, 1.05rem))',
                         outline: 'none',
                         background: '#fff',
                         color: '#111827'

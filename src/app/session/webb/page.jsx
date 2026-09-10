@@ -3,6 +3,8 @@ import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import WebbWritingStudio from './WebbWritingStudio'
+import TypingConversationContext from '../components/TypingConversationContext'
+import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import {
   emptyWebbObjectiveState, reconcileWebbObjectiveState, mergeWebbObjectiveResult,
   webbObjectiveProgress, createWebbObjectiveQueue,
@@ -214,6 +216,7 @@ function isNo(text) {
 function WebbPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
+  const typingViewport = useTypingViewport()
   const routeLearnerId = searchParams?.get('learnerId') || ''
   const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
 
@@ -2590,7 +2593,7 @@ function WebbPageInner() {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div style={{ height: '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+    <div style={{ height: typingViewport.typing && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
 
       {/* Header */}
       <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
@@ -2917,6 +2920,13 @@ function WebbPageInner() {
       {/* Footer: normal chat input. Writing uses the isolated full-screen studio. */}
       {isChatting && !writingMode && (
         <div style={footerStyle}>
+          <TypingConversationContext
+            entries={transcript}
+            visible={typingViewport.typing}
+            maxItems={6}
+            teacherLabel="Mrs. Webb"
+            accent={C.accent}
+          />
           {hasAllWritingReadyNotes(objectives, learnerNotes) && !essayMode && (
             <div style={{ marginBottom: 10 }}>
               <button
@@ -3473,6 +3483,7 @@ function WebbPageInner() {
         onBlankComplete={handleWritingBlankComplete}
         onNextSentence={handleNextWritingSentence}
         isLastSentence={nextWritingObjectiveIndex(objectives, acceptedSentences) === -1}
+        recentEntries={transcript}
       />
 
       {/* Essay full-screen overlay */}
@@ -3866,7 +3877,9 @@ function StudentInput({ onSend, loading }) {
   const [value, setValue] = useState('')
   const ref = useRef(null)
 
-  useEffect(() => { if (!loading) ref.current?.focus() }, [loading])
+  useEffect(() => {
+    if (!loading && shouldAutoFocusTextInput()) ref.current?.focus({ preventScroll: true })
+  }, [loading])
 
   function submit() {
     const t = value.trim()
@@ -3888,7 +3901,7 @@ function StudentInput({ onSend, loading }) {
         aria-label="Chat with Mrs. Webb"
         style={{
           flex: 1, border: `1.5px solid ${C.border}`, borderRadius: 10,
-          padding: '8px 12px', fontSize: 15, resize: 'none', outline: 'none',
+          padding: '8px 12px', fontSize: 16, resize: 'none', outline: 'none',
           fontFamily: 'inherit', background: loading ? '#f9fafb' : '#fff',
           color: C.text, WebkitAppearance: 'none',
         }}
