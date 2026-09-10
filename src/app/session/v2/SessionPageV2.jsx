@@ -3117,21 +3117,12 @@ function SessionPageV2Inner() {
     return phaseTimers[key] || 0;
   }, [phaseTimers]);
 
-  // Calculate lesson progress percentage (V1 parity)
-  // Used by SessionTimer to determine pace color for WORK timers.
-  const calculateLessonProgress = useCallback(() => {
-    const phaseWeights = {
-      discussion: 10,
-      teaching: 30,
-      comprehension: 50,
-      exercise: 70,
-      worksheet: 85,
-      test: 95
-    };
+  // Calculate progress within the work owned by the CURRENT timer only.
+  // Timer pace must never use whole-lesson phase weights.
+  const calculateTimerProgress = useCallback((phaseName) => {
+    if (!phaseName) return 0;
 
-    if (currentPhase === 'complete' || currentPhase === 'closing') return 100;
-
-    const baseWeight = phaseWeights[currentPhase] || 0;
+    const clampRatio = (value) => Math.max(0, Math.min(1, Number(value) || 0));
     const snapshot = snapshotServiceRef.current?.snapshot || null;
     const phaseData = snapshot?.phaseData || {};
 
@@ -3147,33 +3138,65 @@ function SessionPageV2Inner() {
       const nextIdxRaw = Number.isFinite(pd.nextQuestionIndex)
         ? pd.nextQuestionIndex
         : (Number.isFinite(pd.questionIndex) ? pd.questionIndex : 0);
-      const nextIdx = Math.max(0, Math.min(total, nextIdxRaw));
-      return Math.max(0, Math.min(1, nextIdx / total));
+      const completed = Math.max(0, Math.min(total, nextIdxRaw));
+      return clampRatio(completed / total);
     };
 
-    let progress = baseWeight;
+    if (phaseName === 'discussion') {
+      // The current configurable Discussion work timer owns the Discussion + Teaching block.
+      // Measure only progress inside that timer-owned block; never use lesson-wide phase weights.
+      const objectiveTotal = Math.max(0, Number(discussionObjectivesInfo.total) || 0);
+      const objectiveDone = Math.max(0, Math.min(objectiveTotal, Number(discussionObjectivesInfo.completed) || 0));
+      const teachingStages = ['concept', 'definitions', 'lecture', 'examples'];
+      const totalUnits = Math.max(1, objectiveTotal + teachingStages.length);
 
-    if (currentPhase === 'comprehension') {
-      const phaseRange = phaseWeights.comprehension - phaseWeights.teaching;
-      const ratio = getRatioFromSnapshot('comprehension', comprehensionTotalQuestions);
-      progress = phaseWeights.teaching + (ratio * phaseRange);
-    } else if (currentPhase === 'exercise') {
-      const phaseRange = phaseWeights.exercise - phaseWeights.comprehension;
-      const ratio = getRatioFromSnapshot('exercise', exerciseTotalQuestions);
-      progress = phaseWeights.comprehension + (ratio * phaseRange);
-    } else if (currentPhase === 'worksheet') {
-      const phaseRange = phaseWeights.worksheet - phaseWeights.exercise;
-      const ratio = getRatioFromSnapshot('worksheet', worksheetTotalQuestions);
-      progress = phaseWeights.exercise + (ratio * phaseRange);
-    } else if (currentPhase === 'test') {
-      const phaseRange = phaseWeights.test - phaseWeights.worksheet;
-      const ratio = getRatioFromSnapshot('test', testTotalQuestions);
-      progress = phaseWeights.worksheet + (ratio * phaseRange);
+      if (currentPhase === 'discussion') {
+        return clampRatio(objectiveDone / totalUnits) * 100;
+      }
+      if (currentPhase === 'teaching') {
+        if (teachingStage === 'complete') return 100;
+        const stageIndex = teachingStages.indexOf(teachingStage);
+        const completedTeachingStages = Math.max(0, stageIndex);
+        let withinStage = 0;
+        if (stageIndex >= 0 && totalSentences > 0) {
+          const completedSentences = Math.max(0, Math.min(
+            totalSentences,
+            sentenceIndex + (isInSentenceMode ? 0 : 1),
+          ));
+          withinStage = clampRatio(completedSentences / totalSentences);
+        }
+        const completedUnits = objectiveTotal + completedTeachingStages + withinStage;
+        return clampRatio(completedUnits / totalUnits) * 100;
+      }
+      return objectiveTotal > 0 ? clampRatio(objectiveDone / totalUnits) * 100 : 0;
     }
 
-    return Math.min(100, Math.max(0, progress));
-  }, [currentPhase, comprehensionTotalQuestions, exerciseTotalQuestions, worksheetTotalQuestions, testTotalQuestions]);
-  
+    if (phaseName === 'comprehension') {
+      return getRatioFromSnapshot('comprehension', comprehensionTotalQuestions) * 100;
+    }
+    if (phaseName === 'exercise') {
+      return getRatioFromSnapshot('exercise', exerciseTotalQuestions) * 100;
+    }
+    if (phaseName === 'worksheet') {
+      return getRatioFromSnapshot('worksheet', worksheetTotalQuestions) * 100;
+    }
+    if (phaseName === 'test') {
+      return getRatioFromSnapshot('test', testTotalQuestions) * 100;
+    }
+    return 0;
+  }, [
+    currentPhase,
+    discussionObjectivesInfo.completed,
+    discussionObjectivesInfo.total,
+    teachingStage,
+    sentenceIndex,
+    totalSentences,
+    isInSentenceMode,
+    comprehensionTotalQuestions,
+    exerciseTotalQuestions,
+    worksheetTotalQuestions,
+    testTotalQuestions,
+  ]);
   // Handle timer time-up callback
   const handlePhaseTimerTimeUp = useCallback(() => {    
     const phaseName = getCurrentPhaseName();
@@ -7935,7 +7958,7 @@ function SessionPageV2Inner() {
                 timerType={currentTimerMode[getCurrentPhaseName()]}
                 totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}
                 goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
-                lessonProgress={calculateLessonProgress()}
+                phaseProgress={calculateTimerProgress(getCurrentPhaseName())}
                 isPaused={timerPaused}
                 elapsedSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayElapsed : workTimerDisplayElapsed}
                 remainingSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayRemaining : workTimerDisplayRemaining}
@@ -9866,7 +9889,7 @@ function SessionPageV2Inner() {
             goldenKeyBonus={timerType === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
             isPaused={timerPaused}
             lessonKey={lessonKey}
-            lessonProgress={calculateLessonProgress()}
+            phaseProgress={calculateTimerProgress(getCurrentPhaseName())}
             onTimerClick={handleTimerClick}
           />
         ) : null;

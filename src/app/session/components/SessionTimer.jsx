@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react';
 import { TIMER_TYPE_EMOJI } from '../utils/phaseTimerDefaults';
+import { getTimerPaceColor } from '../utils/timerPace.mjs';
 
 /**
  * SessionTimer - Phase-aware countdown timer with play/work modes
@@ -11,7 +12,7 @@ import { TIMER_TYPE_EMOJI } from '../utils/phaseTimerDefaults';
  * 2. Self-timing mode (V1): Don't pass elapsed/remaining - component manages its own interval
  * 
  * @param {number} totalMinutes - Total time allocated (1-60 minutes)
- * @param {number} lessonProgress - Percentage of lesson work completed (0-100)
+ * @param {number} phaseProgress - Percentage of work completed within this timer's own phase/block (0-100)
  * @param {boolean} isPaused - Whether the timer is paused
  * @param {number} elapsedSeconds - (Optional) Elapsed seconds from external timer (pure display mode)
  * @param {number} remainingSeconds - (Optional) Remaining seconds from external timer (pure display mode)
@@ -25,7 +26,7 @@ import { TIMER_TYPE_EMOJI } from '../utils/phaseTimerDefaults';
  */
 export default function SessionTimer({ 
   totalMinutes = 5, 
-  lessonProgress = 0, 
+  phaseProgress = 0,
   isPaused = false,
   elapsedSeconds: externalElapsed = null,
   remainingSeconds: externalRemaining = null,
@@ -195,27 +196,15 @@ export default function SessionTimer({
     }
   }, [minutes, onTimeRemaining]);
 
-  // Calculate progress ratios (only for work timers)
-  const timeProgress = (elapsedSeconds / totalSeconds) * 100; // % of time elapsed
-  const progressDiff = lessonProgress - timeProgress; // positive = ahead, negative = behind
-
-  // Color logic:
-  // PLAY timers: always green (expected to use full time for games)
-  // WORK timers: green/yellow/red based on pace
-  //   - Green: ahead of schedule or within 5% behind
-  //   - Yellow: 5-15% behind
-  //   - Red: more than 15% behind or at 00:00
-  let color = '#22c55e'; // green by default
-  
-  if (timerType === 'work') {
-    if (remainingSeconds === 0) {
-      color = '#ef4444'; // red at timeout
-    } else if (progressDiff < -5) {
-      color = progressDiff < -15 ? '#ef4444' : '#eab308'; // red : yellow
-    }
-  }
-  // Play timers stay green always
-
+  // Pace color is phase-local: compare work completed within THIS timer's phase/block
+  // against elapsed time on THIS timer. Whole-lesson progress must never affect this color.
+  const color = getTimerPaceColor({
+    timerType,
+    elapsedSeconds,
+    totalSeconds,
+    remainingSeconds,
+    phaseProgress,
+  });
   const displayTime = `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
 
   const handleTimerClick = () => {
