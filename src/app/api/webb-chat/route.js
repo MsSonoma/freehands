@@ -35,7 +35,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, completedObjectives = [], writingReady = null) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], completedObjectives = [], writingReady = null) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -52,7 +52,7 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
   ]
 
   if (writingMode) {
-    lines.push(`\n${buildWritingGuidanceInstructions(writingNote, writingEvaluation || {})}`)
+    lines.push(`\n${buildWritingGuidanceInstructions(writingNote, writingEvaluation || {}, { objective: writingObjective, objectiveIndex: writingObjectiveIndex, totalObjectives: writingTotalObjectives, priorSentences: writingPriorSentences })}`)
     return lines.filter(Boolean).join('\n')
   }
 
@@ -151,7 +151,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, completedObjectives = [], writingReady = null } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], completedObjectives = [], writingReady = null } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -241,7 +241,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, completedObjectives, writingReady) },
+      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, completedObjectives, writingReady) },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

@@ -59,13 +59,17 @@ test('evaluator parsing advances only strict correct comprehension while retaini
   assert.equal(parsed.evaluationStatus[2], 'incorrect')
 })
 
-test('writing attempts preserve exact text and only accept accurate complete sentences', () => {
+test('writing attempts preserve exact text and require accuracy, sentence form, and essay-position fit', () => {
   const broken = createWritingAttempt({ objectiveIndex: 0, text: 'The colonists Britain taxes no say.', message: { id: 'm2' }, accuracy: 'correct', sentenceOk: false })
   assert.equal(broken.accepted, false)
   assert.equal(broken.text, 'The colonists Britain taxes no say.')
+  const disconnected = createWritingAttempt({ objectiveIndex: 1, text: 'This is accurate but belongs somewhere else.', message: { id: 'm-position' }, accuracy: 'correct', sentenceOk: true, positionFit: false })
+  assert.equal(disconnected.positionFit, false)
+  assert.equal(disconnected.accepted, false)
   const goodText = 'The colonists were angry because Britain taxed them but they did not have a say.'
-  const good = createWritingAttempt({ objectiveIndex: 0, text: goodText, message: { id: 'm3' }, accuracy: 'correct', sentenceOk: true })
+  const good = createWritingAttempt({ objectiveIndex: 0, text: goodText, message: { id: 'm3' }, accuracy: 'correct', sentenceOk: true, positionFit: true })
   assert.equal(good.accepted, true)
+  assert.equal(good.positionFit, true)
   assert.equal(good.text, goodText)
   assert.equal(nextWritingObjectiveIndex(['one', 'two'], { 0: good }), 1)
   assert.equal(nextWritingObjectiveIndex(['one', 'two'], { 0: good, 1: good }), -1)
@@ -80,6 +84,15 @@ test('writing guidance contract asks for learner retry and forbids supplied pros
   assert.doesNotMatch(unsafe, /colonists opposed/i)
   assert.match(unsafe, /try again in your own words/i)
   assert.equal(sanitizeWritingGuidance('Who is your sentence about? Add that, then try again.'), 'Who is your sentence about? Add that, then try again.')
+  const positionContext = { objective: 'The learner can explain the next consequence.', objectiveIndex: 1, totalObjectives: 3, priorSentences: ['The first learner sentence.'] }
+  const positionEvaluation = { accuracy: 'correct', sentenceOk: true, positionFit: false }
+  const positionInstructions = buildWritingGuidanceInstructions('the next consequence', positionEvaluation, positionContext)
+  assert.match(positionInstructions, /position fit: no/i)
+  assert.match(positionInstructions, /sentence 2 of 3/i)
+  assert.match(positionInstructions, /accepted learner-written sentences before this one are context only/i)
+  assert.match(positionInstructions, /Focus only on structural fit/i)
+  const positionFallback = sanitizeWritingGuidance('', positionEvaluation, positionContext)
+  assert.match(positionFallback, /does not connect cleanly to the essay so far/i)
 })
 
 test('essay assembly is deterministic and requires traceable learner-authored sentences', () => {

@@ -78,7 +78,8 @@ export function createVerbatimLearnerRecord({ objectiveIndex, evaluation, conver
   }
 }
 
-export function createWritingAttempt({ objectiveIndex, text, message, accuracy, sentenceOk, attemptedAt }) {
+export function createWritingAttempt({ objectiveIndex, text, message, accuracy, sentenceOk, positionFit = true, attemptedAt }) {
+  const fitsPosition = positionFit !== false
   return {
     objectiveIndex,
     text: String(text ?? ''),
@@ -86,7 +87,8 @@ export function createWritingAttempt({ objectiveIndex, text, message, accuracy, 
     sourceMessageCreatedAt: message?.createdAt || null,
     accuracy,
     sentenceOk: sentenceOk === true,
-    accepted: accuracy === 'correct' && sentenceOk === true,
+    positionFit: fitsPosition,
+    accepted: accuracy === 'correct' && sentenceOk === true && fitsPosition,
     attemptedAt: attemptedAt || new Date().toISOString(),
     assistance: 'mrs-webb-guidance',
     provenance: 'learner-message',
@@ -228,28 +230,57 @@ export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot
   }
 }
 
-export function buildWritingGuidanceInstructions(note, evaluation = {}) {
-  return [
-    `The research stage is finished. Guide the learner to transform this exact learner-authored note into an essay-ready sentence: "${String(note || '')}".`,
-    `The evaluator found conceptual accuracy: ${evaluation.accuracy || 'partial'}; sentence readiness: ${evaluation.sentenceOk ? 'yes' : 'no'}. Treat those judgments as authoritative.`,
-    `Guide the learner to notice and repair the problem, then ask for another attempt in their own words. You may identify an incomplete thought, missing subject or action, punctuation issue, ambiguity, misconception, or lost connection to the note.`,
-    `Never write, dictate, complete, rewrite, or offer a model sentence for the learner. Do not say "write" followed by suggested prose. The words accepted into the essay must come from the learner.`,
-    `Use 2-3 short, warm sentences, no markdown.`,
-  ].join('\n')
+function writingPositionRole(context = {}) {
+  const index = Number(context?.objectiveIndex)
+  const total = Number(context?.totalObjectives)
+  if (!Number.isInteger(index) || index < 0) return 'unspecified'
+  if (index === 0) return 'opening'
+  if (Number.isInteger(total) && total > 0 && index === total - 1) return 'conclusion'
+  return 'development'
 }
 
-const SAFE_WRITING_RETRY = 'Reread your sentence. Check that it says the same accurate idea as your note and is a complete thought, then try again in your own words.'
+function safeWritingRetry(evaluation = {}, context = {}) {
+  if (evaluation.accuracy === 'correct' && evaluation.sentenceOk === true && evaluation.positionFit === false) {
+    const role = writingPositionRole(context)
+    if (role === 'opening') return "Your idea is accurate and complete, but the first sentence needs to introduce the essay's main thought. Look at what this essay is about overall, then try again in your own words."
+    if (role === 'conclusion') return 'Your idea is accurate and complete, but the final sentence needs to close the essay instead of opening a new thought. Look back at what you already explained, then bring the essay to a finish in your own words.'
+    return 'Your idea is accurate and complete, but this sentence does not connect cleanly to the essay so far. Look at the sentence before it and decide how this idea should follow from it, then try again in your own words.'
+  }
+  return 'Reread your sentence. Check that it says the same accurate idea as your note and is a complete thought, then try again in your own words.'
+}
+
+export function buildWritingGuidanceInstructions(note, evaluation = {}, context = {}) {
+  const role = writingPositionRole(context)
+  const index = Number(context?.objectiveIndex)
+  const total = Number(context?.totalObjectives)
+  const priorSentences = Array.isArray(context?.priorSentences)
+    ? context.priorSentences.map(value => String(value || '').trim()).filter(Boolean).slice(0, Number.isInteger(index) && index >= 0 ? index : 0)
+    : []
+  return [
+    `The research stage is finished. Guide the learner to transform this exact learner-authored note into an essay-ready sentence: "${String(note || '')}".`,
+    context?.objective ? `The current ordered essay objective is: "${String(context.objective)}".` : '',
+    `The evaluator found conceptual accuracy: ${evaluation.accuracy || 'partial'}; sentence readiness: ${evaluation.sentenceOk ? 'yes' : 'no'}; position fit: ${evaluation.positionFit === false ? 'no' : 'yes'}. Treat those judgments as authoritative.`,
+    Number.isInteger(index) && Number.isInteger(total) && total > 0 ? `This is sentence ${index + 1} of ${total}; its structural role is ${role}.` : '',
+    priorSentences.length ? `The accepted learner-written sentences before this one are context only: ${JSON.stringify(priorSentences)}.` : '',
+    evaluation.accuracy === 'correct' && evaluation.sentenceOk === true && evaluation.positionFit === false
+      ? `The content and sentence form are already acceptable. Focus only on structural fit: help the learner notice whether this sentence should introduce, develop, connect, synthesize, or close the surrounding thought. Do not require a particular transition word and do not supply one.`
+      : `Guide the learner to notice and repair the problem, then ask for another attempt in their own words. You may identify an incomplete thought, missing subject or action, punctuation issue, ambiguity, misconception, or lost connection to the note.`,
+    `Never write, dictate, complete, rewrite, or offer a model sentence for the learner. Do not say "write" followed by suggested prose. The words accepted into the essay must come from the learner.`,
+    `Use 2-3 short, warm sentences, no markdown.`,
+  ].filter(Boolean).join('\n')
+}
 
 /** Prevent a model-guidance failure from placing generated candidate prose in front of the learner. */
-export function sanitizeWritingGuidance(reply) {
+export function sanitizeWritingGuidance(reply, evaluation = {}, context = {}) {
+  const fallback = safeWritingRetry(evaluation, context)
   const text = String(reply || '').trim()
-  if (!text) return SAFE_WRITING_RETRY
+  if (!text) return fallback
   const suppliesWording =
     /\b(?:you could|you can|try to|please)\s+(?:write|say|use)\b/i.test(text) ||
     /\b(?:write|say|try|use)\s*:\s*/i.test(text) ||
     /\b(?:here(?:'s| is)|for example)\b[^.!?]{0,40}["“]/i.test(text) ||
     /["“][^"”]*(?:\s+[^"”]+){5,}["”]/.test(text)
-  return suppliesWording ? SAFE_WRITING_RETRY : text
+  return suppliesWording ? fallback : text
 }
 
 function findLegacySource(chatMessages, response) {

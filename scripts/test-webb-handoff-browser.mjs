@@ -67,7 +67,7 @@ async function intercept({ requestId, request, resourceType }) {
       if (url.pathname === '/api/evidence') return fulfill(requestId, { ok: true, exposed_keys: [], exposedKeys: [], evidence_session: { id: sessionId, evidence_status: 'partial' }, accepted: 1 })
       if (url.pathname === '/api/webb-objectives') {
         if (body.action === 'generate') { generateCount++; await delay(1100); return fulfill(requestId, mode === 'startup-error' && generateCount === 1 ? { error: 'offline setup unavailable' } : { objectives }, mode === 'startup-error' && generateCount === 1 ? 503 : 200) }
-        if (body.action === 'check-writing') return fulfill(requestId, { accuracy: 'correct', sentenceOk: body.text !== 'a girl' })
+        if (body.action === 'check-writing') return fulfill(requestId, { accuracy: 'correct', sentenceOk: body.text !== 'a girl', positionFit: true })
         checkCount++
         if (['check-error', 'refresh-error'].includes(mode) && checkCount === 1) return fulfill(requestId, { error: 'offline check unavailable' }, 503)
         const response = await objectivesRoute(new Request(origin + url.pathname, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), { apiKey: 'offline', callModel: async (_system, prompt) => {
@@ -271,9 +271,15 @@ try {
   assert.equal(lastChat?.writingMode, true)
   assert.equal(lastChat?.writingObjective, NARRATOR)
   assert.equal(lastChat?.writingObjectiveIndex, 1)
+  assert.equal(lastChat?.writingTotalObjectives, 2)
+  assert.deepEqual(lastChat?.writingPriorSentences, ['Roald Dahl wrote The Magic Finger.'])
   const writingResumeRecords = records.slice(writingResumeRecordStart)
   assert.equal(writingResumeRecords.some(record => record.path === '/api/webb-objectives' && record.body?.action === 'check'), false)
   assert.equal(writingResumeRecords.some(record => record.path === '/api/webb-objectives' && record.body?.action === 'check-writing'), true)
+  const writingReviewRequest = writingResumeRecords.find(record => record.path === '/api/webb-objectives' && record.body?.action === 'check-writing')
+  assert.equal(writingReviewRequest.body.objectiveIndex, 1)
+  assert.equal(writingReviewRequest.body.totalObjectives, 2)
+  assert.deepEqual(writingReviewRequest.body.priorSentences, ['Roald Dahl wrote The Magic Finger.'])
   assert.equal(writingResumeRecords.some(record => record.path === '/api/webb-chat' && record.body?.writingMode !== true), false)
   pass('interrupted writing review resumes in composition with Mrs. Webb writing-aware')
   await type('The narrator is a girl.', '#webb-writing-attempt')

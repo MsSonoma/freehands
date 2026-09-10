@@ -1557,6 +1557,10 @@ function WebbPageInner() {
     const objectiveIndex = writingIndex
     const note = learnerNotesRef.current[objectiveIndex]
     if (!isWritingReadyNote(note)) return
+    const priorSentences = objectives.slice(0, objectiveIndex)
+      .map((_, index) => acceptedSentences?.[index]?.text)
+      .map(value => String(value || '').trim())
+      .filter(Boolean)
 
     const lastMessage = chatMessages.at(-1)
     const reusingSavedMessage = reuseMessage?.role === 'user' && lastMessage?.role === 'user'
@@ -1593,6 +1597,9 @@ function WebbPageInner() {
           note: note.text,
           text: trimmed,
           lesson: selectedLesson,
+          objectiveIndex,
+          totalObjectives: objectives.length,
+          priorSentences,
         }),
       })
       if (!evaluationRes.ok) throw new Error('Writing evaluation failed')
@@ -1604,6 +1611,7 @@ function WebbPageInner() {
         message: userMsg,
         accuracy: evaluation.accuracy,
         sentenceOk: evaluation.sentenceOk,
+        positionFit: evaluation.positionFit,
       })
       const priorAttempts = Array.isArray(writingAttempts?.[objectiveIndex]) ? writingAttempts[objectiveIndex] : []
       const alreadyRecorded = priorAttempts.some(existing =>
@@ -1641,7 +1649,8 @@ function WebbPageInner() {
           writingSubphase: WEBB_WRITING_SUBPHASES.REVIEW, writingDraft: '',
           writingAttempts: nextWritingAttempts, chatMessages: nextHistory, pendingWritingReview: null, essayMode: false,
         })
-        let reply = sanitizeWritingGuidance('')
+        const writingContext = { objective: objectives[objectiveIndex], objectiveIndex, totalObjectives: objectives.length, priorSentences }
+        let reply = sanitizeWritingGuidance('', evaluation, writingContext)
         try {
           const guidanceRes = await fetch('/api/webb-chat', {
             method: 'POST',
@@ -1652,13 +1661,15 @@ function WebbPageInner() {
               writingMode: true,
               writingObjective: objectives[objectiveIndex],
               writingObjectiveIndex: objectiveIndex,
+              writingTotalObjectives: objectives.length,
+              writingPriorSentences: priorSentences,
               writingNote: note.text,
-              writingEvaluation: { accuracy: evaluation.accuracy, sentenceOk: evaluation.sentenceOk },
+              writingEvaluation: { accuracy: evaluation.accuracy, sentenceOk: evaluation.sentenceOk, positionFit: evaluation.positionFit },
             }),
           })
           if (guidanceRes.ok) {
             const guidance = await guidanceRes.json()
-            reply = sanitizeWritingGuidance(guidance.reply)
+            reply = sanitizeWritingGuidance(guidance.reply, evaluation, writingContext)
           }
         } catch { /* safe retry copy remains */ }
         if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return

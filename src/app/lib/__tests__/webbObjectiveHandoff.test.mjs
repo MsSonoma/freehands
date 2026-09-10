@@ -165,6 +165,95 @@ test('model failure does not mutate supplied learning state', async () => {
   await assert.rejects(evaluateWebbObjectives({ objectives: OBJECTIVES, conversation: first('Roald Dahl'), callModel: async () => '' }), /no result/)
 })
 
+test('objective generation repairs bundled draft rows and exposes only the ordered objective strings', async () => {
+  const bundled = {
+    objectives: [
+      { role: 'opening', atomic_focus: 'character and problem', connection: 'sets up the story', objective: 'The learner can explain who the main character is and what problem the character faces.' },
+      { role: 'development', atomic_focus: 'first attempt', connection: 'follows the problem', objective: 'The learner can explain what the character tries first.' },
+      { role: 'development', atomic_focus: 'turning clue', connection: 'changes the search', objective: 'The learner can explain what clue changes the search.' },
+      { role: 'development', atomic_focus: 'resolution', connection: 'resolves the search', objective: 'The learner can explain how the problem is solved.' },
+      { role: 'conclusion', atomic_focus: 'lesson and evidence', connection: 'closes on meaning', objective: 'The learner can explain the lesson about responsibility and identify the event that supports it.' },
+    ],
+  }
+  const repaired = {
+    objectives: [
+      { role: 'opening', atomic_focus: 'central problem', connection: 'establishes the situation', objective: 'The learner can explain the central problem the character faces.' },
+      { role: 'development', atomic_focus: 'first attempt', connection: 'shows the first response', objective: 'The learner can explain what the character tries first.' },
+      { role: 'development', atomic_focus: 'turning clue', connection: 'changes the search', objective: 'The learner can explain what clue changes the search.' },
+      { role: 'development', atomic_focus: 'supporting event', connection: 'provides evidence before interpretation', objective: 'The learner can identify the event that best supports the lesson about responsibility.' },
+      { role: 'conclusion', atomic_focus: 'responsibility theme', connection: 'synthesizes the earlier events', objective: 'The learner can explain the lesson the story suggests about responsibility.' },
+    ],
+  }
+  let calls = 0
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'generate', lesson: {
+      title: 'A Lost Dog Comes Home', subject: 'language arts', grade: '4',
+      shortanswer: [
+        { question: 'What problem does the character face?' },
+        { question: 'What does the character try first?' },
+        { question: 'What clue changes the search?' },
+        { question: 'Which event supports the lesson?' },
+        { question: 'What lesson does the story suggest about responsibility?' },
+      ],
+    } }),
+  }), { apiKey: 'offline-test', callModel: async (system, user, _maxTokens, _temperature, responseFormat) => {
+    calls += 1
+    assert.equal(responseFormat?.type, 'json_object')
+    if (calls === 1) {
+      assert.match(system, /one focused comprehension question/i)
+      return JSON.stringify(bundled)
+    }
+    assert.match(system, /failed the atomic essay-plan validator/i)
+    const repairInput = JSON.parse(user)
+    assert.ok(repairInput.validator_violations.some(value => /row 1 combines/.test(value)))
+    assert.ok(repairInput.validator_violations.some(value => /row 5 combines/.test(value)))
+    return JSON.stringify(repaired)
+  } })
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.equal(calls, 2)
+  assert.deepEqual(data.objectives, repaired.objectives.map(row => row.objective))
+  assert.equal(Object.prototype.hasOwnProperty.call(data, 'roles'), false)
+})
+
+test('writing evaluator returns a separate structural-position judgment bound to prior learner prose', async () => {
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'check-writing', objective: NARRATOR, note: 'the narrator is a girl', text: 'The narrator is a girl.',
+      lesson: { title: 'Book response', subject: 'language arts', grade: '5' },
+      objectiveIndex: 1, totalObjectives: 3, priorSentences: ['This story begins with an unusual problem.'],
+    }),
+  }), { apiKey: 'offline-test', callModel: async (system, user) => {
+    assert.match(system, /POSITION_FIT/)
+    assert.match(system, /Do not require a transition word/)
+    const input = JSON.parse(user)
+    assert.equal(input.essay_position.objective_index, 1)
+    assert.equal(input.essay_position.position_role, 'development')
+    assert.deepEqual(input.essay_position.prior_accepted_learner_sentences, ['This story begins with an unusual problem.'])
+    assert.equal(input.learner_proposed_sentence, 'The narrator is a girl.')
+    return 'correct|yes|no'
+  } })
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), { accuracy: 'correct', sentenceOk: true, positionFit: false })
+})
+
+test('explicitly contradictory discourse cues cannot override essay position even when the model says yes', async () => {
+  const cases = [
+    { text: 'Finally, seeds need water to begin growing.', objectiveIndex: 0, totalObjectives: 5, objective: 'The learner can explain what a seed needs to begin growing.' },
+    { text: 'First, plants are important because they provide food for animals.', objectiveIndex: 4, totalObjectives: 5, objective: 'The learner can explain why plants are important in an ecosystem.' },
+  ]
+  for (const testCase of cases) {
+    const response = await POST(new Request('http://localhost/api/webb-objectives', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'check-writing', note: 'accurate learner note', lesson: { title: 'Plants', subject: 'science', grade: '4' }, ...testCase }),
+    }), { apiKey: 'offline-test', callModel: async () => 'correct|yes|yes' })
+    assert.equal(response.status, 200)
+    assert.deepEqual(await response.json(), { accuracy: 'correct', sentenceOk: true, positionFit: false })
+  }
+})
+
 test('two completed concepts unlock writing, not automatic essay sentences; refresh preserves retries', async () => {
   const conversation = first('Roald Dahl wrote The Magic Finger.')
   let state = mergeWebbObjectiveResult(OBJECTIVES, emptyWebbObjectiveState(), await routeResult(conversation, judgment()), conversation)

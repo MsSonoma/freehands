@@ -44,6 +44,17 @@ test('writing studio keeps objective context and learner-controlled commit gates
   assert.doesNotMatch(studio, /learnerNotes/)
 })
 
+test('writing evaluation is aware of ordered essay position without taking learner authorship', () => {
+  assert.match(route, /POSITION_FIT/)
+  assert.match(route, /prior_accepted_learner_sentences/)
+  assert.match(page, /totalObjectives: objectives\.length/)
+  assert.match(page, /writingTotalObjectives: objectives\.length/)
+  assert.match(page, /writingPriorSentences: priorSentences/)
+  assert.match(page, /positionFit: evaluation\.positionFit/)
+  assert.match(model, /accepted: accuracy === 'correct' && sentenceOk === true && fitsPosition/)
+  assert.match(model, /Do not require a particular transition word and do not supply one/)
+})
+
 test('writing resume restores the durable composition stage instead of re-entering research', () => {
   assert.match(model, /WEBB_SNAPSHOT_VERSION = 6/)
   assert.match(model, /restoreWebbCompositionState/)

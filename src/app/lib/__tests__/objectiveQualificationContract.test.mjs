@@ -11,8 +11,21 @@ const webb = fs.readFileSync(new URL('../../api/webb-chat/route.js', import.meta
 test('generated objectives are atomic rather than bundled clause checklists', () => {
   assert.match(route, /derive 5 to 8 ATOMIC core comprehension objectives/)
   assert.match(route, /assess ONE central idea, relationship, process, or skill only/)
-  assert.match(route, /never merge distinct concepts merely to reduce the count/)
+  assert.match(route, /must never require two independently gradable answers/)
+  assert.match(route, /Do not combine identification plus explanation/)
   assert.doesNotMatch(route, /Consolidate overlapping questions into a single objective/)
+})
+
+test('Mrs. Webb objective order is an essay blueprint without sacrificing atomic mastery', () => {
+  assert.match(route, /silently reverse-engineer a coherent short essay appropriate to this lesson/)
+  assert.match(route, /returned objective order is authoritative for later writing/)
+  assert.match(route, /Objective 1 must establish the essay's controlling idea or necessary opening context/)
+  assert.match(route, /A bare title, author, character name, date, vocabulary definition, or trivia fact is not a topic sentence/)
+  assert.match(route, /Every middle objective must intentionally advance/)
+  assert.match(route, /final objective must be the essay's synthesis, significance, theme, overall explanation/)
+  assert.match(route, /Do not use a name, date, event-identification task, evidence-identification task/)
+  assert.match(route, /Preserve mastery-first atomicity even while creating essay flow/)
+  assert.match(route, /Do not prescribe transition words, model sentences, or exact learner wording/)
 })
 
 test('semantic qualification accepts the central concept without requiring secondary detail or polished form', () => {
