@@ -283,6 +283,64 @@ test('activation route rebuilds Free establishment server-side and preserves pai
   assert.equal((await paidResponse.json()).forecast_items[0].title, 'Injected future intent')
 })
 
+test('plan-details update lets facilitator recurrence override one-off intent and drops expired rows', async () => {
+  const repository = memoryRepository()
+  const active = await activateSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, snapshot: snapshot(), now: NOW })
+  repository.state.forecast.push({
+    lineage_id: 'cccccccc-cccc-4ccc-8ccc-cccccccccccc',
+    revision_id: active.active_revision.id,
+    planned_date: '2026-08-22',
+    subject: 'math',
+    title: 'Expired lesson intent',
+    description: 'This old row must not be copied into a new revision.',
+    lesson_key: 'math/expired.json',
+    item_type: 'lesson',
+    origin: 'facilitator',
+    sort_order: 0,
+    metadata: {},
+  })
+  const originalPattern = structuredClone(active.active_revision.weekly_pattern)
+  const recurringPattern = {
+    sunday: [],
+    monday: [],
+    tuesday: [{ subject: 'math' }],
+    wednesday: [],
+    thursday: [],
+    friday: [],
+    saturday: [],
+  }
+  const response = await activateSyllabusRoute(
+    new Request('http://localhost/api/syllabus/activate', {
+      method: 'POST',
+      headers: { Authorization: 'Bearer test', 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        learnerId: LEARNER,
+        expectedActiveRevisionId: active.active_revision.id,
+        planDetails: {
+          goals: active.active_revision.goals,
+          subjects: active.active_revision.subjects,
+          weekly_pattern: recurringPattern,
+          teaching_guidance: active.active_revision.teaching_guidance,
+          forecast_items: [{ title: 'client must not control intent here' }],
+        },
+      }),
+    }),
+    {
+      requestContext: { user: { id: FACILITATOR }, admin: {} },
+      repository,
+      syllabusAccess: { can_change_intent: true },
+      now: NOW,
+    },
+  )
+  assert.equal(response.status, 201)
+  const result = await response.json()
+  assert.deepEqual(result.active_revision.weekly_pattern, recurringPattern)
+  assert.deepEqual(active.active_revision.weekly_pattern, originalPattern)
+  assert.deepEqual(result.forecast_items.map((item) => item.title), ['Fractions'])
+  assert.deepEqual(result.forecast_items.map((item) => item.planned_date), ['2026-08-24'])
+  assert.deepEqual(result.active_revision.planning_policy, active.active_revision.planning_policy)
+  assert.equal(result.active_revision.legacy_provenance.plan_details_update.source_active_revision_id, active.active_revision.id)
+})
 test('Teaching Guidance override rejects future-intent smuggling and invalid payloads before writes', async () => {
   const invalidOverrides = [
     { curriculum_preferences: { focus_topics: [], forecast_items: [{ title: 'smuggled' }] } },

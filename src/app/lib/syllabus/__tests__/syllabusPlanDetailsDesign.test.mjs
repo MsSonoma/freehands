@@ -41,16 +41,26 @@ test('all four plan sections remain editable through the shared facilitator edit
   assert.match(facilitatorSyllabus, /editingSection && syllabus\?\.has_active_syllabus && <SyllabusPlanEditor/)
 })
 
-test('shared editor preserves revision safety and capacity PIN protection without displaying revision numbers', () => {
+test('shared editor preserves revision safety while plan configuration stays independent of lesson-capacity PINs', () => {
   assert.match(editorSource, /fetch\('\/api\/syllabus\/activate'/)
   assert.match(editorSource, /expectedActiveRevisionId: revision\.id/)
-  assert.match(editorSource, /SYLLABUS_CAPACITY_PIN_REQUIRED/)
-  assert.match(editorSource, /requestFacilitatorPinException/)
+  assert.match(editorSource, /planDetails:/)
+  assert.doesNotMatch(editorSource, /SYLLABUS_CAPACITY_PIN_REQUIRED|requestFacilitatorPinException/)
+  assert.doesNotMatch(editorSource, /snapshot:\s*\{\s*\.\.\.draft/)
   assert.match(editorSource, /normalizedTeachingGuidance/)
   assert.match(editorSource, /addWeeklyPatternSlot/)
   assert.match(editorSource, /removeWeeklyPatternSlot/)
   assert.doesNotMatch(editorSource, /revision_number|Revision \d|Revision \{/)
   assert.match(documentSource, /revisionId: revision\?\.id/)
+})
+
+test('weekly pattern editor makes empty days explicit and does not preselect a subject', () => {
+  assert.match(editorSource, />No lessons<\/p>/)
+  assert.match(editorSource, /'Add lesson'/)
+  assert.match(editorSource, /<option value="">Choose subject<\/option>/)
+  assert.match(editorSource, /Object\.prototype\.hasOwnProperty\.call\(slotSubjects, day\)/)
+  assert.doesNotMatch(editorSource, /slotSubjects\[day\] \|\| subjectName\(draft\.subjects\?\.\[0\]\)/)
+  assert.match(editorSource, /Days can be empty/)
 })
 
 test('Syllabus document reduces fixed vertical chrome before the lesson week', () => {

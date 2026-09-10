@@ -63,6 +63,7 @@
 .weekPattern .patternDay { display: flex; flex-direction: column; gap: 8px; }
 .patternDay strong { display: flex; justify-content: space-between; gap: 12px; }
 .patternDay strong small { color: #6b7280; font-weight: 600; }
+.patternEmpty { color: #9ca3af; font-size: 13px; }
 .patternDay ul { display: grid; gap: 6px; margin: 0; padding: 0; list-style: none; }
 .patternDay li { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 6px 8px; border: 1px solid #e5e7eb; border-radius: 8px; }
 .patternDay button { border: 1px solid #d1d5db; border-radius: 7px; background: #fff; padding: 5px 8px; cursor: pointer; }

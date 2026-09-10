@@ -158,10 +158,10 @@ export async function activateProposedSyllabus({
   })
 }
 
-async function persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, today = now.toISOString().slice(0, 10), requireNoActiveRevision = false, allowCapacityException = false, expectedActiveRevisionId = undefined, allowLegacyOrigins = false }) {
+async function persistSyllabusActivation({ repository, facilitatorId, learnerId, snapshot, now, today = now.toISOString().slice(0, 10), requireNoActiveRevision = false, allowCapacityException = false, skipCapacityCheck = false, expectedActiveRevisionId = undefined, allowLegacyOrigins = false }) {
   await requireOwnedLearner(repository, learnerId, facilitatorId)
   const planning = validateSnapshot(snapshot, { today, allowLegacyOrigins })
-  await enforceActivationCapacity({ repository, facilitatorId, learnerId, snapshot: planning, allowCapacityException })
+  if (!skipCapacityCheck) await enforceActivationCapacity({ repository, facilitatorId, learnerId, snapshot: planning, allowCapacityException })
   let syllabus = await repository.findSyllabus(facilitatorId, learnerId)
   if (!syllabus) syllabus = await repository.createOrFindSyllabus(facilitatorId, learnerId)
   if (expectedActiveRevisionId !== undefined && syllabus.active_revision_id !== expectedActiveRevisionId) {
@@ -223,6 +223,52 @@ async function persistSyllabusActivation({ repository, facilitatorId, learnerId,
   return { syllabus, active_revision: revision, forecast_items: await repository.listForecastItems(revision.id) }
 }
 
+export async function updateSyllabusPlanDetails({
+  repository,
+  facilitatorId,
+  learnerId,
+  expectedActiveRevisionId,
+  planDetails,
+  now = new Date(),
+  today = now.toISOString().slice(0, 10),
+}) {
+  await requireOwnedLearner(repository, learnerId, facilitatorId)
+  const syllabus = await repository.findSyllabus(facilitatorId, learnerId)
+  if (!syllabus || syllabus.active_revision_id !== expectedActiveRevisionId) {
+    throw new SyllabusError('The active Syllabus changed. Reload before saving plan details.', 409, 'ACTIVATION_CONFLICT')
+  }
+  const activeRevision = await repository.findRevision(expectedActiveRevisionId, syllabus.id)
+  if (!activeRevision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
+  if (!planDetails || typeof planDetails !== 'object' || Array.isArray(planDetails)) {
+    throw new SyllabusError('Plan details are required.', 400, 'PLAN_DETAILS_INVALID')
+  }
+  const activeItems = await repository.listForecastItems(activeRevision.id)
+  const has = (key) => Object.prototype.hasOwnProperty.call(planDetails, key)
+  return persistSyllabusActivation({
+    repository,
+    facilitatorId,
+    learnerId,
+    snapshot: {
+      effective_from: today,
+      goals: has('goals') ? planDetails.goals : activeRevision.goals,
+      subjects: has('subjects') ? planDetails.subjects : activeRevision.subjects,
+      weekly_pattern: has('weekly_pattern') ? planDetails.weekly_pattern : activeRevision.weekly_pattern,
+      teaching_guidance: has('teaching_guidance') ? planDetails.teaching_guidance : activeRevision.teaching_guidance,
+      planning_policy: activeRevision.planning_policy,
+      legacy_provenance: {
+        ...(activeRevision.legacy_provenance || {}),
+        plan_details_update: { version: 1, source_active_revision_id: activeRevision.id },
+      },
+      forecast_items: activeItems.filter((item) => String(item?.planned_date || '').slice(0, 10) >= today),
+      change_reason: String(planDetails.change_reason || '').trim() || 'Facilitator updated Syllabus plan details',
+    },
+    now,
+    today,
+    skipCapacityCheck: true,
+    expectedActiveRevisionId,
+    allowLegacyOrigins: true,
+  })
+}
 export async function activateSyllabus({ repository, facilitatorId, learnerId, snapshot, now = new Date(), today = now.toISOString().slice(0, 10), allowFutureIntentChanges = true, allowCapacityException = false, expectedActiveRevisionId = undefined }) {
   if (!allowFutureIntentChanges) {
     throw new SyllabusError('Future Syllabus planning requires the current Lesson Planner entitlement', 403, 'SYLLABUS_PLANNING_REQUIRED')

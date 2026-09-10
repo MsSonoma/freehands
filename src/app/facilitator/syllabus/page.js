@@ -526,10 +526,23 @@ export default function SyllabusPage() {
     } : current)
   }
 
+  function beginPatternSlot(day) {
+    setSlotSubjects((current) => ({ ...current, [day]: '' }))
+  }
+
+  function cancelPatternSlot(day) {
+    setSlotSubjects((current) => {
+      const next = { ...current }
+      delete next[day]
+      return next
+    })
+  }
+
   function addPatternSlot(day) {
-    const subject = slotSubjects[day] || draft?.subjects?.[0]?.name || ''
+    const subject = String(slotSubjects[day] || '').trim()
     if (!draft || !subject) return
     setDraft({ ...draft, weekly_pattern: addWeeklyPatternSlot(draft.weekly_pattern, day, subject) })
+    cancelPatternSlot(day)
   }
 
   function removePatternSlot(day, index) {
@@ -827,21 +840,22 @@ export default function SyllabusPage() {
                 <h2>Subjects</h2>
                 {draft && planningAccess.can_change_intent ? <><ul className={styles.subjectEditor}>{draft.subjects.map((subject) => {
                   const referenced = referencedSubjects.has(subject.name.toLocaleLowerCase())
-                  return <li key={subject.name}><span>{subject.name}{referenced && <small>Used in this plan</small>}</span><button type="button" disabled={referenced} title={referenced ? 'Reconcile weekly pattern and forecast references before removing this subject.' : `Remove ${subject.name}`} onClick={() => removeDraftSubject(subject.name)}>Remove</button></li>
-                })}</ul><div className={styles.addSubject}><input value={newSubject} onChange={(event) => setNewSubject(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addDraftSubject() } }} aria-label="New subject name" placeholder="Add a subject" /><button type="button" className={styles.secondaryButton} onClick={addDraftSubject}>Add</button></div><p className={styles.hint}>Subjects used by the weekly pattern or forecast cannot be removed here. Available catalog: {availableSubjects.map((item) => item.name).join(', ') || 'none'}</p></> : <ul className={styles.simpleList}>{(displayRevision.subjects || []).map((item) => <li key={item.name}>{item.name}</li>)}</ul>}
+                  return <li key={subject.name}><span>{subject.name}{referenced && <small>Used in this plan</small>}</span><button type="button" disabled={referenced} title={referenced ? 'Remove this subject from the weekly pattern and prepared future lessons first.' : `Remove ${subject.name}`} onClick={() => removeDraftSubject(subject.name)}>Remove</button></li>
+                })}</ul><div className={styles.addSubject}><input value={newSubject} onChange={(event) => setNewSubject(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addDraftSubject() } }} aria-label="New subject name" placeholder="Add a subject" /><button type="button" className={styles.secondaryButton} onClick={addDraftSubject}>Add</button></div><p className={styles.hint}>Subjects used by the weekly pattern or prepared future lessons cannot be removed here. Available catalog: {availableSubjects.map((item) => item.name).join(', ') || 'none'}</p></> : <ul className={styles.simpleList}>{(displayRevision.subjects || []).map((item) => <li key={item.name}>{item.name}</li>)}</ul>}
               </section>
 
               <section className={styles.section}>
                 <h2>Weekly Pattern</h2>
-                <p className={styles.sectionIntro}>Each entry is one automatic lesson slot. Duplicate subjects are allowed; two Math entries means two Math slots that day.</p>
+                <p className={styles.sectionIntro}>The weekly pattern is the recurring schedule. Days can be empty. Add multiple lessons only when that is the pattern you want every week.</p>
                 <div className={styles.weekPattern}>{DAYS.map((day) => {
                   const subjects = displayRevision.weekly_pattern?.[day] || []
                   const capacity = weeklyPatternCapacity(displayRevision.weekly_pattern, day)
                   return <div key={day} className={styles.patternDay}><strong>{DAY_LABELS[day]} <small>{capacity} automatic lesson slot{capacity === 1 ? '' : 's'}</small></strong>
                     {draft && planningAccess.can_change_intent ? <>
+                      {subjects.length === 0 && <span className={styles.patternEmpty}>No lessons</span>}
                       <ul>{subjects.map((item, index) => <li key={`${day}-${index}`}><span>{typeof item === 'string' ? item : item.subject}</span><button type="button" onClick={() => removePatternSlot(day, index)}>Remove</button></li>)}</ul>
-                      <div className={styles.patternAdd}><select aria-label={`Subject slot for ${DAY_LABELS[day]}`} value={slotSubjects[day] || draft.subjects?.[0]?.name || ''} onChange={(event) => setSlotSubjects({ ...slotSubjects, [day]: event.target.value })}>{(draft.subjects || []).map((subject) => <option key={subject.name} value={subject.name}>{subject.name}</option>)}</select><button type="button" onClick={() => addPatternSlot(day)}>Add slot</button></div>
-                    </> : <span>{subjects.map((item) => typeof item === 'string' ? item : item.subject).join(', ') || 'No automatic lessons'}</span>}
+                      {Object.prototype.hasOwnProperty.call(slotSubjects, day) ? <div className={styles.patternAdd}><select autoFocus aria-label={`Subject slot for ${DAY_LABELS[day]}`} value={slotSubjects[day]} onChange={(event) => setSlotSubjects({ ...slotSubjects, [day]: event.target.value })}><option value="">Choose subject</option>{(draft.subjects || []).map((subject) => <option key={subject.name} value={subject.name}>{subject.name}</option>)}</select><button type="button" disabled={!slotSubjects[day]} onClick={() => addPatternSlot(day)}>Add</button><button type="button" onClick={() => cancelPatternSlot(day)}>Cancel</button></div> : <button type="button" disabled={(draft.subjects || []).length === 0} onClick={() => beginPatternSlot(day)}>{subjects.length ? 'Add another lesson' : 'Add lesson'}</button>}
+                    </> : <span>{subjects.map((item) => typeof item === 'string' ? item : item.subject).join(', ') || 'No lessons'}</span>}
                   </div>
                 })}</div>
               </section>

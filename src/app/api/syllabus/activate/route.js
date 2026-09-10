@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server.js'
 import { getSyllabusRequestContext } from '../../../lib/syllabus/request.server.mjs'
-import { activateProposedSyllabus, activateSyllabus, establishSyllabusFromLegacyPlan } from '../../../lib/syllabus/revisions.server.mjs'
+import { activateProposedSyllabus, activateSyllabus, establishSyllabusFromLegacyPlan, updateSyllabusPlanDetails } from '../../../lib/syllabus/revisions.server.mjs'
 import { createSyllabusRepository } from '../../../lib/syllabus/supabaseRepository.server.mjs'
 import { SyllabusError, validateLearnerId } from '../../../lib/syllabus/schema.mjs'
 import { loadSyllabusAccess, requireSyllabusFuturePlanning } from '../../../lib/syllabus/entitlements.server.mjs'
@@ -37,7 +37,17 @@ export async function POST(request, deps = {}) {
       requireSyllabusFuturePlanning(access)
     }
     let result
-    if (body?.proposalRevisionId) {
+    if (body?.planDetails) {
+      result = await updateSyllabusPlanDetails({
+        repository,
+        facilitatorId: context.user.id,
+        learnerId,
+        expectedActiveRevisionId: body.expectedActiveRevisionId,
+        planDetails: body.planDetails,
+        now,
+        today,
+      })
+    } else if (body?.proposalRevisionId) {
       result = await activateProposedSyllabus({
         repository,
         facilitatorId: context.user.id,

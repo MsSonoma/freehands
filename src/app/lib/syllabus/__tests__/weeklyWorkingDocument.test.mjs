@@ -131,10 +131,13 @@ test('inference remains a read-only composition and has no lesson_schedule write
   assert.doesNotMatch(composer, /from\(['"]lesson_schedule|insert\(|upsert\(|update\(/)
 })
 
-test('facilitator Syllabus editor exposes daily capacity and duplicate-slot controls', () => {
+test('facilitator Syllabus editor keeps recurring capacity explicit without forcing a subject onto empty days', () => {
   const page = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
-  assert.match(page, /two Math entries means two Math slots that day/i)
+  assert.match(page, /weekly pattern is the recurring schedule/i)
+  assert.match(page, /Days can be empty/i)
   assert.match(page, /addWeeklyPatternSlot/)
   assert.match(page, /removeWeeklyPatternSlot/)
-  assert.match(page, /automatic lesson slot/)
+  assert.match(page, /'Add lesson'/)
+  assert.match(page, /<option value="">Choose subject<\/option>/)
+  assert.doesNotMatch(page, /slotSubjects\[day\] \|\| draft\?\.subjects\?\.\[0\]\?\.name/)
 })

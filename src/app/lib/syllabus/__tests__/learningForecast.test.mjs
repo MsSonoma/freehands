@@ -281,6 +281,58 @@ test('weekly pattern owns next-week slot count and snapshot preserves existing i
   assert.equal(built.additions[0].description, 'Trace energy through a simple system.')
 })
 
+test('an unusual eight-lesson week never rewrites a four-day recurring forecast pattern', () => {
+  const recurring = {
+    ...activeRevision(),
+    id: 'four-day-revision',
+    subjects: [
+      { name: 'math' },
+      { name: 'language arts' },
+      { name: 'science' },
+      { name: 'social studies' },
+    ],
+    weekly_pattern: {
+      sunday: [],
+      monday: [{ subject: 'math' }],
+      tuesday: [{ subject: 'language arts' }],
+      wednesday: [{ subject: 'science' }],
+      thursday: [{ subject: 'social studies' }],
+      friday: [],
+      saturday: [],
+    },
+  }
+  const unusualCurrentWeek = [
+    ['2026-09-08', 'math', 0],
+    ['2026-09-08', 'math', 1],
+    ['2026-09-09', 'science', 0],
+    ['2026-09-09', 'science', 1],
+    ['2026-09-10', 'language arts', 0],
+    ['2026-09-10', 'language arts', 1],
+    ['2026-09-11', 'social studies', 0],
+    ['2026-09-11', 'social studies', 1],
+  ].map(([planned_date, subject, sort_order], index) => ({
+    occurrence_id: `catch-up-${index}`,
+    planned_date,
+    subject,
+    sort_order,
+    lesson_key: `generated/catch-up-${index}.json`,
+  }))
+  const plan = buildInstructionalForecastPlan({
+    activeRevision: recurring,
+    forecastItems: [],
+    timelineItems: unusualCurrentWeek,
+    reports: [],
+    today: '2026-09-10',
+  })
+  assert.deepEqual(plan.slots.map(({ planned_date, subject, sort_order }) => ({ planned_date, subject, sort_order })), [
+    { planned_date: '2026-09-14', subject: 'math', sort_order: 0 },
+    { planned_date: '2026-09-15', subject: 'language arts', sort_order: 0 },
+    { planned_date: '2026-09-16', subject: 'science', sort_order: 0 },
+    { planned_date: '2026-09-17', subject: 'social studies', sort_order: 0 },
+  ])
+  assert.equal(plan.slots.some((slot) => slot.planned_date === '2026-09-18'), false)
+  assert.deepEqual(recurring.weekly_pattern.friday, [])
+})
 test('production facilitator evidence projects deterministic learning summary without raw authority inputs', () => {
   const report = aggregateFacilitatorEvidenceSession({
     trackedSession: { id: 'real-session', lesson_id: 'math/fractions.json', lesson_title: 'Fractions', subject: 'math', ended_at: '2026-08-28T13:00:00Z' },

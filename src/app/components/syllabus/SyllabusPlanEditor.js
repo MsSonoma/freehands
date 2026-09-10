@@ -1,7 +1,6 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
-import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { addWeeklyPatternSlot, removeWeeklyPatternSlot } from '@/app/lib/syllabus/timeline.mjs'
 import {
   normalizedTeachingGuidance,
@@ -70,18 +69,19 @@ function referencedSubjectKeys(weeklyPattern, forecastItems) {
   return keys
 }
 
-function draftFromRevision(revision, forecastItems, today) {
+function draftFromRevision(revision, today) {
   return {
-    effective_from: dateOnly(today || revision?.effective_from),
     goals: structuredClone(revision?.goals || {}),
     subjects: structuredClone(revision?.subjects || []),
     weekly_pattern: structuredClone(revision?.weekly_pattern || {}),
     teaching_guidance: structuredClone(revision?.teaching_guidance || {}),
-    planning_policy: structuredClone(revision?.planning_policy || {}),
-    legacy_provenance: structuredClone(revision?.legacy_provenance || {}),
-    forecast_items: structuredClone(forecastItems || []),
     change_reason: '',
   }
+}
+
+function currentAndFutureIntent(items, today) {
+  const floor = dateOnly(today)
+  return (items || []).filter((item) => !floor || dateOnly(item?.planned_date) >= floor)
 }
 
 function GuidanceListEditor({ field, values, subject, onChange }) {
@@ -110,14 +110,14 @@ export default function SyllabusPlanEditor({
   onClose,
   onSaved,
 }) {
-  const [draft, setDraft] = useState(() => draftFromRevision(revision, forecastItems, today))
+  const [draft, setDraft] = useState(() => draftFromRevision(revision, today))
   const [newSubject, setNewSubject] = useState('')
   const [slotSubjects, setSlotSubjects] = useState({})
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
 
   useEffect(() => {
-    setDraft(draftFromRevision(revision, forecastItems, today))
+    setDraft(draftFromRevision(revision, today))
     setNewSubject('')
     setSlotSubjects({})
     setError('')
@@ -135,8 +135,8 @@ export default function SyllabusPlanEditor({
   }, [onClose, working])
 
   const referencedSubjects = useMemo(
-    () => referencedSubjectKeys(draft.weekly_pattern, draft.forecast_items),
-    [draft.forecast_items, draft.weekly_pattern],
+    () => referencedSubjectKeys(draft.weekly_pattern, currentAndFutureIntent(forecastItems, today)),
+    [draft.weekly_pattern, forecastItems, today],
   )
   const guidanceSubjects = useMemo(
     () => guidanceSubjectNames(draft.teaching_guidance, draft.subjects),
@@ -176,10 +176,23 @@ export default function SyllabusPlanEditor({
     })
   }
 
+  function beginPatternSlot(day) {
+    setSlotSubjects((current) => ({ ...current, [day]: '' }))
+  }
+
+  function cancelPatternSlot(day) {
+    setSlotSubjects((current) => {
+      const next = { ...current }
+      delete next[day]
+      return next
+    })
+  }
+
   function addPatternSlot(day) {
-    const subject = slotSubjects[day] || subjectName(draft.subjects?.[0])
+    const subject = String(slotSubjects[day] || '').trim()
     if (!subject) return
     setDraft((current) => ({ ...current, weekly_pattern: addWeeklyPatternSlot(current.weekly_pattern, day, subject) }))
+    cancelPatternSlot(day)
   }
 
   function removePatternSlot(day, index) {
@@ -191,24 +204,22 @@ export default function SyllabusPlanEditor({
     setWorking(true)
     setError('')
     try {
-      const activationBody = {
-        learnerId,
-        expectedActiveRevisionId: revision.id,
-        snapshot: { ...draft, teaching_guidance: normalizedTeachingGuidance(draft.teaching_guidance) },
-      }
-      const postActivation = (exceptionPin) => fetch('/api/syllabus/activate', {
+      const response = await fetch('/api/syllabus/activate', {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...activationBody, ...(exceptionPin ? { exceptionPin } : {}) }),
+        body: JSON.stringify({
+          learnerId,
+          expectedActiveRevisionId: revision.id,
+          planDetails: {
+            goals: draft.goals,
+            subjects: draft.subjects,
+            weekly_pattern: draft.weekly_pattern,
+            teaching_guidance: normalizedTeachingGuidance(draft.teaching_guidance),
+            change_reason: draft.change_reason,
+          },
+        }),
       })
-      let response = await postActivation()
-      let json = await response.json().catch(() => ({}))
-      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
-        const pin = await requestFacilitatorPinException({ message: json.error })
-        if (!pin) throw new Error('The placement exception was not approved.')
-        response = await postActivation(pin)
-        json = await response.json().catch(() => ({}))
-      }
+      const json = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(json.error || 'Could not save Syllabus plan details')
       await onSaved?.(json)
       onClose?.()
@@ -230,23 +241,31 @@ export default function SyllabusPlanEditor({
           <ul className={styles.subjectEditor}>{(draft.subjects || []).map((subject) => {
             const name = subjectName(subject)
             const referenced = referencedSubjects.has(name.toLocaleLowerCase())
-            return <li key={name}><span>{name}{referenced && <small>Used by the weekly pattern or future intent</small>}</span><button type="button" disabled={referenced} onClick={() => removeSubject(name)}>Remove</button></li>
+            return <li key={name}><span>{name}{referenced && <small>Used by the weekly pattern or a prepared future lesson</small>}</span><button type="button" disabled={referenced} onClick={() => removeSubject(name)}>Remove</button></li>
           })}</ul>
           <div className={styles.addSubject}><input value={newSubject} onChange={(event) => setNewSubject(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addSubject() } }} placeholder="Add a subject" /><button type="button" onClick={addSubject}>Add</button></div>
         </>}
 
         {section === 'weekly_pattern' && <>
-          <p className={styles.help}>Each entry is one automatic lesson slot. Duplicate subjects are allowed, so two Math entries means two Math slots that day.</p>
+          <p className={styles.help}>The weekly pattern is your recurring schedule. Days can be empty. Add more than one lesson only when that is the pattern you want every week.</p>
           <div className={styles.weekScroller}>
             <div className={styles.weekGrid}>
-              {DAYS.map((day) => <section className={styles.dayCell} key={day}>
-                <strong>{DAY_LABELS[day]}</strong>
-                <ul>{(draft.weekly_pattern?.[day] || []).map((item, index) => <li key={`${day}-${index}`}>
-                  <select value={typeof item === 'string' ? item : item.subject} onChange={(event) => updatePatternSlot(day, index, event.target.value)}>{(draft.subjects || []).map((subject) => { const name = subjectName(subject); return <option key={name} value={name}>{name}</option> })}</select>
-                  <button type="button" onClick={() => removePatternSlot(day, index)} aria-label={`Remove ${DAY_LABELS[day]} slot ${index + 1}`}>×</button>
-                </li>)}</ul>
-                <div className={styles.patternAdd}><select value={slotSubjects[day] || subjectName(draft.subjects?.[0]) || ''} onChange={(event) => setSlotSubjects((current) => ({ ...current, [day]: event.target.value }))}>{(draft.subjects || []).map((subject) => { const name = subjectName(subject); return <option key={name} value={name}>{name}</option> })}</select><button type="button" onClick={() => addPatternSlot(day)}>Add</button></div>
-              </section>)}
+              {DAYS.map((day) => {
+                const entries = draft.weekly_pattern?.[day] || []
+                const adding = Object.prototype.hasOwnProperty.call(slotSubjects, day)
+                return <section className={styles.dayCell} key={day}>
+                  <strong>{DAY_LABELS[day]}</strong>
+                  {entries.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
+                  <ul>{entries.map((item, index) => <li key={`${day}-${index}`}>
+                    <select value={typeof item === 'string' ? item : item.subject} onChange={(event) => updatePatternSlot(day, index, event.target.value)}>{(draft.subjects || []).map((subject) => { const name = subjectName(subject); return <option key={name} value={name}>{name}</option> })}</select>
+                    <button type="button" onClick={() => removePatternSlot(day, index)} aria-label={`Remove ${DAY_LABELS[day]} slot ${index + 1}`}>Remove</button>
+                  </li>)}</ul>
+                  {adding ? <div className={styles.patternAdd}>
+                    <select autoFocus value={slotSubjects[day]} onChange={(event) => setSlotSubjects((current) => ({ ...current, [day]: event.target.value }))}><option value="">Choose subject</option>{(draft.subjects || []).map((subject) => { const name = subjectName(subject); return <option key={name} value={name}>{name}</option> })}</select>
+                    <div className={styles.patternChoiceActions}><button type="button" disabled={!slotSubjects[day]} onClick={() => addPatternSlot(day)}>Add</button><button type="button" onClick={() => cancelPatternSlot(day)}>Cancel</button></div>
+                  </div> : <button type="button" className={styles.patternStart} disabled={(draft.subjects || []).length === 0} onClick={() => beginPatternSlot(day)}>{entries.length ? 'Add another lesson' : 'Add lesson'}</button>}
+                </section>
+              })}
             </div>
           </div>
         </>}
