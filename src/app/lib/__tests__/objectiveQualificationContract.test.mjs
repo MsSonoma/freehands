@@ -3,6 +3,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
 const route = fs.readFileSync(new URL('../../api/webb-objectives/route.js', import.meta.url), 'utf8')
+  + fs.readFileSync(new URL('../webbObjectiveEvaluation.mjs', import.meta.url), 'utf8')
 const discussion = fs.readFileSync(new URL('../../session/v2/DiscussionPhase.jsx', import.meta.url), 'utf8')
 const sonoma = fs.readFileSync(new URL('../../api/sonoma-discussion/route.js', import.meta.url), 'utf8')
 const webb = fs.readFileSync(new URL('../../api/webb-chat/route.js', import.meta.url), 'utf8')
@@ -22,16 +23,16 @@ test('semantic qualification accepts the central concept without requiring secon
 })
 
 test('discussion progression requires demonstrated comprehension rather than correct-looking reproduction', () => {
-  assert.match(route, /classification\.comprehension === 'demonstrated'/)
+  assert.match(route, /classification\.latestAttempt\?\.comprehension === 'demonstrated'/)
   assert.match(route, /newlyCompleted: newlyUnderstood/)
   assert.match(route, /classification\.latestAttempt\?\.reproduction/)
   assert.match(route, /evaluationStatus\[index\] = 'reproduced'/)
-  assert.match(route, /if \(note\) learnerNotes\[index\] = note/)
+  assert.match(route, /state\.learnerNotes\[index\] = note/)
 })
 
 test('Sonoma uses its completed indices while Webb can explicitly use note readiness', () => {
-  assert.match(route, /const completionGate = Array\.isArray\(noteReadyIndices\) \? noteReadyIndices : progressionIndices/)
-  assert.match(route, /Object\.prototype\.hasOwnProperty\.call\(body, 'noteReadyIndices'\)/)
+  assert.match(route, /Array\.isArray\(understoodIndices\) \? understoodIndices/)
+  assert.match(route, /legacyNoteReadyIndices: body\.noteReadyIndices/)
   assert.match(discussion, /completedIndices: this\.#completedIndices/)
   assert.match(discussion, /lesson:\s+this\.#lessonData/)
   assert.doesNotMatch(discussion, /noteReadyIndices/)

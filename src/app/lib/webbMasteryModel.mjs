@@ -118,9 +118,18 @@ export function classifyWebbObjectiveAttempt({
   const accuracy = evaluation?.accuracy
   const correct = accuracy === 'correct'
   const priorAttempts = Array.isArray(previousEvidence?.attempts) ? previousEvidence.attempts : []
-  const assistance = Array.isArray(previousEvidence?.currentSessionAssistance)
+  const replay = priorAttempts.find(attempt =>
+    (learnerMessage.id ? attempt.sourceMessageId === learnerMessage.id : attempt.sourceMessageIndex === sourceMessageIndex)
+    && attempt.text === String(learnerMessage.content ?? '') && attempt.objective === objective)
+  if (replay) return previousEvidence
+  const allAssistance = Array.isArray(previousEvidence?.currentSessionAssistance)
     ? previousEvidence.currentSessionAssistance
     : []
+  const assistance = allAssistance.filter(entry => {
+    if (Number.isInteger(entry.sourceMessageIndex)) return entry.sourceMessageIndex < sourceMessageIndex
+    if (entry.occurredAt && learnerMessage.createdAt) return entry.occurredAt <= learnerMessage.createdAt
+    return true // Unknown exposure timing remains conservative for mastery.
+  })
   const reproduction = findClearAnswerReproduction(conversation, sourceMessageIndex)
   const answerRequested = detectsAnswerRequest(learnerMessage.content)
   const isFirstResponse = priorAttempts.length === 0
@@ -137,7 +146,9 @@ export function classifyWebbObjectiveAttempt({
   })
   const clean = qualification.eligible
   const covered = (correct && !answerRequested) || (assistance.length > 0 && priorAttempts.length > 0)
-  const comprehension = correct && !reproduction && !answerRequested ? 'demonstrated' : 'not_demonstrated'
+  const evidenceKind = evaluation?.evidenceKind === 'fixed_fact' ? 'fixed_fact' : 'meaning'
+  // Identifying a fixed fact is not a paraphrasing task. Exposure still blocks independent mastery.
+  const comprehension = correct && (!reproduction || evidenceKind === 'fixed_fact') && !answerRequested ? 'demonstrated' : 'not_demonstrated'
 
   let masteryOutcome = MASTERY_OUTCOMES.UNAVAILABLE
   let independenceStatus = INDEPENDENCE_STATUSES.UNAVAILABLE
@@ -149,6 +160,7 @@ export function classifyWebbObjectiveAttempt({
   } else if (reproduction) {
     independenceStatus = INDEPENDENCE_STATUSES.ANSWER_REVEALED
     independenceReason = qualification.independenceReason
+    if (comprehension === 'demonstrated') masteryOutcome = MASTERY_OUTCOMES.ASSISTED_SUCCESS
   } else if (clean) {
     independenceStatus = INDEPENDENCE_STATUSES.INDEPENDENT
     independenceReason = INDEPENDENCE_REASONS.ELIGIBLE
@@ -172,6 +184,7 @@ export function classifyWebbObjectiveAttempt({
     text: String(learnerMessage.content ?? ''),
     accuracy,
     sentenceOk: evaluation?.sentenceOk === true,
+    evidenceKind,
     covered,
     comprehension,
     masteryOutcome,
@@ -189,11 +202,11 @@ export function classifyWebbObjectiveAttempt({
     protocolVersion: WEBB_MASTERY_PROTOCOL_VERSION,
     objectiveIndex,
     objective,
-    coverage: covered ? 'covered' : 'not_covered',
-    comprehension,
-    mastery: masteryOutcome === MASTERY_OUTCOMES.INDEPENDENT_SUCCESS ? 'mastered' : 'pending',
+    coverage: covered || previousEvidence.coverage === 'covered' ? 'covered' : 'not_covered',
+    comprehension: comprehension === 'demonstrated' || previousEvidence.comprehension === 'demonstrated' ? 'demonstrated' : 'not_demonstrated',
+    mastery: masteryOutcome === MASTERY_OUTCOMES.INDEPENDENT_SUCCESS || previousEvidence.mastery === 'mastered' ? 'mastered' : 'pending',
     retention: 'not_measured',
-    currentSessionAssistance: assistance,
+    currentSessionAssistance: allAssistance,
     attempts: [...priorAttempts, attempt],
     latestAttempt: attempt,
     updatedAt: occurredAt,

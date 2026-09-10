@@ -35,7 +35,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, completedObjectives = [], writingReady = null) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -75,6 +75,15 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
     )
   }
 
+  if (Array.isArray(completedObjectives) && completedObjectives.length) {
+    lines.push('The application has already recorded comprehension for these concepts. Do not ask the learner to repeat, rephrase, or prove them again, even if the transcript contains an older unanswered question about them:',
+      completedObjectives.map(objective => '- ' + objective).join('\n'))
+  }
+  lines.push('For names, titles, dates and other fixed facts, do not demand different wording as proof. Correctly identifying the fact is sufficient for that factual task. Use the application completion state; do not invent an additional explanation requirement.')
+  if (allObjectivesMet && writingReady === false) {
+    lines.push('All comprehension goals are complete, but a saved note needs recovery. Acknowledge that the learner already answered. Do not ask for the fact again and do not say the writing button is available yet.')
+    return lines.filter(Boolean).join('\n')
+  }
   if (allObjectivesMet) {
     lines.push(
       `\nThe instructional conversation has now been completed for every lesson concept. Some concepts may have required teaching or assistance, so do not claim the learner independently mastered everything.`,
@@ -93,7 +102,7 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
       remainingObjectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n'),
       `IMPORTANT — End EVERY reply with ONE focused question that steers the student toward explaining goal #1 in their own words.`,
       `- Do NOT wait for a video or article. Ask about goal #1 in every response until the student demonstrates it.`,
-      `- SELF-CHECK: Treat the remaining-goals list above as authoritative. Do NOT independently declare a goal complete, and do NOT move on merely because an answer is related, partial, or informal. Flexible child wording is welcome, but the meaning must be materially correct. If the latest answer is partial, vague, or contains a misconception, acknowledge what is right without calling the answer correct, briefly teach or correct the missing point, and ask the student to try again in their own words. Never praise an incorrect answer as correct. Stay on goal #1 until it disappears from the remaining-goals list.`,
+      `- SELF-CHECK: Treat the remaining-goals list above as authoritative. Do NOT independently declare a goal complete, and do NOT move on merely because an answer is related or partial. Flexible child wording is welcome, but the meaning must be materially correct. If the latest answer is partial, vague, or contains a misconception, acknowledge what is right without calling the answer correct, briefly teach or correct the missing point, and ask the student to try again in their own words. Never praise an incorrect answer as correct. Stay on goal #1 until it disappears from the remaining-goals list.`,
       `- Bridge naturally from what the student just said: "That's interesting! Can you also tell me..." or "Speaking of that, what do you know about..."`,
       `- Never use the words "objective", "goal", or "check". Sound warm and curious, not like a quiz.`,
     )
@@ -142,7 +151,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, completedObjectives = [], writingReady = null } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -232,7 +241,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation) },
+      { role: 'system', content: buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, completedObjectives, writingReady) },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

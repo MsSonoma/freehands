@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  WEBB_SNAPSHOT_VERSION,
   assembleLearnerEssay,
   buildWritingGuidanceInstructions,
   createLearnerNote,
@@ -140,7 +141,7 @@ test('v3 resume migrates into explicit writing subphases without losing learner 
     writingMode: true,
     writingIndex: 0,
   })
-  assert.equal(restored.snapshotVersion, 4)
+  assert.equal(restored.snapshotVersion, WEBB_SNAPSHOT_VERSION)
   assert.equal(restored.writingSubphase, 'focus')
   assert.equal(restored.writingDraft, '')
   assert.equal(restored.learnerNotes[0].text, 'rough note')

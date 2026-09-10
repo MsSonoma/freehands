@@ -10,13 +10,12 @@
  * POST { action: 'check-writing', objective, note, text }
  *   → { accuracy, sentenceOk } — evaluates but never rewrites learner text
  */
-import { NextResponse } from 'next/server'
-import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
-import { parseComprehensionEvaluations } from '@/app/lib/webbLearningModel.mjs'
-import { classifyWebbObjectiveAttempt } from '@/app/lib/webbMasteryModel.mjs'
+import { NextResponse } from 'next/server.js'
+import { buildInstructionalLessonView } from '../../lib/masteryEvidence/assessmentIsolation.js'
+import { evaluateWebbObjectives } from '../../lib/webbObjectiveEvaluation.mjs'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL } from '../../lib/aiModel.js'
 const OPENAI_MODEL = AI_MODEL
 
 async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3) {
@@ -30,8 +29,13 @@ async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3)
       temperature,
     }),
   })
+  if (!res.ok) throw new Error('Learning evaluator unavailable (' + res.status + ')')
   const json = await res.json()
-  return json.choices?.[0]?.message?.content?.trim() || ''
+  const choice = json.choices?.[0]
+  if (choice?.finish_reason === 'length' || !choice?.message?.content?.trim()) {
+    throw new Error('Learning evaluator returned an incomplete response')
+  }
+  return choice.message.content.trim()
 }
 
 // ── Generate objectives from a lesson's question bank ────────────────────────
@@ -71,98 +75,6 @@ async function generateObjectives(apiKey, lesson) {
 
 // ── Check whether the student just demonstrated any uncompleted objectives ────
 // Returns comprehension state plus exact, source-verified learner notes.
-async function checkObjectives(apiKey, objectives, progressionIndices, conversation, lesson = {}, quick = false, priorObjectiveEvidence = {}, priorPromptExposure = {}, noteReadyIndices = null) {
-  // Webb explicitly supplies noteReadyIndices because writing requires a source-verified learner note.
-  // Sonoma does not; its progression gate is the completed/comprehension indices it supplies.
-  const completionGate = Array.isArray(noteReadyIndices) ? noteReadyIndices : progressionIndices
-  const incomplete = objectives
-    .map((obj, i) => ({ obj, i }))
-    .filter(({ i }) => !completionGate.includes(i))
-
-  if (!incomplete.length) return { newlyCovered: [], newlyUnderstood: [], newlyCompleted: [], learnerNotes: {}, qualifyingText: {}, objectiveEvidence: priorObjectiveEvidence }
-
-  // Keep enough recent learner language for a genuine paraphrase to remain visible across a short exchange.
-  // The selected evidence is still one exact learner message so notes and mastery provenance stay auditable.
-  const windowSize = quick ? 8 : 30
-  const startIndex = Math.max(0, conversation.length - windowSize)
-  const recentTurns = conversation.slice(startIndex)
-    .map((m, offset) => ({ message: m, idx: startIndex + offset }))
-    .filter(({ message }) => message.role === 'user')
-    .map(({ message, idx }) => ({ idx, text: String(message.content || '').trim() }))
-    .filter(t => t.text)
-
-  if (!recentTurns.length) return { newlyCovered: [], newlyUnderstood: [], newlyCompleted: [], learnerNotes: {}, qualifyingText: {}, objectiveEvidence: priorObjectiveEvidence }
-
-  const system =
-    `You are evaluating whether a student has demonstrated comprehension of lesson concepts. ` +
-    `Judge semantic meaning generously enough for normal child language, while keeping factual and conceptual correctness strict. ` +
-    `The student may use any age-appropriate wording, paraphrase, short explanation, fragment, or valid example. NEVER require exact terminology, a memorized definition, a polished sentence, or wording that matches the lesson. ` +
-    `Judge the CENTRAL CONCEPT, not clause-by-clause coverage. A response is ACCURACY "correct" when it accurately communicates the essential idea, relationship, process, or skill strongly enough to show understanding and contains no material misconception or contradiction. ` +
-    `Do NOT require every modifier, example, consequence, application, condition, or secondary detail named in an objective. If an older objective accidentally combines several ideas, identify its primary concept and do not withhold credit merely because secondary detail was omitted. ` +
-    `Use ACCURACY "partial" only when an ESSENTIAL part of the central concept is missing, ambiguous, or incomplete. A brief but semantically sufficient child answer is correct, not partial. ` +
-    `Use the instructional lesson context to judge meaning and factual correctness, never as a required answer key. ` +
-    `For each remaining objective that the recent student messages address enough to evaluate, output one line: OBJECTIVE_INDEX|ACCURACY|SENTENCE_OK|MESSAGE_INDEX|STUDENT_QUOTE ` +
-    `where ACCURACY is exactly "correct", "partial", or "incorrect". Judge ACCURACY from conceptual meaning alone, independently of grammar or sentence form. A fragment may be ACCURACY "correct" when it contains the central concept; SENTENCE_OK must separately judge whether it is essay-ready. ` +
-    `SENTENCE_OK is "yes" only when the student's quoted response is a complete, grammatically coherent sentence suitable for the child's essay with at most minor spelling, capitalization, or punctuation fixes. ` +
-    `Use SENTENCE_OK "no" for a fragment, single word, phrase, materially broken grammar, garbled or repeated wording, or anything that would require rephrasing, restructuring, or adding missing words. ` +
-    `MESSAGE_INDEX must be the bracketed index of the strongest single student message that carries the central concept. You may use the learner's other recent messages only as conversational context, but never manufacture or paraphrase evidence. STUDENT_QUOTE must be a verbatim excerpt from that selected message. ` +
-    `If a response contains a material contradiction or misconception, do not cherry-pick one correct phrase and call the objective correct. ` +
-    `If no remaining objective is addressed enough to evaluate, return "none".`
-
-  const objList = incomplete.map(({ obj, i }) => `${i}: ${obj}`).join('\n')
-  const studentSaid = recentTurns.map(t => `[${t.idx}] Student: "${t.text}"`).join('\n')
-  const lessonContext = JSON.stringify(lesson || {})
-
-  const raw = await callGPT(apiKey, system,
-    `Instructional lesson context (use for meaning and correctness, never as required wording):\n${lessonContext}\n\nRemaining objectives (number: text):\n${objList}\n\nRecent student messages:\n${studentSaid}`,
-    300, 0)
-
-  const parsed = parseComprehensionEvaluations({ raw, objectives, understoodIndices: completionGate, conversation })
-  const objectiveEvidence = { ...(priorObjectiveEvidence || {}) }
-  const learnerNotes = {}
-  const evaluationStatus = { ...(parsed.evaluationStatus || {}) }
-  const newlyCovered = []
-  const newlyUnderstood = []
-
-  for (const [rawIndex, evaluation] of Object.entries(parsed.evaluationDetails || {})) {
-    const index = Number(rawIndex)
-    const classification = classifyWebbObjectiveAttempt({
-      objectiveIndex: index,
-      objective: objectives[index],
-      evaluation,
-      conversation,
-      previousEvidence: priorObjectiveEvidence?.[index] || {},
-      priorPromptExposed: priorPromptExposure?.[index] !== false,
-    })
-    if (!classification) continue
-    objectiveEvidence[index] = classification
-    if (classification.coverage === 'covered' && !progressionIndices.includes(index)) {
-      newlyCovered.push(index)
-    }
-    if (classification.latestAttempt?.reproduction) {
-      evaluationStatus[index] = 'reproduced'
-    }
-    if (classification.comprehension === 'demonstrated') {
-      if (!completionGate.includes(index)) newlyUnderstood.push(index)
-      const note = parsed.learnerNotes?.[index]
-      if (note) learnerNotes[index] = note
-    }
-  }
-  const qualifyingText = Object.fromEntries(Object.entries(learnerNotes).map(([index, note]) => [index, note.text]))
-
-  return {
-    newlyCovered,
-    newlyUnderstood,
-    // Discussion progression follows demonstrated comprehension, not mere exposure or reproduction.
-    newlyCompleted: newlyUnderstood,
-    learnerNotes,
-    qualifyingText,
-    sentenceQuality: parsed.sentenceQuality,
-    evaluationStatus,
-    objectiveEvidence,
-  }
-}
-
 // Evaluate a learner writing attempt without rewriting it.
 async function checkWriting(apiKey, objective, note, text, lesson) {
   const system =
@@ -175,16 +87,19 @@ async function checkWriting(apiKey, objective, note, text, lesson) {
     20, 0)
   const [accuracyRaw, sentenceRaw] = raw.split('|')
   const accuracy = String(accuracyRaw || '').trim().toLowerCase()
+  if (!['correct', 'partial', 'incorrect'].includes(accuracy) || !['yes', 'no'].includes(String(sentenceRaw || '').trim().toLowerCase())) {
+    throw new Error('Writing evaluator returned an invalid result')
+  }
   return {
-    accuracy: ['correct', 'partial', 'incorrect'].includes(accuracy) ? accuracy : 'partial',
+    accuracy,
     sentenceOk: String(sentenceRaw || '').trim().toLowerCase() === 'yes',
   }
 }
 
-export async function POST(req) {
+export async function POST(req, deps = {}) {
   try {
     const body   = await req.json()
-    const apiKey = process.env.OPENAI_API_KEY
+    const apiKey = deps.apiKey || process.env.OPENAI_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
 
     if (body.action === 'generate') {
@@ -199,39 +114,21 @@ export async function POST(req) {
     }
 
     if (body.action === 'check') {
-      const {
-        newlyCompleted,
-        newlyCovered,
-        newlyUnderstood,
-        learnerNotes,
-        qualifyingText,
-        sentenceQuality,
-        evaluationStatus,
-        objectiveEvidence,
-      } = await checkObjectives(
-        apiKey,
-        body.objectives || [],
-        body.coveredIndices || body.understoodIndices || body.completedIndices || [],
-        body.conversation || [],
-        buildInstructionalLessonView(body.lesson || {}),
-        body.quick || false,
-        body.objectiveEvidence || {},
-        body.priorPromptExposure || {},
-        Object.prototype.hasOwnProperty.call(body, 'noteReadyIndices')
-          ? (Array.isArray(body.noteReadyIndices) ? body.noteReadyIndices : [])
-          : null,
-      )
-
-      return NextResponse.json({
-        newlyCompleted,
-        newlyCovered,
-        newlyUnderstood,
-        learnerNotes,
-        qualifyingText,
-        sentenceQuality,
-        evaluationStatus,
-        objectiveEvidence,
+      const result = await evaluateWebbObjectives({
+        callModel: deps.callModel || ((...args) => callGPT(apiKey, ...args)),
+        objectives: body.objectives || [],
+        completedIndices: body.completedIndices || [],
+        understoodIndices: body.understoodIndices,
+        coveredIndices: body.coveredIndices || [],
+        legacyNoteReadyIndices: body.noteReadyIndices,
+        conversation: body.conversation || [],
+        lesson: buildInstructionalLessonView(body.lesson || {}),
+        quick: body.quick === true,
+        objectiveEvidence: body.objectiveEvidence || {},
+        priorPromptExposure: body.priorPromptExposure || {},
+        recoverNotes: body.recoverNotes === true,
       })
+      return NextResponse.json(result)
     }
 
     if (body.action === 'check-writing') {

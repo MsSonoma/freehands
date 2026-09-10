@@ -1,47 +1,10 @@
 import { normalizeWritingSubphase } from './webbWritingFlow.mjs'
 
-export const WEBB_SNAPSHOT_VERSION = 4
+export const WEBB_SNAPSHOT_VERSION = 5
 
-function asIndex(value) {
-  const parsed = Number.parseInt(value, 10)
-  return Number.isInteger(parsed) && parsed >= 0 ? parsed : null
-}
-
-export function sourceLearnerMessage(conversation, sourceMessageIndex) {
-  const index = asIndex(sourceMessageIndex)
-  if (index === null) return null
-  const message = conversation?.[index]
-  if (!message || message.role !== 'user') return null
-  const text = String(message.content ?? '')
-  if (!text.trim()) return null
-  return { message, index, text }
-}
-
-/**
- * Turns an evaluator decision into a learner note without trusting evaluator prose.
- * The stored text is always the complete, original learner message.
- */
-export function createLearnerNote({ objectiveIndex, evaluation, conversation, capturedAt }) {
-  if (evaluation?.accuracy !== 'correct') return null
-  const source = sourceLearnerMessage(conversation, evaluation.sourceMessageIndex)
-  if (!source) return null
-
-  const quote = String(evaluation.quote ?? '')
-  if (quote && !source.text.includes(quote)) return null
-
-  return {
-    objectiveIndex,
-    text: source.text,
-    sourceMessageIndex: source.index,
-    sourceMessageId: source.message.id || null,
-    sourceMessageCreatedAt: source.message.createdAt || null,
-    accuracy: 'correct',
-    sentenceReadyAtCapture: evaluation.sentenceOk === true,
-    capturedAt: capturedAt || new Date().toISOString(),
-    assistance: 'mrs-webb-research-conversation',
-    provenance: 'learner-message',
-  }
-}
+import { learnerMessageIndex as asIndex, sourceLearnerMessage, createLearnerNote, evaluationSource } from './webbLearnerEvidence.mjs'
+import { reconcileWebbObjectiveState } from './webbObjectiveState.mjs'
+export { sourceLearnerMessage, createLearnerNote } from './webbLearnerEvidence.mjs'
 
 export function parseComprehensionEvaluations({ raw, objectives, understoodIndices = [], conversation, capturedAt }) {
   const newlyUnderstood = []
@@ -49,23 +12,34 @@ export function parseComprehensionEvaluations({ raw, objectives, understoodIndic
   const sentenceQuality = {}
   const evaluationStatus = {}
   const evaluationDetails = {}
+  const invalidLines = []
 
   for (const line of String(raw || '').split('\n')) {
     const trimmed = line.trim()
     if (!trimmed || trimmed.toLowerCase() === 'none') continue
     const parts = trimmed.split('|')
-    if (parts.length < 5) continue
+    if (parts.length < 4) { invalidLines.push(trimmed); continue }
     const objectiveIndex = asIndex(parts[0])
     const accuracy = String(parts[1] || '').trim().toLowerCase()
     const sentenceOk = String(parts[2] || '').trim().toLowerCase() === 'yes'
-    const sourceMessageIndex = asIndex(parts[3])
-    const quote = parts.slice(4).join('|').trim()
-    if (objectiveIndex === null || understoodIndices.includes(objectiveIndex) || !objectives?.[objectiveIndex]) continue
+    // Accept the displayed [index] notation as well as the requested integer.
+    const messageToken = String(parts[3] || '').trim().replace(/^\[(\d+)\]$/, '$1')
+    const sourceMessageIndex = asIndex(messageToken)
+    const detail = parts.slice(4).join('|').trim()
+    const evidenceKind = ['fixed_fact', 'meaning'].includes(detail) ? detail : 'meaning'
+    const quote = ['fixed_fact', 'meaning'].includes(detail) ? '' : detail
+    if (objectiveIndex === null || !objectives?.[objectiveIndex]) { invalidLines.push(trimmed); continue }
+    if (understoodIndices.includes(objectiveIndex)) continue
     if (Object.prototype.hasOwnProperty.call(evaluationStatus, objectiveIndex)) continue
-    if (!['correct', 'partial', 'incorrect'].includes(accuracy)) continue
+    if (!['correct', 'partial', 'incorrect'].includes(accuracy)
+      || !['yes', 'no'].includes(String(parts[2]).trim().toLowerCase())
+      || !evaluationSource(conversation, { sourceMessageIndex, quote })) {
+      invalidLines.push(trimmed)
+      continue
+    }
     evaluationStatus[objectiveIndex] = accuracy
     sentenceQuality[objectiveIndex] = sentenceOk
-    evaluationDetails[objectiveIndex] = { objectiveIndex, accuracy, sentenceOk, sourceMessageIndex, quote }
+    evaluationDetails[objectiveIndex] = { objectiveIndex, accuracy, sentenceOk, sourceMessageIndex, quote, evidenceKind }
     const note = createLearnerNote({
       objectiveIndex,
       evaluation: { accuracy, sentenceOk, sourceMessageIndex, quote },
@@ -76,7 +50,7 @@ export function parseComprehensionEvaluations({ raw, objectives, understoodIndic
     newlyUnderstood.push(objectiveIndex)
     learnerNotes[objectiveIndex] = note
   }
-  return { newlyUnderstood, learnerNotes, sentenceQuality, evaluationStatus, evaluationDetails }
+  return { newlyUnderstood, learnerNotes, sentenceQuality, evaluationStatus, evaluationDetails, invalidLines }
 }
 
 export function createVerbatimLearnerRecord({ objectiveIndex, evaluation, conversation, capturedAt }) {
@@ -164,27 +138,10 @@ function findLegacySource(chatMessages, response) {
  * its stored response can be traced to an actual learner message. Old responses
  * are notes, never silently promoted into accepted writing-stage sentences.
  */
-export function migrateWebbSnapshot(saved = {}) {
-  if (saved.snapshotVersion >= WEBB_SNAPSHOT_VERSION) {
+function migrateWebbSnapshotLegacy(saved = {}) {
+  if (saved.snapshotVersion >= 3) {
     return {
       ...saved,
-      understoodObj: saved.understoodObj || [],
-      coveredObj: saved.coveredObj || [],
-      objectiveEvidence: saved.objectiveEvidence || {},
-      learnerNotes: saved.learnerNotes || {},
-      writingAttempts: saved.writingAttempts || {},
-      acceptedSentences: saved.acceptedSentences || {},
-      writingMode: !!saved.writingMode,
-      writingIndex: asIndex(saved.writingIndex) ?? 0,
-      writingSubphase: normalizeWritingSubphase(saved.writingSubphase, !!saved.writingMode),
-      writingDraft: String(saved.writingDraft || ''),
-    }
-  }
-
-  if (saved.snapshotVersion === 3) {
-    return {
-      ...saved,
-      snapshotVersion: WEBB_SNAPSHOT_VERSION,
       understoodObj: saved.understoodObj || [],
       coveredObj: saved.coveredObj || [],
       objectiveEvidence: saved.objectiveEvidence || {},
@@ -279,5 +236,15 @@ export function migrateWebbSnapshot(saved = {}) {
     writingDraft: '',
     essay: null,
     essayMode: false,
+  }
+}
+
+/** v5 repairs the comprehension-to-note handoff without generating new evidence. */
+export function migrateWebbSnapshot(saved = {}) {
+  const restored = migrateWebbSnapshotLegacy(saved)
+  return {
+    ...restored,
+    ...(restored.objectives?.length ? reconcileWebbObjectiveState(restored.objectives, restored, restored.chatMessages || []) : {}),
+    snapshotVersion: WEBB_SNAPSHOT_VERSION,
   }
 }
