@@ -1,6 +1,12 @@
-import { normalizeWritingSubphase } from './webbWritingFlow.mjs'
+import { WEBB_WRITING_SUBPHASES, latestWritingAttempt, normalizeWritingSubphase } from './webbWritingFlow.mjs'
 
-export const WEBB_SNAPSHOT_VERSION = 5
+export const WEBB_SNAPSHOT_VERSION = 6
+
+export const WEBB_SESSION_STAGES = Object.freeze({
+  RESEARCH: 'research',
+  WRITING: 'writing',
+  ESSAY: 'essay',
+})
 
 import { learnerMessageIndex as asIndex, sourceLearnerMessage, createLearnerNote, evaluationSource } from './webbLearnerEvidence.mjs'
 import { reconcileWebbObjectiveState } from './webbObjectiveState.mjs'
@@ -96,6 +102,130 @@ export function assembleLearnerEssay(objectives, acceptedSentences) {
   if (sentences.length !== (objectives || []).length) return ''
   if (sentences.some(sentence => sentence.provenance !== 'learner-message' || !sentence.text)) return ''
   return sentences.map(sentence => sentence.text).join(' ')
+}
+
+function validAcceptedWritingSentence(sentence) {
+  return sentence?.provenance === 'learner-message' && String(sentence?.text || '').trim().length > 0
+}
+
+function normalizedWebbStage(value) {
+  const stage = String(value || '').trim().toLowerCase()
+  return Object.values(WEBB_SESSION_STAGES).includes(stage) ? stage : null
+}
+
+function writingAttemptRecorded(snapshot, objectiveIndex, message) {
+  if (!message) return false
+  const candidates = [
+    ...(Array.isArray(snapshot?.writingAttempts?.[objectiveIndex]) ? snapshot.writingAttempts[objectiveIndex] : []),
+    snapshot?.acceptedSentences?.[objectiveIndex],
+  ].filter(Boolean)
+  return candidates.some(attempt => {
+    if (message.id && attempt?.sourceMessageId) return attempt.sourceMessageId === message.id
+    return String(attempt?.text || '').trim() === String(message.content || '').trim()
+  })
+}
+
+function inferPendingWritingReview(snapshot, objectiveIndex) {
+  const explicit = snapshot?.pendingWritingReview
+  const explicitMessage = explicit?.message
+  if (asIndex(explicit?.objectiveIndex) === objectiveIndex
+    && explicitMessage?.role === 'user'
+    && String(explicit?.text || '').trim()
+    && String(explicitMessage.content || '').trim() === String(explicit.text || '').trim()
+    && !writingAttemptRecorded(snapshot, objectiveIndex, explicitMessage)) {
+    return {
+      objectiveIndex,
+      text: String(explicit.text).trim(),
+      message: explicitMessage,
+    }
+  }
+
+  const history = Array.isArray(snapshot?.chatMessages) ? snapshot.chatMessages : []
+  const last = history.at(-1)
+  if (last?.role !== 'user' || !String(last.content || '').trim()) return null
+  if (writingAttemptRecorded(snapshot, objectiveIndex, last)) return null
+  return { objectiveIndex, text: String(last.content).trim(), message: last }
+}
+
+/**
+ * Composition resume is derived from durable writing artifacts, not from one boolean.
+ * This prevents a stale writingMode flag or an interrupted sentence request from
+ * dropping Mrs. Webb back into research while the writing UI restores correctly.
+ */
+export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot?.objectives || []) {
+  const list = Array.isArray(objectives) ? objectives : []
+  const acceptedSentences = snapshot?.acceptedSentences || {}
+  const writingAttempts = snapshot?.writingAttempts || {}
+  const savedIndex = asIndex(snapshot?.writingIndex)
+  const savedSubphase = normalizeWritingSubphase(snapshot?.writingSubphase, !!snapshot?.writingMode)
+  const explicitStage = normalizedWebbStage(snapshot?.webbStage)
+  const savedEssay = String(snapshot?.essay || '').trim() ? snapshot.essay : null
+  const essay = savedEssay || assembleLearnerEssay(list, acceptedSentences) || null
+  const nextIndex = nextWritingObjectiveIndex(list, acceptedSentences)
+  const acceptedCount = list.filter((_, index) => validAcceptedWritingSentence(acceptedSentences?.[index])).length
+  const attemptCount = Object.values(writingAttempts).reduce((count, attempts) => count + (Array.isArray(attempts) ? attempts.length : 0), 0)
+  const hasDraft = String(snapshot?.writingDraft || '').trim().length > 0
+  const currentAccepted = savedIndex !== null && validAcceptedWritingSentence(acceptedSentences?.[savedIndex])
+
+  const completedEssayStage = explicitStage === WEBB_SESSION_STAGES.ESSAY || snapshot?.essayMode === true || !!savedEssay
+  if (completedEssayStage && essay && nextIndex === -1) {
+    return {
+      webbStage: WEBB_SESSION_STAGES.ESSAY,
+      writingMode: false, writingIndex: savedIndex ?? Math.max(0, list.length - 1),
+      writingSubphase: WEBB_WRITING_SUBPHASES.IDLE, writingDraft: '',
+      writingAttempts, acceptedSentences, essay, essayMode: snapshot?.essayMode === true, pendingWritingReview: null,
+    }
+  }
+
+  const allSentencesAccepted = list.length > 0 && acceptedCount === list.length
+  const committedIndex = currentAccepted ? savedIndex : allSentencesAccepted ? list.length - 1 : null
+  const committedGate = committedIndex !== null && (
+    ((explicitStage === WEBB_SESSION_STAGES.WRITING || snapshot?.writingMode)
+      && savedSubphase === WEBB_WRITING_SUBPHASES.COMMITTED)
+    // Old snapshots could persist the accepted sentence before their writingMode flag.
+    // Accepted learner prose is stronger evidence of composition than a stale false boolean.
+    || (allSentencesAccepted && !snapshot?.essayMode)
+  )
+  if (committedGate) {
+    return {
+      webbStage: WEBB_SESSION_STAGES.WRITING,
+      writingMode: true, writingIndex: committedIndex, writingSubphase: WEBB_WRITING_SUBPHASES.COMMITTED,
+      writingDraft: '', writingAttempts, acceptedSentences, essay: snapshot?.essay || null, essayMode: false,
+      pendingWritingReview: null,
+    }
+  }
+
+  const hasIncompleteWritingArtifacts = nextIndex !== -1 && (
+    explicitStage === WEBB_SESSION_STAGES.WRITING || snapshot?.writingMode
+    || acceptedCount > 0 || attemptCount > 0 || hasDraft
+    || ![WEBB_WRITING_SUBPHASES.IDLE, WEBB_WRITING_SUBPHASES.COMMITTED].includes(savedSubphase)
+  )
+  if (!hasIncompleteWritingArtifacts) {
+    return {
+      webbStage: WEBB_SESSION_STAGES.RESEARCH,
+      writingMode: false, writingIndex: savedIndex ?? 0, writingSubphase: WEBB_WRITING_SUBPHASES.IDLE,
+      writingDraft: String(snapshot?.writingDraft || ''), writingAttempts, acceptedSentences,
+      essay: snapshot?.essay || null, essayMode: false, pendingWritingReview: null,
+    }
+  }
+
+  const writingIndex = savedIndex !== null && list[savedIndex] && !validAcceptedWritingSentence(acceptedSentences?.[savedIndex])
+    ? savedIndex : nextIndex
+  const latestAttempt = latestWritingAttempt(writingAttempts, writingIndex)
+  let writingSubphase = savedSubphase
+  if (writingSubphase === WEBB_WRITING_SUBPHASES.COMMITTED || writingSubphase === WEBB_WRITING_SUBPHASES.IDLE) {
+    writingSubphase = latestAttempt && !latestAttempt.accepted ? WEBB_WRITING_SUBPHASES.REVIEW : WEBB_WRITING_SUBPHASES.FOCUS
+  } else if (writingSubphase === WEBB_WRITING_SUBPHASES.REVIEW && latestAttempt?.accepted) {
+    writingSubphase = WEBB_WRITING_SUBPHASES.FOCUS
+  }
+  const pendingWritingReview = inferPendingWritingReview(snapshot, writingIndex)
+  const writingDraft = pendingWritingReview?.text || String(snapshot?.writingDraft || '')
+
+  return {
+    webbStage: WEBB_SESSION_STAGES.WRITING,
+    writingMode: true, writingIndex, writingSubphase, writingDraft,
+    writingAttempts, acceptedSentences, essay: snapshot?.essay || null, essayMode: false, pendingWritingReview,
+  }
 }
 
 export function buildWritingGuidanceInstructions(note, evaluation = {}) {
@@ -239,12 +369,15 @@ function migrateWebbSnapshotLegacy(saved = {}) {
   }
 }
 
-/** v5 repairs the comprehension-to-note handoff without generating new evidence. */
+/** v6 reconciles comprehension evidence and restores a durable research/writing/essay stage. */
 export function migrateWebbSnapshot(saved = {}) {
   const restored = migrateWebbSnapshotLegacy(saved)
-  return {
+  const reconciled = {
     ...restored,
     ...(restored.objectives?.length ? reconcileWebbObjectiveState(restored.objectives, restored, restored.chatMessages || []) : {}),
-    snapshotVersion: WEBB_SNAPSHOT_VERSION,
   }
+  const composition = reconciled.objectives?.length
+    ? restoreWebbCompositionState(reconciled, reconciled.objectives)
+    : { webbStage: reconciled.essayMode ? WEBB_SESSION_STAGES.ESSAY : reconciled.writingMode ? WEBB_SESSION_STAGES.WRITING : WEBB_SESSION_STAGES.RESEARCH }
+  return { ...reconciled, ...composition, snapshotVersion: WEBB_SNAPSHOT_VERSION }
 }

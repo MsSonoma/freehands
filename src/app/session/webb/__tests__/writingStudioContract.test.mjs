@@ -44,11 +44,17 @@ test('writing studio keeps objective context and learner-controlled commit gates
   assert.doesNotMatch(studio, /learnerNotes/)
 })
 
-test('writing resume persists explicit subphase and unsent draft', () => {
-  assert.match(model, /WEBB_SNAPSHOT_VERSION = 5/)
-  assert.match(page, /writingSubphase, writingDraft, writingAttempts/)
-  assert.match(page, /setWritingSubphase\(normalizeWritingSubphase/)
-  assert.match(page, /setWritingDraft\(String\(saved\.writingDraft \|\| ''\)\)/)
+test('writing resume restores the durable composition stage instead of re-entering research', () => {
+  assert.match(model, /WEBB_SNAPSHOT_VERSION = 6/)
+  assert.match(model, /restoreWebbCompositionState/)
+  assert.match(page, /const composition = restoreWebbCompositionState/)
+  assert.match(page, /composition\.webbStage === WEBB_SESSION_STAGES\.RESEARCH/)
+  assert.match(page, /pendingWritingReviewRef\.current = composition\.pendingWritingReview/)
+  assert.match(page, /submitWritingAttemptRef\.current/)
+  assert.match(page, /reuseMessage: pending\.message/)
+  assert.match(page, /writingSubphase: WEBB_WRITING_SUBPHASES\.COMMITTED/)
+  assert.match(page, /webbStageRef\.current !== WEBB_SESSION_STAGES\.RESEARCH/)
+  assert.match(page, /webbStage: requestedStage/)
 })
 
 test('normal Mrs. Webb chat input is hidden while the writing studio is active', () => {

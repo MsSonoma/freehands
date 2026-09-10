@@ -4,7 +4,7 @@ import { POST } from '../../api/webb-objectives/route.js'
 import { evaluateWebbObjectives } from '../webbObjectiveEvaluation.mjs'
 import { createLearnerNote, evaluationSource } from '../webbLearnerEvidence.mjs'
 import { classifyWebbObjectiveAttempt, addWebbAssistance, WEBB_ASSISTANCE_TYPES } from '../webbMasteryModel.mjs'
-import { migrateWebbSnapshot, createWritingAttempt, assembleLearnerEssay } from '../webbLearningModel.mjs'
+import { WEBB_SNAPSHOT_VERSION, migrateWebbSnapshot, createWritingAttempt, assembleLearnerEssay } from '../webbLearningModel.mjs'
 import { emptyWebbObjectiveState, mergeWebbObjectiveResult, reconcileWebbObjectiveState, webbObjectiveProgress, createWebbObjectiveQueue } from '../webbObjectiveState.mjs'
 
 const AUTHOR = 'The learner understands that The Magic Finger was written by Roald Dahl.'
@@ -86,7 +86,7 @@ test('v4 already-demonstrated answer recovers its note on resume without a model
   const saved = { snapshotVersion: 4, objectives: OBJECTIVES, chatMessages: conversation, understoodObj: [0], coveredObj: [0], objectiveEvidence: { 0: evidence }, learnerNotes: {}, writingDraft: 'Keep my draft', writingAttempts: { 0: [{ text: 'Keep my attempt' }] }, acceptedSentences: {} }
   const before = structuredClone(saved)
   const restored = migrateWebbSnapshot(saved)
-  assert.equal(restored.snapshotVersion, 5)
+  assert.equal(restored.snapshotVersion, WEBB_SNAPSHOT_VERSION)
   assert.equal(restored.learnerNotes[0].text, conversation[1].content)
   assert.deepEqual(restored.objectiveEvidence, saved.objectiveEvidence)
   assert.deepEqual(restored.writingAttempts, saved.writingAttempts)

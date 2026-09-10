@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
+  WEBB_SESSION_STAGES,
   WEBB_SNAPSHOT_VERSION,
   assembleLearnerEssay,
   buildWritingGuidanceInstructions,
@@ -9,6 +10,7 @@ import {
   migrateWebbSnapshot,
   nextWritingObjectiveIndex,
   parseComprehensionEvaluations,
+  restoreWebbCompositionState,
   sanitizeWritingGuidance,
 } from '../webbLearningModel.mjs'
 
@@ -146,4 +148,85 @@ test('v3 resume migrates into explicit writing subphases without losing learner 
   assert.equal(restored.writingDraft, '')
   assert.equal(restored.learnerNotes[0].text, 'rough note')
   assert.equal(restored.writingAttempts[0][0].text, 'first try')
+})
+
+
+test('v5 writing artifacts override a stale false writingMode flag on resume', () => {
+  const restored = migrateWebbSnapshot({
+    snapshotVersion: 5,
+    objectives: ['first', 'second', 'third'],
+    chatMessages: [{ role: 'assistant', content: 'Now use the next note.', kind: 'writing', id: 'a1' }],
+    learnerNotes: {
+      0: { text: 'first note', accuracy: 'correct', provenance: 'learner-message' },
+      1: { text: 'second note', accuracy: 'correct', provenance: 'learner-message' },
+      2: { text: 'third note', accuracy: 'correct', provenance: 'learner-message' },
+    },
+    acceptedSentences: { 0: { text: 'First sentence.', provenance: 'learner-message', accepted: true, sourceMessageId: 'u1' } },
+    writingAttempts: {},
+    writingMode: false, writingIndex: 1, writingSubphase: 'idle', writingDraft: 'Second sentence draft', essayMode: false,
+  })
+  assert.equal(restored.snapshotVersion, WEBB_SNAPSHOT_VERSION)
+  assert.equal(restored.webbStage, WEBB_SESSION_STAGES.WRITING)
+  assert.equal(restored.writingMode, true)
+  assert.equal(restored.writingIndex, 1)
+  assert.equal(restored.writingSubphase, 'focus')
+  assert.equal(restored.writingDraft, 'Second sentence draft')
+})
+
+test('an interrupted writing submission is recovered as writing review, never as a research answer', () => {
+  const pendingMessage = { role: 'user', content: 'The narrator is a girl.', id: 'pending-writing', createdAt: '2026-09-10T12:00:00Z' }
+  const restored = restoreWebbCompositionState({
+    snapshotVersion: 5,
+    objectives: ['first', 'second'],
+    chatMessages: [{ role: 'assistant', content: 'Turn the next note into a sentence.', kind: 'writing', id: 'a2' }, pendingMessage],
+    acceptedSentences: { 0: { text: 'First sentence.', provenance: 'learner-message', accepted: true, sourceMessageId: 'u1' } },
+    writingAttempts: {},
+    writingMode: true, writingIndex: 1, writingSubphase: 'focus', writingDraft: pendingMessage.content,
+  }, ['first', 'second'])
+  assert.equal(restored.webbStage, WEBB_SESSION_STAGES.WRITING)
+  assert.equal(restored.pendingWritingReview.objectiveIndex, 1)
+  assert.equal(restored.pendingWritingReview.message.id, pendingMessage.id)
+  assert.equal(restored.writingDraft, pendingMessage.content)
+})
+
+test('a research-stage trailing learner message is not reclassified as writing', () => {
+  const restored = restoreWebbCompositionState({
+    snapshotVersion: 5,
+    chatMessages: [{ role: 'user', content: 'Roald Dahl wrote it.', id: 'research-u1' }],
+    writingMode: false, writingIndex: 0, writingSubphase: 'idle', writingDraft: '', writingAttempts: {}, acceptedSentences: {},
+  }, ['author', 'narrator'])
+  assert.equal(restored.webbStage, WEBB_SESSION_STAGES.RESEARCH)
+  assert.equal(restored.pendingWritingReview, null)
+})
+
+
+test('all accepted sentences recover the final learner-controlled gate even if the old writingMode flag is stale', () => {
+  const accepted = {
+    0: { text: 'First.', provenance: 'learner-message' },
+    1: { text: 'Second.', provenance: 'learner-message' },
+  }
+  const restored = restoreWebbCompositionState({
+    snapshotVersion: 5, writingMode: false, writingSubphase: 'idle', writingIndex: 1,
+    acceptedSentences: accepted, writingAttempts: {}, essay: null, essayMode: false,
+  }, ['one', 'two'])
+  assert.equal(restored.webbStage, WEBB_SESSION_STAGES.WRITING)
+  assert.equal(restored.writingMode, true)
+  assert.equal(restored.writingSubphase, 'committed')
+  assert.equal(restored.writingIndex, 1)
+  assert.equal(restored.essayMode, false)
+})
+
+test('completed essay stage survives refresh without forcing a deliberately closed essay overlay open', () => {
+  const accepted = {
+    0: { text: 'First.', provenance: 'learner-message' },
+    1: { text: 'Second.', provenance: 'learner-message' },
+  }
+  const restored = restoreWebbCompositionState({
+    snapshotVersion: 6, webbStage: 'essay', writingMode: false, writingSubphase: 'idle', writingIndex: 1,
+    acceptedSentences: accepted, writingAttempts: {}, essay: 'First. Second.', essayMode: false,
+  }, ['one', 'two'])
+  assert.equal(restored.webbStage, WEBB_SESSION_STAGES.ESSAY)
+  assert.equal(restored.writingMode, false)
+  assert.equal(restored.essay, 'First. Second.')
+  assert.equal(restored.essayMode, false)
 })

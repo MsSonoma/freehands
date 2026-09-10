@@ -23,11 +23,13 @@ import { RETENTION_PROTOCOL_VERSION } from '@/app/lib/masteryEvidence/retention.
 import { buildItemIdentity } from '@/app/lib/masteryEvidence/identity.js'
 import { identityKeys } from '@/app/lib/masteryEvidence/mastery.js'
 import {
+  WEBB_SESSION_STAGES,
   WEBB_SNAPSHOT_VERSION,
   assembleLearnerEssay,
   createWritingAttempt,
   migrateWebbSnapshot,
   nextWritingObjectiveIndex,
+  restoreWebbCompositionState,
   sanitizeWritingGuidance,
 } from '@/app/lib/webbLearningModel.mjs'
 import {
@@ -35,7 +37,6 @@ import {
   hasAllWritingReadyNotes,
   isWritingReadyNote,
   latestWritingAttempt,
-  normalizeWritingSubphase,
   writingReadyNoteIndices,
 } from '@/app/lib/webbWritingFlow.mjs'
 import {
@@ -258,6 +259,10 @@ function WebbPageInner() {
   const [storageError, setStorageError] = useState('')
   const [startupError, setStartupError] = useState('')
   const retryTurnRef = useRef(null)
+  const pendingWritingReviewRef = useRef(null)
+  const writingResumeReplayRef = useRef(false)
+  const webbStageRef = useRef(WEBB_SESSION_STAGES.RESEARCH)
+  const submitWritingAttemptRef = useRef(null)
   const [writingMode,         setWritingMode]        = useState(false)
   const [writingIndex,        setWritingIndex]       = useState(0)
   const [writingSubphase,     setWritingSubphase]    = useState(WEBB_WRITING_SUBPHASES.IDLE)
@@ -573,15 +578,19 @@ function WebbPageInner() {
       announcedNotesRef.current = new Set(Object.entries(rawSaved.learnerNotes || {}).map(([index, note]) => index + ':' + note.text))
       pendingNoteAnnouncementsRef.current = []
       queueNewNotes(rawSaved, restored)
-      setWritingMode(!!saved.writingMode)
-      setWritingIndex(saved.writingIndex || 0)
-      setWritingSubphase(normalizeWritingSubphase(saved.writingSubphase, !!saved.writingMode))
-      setWritingDraft(String(saved.writingDraft || ''))
-      setWritingAttempts(saved.writingAttempts || {})
-      setAcceptedSentences(saved.acceptedSentences || {})
-      if (saved.essay) setEssay(saved.essay)
-      if (saved.essayMode) setEssayMode(saved.essayMode)
-      snapshotRef.current = { ...saved, ...restored, selectedLesson }
+      const composition = restoreWebbCompositionState({ ...saved, ...restored }, saved.objectives)
+      webbStageRef.current = composition.webbStage
+      pendingWritingReviewRef.current = composition.pendingWritingReview
+      writingResumeReplayRef.current = false
+      setWritingMode(composition.writingMode)
+      setWritingIndex(composition.writingIndex || 0)
+      setWritingSubphase(composition.writingSubphase)
+      setWritingDraft(String(composition.writingDraft || ''))
+      setWritingAttempts(composition.writingAttempts || {})
+      setAcceptedSentences(composition.acceptedSentences || {})
+      setEssay(composition.essay || null)
+      setEssayMode(!!composition.essayMode)
+      snapshotRef.current = { ...saved, ...restored, ...composition, selectedLesson }
       setPhase(PHASE.CHATTING)
       setOfferResume(false)
       const resumeLk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
@@ -589,13 +598,16 @@ function WebbPageInner() {
       preloadResources(selectedLesson)
       const history = saved.chatMessages || []
       const progress = webbObjectiveProgress(saved.objectives, restored)
-      const pendingResponse = history.at(-1)?.role === 'user'
-      const untrackedLegacy = Number(rawSaved.snapshotVersion || 0) < 5
-        && !restored.understoodObj.length && history.some(message => message.role === 'user')
-        && !saved.writingMode && !saved.essayMode
-      if (pendingResponse || untrackedLegacy || progress.missingNoteIndices.length > 0) {
-        // Recover the existing response, not another repetition from the learner.
-        await completeResearchTurn(history, saved.objectives, { recoverNotes: true })
+      if (composition.webbStage === WEBB_SESSION_STAGES.RESEARCH) {
+        const pendingResponse = history.at(-1)?.role === 'user'
+        const untrackedLegacy = Number(rawSaved.snapshotVersion || 0) < 5
+          && !restored.understoodObj.length && history.some(message => message.role === 'user')
+        if (pendingResponse || untrackedLegacy || progress.missingNoteIndices.length > 0) {
+          // Research recovery is valid only while the durable stage is research.
+          await completeResearchTurn(history, saved.objectives, { recoverNotes: true })
+        }
+      } else if (composition.webbStage === WEBB_SESSION_STAGES.WRITING && progress.missingNoteIndices.length > 0) {
+        setPageError('Your writing position was restored, but one of its learner notes could not be recovered. Your essay work is preserved; do not restart the lesson.')
       }
     } catch (cause) {
       if (run === runGenerationRef.current) setPageError(cause?.message || 'Could not securely resume this lesson.')
@@ -619,12 +631,26 @@ function WebbPageInner() {
     webbSessionStartedAt: webbSessionStartRef.current,
     selectedLesson, chatMessages, transcript, objectives,
     ...learningStateRef.current,
+    webbStage: webbStageRef.current,
     writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, essay, essayMode,
+    pendingWritingReview: pendingWritingReviewRef.current,
   }
   useEffect(() => {
     if (webbExecutionFencedRef.current || offerResume || phase !== PHASE.CHATTING || !selectedLesson) return
     snapshotSaveRef.current()
   }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, essay, essayMode])
+
+  submitWritingAttemptRef.current = submitWritingAttempt
+  useEffect(() => {
+    const pending = pendingWritingReviewRef.current
+    if (!pending || writingResumeReplayRef.current || webbExecutionFencedRef.current) return
+    if (offerResume || phase !== PHASE.CHATTING || !writingMode || writingEvaluating || chatLoading || checkError || storageError) return
+    if (pending.objectiveIndex !== writingIndex || writingSubphase === WEBB_WRITING_SUBPHASES.COMMITTED) return
+    if (!hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return
+    writingResumeReplayRef.current = true
+    void Promise.resolve(submitWritingAttemptRef.current?.(pending.text, { reuseMessage: pending.message }))
+      .finally(() => { writingResumeReplayRef.current = false })
+  }, [phase, offerResume, writingMode, writingIndex, writingSubphase, writingEvaluating, chatLoading, checkError, storageError, objectives])
 
   // Redirect to the canonical learner home when lesson list is shown.
   useEffect(() => {
@@ -1310,7 +1336,18 @@ function WebbPageInner() {
 
   function saveLearningSnapshot(extra = {}) {
     if (webbExecutionFencedRef.current) return false
-    const snapshot = { ...snapshotRef.current, ...extra, ...learningStateRef.current, snapshotVersion: WEBB_SNAPSHOT_VERSION }
+    const merged = { ...snapshotRef.current, ...extra, ...learningStateRef.current }
+    const pendingWritingReview = Object.prototype.hasOwnProperty.call(extra, 'pendingWritingReview')
+      ? extra.pendingWritingReview : pendingWritingReviewRef.current
+    const requestedStage = Object.values(WEBB_SESSION_STAGES).includes(extra.webbStage)
+      ? extra.webbStage : webbStageRef.current
+    webbStageRef.current = requestedStage
+    const snapshot = {
+      ...merged,
+      webbStage: requestedStage,
+      pendingWritingReview,
+      snapshotVersion: WEBB_SNAPSHOT_VERSION,
+    }
     const key = snapKey(snapshot.selectedLesson)
     if (!key) return false
     try {
@@ -1423,6 +1460,9 @@ function WebbPageInner() {
     setObjectives([])
     commitLearningState(emptyWebbObjectiveState())
     setNewlySavedNote(null)
+    pendingWritingReviewRef.current = null
+    writingResumeReplayRef.current = false
+    webbStageRef.current = WEBB_SESSION_STAGES.RESEARCH
     setWritingMode(false)
     setWritingIndex(0)
     setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
@@ -1508,24 +1548,38 @@ function WebbPageInner() {
     preloadResources(lesson)
   }, [preloadResources, generateObjectives, learnerId, routeLearnerId, routeOccurrenceId, adoptWebbTrackedSession, startWebbSessionPolling])
 
-  async function submitWritingAttempt(text) {
+  async function submitWritingAttempt(text, { reuseMessage = null } = {}) {
     if (webbExecutionFencedRef.current || !writingMode || writingEvaluating || chatLoading) return
     const run = runGenerationRef.current
     const trimmed = String(text || '').trim()
     if (!trimmed) return
 
-    const note = learnerNotesRef.current[writingIndex]
+    const objectiveIndex = writingIndex
+    const note = learnerNotesRef.current[objectiveIndex]
     if (!isWritingReadyNote(note)) return
 
-    addStudentLine(trimmed)
-    const userMsg = {
+    const lastMessage = chatMessages.at(-1)
+    const reusingSavedMessage = reuseMessage?.role === 'user' && lastMessage?.role === 'user'
+      && ((reuseMessage.id && lastMessage.id === reuseMessage.id) || String(lastMessage.content || '').trim() === trimmed)
+    const userMsg = reusingSavedMessage ? lastMessage : {
       role: 'user',
       content: trimmed,
       id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `webb-${Date.now()}`,
       createdAt: new Date().toISOString(),
+      kind: 'writing-attempt',
     }
-    const nextHistory = [...chatMessages, userMsg]
-    setChatMessages(nextHistory)
+    const nextHistory = reusingSavedMessage ? chatMessages : [...chatMessages, userMsg]
+    const transcriptAlreadyHasMessage = reusingSavedMessage
+      && transcript.at(-1)?.role === 'user' && String(transcript.at(-1)?.text || '').trim() === trimmed
+    if (!transcriptAlreadyHasMessage) addStudentLine(trimmed)
+    if (!reusingSavedMessage) setChatMessages(nextHistory)
+
+    const pendingWritingReview = { objectiveIndex, text: trimmed, message: userMsg }
+    pendingWritingReviewRef.current = pendingWritingReview
+    saveLearningSnapshot({
+      webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex: objectiveIndex,
+      writingSubphase, writingDraft: trimmed, chatMessages: nextHistory, pendingWritingReview,
+    })
     setWritingEvaluating(true)
     setChatLoading(true)
 
@@ -1535,7 +1589,7 @@ function WebbPageInner() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'check-writing',
-          objective: objectives[writingIndex],
+          objective: objectives[objectiveIndex],
           note: note.text,
           text: trimmed,
           lesson: selectedLesson,
@@ -1545,30 +1599,48 @@ function WebbPageInner() {
       const evaluation = await evaluationRes.json()
       if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
       const attempt = createWritingAttempt({
-        objectiveIndex: writingIndex,
+        objectiveIndex,
         text: trimmed,
         message: userMsg,
         accuracy: evaluation.accuracy,
         sentenceOk: evaluation.sentenceOk,
       })
-      setWritingAttempts(prev => ({
-        ...prev,
-        [writingIndex]: [...(prev[writingIndex] || []), attempt],
-      }))
+      const priorAttempts = Array.isArray(writingAttempts?.[objectiveIndex]) ? writingAttempts[objectiveIndex] : []
+      const alreadyRecorded = priorAttempts.some(existing =>
+        (attempt.sourceMessageId && existing?.sourceMessageId === attempt.sourceMessageId)
+        || (!attempt.sourceMessageId && String(existing?.text || '').trim() === trimmed)
+      )
+      const nextAttemptsForObjective = alreadyRecorded ? priorAttempts : [...priorAttempts, attempt]
+      const nextWritingAttempts = { ...writingAttempts, [objectiveIndex]: nextAttemptsForObjective }
+      setWritingAttempts(nextWritingAttempts)
       setWritingDraft('')
+      pendingWritingReviewRef.current = null
 
       if (attempt.accepted) {
-        const nextAccepted = { ...acceptedSentences, [writingIndex]: attempt }
-        setAcceptedSentences(nextAccepted)
-        setWritingSubphase(WEBB_WRITING_SUBPHASES.COMMITTED)
+        const nextAccepted = { ...acceptedSentences, [objectiveIndex]: attempt }
         const hasNextSentence = nextWritingObjectiveIndex(objectives, nextAccepted) !== -1
         const reply = hasNextSentence
           ? "That sentence is ready. It's here in your essay. Copy it down, then choose Next sentence when you're ready."
           : "That sentence is ready. It's here in your essay. Copy it down, then choose Finish essay when you're ready."
-        setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+        const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+        const finalHistory = [...nextHistory, assistantMsg]
+        setAcceptedSentences(nextAccepted)
+        setWritingSubphase(WEBB_WRITING_SUBPHASES.COMMITTED)
+        setChatMessages(finalHistory)
+        saveLearningSnapshot({
+          webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex: objectiveIndex,
+          writingSubphase: WEBB_WRITING_SUBPHASES.COMMITTED, writingDraft: '',
+          writingAttempts: nextWritingAttempts, acceptedSentences: nextAccepted,
+          chatMessages: finalHistory, pendingWritingReview: null, essayMode: false,
+        })
         addMsg(reply)
       } else {
         setWritingSubphase(WEBB_WRITING_SUBPHASES.REVIEW)
+        saveLearningSnapshot({
+          webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex: objectiveIndex,
+          writingSubphase: WEBB_WRITING_SUBPHASES.REVIEW, writingDraft: '',
+          writingAttempts: nextWritingAttempts, chatMessages: nextHistory, pendingWritingReview: null, essayMode: false,
+        })
         let reply = sanitizeWritingGuidance('')
         try {
           const guidanceRes = await fetch('/api/webb-chat', {
@@ -1578,6 +1650,8 @@ function WebbPageInner() {
               messages: nextHistory,
               lesson: selectedLesson,
               writingMode: true,
+              writingObjective: objectives[objectiveIndex],
+              writingObjectiveIndex: objectiveIndex,
               writingNote: note.text,
               writingEvaluation: { accuracy: evaluation.accuracy, sentenceOk: evaluation.sentenceOk },
             }),
@@ -1588,14 +1662,28 @@ function WebbPageInner() {
           }
         } catch { /* safe retry copy remains */ }
         if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
-        setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+        const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+        const finalHistory = [...nextHistory, assistantMsg]
+        setChatMessages(finalHistory)
+        saveLearningSnapshot({
+          webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex: objectiveIndex,
+          writingSubphase: WEBB_WRITING_SUBPHASES.REVIEW, writingDraft: '',
+          writingAttempts: nextWritingAttempts, chatMessages: finalHistory, pendingWritingReview: null, essayMode: false,
+        })
         addMsg(reply)
       }
     } catch {
       if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
+      pendingWritingReviewRef.current = null
       const reply = 'I could not review that sentence just yet. Your words are still here, so please try submitting it again.'
+      const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+      const finalHistory = [...nextHistory, assistantMsg]
       setWritingDraft(trimmed)
-      setChatMessages([...nextHistory, { role: 'assistant', content: reply }])
+      setChatMessages(finalHistory)
+      saveLearningSnapshot({
+        webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex: objectiveIndex,
+        writingSubphase, writingDraft: trimmed, chatMessages: finalHistory, pendingWritingReview: null, essayMode: false,
+      })
       addMsg(reply)
     } finally {
       if (run === runGenerationRef.current && !webbExecutionFencedRef.current) {
@@ -1670,7 +1758,7 @@ function WebbPageInner() {
 
   // Normal research/chat dispatcher. Writing Studio submissions bypass every UI-intent intercept.
   async function sendMessage(text) {
-    if (webbExecutionFencedRef.current || phase !== PHASE.CHATTING || !objectives.length || checkError || writingMode) return
+    if (webbExecutionFencedRef.current || phase !== PHASE.CHATTING || !objectives.length || checkError || writingMode || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH) return
     if (!text.trim() || chatLoading) return
     addStudentLine(text)
 
@@ -1896,7 +1984,7 @@ function WebbPageInner() {
   //           (B) article available   → targeted highlight+scroll → Socratic
   //           (C) no navigable media  → conversational teach → Socratic
   async function startResearch(objIdx) {
-    if (webbExecutionFencedRef.current || chatLoading || learningStateRef.current.understoodObj.includes(objIdx)) return
+    if (webbExecutionFencedRef.current || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || chatLoading || learningStateRef.current.understoodObj.includes(objIdx)) return
     closeObjectivesPanel()
     setMediaOverlay(null)
     const obj = objectives[objIdx]
@@ -2118,19 +2206,37 @@ function WebbPageInner() {
     const nextIndex = nextWritingObjectiveIndex(objectives, acceptedSentences)
     if (nextIndex === -1) {
       const finalEssay = assembleLearnerEssay(objectives, acceptedSentences)
+      if (!finalEssay) return
+      pendingWritingReviewRef.current = null
       setEssay(finalEssay)
-      setEssayMode(!!finalEssay)
+      setWritingMode(false)
+      setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
+      setWritingDraft('')
+      setEssayMode(true)
+      saveLearningSnapshot({
+        webbStage: WEBB_SESSION_STAGES.ESSAY, writingMode: false,
+        writingSubphase: WEBB_WRITING_SUBPHASES.IDLE, writingDraft: '',
+        acceptedSentences, essay: finalEssay, essayMode: true, pendingWritingReview: null,
+      })
       return
     }
     const note = learnerNotesRef.current[nextIndex]
     if (!isWritingReadyNote(note)) return
+    pendingWritingReviewRef.current = null
     setWritingIndex(nextIndex)
     setWritingMode(true)
     setWritingSubphase(WEBB_WRITING_SUBPHASES.BLANK)
     setWritingDraft('')
     setEssayMode(false)
     const reply = "You have your notes. Now we'll build your essay one sentence at a time."
-    setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+    const nextHistory = [...chatMessages, assistantMsg]
+    setChatMessages(nextHistory)
+    saveLearningSnapshot({
+      webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex: nextIndex,
+      writingSubphase: WEBB_WRITING_SUBPHASES.BLANK, writingDraft: '', chatMessages: nextHistory,
+      acceptedSentences, pendingWritingReview: null, essayMode: false,
+    })
     addMsg(reply)
   }
 
@@ -2140,7 +2246,14 @@ function WebbPageInner() {
     if (!isWritingReadyNote(note)) return
     setWritingSubphase(WEBB_WRITING_SUBPHASES.FOCUS)
     const reply = "Let's work with just this note. Turn it into one complete sentence in your own words."
-    setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+    const nextHistory = [...chatMessages, assistantMsg]
+    setChatMessages(nextHistory)
+    saveLearningSnapshot({
+      webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex,
+      writingSubphase: WEBB_WRITING_SUBPHASES.FOCUS, writingDraft: '', chatMessages: nextHistory,
+      acceptedSentences, pendingWritingReview: null, essayMode: false,
+    })
     addMsg(reply)
   }
 
@@ -2148,26 +2261,42 @@ function WebbPageInner() {
     if (webbExecutionFencedRef.current || !writingMode || writingEvaluating || chatLoading) return
     if (writingSubphase !== WEBB_WRITING_SUBPHASES.COMMITTED) return
     const accepted = acceptedSentences?.[writingIndex]
-    if (!accepted?.accepted || accepted.provenance !== 'learner-message' || !String(accepted.text || '').trim()) return
+    if (!accepted || accepted.provenance !== 'learner-message' || !String(accepted.text || '').trim()) return
     const nextIndex = nextWritingObjectiveIndex(objectives, acceptedSentences)
     if (nextIndex === -1) {
       const finalEssay = assembleLearnerEssay(objectives, acceptedSentences)
       if (!finalEssay) return
       const reply = 'You turned every rough note into your own writing. Your essay is ready!'
+      pendingWritingReviewRef.current = null
       setEssay(finalEssay)
       setWritingMode(false)
       setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
       setWritingDraft('')
       setEssayMode(true)
-      setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+      const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+      const finalHistory = [...chatMessages, assistantMsg]
+      setChatMessages(finalHistory)
+      saveLearningSnapshot({
+        webbStage: WEBB_SESSION_STAGES.ESSAY, writingMode: false, writingIndex,
+        writingSubphase: WEBB_WRITING_SUBPHASES.IDLE, writingDraft: '', acceptedSentences,
+        essay: finalEssay, essayMode: true, chatMessages: finalHistory, pendingWritingReview: null,
+      })
       addMsg(reply)
       return
     }
+    pendingWritingReviewRef.current = null
     setWritingIndex(nextIndex)
     setWritingSubphase(WEBB_WRITING_SUBPHASES.FOCUS)
     setWritingDraft('')
     const reply = "Now let's use the next note. Turn just that note into one complete sentence."
-    setChatMessages(prev => [...prev, { role: 'assistant', content: reply }])
+    const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+    const nextHistory = [...chatMessages, assistantMsg]
+    setChatMessages(nextHistory)
+    saveLearningSnapshot({
+      webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex: nextIndex,
+      writingSubphase: WEBB_WRITING_SUBPHASES.FOCUS, writingDraft: '', acceptedSentences,
+      chatMessages: nextHistory, pendingWritingReview: null, essayMode: false,
+    })
     addMsg(reply)
   }
 
@@ -2575,7 +2704,20 @@ function WebbPageInner() {
   const objectiveProgress = webbObjectiveProgress(objectives, learningState)
   const understoodCount = objectiveProgress.understoodCount
   const writingReadyCount = writingReadyNoteIndices(objectives, learnerNotes).length
-  const writingGuidance = [...transcript].reverse().find(message => message?.role === 'assistant')?.text || ''
+  const latestWritingGuidance = [...chatMessages].reverse()
+    .find(message => message?.role === 'assistant' && message?.kind === 'writing')?.content || ''
+  const writingFallbackGuidance = writingSubphase === WEBB_WRITING_SUBPHASES.BLANK
+    ? "You have your notes. Now we'll build your essay one sentence at a time."
+    : writingSubphase === WEBB_WRITING_SUBPHASES.COMMITTED
+      ? (nextWritingObjectiveIndex(objectives, acceptedSentences) === -1
+        ? "That sentence is ready. It's here in your essay. Copy it down, then choose Finish essay when you're ready."
+        : "That sentence is ready. It's here in your essay. Copy it down, then choose Next sentence when you're ready.")
+      : writingSubphase === WEBB_WRITING_SUBPHASES.REVIEW
+        ? sanitizeWritingGuidance('')
+        : "Let's work with just this note. Turn it into one complete sentence in your own words."
+  const writingGuidance = writingMode
+    ? (latestWritingGuidance || writingFallbackGuidance)
+    : ([...transcript].reverse().find(message => message?.role === 'assistant')?.text || '')
 
   // ── Guard: never show the retired lesson-selection shell while loading ─
   // During initial load (listLoading=true) the page is still in PHASE.LIST.
@@ -2950,10 +3092,12 @@ function WebbPageInner() {
               </button>
             </div>
           )}
-          <StudentInput
-            onSend={sendMessage}
-            loading={chatLoading || !!checkError}
-          />
+          {webbStageRef.current === WEBB_SESSION_STAGES.RESEARCH && (
+            <StudentInput
+              onSend={sendMessage}
+              loading={chatLoading || !!checkError}
+            />
+          )}
         </div>
       )}
 

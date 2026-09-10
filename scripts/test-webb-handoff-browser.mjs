@@ -238,6 +238,49 @@ try {
   assert.equal(completionRequest.body.source, 'webb')
   pass('protected completion failure keeps the essay and never records false completion')
 
+  const acceptedAuthorSentence = {
+    objectiveIndex: 0, text: 'Roald Dahl wrote The Magic Finger.', sourceMessageId: 'accepted-author',
+    sourceMessageCreatedAt: '2026-09-10T12:00:00Z', accuracy: 'correct', sentenceOk: true, accepted: true,
+    attemptedAt: '2026-09-10T12:00:01Z', assistance: 'mrs-webb-guidance', provenance: 'learner-message',
+  }
+  const writingNotes = {
+    0: { objectiveIndex: 0, objective: AUTHOR, text: answer, accuracy: 'correct', provenance: 'learner-message', sourceMessageId: 'note-author' },
+    1: { objectiveIndex: 1, objective: NARRATOR, text: 'a girl', accuracy: 'correct', provenance: 'learner-message', sourceMessageId: 'note-narrator' },
+  }
+  const interruptedWritingMessage = { role: 'user', content: 'a girl', id: 'pending-writing-u2', createdAt: '2026-09-10T12:05:00Z', kind: 'writing-attempt' }
+  const interruptedWritingHistory = [
+    { role: 'assistant', content: "Now let's use the next note. Turn just that note into one complete sentence.", id: 'writing-a1', kind: 'writing' },
+    interruptedWritingMessage,
+  ]
+  const writingResumeRecordStart = records.length
+  await seed('writing-resume', {
+    snapshotVersion: 5, selectedLesson: lesson, objectives, chatMessages: interruptedWritingHistory,
+    transcript: interruptedWritingHistory.map(message => ({ role: message.role, text: message.content })),
+    coveredObj: [0, 1], understoodObj: [0, 1], objectiveEvidence: {}, learnerNotes: writingNotes,
+    writingMode: true, writingIndex: 1, writingSubphase: 'focus', writingDraft: interruptedWritingMessage.content,
+    writingAttempts: {}, acceptedSentences: { 0: acceptedAuthorSentence }, essay: null, essayMode: false,
+  })
+  await until(() => cdp.eval(`document.body.innerText.includes('Resume')`), 'interrupted writing resume prompt')
+  await click('Resume')
+  await until(() => cdp.eval(snapshotExpression + "?.writingSubphase === 'review'"), 'interrupted writing review replayed')
+  assert.equal(await cdp.eval(snapshotExpression + '.webbStage'), 'writing')
+  assert.equal(await cdp.eval(snapshotExpression + '.writingMode'), true)
+  assert.equal(await cdp.eval(`!!document.querySelector('#webb-writing-attempt')`), true)
+  assert.equal(await cdp.eval(`!!document.querySelector('textarea[aria-label=\"Chat with Mrs. Webb\"]')`), false)
+  assert.equal(await cdp.eval(snapshotExpression + ".chatMessages.filter(message => message.role === 'user' && message.content === 'a girl').length"), 1)
+  assert.equal(lastChat?.writingMode, true)
+  assert.equal(lastChat?.writingObjective, NARRATOR)
+  assert.equal(lastChat?.writingObjectiveIndex, 1)
+  const writingResumeRecords = records.slice(writingResumeRecordStart)
+  assert.equal(writingResumeRecords.some(record => record.path === '/api/webb-objectives' && record.body?.action === 'check'), false)
+  assert.equal(writingResumeRecords.some(record => record.path === '/api/webb-objectives' && record.body?.action === 'check-writing'), true)
+  assert.equal(writingResumeRecords.some(record => record.path === '/api/webb-chat' && record.body?.writingMode !== true), false)
+  pass('interrupted writing review resumes in composition with Mrs. Webb writing-aware')
+  await type('The narrator is a girl.', '#webb-writing-attempt')
+  await until(() => cdp.eval(snapshotExpression + "?.writingSubphase === 'committed'"), 'resumed writing accepts corrected sentence')
+  assert.equal(await cdp.eval(`[...document.querySelectorAll('button')].some(button => button.textContent.includes('Finish essay'))`), true)
+  pass('resumed composition continues accepting sentences after refresh')
+
   const conversation = [{ role: 'assistant', content: 'What do you already know?', id: 'old-a1' }, { role: 'user', content: answer, id: 'old-u1' }]
   const evidence = classifyWebbObjectiveAttempt({ objectiveIndex: 0, objective: AUTHOR, conversation, evaluation: { accuracy: 'correct', sentenceOk: true, sourceMessageIndex: 1 } })
   conversation.push({ role: 'assistant', content: 'You already named the author. Can you say that again?', id: 'old-a2' })
