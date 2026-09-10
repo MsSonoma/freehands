@@ -22,6 +22,22 @@ test('independent first-response success can establish mastery', () => {
   assert.equal(result.retention, 'not_measured')
 })
 
+test('a first-turn direct fact is demonstrated comprehension when Webb did not supply it', () => {
+  const authorObjective = 'The learner understands that Roald Dahl wrote The Magic Finger.'
+  const result = classifyWebbObjectiveAttempt({
+    objectiveIndex: 0,
+    objective: authorObjective,
+    evaluation: evaluate('correct', 1),
+    conversation: [
+      assistant('What do you already know about The Magic Finger?'),
+      learner('The Magic Finger was written by Roald Dahl.'),
+    ],
+  })
+  assert.equal(result.coverage, 'covered')
+  assert.equal(result.comprehension, 'demonstrated')
+  assert.equal(result.mastery, 'mastered')
+  assert.equal(result.latestAttempt.reproduction, null)
+})
 test('correct response after teaching is assisted comprehension, not mastery', () => {
   const previous = addWebbAssistance({ attempts: [{ accuracy: 'partial' }] }, { type: WEBB_ASSISTANCE_TYPES.CORRECTION, sourceMessageId: 'a1' })
   const result = classifyWebbObjectiveAttempt({ objectiveIndex: 0, objective, evaluation: evaluate('correct', 1), conversation: [assistant('Britain taxed them without representation.'), learner('They paid taxes but had no vote.')], previousEvidence: previous })

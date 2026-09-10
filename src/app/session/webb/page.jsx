@@ -1122,40 +1122,22 @@ function WebbPageInner() {
 
   // ── Objectives: generate when lesson starts ──────────────────────────
   // Generate objectives from the lesson question bank (fired once per lesson).
-  // Fall back silently if the API is unavailable.
+  // This is a startup barrier: Webb chat must not open without a usable objective map.
   const generateObjectives = useCallback(async (lesson) => {
-    setObjectives([])
-    setCoveredObj([])
-    setUnderstoodObj([])
-    setObjectiveEvidence({})
-    setNewlySavedNote(null)
-    learnerNotesRef.current = {}
-    setLearnerNotes({})
-    setWritingMode(false)
-    setWritingIndex(0)
-    setWritingSubphase(WEBB_WRITING_SUBPHASES.IDLE)
-    setWritingDraft('')
-    setWritingAttempts({})
-    setAcceptedSentences({})
-    setExpandedObj(null)
-    setEssayMode(false)
-    setEssay(null)
-    try {
-      const lessonKey = lesson?.lessonKey || lesson?.lesson_id || lesson?.id
-      const currentLearnerId = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
-      const pendingObjectives = getWebbCompletionForLearner(currentLearnerId)?.[lessonKey]?.masterySummary?.masteryPending || []
-      const res  = await fetch('/api/webb-objectives', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ action: 'generate', lesson, pendingObjectives }),
-      })
-      const data = await res.json()
-      if (Array.isArray(data.objectives) && data.objectives.length) {
-        priorObjectiveExposureRef.current = Object.fromEntries(data.objectives.map((_, index) => [index, true]))
-        setObjectives(data.objectives)
-        await loadPriorObjectiveExposure(data.objectives, lesson)
-      }
-    } catch { /* objectives are optional — fail silently */ }
+    const lessonKey = lesson?.lessonKey || lesson?.lesson_id || lesson?.id
+    const currentLearnerId = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
+    const pendingObjectives = getWebbCompletionForLearner(currentLearnerId)?.[lessonKey]?.masterySummary?.masteryPending || []
+    const res = await fetch('/api/webb-objectives', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'generate', lesson, pendingObjectives }),
+    })
+    if (!res.ok) throw new Error('Mrs. Webb could not prepare the learning goals for this lesson.')
+    const data = await res.json()
+    if (!Array.isArray(data.objectives) || !data.objectives.length) {
+      throw new Error('Mrs. Webb could not prepare the learning goals for this lesson.')
+    }
+    return data.objectives
   }, [])
 
   function webbObjectiveItem(index) {
@@ -1395,6 +1377,15 @@ function WebbPageInner() {
     setEssay(null)
     webbSessionStartRef.current = new Date().toISOString()
 
+    let startupObjectives
+    try {
+      startupObjectives = await generateObjectives(lesson)
+    } catch (cause) {
+      setPageError(cause?.message || 'Mrs. Webb could not prepare the learning goals for this lesson. Please try again.')
+      setPhase(PHASE.LIST)
+      return
+    }
+
     try {
       const lessonKey = lesson.lessonKey || lesson.lesson_id || lesson.id
       const tracked = await startProtectedInstructionalSession({
@@ -1416,6 +1407,10 @@ function WebbPageInner() {
       setWebbOwnershipEndedReason(null)
       startWebbSessionPolling()
       await initializeWebbEvidence(canonicalSessionRef.current, lesson)
+      // Never expose learner input until the objective map and prior-exposure state are ready.
+      priorObjectiveExposureRef.current = Object.fromEntries(startupObjectives.map((_, index) => [index, true]))
+      setObjectives(startupObjectives)
+      await loadPriorObjectiveExposure(startupObjectives, lesson)
     } catch (cause) {
       setPageError(cause?.message || 'Could not securely start this lesson.')
       setPhase(PHASE.LIST)
@@ -1446,9 +1441,8 @@ function WebbPageInner() {
     const activeLk = lesson.lessonKey || lesson.lesson_id || lesson.id
     try { if (activeLk) sessionStorage.setItem('webb_active_lesson_key', activeLk) } catch {}
 
-    // Preload media + generate objectives in background
+    // Media is enrichment and can continue loading after the objective/evidence map is ready.
     preloadResources(lesson)
-    generateObjectives(lesson)
   }, [preloadResources, generateObjectives, learnerId, routeLearnerId, routeOccurrenceId, adoptWebbTrackedSession, startWebbSessionPolling])
 
   async function submitWritingAttempt(text) {
