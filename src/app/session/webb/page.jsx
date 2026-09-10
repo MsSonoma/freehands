@@ -523,6 +523,7 @@ function WebbPageInner() {
     objectiveQueueRef.current.invalidate()
     setStartupError('')
     setCheckError('')
+    setChatLoading(true)
     retryTurnRef.current = null
     try {
       const key = snapKey(selectedLesson)
@@ -583,8 +584,20 @@ function WebbPageInner() {
       const resumeLk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
       try { if (resumeLk) sessionStorage.setItem('webb_active_lesson_key', resumeLk) } catch {}
       preloadResources(selectedLesson)
+      const history = saved.chatMessages || []
+      const progress = webbObjectiveProgress(saved.objectives, restored)
+      const pendingResponse = history.at(-1)?.role === 'user'
+      const untrackedLegacy = Number(rawSaved.snapshotVersion || 0) < 5
+        && !restored.understoodObj.length && history.some(message => message.role === 'user')
+        && !saved.writingMode && !saved.essayMode
+      if (pendingResponse || untrackedLegacy || progress.missingNoteIndices.length > 0) {
+        // Recover the existing response, not another repetition from the learner.
+        await completeResearchTurn(history, saved.objectives, { recoverNotes: true })
+      }
     } catch (cause) {
-      setPageError(cause?.message || 'Could not securely resume this lesson.')
+      if (run === runGenerationRef.current) setPageError(cause?.message || 'Could not securely resume this lesson.')
+    } finally {
+      if (run === runGenerationRef.current && !webbExecutionFencedRef.current) setChatLoading(false)
     }
   }
 
@@ -932,7 +945,7 @@ function WebbPageInner() {
     }
 
     setInterpretingVideo(true)
-    const targetIndex = objectives.findIndex((_, index) => !isWritingReadyNote(learnerNotesRef.current[index]))
+    const targetIndex = objectives.findIndex((_, index) => !learningStateRef.current.understoodObj.includes(index))
     if (targetIndex >= 0) markObjectiveAssistance(targetIndex, WEBB_ASSISTANCE_TYPES.VISUAL_EXPOSURE)
     setMediaOverlay('video')
     setVideoMoments([])
@@ -1205,12 +1218,12 @@ function WebbPageInner() {
     }
   }
 
-  function recordWebbClassification(index, classification) {
+  function recordWebbClassification(index, classification, objectiveList = objectives) {
     const client = masteryEvidenceClientRef.current
     const attempt = classification?.latestAttempt
     const tracked = canonicalSessionRef.current
     if (!client || !attempt || !tracked?.id) return
-    const identityItem = webbObjectiveItem(index)
+    const identityItem = makeWebbObjectiveItem(objectiveList[index], index, tracked.id)
     const attemptNumber = classification.attempts?.length || 1
     const itemExposureId = `webb:${tracked.id}:${index}:${attemptNumber}`
     void (async () => {
@@ -1218,7 +1231,7 @@ function WebbPageInner() {
         phase: 'discussion', itemPurpose: 'webb_objective', itemExposureId,
         identityItem, assessmentRole: ASSESSMENT_ROLES.CONVERSATIONAL_OPPORTUNITY,
         evidencePurpose: 'independent_mastery', questionIndex: index,
-        item: { objective: objectives[index], interaction_model: 'webb_conversation' },
+        item: { objective: objectiveList[index], interaction_model: 'webb_conversation' },
       })
       await client.recordLearnerResponse({
         phase: 'discussion', itemPurpose: 'webb_objective', itemExposureId,
@@ -1348,11 +1361,18 @@ function WebbPageInner() {
       const next = mergeWebbObjectiveResult(currentObjectives, before, data, updatedMessages)
       commitLearningState(next)
       queueNewNotes(before, next)
-      saveLearningSnapshot({ objectives: currentObjectives, selectedLesson })
+      // Publish a note only with the exact conversation that contains its source.
+      // An older queued media check must not trim a newer conversation snapshot.
+      const latestHistory = snapshotRef.current.chatMessages || []
+      const isPrefix = updatedMessages.every((message, index) => latestHistory[index]?.role === message.role
+        && latestHistory[index]?.content === message.content
+        && (!message.id || latestHistory[index]?.id === message.id))
+      const historyForSave = isPrefix ? latestHistory : updatedMessages
+      saveLearningSnapshot({ objectives: currentObjectives, selectedLesson, chatMessages: historyForSave })
       for (const [rawIndex, classification] of Object.entries(next.objectiveEvidence)) {
         const index = Number(rawIndex)
         if ((classification.attempts?.length || 0) > (before.objectiveEvidence[index]?.attempts?.length || 0)) {
-          recordWebbClassification(index, classification)
+          recordWebbClassification(index, classification, currentObjectives)
         }
       }
       return { data, progress: webbObjectiveProgress(currentObjectives, next) }
@@ -1579,17 +1599,17 @@ function WebbPageInner() {
     }
   }
 
-  async function completeResearchTurn(nextHistory) {
+  async function completeResearchTurn(nextHistory, currentObjectives = objectives, { recoverNotes = false } = {}) {
     const run = runGenerationRef.current
     const active = () => run === runGenerationRef.current && !webbExecutionFencedRef.current
     setChatLoading(true)
     setCheckError('')
     retryTurnRef.current = nextHistory
-    saveLearningSnapshot({ chatMessages: nextHistory })
+    saveLearningSnapshot({ chatMessages: nextHistory, objectives: currentObjectives })
     try {
-      const priorProgress = webbObjectiveProgress(objectives, learningStateRef.current)
-      const checked = await checkObjectivesAfterTurn(nextHistory, objectives, null, {
-        recoverNotes: priorProgress.missingNoteIndices.length > 0,
+      const priorProgress = webbObjectiveProgress(currentObjectives, learningStateRef.current)
+      const checked = await checkObjectivesAfterTurn(nextHistory, currentObjectives, null, {
+        recoverNotes: recoverNotes || priorProgress.missingNoteIndices.length > 0,
       })
       if (!checked || !active()) return
       const { progress, data: checkData } = checked
@@ -2150,6 +2170,8 @@ function WebbPageInner() {
   async function handleCompleteLesson() {
     if (webbExecutionFencedRef.current) return
     if (!learnerId || !selectedLesson || completionState === 'saving') return
+    if (checkError || storageError || !essay || assembleLearnerEssay(objectives, acceptedSentences) !== essay) return
+    if (!saveLearningSnapshot()) return
     const tracked = canonicalSessionRef.current
     if (!tracked?.id) {
       setCompletionState('failed')
@@ -2247,7 +2269,7 @@ function WebbPageInner() {
   async function interpretArticle() {
     if (!articleResource?.html || interpretingArticle) return
     setInterpretingArticle(true)
-    const targetIndex = objectives.findIndex((_, index) => !isWritingReadyNote(learnerNotesRef.current[index]))
+    const targetIndex = objectives.findIndex((_, index) => !learningStateRef.current.understoodObj.includes(index))
     if (targetIndex >= 0) markObjectiveAssistance(targetIndex, WEBB_ASSISTANCE_TYPES.VISUAL_EXPOSURE)
     // Ensure article overlay is open so the iframe exists in the DOM
     setMediaOverlay('article')

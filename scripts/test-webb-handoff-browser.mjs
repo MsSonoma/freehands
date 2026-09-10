@@ -63,16 +63,19 @@ async function intercept({ requestId, request, resourceType }) {
       if (url.pathname === '/api/syllabus/execution') return fulfill(requestId, { ok: true, occurrenceId: 'syllabus:offline', instructionalTeacher: 'webb' })
       if (url.pathname === '/api/syllabus/execution/start') return fulfill(requestId, { id: sessionId, session_id: browserId, lesson_id: lessonKey, learner_id: learnerId, instructional_teacher: 'webb', started_at: new Date().toISOString() })
       if (url.pathname === '/api/syllabus/execution/heartbeat') return fulfill(requestId, { ok: true, active: true, session: { id: sessionId, session_id: browserId, ended_at: null } })
+      if (url.pathname === '/api/syllabus/execution/complete') return fulfill(requestId, { ok: false, error: 'offline completion outage' }, 503)
       if (url.pathname === '/api/evidence') return fulfill(requestId, { ok: true, exposed_keys: [], exposedKeys: [], evidence_session: { id: sessionId, evidence_status: 'partial' }, accepted: 1 })
       if (url.pathname === '/api/webb-objectives') {
         if (body.action === 'generate') { generateCount++; await delay(1100); return fulfill(requestId, mode === 'startup-error' && generateCount === 1 ? { error: 'offline setup unavailable' } : { objectives }, mode === 'startup-error' && generateCount === 1 ? 503 : 200) }
         if (body.action === 'check-writing') return fulfill(requestId, { accuracy: 'correct', sentenceOk: body.text !== 'a girl' })
         checkCount++
-        if (mode === 'check-error' && checkCount === 1) return fulfill(requestId, { error: 'offline check unavailable' }, 503)
-        const response = await objectivesRoute(new Request(origin + url.pathname, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), { apiKey: 'offline', callModel: async () => {
-          const index = body.conversation.findLastIndex(m => m.role === 'user')
-          const text = body.conversation[index]?.content || ''
-          return `${/girl/i.test(text) ? 1 : 0}|correct|${text === 'a girl' ? 'no' : 'yes'}|${index}`
+        if (['check-error', 'refresh-error'].includes(mode) && checkCount === 1) return fulfill(requestId, { error: 'offline check unavailable' }, 503)
+        const response = await objectivesRoute(new Request(origin + url.pathname, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }), { apiKey: 'offline', callModel: async (_system, prompt) => {
+          const input = JSON.parse(prompt)
+          const text = input.learner_response
+          const objectiveIndex = /girl/i.test(text) ? 1 : /Dahl/i.test(text) ? 0 : -1
+          return JSON.stringify({ evaluations: input.remaining_objectives.some(row => row.objectiveIndex === objectiveIndex)
+            ? [{ objectiveIndex, accuracy: 'correct', sentenceOk: text !== 'a girl', evidenceKind: 'fixed_fact' }] : [] })
         } })
         return fulfill(requestId, await response.json(), response.status)
       }
@@ -174,15 +177,35 @@ try {
   await type(' a girl.', '#webb-writing-attempt')
   await until(() => cdp.eval(`${snapshotExpression}?.essay === 'Roald Dahl wrote The Magic Finger. The narrator is a girl.'`), 'complete essay')
   pass('writing focus, rejected attempt, unsent draft resume and exact final essay')
+  await click('Complete Lesson')
+  await until(() => cdp.eval(`document.body.innerText.includes('Retry completion')`), 'completion failure preserved')
+  assert.equal(await cdp.eval(`${snapshotExpression}?.essay === 'Roald Dahl wrote The Magic Finger. The narrator is a girl.'`), true)
+  assert.equal(await cdp.eval(`JSON.parse(localStorage.getItem('webb_completion_v1') || '{}')[${JSON.stringify(learnerId)}]?.[${JSON.stringify(lessonKey)}]?.completed === true`), false)
+  const completionRequest = records.filter(row => row.path === '/api/syllabus/execution/complete').at(-1)
+  assert.equal(completionRequest.body.occurrenceId, 'syllabus:offline')
+  assert.equal(completionRequest.body.source, 'webb')
+  pass('protected completion failure keeps the essay and never records false completion')
 
   const conversation = [{ role: 'assistant', content: 'What do you already know?', id: 'old-a1' }, { role: 'user', content: answer, id: 'old-u1' }]
   const evidence = classifyWebbObjectiveAttempt({ objectiveIndex: 0, objective: AUTHOR, conversation, evaluation: { accuracy: 'correct', sentenceOk: true, sourceMessageIndex: 1 } })
+  conversation.push({ role: 'assistant', content: 'You already named the author. Can you say that again?', id: 'old-a2' })
   await seed('old-resume', { snapshotVersion: 4, selectedLesson: lesson, objectives, chatMessages: conversation, transcript: conversation.map(m => ({ role: m.role, text: m.content })), coveredObj: [0], understoodObj: [0], objectiveEvidence: { 0: evidence }, learnerNotes: {}, writingMode: false, writingAttempts: {}, acceptedSentences: {} })
   await until(() => cdp.eval(`document.body.innerText.includes('Resume')`), 'old resume prompt'); await click('Resume'); await ready()
   await until(() => cdp.eval(`${snapshotExpression}?.learnerNotes?.[0]?.text === ${JSON.stringify(answer)}`), 'old note recovered')
   assert.equal(checkCount, 0); assert.equal(generateCount, 0)
   assert.equal(await cdp.eval(`document.body.innerText.includes('1/2')`), true)
   pass('v4 resume repairs the missing note without re-answering or regrading')
+
+  await seed('untracked-resume', { snapshotVersion: 4, selectedLesson: lesson, objectives, chatMessages: conversation,
+    transcript: conversation.map(m => ({ role: m.role, text: m.content })), coveredObj: [], understoodObj: [],
+    objectiveEvidence: {}, learnerNotes: {}, writingMode: false, writingAttempts: {}, acceptedSentences: {} })
+  await until(() => cdp.eval(`document.body.innerText.includes('Resume')`), 'untracked resume prompt')
+  await click('Resume'); await ready()
+  await until(() => cdp.eval(`${snapshotExpression}?.learnerNotes?.[0]?.text === ${JSON.stringify(answer)}`), 'untracked response recovered')
+  assert.equal(await cdp.eval(`${snapshotExpression}.chatMessages.filter(message => message.role === 'user').length`), 1)
+  assert.deepEqual(lastChat.remainingObjectives, [NARRATOR])
+  assert.equal(generateCount, 0)
+  pass('untracked legacy resume evaluates original words without another learner answer')
 
   await seed('check-error'); await ready(); await type(answer)
   await until(() => cdp.eval(`document.body.innerText.includes('Retry saved answer')`), 'evaluation failure recovery')
@@ -193,6 +216,16 @@ try {
   assert.equal(await cdp.eval(`${snapshotExpression}.chatMessages.filter(m=>m.role==='user').length`), 1)
   assert.equal(await cdp.eval(`${snapshotExpression}.objectiveEvidence[0].attempts.length`), 1)
   pass('evaluation failure retries the same stored answer without duplicate attempts')
+
+  await seed('refresh-error'); await ready(); await type(answer)
+  await until(() => cdp.eval(`document.body.innerText.includes('Retry saved answer')`), 'evaluation failure before refresh')
+  await cdp.send('Page.reload', { ignoreCache: true })
+  await until(() => cdp.eval(`document.body.innerText.includes('Resume')`), 'pending answer resume prompt')
+  await click('Resume'); await ready()
+  await until(() => cdp.eval(`${snapshotExpression}?.learnerNotes?.[0]?.text === ${JSON.stringify(answer)}`), 'pending answer resumed')
+  assert.equal(await cdp.eval(`${snapshotExpression}.chatMessages.filter(message => message.role === 'user').length`), 1)
+  assert.deepEqual(lastChat.remainingObjectives, [NARRATOR])
+  pass('refresh during an evaluator outage resumes the saved answer rather than demanding repetition')
 
   await seed('storage-error'); await ready(); await cdp.eval('window.__failWebbSaves = true'); await type(answer); await ready()
   assert.equal(await cdp.eval(`document.body.innerText.includes('1/2')`), true)

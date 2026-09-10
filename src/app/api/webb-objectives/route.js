@@ -18,7 +18,7 @@ const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL } from '../../lib/aiModel.js'
 const OPENAI_MODEL = AI_MODEL
 
-async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3) {
+async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3, responseFormat = null) {
   const res = await fetch(OPENAI_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
@@ -27,6 +27,7 @@ async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3)
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
       max_completion_tokens: maxTokens,
       temperature,
+      ...(responseFormat ? { response_format: responseFormat } : {}),
     }),
   })
   if (!res.ok) throw new Error('Learning evaluator unavailable (' + res.status + ')')

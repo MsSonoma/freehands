@@ -66,13 +66,20 @@ export function compareLearnerToAssistant({ learnerText, assistantText } = {}) {
     : { copied: false, kind: null, similarity }
 }
 
-export function findClearAnswerReproduction(conversation, sourceMessageIndex) {
+export function findClearAnswerReproduction(conversation, sourceMessageIndex, { fixedFact = false } = {}) {
   const learner = conversation?.[sourceMessageIndex]
   if (!learner || learner.role !== 'user') return null
   for (let index = sourceMessageIndex - 1; index >= 0; index -= 1) {
     const assistant = conversation[index]
     if (assistant?.role !== 'assistant') continue
     const match = compareLearnerToAssistant({ learnerText: learner.content, assistantText: assistant.content })
+    // A short supplied name or number still counts as exposure for independence.
+    // Word boundaries prevent a value such as 3 from matching 13.
+    if (fixedFact && normalizeText(learner.content)
+      && (' ' + normalizeText(assistant.content) + ' ').includes(' ' + normalizeText(learner.content) + ' ')) {
+      return { copied: true, kind: 'supplied_fixed_fact', similarity: 1,
+        sourceAssistantMessageIndex: index, sourceAssistantMessageId: assistant.id || null }
+    }
     if (match.copied) {
       return {
         ...match,
@@ -130,7 +137,8 @@ export function classifyWebbObjectiveAttempt({
     if (entry.occurredAt && learnerMessage.createdAt) return entry.occurredAt <= learnerMessage.createdAt
     return true // Unknown exposure timing remains conservative for mastery.
   })
-  const reproduction = findClearAnswerReproduction(conversation, sourceMessageIndex)
+  const evidenceKind = evaluation?.evidenceKind === 'fixed_fact' ? 'fixed_fact' : 'meaning'
+  const reproduction = findClearAnswerReproduction(conversation, sourceMessageIndex, { fixedFact: evidenceKind === 'fixed_fact' })
   const answerRequested = detectsAnswerRequest(learnerMessage.content)
   const isFirstResponse = priorAttempts.length === 0
   const qualification = qualifyConversationalMasteryOpportunity({
@@ -146,7 +154,6 @@ export function classifyWebbObjectiveAttempt({
   })
   const clean = qualification.eligible
   const covered = (correct && !answerRequested) || (assistance.length > 0 && priorAttempts.length > 0)
-  const evidenceKind = evaluation?.evidenceKind === 'fixed_fact' ? 'fixed_fact' : 'meaning'
   // Identifying a fixed fact is not a paraphrasing task. Exposure still blocks independent mastery.
   const comprehension = correct && (!reproduction || evidenceKind === 'fixed_fact') && !answerRequested ? 'demonstrated' : 'not_demonstrated'
 

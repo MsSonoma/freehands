@@ -1,9 +1,43 @@
-import { parseComprehensionEvaluations } from './webbLearningModel.mjs'
-import { createLearnerNote } from './webbLearnerEvidence.mjs'
+import { createLearnerNote, sourceLearnerMessage } from './webbLearnerEvidence.mjs'
 import { classifyWebbObjectiveAttempt } from './webbMasteryModel.mjs'
 import { reconcileWebbObjectiveState } from './webbObjectiveState.mjs'
 
-// Shared by Sonoma and Webb. Transport is injected so the complete handoff is testable.
+// The application chooses ONE learner response. The model only judges its meaning.
+// There is deliberately no generated quote or message number in this contract.
+const JUDGMENT_INSTRUCTIONS = [
+  'Evaluate only learner_response. The conversation before it is context, never substitute evidence. Judge that ENTIRE message, including any contradiction.',
+  'Judge semantic meaning generously enough for normal child language, while keeping factual and conceptual correctness strict.',
+  'The student may use age-appropriate wording, paraphrases, short explanations, fragments, or valid examples. Never require a memorized definition or wording that matches the lesson.',
+  'Judge the CENTRAL CONCEPT, not clause-by-clause coverage. Accuracy is correct when the essential idea is accurately communicated with no material misconception.',
+  'Do not require every modifier, example, consequence, application, condition, or secondary detail. When an older objective combines ideas, assess its primary concept; do not withhold credit merely because secondary detail was omitted.',
+  'Use partial only when an ESSENTIAL part of the central concept is missing, ambiguous, or incomplete. A brief but semantically sufficient child answer is correct, not partial.',
+  'A fragment may be ACCURACY "correct" when it contains the central concept. A name alone can answer who, using the preceding question as context.',
+  'Independently set sentenceOk true only for a complete, coherent sentence usable verbatim in the essay with at most minor spelling, capitalization or punctuation issues. Fragments and single names have sentenceOk false. Do not repair or supply prose.',
+  'Use evidenceKind fixed_fact only for identification of a name, title, date, quantity, or another single fixed factual answer. Such tasks do not require synonyms. Use meaning for definitions, reasoning, comparisons, explanations, processes and applications.',
+  'Do not change an incorrect answer to correct based on the kind of task. Do not cherry-pick a true fragment out of a materially contradictory response.',
+  'Return only JSON: {"evaluations":[{"objectiveIndex":0,"accuracy":"correct","sentenceOk":true,"evidenceKind":"fixed_fact"}]}. Use the exact objectiveIndex supplied in remaining_objectives. Include only objectives addressed by learner_response, once each. Return {"evaluations":[]} when none is addressed.',
+].join(' ')
+
+function parseJudgments(raw, candidates, sourceMessageIndex) {
+  let parsed
+  try { parsed = JSON.parse(raw) } catch { throw new Error('The learning evaluator returned invalid judgments.') }
+  if (!parsed || !Array.isArray(parsed.evaluations)) throw new Error('The learning evaluator returned no judgments.')
+  const allowed = new Set(candidates.map(({ i }) => i))
+  const seen = new Set()
+  return parsed.evaluations.map(row => {
+    if (!row || !Number.isInteger(row.objectiveIndex) || !allowed.has(row.objectiveIndex)
+      || seen.has(row.objectiveIndex) || !['correct', 'partial', 'incorrect'].includes(row.accuracy)
+      || typeof row.sentenceOk !== 'boolean' || !['fixed_fact', 'meaning'].includes(row.evidenceKind)) {
+      throw new Error('The learning evaluator returned invalid judgments.')
+    }
+    seen.add(row.objectiveIndex)
+    // The trusted source is bound here, never chosen or rewritten by the model.
+    return { objectiveIndex: row.objectiveIndex, accuracy: row.accuracy,
+      sentenceOk: row.sentenceOk, evidenceKind: row.evidenceKind, sourceMessageIndex }
+  })
+}
+
+// Shared by Sonoma and Webb. Injected transport keeps the real handoff testable.
 export async function evaluateWebbObjectives({
   callModel, objectives = [], completedIndices = [], understoodIndices = null,
   coveredIndices = [], legacyNoteReadyIndices = null, conversation = [], lesson = {},
@@ -16,7 +50,7 @@ export async function evaluateWebbObjectives({
     coveredObj: coveredIndices, understoodObj: suppliedUnderstood, objectiveEvidence: priorObjectiveEvidence,
   }, conversation)
   const understood = new Set(state.understoodObj)
-  const incomplete = objectives.map((obj, i) => ({ obj, i }))
+  const candidates = () => objectives.map((obj, i) => ({ obj, i }))
     .filter(({ i }) => !understood.has(i) || (recoverNotes && !state.learnerNotes[i]))
   const evaluationStatus = {}
   const sentenceQuality = {}
@@ -25,69 +59,54 @@ export async function evaluateWebbObjectives({
     return {
       contractVersion: 'webb-objective-result-v2',
       newlyCovered: state.coveredObj.filter(index => !coveredIndices.includes(index)),
-      newlyUnderstood,
-      newlyCompleted: newlyUnderstood,
+      newlyUnderstood, newlyCompleted: newlyUnderstood,
       learnerNotes: state.learnerNotes,
       qualifyingText: Object.fromEntries(Object.entries(state.learnerNotes).map(([index, note]) => [index, note.text])),
       objectiveEvidence: state.objectiveEvidence, evaluationStatus, sentenceQuality,
     }
   }
-  if (!incomplete.length) return finish()
-  const windowSize = recoverNotes ? conversation.length : (quick ? 8 : 30)
-  const startIndex = Math.max(0, conversation.length - windowSize)
-  const recentTurns = conversation.slice(startIndex).map((message, offset) => ({ message, idx: startIndex + offset }))
-    .filter(({ message }) => ['user', 'assistant'].includes(message?.role) && typeof message.content === 'string')
-  if (!recentTurns.some(({ message }) => message.role === 'user' && message.content.trim())) return finish()
-
-  const system =
-    `You are evaluating whether a student has demonstrated comprehension of lesson concepts. ` +
-    `Judge semantic meaning generously enough for normal child language, while keeping factual and conceptual correctness strict. ` +
-    `The student may use any age-appropriate wording, paraphrase, short explanation, fragment, or valid example. NEVER require exact terminology, a memorized definition, a polished sentence, or wording that matches the lesson. ` +
-    `Judge the CENTRAL CONCEPT, not clause-by-clause coverage. A response is ACCURACY "correct" when it accurately communicates the essential idea, relationship, process, or skill strongly enough to show understanding and contains no material misconception or contradiction. ` +
-    `Do NOT require every modifier, example, consequence, application, condition, or secondary detail named in an objective. If an older objective accidentally combines several ideas, identify its primary concept and do not withhold credit merely because secondary detail was omitted. ` +
-    `Use ACCURACY "partial" only when an ESSENTIAL part of the central concept is missing, ambiguous, or incomplete. A brief but semantically sufficient child answer is correct, not partial. ` +
-    `Use the instructional lesson context to judge meaning and factual correctness, never as a required answer key. ` +
-    `For each remaining objective that the recent student messages address enough to evaluate, output one line: OBJECTIVE_INDEX|ACCURACY|SENTENCE_OK|MESSAGE_INDEX|EVIDENCE_KIND ` +
-    `where ACCURACY is exactly "correct", "partial", or "incorrect". Judge ACCURACY from conceptual meaning alone, independently of grammar or sentence form. A fragment may be ACCURACY "correct" when it contains the central concept; SENTENCE_OK must separately judge whether it is essay-ready. ` +
-    `SENTENCE_OK is "yes" only when the student's full response is a complete, grammatically coherent sentence suitable for the child's essay with at most minor spelling, capitalization, or punctuation fixes. ` +
-    `Use SENTENCE_OK "no" for a fragment, single word, phrase, materially broken grammar, garbled or repeated wording, or anything that would require rephrasing, restructuring, or adding missing words. ` +
-    `MESSAGE_INDEX must be the integer index of one actual STUDENT message, WITHOUT brackets. For example: 0|correct|yes|1|fixed_fact. Judge that ENTIRE message, including any contradiction. Do not output, quote, edit, or paraphrase student text. When several messages are sufficient, prefer the earliest sufficient answer before teacher wording was supplied. Teacher turns are context only, never evidence. ` +
-    `EVIDENCE_KIND is "fixed_fact" only when this objective asks the learner to identify a name, title, date, quantity, or other single fixed factual answer. Such answers naturally share wording with teaching and do not need synonyms. Use "meaning" for definitions, explanations, reasoning, processes, comparisons, or applications. This distinction never changes factual accuracy. ` +
-    `If a response contains a material contradiction or misconception, do not cherry-pick one correct phrase and call the objective correct. ` +
-    `If no remaining objective is addressed enough to evaluate, return "none".`
-
-
-  const objList = incomplete.map(({ obj, i }) => i + ': ' + obj).join('\n')
-  const dialogue = recentTurns.map(({ message, idx }) => '[' + idx + '] ' + (message.role === 'user' ? 'STUDENT' : 'TEACHER') + ': ' + JSON.stringify(message.content)).join('\n')
-  const raw = await callModel(system,
-    'Instructional lesson context (not required wording):\n' + JSON.stringify(lesson)
-      + '\n\nRemaining objectives (number: text):\n' + objList + '\n\nConversation:\n' + dialogue,
-    400, 0)
-  if (!String(raw || '').trim()) throw new Error('The learning evaluator returned no result.')
-  const parsed = parseComprehensionEvaluations({
-    raw, objectives, understoodIndices: recoverNotes ? [] : [...understood], conversation,
-  })
-  if (parsed.invalidLines.length) throw new Error('The learning evaluator returned invalid source evidence.')
-  Object.assign(evaluationStatus, parsed.evaluationStatus)
-  Object.assign(sentenceQuality, parsed.sentenceQuality)
-  for (const [rawIndex, evaluation] of Object.entries(parsed.evaluationDetails)) {
-    const index = Number(rawIndex)
-    const classification = classifyWebbObjectiveAttempt({
-      objectiveIndex: index, objective: objectives[index], evaluation, conversation,
-      previousEvidence: state.objectiveEvidence[index] || {},
-      priorPromptExposed: priorPromptExposure[index] !== false,
-    })
-    if (!classification) throw new Error('The learning result did not refer to a learner message.')
-    state.objectiveEvidence[index] = classification
-    if (classification.coverage === 'covered' && !state.coveredObj.includes(index)) state.coveredObj.push(index)
-    if (classification.latestAttempt?.reproduction && classification.latestAttempt?.comprehension !== 'demonstrated') evaluationStatus[index] = 'reproduced'
-    if (classification.latestAttempt?.comprehension === 'demonstrated') {
-      // The same verified source creates the note and supports the judgment.
-      // No second model-generated quote can veto this transition.
-      const note = createLearnerNote({ objectiveIndex: index, evaluation, conversation })
-      if (!note) throw new Error('The qualified learner response could not be captured.')
-      understood.add(index)
-      state.learnerNotes[index] = note
+  if (!candidates().length) return finish()
+  const learnerIndices = conversation.map((_, index) => index).filter(index => sourceLearnerMessage(conversation, index))
+  // Foreground checks evaluate the actual current response, not a model-selected turn.
+  // Explicit legacy recovery examines a bounded recent history chronologically.
+  // Earlier confirmed responses are already recovered above without model calls.
+  const targets = recoverNotes ? learnerIndices.slice(-12) : learnerIndices.slice(-1)
+  for (const sourceMessageIndex of targets) {
+    const remaining = candidates()
+    if (!remaining.length) break
+    const source = sourceLearnerMessage(conversation, sourceMessageIndex)
+    const contextStart = Math.max(0, sourceMessageIndex - (quick ? 8 : 30))
+    const raw = await callModel(JUDGMENT_INSTRUCTIONS, JSON.stringify({
+      instructional_context: lesson,
+      remaining_objectives: remaining.map(({ obj, i }) => ({ objectiveIndex: i, objective: obj })),
+      context_before_response: conversation.slice(contextStart, sourceMessageIndex)
+        .filter(message => ['user', 'assistant'].includes(message?.role) && typeof message.content === 'string')
+        .map(({ role, content }) => ({ role, content })),
+      learner_response: source.text,
+    }), 800, 0, { type: 'json_object' })
+    if (!String(raw || '').trim()) throw new Error('The learning evaluator returned no result.')
+    for (const evaluation of parseJudgments(raw, remaining, sourceMessageIndex)) {
+      const index = evaluation.objectiveIndex
+      const classification = classifyWebbObjectiveAttempt({
+        objectiveIndex: index, objective: objectives[index], evaluation, conversation,
+        previousEvidence: state.objectiveEvidence[index] || {},
+        priorPromptExposed: priorPromptExposure[index] !== false,
+      })
+      if (!classification) throw new Error('The learning result did not refer to a learner message.')
+      state.objectiveEvidence[index] = classification
+      const attempt = classification.attempts.find(item => item.sourceMessageIndex === sourceMessageIndex
+        && item.text === source.text && (!source.message.id || item.sourceMessageId === source.message.id))
+      if (!attempt) throw new Error('The learner judgment did not retain its source.')
+      evaluationStatus[index] = attempt.reproduction && attempt.comprehension !== 'demonstrated' ? 'reproduced' : attempt.accuracy
+      sentenceQuality[index] = attempt.sentenceOk === true
+      if (classification.coverage === 'covered' && !state.coveredObj.includes(index)) state.coveredObj.push(index)
+      if (attempt.comprehension === 'demonstrated') {
+        const note = createLearnerNote({ objectiveIndex: index,
+          evaluation: { ...evaluation, accuracy: attempt.accuracy, sentenceOk: attempt.sentenceOk }, conversation })
+        if (!note) throw new Error('The qualified learner response could not be captured.')
+        understood.add(index)
+        state.learnerNotes[index] = note
+      }
     }
   }
   return finish()

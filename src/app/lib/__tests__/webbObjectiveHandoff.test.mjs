@@ -10,6 +10,8 @@ import { emptyWebbObjectiveState, mergeWebbObjectiveResult, reconcileWebbObjecti
 const AUTHOR = 'The learner understands that The Magic Finger was written by Roald Dahl.'
 const NARRATOR = 'The learner understands that the narrator is a girl.'
 const OBJECTIVES = [AUTHOR, NARRATOR]
+const judgment = (objectiveIndex = 0, accuracy = 'correct', sentenceOk = true, evidenceKind = 'meaning') => JSON.stringify({ evaluations: [{ objectiveIndex, accuracy, sentenceOk, evidenceKind }] })
+const noJudgments = JSON.stringify({ evaluations: [] })
 const teacher = (content, id = 'a1') => ({ role: 'assistant', content, id })
 const learner = (content, id = 'u1') => ({ role: 'user', content, id })
 const first = text => [teacher('What do you already know about The Magic Finger?'), learner(text)]
@@ -22,7 +24,11 @@ async function routeResult(conversation, raw, extra = {}) {
   const response = await POST(request, { apiKey: 'offline-test', callModel: async (system, prompt) => {
     assert.match(system, /Judge that ENTIRE message/)
     assert.doesNotMatch(system, /STUDENT_QUOTE/)
-    assert.match(prompt, /STUDENT/)
+    const input = JSON.parse(prompt)
+    assert.equal(typeof input.learner_response, 'string')
+    assert.ok(input.context_before_response.every(message => ['user', 'assistant'].includes(message.role)))
+    assert.doesNotMatch(system, /MESSAGE_INDEX|STUDENT_QUOTE/)
+    assert.equal(input.learner_response, conversation.at(-1).content)
     return raw
   } })
   assert.equal(response.status, 200)
@@ -32,7 +38,7 @@ async function routeResult(conversation, raw, extra = {}) {
 for (const text of ['Roald Dahl wrote the magic finger', 'The Magic Finger was written by Roald Dahl.', 'Roald Dahl']) {
   test('HTTP result -> note -> credit -> next question preserves exact learner text: ' + text, async () => {
     const conversation = first(text)
-    const result = await routeResult(conversation, '0|correct|yes|1')
+    const result = await routeResult(conversation, judgment())
     const state = mergeWebbObjectiveResult(OBJECTIVES, emptyWebbObjectiveState(), result, conversation)
     assert.equal(state.learnerNotes[0].text, text)
     assert.equal(state.learnerNotes[0].sourceMessageId, 'u1')
@@ -64,11 +70,11 @@ test('source validation rejects wrong roles, invented words, negation changes an
   assert.equal(evaluationSource(first('1.5'), { sourceMessageIndex: 1, quote: '15' }), null)
 })
 
-test('HTTP source failure is an evaluation error, never credited mastery with a missing note', async () => {
+test('invalid objective judgment is an evaluation error, never credited mastery with a missing note', async () => {
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'check', objectives: OBJECTIVES, conversation: first('Roald Dahl') }),
-  }), { apiKey: 'offline-test', callModel: async () => '0|correct|yes|0' })
+  }), { apiKey: 'offline-test', callModel: async () => judgment(999) })
   assert.equal(response.status, 500)
   assert.ok((await response.json()).error)
 })
@@ -111,14 +117,14 @@ test('existing Webb clients recover known comprehension without using note readi
 
 test('Sonoma completed indices remain excluded from the shared evaluator', async () => {
   let calls = 0
-  const result = await evaluateWebbObjectives({ objectives: [AUTHOR], completedIndices: [0], conversation: first('Roald Dahl'), callModel: async () => { calls++; return 'none' } })
+  const result = await evaluateWebbObjectives({ objectives: [AUTHOR], completedIndices: [0], conversation: first('Roald Dahl'), callModel: async () => { calls++; return noJudgments } })
   assert.equal(calls, 0)
   assert.deepEqual(result.newlyCompleted, [])
 })
 
 for (const accuracy of ['partial', 'incorrect']) {
   test(accuracy + ' answers remain uncompleted and cannot become notes', async () => {
-    const result = await routeResult(first('The book wrote itself.'), '0|' + accuracy + '|yes|1')
+    const result = await routeResult(first('The book wrote itself.'), judgment(0, accuracy))
     assert.deepEqual(result.newlyCompleted, [])
     assert.deepEqual(result.learnerNotes, {})
     assert.notEqual(result.objectiveEvidence[0].mastery, 'mastered')
@@ -128,7 +134,7 @@ for (const accuracy of ['partial', 'incorrect']) {
 test('copied explanations remain exposure, not independent mastery or comprehension', async () => {
   const objective = 'Explain why the colonists objected to taxes.'
   const text = 'The colonists opposed taxes because they had no representation in Parliament.'
-  const result = await evaluateWebbObjectives({ objectives: [objective], conversation: [teacher(text), learner(text)], priorPromptExposure: { 0: false }, callModel: async () => '0|correct|yes|1' })
+  const result = await evaluateWebbObjectives({ objectives: [objective], conversation: [teacher(text), learner(text)], priorPromptExposure: { 0: false }, callModel: async () => judgment() })
   assert.deepEqual(result.newlyCompleted, [])
   assert.deepEqual(result.learnerNotes, {})
   assert.equal(result.evaluationStatus[0], 'reproduced')
@@ -137,7 +143,7 @@ test('copied explanations remain exposure, not independent mastery or comprehens
 
 test('assisted comprehension makes a note without being promoted to independent mastery', async () => {
   const objective = 'Explain why the colonists opposed taxation without representation.'
-  const result = await evaluateWebbObjectives({ objectives: [objective], conversation: [teacher('Britain taxed them without representation.'), learner('They paid taxes but had no vote.')], objectiveEvidence: { 0: addWebbAssistance({ objective, attempts: [] }, { type: WEBB_ASSISTANCE_TYPES.CORRECTION, sourceMessageIndex: 0 }) }, priorPromptExposure: { 0: false }, callModel: async () => '0|correct|yes|1' })
+  const result = await evaluateWebbObjectives({ objectives: [objective], conversation: [teacher('Britain taxed them without representation.'), learner('They paid taxes but had no vote.')], objectiveEvidence: { 0: addWebbAssistance({ objective, attempts: [] }, { type: WEBB_ASSISTANCE_TYPES.CORRECTION, sourceMessageIndex: 0 }) }, priorPromptExposure: { 0: false }, callModel: async () => judgment() })
   assert.deepEqual(result.newlyCompleted, [0])
   assert.equal(result.learnerNotes[0].text, 'They paid taxes but had no vote.')
   assert.equal(result.objectiveEvidence[0].mastery, 'pending')
@@ -161,9 +167,9 @@ test('model failure does not mutate supplied learning state', async () => {
 
 test('two completed concepts unlock writing, not automatic essay sentences; refresh preserves retries', async () => {
   const conversation = first('Roald Dahl wrote The Magic Finger.')
-  let state = mergeWebbObjectiveResult(OBJECTIVES, emptyWebbObjectiveState(), await routeResult(conversation, '0|correct|yes|1'), conversation)
+  let state = mergeWebbObjectiveResult(OBJECTIVES, emptyWebbObjectiveState(), await routeResult(conversation, judgment()), conversation)
   conversation.push(teacher('Who tells the story?', 'a2'), learner('a girl', 'u2'))
-  state = mergeWebbObjectiveResult(OBJECTIVES, state, await routeResult(conversation, '1|correct|no|3', { understoodIndices: state.understoodObj, objectiveEvidence: state.objectiveEvidence }), conversation)
+  state = mergeWebbObjectiveResult(OBJECTIVES, state, await routeResult(conversation, judgment(1, 'correct', false), { understoodIndices: state.understoodObj, objectiveEvidence: state.objectiveEvidence }), conversation)
   assert.equal(webbObjectiveProgress(OBJECTIVES, state).writingReady, true)
   const rejected = createWritingAttempt({ objectiveIndex: 1, text: 'a girl', message: conversation[3], accuracy: 'correct', sentenceOk: false })
   assert.equal(rejected.accepted, false)
@@ -191,9 +197,9 @@ test('serialized checks see current state and invalidated in-flight work cannot 
   assert.deepEqual(events, ['first', 'new-run'])
 })
 
-test('model echoing the displayed bracketed message index still selects exactly one real learner source', async () => {
+test('a model-supplied message number cannot redirect credit or notes to the teacher', async () => {
   const conversation = first('Roald Dahl wrote the magic finger')
-  const result = await routeResult(conversation, '0|correct|yes|[1]')
+  const result = await routeResult(conversation, JSON.stringify({ evaluations: [{ objectiveIndex: 0, accuracy: 'correct', sentenceOk: true, evidenceKind: 'fixed_fact', sourceMessageIndex: 0 }] }))
   assert.equal(result.learnerNotes[0].sourceMessageId, 'u1')
   assert.deepEqual(result.newlyCompleted, [0])
 })
@@ -201,7 +207,7 @@ test('model echoing the displayed bracketed message index still selects exactly 
 
 test('correct fixed facts taught by Webb count as assisted comprehension without requiring invented synonyms', async () => {
   const conversation = [teacher('Roald Dahl wrote The Magic Finger. Who wrote it?'), learner('Roald Dahl wrote The Magic Finger.')]
-  const result = await routeResult(conversation, '0|correct|yes|1|fixed_fact')
+  const result = await routeResult(conversation, judgment(0, 'correct', true, 'fixed_fact'))
   assert.deepEqual(result.newlyCompleted, [0])
   assert.equal(result.evaluationStatus[0], 'correct')
   assert.equal(result.learnerNotes[0].text, conversation[1].content)
@@ -214,7 +220,39 @@ test('correct fixed facts taught by Webb count as assisted comprehension without
 })
 
 test('a wrong fixed fact is not accepted just because the evaluator identifies the task type', async () => {
-  const result = await routeResult(first('Dr. Seuss wrote The Magic Finger.'), '0|incorrect|yes|1|fixed_fact')
+  const result = await routeResult(first('Dr. Seuss wrote The Magic Finger.'), judgment(0, 'incorrect', true, 'fixed_fact'))
   assert.deepEqual(result.newlyCompleted, [])
   assert.deepEqual(result.learnerNotes, {})
+})
+
+
+test('short supplied factual names remain assisted, never independent mastery', async () => {
+  const conversation = [teacher('Roald Dahl wrote The Magic Finger. Who wrote it?'), learner('Roald Dahl')]
+  const result = await routeResult(conversation, judgment(0, 'correct', false, 'fixed_fact'))
+  assert.deepEqual(result.newlyCompleted, [0])
+  assert.equal(result.objectiveEvidence[0].mastery, 'pending')
+  assert.equal(result.objectiveEvidence[0].latestAttempt.masteryOutcome, 'assisted_success')
+  assert.equal(result.learnerNotes[0].text, 'Roald Dahl')
+})
+
+test('current-turn binding cannot silently substitute an earlier answer', async () => {
+  const conversation = [...first('The Magic Finger was written by Roald Dahl.'), teacher('Who is the narrator?', 'a2'), learner('a girl', 'u2')]
+  const result = await routeResult(conversation, judgment(1, 'correct', false, 'fixed_fact'))
+  assert.equal(result.learnerNotes[1].sourceMessageId, 'u2')
+  assert.equal(result.learnerNotes[1].text, 'a girl')
+  assert.deepEqual(result.newlyCompleted, [1])
+})
+
+test('legacy recovery binds each response chronologically rather than asking the model to locate a message', async () => {
+  const conversation = [...first('The Magic Finger was written by Roald Dahl.'), teacher('Who is the narrator?', 'a2'), learner('a girl', 'u2')]
+  const seen = []
+  const result = await evaluateWebbObjectives({ objectives: OBJECTIVES, conversation, recoverNotes: true,
+    callModel: async (_system, prompt) => {
+      const input = JSON.parse(prompt); seen.push(input.learner_response)
+      return judgment(input.learner_response === 'a girl' ? 1 : 0, 'correct', input.learner_response !== 'a girl', 'fixed_fact')
+    } })
+  assert.deepEqual(seen, [conversation[1].content, 'a girl'])
+  assert.deepEqual(result.newlyCompleted, [0, 1])
+  assert.equal(result.learnerNotes[0].sourceMessageId, 'u1')
+  assert.equal(result.learnerNotes[1].sourceMessageId, 'u2')
 })

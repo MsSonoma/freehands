@@ -23,10 +23,10 @@ test('semantic qualification accepts the central concept without requiring secon
 })
 
 test('discussion progression requires demonstrated comprehension rather than correct-looking reproduction', () => {
-  assert.match(route, /classification\.latestAttempt\?\.comprehension === 'demonstrated'/)
+  assert.match(route, /attempt\.comprehension === 'demonstrated'/)
   assert.match(route, /newlyCompleted: newlyUnderstood/)
-  assert.match(route, /classification\.latestAttempt\?\.reproduction/)
-  assert.match(route, /evaluationStatus\[index\] = 'reproduced'/)
+  assert.match(route, /attempt\.reproduction/)
+  assert.match(route, /evaluationStatus\[index\][^\n]*'reproduced'/)
   assert.match(route, /state\.learnerNotes\[index\] = note/)
 })
 
