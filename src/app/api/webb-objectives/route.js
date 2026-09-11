@@ -122,14 +122,29 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
 
   const invoke = callModel || ((systemPrompt, userPrompt, maxTokens, temperature, responseFormat) => callGPT(apiKey, systemPrompt, userPrompt, maxTokens, temperature, responseFormat))
   const responseFormat = { type: 'json_object' }
-  let raw = await invoke(system, user, 900, 0.15, responseFormat)
-  let plan = parseGeneratedObjectivePlan(raw)
-  let violations = objectivePlanViolations(plan)
+  const validatePlan = (candidate) => {
+    try {
+      const plan = parseGeneratedObjectivePlan(candidate)
+      const violations = objectivePlanViolations(plan)
+      if (violations.length) return { ok: false, plan, violations }
+      return { ok: true, plan, violations: [] }
+    } catch (error) {
+      return {
+        ok: false,
+        plan: null,
+        violations: [String(error?.message || 'Objective planner output was invalid')],
+      }
+    }
+  }
 
-  if (violations.length) {
+  let raw = await invoke(system, user, 900, 0.15, responseFormat)
+  let validation = validatePlan(raw)
+
+  if (!validation.ok) {
     const repairSystem = [
       system,
       `You are repairing a draft that failed the atomic essay-plan validator. Return the COMPLETE corrected plan, not commentary.`,
+      `The draft may have malformed JSON, the wrong number of rows, invalid role ordering, duplicate objectives, or non-atomic objectives. Repair any of those failures rather than explaining them.`,
       `Do not preserve a bad row merely because its facts are true. One row must equal one independently gradable comprehension target.`,
       `When an opening combines identity plus problem, keep the central problem or situation as the one target and let identity be incidental context.`,
       `When a conclusion combines theme or significance plus evidence, move the evidence earlier if it is needed and leave only the theme, significance, or synthesis as the concluding target.`,
@@ -137,15 +152,28 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
     raw = await invoke(repairSystem, JSON.stringify({
       lesson: { title, subject, grade },
       assessment_questions: allQ,
-      draft_plan: plan,
-      validator_violations: violations,
+      raw_draft: raw,
+      draft_plan: validation.plan,
+      validator_violations: validation.violations,
     }), 900, 0.05, responseFormat)
-    plan = parseGeneratedObjectivePlan(raw)
-    violations = objectivePlanViolations(plan)
-    if (violations.length) throw new Error(`Objective planner remained non-atomic: ${violations.join('; ')}`)
+    validation = validatePlan(raw)
   }
 
-  return plan.map(row => row.objective)
+  if (!validation.ok) {
+    const regenerateSystem = [
+      system,
+      `Previous objective-plan attempts failed deterministic validation. Start over from the lesson and assessment questions rather than repairing the prior draft.`,
+      `Return one fresh, complete plan with 5 to 8 rows, valid role ordering, unique objectives, and one independently gradable target per row. Return JSON only.`,
+    ].join(' ')
+    raw = await invoke(regenerateSystem, user, 900, 0.05, responseFormat)
+    validation = validatePlan(raw)
+  }
+
+  if (!validation.ok) {
+    throw new Error(`Objective planner remained invalid after recovery: ${validation.violations.join('; ')}`)
+  }
+
+  return validation.plan.map(row => row.objective)
 }
 
 // Check whether the student just demonstrated any uncompleted objectives.

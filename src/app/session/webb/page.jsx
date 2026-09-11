@@ -1379,7 +1379,7 @@ function WebbPageInner() {
       if (run !== runGenerationRef.current) return
     } catch (cause) {
       if (run !== runGenerationRef.current) return
-      setStartupError('Mrs. Webb could not prepare this lesson yet. Please retry; no answer has been lost.')
+      setStartupError('Mrs. Webb could not prepare this lesson yet. Please retry.')
       return
     }
 

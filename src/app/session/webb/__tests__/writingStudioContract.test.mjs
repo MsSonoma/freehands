@@ -72,6 +72,11 @@ test('normal Mrs. Webb chat input is hidden while the writing studio is active',
   assert.match(page, /\{isChatting && !writingMode && \(/)
   assert.match(page, /open=\{isChatting && writingMode\}/)
 })
+test('startup preparation errors do not imply learner work was lost before input opens', () => {
+  assert.match(page, /Mrs\. Webb could not prepare this lesson yet\. Please retry\./)
+  assert.doesNotMatch(page, /no answer has been lost/)
+})
+
 test('Mrs. Webb cannot expose first-turn input before objective tracking is ready', () => {
   const start = page.indexOf('const selectLesson = useCallback(async (lesson, forceNew = false) => {')
   const end = page.indexOf('async function submitWritingAttempt', start)

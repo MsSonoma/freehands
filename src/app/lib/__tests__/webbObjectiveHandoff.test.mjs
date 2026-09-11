@@ -16,6 +16,42 @@ const teacher = (content, id = 'a1') => ({ role: 'assistant', content, id })
 const learner = (content, id = 'u1') => ({ role: 'user', content, id })
 const first = text => [teacher('What do you already know about The Magic Finger?'), learner(text)]
 
+const GENERATION_LESSON = {
+  title: 'A Lost Dog Comes Home', subject: 'language arts', grade: '4',
+  shortanswer: [
+    { question: 'What problem does the character face?' },
+    { question: 'What does the character try first?' },
+    { question: 'What clue changes the search?' },
+    { question: 'Which event supports the lesson?' },
+    { question: 'What lesson does the story suggest about responsibility?' },
+  ],
+}
+
+const VALID_GENERATED_PLAN = {
+  objectives: [
+    { role: 'opening', atomic_focus: 'central problem', connection: 'establishes the situation', objective: 'The learner can explain the central problem the character faces.' },
+    { role: 'development', atomic_focus: 'first attempt', connection: 'shows the first response', objective: 'The learner can explain what the character tries first.' },
+    { role: 'development', atomic_focus: 'turning clue', connection: 'changes the search', objective: 'The learner can explain what clue changes the search.' },
+    { role: 'development', atomic_focus: 'supporting event', connection: 'provides evidence before interpretation', objective: 'The learner can identify the event that best supports the lesson about responsibility.' },
+    { role: 'conclusion', atomic_focus: 'responsibility theme', connection: 'synthesizes the earlier events', objective: 'The learner can explain the lesson the story suggests about responsibility.' },
+  ],
+}
+
+async function generateThroughRoute(modelOutputs, onCall = null) {
+  let calls = 0
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'generate', lesson: GENERATION_LESSON }),
+  }), { apiKey: 'offline-test', callModel: async (system, user, maxTokens, temperature, responseFormat) => {
+    const index = calls++
+    onCall?.({ index, system, user, maxTokens, temperature, responseFormat })
+    const output = modelOutputs[index]
+    if (output instanceof Error) throw output
+    return typeof output === 'string' ? output : JSON.stringify(output)
+  } })
+  return { response, calls }
+}
+
 async function routeResult(conversation, raw, extra = {}) {
   const request = new Request('http://localhost/api/webb-objectives', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -215,6 +251,67 @@ test('objective generation repairs bundled draft rows and exposes only the order
   assert.equal(calls, 2)
   assert.deepEqual(data.objectives, repaired.objectives.map(row => row.objective))
   assert.equal(Object.prototype.hasOwnProperty.call(data, 'roles'), false)
+})
+
+test('objective generation repairs an initial plan with too few objectives', async () => {
+  const tooFew = { objectives: VALID_GENERATED_PLAN.objectives.slice(0, 4) }
+  const { response, calls } = await generateThroughRoute([tooFew, VALID_GENERATED_PLAN], ({ index, system, user, responseFormat }) => {
+    assert.equal(responseFormat?.type, 'json_object')
+    if (index === 1) {
+      assert.match(system, /failed the atomic essay-plan validator/i)
+      const repairInput = JSON.parse(user)
+      assert.match(repairInput.validator_violations.join(' '), /invalid objective count/i)
+      assert.equal(repairInput.draft_plan, null)
+      assert.equal(typeof repairInput.raw_draft, 'string')
+    }
+  })
+  assert.equal(response.status, 200)
+  assert.equal(calls, 2)
+  assert.deepEqual((await response.json()).objectives, VALID_GENERATED_PLAN.objectives.map(row => row.objective))
+})
+
+test('objective generation repairs an initial plan with too many objectives', async () => {
+  const tooMany = { objectives: [
+    ...VALID_GENERATED_PLAN.objectives,
+    ...Array.from({ length: 4 }, (_, index) => ({
+      role: 'development', atomic_focus: `extra ${index}`, connection: 'extra detail', objective: `The learner can explain extra detail ${index}.`,
+    })),
+  ] }
+  const { response, calls } = await generateThroughRoute([tooMany, VALID_GENERATED_PLAN])
+  assert.equal(response.status, 200)
+  assert.equal(calls, 2)
+  assert.deepEqual((await response.json()).objectives, VALID_GENERATED_PLAN.objectives.map(row => row.objective))
+})
+
+test('objective generation repairs malformed JSON before failing lesson startup', async () => {
+  const { response, calls } = await generateThroughRoute(['{not valid json', VALID_GENERATED_PLAN], ({ index, user }) => {
+    if (index === 1) {
+      const repairInput = JSON.parse(user)
+      assert.match(repairInput.validator_violations.join(' '), /invalid JSON/i)
+      assert.equal(repairInput.raw_draft, '{not valid json')
+    }
+  })
+  assert.equal(response.status, 200)
+  assert.equal(calls, 2)
+  assert.deepEqual((await response.json()).objectives, VALID_GENERATED_PLAN.objectives.map(row => row.objective))
+})
+
+test('objective generation makes one fresh regeneration after a failed repair', async () => {
+  const tooFew = { objectives: VALID_GENERATED_PLAN.objectives.slice(0, 4) }
+  const { response, calls } = await generateThroughRoute([tooFew, '{still invalid', VALID_GENERATED_PLAN], ({ index, system }) => {
+    if (index === 2) assert.match(system, /Start over from the lesson and assessment questions/i)
+  })
+  assert.equal(response.status, 200)
+  assert.equal(calls, 3)
+  assert.deepEqual((await response.json()).objectives, VALID_GENERATED_PLAN.objectives.map(row => row.objective))
+})
+
+test('objective generation fails cleanly only after generation, repair, and fresh regeneration are all invalid', async () => {
+  const tooFew = { objectives: VALID_GENERATED_PLAN.objectives.slice(0, 4) }
+  const { response, calls } = await generateThroughRoute([tooFew, '{still invalid', tooFew])
+  assert.equal(response.status, 500)
+  assert.equal(calls, 3)
+  assert.deepEqual(await response.json(), { error: 'Internal error' })
 })
 
 test('writing evaluator returns a separate structural-position judgment bound to prior learner prose', async () => {
