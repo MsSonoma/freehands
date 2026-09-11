@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useMemo, useState } from 'react'
+import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 import { addWeeklyPatternSlot, removeWeeklyPatternSlot } from '@/app/lib/syllabus/timeline.mjs'
 import {
   normalizedTeachingGuidance,
@@ -123,15 +124,12 @@ export default function SyllabusPlanEditor({
     setError('')
   }, [forecastItems, revision, section, today])
 
+  useEffect(() => acquirePageScrollLock(), [])
+
   useEffect(() => {
-    const priorOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
     const onKeyDown = (event) => { if (event.key === 'Escape' && !working) onClose?.() }
     document.addEventListener('keydown', onKeyDown)
-    return () => {
-      document.body.style.overflow = priorOverflow
-      document.removeEventListener('keydown', onKeyDown)
-    }
+    return () => document.removeEventListener('keydown', onKeyDown)
   }, [onClose, working])
 
   const referencedSubjects = useMemo(

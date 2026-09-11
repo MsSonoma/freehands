@@ -1,6 +1,7 @@
 'use client'
 
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 import styles from './SyllabusScheduleDialog.module.css'
 
 function subjectLabel(value) {
@@ -22,6 +23,14 @@ export default function SyllabusScheduleDialog({
   onSubmit,
 }) {
   const [search, setSearch] = useState('')
+
+  useEffect(() => acquirePageScrollLock(), [])
+
+  useEffect(() => {
+    const onKeyDown = (event) => { if (event.key === 'Escape' && !busy) onClose?.() }
+    document.addEventListener('keydown', onKeyDown)
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [busy, onClose])
   const visibleLessons = useMemo(() => {
     const query = search.trim().toLocaleLowerCase()
     if (!query) return lessons

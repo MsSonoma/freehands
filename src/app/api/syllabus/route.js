@@ -10,7 +10,9 @@ export async function GET(request, deps = {}) {
   try {
     const context = await getSyllabusRequestContext(request, deps)
     if (context.error) return NextResponse.json({ error: context.error }, { status: context.status })
-    const learnerId = validateLearnerId(new URL(request.url).searchParams.get('learnerId'))
+    const url = new URL(request.url)
+    const learnerId = validateLearnerId(url.searchParams.get('learnerId'))
+    const view = url.searchParams.get('view') === 'shell' ? 'shell' : 'full'
     const repository = deps.repository || createSyllabusRepository(context.admin)
     const result = await getActiveSyllabus({
       repository,
@@ -18,6 +20,7 @@ export async function GET(request, deps = {}) {
       facilitatorId: context.user.id,
       learnerId,
       fallbackTimeZone: context.user?.user_metadata?.timezone,
+      view,
     })
     return NextResponse.json(result)
   } catch (error) {

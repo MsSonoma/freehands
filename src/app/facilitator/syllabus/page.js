@@ -11,7 +11,8 @@ import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusPlanningWorkspace from '@/app/components/syllabus/SyllabusPlanningWorkspace'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { ensurePinAllowed, ensureFacilitatorPinException, requestFacilitatorPinException } from '@/app/lib/pinGate'
+import { ensureFacilitatorPinException, requestFacilitatorPinException } from '@/app/lib/pinGate'
+import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { addWeeklyPatternSlot, moveSyllabusWeek, removeWeeklyPatternSlot, syllabusEntitlementsFor, weeklyPatternCapacity } from '@/app/lib/syllabus/timeline.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '@/app/lib/syllabus/forecastRequestIdentity.mjs'
@@ -29,6 +30,17 @@ import styles from './syllabus.module.css'
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const DAY_LABELS = Object.fromEntries(DAYS.map((day) => [day, day[0].toUpperCase() + day.slice(1)]))
+
+function yieldToBrowser() {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined') return resolve()
+    if (typeof window.requestAnimationFrame === 'function') {
+      window.requestAnimationFrame(() => setTimeout(resolve, 0))
+      return
+    }
+    setTimeout(resolve, 0)
+  })
+}
 
 function dateOnly(value) {
   return String(value || '').slice(0, 10)
@@ -151,7 +163,6 @@ function GuidanceReadOnly({ guidance }) {
 export default function SyllabusPage() {
   const router = useRouter()
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
-  const [pinChecked, setPinChecked] = useState(false)
   const [learners, setLearners] = useState([])
   const [learnerId, setLearnerId] = useState('')
   const [token, setToken] = useState('')
@@ -168,6 +179,8 @@ export default function SyllabusPage() {
   const [availableSubjects, setAvailableSubjects] = useState([])
   const [slotSubjects, setSlotSubjects] = useState({})
   const [loading, setLoading] = useState(true)
+  const [contentLoading, setContentLoading] = useState(false)
+  const [syllabusHydrated, setSyllabusHydrated] = useState(false)
   const [working, setWorking] = useState(false)
   const [teacherAssignmentBusy, setTeacherAssignmentBusy] = useState('')
   const [slateAssignmentBusy, setSlateAssignmentBusy] = useState('')
@@ -204,23 +217,10 @@ export default function SyllabusPage() {
   })
   const planningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier })
   const canScheduleLessons = featuresForTier(planTier).lessonScheduling === true
+  const inlineModalOpen = Boolean(conceptEditor || slateScheduler)
 
   useEffect(() => {
-    if (authLoading || !isAuthenticated) return
-    let cancelled = false
-    ;(async () => {
-      try {
-        const allowed = await ensurePinAllowed('facilitator-syllabus')
-        if (!allowed) return router.push('/')
-      } finally {
-        if (!cancelled) setPinChecked(true)
-      }
-    })()
-    return () => { cancelled = true }
-  }, [authLoading, isAuthenticated, router])
-
-  useEffect(() => {
-    if (!pinChecked || !isAuthenticated) return
+    if (!isAuthenticated) return
     let cancelled = false
     ;(async () => {
       try {
@@ -230,12 +230,12 @@ export default function SyllabusPage() {
         const safeItems = Array.isArray(items) ? items.filter((item) => /^[0-9a-f-]{36}$/i.test(String(item.id))) : []
         const remembered = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : ''
         setToken(session?.access_token || '')
+        setLearners(safeItems)
+        setLearnerId(safeItems.some((item) => String(item.id) === remembered) ? remembered : (safeItems[0]?.id || ''))
         if (session?.user) {
           const { data: profile } = await supabase.from('profiles').select('plan_tier,subscription_tier').eq('id', session.user.id).maybeSingle()
           if (!cancelled) setPlanTier(resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier))
         }
-        setLearners(safeItems)
-        setLearnerId(safeItems.some((item) => String(item.id) === remembered) ? remembered : (safeItems[0]?.id || ''))
       } catch (cause) {
         if (!cancelled) setError(cause.message || 'Could not load learners')
       } finally {
@@ -243,68 +243,115 @@ export default function SyllabusPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [isAuthenticated, pinChecked])
+  }, [isAuthenticated])
 
   async function loadCurrent(id = learnerId) {
     if (!id || !token) return
     const sequence = ++loadSequence.current
-    setLoading(true)
+    const requestIsCurrent = () => sequence === loadSequence.current && pageIdentity.current.startsWith(`${id}:`)
+    const preserveVisibleContent = Boolean(syllabus && pageIdentity.current.startsWith(`${id}:`))
+    setLoading(!preserveVisibleContent)
+    setContentLoading(true)
+    setSyllabusHydrated(false)
     setError('')
     try {
+      const shellResponse = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(id)}&view=shell`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const shell = await shellResponse.json()
+      if (!shellResponse.ok) throw new Error(shell.error || 'Could not load Syllabus')
+      if (!requestIsCurrent()) return
+
+      forecastRequestSequence.current++
+      setForecastBusy(false)
+      setLegacyWebbCompletions(getWebbCompletionForLearner(id))
+      setLearningMessage('')
+      setDraft(null)
+      setNewSubject('')
+      setAvailableSubjects([])
+      setSyllabus((current) => {
+        const sameRevision = current?.active_revision?.id && current.active_revision.id === shell.active_revision?.id
+        if (!sameRevision || !Array.isArray(current.timeline_items)) return shell
+        return {
+          ...shell,
+          forecast_items: current.forecast_items || [],
+          timeline_items: current.timeline_items,
+          proposed_learning_forecast: current.proposed_learning_forecast || null,
+        }
+      })
+      setLoading(false)
+
+      if (!shell.has_active_syllabus) {
+        setLearningProposal(null)
+        setSyllabusHydrated(true)
+        return
+      }
+
+      await yieldToBrowser()
+      if (!requestIsCurrent()) return
+
       const response = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(id)}`, {
         cache: 'no-store',
         headers: { Authorization: `Bearer ${token}` },
       })
       const json = await response.json()
-      if (!response.ok) throw new Error(json.error || 'Could not load Syllabus')
-      if (sequence !== loadSequence.current || !pageIdentity.current.startsWith(`${id}:`)) return
-      forecastRequestSequence.current++
-      setForecastBusy(false)
+      if (!response.ok) throw new Error(json.error || 'Could not load Syllabus contents')
+      if (!requestIsCurrent()) return
+
       setSyllabus(json)
-      setLegacyWebbCompletions(getWebbCompletionForLearner(id))
       setLearningProposal(json.proposed_learning_forecast ? {
         proposal_revision: json.proposed_learning_forecast.revision,
         forecast_items: json.proposed_learning_forecast.forecast_items,
       } : null)
-      setLearningMessage('')
-      setDraft(null)
-      setNewSubject('')
-      setAvailableSubjects([])
       setForecastRefreshSequence((current) => current + 1)
+      setSyllabusHydrated(true)
     } catch (cause) {
       if (sequence === loadSequence.current) setError(cause.message)
     } finally {
-      if (sequence === loadSequence.current) setLoading(false)
+      if (sequence === loadSequence.current) {
+        setLoading(false)
+        setContentLoading(false)
+      }
     }
   }
 
   useEffect(() => { if (learnerId && token) loadCurrent(learnerId) }, [learnerId, token]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
+    if (!syllabusHydrated) return undefined
     const activeId = syllabus?.active_revision?.id
-    if (!activeId || !currentTargetForecastWeek || !planningAccess.can_change_intent) return
+    if (!activeId || !currentTargetForecastWeek || !planningAccess.can_change_intent) return undefined
     const identity = buildAutomaticForecastAttemptIdentity({
       requestIdentity: forecastViewIdentity.current,
       refreshSequence: forecastRefreshSequence,
     })
-    if (!identity || forecastAttempt.current === identity) return
-    forecastAttempt.current = identity
-    createLearningForecast({ automatic: true })
-  }, [forecastRefreshSequence, syllabus?.active_revision?.id, syllabus?.resolved_today, learnerId, planningAccess.can_change_intent]) // eslint-disable-line react-hooks/exhaustive-deps
+    if (!identity || forecastAttempt.current === identity) return undefined
+    let cancelled = false
+    ;(async () => {
+      await yieldToBrowser()
+      if (cancelled || forecastAttempt.current === identity) return
+      forecastAttempt.current = identity
+      void createLearningForecast({ automatic: true })
+    })()
+    return () => { cancelled = true }
+  }, [forecastRefreshSequence, syllabus?.active_revision?.id, syllabus?.resolved_today, learnerId, planningAccess.can_change_intent, syllabusHydrated]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!editingSection && !conceptEditor && !scheduleDialog) return
-    const priorOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    if (!inlineModalOpen) return undefined
+    return acquirePageScrollLock()
+  }, [inlineModalOpen])
+
+  useEffect(() => {
+    if (!inlineModalOpen) return undefined
     const onKeyDown = (event) => {
       if (event.key !== 'Escape') return
-      if (scheduleDialog && !scheduleBusy) setScheduleDialog(null)
+      if (slateScheduler) setSlateScheduler(null)
       else if (conceptEditor) setConceptEditor(null)
-      else { setEditingSection(''); setDraft(null) }
     }
     document.addEventListener('keydown', onKeyDown)
-    return () => { document.body.style.overflow = priorOverflow; document.removeEventListener('keydown', onKeyDown) }
-  }, [editingSection, conceptEditor, scheduleDialog, scheduleBusy])
+    return () => document.removeEventListener('keydown', onKeyDown)
+  }, [conceptEditor, inlineModalOpen, slateScheduler])
 
   async function buildSeed() {
     setWorking(true)
@@ -749,6 +796,9 @@ export default function SyllabusPage() {
     setLearnerId(nextLearnerId)
     setSyllabus(null)
     setLearningProposal(null)
+    setLoading(true)
+    setContentLoading(false)
+    setSyllabusHydrated(false)
     setForecastBusy(false)
     setSelectedWeekStart('')
     setEditingSection('')
@@ -788,7 +838,7 @@ export default function SyllabusPage() {
     setHistoryOccurrenceId(occurrenceId)
   }
 
-  if (authLoading || (isAuthenticated && !pinChecked)) return <main className={styles.page}><p>Loading…</p></main>
+  if (authLoading) return <main className={styles.page}><p>Loading…</p></main>
   if (!isAuthenticated) return <main className={styles.page}><GatedOverlay show gateType={gateType || 'auth'} feature="Syllabus" emoji="🧭" description="Sign in to view and activate a learner's educational plan." /></main>
 
   return (
@@ -810,6 +860,15 @@ export default function SyllabusPage() {
       {!planningAccess.can_change_intent && <p className={styles.statusMessage}>{establishingFirstSyllabus ? 'Every plan can establish an initial Syllabus through explicit facilitator activation. Future replanning remains locked.' : 'The complete Syllabus remains visible. Future replanning is locked for this plan.'}</p>}
       {!loading && learners.length === 0 && <section className={styles.empty}><h2>No learners yet</h2><p>Add a learner before building a Syllabus.</p></section>}
       {loading && <p className={styles.muted}>Loading {selectedLearner?.name || 'learner'}&apos;s Syllabus…</p>}
+      {learnerId && !displayRevision && (loading || contentLoading) && <SyllabusDocument
+        revision={null}
+        forecastItems={[]}
+        timelineItems={[]}
+        role="facilitator"
+        learnerId={learnerId}
+        learnerName={selectedLearner?.name || ''}
+        contentLoading
+      />}
 
       {!loading && learnerId && !syllabus?.has_active_syllabus && !draft && (
         <section className={styles.empty}>
@@ -895,10 +954,10 @@ export default function SyllabusPage() {
               planTier={planTier}
               learnerName={selectedLearner?.name || ''}
               onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
-              canScheduleLessons={canScheduleLessons}
-              onOpenPlanning={planningAccess.can_change_intent ? () => setPlanAheadOpen(true) : null}
-              onAddLesson={canScheduleLessons ? openLessonPicker : null}
-              onEditSection={planningAccess.can_change_intent ? openSectionEditor : null}
+              canScheduleLessons={canScheduleLessons && syllabusHydrated}
+              onOpenPlanning={planningAccess.can_change_intent && syllabusHydrated ? () => setPlanAheadOpen(true) : null}
+              onAddLesson={canScheduleLessons && syllabusHydrated ? openLessonPicker : null}
+              onEditSection={planningAccess.can_change_intent && syllabusHydrated ? openSectionEditor : null}
               proposedForecastItems={learningProposal?.forecast_items || []}
               proposedForecastTargetWeek={currentTargetForecastWeek}
               forecastBusy={forecastBusy}
@@ -910,6 +969,7 @@ export default function SyllabusPage() {
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
               restoreWeekStart={selectedWeekStart}
               today={syllabus.resolved_today}
+              contentLoading={contentLoading && !Array.isArray(syllabus.timeline_items)}
             />)}
 
           {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay

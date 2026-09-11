@@ -32,6 +32,13 @@
 .weekHeader h3 { margin:2px 0 0; font-size:21px; }.weekHeader time { color:#756b61; font:12px Roboto,sans-serif; white-space:nowrap; }
 .stateLabel { margin:0; color:#6b382c!important; }.now .stateLabel { color:#ba4b36!important; }
 .entries { display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border-bottom:1px solid #ded8cf; }
+.loadingEntries { grid-column:1 / -1; min-height:280px; display:grid; align-content:start; gap:8px; padding:22px 10px; color:#6d6359; font:13px/1.45 Roboto,sans-serif; }
+.loadingEntries strong { color:#3d3832; font:800 12px Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.05em; }
+.loadingEntries span { margin-bottom:8px; }
+.loadingEntries i { display:block; width:min(520px,92%); height:18px; border-radius:5px; background:linear-gradient(90deg,#eee9e1 25%,#f8f5ef 50%,#eee9e1 75%); background-size:200% 100%; animation:syllabusLoading 1.4s ease-in-out infinite; }
+.loadingEntries i:nth-of-type(2) { width:min(430px,80%); }
+.loadingEntries i:nth-of-type(3) { width:min(350px,68%); }
+@keyframes syllabusLoading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
 .day { min-width:0; padding:9px 7px 12px; border-right:1px solid #ded8cf; }
 .day:last-child { border-right:0; }
 .day>header { min-height:36px; display:grid; gap:2px; color:#6d6359; font:700 10px Roboto,sans-serif; }

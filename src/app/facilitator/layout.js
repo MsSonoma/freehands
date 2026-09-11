@@ -2,7 +2,7 @@
 import { useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import LegalFooter from '@/components/LegalFooter';
-import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { checkFacilitatorSection, ensurePinAllowed } from '@/app/lib/pinGate';
 
 /** @param {{ children: React.ReactNode }} props */
 export default function FacilitatorLayout({ children }) {
@@ -12,6 +12,10 @@ export default function FacilitatorLayout({ children }) {
   const hideFooter = pathname === '/facilitator/calendar';
 
   useEffect(() => {
+    if (checkFacilitatorSection()) {
+      setSectionAuthorized(true);
+      return undefined;
+    }
     let cancelled = false;
     ;(async () => {
       const allowed = await ensurePinAllowed('facilitator-page');

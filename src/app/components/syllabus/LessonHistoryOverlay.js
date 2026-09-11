@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useRef, useState } from 'react'
+import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 import styles from './LessonHistoryOverlay.module.css'
 
 function formatDate(value, includeTime = false) {
@@ -98,11 +99,11 @@ export default function LessonHistoryOverlay({ learnerId, occurrenceId, accessTo
 
   useEffect(() => {
     const previous = document.activeElement
-    const priorOverflow = document.body.style.overflow
-    document.body.style.overflow = 'hidden'
+    const releaseScrollLock = acquirePageScrollLock()
+
     closeRef.current?.focus()
     return () => {
-      document.body.style.overflow = priorOverflow
+      releaseScrollLock()
       previous?.focus?.()
     }
   }, [])

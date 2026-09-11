@@ -59,7 +59,7 @@ function carryForwardProposalKey({ sourceProposal, activeRevisionId, items }) {
   return `learning-forecast-rebase-v1:${createHash('sha256').update(JSON.stringify(identity)).digest('hex')}`
 }
 
-export async function getActiveSyllabus({ repository, admin, facilitatorId, learnerId, now = new Date(), fallbackTimeZone, verifyLessonAccess }) {
+export async function getActiveSyllabus({ repository, admin, facilitatorId, learnerId, now = new Date(), fallbackTimeZone, verifyLessonAccess, view = 'full' }) {
   const learner = await requireOwnedLearner(repository, learnerId, facilitatorId)
   const profileTimeZone = typeof repository.findFacilitatorTimeZone === 'function' ? await repository.findFacilitatorTimeZone(facilitatorId) : null
   const calendar = resolveCalendarContext({ now, profileTimeZone, fallbackTimeZone })
@@ -69,6 +69,18 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
   }
   const activeRevision = await repository.findRevision(syllabus.active_revision_id, syllabus.id)
   if (!activeRevision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
+  if (view === 'shell') {
+    return {
+      has_active_syllabus: true,
+      syllabus,
+      active_revision: activeRevision,
+      forecast_items: [],
+      timeline_items: null,
+      proposed_learning_forecast: null,
+      resolved_today: calendar.today,
+      resolved_timezone: calendar.timeZone,
+    }
+  }
   const { forecastItems, associations, slateAssignments, schedules, sessions, sessionEvents, legacyActivities, lessonMetadata, slateEvidenceReports, slateReviewReports } = await loadSyllabusTimelineInputs({
     repository, admin, facilitatorId, learner, activeRevision, verifyLessonAccess, includeSlateEvidence: true,
   })

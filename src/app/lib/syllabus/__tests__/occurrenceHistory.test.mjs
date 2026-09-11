@@ -282,7 +282,7 @@ test('Review History integration is read-only, local, exact-identity, and race g
   assert.match(overlaySource, /AbortController/)
   assert.match(overlaySource, /pageIdentity.*learnerId.*occurrenceId/)
   assert.match(overlaySource, /controller\.abort\(\)/)
-  assert.match(overlaySource, /document\.body\.style\.overflow = 'hidden'/)
+  assert.match(overlaySource, /acquirePageScrollLock\(\)/)
   assert.match(overlaySource, /event\.key === 'Escape'/)
   assert.match(overlaySource, /role="dialog"/)
   assert.match(routeSource, /export async function GET/)

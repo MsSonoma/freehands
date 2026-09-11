@@ -6,6 +6,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { ensurePinAllowed, setInFacilitatorSection } from '@/app/lib/pinGate';
+import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs';
 
 const FACILITATOR_MENU_ITEMS = Object.freeze([
   { label: 'Syllabus', href: '/facilitator/syllabus', primary: true },
@@ -362,37 +363,11 @@ export default function HeaderBar() {
 		return () => window.removeEventListener('ms:profile:name:updated', onNameUpdate);
 	}, []);
 
-	// Lock body scroll on the Session page so nothing scrolls under the header
+	// The shared scroll-lock owner prevents Session and modal locks from restoring
+	// stale body/html styles over one another during route or overlay changes.
 	useEffect(() => {
-		const lock = pathname.startsWith('/session');
-		const html = typeof document !== 'undefined' ? document.documentElement : null;
-		const body = typeof document !== 'undefined' ? document.body : null;
-		if (!html || !body) return;
-		const prev = {
-			htmlOverflow: html.style.overflow,
-			htmlHeight: html.style.height,
-			bodyOverflow: body.style.overflow,
-			bodyHeight: body.style.height,
-		};
-		if (lock) {
-			html.style.overflow = 'hidden';
-			html.style.height = '100svh';
-			body.style.overflow = 'hidden';
-			body.style.height = '100svh';
-		} else {
-			// Ensure defaults when not on session
-			html.style.overflow = prev.htmlOverflow || '';
-			html.style.height = prev.htmlHeight || '';
-			body.style.overflow = prev.bodyOverflow || '';
-			body.style.height = prev.bodyHeight || '';
-		}
-		return () => {
-			// On unmount or route change, restore
-			html.style.overflow = prev.htmlOverflow || '';
-			html.style.height = prev.htmlHeight || '';
-			body.style.overflow = prev.bodyOverflow || '';
-			body.style.height = prev.bodyHeight || '';
-		};
+		if (!pathname.startsWith('/session')) return undefined;
+		return acquirePageScrollLock({ viewport: true });
 	}, [pathname]);
 
 	// Compute back destination based on defined navigation chains.

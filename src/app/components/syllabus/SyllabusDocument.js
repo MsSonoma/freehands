@@ -95,6 +95,7 @@ export default function SyllabusDocument({
   isForecastRecoveryRequired = () => false,
   onWeekChange = null,
   restoreWeekStart = '',
+  contentLoading = false,
   today = localCalendarDate(),
 }) {
   const visibleItems = Array.isArray(timelineItems) ? timelineItems : forecastItems
@@ -178,8 +179,9 @@ export default function SyllabusDocument({
           <time dateTime={week.week_start}>{weekRangeLabel}</time>
         </header>
 
-        <div className={styles.entries} data-selected-week={week.week_start}>
-          {week.days.map((day) => {
+        <div className={styles.entries} data-selected-week={week.week_start} aria-busy={contentLoading ? 'true' : undefined}>
+          {contentLoading && <div className={styles.loadingEntries} role="status" aria-live="polite"><strong>Loading Syllabus contents</strong><span>Bringing in this learner&apos;s current lessons and history.</span><i /><i /><i /></div>}
+          {!contentLoading && week.days.map((day) => {
             const suggestions = projectedForecast.filter((item) => dateOnly(item.planned_date) === day.date)
             const presentations = syllabusDayPresentation(day.items, suggestions)
             const addLessonAllowed = canAddLessonToSyllabusDay({
@@ -251,9 +253,9 @@ export default function SyllabusDocument({
           </section>
           })}
         </div>
-        {week.week_start === startOfSyllabusWeek(proposedForecastTargetWeek) && role === 'facilitator' && (forecastBusy || forecastError || (!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage)) && <div className={styles.forecastStatus}>
+        {!contentLoading && week.week_start === startOfSyllabusWeek(proposedForecastTargetWeek) && role === 'facilitator' && (forecastBusy || forecastError || (!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage)) && <div className={styles.forecastStatus}>
           {forecastBusy && <p role="status">Preparing next week&apos;s lesson forecast...</p>}
-          {!forecastBusy && forecastError && <p role="alert">Next week&apos;s forecast could not be prepared. It will try again when the Syllabus reloads.</p>}
+          {!forecastBusy && forecastError && <p role="alert">The forecast for next week could not be prepared. It will try again when the Syllabus reloads.</p>}
           {!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage && <p>{forecastMessage}</p>}
         </div>}
       </section>

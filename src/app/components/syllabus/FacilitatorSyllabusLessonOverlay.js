@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 import { useRouter } from 'next/navigation'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
 import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
@@ -102,6 +103,8 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [revisionOpen, setRevisionOpen] = useState(false)
   const [forecastChangeOpen, setForecastChangeOpen] = useState(false)
   const [forecastChangeRequest, setForecastChangeRequest] = useState('')
+
+  useEffect(() => acquirePageScrollLock(), [])
 
   useEffect(() => {
     if (!item) return

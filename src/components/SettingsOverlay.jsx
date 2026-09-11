@@ -1,5 +1,6 @@
 'use client'
 import { useEffect, useRef } from 'react'
+import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 
 /**
  * SettingsOverlay - Reusable modal overlay for account settings
@@ -30,19 +31,11 @@ export default function SettingsOverlay({
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
 
-  // Prevent body scroll when overlay is open
+  // Prevent background scroll without clobbering another open overlay's lock.
   useEffect(() => {
-    if (isOpen) {
-      document.body.style.overflow = 'hidden'
-    } else {
-      document.body.style.overflow = ''
-    }
-
-    return () => {
-      document.body.style.overflow = ''
-    }
+    if (!isOpen) return undefined
+    return acquirePageScrollLock()
   }, [isOpen])
-
   if (!isOpen) return null
 
   return (
