@@ -61,6 +61,7 @@ export default function FacilitatorLessonsPage() {
   const [advancedFiltersOpen, setAdvancedFiltersOpen] = useState(false)
   const [showHistoryModal, setShowHistoryModal] = useState(false)
   const [revisionTarget, setRevisionTarget] = useState(null)
+  const [planningLessonKey, setPlanningLessonKey] = useState('')
 
   const {
     sessions: lessonHistorySessions,
@@ -551,6 +552,29 @@ export default function FacilitatorLessonsPage() {
     return filtered
   }
 
+  async function addApprovedLessonToSyllabus(lessonKey, href) {
+    if (!selectedLearnerId || !lessonKey || !href) return
+    setPlanningLessonKey(lessonKey)
+    try {
+      const supabase = getSupabaseClient()
+      const { data: { session } } = await supabase.auth.getSession()
+      const token = session?.access_token
+      if (!token) throw new Error('Sign in required')
+      const response = await fetch('/api/syllabus/lesson-associations', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId: selectedLearnerId, lessonKey }),
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json?.error || 'Could not add this lesson to the learner Syllabus')
+      router.push(href)
+    } catch (error) {
+      alert(error?.message || 'Could not add this lesson to the learner Syllabus')
+    } finally {
+      setPlanningLessonKey('')
+    }
+  }
+
   async function saveNote(lessonKey, noteText) {
     if (!selectedLearnerId) return
     
@@ -853,8 +877,8 @@ export default function FacilitatorLessonsPage() {
                 })
                 const primaryLabel = libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.REVIEW
                   ? 'Review lesson'
-                  : libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.DELIVERY
-                    ? 'Choose session option'
+                  : libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.PLAN
+                    ? 'Use in Syllabus'
                     : libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.DOWNLOAD
                       ? 'Download'
                       : ''
@@ -944,9 +968,14 @@ export default function FacilitatorLessonsPage() {
                             onClick={(e) => {
                               e.preventDefault()
                               e.stopPropagation()
+                              if (libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.PLAN) {
+                                void addApprovedLessonToSyllabus(libraryState.lessonKey, libraryState.href)
+                                return
+                              }
                               router.push(libraryState.href)
                             }}
                             data-primary-action={libraryState.primaryActionType}
+                            disabled={libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.PLAN && planningLessonKey === libraryState.lessonKey}
                             style={{
                               padding: '6px 12px',
                               border: '1px solid #111827',
@@ -958,7 +987,7 @@ export default function FacilitatorLessonsPage() {
                               fontWeight: 700
                             }}
                           >
-                            {primaryLabel}
+                            {libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.PLAN && planningLessonKey === libraryState.lessonKey ? 'Adding...' : primaryLabel}
                           </button>
                         ) : null}
 

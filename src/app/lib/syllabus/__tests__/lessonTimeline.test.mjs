@@ -975,14 +975,14 @@ test('association schema and API cannot create manual or inferred placement date
   assert.match(sql, /before update of readiness_state[\s\S]*execute function public\.preserve_syllabus_lesson_association_readiness\(\)/i)
 })
 
-test('Prepare save-for-later persists learner presence and the learner page has no active-Syllabus library bucket', () => {
-  const prepare = fs.readFileSync(path.resolve('src/app/facilitator/prepare/page.js'), 'utf8')
+test('Generator preserves draft and approval association state while learner active-Syllabus library behavior stays separate', () => {
+  const generator = fs.readFileSync(path.resolve('src/app/facilitator/generator/page.js'), 'utf8')
   const learner = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
-  assert.match(prepare, /async function saveForLater\(\)[\s\S]*await preserveLessonAssociation\(undefined, undefined, 'save_for_later'\)/)
-  assert.match(prepare, /remains in this learner\\'s Syllabus forecast/)
-  assert.match(prepare, /const payload = \{ learnerId, lessonKey: explicitLessonKey, instructionalTeacher: explicitTeacher \}/)
-  assert.match(prepare, /if \(action === 'save_for_later'\) payload\.action = action/)
-  assert.doesNotMatch(prepare, /const payload = \{[^}]*readinessState|const payload = \{[^}]*associationSource/)
+  assert.match(generator, /async function refreshGeneratedLessonAssociation/)
+  assert.match(generator, /body: JSON\.stringify\(\{ learnerId: intendedLearnerId, lessonKey \}\)/)
+  assert.match(generator, /await refreshGeneratedLessonAssociation\(json\?\.lessonKey \|\| generatedLessonKey\)/)
+  assert.match(generator, /if \(intendedLearnerId\) await refreshGeneratedLessonAssociation\(generatedLessonKey\)/)
+  assert.doesNotMatch(generator, /\/facilitator\/prepare/)
   assert.match(learner, /syllabusPresentation\.showLegacyLibraryHeading && <div[\s\S]*Lesson library and learning tools/)
   assert.match(learner, /display: syllabusPresentation\.showSupportingLibrary \? 'flex' : 'none'/)
 })
@@ -1008,11 +1008,13 @@ test('association endpoint derives readiness and source from verified artifact s
   assert.doesNotMatch(route, /body\?\.(readinessState|associationSource)/)
 })
 
-test('facilitator Syllabus exposes Prepare review actions without changing revision data', () => {
+test('facilitator Syllabus routes draft review to Generator without changing revision data', () => {
   const source = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
   assert.match(source, /syllabus\?\.timeline_items \|\| syllabus\?\.forecast_items/)
-  assert.match(source, /Prepare \/ review draft/)
-  assert.match(source, /\/facilitator\/prepare\?learnerId=/)
+  assert.match(source, /Review draft/)
+  assert.match(source, /buildLessonGeneratorReviewHref/)
+  assert.match(source, /workflowSource="syllabus"/)
+  assert.doesNotMatch(source, /\/facilitator\/prepare\?learnerId=/)
 })
 
 test('generation now transmits the explicit learner and preserves a draft association server-side', () => {

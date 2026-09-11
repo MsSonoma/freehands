@@ -8,5 +8,9 @@ export function resolveCalendarLandingParams(params) {
   return {
     openPortfolio: reader.get('portfolio') === '1',
     redirectToSyllabus: LEGACY_CALENDAR_AUTHORING_TABS.includes(requestedTab),
+    learnerId: reader.get('learnerId') || '',
+    date: reader.get('date') || '',
+    lessonKey: reader.get('lessonKey') || '',
+    occurrenceId: reader.get('occurrenceId') || '',
   }
 }

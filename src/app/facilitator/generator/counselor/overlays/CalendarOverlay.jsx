@@ -133,6 +133,7 @@ export default function CalendarOverlay({ learnerId, tier = 'free', accessToken 
         planTier={tier}
         resolvedToday={resolvedToday}
         activeRevisionId={activeRevisionId}
+        workflowSource="calendar"
         onChanged={loadSyllabus}
         onClose={() => setSelectedLesson(null)}
         canChangeIntent={false}

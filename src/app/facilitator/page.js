@@ -21,9 +21,10 @@ import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/Facilita
 import SyllabusPlanEditor from '@/app/components/syllabus/SyllabusPlanEditor'
 import { resolveSyllabusReadModel, syllabusEntitlementsFor } from '@/app/lib/syllabus/timeline.mjs'
 import { resolveEffectiveTier } from '@/app/lib/entitlements'
+import { buildLessonGeneratorReviewHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import styles from './facilitatorHome.module.css'
 
-const PREPARE_PATH = '/facilitator/prepare'
+const LEGACY_PREPARE_PATH = '/facilitator/prepare'
 
 export default function FacilitatorPage() {
   const router = useRouter()
@@ -265,7 +266,7 @@ export default function FacilitatorPage() {
         body: learnerError,
       }
     }
-    return resolveFacilitatorHomeDecision({ learners, scheduledKeys, preparationSnapshot, preparePath: PREPARE_PATH })
+    return resolveFacilitatorHomeDecision({ learners, scheduledKeys, preparationSnapshot, legacyPreparePath: LEGACY_PREPARE_PATH, generatorPath: '/facilitator/generator' })
   }, [learnerError, learnerStatus, learners, preparationSnapshot, scheduleStatus, scheduledKeys, sessionStatus])
 
   const shellState = resolveFacilitatorHomeShellState({ authLoading, isAuthenticated, pinChecked })
@@ -309,12 +310,14 @@ export default function FacilitatorPage() {
 
   function openHomeSyllabusLesson(item) {
     if (!item?.lesson_key) return
-    const occurrenceId = String(item.occurrence_id || '').trim()
-    const revisionId = String(syllabusModel.revision?.id || '').trim()
-    const occurrenceContext = occurrenceId
-      ? `&occurrenceId=${encodeURIComponent(occurrenceId)}${revisionId ? `&expectedActiveRevisionId=${encodeURIComponent(revisionId)}` : ''}`
-      : ''
-    router.push(`${PREPARE_PATH}?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}${occurrenceContext}`)
+    router.push(buildLessonGeneratorReviewHref({
+      learnerId,
+      lessonKey: item.lesson_key,
+      source: 'home',
+      plannedDate: String(item.planned_date || '').slice(0, 10),
+      occurrenceId: String(item.occurrence_id || '').trim(),
+      expectedActiveRevisionId: String(syllabusModel.revision?.id || '').trim(),
+    }))
   }
 
   return (
@@ -378,6 +381,7 @@ export default function FacilitatorPage() {
         planTier={plan}
         resolvedToday={syllabusPayload?.resolved_today || ''}
         activeRevisionId={syllabusModel.revision?.id || ''}
+        workflowSource="home"
         onChanged={() => setSyllabusRefreshSequence((value) => value + 1)}
         onClose={() => setSelectedSyllabusLesson(null)}
         onOpenLesson={(item) => openHomeSyllabusLesson(item)}

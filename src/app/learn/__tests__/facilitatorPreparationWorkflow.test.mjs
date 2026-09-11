@@ -3,27 +3,13 @@ import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
 
-import {
-  FACILITATOR_PREPARATION_STAGES,
-  canTransitionPreparationStage,
-  resolveConfirmedLessonApproval,
-} from '../../lib/facilitatorPreparation.mjs'
+import { FACILITATOR_PREPARATION_STAGES } from '../../lib/facilitatorPreparation.mjs'
 import { POST as approveLessonRequest } from '../../api/facilitator/lessons/approve/route.js'
 import {
   countEducatorApprovedLessons,
   countLearnerActiveLessons,
   resolveFacilitatorHomeDecision,
 } from '../../lib/facilitatorHome.mjs'
-
-test('approval can advance from draft content review to session choice', () => {
-  assert.equal(
-    canTransitionPreparationStage(
-      FACILITATOR_PREPARATION_STAGES.DRAFT,
-      FACILITATOR_PREPARATION_STAGES.DELIVERY,
-    ),
-    true,
-  )
-})
 
 test('facilitator home no longer describes an approved lesson as pending review', () => {
   const decision = resolveFacilitatorHomeDecision({
@@ -37,9 +23,24 @@ test('facilitator home no longer describes an approved lesson as pending review'
     },
   })
 
-  assert.equal(decision.label, 'Choose session option')
-  assert.equal(decision.title, 'An approved lesson is waiting')
-  assert.doesNotMatch(`${decision.label} ${decision.title}`, /delivery|review/i)
+  assert.equal(decision.label, 'Open in Syllabus')
+  assert.equal(decision.title, 'An approved lesson is ready in the learner plan')
+  assert.doesNotMatch(`${decision.label} ${decision.title}`, /delivery|review|session option/i)
+})
+
+test('legacy approved lesson with a removed learner routes to the Lesson Library instead of silently selecting someone else', () => {
+  const decision = resolveFacilitatorHomeDecision({
+    learners: [{ id: 'learner-2', approved_lessons: {} }],
+    preparationSnapshot: {
+      version: 1,
+      stage: FACILITATOR_PREPARATION_STAGES.DELIVERY,
+      learnerId: 'removed-learner',
+      lessonIdentity: { lessonKey: 'generated/fractions.json', file: 'fractions.json' },
+    },
+  })
+  assert.equal(decision.kind, 'ORPHANED_APPROVED_LESSON')
+  assert.equal(decision.href, '/facilitator/lessons')
+  assert.match(decision.body, /choose an available learner/i)
 })
 
 test('dashboard approved lesson count is educator approval, not learner-active availability', () => {
@@ -144,8 +145,6 @@ test('fresh draft approval tolerates a stale post-write read and is idempotent a
   })
   const firstJson = await firstResponse.json()
   const storedAfterFirstRequest = JSON.parse(objects.get(canonicalPath))
-  const approval = resolveConfirmedLessonApproval(firstJson)
-
   assert.equal(firstResponse.status, 200)
   assert.equal(firstJson.approved, true)
   assert.equal(firstJson.lesson.approved, true)
@@ -159,8 +158,7 @@ test('fresh draft approval tolerates a stale post-write read and is idempotent a
   ])
   assert.deepEqual(sleeps, [50])
   assert.equal(delayedUpload, null)
-  assert.equal(approval?.stage, FACILITATOR_PREPARATION_STAGES.DELIVERY)
-  assert.equal(approval?.lessonIdentity?.storagePath, canonicalPath)
+  assert.equal(firstJson.identity?.storagePath, canonicalPath)
 
   paths.length = 0
   sleeps.length = 0
@@ -178,29 +176,24 @@ test('fresh draft approval tolerates a stale post-write read and is idempotent a
   ])
   assert.deepEqual(sleeps, [])
 })
-test('approval page renders lesson content review before the approve action', () => {
-  const source = fs.readFileSync(
-    path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),
-    'utf8',
-  )
-  const contentIndex = source.indexOf('<LessonContentReview lesson={lessonDraft} />')
-  const buttonIndex = source.indexOf('Approve lesson content')
-
+test('Generator renders the actual generated artifact before the explicit approval action', () => {
+  const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'generator', 'page.js'), 'utf8')
+  const contentIndex = source.indexOf('<GeneratedLessonReview lesson={generatedLessonDraft} />')
+  const buttonIndex = source.indexOf('Approve lesson')
   assert.ok(contentIndex > 0)
   assert.ok(buttonIndex > 0)
   assert.ok(contentIndex < buttonIndex)
+  assert.match(source, /fetch\('\/api\/facilitator\/lessons\/approve'/)
+  assert.ok(source.indexOf('refreshGeneratedLessonAssociation') < source.indexOf('router.push(reviewReturnHref())'))
 })
 
-test('approval page shows the lesson title and blurb once inside the detailed review', () => {
-  const source = fs.readFileSync(
-    path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),
-    'utf8',
-  )
-
-  assert.doesNotMatch(source, /lesson-approval-overview/)
-  assert.doesNotMatch(source, /compactLessonDescription/)
-  assert.ok(source.includes("const title = lesson?.title || 'Lesson content'"))
-  assert.ok(source.includes('lesson?.blurb && <p'))
+test('generated lesson review keeps the substantive title and blurb renderer outside compatibility routing', () => {
+  const reviewSource = fs.readFileSync(path.resolve('src', 'app', 'components', 'GeneratedLessonReview.jsx'), 'utf8')
+  const prepareSource = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'), 'utf8')
+  assert.ok(reviewSource.includes("const title = lesson?.title || 'Lesson content'"))
+  assert.ok(reviewSource.includes('lesson?.blurb && <p'))
+  assert.match(prepareSource, /LegacyPrepareCompatibilityPage/)
+  assert.doesNotMatch(prepareSource, /GeneratedLessonReview|Approve lesson|Start now|Make available|Choose session option/)
 })
 
 test('generated approval content freshness contract remains independently covered', () => {
@@ -223,18 +216,23 @@ test('generated approval content freshness contract remains independently covere
   assert.match(accessSource, /freshStoragePath = `\$\{storagePath\}\?fresh=/)
 })
 
-test('approval page keeps only lesson content scrollable while the draft section remains in normal document flow', () => {
-  const source = fs.readFileSync(
-    path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'),
-    'utf8',
-  )
-  const draftStart = source.indexOf("stage === STAGES.DRAFT")
-  const draftEnd = source.indexOf("stage === STAGES.DELIVERY", draftStart)
-  const draftSource = source.slice(draftStart, draftEnd)
+test('Generator keeps only generated lesson content scrollable during review', () => {
+  const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'generator', 'page.js'), 'utf8')
+  const reviewStart = source.indexOf('data-testid="generated-lesson-review"')
+  const reviewEnd = source.indexOf("generatorMode === 'simple'", reviewStart)
+  const reviewSource = source.slice(reviewStart, reviewEnd)
+  assert.match(reviewSource, /data-testid="lesson-content-scroll-pane"/)
+  assert.match(reviewSource, /maxHeight: '60vh'/)
+  assert.match(reviewSource, /overflowY: 'auto'/)
+  assert.doesNotMatch(reviewSource, /maxHeight: 'calc\(100vh - 120px\)'/)
+})
 
-  assert.doesNotMatch(draftSource, /maxHeight: 'calc\(100vh - 120px\)'/)
-  assert.match(draftSource, /data-testid="lesson-content-scroll-pane"/)
-  assert.match(draftSource, /maxHeight: '60vh'/)
-  assert.match(draftSource, /overflowY: 'auto'/)
-  assert.match(draftSource, /flexShrink: 0/)
+test('Prepare is compatibility-only and cannot approve, generate, or deliver lessons', () => {
+  const prepareSource = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'prepare', 'page.js'), 'utf8')
+  assert.match(prepareSource, /LegacyPrepareCompatibilityPage/)
+  assert.match(prepareSource, /router\.replace\(target\)/)
+  assert.match(prepareSource, /clearPreparationSnapshot\(\)/)
+  for (const retired of ['/api/facilitator/lessons/approve', '/api/facilitator/lessons/generate', '/api/lesson-schedule', 'Approve lesson', 'Start now', 'Make available']) {
+    assert.ok(!prepareSource.includes(retired), retired)
+  }
 })

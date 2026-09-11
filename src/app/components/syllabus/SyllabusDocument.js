@@ -114,6 +114,9 @@ export default function SyllabusDocument({
   onSuggestSlot = null,
   onWeekChange = null,
   restoreWeekStart = '',
+  focusPlannedDate = '',
+  focusLessonKey = '',
+  focusOccurrenceId = '',
   contentLoading = false,
   today = localCalendarDate(),
 }) {
@@ -126,6 +129,7 @@ export default function SyllabusDocument({
   const [selectedWeekStart, setSelectedWeekStart] = useState(() => startOfSyllabusWeek(restoreWeekStart) || moveSyllabusWeek(null, 'now', today))
   const selectedWeekRef = useRef(null)
   const establishedNowViewportKeyRef = useRef('')
+  const resolvedFocusRef = useRef('')
   useEffect(() => setSelectedWeekStart(startOfSyllabusWeek(restoreWeekStart) || moveSyllabusWeek(null, 'now', today)), [learnerId, restoreWeekStart, today])
   const week = useMemo(() => selectSyllabusWeek(visibleItems, { weekStart: selectedWeekStart, today }), [visibleItems, selectedWeekStart, today])
   const nowViewportKey = learnerNowViewportKey({
@@ -151,6 +155,30 @@ export default function SyllabusDocument({
     includeOpenSlots: role === 'facilitator' && week.state === 'future',
   }), [revision?.weekly_pattern, visibleItems, proposedForecastItems, noSchoolDates, week.week_start, week.state, role, today])
   const projectedForecast = planningProjection.forecast_items
+  useEffect(() => {
+    if (role !== 'facilitator' || typeof onSelectLesson !== 'function' || (!focusOccurrenceId && !focusLessonKey)) return
+    const match = planningProjection.items.find((candidate) => {
+      const candidateOccurrence = String(candidate?.occurrence_id || candidate?.id || '')
+      const sourceOccurrence = String(candidate?.source_occurrence_id || '')
+      if (focusOccurrenceId && (candidateOccurrence === String(focusOccurrenceId) || sourceOccurrence === String(focusOccurrenceId))) return true
+      return focusLessonKey && String(candidate?.lesson_key || '') === String(focusLessonKey) && (!focusPlannedDate || dateOnly(candidate?.planned_date) === dateOnly(focusPlannedDate))
+    })
+    if (!match) return
+    const signature = `${learnerId}:${week.week_start}:${focusPlannedDate}:${focusOccurrenceId}:${focusLessonKey}`
+    if (resolvedFocusRef.current === signature) return
+    resolvedFocusRef.current = signature
+    const currentLesson = lessonState(match) || {}
+    const state = syllabusItemState({ item: match, today, hasProgress: currentLesson.hasProgress })
+    const occurrenceKey = match.occurrence_id || match.id || `${match.lineage_id}-${match.planned_date}`
+    const assignedTeacher = normalizeInstructionalTeacher(match.assigned_instructional_teacher || match.instructional_teacher) || 'sonoma'
+    const historicalActivityAllowed = match.historical_record !== true
+      && (match.placement_kind !== 'actual' || Boolean(match.source_occurrence_id))
+    const teacherEditable = Boolean(match.lesson_key)
+      && match.placement_kind !== 'actual'
+      && match.historical_record !== true
+      && !startedOccurrenceIds.has(String(occurrenceKey))
+    onSelectLesson(match, { syllabus_state: state, currentLesson, teacherEditable, historicalActivityAllowed, occurrenceKey, assignedTeacher })
+  }, [focusLessonKey, focusOccurrenceId, focusPlannedDate, learnerId, lessonState, onSelectLesson, planningProjection.items, role, startedOccurrenceIds, today, week.week_start])
   useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
   const copy = STATE_COPY[week.state]
   const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)

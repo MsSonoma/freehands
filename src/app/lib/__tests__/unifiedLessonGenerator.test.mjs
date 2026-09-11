@@ -22,28 +22,39 @@ test('lesson generation is one surface with Simple and Detailed modes and shared
   assert.match(generator, /setDayMaterializationContext\(\{ lineageId, activeRevisionId \}\)/)
 })
 
-test('all lesson-creation entry points converge on the unified generator while review remains in Prepare', () => {
+test('lesson creation and draft approval converge on Generator while Prepare is compatibility-only', () => {
   const dialog = source('components/syllabus/SyllabusDayActionDialog.js')
   const syllabus = source('facilitator/syllabus/page.js')
   const calendar = source('facilitator/calendar/page.js')
   const prepare = source('facilitator/prepare/page.js')
+  const generator = source('facilitator/generator/page.js')
   const lessons = source('facilitator/lessons/page.js')
   const home = source('facilitator/page.js')
   const legacyGeneratorCard = source('facilitator/generator/ClientGenerator.jsx')
 
   assert.doesNotMatch(dialog, /Lesson title|Brief description|What should this lesson teach/)
   for (const page of [syllabus, calendar]) {
-    assert.match(page, /\/facilitator\/generator\?/)
+    assert.ok(page.includes('/facilitator/generator?'))
     assert.match(page, /plannedDate/)
     assert.match(page, /expectedActiveRevisionId/)
   }
-  assert.match(prepare, /stage !== STAGES\.NEED/)
-  assert.match(prepare, /router\.replace\(`\/facilitator\/generator\?/)
+  assert.match(generator, /data-testid="generated-lesson-review"/)
+  assert.match(generator, /Approve lesson/)
+  assert.ok(generator.includes('/api/facilitator/lessons/approve'))
+  assert.match(generator, /refreshGeneratedLessonAssociation/)
+  assert.ok(!generator.includes('/facilitator/prepare'))
+  assert.doesNotMatch(generator, /writePreparationSnapshot/)
+  assert.match(prepare, /LegacyPrepareCompatibilityPage/)
+  assert.ok(prepare.includes('router.replace(target)'))
+  assert.match(prepare, /buildLessonGeneratorReviewHref/)
+  for (const retired of ['/api/facilitator/lessons/approve', '/api/facilitator/lessons/generate', '/api/lesson-schedule', 'Approve lesson', 'Start now', 'Make available']) assert.ok(!prepare.includes(retired), retired)
+  assert.match(lessons, /Use in Syllabus/)
+  assert.match(lessons, /addApprovedLessonToSyllabus/)
+  assert.match(lessons, /\/api\/syllabus\/lesson-associations/)
   assert.doesNotMatch(lessons, /Detailed lesson builder/)
   assert.doesNotMatch(home, /Detailed lesson builder/)
-  assert.match(legacyGeneratorCard, /href="\/facilitator\/generator"/)
+  assert.ok(legacyGeneratorCard.includes('href="/facilitator/generator"'))
 })
-
 test('Syllabus day generation keeps canonical lineage materialization instead of becoming a separate generator', () => {
   const generator = source('facilitator/generator/page.js')
   const planning = source('lib/syllabus/planning.server.mjs')

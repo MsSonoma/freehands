@@ -12,8 +12,9 @@ import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/l
 import AIRewriteButton from '@/components/AIRewriteButton'
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
-import { FACILITATOR_PREPARATION_STAGES, FACILITATOR_PREPARATION_VERSION } from '@/app/lib/facilitatorPreparation.mjs'
-import { writePreparationSnapshot } from '@/app/facilitator/prepare/preparationSnapshot'
+import { FACILITATOR_PREPARATION_VERSION } from '@/app/lib/facilitatorPreparation.mjs'
+import GeneratedLessonReview from '@/app/components/GeneratedLessonReview'
+import { buildLessonWorkflowReturnHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 
 const difficulties = ['beginner','intermediate','advanced']
 const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
@@ -23,25 +24,43 @@ export default function LessonMakerPage(){
   const [generatorMode, setGeneratorMode] = useState('simple')
   const [simpleNeed, setSimpleNeed] = useState('')
   const [simpleProposal, setSimpleProposal] = useState(null)
-  const [entryContext, setEntryContext] = useState({ source: '', learnerId: '', plannedDate: '', expectedActiveRevisionId: '', subject: '' })
+  const [entryContext, setEntryContext] = useState({ source: '', learnerId: '', plannedDate: '', expectedActiveRevisionId: '', subject: '', lessonKey: '', occurrenceId: '' })
   const [dayMaterializationContext, setDayMaterializationContext] = useState(null)
   useEffect(() => {
     if (typeof window === 'undefined') return
     window.scrollTo(0, 0)
     const params = new URLSearchParams(window.location.search)
-    const requestedMode = params.get('mode') === 'detailed' || params.get('advanced') === '1' ? 'detailed' : 'simple'
+    const lessonKey = params.get('lessonKey') || ''
+    const reviewRequested = params.get('mode') === 'review' || Boolean(lessonKey)
+    const requestedMode = reviewRequested ? 'review' : (params.get('mode') === 'detailed' || params.get('advanced') === '1' ? 'detailed' : 'simple')
     const learnerId = params.get('learnerId') || ''
     const plannedDate = params.get('plannedDate') || ''
     const expectedActiveRevisionId = params.get('expectedActiveRevisionId') || ''
+    const occurrenceId = params.get('occurrenceId') || ''
     const source = params.get('source') || ''
     const subject = params.get('subject') || ''
     const need = params.get('need') || ''
     const gradeParam = params.get('grade') || ''
+    const difficultyParam = params.get('difficulty') || ''
+    const titleParam = params.get('title') || ''
+    const descriptionParam = params.get('description') || ''
+    const notesParam = params.get('notes') || ''
+    const vocabParam = params.get('vocab') || ''
     setGeneratorMode(requestedMode)
-    setEntryContext({ source, learnerId, plannedDate, expectedActiveRevisionId, subject })
+    setEntryContext({ source, learnerId, plannedDate, expectedActiveRevisionId, subject, lessonKey, occurrenceId })
     if (learnerId) setIntendedLearnerId(learnerId)
+    if (lessonKey) setGeneratedLessonKey(lessonKey)
     if (need) setSimpleNeed(need)
-    if (gradeParam || subject) setForm((current) => ({ ...current, ...(gradeParam ? { grade: gradeParam } : {}), ...(subject ? { subject } : {}) }))
+    if (gradeParam || difficultyParam || subject || titleParam || descriptionParam || notesParam || vocabParam) setForm((current) => ({
+      ...current,
+      ...(gradeParam ? { grade: gradeParam } : {}),
+      ...(difficultyParam ? { difficulty: difficultyParam } : {}),
+      ...(subject ? { subject } : {}),
+      ...(titleParam ? { title: titleParam } : {}),
+      ...(descriptionParam ? { description: descriptionParam } : {}),
+      ...(notesParam ? { notes: notesParam } : {}),
+      ...(vocabParam ? { vocab: vocabParam } : {}),
+    }))
   }, [])
   const { loading, hasAccess, gateType, tier, isAuthenticated } = useAccessControl({
     requiredAuth: 'required',
@@ -57,12 +76,17 @@ export default function LessonMakerPage(){
   const [quotaInfo, setQuotaInfo] = useState(null)
   const [quotaLoading, setQuotaLoading] = useState(true)
   const [toast, setToast] = useState(null) // { message, type }
-  const [generatedLessonKey, setGeneratedLessonKey] = useState(null) // Track last generated lesson
+  const [generatedLessonKey, setGeneratedLessonKey] = useState(null) // Canonical generated lesson under review
+  const [generatedLessonDraft, setGeneratedLessonDraft] = useState(null)
+  const [reviewLoading, setReviewLoading] = useState(false)
+  const [reviewError, setReviewError] = useState('')
+  const [approving, setApproving] = useState(false)
   const [revisionOpen, setRevisionOpen] = useState(false)
   const [learners, setLearners] = useState([])
   const [intendedLearnerId, setIntendedLearnerId] = useState('')
 
   const isDayGenerator = Boolean(entryContext.plannedDate && entryContext.expectedActiveRevisionId && ['syllabus', 'calendar'].includes(entryContext.source))
+  const isReviewMode = generatorMode === 'review' || Boolean(generatedLessonKey)
 
   // AI Rewrite loading states
   const [rewritingTitle, setRewritingTitle] = useState(false)
@@ -172,7 +196,10 @@ export default function LessonMakerPage(){
   useEffect(() => {
     if (!learners.length || !entryContext.learnerId) return
     const learner = learners.find((item) => String(item.id) === String(entryContext.learnerId))
-    if (!learner) return
+    if (!learner) {
+      setIntendedLearnerId('')
+      return
+    }
     setIntendedLearnerId(learner.id)
     if (learner.grade) setForm((current) => ({ ...current, grade: current.grade || String(learner.grade) }))
   }, [entryContext.learnerId, learners])
@@ -182,6 +209,11 @@ export default function LessonMakerPage(){
     const learner = learners.find((item) => String(item.id) === String(nextLearnerId))
     if (learner?.grade) setForm((current) => ({ ...current, grade: String(learner.grade) }))
   }
+
+  useEffect(() => {
+    if (!pinChecked || !isAuthenticated || !entryContext.lessonKey) return
+    void loadGeneratedLessonReview(entryContext.lessonKey)
+  }, [entryContext.lessonKey, isAuthenticated, pinChecked]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // AI Rewrite handlers
   const handleRewriteTitle = async () => {
@@ -427,6 +459,98 @@ export default function LessonMakerPage(){
     return session?.access_token || ''
   }
 
+  function reviewReturnHref() {
+    return buildLessonWorkflowReturnHref({ source: entryContext.source, learnerId: intendedLearnerId, plannedDate: entryContext.plannedDate, lessonKey: generatedLessonKey, occurrenceId: entryContext.occurrenceId })
+  }
+
+  async function loadGeneratedLessonReview(lessonKey = generatedLessonKey) {
+    if (!lessonKey) return null
+    setReviewLoading(true)
+    setReviewError('')
+    try {
+      const token = await currentAccessToken()
+      if (!token) throw new Error('Sign in required')
+      const response = await fetch(`/api/facilitator/lessons/get?file=${encodeURIComponent(lessonKey)}`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${token}` },
+      })
+      const lesson = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(lesson?.error || 'Could not load the generated lesson')
+      setGeneratedLessonKey(lessonKey)
+      setGeneratedLessonDraft(lesson)
+      setGeneratorMode('review')
+      setForm((current) => ({
+        ...current,
+        grade: lesson.grade || current.grade,
+        difficulty: lesson.difficulty || current.difficulty,
+        subject: lesson.subject || current.subject,
+        title: lesson.title || current.title,
+        description: lesson.description || lesson.blurb || current.description,
+        notes: lesson.teachingNotes || lesson.notes || current.notes,
+      }))
+      return lesson
+    } catch (error) {
+      setReviewError(error?.message || 'Could not load the generated lesson')
+      return null
+    } finally {
+      setReviewLoading(false)
+    }
+  }
+
+  async function refreshGeneratedLessonAssociation(lessonKey = generatedLessonKey) {
+    if (!lessonKey || !intendedLearnerId) throw new Error('Choose a learner before continuing.')
+    const token = await currentAccessToken()
+    if (!token) throw new Error('Sign in required')
+    const response = await fetch('/api/syllabus/lesson-associations', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({ learnerId: intendedLearnerId, lessonKey }),
+    })
+    const json = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(json?.error || 'Could not refresh this lesson in the learner plan')
+    return json
+  }
+
+  async function approveGeneratedLesson() {
+    if (!generatedLessonKey || !intendedLearnerId || generatedLessonDraft?.approved === true) return
+    setApproving(true)
+    setReviewError('')
+    setMessage('')
+    try {
+      const token = await currentAccessToken()
+      if (!token) throw new Error('Sign in required')
+      const file = generatedLessonKey.replace(/^generated\//, '')
+      const response = await fetch('/api/facilitator/lessons/approve', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ file }),
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok || json?.approved !== true || json?.lesson?.approved !== true) {
+        throw new Error(json?.error || 'Approval failed')
+      }
+      setGeneratedLessonDraft(json.lesson)
+      await refreshGeneratedLessonAssociation(json?.lessonKey || generatedLessonKey)
+      setToast({ message: 'Lesson approved. Returning to the learner plan.', type: 'success' })
+      router.push(reviewReturnHref())
+    } catch (error) {
+      setReviewError(error?.message || 'Could not approve the lesson')
+    } finally {
+      setApproving(false)
+    }
+  }
+
+  async function leaveGeneratedLessonAsDraft() {
+    if (!generatedLessonKey) return
+    setReviewError('')
+    try {
+      if (intendedLearnerId) await refreshGeneratedLessonAssociation(generatedLessonKey)
+      router.push(reviewReturnHref())
+    } catch (error) {
+      setReviewError(error?.message || 'Could not save this draft in the learner plan')
+    }
+  }
+
   function detailedIntent(spec = form) {
     if (!intendedLearnerId) return null
     return {
@@ -447,18 +571,13 @@ export default function LessonMakerPage(){
     }
   }
 
-  async function continueGeneratedLesson({ identity, spec, proposal, intent }) {
+  async function continueGeneratedLesson({ identity, proposal }) {
     if (!identity?.lessonKey) throw new Error('Lesson storage was not available for review. Please try again.')
     setGeneratedLessonKey(identity.lessonKey)
-    writePreparationSnapshot({
-      version: FACILITATOR_PREPARATION_VERSION,
-      stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
-      learnerId: intendedLearnerId,
-      intent: intent || detailedIntent(spec),
-      proposal: proposal || detailedProposal(spec),
-      lessonIdentity: identity,
-    })
-    router.push('/facilitator/prepare')
+    setSimpleProposal(proposal || simpleProposal)
+    setGeneratorMode('review')
+    const lesson = await loadGeneratedLessonReview(identity.lessonKey)
+    if (!lesson) throw new Error('The lesson was generated, but its review copy could not be loaded. Open the draft again from the Syllabus or Lesson Library.')
   }
 
   async function generateStandaloneLesson(spec, { proposal = null, intent = null } = {}) {
@@ -573,16 +692,8 @@ export default function LessonMakerPage(){
       storagePath: '',
       ownerId: '',
     }
-    writePreparationSnapshot({
-      version: FACILITATOR_PREPARATION_VERSION,
-      stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
-      learnerId: intendedLearnerId,
-      intent: intent || detailedIntent(spec),
-      proposal: proposal || detailedProposal(spec),
-      lessonIdentity: identity,
-    })
     setToast({ message: 'Lesson ready for review!', type: 'success' })
-    router.push('/facilitator/prepare')
+    await continueGeneratedLesson({ identity, spec, proposal, intent })
   }
 
   async function generateFromSpec(spec, context = {}) {
@@ -728,11 +839,11 @@ export default function LessonMakerPage(){
             </h1>
           </div>
           <p style={{ margin: '4px 0 0 36px', fontSize: 13, color: '#6366f1', fontWeight: 500 }}>
-            One generator. Start simple or take full control of the details.
+            {isReviewMode ? 'Review the generated lesson and explicitly approve it before learner use.' : 'One generator. Start simple or take full control of the details.'}
           </p>
         </div>
         <button
-          onClick={() => router.push(entryContext.source === 'calendar' ? '/facilitator/calendar' : entryContext.source === 'syllabus' ? '/facilitator/syllabus' : '/facilitator/lessons')}
+          onClick={() => router.push(reviewReturnHref())}
           style={{
             padding: '9px 16px',
             borderRadius: 8,
@@ -745,7 +856,7 @@ export default function LessonMakerPage(){
             whiteSpace: 'nowrap',
           }}
         >
-          ← Back to Lessons
+          Back
         </button>
       </div>
 
@@ -755,18 +866,52 @@ export default function LessonMakerPage(){
         </div>
       )}
 
-      <div role="tablist" aria-label="Lesson generator mode" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: 5, marginBottom: 16, border: '1px solid #e5e7eb', borderRadius: 12, background: '#f8fafc' }}>
+      {!isReviewMode && <div role="tablist" aria-label="Lesson generator mode" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: 5, marginBottom: 16, border: '1px solid #e5e7eb', borderRadius: 12, background: '#f8fafc' }}>
         <button type="button" role="tab" aria-selected={generatorMode === 'simple'} onClick={() => switchGeneratorMode('simple')} style={{ padding: '11px 14px', border: generatorMode === 'simple' ? '1px solid #c7442e' : '1px solid transparent', borderRadius: 9, background: generatorMode === 'simple' ? '#fff' : 'transparent', color: generatorMode === 'simple' ? '#9f2f20' : '#4b5563', fontWeight: 800, cursor: 'pointer' }}>Simple</button>
         <button type="button" role="tab" aria-selected={generatorMode === 'detailed'} onClick={() => switchGeneratorMode('detailed')} style={{ padding: '11px 14px', border: generatorMode === 'detailed' ? '1px solid #c7442e' : '1px solid transparent', borderRadius: 9, background: generatorMode === 'detailed' ? '#fff' : 'transparent', color: generatorMode === 'detailed' ? '#9f2f20' : '#4b5563', fontWeight: 800, cursor: 'pointer' }}>Detailed</button>
-      </div>
+      </div>}
 
-      {isDayGenerator && (
+      {isDayGenerator && !isReviewMode && (
         <div style={{ marginBottom: 16, padding: '10px 14px', border: '1px solid #dbeafe', borderRadius: 10, background: '#eff6ff', color: '#1e3a8a', fontSize: 13 }}>
           This lesson will stay attached to <strong>{entryContext.plannedDate}</strong> in the learner&apos;s Syllabus. Switching generator modes will not lose that placement.
         </div>
       )}
 
-      {generatorMode === 'simple' ? (
+      {isReviewMode ? (
+        <section data-testid="generated-lesson-review" style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 14, padding: 20, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+          <div>
+            <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#6b7280' }}>Generated draft</p>
+            <h2 style={{ margin: 0, fontSize: 20 }}>{generatedLessonDraft?.title || form.title || 'Review lesson'}</h2>
+            <p style={{ margin: '7px 0 0', color: '#4b5563', lineHeight: 1.55 }}>Review the actual lesson artifact. Approval is an explicit educator decision. Scheduling and learner delivery remain in the Syllabus or Calendar.</p>
+          </div>
+          {learners.length > 0 && (
+            <label style={{ display: 'grid', gap: 6, maxWidth: 360 }}>
+              <span style={{ fontWeight: 700, fontSize: 13, color: '#374151' }}>Learner</span>
+              <select value={intendedLearnerId} disabled={isDayGenerator} onChange={(event) => selectIntendedLearner(event.target.value)} style={{ padding: 10, border: '1px solid #d1d5db', borderRadius: 8, background: '#fff' }} required>
+                <option value="">Choose learner</option>
+                {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}{learner.grade ? ` - grade ${learner.grade}` : ''}</option>)}
+              </select>
+            </label>
+          )}
+          {reviewLoading && <p style={{ margin: 0, color: '#6b7280' }}>Loading lesson content...</p>}
+          {reviewError && <div role="alert" style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#b91c1c', fontSize: 13, fontWeight: 600 }}>{reviewError}</div>}
+          {generatedLessonDraft && (
+            <div data-testid="lesson-content-scroll-pane" style={{ maxHeight: '60vh', minHeight: 180, overflowY: 'auto', padding: 12, border: '1px solid #e5e7eb', borderRadius: 8, background: '#f9fafb' }}>
+              <GeneratedLessonReview lesson={generatedLessonDraft} />
+            </div>
+          )}
+          <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
+            {generatedLessonDraft?.approved === true ? (
+              <button type="button" onClick={() => router.push(reviewReturnHref())} style={{ padding: '11px 18px', border: 'none', borderRadius: 9, background: '#c7442e', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>Return to learner plan</button>
+            ) : (
+              <button type="button" onClick={() => void approveGeneratedLesson()} disabled={approving || reviewLoading || !generatedLessonDraft || !intendedLearnerId} style={{ padding: '11px 18px', border: 'none', borderRadius: 9, background: '#c7442e', color: '#fff', fontWeight: 800, cursor: approving ? 'wait' : 'pointer', opacity: approving || reviewLoading || !generatedLessonDraft || !intendedLearnerId ? 0.55 : 1 }}>{approving ? 'Approving...' : 'Approve lesson'}</button>
+            )}
+            {generatedLessonDraft?.approved !== true && <button type="button" onClick={() => setRevisionOpen(true)} disabled={reviewLoading || !generatedLessonKey} style={{ padding: '10px 15px', border: '1px solid #d1d5db', borderRadius: 9, background: '#fff', color: '#374151', fontWeight: 700, cursor: 'pointer' }}>Regenerate with changes</button>}
+            {generatedLessonDraft?.approved !== true && generatedLessonKey && <button type="button" onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)} style={{ padding: '10px 15px', border: '1px solid #d1d5db', borderRadius: 9, background: '#fff', color: '#374151', fontWeight: 700, cursor: 'pointer' }}>Edit draft</button>}
+            {generatedLessonDraft?.approved !== true && <button type="button" onClick={() => void leaveGeneratedLessonAsDraft()} disabled={reviewLoading || !generatedLessonKey} style={{ padding: '10px 15px', border: '1px solid #d1d5db', borderRadius: 9, background: '#fff', color: '#374151', fontWeight: 700, cursor: 'pointer' }}>Leave as draft</button>}
+          </div>
+        </section>
+      ) : generatorMode === 'simple' ? (
         <section style={{ display: 'grid', gap: 14 }}>
           <form onSubmit={proposeSimpleLesson} style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 14, padding: 20, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
             {learners.length > 0 && (
@@ -1141,7 +1286,7 @@ export default function LessonMakerPage(){
       )}
 
       {/* ── Planner promo card ── */}
-      <div
+      {!isReviewMode && <div
         onClick={() => router.push('/facilitator/syllabus')}
         role="button"
         tabIndex={0}
@@ -1171,7 +1316,7 @@ export default function LessonMakerPage(){
         <div style={{ fontSize: 13, fontWeight: 700, color: '#2563eb', whiteSpace: 'nowrap' }}>
           Open Syllabus →
         </div>
-      </div>
+      </div>}
     </main>
 
     <LessonRevisionDialog
@@ -1179,8 +1324,13 @@ export default function LessonMakerPage(){
       lessonKey={generatedLessonKey || ''}
       lessonTitle={form.title || 'lesson'}
       onClose={() => setRevisionOpen(false)}
-      onRevised={async () => {
+      onRevised={async (result) => {
         setMessage('')
+        setReviewError('')
+        if (result?.identity?.lessonKey) setGeneratedLessonKey(result.identity.lessonKey)
+        if (result?.lesson) setGeneratedLessonDraft(result.lesson)
+        else if (generatedLessonKey) await loadGeneratedLessonReview(generatedLessonKey)
+        setGeneratorMode('review')
         setToast({ message: 'Lesson regenerated and returned to draft for review', type: 'success' })
       }}
     />

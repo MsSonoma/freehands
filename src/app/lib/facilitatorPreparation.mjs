@@ -210,56 +210,6 @@ export function buildCanonicalLessonIdentity({ file, ownerId, storagePath } = {}
   }
 }
 
-export function canTransitionPreparationStage(fromStage, toStage) {
-  if (
-    fromStage === FACILITATOR_PREPARATION_STAGES.DRAFT
-    && toStage === FACILITATOR_PREPARATION_STAGES.DELIVERY
-  ) {
-    return true
-  }
-  const fromIndex = STAGE_ORDER.indexOf(fromStage)
-  const toIndex = STAGE_ORDER.indexOf(toStage)
-  if (fromIndex === -1 || toIndex === -1) return false
-  if (fromStage === FACILITATOR_PREPARATION_STAGES.COMPLETE) return false
-  return toIndex === fromIndex || toIndex === fromIndex + 1 || toStage === FACILITATOR_PREPARATION_STAGES.NEED
-}
-
-export function resolveConfirmedLessonApproval(response = {}, fallbackIdentity = null) {
-  if (response?.approved !== true || response?.lesson?.approved !== true) return null
-  const lessonIdentity = response.identity || fallbackIdentity
-  if (!lessonIdentity?.file || !lessonIdentity?.lessonKey) return null
-  return {
-    stage: FACILITATOR_PREPARATION_STAGES.DELIVERY,
-    lessonIdentity,
-    lesson: response.lesson,
-  }
-}
-
-export function snapshotLearnerId(snapshot = {}) {
-  return cleanString(snapshot?.learnerId || snapshot?.intent?.learnerId || snapshot?.proposal?.learnerId, 120)
-}
-
-export function resolvePreparationLearnerRecovery(snapshot = {}, learners = []) {
-  const normalized = normalizePreparationSnapshot(snapshot)
-  if (!normalized || normalized.stage === FACILITATOR_PREPARATION_STAGES.COMPLETE) return null
-  const missingLearnerId = snapshotLearnerId(normalized)
-  if (!missingLearnerId || !Array.isArray(learners) || learners.length === 0) return null
-  if (learners.some((learner) => learner?.id === missingLearnerId)) return null
-  return { missingLearnerId, stage: normalized.stage }
-}
-
-export function reassignPreparationSnapshotLearner(snapshot = {}, learnerId = '') {
-  const normalized = normalizePreparationSnapshot(snapshot)
-  const nextLearnerId = cleanString(learnerId, 120)
-  if (!normalized || !nextLearnerId) return null
-  return {
-    ...normalized,
-    learnerId: nextLearnerId,
-    intent: normalized.intent ? { ...normalized.intent, learnerId: nextLearnerId } : null,
-    proposal: normalized.proposal ? { ...normalized.proposal, learnerId: nextLearnerId } : null,
-  }
-}
-
 export function normalizePreparationSnapshot(snapshot = {}) {
   if (!snapshot || typeof snapshot !== 'object' || Array.isArray(snapshot)) return null
   if (Number(snapshot.version) !== FACILITATOR_PREPARATION_VERSION) return null

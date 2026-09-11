@@ -74,6 +74,7 @@ export default function CalendarPage() {
   const forecastAttempt = useRef('')
   const forecastRequestSequence = useRef(0)
   const forecastViewIdentity = useRef('')
+  const returnFocusRef = useRef({ date: '', lessonKey: '', occurrenceId: '' })
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -82,6 +83,8 @@ export default function CalendarPage() {
       router.replace('/facilitator/syllabus')
       return
     }
+    if (landing.learnerId) setSelectedLearnerId(landing.learnerId)
+    returnFocusRef.current = { date: dateOnly(landing.date), lessonKey: landing.lessonKey || '', occurrenceId: landing.occurrenceId || '' }
     if (landing.openPortfolio) setShowPortfolio(true)
   }, [router])
 
@@ -105,8 +108,9 @@ export default function CalendarPage() {
         if (cancelled) return
         const token = session?.access_token || ''
         setAccessToken(token)
-        setLearners(Array.isArray(learnerRows) ? learnerRows : [])
-        setSelectedLearnerId((current) => current || learnerRows?.[0]?.id || '')
+        const safeLearners = Array.isArray(learnerRows) ? learnerRows : []
+        setLearners(safeLearners)
+        setSelectedLearnerId((current) => safeLearners.some((learner) => String(learner.id) === String(current)) ? current : (safeLearners[0]?.id || ''))
         if (token) {
           const quotaResponse = await fetch('/api/lessons/quota', { headers: { Authorization: `Bearer ${token}` } })
           if (quotaResponse.ok) {
@@ -135,7 +139,7 @@ export default function CalendarPage() {
       if (!response.ok) throw new Error(json.error || 'Could not load the Syllabus calendar')
       setSyllabus(json)
       setForecastRefreshSequence((current) => current + 1)
-      setSelectedDate((current) => current || json.resolved_today || '')
+      setSelectedDate((current) => current || returnFocusRef.current.date || json.resolved_today || '')
     } catch (cause) {
       setSyllabus(null)
       setError(cause?.message || 'Could not load the Syllabus calendar')
@@ -192,6 +196,24 @@ export default function CalendarPage() {
     noSchoolDates: syllabus?.no_school_dates || [],
   }), [syllabus?.timeline_items, syllabus?.proposed_learning_forecast?.forecast_items, syllabus?.no_school_dates])
   const selectedItems = selectedDate ? (itemsByDate[selectedDate] || []) : []
+  useEffect(() => {
+    const focus = returnFocusRef.current
+    if (!focus.date || !syllabus) return
+    if (selectedDate !== focus.date) {
+      setSelectedDate(focus.date)
+      return
+    }
+    if (focus.lessonKey || focus.occurrenceId) {
+      const match = (itemsByDate[focus.date] || []).find((candidate) => {
+        const occurrence = String(candidate?.occurrence_id || candidate?.id || '')
+        const sourceOccurrence = String(candidate?.source_occurrence_id || '')
+        if (focus.occurrenceId && (occurrence === focus.occurrenceId || sourceOccurrence === focus.occurrenceId)) return true
+        return focus.lessonKey && String(candidate?.lesson_key || '') === focus.lessonKey
+      })
+      if (match) selectCalendarItem(match)
+    }
+    returnFocusRef.current = { date: '', lessonKey: '', occurrenceId: '' }
+  }, [itemsByDate, selectedDate, syllabus]) // eslint-disable-line react-hooks/exhaustive-deps
   const activeRevisionId = String(syllabus?.active_revision?.id || '')
   const resolvedToday = syllabus?.resolved_today || selectedDate || ''
   const currentTargetForecastWeek = resolvedToday ? moveSyllabusWeek(null, 'later', resolvedToday) : ''
@@ -612,6 +634,7 @@ export default function CalendarPage() {
           planTier={planTier}
           resolvedToday={resolvedToday}
           activeRevisionId={activeRevisionId}
+          workflowSource="calendar"
           onChanged={refreshPlanningViews}
           onClose={() => setSelectedLesson(null)}
           onEditConcept={editPlannedConcept}

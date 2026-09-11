@@ -246,7 +246,7 @@ test('production Syllabus callers expose selection only where the host supplies 
   assert.equal(syllabusActionPresentation({ action: { id: 'history' }, role: 'facilitator', capabilities: { reviewHistory: true } }), 'button')
   assert.equal(syllabusActionPresentation({ action: { id: 'materialize' }, role: 'facilitator' }), 'hidden')
   assert.equal(syllabusActionPresentation({ action: { id: 'materialize' }, role: 'facilitator', capabilities: { lessonActions: true } }), 'button')
-  assert.equal(syllabusActionPresentation({ action: { id: 'view' }, href: '/facilitator/prepare', role: 'facilitator' }), 'link')
+  assert.equal(syllabusActionPresentation({ action: { id: 'view' }, href: '/facilitator/generator?mode=review', role: 'facilitator' }), 'link')
   assert.ok(!document.includes("presentation === 'hidden'") && !document.includes('actionCapabilities='))
   assert.match(document, /onSelectLesson/)
   assert.doesNotMatch(home, /actionCapabilities=/)

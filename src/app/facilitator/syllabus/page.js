@@ -11,10 +11,10 @@ import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
 import SyllabusDayActionDialog from '@/app/components/syllabus/SyllabusDayActionDialog'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
-import { ensureFacilitatorPinException, requestFacilitatorPinException } from '@/app/lib/pinGate'
+import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
-import { addWeeklyPatternSlot, moveSyllabusWeek, removeWeeklyPatternSlot, syllabusEntitlementsFor, weeklyPatternCapacity } from '@/app/lib/syllabus/timeline.mjs'
+import { addWeeklyPatternSlot, moveSyllabusWeek, removeWeeklyPatternSlot, startOfSyllabusWeek, syllabusEntitlementsFor, weeklyPatternCapacity } from '@/app/lib/syllabus/timeline.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '@/app/lib/syllabus/forecastRequestIdentity.mjs'
 import { buildLessonSchedulePayload, buildSchedulableLessonOptions, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
@@ -27,6 +27,7 @@ import {
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { CORE_SUBJECTS } from '@/app/lib/subjects'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
+import { buildLessonGeneratorReviewHref, buildLessonWorkflowReturnHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import styles from './syllabus.module.css'
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
@@ -190,6 +191,7 @@ export default function SyllabusPage() {
   const [legacyWebbCompletions, setLegacyWebbCompletions] = useState({})
   const [error, setError] = useState('')
   const [selectedWeekStart, setSelectedWeekStart] = useState('')
+  const [returnFocus, setReturnFocus] = useState({ plannedDate: '', lessonKey: '', occurrenceId: '' })
   const [editingSection, setEditingSection] = useState('')
   const [conceptEditor, setConceptEditor] = useState(null)
   const [replacingLineage, setReplacingLineage] = useState('')
@@ -232,9 +234,15 @@ export default function SyllabusPage() {
         if (cancelled) return
         const safeItems = Array.isArray(items) ? items.filter((item) => /^[0-9a-f-]{36}$/i.test(String(item.id))) : []
         const remembered = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : ''
+        const returnParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+        const requestedLearner = returnParams.get('learnerId') || ''
+        const returnDate = returnParams.get('date') || ''
+        const preferredLearner = safeItems.some((item) => String(item.id) === String(requestedLearner)) ? requestedLearner : remembered
+        if (returnDate) setSelectedWeekStart(startOfSyllabusWeek(returnDate))
+        setReturnFocus({ plannedDate: returnDate, lessonKey: returnParams.get('lessonKey') || '', occurrenceId: returnParams.get('occurrenceId') || '' })
         setToken(session?.access_token || '')
         setLearners(safeItems)
-        setLearnerId(safeItems.some((item) => String(item.id) === remembered) ? remembered : (safeItems[0]?.id || ''))
+        setLearnerId(safeItems.some((item) => String(item.id) === String(preferredLearner)) ? preferredLearner : (safeItems[0]?.id || ''))
         if (session?.user) {
           const { data: profile } = await supabase.from('profiles').select('plan_tier,subscription_tier').eq('id', session.user.id).maybeSingle()
           if (!cancelled) setPlanTier(resolveEffectiveTier(profile?.subscription_tier, profile?.plan_tier))
@@ -776,12 +784,7 @@ export default function SyllabusPage() {
       return
     }
 
-    if (!item?.lesson_key || action?.id !== 'repeat') return
-    const allowed = await ensureFacilitatorPinException({
-      message: `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to prepare it as a deliberate repeat.`,
-    })
-    if (!allowed) return
-    router.push(`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=DELIVERY&repeat=1`)
+    return
   }
 
   async function scheduleSlateSession() {
@@ -879,6 +882,7 @@ export default function SyllabusPage() {
     setSyllabusHydrated(false)
     setForecastBusy(false)
     setSelectedWeekStart('')
+    setReturnFocus({ plannedDate: '', lessonKey: '', occurrenceId: '' })
     setEditingSection('')
     setConceptEditor(null)
     setHistoryOccurrenceId('')
@@ -893,15 +897,14 @@ export default function SyllabusPage() {
 
   function openFacilitatorLessonWorkflow(item) {
     if (!item?.lesson_key) return
-    const learner = encodeURIComponent(learnerId)
-    const key = encodeURIComponent(item.lesson_key)
-    const stage = item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'
-    const occurrenceId = String(item.occurrence_id || '').trim()
-    const revisionId = String(syllabus?.active_revision?.id || '').trim()
-    const occurrenceContext = occurrenceId
-      ? `&occurrenceId=${encodeURIComponent(occurrenceId)}${revisionId ? `&expectedActiveRevisionId=${encodeURIComponent(revisionId)}` : ''}`
-      : ''
-    router.push(`/facilitator/prepare?learnerId=${learner}&lessonKey=${key}&stage=${stage}${occurrenceContext}`)
+    router.push(buildLessonGeneratorReviewHref({
+      learnerId,
+      lessonKey: item.lesson_key,
+      source: 'syllabus',
+      plannedDate: dateOnly(item.planned_date),
+      occurrenceId: String(item.occurrence_id || '').trim(),
+      expectedActiveRevisionId: String(syllabus?.active_revision?.id || '').trim(),
+    }))
   }
 
   function openReviewHistory(item) {
@@ -1007,7 +1010,7 @@ export default function SyllabusPage() {
 
             <section className={`${styles.section} ${styles.forecast}`}>
               <div className={styles.forecastHeader}><div><p className={styles.eyebrow}>{draft ? 'Future direction' : 'Educational record and future plan'}</p><h2>{draft ? 'Future plan' : 'Lesson timeline'}</h2></div><span>{displayForecast.length} item{displayForecast.length === 1 ? '' : 's'}</span></div>
-              {forecastGroups.length ? forecastGroups.map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><div><strong>{item.subject}:</strong> {item.title}{item.description && <p>{item.description}</p>}{!draft && item.placement_kind === 'inferred' && <em> Provisional weekly-pattern placement</em>}{!draft && item.placement_kind === 'scheduled' && <em> Explicit calendar date</em>}{!draft && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <><br /><a href={`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}`}>{item.readiness_state === 'draft' ? 'Prepare / review draft' : 'Open lesson details'}</a></>}</div></li>)}</ul></div>) : <p className={styles.muted}>No learner-specific lessons are recorded yet.</p>}
+              {forecastGroups.length ? forecastGroups.map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><div><strong>{item.subject}:</strong> {item.title}{item.description && <p>{item.description}</p>}{!draft && item.placement_kind === 'inferred' && <em> Provisional weekly-pattern placement</em>}{!draft && item.placement_kind === 'scheduled' && <em> Explicit calendar date</em>}{!draft && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <><br /><a href={item.readiness_state === 'draft' ? buildLessonGeneratorReviewHref({ learnerId, lessonKey: item.lesson_key, source: 'syllabus', plannedDate: item.planned_date, occurrenceId: item.occurrence_id || '', expectedActiveRevisionId: syllabus?.active_revision?.id || '' }) : buildLessonWorkflowReturnHref({ source: 'syllabus', learnerId })}>{item.readiness_state === 'draft' ? 'Review draft' : 'Open in Syllabus'}</a></>}</div></li>)}</ul></div>) : <p className={styles.muted}>No learner-specific lessons are recorded yet.</p>}
             </section>
           </div> : <SyllabusDocument
               revision={syllabus.active_revision}
@@ -1034,6 +1037,9 @@ export default function SyllabusPage() {
               onSuggestSlot={planningAccess.can_change_intent && syllabusHydrated ? suggestFutureSlot : null}
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
               restoreWeekStart={selectedWeekStart}
+              focusPlannedDate={returnFocus.plannedDate}
+              focusLessonKey={returnFocus.lessonKey}
+              focusOccurrenceId={returnFocus.occurrenceId}
               today={syllabus.resolved_today}
               contentLoading={contentLoading && !Array.isArray(syllabus.timeline_items)}
             />}
@@ -1045,6 +1051,7 @@ export default function SyllabusPage() {
             planTier={planTier}
             resolvedToday={syllabus?.resolved_today || ''}
             activeRevisionId={syllabus?.active_revision?.id || ''}
+            workflowSource="syllabus"
             onChanged={() => loadCurrent()}
             onClose={() => setSelectedSyllabusLesson(null)}
             onOpenLesson={(item) => openFacilitatorLessonWorkflow(item)}
@@ -1053,7 +1060,6 @@ export default function SyllabusPage() {
             canScheduleLessons={canScheduleLessons}
             onSchedule={(item) => { void handleLessonAction(item, { id: item.is_explicit_schedule ? 'reschedule' : 'schedule' }) }}
             onReviewHistory={(item) => openReviewHistory(item)}
-            onRepeat={(item) => { setSelectedSyllabusLesson(null); void handleLessonAction(item, { id: 'repeat' }) }}
             onScheduleSlate={(item) => { void handleLessonAction(item, { id: 'schedule_slate' }) }}
             onRemoveSlateSchedule={(item) => { void handleLessonAction(item, { id: 'remove_slate_schedule' }) }}
             slateBusy={slateAssignmentBusy === selectedSyllabusLesson.occurrenceKey}

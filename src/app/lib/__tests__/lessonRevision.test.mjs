@@ -47,7 +47,6 @@ test('request-changes resets shared state before writing revised content', () =>
 test('generated lesson authoring surfaces share the canonical regeneration dialog', () => {
   const directDialogFiles = [
     '../../components/syllabus/FacilitatorSyllabusLessonOverlay.js',
-    '../../facilitator/prepare/page.js',
     '../../facilitator/generator/page.js',
     '../../facilitator/lessons/page.js',
     '../../facilitator/generator/counselor/overlays/GeneratedLessonsOverlay.jsx',
@@ -57,6 +56,8 @@ test('generated lesson authoring surfaces share the canonical regeneration dialo
     assert.match(source, /LessonRevisionDialog/, path)
     assert.match(source, /Regenerate with changes|revisionTarget|revisionOpen/, path)
   }
+  const compatibility = fs.readFileSync(new URL('../../facilitator/prepare/page.js', import.meta.url), 'utf8')
+  assert.doesNotMatch(compatibility, /LessonRevisionDialog|Regenerate with changes/)
   const calendar = fs.readFileSync(new URL('../../facilitator/calendar/page.js', import.meta.url), 'utf8')
   assert.match(calendar, /FacilitatorSyllabusLessonOverlay/)
   assert.match(calendar, /syllabusCalendarSelection/)

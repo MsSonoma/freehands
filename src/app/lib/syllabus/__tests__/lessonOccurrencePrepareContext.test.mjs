@@ -2,105 +2,67 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
-const facilitatorPageSource = fs.readFileSync(
-  new URL('../../../facilitator/syllabus/page.js', import.meta.url),
-  'utf8',
-)
-const prepareSource = fs.readFileSync(
-  new URL('../../../facilitator/prepare/page.js', import.meta.url),
-  'utf8',
-)
+import { buildLessonGeneratorReviewHref } from '../../facilitatorLessonWorkflow.mjs'
 
-function sourceBetween(source, startMarker, endMarker) {
-  const normalizedSource = source.replace(/\r\n/g, '\n')
-  const start = normalizedSource.indexOf(startMarker)
-  const end = normalizedSource.indexOf(endMarker, start + startMarker.length)
+const syllabusSource = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const generatorSource = fs.readFileSync(new URL('../../../facilitator/generator/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const prepareSource = fs.readFileSync(new URL('../../../facilitator/prepare/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const documentSource = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+
+function between(source, startMarker, endMarker) {
+  const start = source.indexOf(startMarker)
+  const end = source.indexOf(endMarker, start + startMarker.length)
   assert.notEqual(start, -1, `Missing source marker: ${startMarker}`)
   assert.notEqual(end, -1, `Missing source marker: ${endMarker}`)
-  return normalizedSource.slice(start, end)
+  return source.slice(start, end)
 }
 
-const lessonWorkflowSource = sourceBetween(
-  facilitatorPageSource,
-  'function openFacilitatorLessonWorkflow(item) {',
-  '\n\n  function openReviewHistory',
-)
-const occurrenceContextSource = sourceBetween(
-  lessonWorkflowSource,
-  'const occurrenceId =',
-  '\n    router.push',
-)
-const initialUrlParsingSource = sourceBetween(
-  prepareSource,
-  'const params = new URLSearchParams(window.location.search)',
-  '\n        if (paramOriginalScheduledDate)',
-)
-const persistSource = sourceBetween(
-  prepareSource,
-  'function persist(nextStage, extras = {}) {',
-  '\n  function activeBoundaries()',
-)
-const reassignmentSource = sourceBetween(
-  prepareSource,
-  'const reassigned = reassignPreparationSnapshotLearner({',
-  '\n    }, learnerId)',
-)
+const openWorkflow = between(syllabusSource, 'function openFacilitatorLessonWorkflow(item) {', '\n\n  function openReviewHistory')
 
-test('Prepare occurrenceId comes only from a non-empty item.occurrence_id', () => {
-  assert.match(occurrenceContextSource, /String\(item\.occurrence_id \|\| ''\)\.trim\(\)/)
-  assert.match(occurrenceContextSource, /occurrenceId=\$\{encodeURIComponent\(occurrenceId\)\}/)
+test('Syllabus draft review sends exact occurrence authority into Lesson Generator', () => {
+  assert.match(openWorkflow, /buildLessonGeneratorReviewHref/)
+  assert.match(openWorkflow, /occurrenceId: String\(item\.occurrence_id \|\| ''\)\.trim\(\)/)
+  assert.match(openWorkflow, /expectedActiveRevisionId: String\(syllabus\?\.active_revision\?\.id \|\| ''\)\.trim\(\)/)
+  assert.doesNotMatch(openWorkflow, /item\.id|lineage_id/)
 })
 
-test('Prepare expectedActiveRevisionId comes from revision.id', () => {
-  assert.match(lessonWorkflowSource, /const revisionId = String\(syllabus\?\.active_revision\?\.id \|\| ''\)\.trim\(\)/)
-  assert.match(occurrenceContextSource, /expectedActiveRevisionId=\$\{encodeURIComponent\(revisionId\)\}/)
+test('review href preserves date, occurrence, and active revision without treating date as occurrence authority', () => {
+  const href = buildLessonGeneratorReviewHref({
+    learnerId: 'learner-1',
+    lessonKey: 'generated/fractions.json',
+    source: 'syllabus',
+    plannedDate: '2026-09-11',
+    occurrenceId: 'forecast:lineage-1',
+    expectedActiveRevisionId: 'revision-1',
+  })
+  const url = new URL(`http://localhost${href}`)
+  assert.equal(url.pathname, '/facilitator/generator')
+  assert.equal(url.searchParams.get('plannedDate'), '2026-09-11')
+  assert.equal(url.searchParams.get('occurrenceId'), 'forecast:lineage-1')
+  assert.equal(url.searchParams.get('expectedActiveRevisionId'), 'revision-1')
 })
 
-test('schedule and reschedule stay native while the detail-overlay Prepare workflow keeps occurrence context', () => {
-  assert.match(facilitatorPageSource, /if \(\['schedule', 'reschedule'\]\.includes\(action\?\.id\)\)/)
-  assert.doesNotMatch(lessonWorkflowSource, /scheduleId=|originalScheduledDate=/)
-  assert.match(lessonWorkflowSource, /facilitator\/prepare\?[^\r\n]+\$\{occurrenceContext\}/)
+test('Generator reads exact review context and returns it with the approved lesson identity', () => {
+  assert.match(generatorSource, /params\.get\('occurrenceId'\)/)
+  assert.match(generatorSource, /params\.get\('expectedActiveRevisionId'\)/)
+  assert.match(generatorSource, /buildLessonWorkflowReturnHref\(\{ source: entryContext\.source, learnerId: intendedLearnerId, plannedDate: entryContext\.plannedDate, lessonKey: generatedLessonKey, occurrenceId: entryContext\.occurrenceId \}\)/)
 })
 
-test('item.id is not a fallback for occurrenceId', () => {
-  assert.doesNotMatch(occurrenceContextSource, /item\.id/)
+test('Syllabus return opens the correct week and focuses the exact lesson or occurrence', () => {
+  assert.match(syllabusSource, /startOfSyllabusWeek\(returnDate\)/)
+  assert.match(syllabusSource, /setReturnFocus\(\{ plannedDate: returnDate, lessonKey: returnParams\.get\('lessonKey'\) \|\| '', occurrenceId: returnParams\.get\('occurrenceId'\) \|\| '' \}\)/)
+  assert.match(documentSource, /focusOccurrenceId/)
+  assert.match(documentSource, /focusPlannedDate/)
+  assert.match(documentSource, /dateOnly\(candidate\?\.planned_date\) === dateOnly\(focusPlannedDate\)/)
+  assert.match(documentSource, /sourceOccurrence === String\(focusOccurrenceId\)/)
+  assert.match(documentSource, /String\(candidate\?\.lesson_key \|\| ''\) === String\(focusLessonKey\)/)
+  assert.match(documentSource, /onSelectLesson\(match,/)
 })
 
-test('lineage_id is not exact occurrence authority', () => {
-  assert.doesNotMatch(occurrenceContextSource, /lineage_id/)
-})
-
-test('planned_date is not exact occurrence authority', () => {
-  assert.doesNotMatch(occurrenceContextSource, /planned_date/)
-})
-
-test('Prepare reads occurrenceId from the URL', () => {
-  assert.match(initialUrlParsingSource, /params\.get\(['"]occurrenceId['"]\)/)
-})
-
-test('Prepare reads expectedActiveRevisionId from the URL', () => {
-  assert.match(initialUrlParsingSource, /params\.get\(['"]expectedActiveRevisionId['"]\)/)
-})
-
-test('Prepare stores exact occurrence URL values in dedicated ephemeral state', () => {
-  assert.match(prepareSource, /const\s+\[syllabusOccurrenceId,\s*setSyllabusOccurrenceId\]\s*=\s*useState\(['"]{2}\)/)
-  assert.match(prepareSource, /const\s+\[syllabusExpectedActiveRevisionId,\s*setSyllabusExpectedActiveRevisionId\]\s*=\s*useState\(['"]{2}\)/)
-  assert.match(initialUrlParsingSource, /setSyllabusOccurrenceId\(paramOccurrenceId\)/)
-  assert.match(initialUrlParsingSource, /setSyllabusExpectedActiveRevisionId\(paramExpectedActiveRevisionId\)/)
-})
-
-test('ephemeral occurrence state is excluded from snapshot and persist objects', () => {
-  const directUrlSnapshotSource = sourceBetween(
-    prepareSource,
-    'writePreparationSnapshot({',
-    '\n          })',
-  )
-  for (const source of [directUrlSnapshotSource, persistSource, reassignmentSource]) {
-    assert.doesNotMatch(source, /syllabusOccurrenceId|syllabusExpectedActiveRevisionId/)
-  }
-})
-
-test('ephemeral occurrence state is not written to localStorage', () => {
-  assert.doesNotMatch(prepareSource, /localStorage[^\r\n]*(?:syllabusOccurrenceId|syllabusExpectedActiveRevisionId)/)
-  assert.doesNotMatch(prepareSource, /(?:syllabusOccurrenceId|syllabusExpectedActiveRevisionId)[^\r\n]*localStorage/)
+test('legacy Prepare handoff forwards exact context without persisting a new preparation workflow', () => {
+  assert.match(prepareSource, /params\.get\('occurrenceId'\)/)
+  assert.match(prepareSource, /params\.get\('expectedActiveRevisionId'\)/)
+  assert.match(prepareSource, /buildLessonGeneratorReviewHref\(\{ learnerId, lessonKey, source, plannedDate, occurrenceId, expectedActiveRevisionId \}\)/)
+  assert.match(prepareSource, /clearPreparationSnapshot\(\)/)
+  assert.doesNotMatch(prepareSource, /writePreparationSnapshot|syllabusOccurrenceId|syllabusExpectedActiveRevisionId/)
 })

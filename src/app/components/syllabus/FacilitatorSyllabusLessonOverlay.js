@@ -10,6 +10,7 @@ import { ensureFacilitatorPinException, requestFacilitatorPinException } from '@
 import { featuresForTier } from '@/app/lib/entitlements'
 import { buildLessonSchedulePayload, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { buildLessonGeneratorReviewHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import styles from './FacilitatorSyllabusLessonOverlay.module.css'
 
 function dateOnly(value) {
@@ -63,6 +64,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   planTier = 'free',
   resolvedToday = '',
   activeRevisionId = '',
+  workflowSource = 'syllabus',
   onChanged = null,
   onClose,
   onOpenLesson,
@@ -102,6 +104,9 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [slateEditorOpen, setSlateEditorOpen] = useState(false)
   const [slateDate, setSlateDate] = useState('')
   const [revisionOpen, setRevisionOpen] = useState(false)
+  const [repeatMode, setRepeatMode] = useState(false)
+  const [learnerLessonBound, setLearnerLessonBound] = useState(false)
+  const [removalBusy, setRemovalBusy] = useState('')
   const [forecastChangeOpen, setForecastChangeOpen] = useState(false)
   const [forecastChangeRequest, setForecastChangeRequest] = useState('')
   const [conceptEditMode, setConceptEditMode] = useState('')
@@ -125,12 +130,35 @@ export default function FacilitatorSyllabusLessonOverlay({
     setSlateEditorOpen(false)
     setSlateDate('')
     setRevisionOpen(false)
+    setRepeatMode(false)
+    setLearnerLessonBound(false)
+    setRemovalBusy('')
     setForecastChangeOpen(false)
     setForecastChangeRequest('')
     setConceptEditMode('')
     setConceptTitle('')
     setConceptDescription('')
   }, [item, selection?.assignedTeacher])
+
+  useEffect(() => {
+    setLearnerLessonBound(false)
+    if (!learnerId || !accessToken || !item?.lesson_key) return undefined
+    let cancelled = false
+    ;(async () => {
+      try {
+        const params = new URLSearchParams({ learnerId, lessonKey: item.lesson_key })
+        const response = await fetch(`/api/facilitator/learners/lesson-availability?${params}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        const json = await response.json().catch(() => ({}))
+        if (!cancelled && response.ok) setLearnerLessonBound(json?.currentlyBound === true)
+      } catch {
+        if (!cancelled) setLearnerLessonBound(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [accessToken, item?.lesson_key, learnerId])
 
   if (!item) return null
 
@@ -147,14 +175,18 @@ export default function FacilitatorSyllabusLessonOverlay({
   const occurrenceId = String(item.occurrence_id || item.id || '').trim()
   const sourceOccurrenceId = String(item.source_occurrence_id || occurrenceId).trim()
   const historyOccurrenceId = occurrenceId.startsWith('actual:') || occurrenceId.startsWith('historical:') ? occurrenceId : ''
+  const exactOccurrenceIsProtected = sourceOccurrenceId.startsWith('actual:') || sourceOccurrenceId.startsWith('historical:')
+  const canRemoveExactOccurrence = coreAuthority && canChangeIntent && Boolean(sourceOccurrenceId) && !exactOccurrenceIsProtected
+  const canRemoveFromLearner = coreAuthority && learnerLessonBound === true && !isHistorical
   const historyAvailable = Boolean(historyOccurrenceId) && (typeof onReviewHistory === 'function' || coreAuthority)
-  const schedulingAvailable = effectiveCanSchedule && isLesson && item.lesson_key && item.historical_record !== true && item.placement_kind !== 'actual' && !isDraft && (typeof onSchedule === 'function' || coreAuthority)
+  const repeatDeliveryActive = repeatMode && selection.syllabus_state === 'completed_historical'
+  const schedulingAvailable = effectiveCanSchedule && isLesson && item.lesson_key && !isDraft && (!isHistorical || repeatDeliveryActive) && (typeof onSchedule === 'function' || coreAuthority)
   const teacherEditable = isLesson && item.lesson_key && selection.teacherEditable && (typeof onTeacherAssignment === 'function' || coreAuthority)
-  const canDeliver = isLesson && item.lesson_key && !isDraft && !isHistorical && coreAuthority
+  const canDeliver = isLesson && item.lesson_key && !isDraft && (!isHistorical || repeatDeliveryActive) && coreAuthority
   const canEditOwnedLesson = isLesson && String(item.lesson_key || '').startsWith('generated/') && !isHistorical
   const canRegenerateOwnedLesson = canEditOwnedLesson && coreAuthority
   const canScheduleSlateCore = isLesson && item.lesson_key && !isDraft && !isHistorical && coreAuthority
-  const canRepeat = selection.syllabus_state === 'completed_historical' && isLesson && item.lesson_key && (typeof onRepeat === 'function' || coreAuthority)
+  const canRepeat = !repeatDeliveryActive && selection.syllabus_state === 'completed_historical' && isLesson && item.lesson_key && (typeof onRepeat === 'function' || coreAuthority)
   const availableToLearner = localAvailable || item.readiness_state === 'available'
   const displayedDate = localPlannedDate || dateOnly(item.planned_date)
 
@@ -304,7 +336,9 @@ export default function FacilitatorSyllabusLessonOverlay({
       message: `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to prepare it as a deliberate repeat.`,
     })
     if (!allowed) return
-    router.push(`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=DELIVERY&repeat=1`)
+    setRepeatMode(true)
+    setLocalAvailable(false)
+    setMessage('Repeat ready. Choose Start now, Make available, or Schedule.')
   }
 
   function openSlateScheduler() {
@@ -371,10 +405,65 @@ export default function FacilitatorSyllabusLessonOverlay({
       onOpenLesson(item, selection)
       return
     }
-    const occurrenceContext = occurrenceId
-      ? `&occurrenceId=${encodeURIComponent(occurrenceId)}${activeRevisionId ? `&expectedActiveRevisionId=${encodeURIComponent(activeRevisionId)}` : ''}`
-      : ''
-    router.push(`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=DRAFT${occurrenceContext}`)
+    router.push(buildLessonGeneratorReviewHref({
+      learnerId,
+      lessonKey: item.lesson_key,
+      source: workflowSource,
+      plannedDate: dateOnly(item.planned_date),
+      occurrenceId,
+      expectedActiveRevisionId: activeRevisionId,
+    }))
+  }
+
+  async function removeExactSyllabusOccurrence() {
+    if (!canRemoveExactOccurrence) return
+    const confirmed = window.confirm('This removes only this occurrence from the Syllabus. The lesson, other occurrences, and existing learning history remain.')
+    if (!confirmed) return
+    setRemovalBusy('occurrence')
+    setCoreError('')
+    setMessage('')
+    try {
+      const payload = { learnerId, lessonKey: item.lesson_key, occurrenceId: sourceOccurrenceId }
+      if (activeRevisionId) payload.expectedActiveRevisionId = activeRevisionId
+      const response = await fetch('/api/syllabus/lesson-occurrences', {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json?.error || 'Could not remove this Syllabus occurrence')
+      onClose?.()
+      await refreshAfterChange()
+    } catch (cause) {
+      setCoreError(cause?.message || 'Could not remove this Syllabus occurrence')
+    } finally {
+      setRemovalBusy('')
+    }
+  }
+
+  async function removeLessonFromLearner() {
+    if (!canRemoveFromLearner) return
+    const confirmed = window.confirm("This removes the lesson from this learner's current and future plan and availability. The lesson itself and existing learning history remain.")
+    if (!confirmed) return
+    setRemovalBusy('learner')
+    setCoreError('')
+    setMessage('')
+    try {
+      const response = await fetch('/api/facilitator/learners/lesson-availability', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, lessonKey: item.lesson_key, available: false }),
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json?.error || 'Could not remove this lesson from the learner')
+      setLearnerLessonBound(false)
+      onClose?.()
+      await refreshAfterChange()
+    } catch (cause) {
+      setCoreError(cause?.message || 'Could not remove this lesson from the learner')
+    } finally {
+      setRemovalBusy('')
+    }
   }
 
   function editLesson() {
@@ -497,6 +586,8 @@ export default function FacilitatorSyllabusLessonOverlay({
             {isLesson && item.lesson_key && !isDraft && item.historical_record !== true && (typeof onScheduleSlate === 'function' || canScheduleSlateCore) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={openSlateScheduler}>Schedule Mr. Slate</button>}
             {isSlateAssignment && (typeof onRemoveSlateSchedule === 'function' || coreAuthority) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={() => void removeSlateSchedule()}>Remove scheduled session</button>}
             {canRepeat && <button type="button" onClick={() => void handleRepeat()}>Prepare repeat</button>}
+            {canRemoveExactOccurrence && <button type="button" disabled={Boolean(removalBusy)} onClick={() => void removeExactSyllabusOccurrence()}>{removalBusy === 'occurrence' ? 'Removing...' : 'Remove this occurrence'}</button>}
+            {canRemoveFromLearner && <button type="button" disabled={Boolean(removalBusy)} onClick={() => void removeLessonFromLearner()}>{removalBusy === 'learner' ? 'Removing...' : 'Remove lesson from learner'}</button>}
           </div>
           {isDraft && item.lesson_key && <button type="button" className={styles.primary} onClick={reviewDraft}>Review & approve draft</button>}
           {canDeliver && <button type="button" className={styles.primary} disabled={coreBusy === 'start'} onClick={() => void handleStartNow()}>{coreBusy === 'start' ? 'Starting...' : 'Start now'}</button>}

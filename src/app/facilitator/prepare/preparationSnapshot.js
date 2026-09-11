@@ -15,18 +15,6 @@ export function readPreparationSnapshot() {
   }
 }
 
-export function writePreparationSnapshot(snapshot) {
-  if (typeof window === 'undefined') return null
-  const normalized = normalizePreparationSnapshot({
-    ...snapshot,
-    version: 1,
-    updatedAt: new Date().toISOString(),
-  })
-  if (!normalized) return null
-  window.localStorage.setItem(PREPARATION_SNAPSHOT_KEY, JSON.stringify(normalized))
-  return normalized
-}
-
 export function clearPreparationSnapshot() {
   if (typeof window === 'undefined') return
   try { window.localStorage.removeItem(PREPARATION_SNAPSHOT_KEY) } catch {}

@@ -402,19 +402,12 @@ test('teacher PATCH contains no suppression-clear lifecycle', () => {
   assert.equal(typeof patchAssociation, 'function')
 })
 
-test('Prepare sends placement action only from Save for later and never sends suppression state', () => {
-  const source = fs.readFileSync(path.resolve('src/app/facilitator/prepare/page.js'), 'utf8')
-  const functionSource = (name, nextName) => source.slice(source.indexOf(`async function ${name}`), source.indexOf(`async function ${nextName}`))
-  assert.match(functionSource('saveForLater', 'saveDraftAndLeave'), /preserveLessonAssociation\(undefined, undefined, 'save_for_later'\)/)
-  for (const [name, nextName] of [
-    ['makeAvailable', 'startNow'],
-    ['startNow', 'scheduleLesson'],
-    ['scheduleLesson', 'saveForLater'],
-    ['saveDraftAndLeave', 'saveInstructionalTeacher'],
-    ['saveInstructionalTeacher', 'approveLesson'],
-  ]) {
-    assert.doesNotMatch(functionSource(name, nextName), /save_for_later/)
-  }
-  const preserveSource = functionSource('preserveLessonAssociation', 'makeAvailable')
-  assert.doesNotMatch(preserveSource, /\bsuppressed\b|inferred_placement_suppressed/)
+test('Generator association refresh never accepts client suppression state', () => {
+  const source = fs.readFileSync(path.resolve('src/app/facilitator/generator/page.js'), 'utf8')
+  const start = source.indexOf('async function refreshGeneratedLessonAssociation')
+  const end = source.indexOf('async function approveGeneratedLesson', start)
+  const refreshSource = source.slice(start, end)
+  assert.match(refreshSource, /fetch\('\/api\/syllabus\/lesson-associations'/)
+  assert.match(refreshSource, /body: JSON\.stringify\(\{ learnerId: intendedLearnerId, lessonKey \}\)/)
+  assert.doesNotMatch(refreshSource, /save_for_later|\bsuppressed\b|inferred_placement_suppressed/)
 })

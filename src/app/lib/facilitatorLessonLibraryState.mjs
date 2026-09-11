@@ -1,4 +1,5 @@
 import { normalizeLessonKey } from './lessonKeyNormalization.js'
+import { buildLessonGeneratorReviewHref, buildLessonWorkflowReturnHref } from './facilitatorLessonWorkflow.mjs'
 
 export const LIBRARY_LESSON_STATES = Object.freeze({
   DRAFT: 'draft',
@@ -15,7 +16,7 @@ export const LIBRARY_LESSON_STATES = Object.freeze({
 
 export const LIBRARY_PRIMARY_ACTIONS = Object.freeze({
   REVIEW: 'review',
-  DELIVERY: 'delivery',
+  PLAN: 'plan',
   DOWNLOAD: 'download',
   NONE: 'none',
 })
@@ -30,15 +31,6 @@ const formatScheduledDate = (value, formatter = null) => {
 
 export function resolveInitialLibraryLearner(learners = []) {
   return Array.isArray(learners) && learners.length === 1 ? learners[0] : null
-}
-
-export function buildPreparationActionHref({ learnerId, lessonKey, stage }) {
-  const canonicalKey = normalizeLessonKey(lessonKey)
-  const params = new URLSearchParams()
-  if (learnerId) params.set('learnerId', learnerId)
-  if (canonicalKey) params.set('lessonKey', canonicalKey)
-  if (stage) params.set('stage', stage)
-  return `/facilitator/prepare?${params.toString()}`
 }
 
 export function resolveLibraryLessonState({
@@ -63,83 +55,34 @@ export function resolveLibraryLessonState({
   const isExplicitGeneratedDraft = lesson?.isGenerated === true && lesson?.approved === false
   const isApprovedGenerated = lesson?.isGenerated === true && lesson?.approved === true
 
-  // Precedence: ownership/download state first; learner outcome state beats session-choice state;
-  // scheduled state beats available; session choices beat generic saved lessons.
+  // Learner outcome state beats planning state; scheduled state beats available.
+  // Draft review belongs to Generator. Approved lesson delivery belongs to Syllabus/Calendar.
   if (isDownloadableNotOwned) {
-    return {
-      stateKey: LIBRARY_LESSON_STATES.DOWNLOADABLE,
-      label: 'Available to download',
-      primaryActionType: LIBRARY_PRIMARY_ACTIONS.DOWNLOAD,
-      preparationStage: null,
-      href: null,
-      lessonKey: canonicalKey,
-    }
+    return { stateKey: LIBRARY_LESSON_STATES.DOWNLOADABLE, label: 'Available to download', primaryActionType: LIBRARY_PRIMARY_ACTIONS.DOWNLOAD, href: null, lessonKey: canonicalKey }
   }
 
   if (!learnerId) {
-    return {
-      stateKey: LIBRARY_LESSON_STATES.SELECT_LEARNER,
-      label: 'Choose a learner',
-      primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE,
-      preparationStage: null,
-      href: null,
-      lessonKey: canonicalKey,
-    }
+    return { stateKey: LIBRARY_LESSON_STATES.SELECT_LEARNER, label: 'Choose a learner', primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE, href: null, lessonKey: canonicalKey }
   }
 
   if (completedValue) {
-    return {
-      stateKey: LIBRARY_LESSON_STATES.COMPLETED,
-      label: 'Completed',
-      primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE,
-      preparationStage: null,
-      href: null,
-      lessonKey: canonicalKey,
-    }
+    return { stateKey: LIBRARY_LESSON_STATES.COMPLETED, label: 'Completed', primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE, href: null, lessonKey: canonicalKey }
   }
 
   if (inProgressValue) {
-    return {
-      stateKey: LIBRARY_LESSON_STATES.IN_PROGRESS,
-      label: 'In progress',
-      primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE,
-      preparationStage: null,
-      href: null,
-      lessonKey: canonicalKey,
-    }
+    return { stateKey: LIBRARY_LESSON_STATES.IN_PROGRESS, label: 'In progress', primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE, href: null, lessonKey: canonicalKey }
   }
 
   if (scheduledTodayValue) {
-    return {
-      stateKey: LIBRARY_LESSON_STATES.SCHEDULED_TODAY,
-      label: 'Scheduled for today',
-      primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE,
-      preparationStage: null,
-      href: null,
-      lessonKey: canonicalKey,
-    }
+    return { stateKey: LIBRARY_LESSON_STATES.SCHEDULED_TODAY, label: 'Scheduled for today', primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE, href: null, lessonKey: canonicalKey }
   }
 
   if (futureScheduledValue) {
-    return {
-      stateKey: LIBRARY_LESSON_STATES.SCHEDULED_FUTURE,
-      label: formatScheduledDate(futureScheduledValue, dateFormatter),
-      primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE,
-      preparationStage: null,
-      href: null,
-      lessonKey: canonicalKey,
-    }
+    return { stateKey: LIBRARY_LESSON_STATES.SCHEDULED_FUTURE, label: formatScheduledDate(futureScheduledValue, dateFormatter), primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE, href: null, lessonKey: canonicalKey }
   }
 
   if (deliveredNow) {
-    return {
-      stateKey: LIBRARY_LESSON_STATES.AVAILABLE,
-      label: 'Available now',
-      primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE,
-      preparationStage: null,
-      href: null,
-      lessonKey: canonicalKey,
-    }
+    return { stateKey: LIBRARY_LESSON_STATES.AVAILABLE, label: 'Available now', primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE, href: null, lessonKey: canonicalKey }
   }
 
   if (isExplicitGeneratedDraft) {
@@ -147,8 +90,7 @@ export function resolveLibraryLessonState({
       stateKey: LIBRARY_LESSON_STATES.DRAFT,
       label: 'Draft - needs your review',
       primaryActionType: LIBRARY_PRIMARY_ACTIONS.REVIEW,
-      preparationStage: 'DRAFT',
-      href: buildPreparationActionHref({ learnerId, lessonKey: canonicalKey, stage: 'DRAFT' }),
+      href: buildLessonGeneratorReviewHref({ learnerId, lessonKey: canonicalKey, source: 'library' }),
       lessonKey: canonicalKey,
     }
   }
@@ -156,10 +98,9 @@ export function resolveLibraryLessonState({
   if (isApprovedGenerated) {
     return {
       stateKey: LIBRARY_LESSON_STATES.APPROVED,
-      label: 'Approved - choose session option',
-      primaryActionType: LIBRARY_PRIMARY_ACTIONS.DELIVERY,
-      preparationStage: 'DELIVERY',
-      href: buildPreparationActionHref({ learnerId, lessonKey: canonicalKey, stage: 'DELIVERY' }),
+      label: 'Approved',
+      primaryActionType: LIBRARY_PRIMARY_ACTIONS.PLAN,
+      href: buildLessonWorkflowReturnHref({ source: 'syllabus', learnerId }),
       lessonKey: canonicalKey,
     }
   }
@@ -168,7 +109,6 @@ export function resolveLibraryLessonState({
     stateKey: LIBRARY_LESSON_STATES.SAVED,
     label: lesson?.isGenerated ? 'Saved lesson' : 'Ready in library',
     primaryActionType: LIBRARY_PRIMARY_ACTIONS.NONE,
-    preparationStage: null,
     href: null,
     lessonKey: canonicalKey,
   }
