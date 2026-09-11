@@ -94,16 +94,21 @@ test('capacity response requests the existing PIN exception and retries the iden
   ])
 })
 
-test('Syllabus placement uses the native dialog, canonical route, PIN retry, and authoritative reload', () => {
+test('Syllabus placement uses the native day dialog, unified generator, canonical schedule route, PIN retry, and authoritative reload', () => {
   const page = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
+  const generator = fs.readFileSync(new URL('../../../facilitator/generator/page.js', import.meta.url), 'utf8')
   const saveStart = page.indexOf('async function saveLessonSchedule')
   const saveSource = page.slice(saveStart, page.indexOf('async function handleLessonAction', saveStart))
   assert.match(document, /title="Add lesson or mark day off"/)
   assert.match(document, />\+<\/button>/)
   assert.match(page, /SyllabusDayActionDialog/)
-  assert.match(page, /action: 'create_day'/)
+  assert.match(page, /source: 'syllabus'/)
+  assert.match(page, /plannedDate: date/)
+  assert.match(page, /expectedActiveRevisionId: syllabus\.active_revision\.id/)
+  assert.match(page, /router\.push\(`\/facilitator\/generator\?\$\{params\.toString\(\)\}`\)/)
+  assert.match(generator, /action: 'create_day'/)
   assert.match(document, /canAddLessonToSyllabusDay/)
   assert.ok(!document.includes('const actionHref'))
   assert.ok(page.includes("if (['schedule', 'reschedule'].includes(action?.id))"))

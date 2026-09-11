@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 
-import { buildPlanAhead } from '../planning.mjs'
+import { buildFuturePlanningProjection } from '../futurePlanningProjection.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '../forecastRequestIdentity.mjs'
 import { createFacilitatorConcept, createFacilitatorDayConcept, editFacilitatorConcept, replaceLearningForecastConcept } from '../planning.server.mjs'
 import { materializeForecastOccurrence } from '../materialization.server.mjs'
@@ -40,12 +40,19 @@ function repository(initial = [], { noSchoolDates = [] } = {}) {
   }
 }
 
-test('Plan Ahead expands one to four weeks from canonical weekly pattern and places existing intent by exact slot', () => {
-  const plan = buildPlanAhead({ weeklyPattern: revision().weekly_pattern, forecastItems: [concept()], today: '2026-08-31', weeks: 4 })
-  assert.equal(plan.length, 4)
-  assert.equal(plan[0].slots.length, 3)
-  assert.equal(plan[0].slots[0].item.title, 'Fractions')
-  assert.equal(plan[3].week_start, '2026-09-28')
+test('future planning expands canonical weekly-pattern slots in place while preserving exact active intent', () => {
+  const plan = buildFuturePlanningProjection({
+    weeklyPattern: revision().weekly_pattern,
+    timelineItems: [concept()],
+    rangeStart: '2026-09-07',
+    rangeEnd: '2026-10-04',
+    today: '2026-08-31',
+    includeOpenSlots: true,
+  })
+  assert.equal(plan.active_items[0].title, 'Fractions')
+  assert.equal(plan.open_slots.length, 11)
+  assert.equal(plan.open_slots.some((slot) => slot.planned_date === '2026-09-07' && slot.sort_order === 0), false)
+  assert.equal(plan.open_slots.some((slot) => slot.planned_date === '2026-09-28'), true)
 })
 
 test('Create Your Own creates canonical facilitator intent with stable independent lineage and no artifact', async () => {
@@ -143,13 +150,16 @@ test('facilitator UI automatically POSTs forecast after authoritative refresh, k
   assert.doesNotMatch(learner, /onEditSection=/)
 })
 
-test('unified planning route enforces planning entitlement without scheduling or a second planned-lessons authority', () => {
+test('unified future-planning route enforces planning entitlement without scheduling or a second planned-lessons authority', () => {
   const route = fs.readFileSync(new URL('../../../api/syllabus/planning/route.js', import.meta.url), 'utf8')
-  const workspace = fs.readFileSync(new URL('../../../components/syllabus/SyllabusPlanningWorkspace.js', import.meta.url), 'utf8')
+  const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
+  const projection = fs.readFileSync(new URL('../futurePlanningProjection.mjs', import.meta.url), 'utf8')
   const getRoute = fs.readFileSync(new URL('../../../api/syllabus/route.js', import.meta.url), 'utf8')
   assert.match(route, /requireSyllabusFuturePlanning\(access\)/)
   assert.match(route, /createFacilitatorConcept/)
-  assert.doesNotMatch(`${route}\n${workspace}`, /plannedLessons|lesson_schedule|scheduleLesson|generate-lesson-outline/)
+  assert.match(route, /suggestFuturePlanningConcepts/)
+  assert.match(document, /buildFuturePlanningProjection/)
+  assert.doesNotMatch(`${route}\n${document}\n${projection}`, /plannedLessons|lesson_schedule|scheduleLesson|generate-lesson-outline/)
   assert.doesNotMatch(getRoute, /createLearningForecastProposal|generateInstructionalForecastItems/)
 })
 
@@ -157,7 +167,7 @@ test('Syllabus UX preserves week position and hardens overlays and async plannin
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
-  const workspace = fs.readFileSync(new URL('../../../components/syllabus/SyllabusPlanningWorkspace.js', import.meta.url), 'utf8')
+
   assert.ok(document.includes('[learnerId, restoreWeekStart, today]'))
   assert.ok(!document.includes('[revision?.id, today]'))
   assert.ok(facilitator.includes('planningRequest.current'))
@@ -166,10 +176,10 @@ test('Syllabus UX preserves week position and hardens overlays and async plannin
   assert.match(document, /forecastError &&/)
   assert.ok(detailOverlay.includes('Generate with changes'))
   assert.ok(facilitator.includes("event.key !== 'Escape'"))
-  assert.ok(workspace.includes("event.key === 'Escape'"))
-  assert.ok(workspace.includes('if (result) setEditor(null)'))
-  assert.match(workspace, /role="alert"/)
-  assert.ok(!workspace.includes('role="dialog"') && !workspace.includes('aria-modal') && !workspace.includes('styles.backdrop') && !workspace.includes('document.body.style.overflow'))
+  assert.match(document, /Open weekly slot/)
+  assert.match(document, /onPlanSlot/)
+  assert.match(document, /onSuggestSlot/)
+  assert.doesNotMatch(facilitator, /SyllabusPlanningWorkspace|planAheadOpen/)
 })
 
 test('inactive forecast presentation stays readable in the weekly document and keeps its actions in the detail overlay', () => {
@@ -178,13 +188,14 @@ test('inactive forecast presentation stays readable in the weekly document and k
   const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
   assert.ok(!facilitator.includes('styles.learningProposal') && !facilitator.includes('Proposed forecast') && !facilitator.includes('Next week&apos;s open Syllabus slots'))
   assert.ok(facilitator.includes('proposedForecastItems={learningProposal?.forecast_items || []}'))
-  assert.match(document, /Forecast lesson/)
+  assert.match(document, /AI forecast suggestion/)
+
   assert.ok(document.includes('data-forecast-lineage={item.lineage_id}'))
   assert.ok(document.includes('onSelect(item, { suggested: true, recoveryRequired })'))
   assert.doesNotMatch(document, /suggestionAction|Use this forecast|Retry forecast/)
-  for (const action of ['Forecast lesson', 'Generate lesson', 'Generate with changes', 'Create your own lesson']) assert.match(detailOverlay, new RegExp(action))
-  assert.match(detailOverlay, /one-week-ahead lesson recommendation/)
-  assert.match(document, /projectLearningForecastForWeek/)
+  for (const action of ['AI forecast suggestion', 'Generate lesson', 'Generate with changes', 'Create your own lesson']) assert.match(detailOverlay, new RegExp(action))
+  assert.match(detailOverlay, /one-week-ahead AI suggestion inside the future plan/)
+  assert.match(document, /buildFuturePlanningProjection/)
   assert.match(document, /syllabusDayPresentation/)
 })
 
@@ -192,7 +203,7 @@ test('forecast progress and failure stay quiet inside the exact target week with
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   assert.match(document, /week\.week_start === startOfSyllabusWeek\(proposedForecastTargetWeek\)/)
-  assert.match(document, /Preparing next week&apos;s lesson forecast/)
+  assert.match(document, /Preparing next week&apos;s AI lesson suggestions/)
   assert.doesNotMatch(document, /Retry forecast|Use this forecast/)
   assert.match(facilitator, /setForecastError\(cause\.message\)/)
   assert.doesNotMatch(facilitator.slice(facilitator.indexOf('async function createLearningForecast'), facilitator.indexOf('function openSectionEditor')), /setError\(cause\.message\)/)
@@ -204,24 +215,28 @@ test('forecast decisions stay per lesson: unchanged, facilitator-directed, or ed
   const model = fs.readFileSync(new URL('../learningForecastModel.server.mjs', import.meta.url), 'utf8')
   assert.match(facilitator, /generateForecastWithChanges/)
   assert.match(facilitator, /changeRequest/)
-  assert.match(facilitator, /source: 'forecast-own'/)
-  assert.match(facilitator, /Generate my lesson/)
+  const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
+  assert.match(facilitator, /createOwnForecastLesson/)
+  assert.match(detailOverlay, /conceptEditMode === 'forecast-own'/)
+  assert.match(detailOverlay, /Generate my lesson/)
   assert.match(route, /changeRequest: body\.changeRequest/)
   assert.match(model, /facilitator_change_request/)
   assert.doesNotMatch(facilitator, /activateLearningProposal/)
 })
-test('Plan Ahead is one inline Syllabus mode and the initial no-active flow remains dedicated', () => {
+test('future Syllabus weeks are the planning surface and no separate Plan Ahead workspace remains in production', () => {
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
-  const workspace = fs.readFileSync(new URL('../../../components/syllabus/SyllabusPlanningWorkspace.js', import.meta.url), 'utf8')
-  assert.match(facilitator, /planAheadOpen \? <SyllabusPlanningWorkspace/)
-  assert.equal((document.match(/>Plan ahead</g) || []).length, 1)
-  assert.doesNotMatch(workspace, /role="dialog"|aria-modal|styles\.backdrop/)
-  assert.match(workspace, /Back to week view/)
+  assert.doesNotMatch(facilitator, /SyllabusPlanningWorkspace|planAheadOpen/)
+  assert.doesNotMatch(document, />Plan ahead</)
+  assert.match(document, /FUTURE \/ PLANNING/)
+  assert.match(document, /Open weekly slot/)
+  assert.match(document, />Plan lesson</)
+  assert.match(document, />Suggest with AI</)
+  assert.match(facilitator, /onPlanSlot=/)
+  assert.match(facilitator, /onSuggestSlot=/)
   assert.match(facilitator, /This learner does not have an active Syllabus yet/)
   for (const section of ['Goals', 'Subjects', 'Weekly pattern', 'Teaching guidance']) assert.match(document, new RegExp(section, 'i'))
 })
-
 test('production Syllabus callers expose selection only where the host supplies a detail workflow', () => {
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   const home = fs.readFileSync(new URL('../../../facilitator/page.js', import.meta.url), 'utf8')

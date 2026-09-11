@@ -19,10 +19,9 @@
 .planPatternDay strong { display:block; margin-bottom:5px; color:#6b382c; font:800 10px Montserrat,sans-serif; text-transform:uppercase; }
 .planPatternDay span { display:block; color:#4f4942; font:12px/1.35 Roboto,sans-serif; overflow-wrap:anywhere; }
 .guidanceSummary { display:grid; gap:4px; }
-.timelineNav { display:grid; grid-template-columns:1fr auto 1fr auto; align-items:center; gap:8px; padding:12px 0 6px; }
+.timelineNav { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; padding:12px 0 6px; }
 .timelineNav button,.returnNow { min-height:34px; border:0; background:transparent; color:#6b382c; cursor:pointer; font:700 12px Montserrat,sans-serif; }
 .timelineNav button:first-child { justify-self:start; }.timelineNav button:nth-child(3) { justify-self:end; }.timelineNav button:disabled { opacity:.3; cursor:default; }
-.planAheadButton { margin-left:8px; padding:5px 10px!important; border-left:1px solid #cfc6b8!important; }
 .nowButton { padding:6px 12px!important; border:1px solid #ba4b36!important; background:#ba4b36!important; color:#fff!important; }
 .returnNow { display:block; margin:0 auto 6px; text-decoration:underline; }
 .week { margin-top:2px; border-top:3px solid #84796c; scroll-margin-top:72px; }
@@ -55,6 +54,12 @@
 .suggestedEntry { display:grid; gap:8px; align-items:start; margin-top:7px; padding:9px 7px 8px; border:1px dashed #c9c5bf; background:#f1f0ed; color:#77716a; opacity:.76; }
 .suggestedEntry h4 { margin:2px 0 0; color:#615c56; font-size:15px; font-weight:500; overflow-wrap:anywhere; }
 .suggestedLabel { display:inline-block; margin-top:5px; color:#817b74; font:700 10px Roboto,sans-serif; }
+.openPlanningSlot { margin-top:7px; padding:9px 7px 8px; border:1px dashed #d8d0c5; border-radius:7px; background:#fffdf8; font-family:Roboto,sans-serif; }
+.openPlanningSlot h4 { margin:2px 0 0; color:#6d6359; font:600 13px Georgia,serif; }
+.openSlotLabel { display:block; margin-top:4px; color:#8a8178; font-size:9px; line-height:1.3; }
+.openSlotActions { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+.openSlotActions button { border:1px solid #cfc6b8; border-radius:5px; background:#fff; color:#6b382c; cursor:pointer; padding:4px 6px; font:700 9px Montserrat,sans-serif; }
+.openSlotActions button:disabled { opacity:.45; cursor:default; }
 .entryBody h4 { margin:2px 0 0; font-size:15px; font-weight:500; overflow-wrap:anywhere; }.subject { margin:0;color:#6b382c; }
 .statusLabel,.placementLabel,.preparing { display:inline-block; margin:5px 6px 0 0; color:#756b61; font:700 10px Roboto,sans-serif; text-transform:capitalize; }
 .placementLabel { font-weight:500; font-style:italic; text-transform:none; }
@@ -69,4 +74,4 @@
 .entryChevron { align-self:center; color:#9a9187; font:22px/1 Georgia,serif; }
 .selectableEntry .preparing { grid-column:1 / -1; }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }
-@media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader { align-items:stretch; flex-direction:column; gap:7px; } .planDetailsBody { grid-template-columns:1fr; } .planPatternSection { grid-column:auto; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; }.planAheadButton { grid-column:1 / -1; justify-self:stretch; margin:0; border:1px solid #cfc6b8!important; } .weekHeader time { white-space:normal; } }
+@media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader { align-items:stretch; flex-direction:column; gap:7px; } .planDetailsBody { grid-template-columns:1fr; } .planPatternSection { grid-column:auto; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; }.weekHeader time { white-space:normal; } }

@@ -27,6 +27,22 @@ test('calendar projection groups the canonical Syllabus timeline by date without
   assert.equal(grouped['2026-09-11'][0].lesson_key, undefined)
 })
 
+test('calendar projection includes the inactive AI forecast as provisional future planning without overriding active intent', () => {
+  const timeline = [
+    { occurrence_id: 'syllabus:active', lineage_id: 'active', planned_date: '2026-09-14', sort_order: 0, subject: 'Math', title: 'Educator plan' },
+  ]
+  const proposals = [
+    { id: 'forecast-duplicate', lineage_id: 'forecast-duplicate', planned_date: '2026-09-14', sort_order: 0, subject: 'Math', title: 'Duplicate AI idea', origin: 'learning_forecast', lesson_key: null },
+    { id: 'forecast-science', lineage_id: 'forecast-science', planned_date: '2026-09-16', sort_order: 0, subject: 'Science', title: 'Energy transfer', origin: 'learning_forecast', lesson_key: null },
+    { id: 'forecast-off', lineage_id: 'forecast-off', planned_date: '2026-09-17', sort_order: 0, subject: 'History', title: 'Blocked suggestion', origin: 'learning_forecast', lesson_key: null },
+  ]
+  const grouped = groupSyllabusCalendarItems(timeline, { proposedForecastItems: proposals, noSchoolDates: [{ date: '2026-09-17' }] })
+  assert.equal(grouped['2026-09-14'].length, 1)
+  assert.equal(grouped['2026-09-14'][0].title, 'Educator plan')
+  assert.equal(grouped['2026-09-16'][0].planning_state, 'forecast')
+  assert.equal(grouped['2026-09-16'][0].presentation_kind, 'suggested_inactive')
+  assert.equal(grouped['2026-09-17'], undefined)
+})
 test('calendar lesson selection carries Syllabus occurrence authority into the shared overlay', () => {
   const selection = syllabusCalendarSelection({
     occurrence_id: 'syllabus:abc',
@@ -40,13 +56,37 @@ test('calendar lesson selection carries Syllabus occurrence authority into the s
   assert.equal(selection.assignedTeacher, 'webb')
   assert.equal(selection.teacherEditable, true)
   assert.equal(selection.syllabus_state, 'future_unfinished')
+  assert.equal(selection.suggested, false)
 })
 
-test('calendar production surface reads Syllabus and no longer owns planned_lessons', () => {
+test('calendar selection marks forecast proposal lineage as suggested for the shared details overlay', () => {
+  const selection = syllabusCalendarSelection({
+    occurrence_id: 'forecast:lineage-1',
+    lineage_id: 'lineage-1',
+    planned_date: '2026-09-15',
+    origin: 'learning_forecast',
+    planning_state: 'forecast',
+    presentation_kind: 'suggested_inactive',
+    lesson_key: null,
+  }, { today: '2026-09-10' })
+  assert.equal(selection.suggested, true)
+  assert.equal(selection.occurrenceKey, 'forecast:lineage-1')
+})
+
+test('calendar is a second view of the same Syllabus future plan and can refresh and act on provisional forecast lineage', () => {
   const calendar = source('facilitator/calendar/page.js')
+  const month = source('facilitator/calendar/LessonCalendar.js')
   assert.match(calendar, /\/api\/syllabus\?learnerId=/)
   assert.match(calendar, /timeline_items/)
-  assert.match(calendar, /FacilitatorSyllabusLessonOverlay/)
+  assert.match(calendar, /proposed_learning_forecast/)
+  assert.match(calendar, /fetch\('\/api\/syllabus\/forecast'/)
+  assert.match(calendar, /buildAutomaticForecastAttemptIdentity/)
+  assert.match(calendar, /\/api\/syllabus\/planning/)
+  assert.match(calendar, /\/api\/syllabus\/materialize/)
+  assert.match(calendar, /canChangeIntent=\{planningAccess\.can_change_intent\}/)
+  assert.match(calendar, /onGenerateWithChanges=\{generateForecastWithChanges\}/)
+  assert.match(month, /Forecast:/)
+  assert.doesNotMatch(calendar, /Curriculum planning stays in Syllabus|Open in Syllabus to prepare this concept/)
   assert.doesNotMatch(calendar, /\/api\/planned-lessons/)
   assert.doesNotMatch(calendar, /LessonPlanner/)
   assert.doesNotMatch(calendar, /savePlannedLessons|loadPlannedLessons/)
@@ -71,7 +111,9 @@ test('Mentor calendar and reporting use the canonical Syllabus instead of planne
   const mentorCalendar = source('facilitator/generator/counselor/overlays/CalendarOverlay.jsx')
   const counselor = source('facilitator/generator/counselor/CounselorClient.jsx')
   assert.match(mentorCalendar, /\/api\/syllabus\?learnerId=/)
-  assert.doesNotMatch(mentorCalendar, /planned-lessons|LessonPlanner/)
+  assert.match(mentorCalendar, /proposed_learning_forecast/)
+  assert.match(mentorCalendar, /AI forecast suggestion/)
+  assert.doesNotMatch(mentorCalendar, /planned-lessons|LessonPlanner|Planning changes belong in Syllabus/)
   assert.match(counselor, /Loading the Syllabus plan/)
   assert.match(counselor, /\/api\/syllabus\?learnerId=/)
   assert.doesNotMatch(counselor, /\/api\/planned-lessons/)

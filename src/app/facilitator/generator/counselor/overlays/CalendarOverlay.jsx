@@ -21,6 +21,7 @@ function statusLabel(item) {
   if (item?.actual_kind === 'completed' || item?.historical_record === true) return 'Completed'
   if (item?.actual_kind === 'in_progress') return 'In progress'
   if (item?.actual_kind === 'incomplete') return 'Incomplete'
+  if (item?.planning_state === 'forecast' || item?.presentation_kind === 'suggested_inactive') return 'AI forecast suggestion'
   if (!item?.lesson_key) return 'Planned concept'
   if (item?.item_type === 'slate_assignment') return 'Mr. Slate practice'
   return String(item?.readiness_state || 'Planned').replaceAll('_', ' ')
@@ -64,16 +65,15 @@ export default function CalendarOverlay({ learnerId, tier = 'free', accessToken 
     void loadSyllabus()
   }, [loadSyllabus])
 
-  const itemsByDate = useMemo(() => groupSyllabusCalendarItems(syllabus?.timeline_items || []), [syllabus?.timeline_items])
+  const itemsByDate = useMemo(() => groupSyllabusCalendarItems(syllabus?.timeline_items || [], {
+    proposedForecastItems: syllabus?.proposed_learning_forecast?.forecast_items || [],
+    noSchoolDates: syllabus?.no_school_dates || [],
+  }), [syllabus?.timeline_items, syllabus?.proposed_learning_forecast?.forecast_items, syllabus?.no_school_dates])
   const selectedItems = selectedDate ? (itemsByDate[selectedDate] || []) : []
   const resolvedToday = syllabus?.resolved_today || selectedDate || ''
   const activeRevisionId = String(syllabus?.active_revision?.id || '')
 
   function selectItem(item) {
-    if (!item?.lesson_key) {
-      router.push('/facilitator/syllabus')
-      return
-    }
     setSelectedLesson(syllabusCalendarSelection(item, { today: resolvedToday }))
   }
 
@@ -87,7 +87,7 @@ export default function CalendarOverlay({ learnerId, tier = 'free', accessToken 
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
           <div>
             <strong style={{ color: '#111827' }}>Syllabus Calendar</strong>
-            <div style={{ color: '#6b7280', fontSize: 11 }}>Calendar reflects the active Syllabus. Planning changes belong in Syllabus.</div>
+            <div style={{ color: '#6b7280', fontSize: 11 }}>Calendar reflects the same Syllabus and future plan, including provisional AI forecast suggestions.</div>
           </div>
           <button type="button" onClick={() => router.push('/facilitator/syllabus')} style={{ padding: '6px 9px', border: '1px solid #c7442e', borderRadius: 6, background: '#fff', color: '#c7442e', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Open Syllabus</button>
         </div>
@@ -119,7 +119,7 @@ export default function CalendarOverlay({ learnerId, tier = 'free', accessToken 
                 <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, fontSize: 9, color: '#6b7280' }}><strong>{item.subject || 'Lesson'}</strong><span>{statusLabel(item)}</span></div>
                 <div style={{ marginTop: 2, color: '#111827', fontWeight: 800, fontSize: 11 }}>{item.title || 'Untitled lesson'}</div>
                 {teacher && item.item_type !== 'slate_assignment' && <div style={{ marginTop: 2, color: '#6b7280', fontSize: 9 }}>{instructionalTeacherLabel(teacher)}</div>}
-                {!item.lesson_key && <div style={{ marginTop: 3, color: '#c7442e', fontSize: 9 }}>Open in Syllabus to prepare this concept</div>}
+                {!item.lesson_key && <div style={{ marginTop: 3, color: '#6b382c', fontSize: 9 }}>{item?.planning_state === 'forecast' ? 'Provisional AI forecast suggestion' : 'Planned concept'}</div>}
               </button>
             })}
           </div>

@@ -213,14 +213,14 @@ export async function replaceLearningForecastConcept({ repository, facilitatorId
   return { kind: 'proposal', reused: result.reused === true, active_revision_id: expectedActiveRevisionId, proposal_revision: result.revision, forecast_items: await repository.listForecastItems(result.revision.id) }
 }
 
-export async function suggestPlanAheadConcepts({ repository, facilitatorId, learnerId, expectedActiveRevisionId, slots, generateItems, reports, loadReports = loadRecentMasteryReports, resolveLesson }) {
+export async function suggestFuturePlanningConcepts({ repository, facilitatorId, learnerId, expectedActiveRevisionId, slots, generateItems, reports, loadReports = loadRecentMasteryReports, resolveLesson }) {
   const current = await currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId })
   const requested = (Array.isArray(slots) ? slots : []).slice(0, 28).map((slot) => canonicalSlotFor({ weeklyPattern: current.revision.weekly_pattern, plannedDate: slot.planned_date, sortOrder: slot.sort_order })).filter(Boolean)
-  if (!requested.length) throw new SyllabusError('Select at least one valid Plan Ahead slot.', 400, 'PLANNING_SLOT_INVALID')
+  if (!requested.length) throw new SyllabusError('Select at least one valid future Syllabus slot.', 400, 'PLANNING_SLOT_INVALID')
   if (typeof repository.listNoSchoolDates === 'function') {
     const dates = requested.map((slot) => slot.planned_date).sort()
     const blocked = noSchoolDateSet(await repository.listNoSchoolDates(facilitatorId, learnerId, dates[0], dates.at(-1)))
-    if (requested.some((slot) => blocked.has(slot.planned_date))) throw new SyllabusError('A selected Plan Ahead date is marked as a day off or holiday.', 409, 'NO_SCHOOL_DATE')
+    if (requested.some((slot) => blocked.has(slot.planned_date))) throw new SyllabusError('A selected future Syllabus date is marked as a day off or holiday.', 409, 'NO_SCHOOL_DATE')
   }
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
   const generated = await generateItems({

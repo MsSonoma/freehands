@@ -11,7 +11,7 @@ import {
   editLearningForecastConcept,
   removeFacilitatorConcept,
   replaceLearningForecastConcept,
-  suggestPlanAheadConcepts,
+  suggestFuturePlanningConcepts,
 } from '../../../lib/syllabus/planning.server.mjs'
 import { getSyllabusRequestContext } from '../../../lib/syllabus/request.server.mjs'
 import { SyllabusError, validateLearnerId } from '../../../lib/syllabus/schema.mjs'
@@ -53,7 +53,7 @@ export async function POST(request, deps = {}) {
       changeRequest: body.changeRequest, reports: deps.reports, loadReports: deps.loadReports, generateItems: deps.generateItems || generateInstructionalForecastItems,
       resolveLesson: (lessonKey) => loadLessonForFollowUp({ lessonKey, facilitatorId: context.user.id, admin: context.admin }),
     })
-    else if (body?.action === 'suggest') result = await suggestPlanAheadConcepts({
+    else if (body?.action === 'suggest') result = await suggestFuturePlanningConcepts({
       ...common, slots: body.slots, reports: deps.reports, loadReports: deps.loadReports,
       generateItems: deps.generateItems || generateInstructionalForecastItems,
       resolveLesson: (lessonKey) => loadLessonForFollowUp({ lessonKey, facilitatorId: context.user.id, admin: context.admin }),

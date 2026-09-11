@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 import { GET, POST, DELETE } from '../../../api/no-school-dates/route.js'
-import { buildPlanAhead } from '../planning.mjs'
+import { buildFuturePlanningProjection } from '../futurePlanningProjection.mjs'
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
 const LEARNER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
@@ -42,11 +42,20 @@ test('hardened no-school API validates ownership and date while preserving facil
   assert.equal(invalid.status, 400)
 })
 
-test('Plan Ahead excludes no-school dates from selectable recurring slots', () => {
-  const plan = buildPlanAhead({ weeklyPattern: { monday: [{ subject: 'Math' }], tuesday: [{ subject: 'Science' }] }, noSchoolDates: [{ date: '2026-09-07' }], today: '2026-08-31', weeks: 1 })
-  assert.deepEqual(plan[0].slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-09-08', 'Science']])
+test('future planning excludes no-school dates from recurring open slots', () => {
+  const plan = buildFuturePlanningProjection({
+    weeklyPattern: { monday: [{ subject: 'Math' }], tuesday: [{ subject: 'Science' }] },
+    timelineItems: [],
+    proposedForecastItems: [],
+    noSchoolDates: [{ date: '2026-09-08', reason: 'Holiday' }],
+    rangeStart: '2026-09-07',
+    rangeEnd: '2026-09-13',
+    today: '2026-09-01',
+    includeOpenSlots: true,
+  })
+  assert.equal(plan.open_slots.some((slot) => slot.planned_date === '2026-09-08'), false)
+  assert.equal(plan.open_slots.some((slot) => slot.planned_date === '2026-09-07' && slot.subject === 'Math'), true)
 })
-
 test('Syllabus and Calendar share day actions and all new instructional write paths recognize no-school authority', () => {
   const root = new URL('../../../', import.meta.url)
   const source = (relative) => fs.readFileSync(new URL(relative, root), 'utf8')

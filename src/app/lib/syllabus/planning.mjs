@@ -1,5 +1,4 @@
 import { addSyllabusDays, startOfSyllabusWeek } from './timeline.mjs'
-import { noSchoolDateSet } from './noSchoolDates.mjs'
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 
@@ -20,23 +19,6 @@ function slotsForWeek(weeklyPattern, weekStart) {
   return slots
 }
 
-export function buildPlanAhead({ weeklyPattern, forecastItems = [], noSchoolDates = [], today, weeks = 1 }) {
-  const horizon = Math.max(1, Math.min(4, Number(weeks) || 1))
-  const blockedDates = noSchoolDateSet(noSchoolDates)
-  const firstWeek = addSyllabusDays(startOfSyllabusWeek(today), 7)
-  const bySlot = new Map(forecastItems.map((item) => [syllabusSlotKey(item), item]))
-  return Array.from({ length: horizon }, (_, index) => {
-    const weekStart = addSyllabusDays(firstWeek, index * 7)
-    return {
-      week_start: weekStart,
-      slots: slotsForWeek(weeklyPattern, weekStart).filter((slot) => !blockedDates.has(slot.planned_date)).map((slot) => ({
-        ...slot,
-        slot_key: syllabusSlotKey(slot),
-        item: bySlot.get(syllabusSlotKey(slot)) || null,
-      })),
-    }
-  })
-}
 
 export function canonicalSlotsForDate(weeklyPattern, plannedDate) {
   const date = dateOnly(plannedDate)

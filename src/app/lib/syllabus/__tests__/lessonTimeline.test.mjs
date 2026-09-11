@@ -1018,7 +1018,7 @@ test('facilitator Syllabus exposes Prepare review actions without changing revis
 test('generation now transmits the explicit learner and preserves a draft association server-side', () => {
   const page = fs.readFileSync(path.resolve('src/app/facilitator/generator/page.js'), 'utf8')
   const route = fs.readFileSync(path.resolve('src/app/api/facilitator/lessons/generate/route.js'), 'utf8')
-  assert.match(page, /JSON\.stringify\(\{ \.\.\.form, learnerId: intendedLearnerId \}\)/)
+  assert.match(page, /JSON\.stringify\(\{ \.\.\.spec, learnerId: intendedLearnerId \}\)/)
   assert.match(route, /requireAssociationLearner/)
   assert.match(route, /readinessState: 'draft'/)
   assert.match(route, /associationSource: 'generator'/)

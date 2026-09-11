@@ -1,5 +1,6 @@
 import { syllabusItemState } from './timeline.mjs'
 import { normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
+import { buildFuturePlanningProjection } from './futurePlanningProjection.mjs'
 
 function dateOnly(value) {
   return String(value || '').slice(0, 10)
@@ -9,9 +10,15 @@ function occurrenceKey(item) {
   return String(item?.occurrence_id || item?.id || `${item?.lineage_id || 'item'}-${dateOnly(item?.planned_date)}`).trim()
 }
 
-export function groupSyllabusCalendarItems(items = []) {
+export function groupSyllabusCalendarItems(items = [], { proposedForecastItems = [], noSchoolDates = [] } = {}) {
+  const projected = buildFuturePlanningProjection({
+    timelineItems: items,
+    proposedForecastItems,
+    noSchoolDates,
+    includeOpenSlots: false,
+  }).items
   const grouped = {}
-  for (const item of items || []) {
+  for (const item of projected) {
     const date = dateOnly(item?.planned_date)
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) continue
     if (!grouped[date]) grouped[date] = []
@@ -46,8 +53,11 @@ export function syllabusCalendarSelection(item, { today = new Date().toISOString
     && item?.historical_record !== true
     && item?.actual_kind !== 'in_progress',
   )
+  const suggested = item?.planning_state === 'forecast' || item?.presentation_kind === 'suggested_inactive'
   return {
     item,
+    suggested,
+    recoveryRequired: item?.recovery_required === true,
     syllabus_state: syllabusItemState({ item, today, hasProgress }),
     currentLesson: { hasProgress, hasLessonArtifact: item?.has_lesson_artifact !== false },
     teacherEditable,

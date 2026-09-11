@@ -477,11 +477,12 @@ test('historical instructional actions preserve non-editable provenance and exis
 
 test('new Syllabus UI source contains required readable labels and no mojibake', () => {
   const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
-  for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / FORECAST', 'Weekly learning plan', 'Previous week', 'This week', 'Next week', 'Plan ahead']) {
+  for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / PLANNING', 'Weekly learning plan', 'Previous week', 'This week', 'Next week', 'Open weekly slot', 'Plan lesson', 'Suggest with AI']) {
     assert.match(source, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
   assert.doesNotMatch(source, /\uFFFD|Ã|Â|â€|â€™|â†/u)
   assert.doesNotMatch(source, /Mastery proposals for general review|Mastery note|proposedReforecast/)
+  assert.doesNotMatch(source, />Plan ahead</)
   assert.match(source, /week\.days\.map/)
   assert.doesNotMatch(source, /timeline\.weeks\.map/)
 })

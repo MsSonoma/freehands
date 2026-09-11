@@ -44,7 +44,9 @@ test('fixture identities and repeated occurrences are deterministic and non-prod
 test('QA harness uses actual Syllabus components and has no production-capable data adapter', () => {
   const harness = read('src/app/qa/syllabus/SyllabusQaHarness.js')
   assert.match(harness, /components\/syllabus\/SyllabusDocument/)
-  assert.match(harness, /components\/syllabus\/SyllabusPlanningWorkspace/)
+  assert.doesNotMatch(harness, /components\/syllabus\/SyllabusPlanningWorkspace|planAheadOpen/)
+  assert.match(harness, /onPlanSlot=/)
+  assert.match(harness, /onSuggestSlot=/)
   assert.match(harness, /components\/syllabus\/LessonHistoryOverlay/)
   assert.match(harness, /resolveActionHref=\{\(\) => null\}/)
   assert.match(harness, /loadHistory=\{loadHistory\}/)

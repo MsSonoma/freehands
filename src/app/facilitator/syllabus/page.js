@@ -8,7 +8,6 @@ import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay
 import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
 import SyllabusPlanEditor from '@/app/components/syllabus/SyllabusPlanEditor'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
-import SyllabusPlanningWorkspace from '@/app/components/syllabus/SyllabusPlanningWorkspace'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
 import SyllabusDayActionDialog from '@/app/components/syllabus/SyllabusDayActionDialog'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
@@ -192,7 +191,6 @@ export default function SyllabusPage() {
   const [error, setError] = useState('')
   const [selectedWeekStart, setSelectedWeekStart] = useState('')
   const [editingSection, setEditingSection] = useState('')
-  const [planAheadOpen, setPlanAheadOpen] = useState(false)
   const [conceptEditor, setConceptEditor] = useState(null)
   const [replacingLineage, setReplacingLineage] = useState('')
   const [historyOccurrenceId, setHistoryOccurrenceId] = useState('')
@@ -480,24 +478,51 @@ export default function SyllabusPage() {
     }
   }
 
+  function planFutureSlot(slot) {
+    if (!planningAccess.can_change_intent || !slot) return
+    setConceptEditor({ source: 'slot', slot, title: '', description: '' })
+  }
+
+  async function suggestFutureSlot(slot) {
+    if (!planningAccess.can_change_intent || !slot) return
+    const suggestion = await planningPost('suggest', { slots: [{ planned_date: slot.planned_date, sort_order: slot.sort_order }] })
+    if (!suggestion) return
+    setConceptEditor({ source: 'slot', slot, title: suggestion.title || '', description: suggestion.description || '' })
+  }
   async function saveConceptEditor() {
-    if (!conceptEditor) return
-    if (conceptEditor.source === 'forecast-own') {
-      const proposalRevisionId = learningProposal?.proposal_revision?.id
-      if (!proposalRevisionId) return setError('This forecast changed. Reload the Syllabus and try again.')
-      const result = await planningPost('edit_forecast', { proposalRevisionId, lineageId: conceptEditor.item.lineage_id, title: conceptEditor.title, description: conceptEditor.description })
-      const edited = result?.forecast_items?.find((item) => String(item.lineage_id) === String(conceptEditor.item.lineage_id))
-      if (!result?.active_revision?.id || !edited) return
-      const generated = await materializeForecast(edited, { expectedActiveRevisionId: result.active_revision.id })
-      if (generated) setConceptEditor(null)
-      return
-    }
-    const result = conceptEditor.source === 'forecast'
-      ? await planningPost('edit_forecast', { proposalRevisionId: learningProposal.proposal_revision.id, lineageId: conceptEditor.item.lineage_id, title: conceptEditor.title, description: conceptEditor.description })
-      : await planningPost('edit', { lineageId: conceptEditor.item.lineage_id, title: conceptEditor.title, description: conceptEditor.description })
+    if (!conceptEditor?.slot) return
+    const result = await planningPost('create', {
+      plannedDate: conceptEditor.slot.planned_date,
+      sortOrder: conceptEditor.slot.sort_order,
+      title: conceptEditor.title,
+      description: conceptEditor.description,
+    })
     if (result) setConceptEditor(null)
   }
 
+  async function editPlannedConcept(item, values) {
+    if (!item?.lineage_id || !values?.title?.trim() || !values?.description?.trim()) return false
+    const result = await planningPost('edit', {
+      lineageId: item.lineage_id,
+      title: values.title,
+      description: values.description,
+    })
+    return Boolean(result)
+  }
+
+  async function createOwnForecastLesson(item, values) {
+    const proposalRevisionId = learningProposal?.proposal_revision?.id
+    if (!item?.lineage_id || !proposalRevisionId || !values?.title?.trim() || !values?.description?.trim()) return false
+    const result = await planningPost('edit_forecast', {
+      proposalRevisionId,
+      lineageId: item.lineage_id,
+      title: values.title,
+      description: values.description,
+    })
+    const edited = result?.forecast_items?.find((candidate) => String(candidate.lineage_id) === String(item.lineage_id))
+    if (!result?.active_revision?.id || !edited) return false
+    return materializeForecast(edited, { expectedActiveRevisionId: result.active_revision.id })
+  }
   async function generateForecastWithChanges(item, changeRequest) {
     if (!item?.lineage_id || replacingLineage || !learningProposal?.proposal_revision?.id) return false
     setReplacingLineage(item.lineage_id)
@@ -750,10 +775,7 @@ export default function SyllabusPage() {
       await openLessonPicker(item.planned_date, { mode: 'bind', item })
       return
     }
-    if (action?.id === 'edit_concept' && item?.lineage_id) {
-      setConceptEditor({ source: 'active', item, title: item.title, description: item.description || '' })
-      return
-    }
+
     if (!item?.lesson_key || action?.id !== 'repeat') return
     const allowed = await ensureFacilitatorPinException({
       message: `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to prepare it as a deliberate repeat.`,
@@ -859,7 +881,6 @@ export default function SyllabusPage() {
     setSelectedWeekStart('')
     setEditingSection('')
     setConceptEditor(null)
-    setPlanAheadOpen(false)
     setHistoryOccurrenceId('')
     setSelectedSyllabusLesson(null)
     setScheduleDialog(null)
@@ -889,7 +910,6 @@ export default function SyllabusPage() {
     setEditingSection('')
     setDraft(null)
     setConceptEditor(null)
-    setPlanAheadOpen(false)
     setSelectedSyllabusLesson(null)
     setHistoryOccurrenceId(occurrenceId)
   }
@@ -986,23 +1006,10 @@ export default function SyllabusPage() {
             </div>
 
             <section className={`${styles.section} ${styles.forecast}`}>
-              <div className={styles.forecastHeader}><div><p className={styles.eyebrow}>{draft ? 'Future direction' : 'Educational record and forecast'}</p><h2>{draft ? 'Forecast' : 'Lesson timeline'}</h2></div><span>{displayForecast.length} item{displayForecast.length === 1 ? '' : 's'}</span></div>
-              {forecastGroups.length ? forecastGroups.map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><div><strong>{item.subject}:</strong> {item.title}{item.description && <p>{item.description}</p>}{!draft && item.placement_kind === 'inferred' && <em> Provisional weekly-pattern forecast</em>}{!draft && item.placement_kind === 'scheduled' && <em> Explicit calendar date</em>}{!draft && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <><br /><a href={`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}`}>{item.readiness_state === 'draft' ? 'Prepare / review draft' : 'Open lesson details'}</a></>}</div></li>)}</ul></div>) : <p className={styles.muted}>No learner-specific lessons are recorded yet.</p>}
+              <div className={styles.forecastHeader}><div><p className={styles.eyebrow}>{draft ? 'Future direction' : 'Educational record and future plan'}</p><h2>{draft ? 'Future plan' : 'Lesson timeline'}</h2></div><span>{displayForecast.length} item{displayForecast.length === 1 ? '' : 's'}</span></div>
+              {forecastGroups.length ? forecastGroups.map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><div><strong>{item.subject}:</strong> {item.title}{item.description && <p>{item.description}</p>}{!draft && item.placement_kind === 'inferred' && <em> Provisional weekly-pattern placement</em>}{!draft && item.placement_kind === 'scheduled' && <em> Explicit calendar date</em>}{!draft && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <><br /><a href={`/facilitator/prepare?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(item.lesson_key)}&stage=${item.readiness_state === 'draft' ? 'DRAFT' : 'DELIVERY'}`}>{item.readiness_state === 'draft' ? 'Prepare / review draft' : 'Open lesson details'}</a></>}</div></li>)}</ul></div>) : <p className={styles.muted}>No learner-specific lessons are recorded yet.</p>}
             </section>
-          </div> : (planAheadOpen ? <SyllabusPlanningWorkspace
-              revision={syllabus.active_revision}
-              items={[...(syllabus.forecast_items || []), ...(learningProposal?.forecast_items || [])]}
-              noSchoolDates={syllabus.no_school_dates || []}
-              today={syllabus.resolved_today}
-              busy={working || Boolean(materializingLineage)}
-              error={error}
-              onClose={() => setPlanAheadOpen(false)}
-              onCreate={(slot, values) => planningPost('create', { plannedDate: slot.planned_date, sortOrder: slot.sort_order, title: values.title, description: values.description })}
-              onEdit={(item, values) => item.origin === 'learning_forecast' ? planningPost('edit_forecast', { proposalRevisionId: learningProposal.proposal_revision.id, lineageId: item.lineage_id, title: values.title, description: values.description }) : planningPost('edit', { lineageId: item.lineage_id, title: values.title, description: values.description })}
-              onRemove={(item) => planningPost('remove', { lineageId: item.lineage_id })}
-              onGenerate={(item) => materializeForecast(item, { proposal: item.origin === 'learning_forecast' ? learningProposal : null })}
-              onSuggest={(slot) => planningPost('suggest', { slots: [{ planned_date: slot.planned_date, sort_order: slot.sort_order }] })}
-            /> : <SyllabusDocument
+          </div> : <SyllabusDocument
               revision={syllabus.active_revision}
               forecastItems={syllabus.forecast_items}
               timelineItems={syllabus.timeline_items}
@@ -1012,7 +1019,6 @@ export default function SyllabusPage() {
               learnerName={selectedLearner?.name || ''}
               onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
               canScheduleLessons={canScheduleLessons && syllabusHydrated}
-              onOpenPlanning={planningAccess.can_change_intent && syllabusHydrated ? () => setPlanAheadOpen(true) : null}
               noSchoolDates={syllabus.no_school_dates || []}
               onDayAction={syllabusHydrated ? openDayAction : null}
               onEditSection={planningAccess.can_change_intent && syllabusHydrated ? openSectionEditor : null}
@@ -1023,12 +1029,14 @@ export default function SyllabusPage() {
               forecastMessage={learningMessage}
               materializingForecastLineage={materializingLineage}
               isForecastRecoveryRequired={(item) => recoveryRequiredLineages.has(item.lineage_id)}
-
+              planningBusy={working || Boolean(materializingLineage)}
+              onPlanSlot={planningAccess.can_change_intent && syllabusHydrated ? planFutureSlot : null}
+              onSuggestSlot={planningAccess.can_change_intent && syllabusHydrated ? suggestFutureSlot : null}
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
               restoreWeekStart={selectedWeekStart}
               today={syllabus.resolved_today}
               contentLoading={contentLoading && !Array.isArray(syllabus.timeline_items)}
-            />)}
+            />}
 
           {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
             selection={selectedSyllabusLesson}
@@ -1049,10 +1057,8 @@ export default function SyllabusPage() {
             onScheduleSlate={(item) => { void handleLessonAction(item, { id: 'schedule_slate' }) }}
             onRemoveSlateSchedule={(item) => { void handleLessonAction(item, { id: 'remove_slate_schedule' }) }}
             slateBusy={slateAssignmentBusy === selectedSyllabusLesson.occurrenceKey}
-            onEditConcept={(item) => {
-              setSelectedSyllabusLesson(null)
-              void handleLessonAction(item, { id: 'edit_concept' })
-            }}
+            onEditConcept={editPlannedConcept}
+            onRemoveConcept={async (item) => Boolean(await planningPost('remove', { lineageId: item.lineage_id }))}
             onUseExisting={(item) => {
               setSelectedSyllabusLesson(null)
               void handleLessonAction(item, { id: 'use_existing' })
@@ -1062,10 +1068,7 @@ export default function SyllabusPage() {
               void materializeForecast(item, { proposal: item.origin === 'learning_forecast' ? learningProposal : null })
             }}
             onGenerateWithChanges={(item, changeRequest) => generateForecastWithChanges(item, changeRequest)}
-            onCreateOwnLesson={(item) => {
-              setSelectedSyllabusLesson(null)
-              setConceptEditor({ source: 'forecast-own', item, title: item.title || '', description: item.description || '' })
-            }}
+            onCreateOwnLesson={createOwnForecastLesson}
             canChangeIntent={planningAccess.can_change_intent}
             onRecordHistoricalActivity={async (item, activity) => { setSelectedSyllabusLesson(null); await handleRecordHistoricalActivity(item, activity) }}
             historicalActivityBusy={historicalActivityBusy === selectedSyllabusLesson.occurrenceKey}
@@ -1083,7 +1086,7 @@ export default function SyllabusPage() {
             onSaved={() => loadCurrent()}
           />}
 
-          {conceptEditor && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={conceptEditor.source === 'forecast-own' ? 'Create your own lesson' : 'Edit forecast concept'}><header><h2>{conceptEditor.source === 'forecast-own' ? 'Create your own lesson' : 'Edit forecast concept'}</h2><button type="button" onClick={() => setConceptEditor(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<label>Title<input autoFocus value={conceptEditor.title} onChange={(event) => setConceptEditor({ ...conceptEditor, title: event.target.value })} /></label><label>Brief description<textarea rows={5} value={conceptEditor.description} onChange={(event) => setConceptEditor({ ...conceptEditor, description: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setConceptEditor(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working || Boolean(materializingLineage) || !conceptEditor.title.trim() || !conceptEditor.description.trim()} onClick={saveConceptEditor}>{conceptEditor.source === 'forecast-own' ? (materializingLineage ? 'Generating...' : 'Generate my lesson') : 'Save as educator intent'}</button></footer></section></div>}
+          {conceptEditor && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label="Plan future lesson"><header><h2>Plan future lesson</h2><button type="button" onClick={() => setConceptEditor(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<label>Title<input autoFocus value={conceptEditor.title} onChange={(event) => setConceptEditor({ ...conceptEditor, title: event.target.value })} /></label><label>Brief description<textarea rows={5} value={conceptEditor.description} onChange={(event) => setConceptEditor({ ...conceptEditor, description: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setConceptEditor(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working || !conceptEditor.title.trim() || !conceptEditor.description.trim()} onClick={saveConceptEditor}>Save planned concept</button></footer></section></div>}
 
           {dayActionDate && <SyllabusDayActionDialog
             date={dayActionDate}
