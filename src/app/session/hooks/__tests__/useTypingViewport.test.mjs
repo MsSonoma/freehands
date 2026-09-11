@@ -4,6 +4,7 @@ import {
   isTextEntryElement,
   isTouchLikeDevice,
   measureTypingViewport,
+  releaseStaleTouchFocus,
   shouldAutoFocusTextInput,
 } from '../useTypingViewport.js'
 
@@ -69,4 +70,33 @@ test('only editable text controls enter typing mode', () => {
   assert.equal(isTextEntryElement(input({ type: 'checkbox' })), false)
   assert.equal(isTextEntryElement(input({ disabled: true })), false)
   assert.equal(isTextEntryElement({ tagName: 'DIV', isContentEditable: true }), true)
+})
+
+
+test('a stale focused touch field is released so the same native tap can reopen the keyboard', () => {
+  const win = fakeWindow({ touch: true, innerHeight: 768, visualHeight: 768 })
+  let blurCount = 0
+  const field = input({ blur: () => { blurCount += 1 } })
+  const doc = { activeElement: field }
+  assert.equal(releaseStaleTouchFocus(win, doc, field), true)
+  assert.equal(blurCount, 1)
+})
+
+test('an already-visible touch keyboard never releases the active field', () => {
+  const win = fakeWindow({ touch: true, innerHeight: 768, visualHeight: 360 })
+  let blurCount = 0
+  const field = input({ blur: () => { blurCount += 1 } })
+  const doc = { activeElement: field }
+  assert.equal(releaseStaleTouchFocus(win, doc, field), false)
+  assert.equal(blurCount, 0)
+})
+
+test('stale-focus recovery ignores desktop, inactive, and non-editable targets', () => {
+  let blurCount = 0
+  const field = input({ blur: () => { blurCount += 1 } })
+  const other = input()
+  assert.equal(releaseStaleTouchFocus(fakeWindow({ touch: false }), { activeElement: field }, field), false)
+  assert.equal(releaseStaleTouchFocus(fakeWindow({ touch: true }), { activeElement: other }, field), false)
+  assert.equal(releaseStaleTouchFocus(fakeWindow({ touch: true }), { activeElement: field }, input({ type: 'checkbox' })), false)
+  assert.equal(blurCount, 0)
 })

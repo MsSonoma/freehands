@@ -67,6 +67,29 @@ export function measureTypingViewport(win = typeof window !== 'undefined' ? wind
   }
 }
 
+export function releaseStaleTouchFocus(
+  win = typeof window !== 'undefined' ? window : null,
+  doc = typeof document !== 'undefined' ? document : null,
+  target = null,
+) {
+  if (!win || !doc || !target) return false
+  if (!isTouchLikeDevice(win) || !isTextEntryElement(target)) return false
+  if (doc.activeElement !== target) return false
+  try {
+    if (!win.visualViewport) return false
+  } catch {
+    return false
+  }
+  const measured = measureTypingViewport(win, doc)
+  if (measured.keyboardVisible) return false
+  try {
+    target.blur()
+    return true
+  } catch {
+    return false
+  }
+}
+
 export default function useTypingViewport() {
   const [state, setState] = useState(() => measureTypingViewport())
 
@@ -98,12 +121,18 @@ export default function useTypingViewport() {
         setState(measureTypingViewport())
       }, 0)
     }
+    const handleTouchIntent = (event) => {
+      if (event.type === 'pointerdown' && event.pointerType && !['touch', 'pen'].includes(event.pointerType)) return
+      if (releaseStaleTouchFocus(window, document, event.target)) updateViewport()
+    }
     const vv = window.visualViewport || null
+    const touchIntentEvent = typeof window.PointerEvent === 'function' ? 'pointerdown' : 'touchstart'
     updateViewport()
     window.addEventListener('resize', updateViewport)
     window.addEventListener('orientationchange', updateViewport)
     document.addEventListener('focusin', handleFocusIn)
     document.addEventListener('focusout', handleFocusOut)
+    document.addEventListener(touchIntentEvent, handleTouchIntent, true)
     vv?.addEventListener?.('resize', updateViewport)
     vv?.addEventListener?.('scroll', updateViewport)
     return () => {
@@ -113,6 +142,7 @@ export default function useTypingViewport() {
       window.removeEventListener('orientationchange', updateViewport)
       document.removeEventListener('focusin', handleFocusIn)
       document.removeEventListener('focusout', handleFocusOut)
+      document.removeEventListener(touchIntentEvent, handleTouchIntent, true)
       vv?.removeEventListener?.('resize', updateViewport)
       vv?.removeEventListener?.('scroll', updateViewport)
     }

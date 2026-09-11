@@ -6,6 +6,7 @@ const sonoma = fs.readFileSync(new URL('../v2/SessionPageV2.jsx', import.meta.ur
 const webb = fs.readFileSync(new URL('../webb/page.jsx', import.meta.url), 'utf8')
 const studio = fs.readFileSync(new URL('../webb/WebbWritingStudio.jsx', import.meta.url), 'utf8')
 const context = fs.readFileSync(new URL('../components/TypingConversationContext.js', import.meta.url), 'utf8')
+const typingViewport = fs.readFileSync(new URL('../hooks/useTypingViewport.js', import.meta.url), 'utf8')
 
 test('Ms. Sonoma keeps six recent transcript entries with the input while touch typing', () => {
   assert.match(sonoma, /entries=\{transcriptLines\}/)
@@ -55,6 +56,17 @@ test('lesson surfaces do not use text focus alone to keep keyboard context visib
   assert.doesNotMatch(sonoma, /typingViewport\.typing/)
   assert.doesNotMatch(webb, /typingViewport\.typing/)
   assert.doesNotMatch(studio, /typingViewport\.typing/)
+})
+
+test('touching a stale focused field releases focus before the native tap refocuses it', () => {
+  assert.match(typingViewport, /releaseStaleTouchFocus/)
+  assert.match(typingViewport, /doc\.activeElement !== target/)
+  assert.match(typingViewport, /if \(measured\.keyboardVisible\) return false/)
+  assert.match(typingViewport, /target\.blur\(\)/)
+  assert.match(typingViewport, /typeof window\.PointerEvent === 'function' \? 'pointerdown' : 'touchstart'/)
+  assert.match(typingViewport, /document\.addEventListener\(touchIntentEvent, handleTouchIntent, true\)/)
+  assert.match(typingViewport, /document\.removeEventListener\(touchIntentEvent, handleTouchIntent, true\)/)
+  assert.doesNotMatch(typingViewport, /handleTouchIntent[\s\S]{0,500}preventDefault/)
 })
 
 test('iPad text fields use at least 16px type to avoid Safari focus zoom', () => {
