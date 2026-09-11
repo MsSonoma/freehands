@@ -418,6 +418,14 @@ export default function FacilitatorPreparePage() {
   const hasLearnerRecovery = !!recoveryStage && !!missingLearnerId
   const exactOccurrenceIsProtected = syllabusOccurrenceId.startsWith('actual:') || syllabusOccurrenceId.startsWith('historical:')
 
+  useEffect(() => {
+    if (loading || !pinChecked || !isAuthenticated || hasLearnerRecovery || stage !== STAGES.NEED || lessonIdentity) return
+    const params = new URLSearchParams({ mode: 'simple' })
+    if (learnerId) params.set('learnerId', learnerId)
+    if (need) params.set('need', need)
+    router.replace(`/facilitator/generator?${params.toString()}`)
+  }, [hasLearnerRecovery, isAuthenticated, learnerId, lessonIdentity, loading, need, pinChecked, router, stage])
+
   function snapshotIntentFor(nextLearnerId = learnerId) {
     if (intentSnapshot) return { ...intentSnapshot, learnerId: nextLearnerId }
     return need ? { version: 1, learnerId: nextLearnerId, need, boundaries: activeBoundaries() } : null
@@ -842,12 +850,16 @@ export default function FacilitatorPreparePage() {
     )
   }
 
+  if (stage === STAGES.NEED && !hasLearnerRecovery && !lessonIdentity) {
+    return <main style={{ padding: 24 }}><p style={{ color: '#6b7280' }}>Opening Lesson Generator...</p></main>
+  }
+
   return (
     <main style={{ padding: '20px 16px 44px', maxWidth: 820, margin: '0 auto', fontFamily: 'Roboto, sans-serif' }}>
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 18 }}>
         <div>
-          <h1 style={{ margin: 0, fontFamily: 'Montserrat, sans-serif', fontSize: 24 }}>Prepare a guided learning session</h1>
-          <p style={{ margin: '6px 0 0', color: '#6b7280', lineHeight: 1.5 }}>Describe what the learner needs. Ms. Sonoma will propose an approach before anything is generated.</p>
+          <h1 style={{ margin: 0, fontFamily: 'Montserrat, sans-serif', fontSize: 24 }}>Review and prepare lesson</h1>
+          <p style={{ margin: '6px 0 0', color: '#6b7280', lineHeight: 1.5 }}>Review the generated lesson, approve its content, then choose how the learner will use it.</p>
         </div>
         <Link href="/facilitator" style={{ ...secondaryButton, textDecoration: 'none', whiteSpace: 'nowrap' }}>Home</Link>
       </div>

@@ -639,45 +639,18 @@ export default function SyllabusPage() {
     } finally { setWorking(false) }
   }
 
-  async function createGeneratedDayLesson({ date, subject, title, description }) {
-    if (!planningAccess.can_change_intent || !learnerId || !token || !syllabus?.active_revision?.id) return
-    const requestLearnerId = learnerId
-    setWorking(true)
+  function createGeneratedDayLesson({ date }) {
+    if (!planningAccess.can_change_intent || !learnerId || !syllabus?.active_revision?.id || !date) return
+    setDayActionDate('')
     setDayActionError('')
-    try {
-      const postConcept = (exceptionPin) => fetch('/api/syllabus/planning', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ learnerId: requestLearnerId, expectedActiveRevisionId: syllabus.active_revision.id, action: 'create_day', plannedDate: date, subject, title, description, ...(exceptionPin ? { exceptionPin } : {}) }),
-      })
-      let response = await postConcept()
-      let json = await response.json().catch(() => ({}))
-      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
-        const pin = await requestFacilitatorPinException({ message: json.error })
-        if (!pin) throw new Error('The placement exception was not approved.')
-        response = await postConcept(pin)
-        json = await response.json().catch(() => ({}))
-      }
-      if (!response.ok) throw new Error(json.error || 'Could not create this lesson intent')
-      const lineageId = json.created_lineage_id
-      const activeRevisionId = json.active_revision?.id
-      if (!lineageId || !activeRevisionId) throw new Error('The new Syllabus lesson could not be identified')
-      const materializeResponse = await fetch('/api/syllabus/materialize', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ learnerId: requestLearnerId, lineageId, expectedActiveRevisionId: activeRevisionId }),
-      })
-      const materialized = await materializeResponse.json().catch(() => ({}))
-      if (!materializeResponse.ok) {
-        if (materialized?.code === 'MATERIALIZATION_RECOVERY_REQUIRED') setRecoveryRequiredLineages((current) => new Set(current).add(lineageId))
-        await loadCurrent(requestLearnerId)
-        throw new Error(materialized.error || 'The lesson intent was saved, but generation did not complete')
-      }
-      setDayActionDate('')
-      await loadCurrent(requestLearnerId)
-    } catch (cause) {
-      setDayActionError(cause.message || 'Could not generate this lesson')
-    } finally { setWorking(false) }
+    const params = new URLSearchParams({
+      mode: 'simple',
+      source: 'syllabus',
+      learnerId,
+      plannedDate: date,
+      expectedActiveRevisionId: syllabus.active_revision.id,
+    })
+    router.push(`/facilitator/generator?${params.toString()}`)
   }
 
   async function openLessonPicker(scheduledDate, { mode = 'add', item = null, proposal = null } = {}) {

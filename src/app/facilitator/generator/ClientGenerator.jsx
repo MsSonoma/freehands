@@ -172,7 +172,7 @@ export default function ClientGenerator(){
               <h3 style={{ marginTop:0 }}>Lesson Generator</h3>
               <p style={{ color:'#555' }}>Use AI to draft a lesson aligned to your grade, subject, and difficulty. Saved under Generated Lessons.</p>
               <Link 
-                href="/facilitator/lesson-generator" 
+                href="/facilitator/generator"
                 style={{ 
                   display:'inline-block', 
                   padding:'8px 12px', 

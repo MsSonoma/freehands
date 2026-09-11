@@ -41,6 +41,7 @@ function generationHash({ learnerId, activeRevision, item, learner }) {
     subject: item.subject,
     teaching_guidance: activeRevision.teaching_guidance,
     planning_policy: activeRevision.planning_policy,
+    facilitator_generation_spec: item?.metadata?.facilitator_planning?.generation_spec || null,
   })).digest('hex')
 }
 
@@ -261,14 +262,18 @@ export async function materializeForecastOccurrence({
   if (!lessonKey) {
     let result
     try {
+      const facilitatorSpec = item?.metadata?.facilitator_planning?.generation_spec || {}
+      const facilitatorNotes = clean(facilitatorSpec.notes)
+      const syllabusNotes = JSON.stringify(activeRevision.teaching_guidance || {}).slice(0, 3000)
       result = await generateLesson({
         learnerId,
         title: item.title,
         subject: item.subject,
         description: item.description || `A complete lesson for ${item.title}.`,
         grade: learnerGrade,
-        difficulty: clean(activeRevision.planning_policy?.difficulty) || 'intermediate',
-        notes: JSON.stringify(activeRevision.teaching_guidance || {}).slice(0, 3000),
+        difficulty: clean(facilitatorSpec.difficulty) || clean(activeRevision.planning_policy?.difficulty) || 'intermediate',
+        notes: [facilitatorNotes, syllabusNotes].filter(Boolean).join(' '),
+        vocab: clean(facilitatorSpec.vocab),
         materializationOperation: {
           id: receipt.id,
           syllabusId: syllabus.id,

@@ -61,10 +61,11 @@ test('Create Your Own creates canonical facilitator intent with stable independe
 
 test('day-authored lesson uses normal capacity, requires PIN outside the pattern, and day-off authority wins over PIN', async () => {
   const normalRepo = repository()
-  const normal = await createFacilitatorDayConcept({ repository: normalRepo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, plannedDate: '2026-09-07', subject: 'Math', title: 'Monday lesson', description: 'Use the ordinary Monday Math slot.', now: NOW, today: '2026-08-31' })
+  const normal = await createFacilitatorDayConcept({ repository: normalRepo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, plannedDate: '2026-09-07', subject: 'Math', title: 'Monday lesson', description: 'Use the ordinary Monday Math slot.', generationSpec: { difficulty: 'advanced', notes: 'Use manipulatives.', vocab: 'quotient, divisor', ignored: 'not persisted' }, now: NOW, today: '2026-08-31' })
   assert.equal(normal.forecast_items[0].planned_date, '2026-09-07')
   assert.equal(normal.forecast_items[0].sort_order, 0)
   assert.equal(normal.forecast_items[0].metadata.facilitator_planning.action, 'created_day')
+  assert.deepEqual(normal.forecast_items[0].metadata.facilitator_planning.generation_spec, { difficulty: 'advanced', notes: 'Use manipulatives.', vocab: 'quotient, divisor' })
   assert.equal(normal.created_lineage_id, normal.forecast_items[0].lineage_id)
 
   const exceptionRepo = repository()
@@ -103,6 +104,20 @@ test('AI replacement changes only exact title and description while preserving s
   assert.equal(replaced.metadata.learning_forecast_replacement.facilitator_change_request, 'Make it more hands-on.')
 })
 
+test('day-authored detailed generation settings reach canonical materialization and participate in its identity', async () => {
+  const detailed = concept({ metadata: { facilitator_planning: { generation_spec: { difficulty: 'advanced', notes: 'Use manipulatives.', vocab: 'quotient, divisor' } } } })
+  const firstRepo = repository([detailed])
+  let received
+  await assert.rejects(materializeForecastOccurrence({ repository: firstRepo, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: detailed.lineage_id, expectedActiveRevisionId: ACTIVE, generateLesson: async (spec) => { received = spec; throw new Error('offline') }, now: NOW }), { code: 'MATERIALIZATION_GENERATION_FAILED' })
+  assert.equal(received.difficulty, 'advanced')
+  assert.match(received.notes, /Use manipulatives\./)
+  assert.equal(received.vocab, 'quotient, divisor')
+  const detailedHash = firstRepo.state.receipts[0].generation_input_hash
+
+  const ordinaryRepo = repository([concept()])
+  await assert.rejects(materializeForecastOccurrence({ repository: ordinaryRepo, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: concept().lineage_id, expectedActiveRevisionId: ACTIVE, generateLesson: async () => { throw new Error('offline') }, now: NOW }), { code: 'MATERIALIZATION_GENERATION_FAILED' })
+  assert.notEqual(detailedHash, ordinaryRepo.state.receipts[0].generation_input_hash)
+})
 test('facilitator concept materialization delegates exact lineage and preserves concept on generator failure', async () => {
   const repo = repository([concept()])
   await assert.rejects(materializeForecastOccurrence({ repository: repo, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: concept().lineage_id, expectedActiveRevisionId: ACTIVE, generateLesson: async () => { throw new Error('offline') }, now: NOW }), { code: 'MATERIALIZATION_GENERATION_FAILED' })

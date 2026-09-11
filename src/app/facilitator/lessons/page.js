@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
@@ -616,8 +616,8 @@ export default function FacilitatorLessonsPage() {
                 <button type="button" onClick={() => router.push('/facilitator/lessons/edit?new=1')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontWeight: 600, cursor: 'pointer' }}>
                   New lesson from scratch
                 </button>
-                <button type="button" onClick={() => router.push('/facilitator/generator?advanced=1')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #dbeafe', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer' }}>
-                  Detailed lesson builder
+                <button type="button" onClick={() => router.push('/facilitator/generator')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #dbeafe', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer' }}>
+                  Lesson Generator
                 </button>
               </div>
             </details>

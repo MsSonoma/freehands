@@ -3,7 +3,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
-import { ensurePinAllowed } from '@/app/lib/pinGate'
+import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
@@ -20,22 +20,29 @@ const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '1
 
 export default function LessonMakerPage(){
   const router = useRouter()
-  const [advancedAllowed, setAdvancedAllowed] = useState(false)
+  const [generatorMode, setGeneratorMode] = useState('simple')
+  const [simpleNeed, setSimpleNeed] = useState('')
+  const [simpleProposal, setSimpleProposal] = useState(null)
+  const [entryContext, setEntryContext] = useState({ source: '', learnerId: '', plannedDate: '', expectedActiveRevisionId: '', subject: '' })
+  const [dayMaterializationContext, setDayMaterializationContext] = useState(null)
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      window.scrollTo(0, 0)
-      const params = new URLSearchParams(window.location.search)
-      if (params.get('advanced') !== '1') {
-        router.replace('/facilitator/prepare')
-        return
-      }
-      setAdvancedAllowed(true)
-      const gradeParam = params.get('grade')
-      if (gradeParam) {
-        setForm(f => ({ ...f, grade: gradeParam }))
-      }
-    }
-  }, [router])
+    if (typeof window === 'undefined') return
+    window.scrollTo(0, 0)
+    const params = new URLSearchParams(window.location.search)
+    const requestedMode = params.get('mode') === 'detailed' || params.get('advanced') === '1' ? 'detailed' : 'simple'
+    const learnerId = params.get('learnerId') || ''
+    const plannedDate = params.get('plannedDate') || ''
+    const expectedActiveRevisionId = params.get('expectedActiveRevisionId') || ''
+    const source = params.get('source') || ''
+    const subject = params.get('subject') || ''
+    const need = params.get('need') || ''
+    const gradeParam = params.get('grade') || ''
+    setGeneratorMode(requestedMode)
+    setEntryContext({ source, learnerId, plannedDate, expectedActiveRevisionId, subject })
+    if (learnerId) setIntendedLearnerId(learnerId)
+    if (need) setSimpleNeed(need)
+    if (gradeParam || subject) setForm((current) => ({ ...current, ...(gradeParam ? { grade: gradeParam } : {}), ...(subject ? { subject } : {}) }))
+  }, [])
   const { loading, hasAccess, gateType, tier, isAuthenticated } = useAccessControl({
     requiredAuth: 'required',
      requiredFeature: 'lessonGenerator'
@@ -54,6 +61,8 @@ export default function LessonMakerPage(){
   const [revisionOpen, setRevisionOpen] = useState(false)
   const [learners, setLearners] = useState([])
   const [intendedLearnerId, setIntendedLearnerId] = useState('')
+
+  const isDayGenerator = Boolean(entryContext.plannedDate && entryContext.expectedActiveRevisionId && ['syllabus', 'calendar'].includes(entryContext.source))
 
   // AI Rewrite loading states
   const [rewritingTitle, setRewritingTitle] = useState(false)
@@ -159,6 +168,20 @@ export default function LessonMakerPage(){
     })()
     return () => { cancelled = true }
   }, [isAuthenticated, loading, pinChecked])
+
+  useEffect(() => {
+    if (!learners.length || !entryContext.learnerId) return
+    const learner = learners.find((item) => String(item.id) === String(entryContext.learnerId))
+    if (!learner) return
+    setIntendedLearnerId(learner.id)
+    if (learner.grade) setForm((current) => ({ ...current, grade: current.grade || String(learner.grade) }))
+  }, [entryContext.learnerId, learners])
+
+  function selectIntendedLearner(nextLearnerId) {
+    setIntendedLearnerId(nextLearnerId)
+    const learner = learners.find((item) => String(item.id) === String(nextLearnerId))
+    if (learner?.grade) setForm((current) => ({ ...current, grade: String(learner.grade) }))
+  }
 
   // AI Rewrite handlers
   const handleRewriteTitle = async () => {
@@ -398,118 +421,254 @@ export default function LessonMakerPage(){
     }
   }
 
-  async function handleGenerate(e){
-    e.preventDefault()
-     if (!ent.lessonGenerator) {
-       setMessage('Upgrade required to generate lessons.')
-       return
-     }
-    
-    // Check quota before generating
+  async function currentAccessToken() {
+    const supabase = getSupabaseClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    return session?.access_token || ''
+  }
+
+  function detailedIntent(spec = form) {
+    if (!intendedLearnerId) return null
+    return {
+      version: FACILITATOR_PREPARATION_VERSION,
+      learnerId: intendedLearnerId,
+      need: spec.description || spec.title,
+      boundaries: {},
+    }
+  }
+
+  function detailedProposal(spec = form) {
+    return {
+      version: FACILITATOR_PREPARATION_VERSION,
+      learnerId: intendedLearnerId,
+      summary: `Review the lesson draft for ${spec.title}.`,
+      generationSpec: { ...spec },
+      assumptions: [generatorMode === 'simple' ? 'Created in Simple mode.' : 'Created in Detailed mode.'],
+    }
+  }
+
+  async function continueGeneratedLesson({ identity, spec, proposal, intent }) {
+    if (!identity?.lessonKey) throw new Error('Lesson storage was not available for review. Please try again.')
+    setGeneratedLessonKey(identity.lessonKey)
+    writePreparationSnapshot({
+      version: FACILITATOR_PREPARATION_VERSION,
+      stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
+      learnerId: intendedLearnerId,
+      intent: intent || detailedIntent(spec),
+      proposal: proposal || detailedProposal(spec),
+      lessonIdentity: identity,
+    })
+    router.push('/facilitator/prepare')
+  }
+
+  async function generateStandaloneLesson(spec, { proposal = null, intent = null } = {}) {
+    const token = await currentAccessToken()
+    if (!token) throw new Error('Sign in required')
+    setToast({ message: 'Generating lesson...', type: 'info' })
+    const response = await fetch('/api/facilitator/lessons/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ ...spec, learnerId: intendedLearnerId }),
+    })
+    const json = await response.json().catch(() => ({}))
+    if (!response.ok) throw new Error(json?.error || 'Failed to generate lesson')
+
+    const generatedFile = json?.file
+    const generatedUserId = json?.userId
+    const storedLessonKey = json?.storageError ? null : (json?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null))
+
+    setToast({ message: 'Validating lesson quality...', type: 'info' })
+    const validation = validateLessonQuality(json?.lesson)
+    if (validation?.issues?.length && generatedFile) {
+      setToast({ message: 'Improving lesson quality...', type: 'info' })
+      const fixResponse = await fetch('/api/facilitator/lessons/request-changes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({
+          file: generatedFile,
+          userId: generatedUserId,
+          changeRequest: buildValidationChangeRequest(validation.issues),
+        }),
+      })
+      const fixJson = await fixResponse.json().catch(() => ({}))
+      if (!fixResponse.ok) throw new Error(fixJson?.error || 'Lesson generated, but quality improvements failed')
+    }
+
+    const identity = json?.identity || (storedLessonKey ? {
+      file: generatedFile,
+      lessonKey: storedLessonKey,
+      storagePath: json?.storagePath || '',
+      ownerId: json?.ownerId || generatedUserId || '',
+    } : null)
+    setToast({ message: 'Lesson ready!', type: 'success' })
+    await continueGeneratedLesson({ identity, spec, proposal, intent })
+  }
+
+  async function generateSyllabusDayLesson(spec, { proposal = null, intent = null } = {}) {
+    const token = await currentAccessToken()
+    if (!token) throw new Error('Sign in required')
+    if (!intendedLearnerId) throw new Error('Choose a learner before generating this lesson.')
+    if (!entryContext.plannedDate || !entryContext.expectedActiveRevisionId) throw new Error('The Syllabus day context is incomplete. Return to the Syllabus and try again.')
+
+    let lineageId = dayMaterializationContext?.lineageId || ''
+    let activeRevisionId = dayMaterializationContext?.activeRevisionId || ''
+    if (!lineageId || !activeRevisionId) {
+      setToast({ message: 'Saving lesson intent to the Syllabus...', type: 'info' })
+      const postConcept = (exceptionPin) => fetch('/api/syllabus/planning', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          learnerId: intendedLearnerId,
+          expectedActiveRevisionId: entryContext.expectedActiveRevisionId,
+          action: 'create_day',
+          plannedDate: entryContext.plannedDate,
+          subject: spec.subject,
+          title: spec.title,
+          description: spec.description || `A complete lesson for ${spec.title}.`,
+          generationSpec: {
+            difficulty: spec.difficulty,
+            notes: spec.notes,
+            vocab: spec.vocab,
+          },
+          ...(exceptionPin ? { exceptionPin } : {}),
+        }),
+      })
+
+      let response = await postConcept()
+      let json = await response.json().catch(() => ({}))
+      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
+        const pin = await requestFacilitatorPinException({ message: json.error })
+        if (!pin) throw new Error('The placement exception was not approved.')
+        response = await postConcept(pin)
+        json = await response.json().catch(() => ({}))
+      }
+      if (!response.ok) throw new Error(json?.error || 'Could not save this lesson intent to the Syllabus')
+      lineageId = json?.created_lineage_id || ''
+      activeRevisionId = json?.active_revision?.id || ''
+      if (!lineageId || !activeRevisionId) throw new Error('The new Syllabus lesson could not be identified')
+      setDayMaterializationContext({ lineageId, activeRevisionId })
+    }
+
+    setToast({ message: 'Generating lesson...', type: 'info' })
+    const materializeResponse = await fetch('/api/syllabus/materialize', {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        learnerId: intendedLearnerId,
+        lineageId,
+        expectedActiveRevisionId: activeRevisionId,
+      }),
+    })
+    const materialized = await materializeResponse.json().catch(() => ({}))
+    if (!materializeResponse.ok) {
+      throw new Error(materialized?.error || 'The lesson intent was saved, but generation did not complete')
+    }
+    if (!materialized?.lesson_key) throw new Error('The generated Syllabus lesson has no canonical lesson identity')
+    setDayMaterializationContext(null)
+
+    const lessonKey = materialized.lesson_key
+    const identity = {
+      file: lessonKey.replace(/^generated\//, ''),
+      lessonKey,
+      storagePath: '',
+      ownerId: '',
+    }
+    writePreparationSnapshot({
+      version: FACILITATOR_PREPARATION_VERSION,
+      stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
+      learnerId: intendedLearnerId,
+      intent: intent || detailedIntent(spec),
+      proposal: proposal || detailedProposal(spec),
+      lessonIdentity: identity,
+    })
+    setToast({ message: 'Lesson ready for review!', type: 'success' })
+    router.push('/facilitator/prepare')
+  }
+
+  async function generateFromSpec(spec, context = {}) {
+    if (!ent.lessonGenerator) {
+      setMessage('Upgrade required to generate lessons.')
+      return
+    }
     if (quotaInfo && !quotaAllowed) {
       setMessage('Generation limit reached. Upgrade to increase your quota.')
       return
     }
-    
-    setBusy(true); setMessage(''); setToast(null)
-    setGeneratedLessonKey(null) // Reset previous lesson
-    let generatedFile = null
-    let generatedUserId = null
-    
+    setBusy(true)
+    setMessage('')
+    setToast(null)
+    setGeneratedLessonKey(null)
     try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      
-      // STEP 1: Generate the lesson
-      setToast({ message: 'Generating lesson...', type: 'info' })
-      const res = await fetch('/api/facilitator/lessons/generate', {
-        method:'POST',
-        headers:{ 'Content-Type':'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) },
-        body: JSON.stringify({ ...form, learnerId: intendedLearnerId })
-      })
-      const js = await res.json().catch(()=>null)
-      if (!res.ok) { 
-        setMessage(`Error ${res.status}: ${js?.error || 'Failed to generate'}`)
-        setToast({ message: 'Generation failed', type: 'error' })
-        return
-      }
-
-      generatedFile = js?.file
-      generatedUserId = js?.userId
-      const storedLessonKey = js?.storageError ? null : (js?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null))
-      if (js?.lessonKey) {
-        setGeneratedLessonKey(js.lessonKey)
-      } else if (storedLessonKey) {
-        setGeneratedLessonKey(storedLessonKey)
-      }
-
-      // STEP 2: Validate lesson quality
-      setToast({ message: 'Validating lesson quality...', type: 'info' })
-      const validation = validateLessonQuality(js?.lesson)
-      if (validation?.issues?.length) {
-        setToast({ message: 'Improving lesson quality...', type: 'info' })
-
-        const changes = buildValidationChangeRequest(validation.issues)
-        const fixRes = await fetch('/api/facilitator/lessons/request-changes', {
-          method:'POST',
-          headers:{ 'Content-Type':'application/json', ...(token ? { Authorization:`Bearer ${token}` } : {}) },
-          body: JSON.stringify({
-            file: generatedFile,
-            userId: generatedUserId,
-            changeRequest: changes
-          })
-        })
-        const fixJs = await fixRes.json().catch(()=>null)
-        if (!fixRes.ok) {
-          setMessage(fixJs?.error || 'Lesson generated, but quality improvements failed')
-          setToast({ message: 'Lesson generated with warnings', type: 'error' })
-          return
-        }
-      }
-
-      setToast({ message: 'Lesson ready!', type: 'success' })
-      setMessage('')
-      const identity = js?.identity || (storedLessonKey ? {
-        file: generatedFile,
-        lessonKey: storedLessonKey,
-        storagePath: js?.storagePath || '',
-        ownerId: js?.ownerId || generatedUserId || '',
-      } : null)
-      if (!identity?.lessonKey) {
-        setMessage('Lesson generated, but storage was not available for review. Please try again.')
-        setToast({ message: 'Lesson storage failed', type: 'error' })
-        return
-      }
-
-      const intent = intendedLearnerId ? {
-        version: FACILITATOR_PREPARATION_VERSION,
-        learnerId: intendedLearnerId,
-        need: form.description || form.title,
-        boundaries: {},
-      } : null
-      const proposal = {
-        version: FACILITATOR_PREPARATION_VERSION,
-        learnerId: intendedLearnerId,
-        summary: `Review the detailed lesson draft for ${form.title}.`,
-        generationSpec: { ...form },
-        assumptions: ['Created in the detailed lesson builder.'],
-      }
-      writePreparationSnapshot({
-        version: FACILITATOR_PREPARATION_VERSION,
-        stage: FACILITATOR_PREPARATION_STAGES.DRAFT,
-        learnerId: intendedLearnerId,
-        intent,
-        proposal,
-        lessonIdentity: identity,
-      })
-      router.push('/facilitator/prepare')
-    } catch (err) {
-      setMessage(`Generation error: ${err?.message || String(err) || 'Unknown error'}`)
+      if (isDayGenerator) await generateSyllabusDayLesson(spec, context)
+      else await generateStandaloneLesson(spec, context)
+    } catch (error) {
+      setMessage(error?.message || 'Lesson generation failed')
       setToast({ message: 'Generation failed', type: 'error' })
     } finally {
       setBusy(false)
     }
+  }
+
+  async function handleGenerate(event) {
+    event.preventDefault()
+    await generateFromSpec(form, { proposal: detailedProposal(form), intent: detailedIntent(form) })
+  }
+
+  async function proposeSimpleLesson(event) {
+    event.preventDefault()
+    if (!intendedLearnerId) {
+      setMessage('Choose a learner before preparing the lesson.')
+      return
+    }
+    if (simpleNeed.trim().length < 8) {
+      setMessage('Describe what the lesson should be about in a little more detail.')
+      return
+    }
+    setBusy(true)
+    setMessage('')
+    setToast(null)
+    try {
+      const token = await currentAccessToken()
+      if (!token) throw new Error('Sign in required')
+      const intent = {
+        version: FACILITATOR_PREPARATION_VERSION,
+        learnerId: intendedLearnerId,
+        need: simpleNeed.trim(),
+        boundaries: {},
+      }
+      const response = await fetch('/api/facilitator/lessons/propose', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+        body: JSON.stringify({ intent }),
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok || !json?.proposal?.generationSpec) throw new Error(json?.error || 'Ms. Sonoma could not prepare a lesson approach')
+      setSimpleProposal(json.proposal)
+      setForm((current) => ({ ...current, ...json.proposal.generationSpec }))
+    } catch (error) {
+      setMessage(error?.message || 'Could not prepare the lesson approach')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  async function generateSimpleLesson() {
+    if (!simpleProposal) return
+    const proposal = { ...simpleProposal, generationSpec: { ...form } }
+    const intent = {
+      version: FACILITATOR_PREPARATION_VERSION,
+      learnerId: intendedLearnerId,
+      need: simpleNeed.trim(),
+      boundaries: {},
+    }
+    await generateFromSpec(form, { proposal, intent })
+  }
+
+  function switchGeneratorMode(nextMode) {
+    if (nextMode !== 'simple' && nextMode !== 'detailed') return
+    if (nextMode === 'simple' && !simpleNeed.trim()) setSimpleNeed(form.description || form.title || '')
+    setGeneratorMode(nextMode)
+    setMessage('')
   }
 
   const showGate = (!loading && !quotaLoading && (!resolvedHasAccess || !ent.lessonGenerator))
@@ -523,7 +682,7 @@ export default function LessonMakerPage(){
     return true
   }, [busy, form, learners.length, intendedLearnerId, quotaInfo, resolvedHasAccess, ent.lessonGenerator, quotaAllowed])
 
-  if (!advancedAllowed || loading || (isAuthenticated && (!pinChecked || quotaLoading))) {
+  if (loading || (isAuthenticated && (!pinChecked || quotaLoading))) {
     return (
       <main style={{ padding: 24, minHeight: '60vh' }}>
         <p style={{ color: '#6b7280' }}>Loading...</p>
@@ -569,11 +728,11 @@ export default function LessonMakerPage(){
             </h1>
           </div>
           <p style={{ margin: '4px 0 0 36px', fontSize: 13, color: '#6366f1', fontWeight: 500 }}>
-            AI-powered lessons, built in seconds
+            One generator. Start simple or take full control of the details.
           </p>
         </div>
         <button
-          onClick={() => router.push('/facilitator/lessons')}
+          onClick={() => router.push(entryContext.source === 'calendar' ? '/facilitator/calendar' : entryContext.source === 'syllabus' ? '/facilitator/syllabus' : '/facilitator/lessons')}
           style={{
             padding: '9px 16px',
             borderRadius: 8,
@@ -596,6 +755,61 @@ export default function LessonMakerPage(){
         </div>
       )}
 
+      <div role="tablist" aria-label="Lesson generator mode" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 6, padding: 5, marginBottom: 16, border: '1px solid #e5e7eb', borderRadius: 12, background: '#f8fafc' }}>
+        <button type="button" role="tab" aria-selected={generatorMode === 'simple'} onClick={() => switchGeneratorMode('simple')} style={{ padding: '11px 14px', border: generatorMode === 'simple' ? '1px solid #c7442e' : '1px solid transparent', borderRadius: 9, background: generatorMode === 'simple' ? '#fff' : 'transparent', color: generatorMode === 'simple' ? '#9f2f20' : '#4b5563', fontWeight: 800, cursor: 'pointer' }}>Simple</button>
+        <button type="button" role="tab" aria-selected={generatorMode === 'detailed'} onClick={() => switchGeneratorMode('detailed')} style={{ padding: '11px 14px', border: generatorMode === 'detailed' ? '1px solid #c7442e' : '1px solid transparent', borderRadius: 9, background: generatorMode === 'detailed' ? '#fff' : 'transparent', color: generatorMode === 'detailed' ? '#9f2f20' : '#4b5563', fontWeight: 800, cursor: 'pointer' }}>Detailed</button>
+      </div>
+
+      {isDayGenerator && (
+        <div style={{ marginBottom: 16, padding: '10px 14px', border: '1px solid #dbeafe', borderRadius: 10, background: '#eff6ff', color: '#1e3a8a', fontSize: 13 }}>
+          This lesson will stay attached to <strong>{entryContext.plannedDate}</strong> in the learner&apos;s Syllabus. Switching generator modes will not lose that placement.
+        </div>
+      )}
+
+      {generatorMode === 'simple' ? (
+        <section style={{ display: 'grid', gap: 14 }}>
+          <form onSubmit={proposeSimpleLesson} style={{ display: 'grid', gap: 14, border: '1px solid #e5e7eb', borderRadius: 14, padding: 20, background: '#fff', boxShadow: '0 1px 3px rgba(0,0,0,0.06)' }}>
+            {learners.length > 0 && (
+              <label style={{ display: 'grid', gap: 6 }}>
+                <span style={{ fontWeight: 700, fontSize: 13, color: '#374151' }}>Learner</span>
+                <select value={intendedLearnerId} disabled={isDayGenerator} onChange={(event) => { selectIntendedLearner(event.target.value); setSimpleProposal(null) }} style={{ padding: 10, border: '1px solid #d1d5db', borderRadius: 8, background: '#fff' }} required>
+                  <option value="">Choose learner</option>
+                  {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}{learner.grade ? ` - grade ${learner.grade}` : ''}</option>)}
+                </select>
+              </label>
+            )}
+            <label style={{ display: 'grid', gap: 7 }}>
+              <span style={{ fontWeight: 800, color: '#1f2937' }}>What should this lesson be about?</span>
+              <textarea autoFocus value={simpleNeed} onChange={(event) => { setSimpleNeed(event.target.value); setSimpleProposal(null) }} rows={7} maxLength={2000} placeholder="Example: Refresh whole-number division, then connect it to dividing decimals." style={{ padding: 13, border: '1px solid #d1d5db', borderRadius: 10, resize: 'vertical', fontSize: 15, lineHeight: 1.5 }} required />
+            </label>
+            <div style={{ display: 'flex', gap: 10, alignItems: 'center', flexWrap: 'wrap' }}>
+              <button type="submit" disabled={busy || !intendedLearnerId || simpleNeed.trim().length < 8} style={{ padding: '11px 18px', border: 'none', borderRadius: 9, background: '#c7442e', color: '#fff', fontWeight: 800, cursor: busy ? 'wait' : 'pointer', opacity: busy || !intendedLearnerId || simpleNeed.trim().length < 8 ? 0.55 : 1 }}>{busy ? 'Preparing...' : 'Review approach'}</button>
+              <span style={{ color: '#6b7280', fontSize: 13 }}>Ms. Sonoma fills in the lesson details from the learner and your request.</span>
+            </div>
+          </form>
+
+          {simpleProposal && (
+            <section style={{ display: 'grid', gap: 12, border: '1px solid #e5e7eb', borderRadius: 14, padding: 20, background: '#fff' }}>
+              <div>
+                <p style={{ margin: '0 0 5px', fontSize: 12, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '0.04em', color: '#6b7280' }}>Proposed approach</p>
+                <h2 style={{ margin: 0, fontSize: 18 }}>{form.title}</h2>
+              </div>
+              <p style={{ margin: 0, lineHeight: 1.55, color: '#374151' }}>{simpleProposal.summary}</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 13, color: '#4b5563' }}>
+                <span><strong>Subject:</strong> {form.subject}</span>
+                <span><strong>Grade:</strong> {form.grade}</span>
+                <span><strong>Difficulty:</strong> {form.difficulty}</span>
+              </div>
+              <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+                <button type="button" onClick={generateSimpleLesson} disabled={busy || !quotaAllowed} style={{ padding: '11px 18px', border: 'none', borderRadius: 9, background: '#c7442e', color: '#fff', fontWeight: 800, cursor: busy ? 'wait' : 'pointer', opacity: busy || !quotaAllowed ? 0.55 : 1 }}>{busy ? 'Generating...' : 'Generate lesson'}</button>
+                <button type="button" onClick={() => switchGeneratorMode('detailed')} disabled={busy} style={{ padding: '10px 15px', border: '1px solid #d1d5db', borderRadius: 9, background: '#fff', color: '#374151', fontWeight: 700, cursor: 'pointer' }}>Fine-tune in Detailed mode</button>
+              </div>
+            </section>
+          )}
+
+          {message && <div style={{ padding: '10px 14px', background: '#fef2f2', border: '1px solid #fecaca', borderRadius: 8, color: '#b91c1c', fontSize: 13, fontWeight: 600 }}>{message}</div>}
+        </section>
+      ) : (
       <form onSubmit={handleGenerate} style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
 
         {/* ── Card: Lesson Setup ── */}
@@ -629,6 +843,7 @@ export default function LessonMakerPage(){
               <span style={{ fontWeight: 600, fontSize: 13, color: '#374151' }}>Grade <span style={{ color: '#ef4444' }}>*</span></span>
               <select
                 value={form.grade}
+                disabled={isDayGenerator}
                 onChange={e => setForm(f => ({ ...f, grade: e.target.value }))}
                 style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
                 required
@@ -798,7 +1013,8 @@ export default function LessonMakerPage(){
                 <span style={{ fontWeight: 600, fontSize: 13, color: '#374151', whiteSpace: 'nowrap' }}>Intended learner</span>
                 <select
                   value={intendedLearnerId}
-                  onChange={e => setIntendedLearnerId(e.target.value)}
+                  disabled={isDayGenerator}
+                  onChange={e => selectIntendedLearner(e.target.value)}
                   style={{ padding: '9px 12px', border: '1px solid #e5e7eb', borderRadius: 8, fontSize: 14, background: '#f9fafb', color: '#111827' }}
                 >
                   <option value="">Choose learner</option>
@@ -922,6 +1138,7 @@ export default function LessonMakerPage(){
           )}
         </div>
       </form>
+      )}
 
       {/* ── Planner promo card ── */}
       <div

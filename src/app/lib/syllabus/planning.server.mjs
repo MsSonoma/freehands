@@ -46,6 +46,17 @@ function conceptFields(input) {
   return { title, description }
 }
 
+function facilitatorGenerationSpec(input) {
+  if (!input || typeof input !== 'object' || Array.isArray(input)) return {}
+  const out = {}
+  const difficulty = clean(input.difficulty, 80).toLowerCase()
+  const notes = clean(input.notes, 2000)
+  const vocab = clean(input.vocab, 1000)
+  if (difficulty) out.difficulty = difficulty
+  if (notes) out.notes = notes
+  if (vocab) out.vocab = vocab
+  return out
+}
 function planningGenerationContext({ current, slots, reports, forecastItems, syllabusExtra = {}, today = null }) {
   const subjects = slots.map((slot) => slot.subject)
   return {
@@ -81,7 +92,7 @@ export async function createFacilitatorConcept({ repository, facilitatorId, lear
   return activateSyllabus({ repository, facilitatorId, learnerId, expectedActiveRevisionId, now, today, snapshot: snapshot(current.revision, [...current.items, item], today, `Facilitator created concept ${lineageId}`) })
 }
 
-export async function createFacilitatorDayConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, plannedDate, subject, title, description, allowCapacityException = false, now = new Date(), today = now.toISOString().slice(0, 10) }) {
+export async function createFacilitatorDayConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, plannedDate, subject, title, description, generationSpec = null, allowCapacityException = false, now = new Date(), today = now.toISOString().slice(0, 10) }) {
   const current = await currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId })
   const date = clean(plannedDate, 10)
   const requestedSubject = clean(subject, 200)
@@ -107,7 +118,7 @@ export async function createFacilitatorDayConcept({ repository, facilitatorId, l
   }
   const fields = conceptFields({ title, description })
   const lineageId = randomUUID()
-  const item = { ...slot, ...fields, lineage_id: lineageId, lesson_key: null, item_type: 'lesson', origin: 'facilitator', metadata: { facilitator_planning: { version: 1, action: 'created_day', active_revision_id: current.revision.id } } }
+  const item = { ...slot, ...fields, lineage_id: lineageId, lesson_key: null, item_type: 'lesson', origin: 'facilitator', metadata: { facilitator_planning: { version: 1, action: 'created_day', active_revision_id: current.revision.id, generation_spec: facilitatorGenerationSpec(generationSpec) } } }
   const activated = await activateSyllabus({ repository, facilitatorId, learnerId, expectedActiveRevisionId, now, today, allowCapacityException, snapshot: snapshot(current.revision, [...current.items, item], today, 'Facilitator created day lesson concept ' + lineageId) })
   return { ...activated, created_lineage_id: lineageId }
 }

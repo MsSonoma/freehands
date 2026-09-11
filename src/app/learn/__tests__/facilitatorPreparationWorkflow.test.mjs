@@ -217,7 +217,7 @@ test('generated approval content freshness contract remains independently covere
     'utf8',
   )
 
-  assert.match(generatorSource, /lesson\.description = lesson\.description \|\| lesson\.blurb \|\| description \|\| ''/)
+  assert.match(generatorSource, /description: lesson\.description \|\| lesson\.blurb \|\| description \|\| ''/)
   assert.ok((generatorSource.match(/cacheControl: '0'/g) || []).length >= 2)
   assert.match(getSource, /freshStoragePath = `\$\{storagePath\}\?fresh=/)
   assert.match(accessSource, /freshStoragePath = `\$\{storagePath\}\?fresh=/)

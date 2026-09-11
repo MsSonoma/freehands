@@ -62,8 +62,17 @@ test('Syllabus and Calendar share day actions and all new instructional write pa
   assert.match(calendar, />\+<\/button>/)
   for (const page of [syllabusPage, calendarPage]) {
     assert.match(page, /SyllabusDayActionDialog/)
-    assert.match(page, /action: 'create_day'/)
+    assert.match(page, /\/facilitator\/generator\?/)
+    assert.match(page, /plannedDate/)
+    assert.match(page, /expectedActiveRevisionId/)
     assert.match(page, /\/api\/no-school-dates/)
   }
+  const generator = source('facilitator/generator/page.js')
+  assert.match(generator, /Lesson generator mode/)
+  assert.match(generator, />Simple<\/button>/)
+  assert.match(generator, />Detailed<\/button>/)
+  assert.match(generator, /action: 'create_day'/)
+  assert.match(generator, /generationSpec/)
+  assert.doesNotMatch(dialog, /Lesson title|Brief description/)
   for (const text of [dialog, schedule, slate, materialization]) assert.match(text, /day off|no-school|NO_SCHOOL_DATE/i)
 })

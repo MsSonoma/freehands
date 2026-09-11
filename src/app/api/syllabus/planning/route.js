@@ -44,7 +44,7 @@ export async function POST(request, deps = {}) {
     const common = { repository, facilitatorId: context.user.id, learnerId, expectedActiveRevisionId: body?.expectedActiveRevisionId, now, today }
     let result
     if (body?.action === 'create') result = await createFacilitatorConcept({ ...common, plannedDate: body.plannedDate, sortOrder: body.sortOrder, title: body.title, description: body.description })
-    else if (body?.action === 'create_day') result = await createFacilitatorDayConcept({ ...common, plannedDate: body.plannedDate, subject: body.subject, title: body.title, description: body.description, allowCapacityException })
+    else if (body?.action === 'create_day') result = await createFacilitatorDayConcept({ ...common, plannedDate: body.plannedDate, subject: body.subject, title: body.title, description: body.description, generationSpec: body.generationSpec, allowCapacityException })
     else if (body?.action === 'edit') result = await editFacilitatorConcept({ ...common, lineageId: body.lineageId, title: body.title, description: body.description })
     else if (body?.action === 'remove') result = await removeFacilitatorConcept({ ...common, lineageId: body.lineageId })
     else if (body?.action === 'edit_forecast') result = await editLearningForecastConcept({ ...common, proposalRevisionId: body.proposalRevisionId, lineageId: body.lineageId, title: body.title, description: body.description })
