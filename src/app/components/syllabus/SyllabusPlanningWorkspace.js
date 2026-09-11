@@ -4,10 +4,10 @@ import { useEffect, useMemo, useState } from 'react'
 import { buildPlanAhead } from '@/app/lib/syllabus/planning.mjs'
 import styles from './SyllabusPlanningWorkspace.module.css'
 
-export default function SyllabusPlanningWorkspace({ revision, items, today, busy, error = '', canPlan = true, canGenerate = true, canSuggest = true, onClose, onCreate, onEdit, onRemove, onGenerate, onSuggest }) {
+export default function SyllabusPlanningWorkspace({ revision, items, noSchoolDates = [], today, busy, error = '', canPlan = true, canGenerate = true, canSuggest = true, onClose, onCreate, onEdit, onRemove, onGenerate, onSuggest }) {
   const [weeks, setWeeks] = useState(2)
   const [editor, setEditor] = useState(null)
-  const plan = useMemo(() => buildPlanAhead({ weeklyPattern: revision.weekly_pattern, forecastItems: items, today, weeks }), [revision.weekly_pattern, items, today, weeks])
+  const plan = useMemo(() => buildPlanAhead({ weeklyPattern: revision.weekly_pattern, forecastItems: items, noSchoolDates, today, weeks }), [revision.weekly_pattern, items, noSchoolDates, today, weeks])
   useEffect(() => {
     const onKeyDown = (event) => { if (event.key === 'Escape') editor ? setEditor(null) : onClose() }
     document.addEventListener('keydown', onKeyDown)

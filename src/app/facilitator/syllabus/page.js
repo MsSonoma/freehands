@@ -10,6 +10,7 @@ import SyllabusPlanEditor from '@/app/components/syllabus/SyllabusPlanEditor'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusPlanningWorkspace from '@/app/components/syllabus/SyllabusPlanningWorkspace'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
+import SyllabusDayActionDialog from '@/app/components/syllabus/SyllabusDayActionDialog'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { ensureFacilitatorPinException, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
@@ -17,6 +18,7 @@ import { listLearners } from '@/app/facilitator/learners/clientApi'
 import { addWeeklyPatternSlot, moveSyllabusWeek, removeWeeklyPatternSlot, syllabusEntitlementsFor, weeklyPatternCapacity } from '@/app/lib/syllabus/timeline.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '@/app/lib/syllabus/forecastRequestIdentity.mjs'
 import { buildLessonSchedulePayload, buildSchedulableLessonOptions, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
+import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
 import {
   normalizedTeachingGuidance,
   teachingGuidanceOverrideFrom,
@@ -200,6 +202,8 @@ export default function SyllabusPage() {
   const [scheduleCatalogLoading, setScheduleCatalogLoading] = useState(false)
   const [scheduleBusy, setScheduleBusy] = useState(false)
   const [scheduleError, setScheduleError] = useState('')
+  const [dayActionDate, setDayActionDate] = useState('')
+  const [dayActionError, setDayActionError] = useState('')
   const [forecastRefreshSequence, setForecastRefreshSequence] = useState(0)
   const forecastAttempt = useRef('')
   const forecastRequestSequence = useRef(0)
@@ -217,6 +221,7 @@ export default function SyllabusPage() {
   })
   const planningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier })
   const canScheduleLessons = featuresForTier(planTier).lessonScheduling === true
+  const noSchoolByDate = useMemo(() => noSchoolReasonMap(syllabus?.no_school_dates || []), [syllabus?.no_school_dates])
   const inlineModalOpen = Boolean(conceptEditor || slateScheduler)
 
   useEffect(() => {
@@ -597,6 +602,84 @@ export default function SyllabusPage() {
     setDraft({ ...draft, weekly_pattern: removeWeeklyPatternSlot(draft.weekly_pattern, day, index) })
   }
 
+  function openDayAction(date) {
+    setDayActionError('')
+    setDayActionDate(dateOnly(date))
+  }
+
+  async function setNoSchoolDate({ date, reason }) {
+    if (!learnerId || !token || !date) return
+    setWorking(true)
+    setDayActionError('')
+    try {
+      const response = await fetch('/api/no-school-dates', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ learnerId, date, reason }) })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json.error || 'Could not mark this day off')
+      setDayActionDate('')
+      forecastAttempt.current = ''
+      await loadCurrent(learnerId)
+    } catch (cause) {
+      setDayActionError(cause.message || 'Could not mark this day off')
+    } finally { setWorking(false) }
+  }
+
+  async function clearNoSchoolDate({ date }) {
+    if (!learnerId || !token || !date) return
+    setWorking(true)
+    setDayActionError('')
+    try {
+      const response = await fetch(`/api/no-school-dates?learnerId=${encodeURIComponent(learnerId)}&date=${encodeURIComponent(date)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${token}` } })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json.error || 'Could not remove the day-off mark')
+      setDayActionDate('')
+      forecastAttempt.current = ''
+      await loadCurrent(learnerId)
+    } catch (cause) {
+      setDayActionError(cause.message || 'Could not remove the day-off mark')
+    } finally { setWorking(false) }
+  }
+
+  async function createGeneratedDayLesson({ date, subject, title, description }) {
+    if (!planningAccess.can_change_intent || !learnerId || !token || !syllabus?.active_revision?.id) return
+    const requestLearnerId = learnerId
+    setWorking(true)
+    setDayActionError('')
+    try {
+      const postConcept = (exceptionPin) => fetch('/api/syllabus/planning', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId: requestLearnerId, expectedActiveRevisionId: syllabus.active_revision.id, action: 'create_day', plannedDate: date, subject, title, description, ...(exceptionPin ? { exceptionPin } : {}) }),
+      })
+      let response = await postConcept()
+      let json = await response.json().catch(() => ({}))
+      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
+        const pin = await requestFacilitatorPinException({ message: json.error })
+        if (!pin) throw new Error('The placement exception was not approved.')
+        response = await postConcept(pin)
+        json = await response.json().catch(() => ({}))
+      }
+      if (!response.ok) throw new Error(json.error || 'Could not create this lesson intent')
+      const lineageId = json.created_lineage_id
+      const activeRevisionId = json.active_revision?.id
+      if (!lineageId || !activeRevisionId) throw new Error('The new Syllabus lesson could not be identified')
+      const materializeResponse = await fetch('/api/syllabus/materialize', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId: requestLearnerId, lineageId, expectedActiveRevisionId: activeRevisionId }),
+      })
+      const materialized = await materializeResponse.json().catch(() => ({}))
+      if (!materializeResponse.ok) {
+        if (materialized?.code === 'MATERIALIZATION_RECOVERY_REQUIRED') setRecoveryRequiredLineages((current) => new Set(current).add(lineageId))
+        await loadCurrent(requestLearnerId)
+        throw new Error(materialized.error || 'The lesson intent was saved, but generation did not complete')
+      }
+      setDayActionDate('')
+      await loadCurrent(requestLearnerId)
+    } catch (cause) {
+      setDayActionError(cause.message || 'Could not generate this lesson')
+    } finally { setWorking(false) }
+  }
+
   async function openLessonPicker(scheduledDate, { mode = 'add', item = null, proposal = null } = {}) {
     if (mode === 'add' ? !canScheduleLessons : !planningAccess.can_change_intent) return
     setScheduleDialog({ mode, item, proposal, scheduledDate: dateOnly(scheduledDate) })
@@ -936,6 +1019,7 @@ export default function SyllabusPage() {
           </div> : (planAheadOpen ? <SyllabusPlanningWorkspace
               revision={syllabus.active_revision}
               items={[...(syllabus.forecast_items || []), ...(learningProposal?.forecast_items || [])]}
+              noSchoolDates={syllabus.no_school_dates || []}
               today={syllabus.resolved_today}
               busy={working || Boolean(materializingLineage)}
               error={error}
@@ -956,7 +1040,8 @@ export default function SyllabusPage() {
               onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
               canScheduleLessons={canScheduleLessons && syllabusHydrated}
               onOpenPlanning={planningAccess.can_change_intent && syllabusHydrated ? () => setPlanAheadOpen(true) : null}
-              onAddLesson={canScheduleLessons && syllabusHydrated ? openLessonPicker : null}
+              noSchoolDates={syllabus.no_school_dates || []}
+              onDayAction={syllabusHydrated ? openDayAction : null}
               onEditSection={planningAccess.can_change_intent && syllabusHydrated ? openSectionEditor : null}
               proposedForecastItems={learningProposal?.forecast_items || []}
               proposedForecastTargetWeek={currentTargetForecastWeek}
@@ -1026,6 +1111,22 @@ export default function SyllabusPage() {
           />}
 
           {conceptEditor && <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={conceptEditor.source === 'forecast-own' ? 'Create your own lesson' : 'Edit forecast concept'}><header><h2>{conceptEditor.source === 'forecast-own' ? 'Create your own lesson' : 'Edit forecast concept'}</h2><button type="button" onClick={() => setConceptEditor(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<label>Title<input autoFocus value={conceptEditor.title} onChange={(event) => setConceptEditor({ ...conceptEditor, title: event.target.value })} /></label><label>Brief description<textarea rows={5} value={conceptEditor.description} onChange={(event) => setConceptEditor({ ...conceptEditor, description: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setConceptEditor(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={working || Boolean(materializingLineage) || !conceptEditor.title.trim() || !conceptEditor.description.trim()} onClick={saveConceptEditor}>{conceptEditor.source === 'forecast-own' ? (materializingLineage ? 'Generating...' : 'Generate my lesson') : 'Save as educator intent'}</button></footer></section></div>}
+
+          {dayActionDate && <SyllabusDayActionDialog
+            date={dayActionDate}
+            subjects={syllabus?.active_revision?.subjects || []}
+            isNoSchool={Object.prototype.hasOwnProperty.call(noSchoolByDate, dayActionDate)}
+            noSchoolReason={noSchoolByDate[dayActionDate] || ''}
+            canGenerate={planningAccess.can_change_intent}
+            canUseExisting={canScheduleLessons}
+            busy={working}
+            error={dayActionError}
+            onClose={() => { setDayActionDate(''); setDayActionError('') }}
+            onGenerate={createGeneratedDayLesson}
+            onUseExisting={({ date }) => { setDayActionDate(''); void openLessonPicker(date) }}
+            onMarkNoSchool={setNoSchoolDate}
+            onClearNoSchool={clearNoSchoolDate}
+          />}
 
           {scheduleDialog && <SyllabusScheduleDialog
             mode={scheduleDialog.mode}

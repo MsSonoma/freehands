@@ -19,6 +19,9 @@ export default function LessonCalendar({
   onLearnerChange,
   onDateSelect,
   onItemSelect,
+  resolvedToday = '',
+  canManageDays = false,
+  onDayAction,
 }) {
   const [currentMonth, setCurrentMonth] = useState(() => {
     const base = selectedDate ? new Date(`${selectedDate}T12:00:00`) : new Date()
@@ -35,7 +38,7 @@ export default function LessonCalendar({
     ...Array.from({ length: firstDay }, () => null),
     ...Array.from({ length: totalDays }, (_, index) => index + 1),
   ]
-  const today = localDateString(new Date())
+  const today = resolvedToday || localDateString(new Date())
 
   function changeMonth(offset) {
     setCurrentMonth(new Date(currentYear, currentMonthIndex + offset, 1))
@@ -75,10 +78,13 @@ export default function LessonCalendar({
             const allCompleted = items.length > 0 && items.every(syllabusCalendarItemCompleted)
             return (
               <div key={date} style={{ minHeight: 112, padding: 6, border: isSelected ? '2px solid #111827' : '1px solid #e5e7eb', borderRadius: 8, background: noSchool ? '#fffbeb' : isToday ? '#f0fdf4' : '#fff', overflow: 'hidden' }}>
-                <button type="button" onClick={() => onDateSelect?.(date)} style={{ width: '100%', display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: 0, padding: 0, background: 'transparent', cursor: 'pointer', textAlign: 'left' }}>
-                  <strong style={{ fontSize: 13, color: isToday ? '#166534' : '#111827' }}>{day}</strong>
-                  {noSchool ? <span style={{ fontSize: 9, color: '#92400e' }}>No school</span> : items.length > 0 ? <span style={{ fontSize: 9, color: allCompleted ? '#6b7280' : '#374151' }}>{items.length}</span> : null}
-                </button>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 4, alignItems: 'center' }}>
+                  <button type="button" onClick={() => onDateSelect?.(date)} style={{ flex: 1, minWidth: 0, display: 'flex', justifyContent: 'space-between', alignItems: 'center', border: 0, padding: 0, background: 'transparent', cursor: 'pointer', textAlign: 'left' }}>
+                    <strong style={{ fontSize: 13, color: isToday ? '#166534' : '#111827' }}>{day}</strong>
+                    {noSchool ? <span style={{ fontSize: 9, color: '#92400e' }}>Day off</span> : items.length > 0 ? <span style={{ fontSize: 9, color: allCompleted ? '#6b7280' : '#374151' }}>{items.length}</span> : null}
+                  </button>
+                  {canManageDays && date >= today && <button type="button" aria-label={`Plan ${date}`} title="Add lesson or mark day off" onClick={() => onDayAction?.(date)} style={{ width: 24, height: 24, flex: '0 0 auto', border: '1px solid #d1d5db', borderRadius: '50%', background: '#fff', color: '#6b382c', cursor: 'pointer', fontSize: 16, fontWeight: 800, lineHeight: '20px', padding: 0 }}>+</button>}
+                </div>
                 <div style={{ display: 'grid', gap: 3, marginTop: 5 }}>
                   {items.slice(0, 3).map((item) => (
                     <button

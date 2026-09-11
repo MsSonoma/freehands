@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto'
 import { addSyllabusDays, startOfSyllabusWeek } from './timeline.mjs'
 import { subjectBalancedInstructionalEvidenceContext } from './evidenceProjection.mjs'
 import { buildSubjectBreadthContext, forecastPlanningMetadata } from './learningBreadth.mjs'
+import { noSchoolDateSet } from './noSchoolDates.mjs'
 
 export { instructionalEvidenceContext } from './evidenceProjection.mjs'
 export { buildSubjectBreadthContext } from './learningBreadth.mjs'
@@ -37,7 +38,7 @@ export function instructionalSlotsForWeek(weeklyPattern, weekStart) {
   return slots
 }
 
-function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWeekStart, targetWeekEnd, learnerGrade, evidenceContext, subjectBreadth }) {
+function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWeekStart, targetWeekEnd, learnerGrade, evidenceContext, subjectBreadth, blockedDates }) {
   return createHash('sha256').update(JSON.stringify({
     active_revision_id: activeRevision.id,
     target_week: [targetWeekStart, targetWeekEnd],
@@ -45,6 +46,7 @@ function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWee
     goals: activeRevision.goals,
     subjects: activeRevision.subjects,
     weekly_pattern: activeRevision.weekly_pattern,
+    no_school_dates: [...blockedDates].sort(),
     teaching_guidance: activeRevision.teaching_guidance,
     planning_policy: activeRevision.planning_policy,
     forecast_items: forecastItems.map((item) => ({
@@ -75,11 +77,12 @@ function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWee
   })).digest('hex')
 }
 
-export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], timelineItems = [], reports = [], learnerGrade = null, today }) {
+export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], timelineItems = [], reports = [], learnerGrade = null, noSchoolDates = [], today }) {
   if (!activeRevision?.id) throw new Error('An active Syllabus revision is required')
   const targetWeekStart = nextInstructionalForecastWeek(today)
   const targetWeekEnd = addSyllabusDays(targetWeekStart, 6)
-  const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart)
+  const blockedDates = noSchoolDateSet(noSchoolDates)
+  const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart).filter((slot) => !blockedDates.has(slot.planned_date))
   const occupied = new Set(timelineItems.filter((item) => {
     const date = String(item?.planned_date || '').slice(0, 10)
     return date >= targetWeekStart && date <= targetWeekEnd
@@ -98,7 +101,7 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
   })
   const proposalKey = inputIdentity({
     activeRevision, forecastItems, timelineItems, targetWeekStart, targetWeekEnd,
-    learnerGrade, evidenceContext, subjectBreadth,
+    learnerGrade, evidenceContext, subjectBreadth, blockedDates,
   })
   return {
     proposal_key: proposalKey,

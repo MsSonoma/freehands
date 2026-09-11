@@ -13,6 +13,7 @@ import {
 import { instructionalTeacherLabel, normalizeInstructionalTeacher, syllabusTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/lib/syllabus/learnerPresentation.mjs'
+import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
 import styles from './SyllabusDocument.module.css'
 
 const STATE_COPY = {
@@ -82,9 +83,10 @@ export default function SyllabusDocument({
   learnerName = '',
   lessonState = () => ({ hasLessonArtifact: false, hasProgress: false }),
   onSelectLesson = null,
-  canScheduleLessons = false,
   onOpenPlanning = null,
+  onDayAction = null,
   onAddLesson = null,
+  noSchoolDates = [],
   onEditSection = null,
   proposedForecastItems = [],
   proposedForecastTargetWeek = '',
@@ -99,6 +101,8 @@ export default function SyllabusDocument({
   today = localCalendarDate(),
 }) {
   const visibleItems = Array.isArray(timelineItems) ? timelineItems : forecastItems
+  const noSchoolByDate = useMemo(() => noSchoolReasonMap(noSchoolDates), [noSchoolDates])
+  const dayAction = onDayAction || onAddLesson
   const startedOccurrenceIds = useMemo(() => new Set(visibleItems
     .filter((item) => item?.placement_kind === 'actual' && item?.historical_record !== true && item?.source_occurrence_id)
     .map((item) => String(item.source_occurrence_id))), [visibleItems])
@@ -182,17 +186,19 @@ export default function SyllabusDocument({
         <div className={styles.entries} data-selected-week={week.week_start} aria-busy={contentLoading ? 'true' : undefined}>
           {contentLoading && <div className={styles.loadingEntries} role="status" aria-live="polite"><strong>Loading Syllabus contents</strong><span>Bringing in this learner&apos;s current lessons and history.</span><i /><i /><i /></div>}
           {!contentLoading && week.days.map((day) => {
-            const suggestions = projectedForecast.filter((item) => dateOnly(item.planned_date) === day.date)
+            const isNoSchool = Object.prototype.hasOwnProperty.call(noSchoolByDate, day.date)
+            const suggestions = isNoSchool ? [] : projectedForecast.filter((item) => dateOnly(item.planned_date) === day.date)
             const presentations = syllabusDayPresentation(day.items, suggestions)
-            const addLessonAllowed = canAddLessonToSyllabusDay({
+            const dayActionAllowed = canAddLessonToSyllabusDay({
               role,
               day: day.date,
               today,
-              schedulingAllowed: canScheduleLessons === true && typeof onAddLesson === 'function',
+              schedulingAllowed: typeof dayAction === 'function',
             })
-            return <section className={styles.day} key={day.date} data-syllabus-day={day.date}>
-            <header><time dateTime={day.date}>{prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>{day.date === dateOnly(today) && <span>Today</span>}{addLessonAllowed && <button type="button" className={styles.addLesson} onClick={() => onAddLesson(day.date)}>Add lesson</button>}</header>
-            {presentations.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
+            return <section className={`${styles.day} ${isNoSchool ? styles.dayOff : ''}`} key={day.date} data-syllabus-day={day.date} data-no-school={isNoSchool ? 'true' : undefined}>
+            <header><time dateTime={day.date}>{prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>{day.date === dateOnly(today) && <span>Today</span>}{dayActionAllowed && <button type="button" className={styles.addLesson} aria-label={`Plan ${prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}`} title="Add lesson or mark day off" onClick={() => dayAction(day.date)}>+</button>}</header>
+            {isNoSchool && <div className={styles.dayOffNotice}><strong>{noSchoolByDate[day.date] || 'Day off'}</strong><span>{presentations.length ? `${presentations.length} existing ${presentations.length === 1 ? 'item remains' : 'items remain'}` : 'No lessons planned'}</span></div>}
+            {!isNoSchool && presentations.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
             {presentations.map(({ kind, item }) => {
             if (kind === 'suggested') return <ForecastSuggestion
               key={item.lineage_id || item.id}

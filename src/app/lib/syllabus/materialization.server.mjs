@@ -203,6 +203,13 @@ export async function materializeForecastOccurrence({
     throw new SyllabusError('Forecast occurrence not found', 404, 'FORECAST_OCCURRENCE_NOT_FOUND')
   }
   const item = matches[0]
+  if (!item.lesson_key && typeof repository.listNoSchoolDates === 'function') {
+    const plannedDate = clean(item.planned_date).slice(0, 10)
+    const blocked = await repository.listNoSchoolDates(facilitatorId, learnerId, plannedDate, plannedDate)
+    if (blocked.some((row) => clean(row?.date).slice(0, 10) === plannedDate)) {
+      throw new SyllabusError('This date is marked as a day off or holiday. Remove that mark before generating or binding a lesson.', 409, 'NO_SCHOOL_DATE')
+    }
+  }
   if (item.lesson_key) {
     if (existingLesson && clean(item.lesson_key) !== existingLessonKey) {
       throw new SyllabusError('This forecast occurrence is already bound to another lesson.', 409, 'FORECAST_ALREADY_MATERIALIZED')

@@ -4,7 +4,7 @@ import test from 'node:test'
 
 import { buildPlanAhead } from '../planning.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '../forecastRequestIdentity.mjs'
-import { createFacilitatorConcept, editFacilitatorConcept, replaceLearningForecastConcept } from '../planning.server.mjs'
+import { createFacilitatorConcept, createFacilitatorDayConcept, editFacilitatorConcept, replaceLearningForecastConcept } from '../planning.server.mjs'
 import { materializeForecastOccurrence } from '../materialization.server.mjs'
 import { syllabusActionPresentation } from '../timeline.mjs'
 
@@ -17,8 +17,8 @@ const NOW = new Date('2026-08-31T14:00:00.000Z')
 function revision() { return { id: ACTIVE, syllabus_id: SYLLABUS, revision_number: 1, effective_from: '2026-08-31', schema_version: 1, goals: { legacy_notes: 'Learn deliberately.' }, subjects: [{ name: 'Math' }, { name: 'Science' }], weekly_pattern: { monday: [{ subject: 'Math' }, { subject: 'Math' }], wednesday: [{ subject: 'Science' }] }, teaching_guidance: { curriculum_preferences: {} }, planning_policy: { difficulty: 'intermediate' }, legacy_provenance: {}, change_reason: 'baseline', activated_at: NOW.toISOString() } }
 function concept(overrides = {}) { return { id: 'item-1', revision_id: ACTIVE, lineage_id: 'aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee', planned_date: '2026-09-07', subject: 'Math', title: 'Fractions', description: 'Compare equivalent fractions.', lesson_key: null, item_type: 'lesson', origin: 'facilitator', sort_order: 0, metadata: {}, ...overrides } }
 
-function repository(initial = []) {
-  const state = { learner: { id: LEARNER, facilitator_id: FACILITATOR, grade: '5th' }, syllabus: { id: SYLLABUS, facilitator_id: FACILITATOR, learner_id: LEARNER, active_revision_id: ACTIVE }, revisions: [revision()], items: structuredClone(initial), receipts: [], sequence: 1 }
+function repository(initial = [], { noSchoolDates = [] } = {}) {
+  const state = { learner: { id: LEARNER, facilitator_id: FACILITATOR, grade: '5th' }, syllabus: { id: SYLLABUS, facilitator_id: FACILITATOR, learner_id: LEARNER, active_revision_id: ACTIVE }, revisions: [revision()], items: structuredClone(initial), receipts: [], noSchoolDates: structuredClone(noSchoolDates), sequence: 1 }
   const clone = (value) => value == null ? value : structuredClone(value)
   return {
     state,
@@ -34,6 +34,7 @@ function repository(initial = []) {
     async findLatestLearningForecastProposal(syllabusId, baseRevisionId) { return clone(state.revisions.findLast((row) => row.syllabus_id === syllabusId && row.base_revision_id === baseRevisionId && row.proposal_kind === 'learning_forecast' && !row.activated_at) || null) },
     async replaceLearningForecastProposal({ expectedActiveRevisionId, planning, proposalKey }) { const old = state.revisions.find((row) => row.base_revision_id === expectedActiveRevisionId && row.proposal_kind === 'learning_forecast' && !row.activated_at); if (old) { state.revisions = state.revisions.filter((row) => row !== old); state.items = state.items.filter((row) => row.revision_id !== old.id) } const saved = { ...clone(planning), id: `proposal-${++state.sequence}`, syllabus_id: SYLLABUS, base_revision_id: expectedActiveRevisionId, revision_number: state.sequence, proposal_kind: 'learning_forecast', proposal_key: proposalKey, activated_at: null }; state.revisions.push(saved); state.items.push(...planning.forecast_items.map((row) => ({ ...clone(row), id: `item-${++state.sequence}`, revision_id: saved.id }))); return { revision: clone(saved), reused: false } },
     async findFacilitatorTimeZone() { return 'America/New_York' },
+    async listNoSchoolDates(owner, id, fromDate = null, toDate = null) { return owner === FACILITATOR && id === LEARNER ? clone(state.noSchoolDates.filter((row) => (!fromDate || row.date >= fromDate) && (!toDate || row.date <= toDate))) : [] },
     async claimForecastMaterialization({ lineageId, generationInputHash }) { const receipt = { id: `receipt-${++state.sequence}`, lineage_id: lineageId, generation_input_hash: generationInputHash, status: 'generating', lesson_key: null }; state.receipts.push(receipt); return { claimed: true, receipt: clone(receipt) } },
     async updateForecastMaterialization(id, values) { Object.assign(state.receipts.find((row) => row.id === id), values) },
   }
@@ -56,6 +57,24 @@ test('Create Your Own creates canonical facilitator intent with stable independe
   assert.equal(firstItem.metadata.facilitator_planning.action, 'created')
   const second = await createFacilitatorConcept({ repository: repo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: first.active_revision.id, plannedDate: '2026-09-07', sortOrder: 1, title: 'Same title', description: 'Second exact slot.', now: NOW, today: '2026-08-31' })
   assert.notEqual(second.forecast_items[0].lineage_id, second.forecast_items[1].lineage_id)
+})
+
+test('day-authored lesson uses normal capacity, requires PIN outside the pattern, and day-off authority wins over PIN', async () => {
+  const normalRepo = repository()
+  const normal = await createFacilitatorDayConcept({ repository: normalRepo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, plannedDate: '2026-09-07', subject: 'Math', title: 'Monday lesson', description: 'Use the ordinary Monday Math slot.', now: NOW, today: '2026-08-31' })
+  assert.equal(normal.forecast_items[0].planned_date, '2026-09-07')
+  assert.equal(normal.forecast_items[0].sort_order, 0)
+  assert.equal(normal.forecast_items[0].metadata.facilitator_planning.action, 'created_day')
+  assert.equal(normal.created_lineage_id, normal.forecast_items[0].lineage_id)
+
+  const exceptionRepo = repository()
+  await assert.rejects(createFacilitatorDayConcept({ repository: exceptionRepo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, plannedDate: '2026-09-08', subject: 'Math', title: 'Tuesday Math', description: 'An educator-directed exception.', now: NOW, today: '2026-08-31' }), { code: 'SYLLABUS_CAPACITY_PIN_REQUIRED' })
+  const exception = await createFacilitatorDayConcept({ repository: exceptionRepo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, plannedDate: '2026-09-08', subject: 'Math', title: 'Tuesday Math', description: 'An educator-directed exception.', allowCapacityException: true, now: NOW, today: '2026-08-31' })
+  assert.equal(exception.forecast_items[0].planned_date, '2026-09-08')
+  assert.equal(exception.forecast_items[0].subject, 'Math')
+
+  const blockedRepo = repository([], { noSchoolDates: [{ date: '2026-09-07', reason: 'Holiday: Labor Day' }] })
+  await assert.rejects(createFacilitatorDayConcept({ repository: blockedRepo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, plannedDate: '2026-09-07', subject: 'Math', title: 'Blocked', description: 'Must not be created.', allowCapacityException: true, now: NOW, today: '2026-08-31' }), { code: 'NO_SCHOOL_DATE' })
 })
 
 test('editing preserves exact lineage, records educator authorship, and concurrent revisions fail closed', async () => {
@@ -96,7 +115,7 @@ test('facilitator UI automatically POSTs forecast after authoritative refresh, k
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   const learner = fs.readFileSync(new URL('../../../learn/LearnerHome.js', import.meta.url), 'utf8')
-  const automaticEffectStart = facilitator.indexOf('useEffect(() => {\n    const activeId')
+  const automaticEffectStart = facilitator.indexOf('useEffect(() => {\n    if (!syllabusHydrated) return undefined')
   const automaticEffect = facilitator.slice(automaticEffectStart, facilitator.indexOf('  useEffect(() => {', automaticEffectStart + 1))
   assert.match(facilitator, /fetch\('\/api\/syllabus\/forecast'/)
   assert.match(facilitator, /setForecastRefreshSequence\(\(current\) => current \+ 1\)/)

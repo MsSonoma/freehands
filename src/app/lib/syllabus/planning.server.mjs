@@ -2,9 +2,10 @@ import { createHash, randomUUID } from 'node:crypto'
 import { loadRecentMasteryReports } from './masteryReports.server.mjs'
 import { subjectBalancedInstructionalEvidenceContext } from './evidenceProjection.mjs'
 import { buildSubjectBreadthContext, forecastPlanningMetadata } from './learningBreadth.mjs'
-import { canonicalSlotFor, syllabusSlotKey } from './planning.mjs'
+import { canonicalSlotFor, canonicalSlotsForDate, syllabusSlotKey } from './planning.mjs'
+import { noSchoolDateSet } from './noSchoolDates.mjs'
 import { activateSyllabus, carryForwardLearningForecastProposal } from './revisions.server.mjs'
-import { SyllabusError, validateSnapshot } from './schema.mjs'
+import { isCalendarDate, SyllabusError, validateSnapshot } from './schema.mjs'
 
 function clean(value, max) { return String(value || '').trim().slice(0, max) }
 function clone(value) { return structuredClone(value) }
@@ -30,6 +31,12 @@ function snapshot(revision, items, today, reason, provenance = {}) {
     legacy_provenance: { ...clone(revision.legacy_provenance), ...provenance },
     forecast_items: futureItems(items, today), change_reason: reason,
   }
+}
+
+async function assertInstructionalDateOpen(repository, facilitatorId, learnerId, date) {
+  if (typeof repository.listNoSchoolDates !== 'function') return
+  const blocked = noSchoolDateSet(await repository.listNoSchoolDates(facilitatorId, learnerId, date, date))
+  if (blocked.has(date)) throw new SyllabusError('Remove the day-off or holiday mark before adding instructional work to this date.', 409, 'NO_SCHOOL_DATE')
 }
 
 function conceptFields(input) {
@@ -65,12 +72,44 @@ function planningGenerationContext({ current, slots, reports, forecastItems, syl
 export async function createFacilitatorConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, plannedDate, sortOrder, title, description, now = new Date(), today = now.toISOString().slice(0, 10) }) {
   const current = await currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId })
   const slot = canonicalSlotFor({ weeklyPattern: current.revision.weekly_pattern, plannedDate, sortOrder })
+  if (slot) await assertInstructionalDateOpen(repository, facilitatorId, learnerId, slot.planned_date)
   if (!slot || slot.planned_date < today) throw new SyllabusError('This is not an available future weekly-pattern slot.', 409, 'PLANNING_SLOT_INVALID')
   if (current.items.some((item) => syllabusSlotKey(item) === syllabusSlotKey(slot))) throw new SyllabusError('This Syllabus slot already contains educational intent.', 409, 'PLANNING_SLOT_OCCUPIED')
   const fields = conceptFields({ title, description })
   const lineageId = randomUUID()
   const item = { ...slot, ...fields, lineage_id: lineageId, lesson_key: null, item_type: 'lesson', origin: 'facilitator', metadata: { facilitator_planning: { version: 1, action: 'created', active_revision_id: current.revision.id } } }
   return activateSyllabus({ repository, facilitatorId, learnerId, expectedActiveRevisionId, now, today, snapshot: snapshot(current.revision, [...current.items, item], today, `Facilitator created concept ${lineageId}`) })
+}
+
+export async function createFacilitatorDayConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, plannedDate, subject, title, description, allowCapacityException = false, now = new Date(), today = now.toISOString().slice(0, 10) }) {
+  const current = await currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId })
+  const date = clean(plannedDate, 10)
+  const requestedSubject = clean(subject, 200)
+  if (!isCalendarDate(date) || date < today) throw new SyllabusError('Choose a current or future calendar date.', 400, 'PLANNING_DATE_INVALID')
+  const declared = (current.revision.subjects || []).map((entry) => clean(typeof entry === 'string' ? entry : entry?.name, 200)).filter(Boolean)
+  const canonicalSubject = declared.find((name) => name.toLocaleLowerCase() === requestedSubject.toLocaleLowerCase())
+  if (!canonicalSubject) throw new SyllabusError('Choose a subject already declared in this Syllabus.', 400, 'PLANNING_SUBJECT_INVALID')
+  await assertInstructionalDateOpen(repository, facilitatorId, learnerId, date)
+
+  const occupied = new Set(current.items.filter((item) => String(item?.planned_date || '').slice(0, 10) === date).map((item) => Number(item?.sort_order || 0)))
+  const normalSlots = canonicalSlotsForDate(current.revision.weekly_pattern, date)
+  const openMatching = normalSlots.find((slot) => slot.subject.toLocaleLowerCase() === canonicalSubject.toLocaleLowerCase() && !occupied.has(slot.sort_order))
+  let slot = openMatching
+  if (!slot) {
+    if (!allowCapacityException) {
+      const error = new SyllabusError(canonicalSubject + ' has no open normal Syllabus slot on ' + date + '. Enter the Facilitator PIN to add it as an exception.', 409, 'SYLLABUS_CAPACITY_PIN_REQUIRED')
+      error.conflict = normalSlots.length ? 'subject_capacity' : 'no_capacity'
+      throw error
+    }
+    const used = [...normalSlots.map((entry) => Number(entry.sort_order || 0)), ...occupied]
+    const sortOrder = used.length ? Math.max(...used) + 1 : 0
+    slot = { planned_date: date, subject: canonicalSubject, sort_order: sortOrder }
+  }
+  const fields = conceptFields({ title, description })
+  const lineageId = randomUUID()
+  const item = { ...slot, ...fields, lineage_id: lineageId, lesson_key: null, item_type: 'lesson', origin: 'facilitator', metadata: { facilitator_planning: { version: 1, action: 'created_day', active_revision_id: current.revision.id } } }
+  const activated = await activateSyllabus({ repository, facilitatorId, learnerId, expectedActiveRevisionId, now, today, allowCapacityException, snapshot: snapshot(current.revision, [...current.items, item], today, 'Facilitator created day lesson concept ' + lineageId) })
+  return { ...activated, created_lineage_id: lineageId }
 }
 
 export async function editFacilitatorConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, lineageId, title, description, now = new Date(), today = now.toISOString().slice(0, 10) }) {
@@ -167,6 +206,11 @@ export async function suggestPlanAheadConcepts({ repository, facilitatorId, lear
   const current = await currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId })
   const requested = (Array.isArray(slots) ? slots : []).slice(0, 28).map((slot) => canonicalSlotFor({ weeklyPattern: current.revision.weekly_pattern, plannedDate: slot.planned_date, sortOrder: slot.sort_order })).filter(Boolean)
   if (!requested.length) throw new SyllabusError('Select at least one valid Plan Ahead slot.', 400, 'PLANNING_SLOT_INVALID')
+  if (typeof repository.listNoSchoolDates === 'function') {
+    const dates = requested.map((slot) => slot.planned_date).sort()
+    const blocked = noSchoolDateSet(await repository.listNoSchoolDates(facilitatorId, learnerId, dates[0], dates.at(-1)))
+    if (requested.some((slot) => blocked.has(slot.planned_date))) throw new SyllabusError('A selected Plan Ahead date is marked as a day off or holiday.', 409, 'NO_SCHOOL_DATE')
+  }
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
   const generated = await generateItems({
     slots: requested,

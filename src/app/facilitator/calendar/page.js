@@ -9,7 +9,13 @@ import { featuresForTier } from '@/app/lib/entitlements'
 import { resolveCalendarLandingParams } from '@/app/lib/facilitatorCalendarLanding.mjs'
 import { groupSyllabusCalendarItems, syllabusCalendarSelection, syllabusCalendarItemCompleted } from '@/app/lib/syllabus/calendarProjection.mjs'
 import { instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { syllabusEntitlementsFor } from '@/app/lib/syllabus/timeline.mjs'
+import { buildLessonSchedulePayload, buildSchedulableLessonOptions, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
+import { requestFacilitatorPinException } from '@/app/lib/pinGate'
+import { CORE_SUBJECTS } from '@/app/lib/subjects'
 import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
+import SyllabusDayActionDialog from '@/app/components/syllabus/SyllabusDayActionDialog'
+import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonCalendar from './LessonCalendar'
 import GeneratePortfolioModal from './GeneratePortfolioModal'
@@ -49,6 +55,14 @@ export default function CalendarPage() {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showPortfolio, setShowPortfolio] = useState(false)
+  const [dayActionDate, setDayActionDate] = useState('')
+  const [dayActionError, setDayActionError] = useState('')
+  const [dayActionBusy, setDayActionBusy] = useState(false)
+  const [scheduleDialog, setScheduleDialog] = useState(null)
+  const [scheduleLessons, setScheduleLessons] = useState([])
+  const [scheduleCatalogLoading, setScheduleCatalogLoading] = useState(false)
+  const [scheduleBusy, setScheduleBusy] = useState(false)
+  const [scheduleError, setScheduleError] = useState('')
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -158,6 +172,128 @@ export default function CalendarPage() {
   const resolvedToday = syllabus?.resolved_today || selectedDate || ''
   const selectedLearner = learners.find((learner) => String(learner.id) === String(selectedLearnerId)) || null
   const portfolioAllowed = featuresForTier(planTier).lessonPlanner === true
+  const planningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier })
+  const canScheduleLessons = featuresForTier(planTier).lessonScheduling === true
+
+  function openDayAction(date) {
+    setSelectedDate(date)
+    setDayActionError('')
+    setDayActionDate(date)
+  }
+
+  async function refreshPlanningViews() {
+    await Promise.all([loadSyllabus(), loadNoSchoolDates()])
+  }
+
+  async function setNoSchoolDate({ date, reason }) {
+    if (!selectedLearnerId || !accessToken || !date) return
+    setDayActionBusy(true)
+    setDayActionError('')
+    try {
+      const response = await fetch('/api/no-school-dates', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ learnerId: selectedLearnerId, date, reason }) })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json.error || 'Could not mark this day off')
+      setDayActionDate('')
+      await refreshPlanningViews()
+    } catch (cause) {
+      setDayActionError(cause.message || 'Could not mark this day off')
+    } finally { setDayActionBusy(false) }
+  }
+
+  async function clearNoSchoolDate({ date }) {
+    if (!selectedLearnerId || !accessToken || !date) return
+    setDayActionBusy(true)
+    setDayActionError('')
+    try {
+      const response = await fetch(`/api/no-school-dates?learnerId=${encodeURIComponent(selectedLearnerId)}&date=${encodeURIComponent(date)}`, { method: 'DELETE', headers: { Authorization: `Bearer ${accessToken}` } })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json.error || 'Could not remove the day-off mark')
+      setDayActionDate('')
+      await refreshPlanningViews()
+    } catch (cause) {
+      setDayActionError(cause.message || 'Could not remove the day-off mark')
+    } finally { setDayActionBusy(false) }
+  }
+
+  async function createGeneratedDayLesson({ date, subject, title, description }) {
+    if (!planningAccess.can_change_intent || !selectedLearnerId || !accessToken || !syllabus?.active_revision?.id) return
+    const learnerId = selectedLearnerId
+    setDayActionBusy(true)
+    setDayActionError('')
+    try {
+      const postConcept = (exceptionPin) => fetch('/api/syllabus/planning', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, expectedActiveRevisionId: syllabus.active_revision.id, action: 'create_day', plannedDate: date, subject, title, description, ...(exceptionPin ? { exceptionPin } : {}) }),
+      })
+      let response = await postConcept()
+      let json = await response.json().catch(() => ({}))
+      if (response.status === 409 && json?.code === 'SYLLABUS_CAPACITY_PIN_REQUIRED') {
+        const pin = await requestFacilitatorPinException({ message: json.error })
+        if (!pin) throw new Error('The placement exception was not approved.')
+        response = await postConcept(pin)
+        json = await response.json().catch(() => ({}))
+      }
+      if (!response.ok) throw new Error(json.error || 'Could not create this lesson intent')
+      if (!json.created_lineage_id || !json.active_revision?.id) throw new Error('The new Syllabus lesson could not be identified')
+      const materializeResponse = await fetch('/api/syllabus/materialize', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, lineageId: json.created_lineage_id, expectedActiveRevisionId: json.active_revision.id }),
+      })
+      const materialized = await materializeResponse.json().catch(() => ({}))
+      if (!materializeResponse.ok) {
+        await refreshPlanningViews()
+        throw new Error(materialized.error || 'The lesson intent was saved, but generation did not complete')
+      }
+      setDayActionDate('')
+      await refreshPlanningViews()
+    } catch (cause) {
+      setDayActionError(cause.message || 'Could not generate this lesson')
+    } finally { setDayActionBusy(false) }
+  }
+
+  async function openExistingLessonPicker(date) {
+    if (!canScheduleLessons) return
+    setDayActionDate('')
+    setScheduleDialog({ mode: 'add', scheduledDate: date })
+    setScheduleCatalogLoading(true)
+    setScheduleError('')
+    try {
+      const [publicResults, ownedResponse] = await Promise.all([
+        Promise.all(CORE_SUBJECTS.map(async (subject) => {
+          const response = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+          return [subject, response.ok ? await response.json() : []]
+        })),
+        fetch('/api/facilitator/lessons/list', { cache: 'no-store', headers: { Authorization: `Bearer ${accessToken}` } }),
+      ])
+      const publicLessonsBySubject = Object.fromEntries(publicResults.map(([subject, lessons]) => [subject, Array.isArray(lessons) ? lessons : []]))
+      const facilitatorLessons = ownedResponse.ok ? await ownedResponse.json() : []
+      setScheduleLessons(buildSchedulableLessonOptions({ publicLessonsBySubject, facilitatorLessons }))
+    } catch (cause) {
+      setScheduleLessons([])
+      setScheduleError(cause.message || 'Could not load ready lessons')
+    } finally { setScheduleCatalogLoading(false) }
+  }
+
+  async function saveExistingLesson(lesson) {
+    if (!scheduleDialog?.scheduledDate || !lesson?.lessonKey) return
+    setScheduleBusy(true)
+    setScheduleError('')
+    try {
+      const payload = buildLessonSchedulePayload({ learnerId: selectedLearnerId, lessonKey: lesson.lessonKey, scheduledDate: scheduleDialog.scheduledDate })
+      const { response, json } = await postLessonScheduleWithCapacityPin({
+        payload,
+        postSchedule: (body) => fetch('/api/lesson-schedule', { method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' }, body: JSON.stringify(body) }),
+        requestPin: (message) => requestFacilitatorPinException({ message }),
+      })
+      if (!response.ok) throw new Error(json.error || 'Could not schedule the lesson')
+      setScheduleDialog(null)
+      await refreshPlanningViews()
+    } catch (cause) {
+      setScheduleError(cause.message || 'Could not schedule the lesson')
+    } finally { setScheduleBusy(false) }
+  }
 
   function selectCalendarItem(item) {
     if (!item?.lesson_key) {
@@ -203,6 +339,9 @@ export default function CalendarPage() {
               onLearnerChange={setSelectedLearnerId}
               onDateSelect={setSelectedDate}
               onItemSelect={selectCalendarItem}
+              resolvedToday={resolvedToday}
+              canManageDays={Boolean(syllabus?.has_active_syllabus)}
+              onDayAction={openDayAction}
             />
 
             <aside style={{ border: '1px solid #d1d5db', borderRadius: 12, background: '#fff', overflow: 'hidden' }}>
@@ -213,7 +352,7 @@ export default function CalendarPage() {
               <div style={{ padding: 10, display: 'grid', gap: 8 }}>
                 {selectedDate && noSchoolDates[selectedDate] !== undefined && (
                   <div style={{ padding: 9, borderRadius: 7, background: '#fffbeb', color: '#92400e', fontSize: 12 }}>
-                    Legacy Calendar note: No school{noSchoolDates[selectedDate] ? ` - ${noSchoolDates[selectedDate]}` : ''}. This note is displayed here but does not author the Syllabus.
+                    {noSchoolDates[selectedDate] || 'Day off'} - this date is protected from new instructional planning.
                   </div>
                 )}
                 {!syllabus?.has_active_syllabus && (
@@ -249,6 +388,39 @@ export default function CalendarPage() {
           </div>
         )}
       </main>
+
+      {dayActionDate && (
+        <SyllabusDayActionDialog
+          date={dayActionDate}
+          subjects={syllabus?.active_revision?.subjects || []}
+          isNoSchool={Object.prototype.hasOwnProperty.call(noSchoolDates, dayActionDate)}
+          noSchoolReason={noSchoolDates[dayActionDate] || ''}
+          canGenerate={planningAccess.can_change_intent}
+          canUseExisting={canScheduleLessons}
+          busy={dayActionBusy}
+          error={dayActionError}
+          onClose={() => { setDayActionDate(''); setDayActionError('') }}
+          onGenerate={createGeneratedDayLesson}
+          onUseExisting={({ date }) => { void openExistingLessonPicker(date) }}
+          onMarkNoSchool={setNoSchoolDate}
+          onClearNoSchool={clearNoSchoolDate}
+        />
+      )}
+
+      {scheduleDialog && (
+        <SyllabusScheduleDialog
+          mode="add"
+          scheduledDate={scheduleDialog.scheduledDate}
+          minimumDate={resolvedToday}
+          lessons={scheduleLessons}
+          loading={scheduleCatalogLoading}
+          busy={scheduleBusy}
+          error={scheduleError}
+          onClose={() => { setScheduleDialog(null); setScheduleError('') }}
+          onDateChange={(scheduledDate) => setScheduleDialog((current) => ({ ...current, scheduledDate }))}
+          onChooseLesson={saveExistingLesson}
+        />
+      )}
 
       {selectedLesson && (
         <FacilitatorSyllabusLessonOverlay

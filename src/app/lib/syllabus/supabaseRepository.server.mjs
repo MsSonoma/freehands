@@ -161,6 +161,32 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load Syllabus forecast')
       return data || []
     },
+    async listNoSchoolDates(facilitatorId, learnerId, fromDate = null, toDate = null) {
+      let query = admin.from('no_school_dates').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .order('date')
+      if (fromDate) query = query.gte('date', String(fromDate).slice(0, 10))
+      if (toDate) query = query.lte('date', String(toDate).slice(0, 10))
+      const { data, error } = await query
+      throwOn(error, 'Failed to load no-school dates')
+      return data || []
+    },
+    async upsertNoSchoolDate(row) {
+      const { data, error } = await admin.from('no_school_dates').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'facilitator_id,learner_id,date' }).select('*').single()
+      throwOn(error, 'Failed to save no-school date')
+      return data
+    },
+    async deleteNoSchoolDate(facilitatorId, learnerId, date) {
+      const { data, error } = await admin.from('no_school_dates').delete()
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .eq('date', String(date).slice(0, 10))
+        .select('id')
+        .maybeSingle()
+      throwOn(error, 'Failed to remove no-school date')
+      return data
+    },
     async listLessonAssociations(facilitatorId, learnerId) {
       const { data, error } = await admin.from('syllabus_lesson_associations').select('*')
         .eq('facilitator_id', facilitatorId)

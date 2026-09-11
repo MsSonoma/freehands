@@ -133,10 +133,11 @@ function forecastRepository({ lineageId = FORECAST_LINEAGE, lessonKey = LESSON_K
   }
 }
 
-function scheduleDeps(admin, clear, syllabusRepository = null) {
+function scheduleDeps(admin, clear, syllabusRepository = null, blockedDate = null) {
   return {
     createClientImpl: () => admin,
     inspectLearnerSyllabusPlacement: async () => ({ allowed: true }),
+    findNoSchoolDate: async () => blockedDate,
     setLessonAssociationInferenceSuppressed: clear,
     ...(syllabusRepository ? { syllabusRepository } : {}),
   }
@@ -169,6 +170,18 @@ function associationDeps(admin, clear = async () => {}) {
     setLessonAssociationInferenceSuppressed: clear,
   }
 }
+
+test('new scheduling fails closed on a no-school date before any schedule mutation', async () => {
+  const admin = scheduleAdmin()
+  const response = await scheduleLesson(request('http://localhost/api/lesson-schedule', {
+    learnerId: LEARNER_ID,
+    lessonKey: LESSON_KEY,
+    scheduledDate: '2026-09-08',
+  }), scheduleDeps(admin, async () => {}, null, { id: 'off-1', reason: 'Holiday' }))
+  assert.equal(response.status, 409)
+  assert.equal((await response.json()).code, 'NO_SCHOOL_DATE')
+  assert.equal(admin.state.scheduleWrites, 0)
+})
 
 test('new schedule persists and preserves association before exact suppression clear', async () => {
   const admin = scheduleAdmin()

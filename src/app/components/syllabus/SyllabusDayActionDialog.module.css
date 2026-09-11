@@ -1,0 +1,24 @@
+.backdrop { position:fixed; inset:0; z-index:1200; display:grid; place-items:center; padding:18px; background:rgba(25,22,18,.48); }
+.dialog { width:min(560px,100%); max-height:calc(100svh - 36px); overflow:auto; padding:18px; border:1px solid #d6cec2; border-radius:12px; background:#fffdf8; box-shadow:0 18px 50px rgba(0,0,0,.2); color:#2d2924; font-family:Roboto,sans-serif; }
+.dialog>header { display:flex; justify-content:space-between; gap:16px; align-items:start; padding-bottom:12px; border-bottom:1px solid #ded8cf; }
+.dialog>header p { margin:0 0 3px; color:#6b382c; font:800 10px Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.08em; }
+.dialog>header h2 { margin:0; font:500 22px Georgia,serif; }
+.dialog>header button,.form footer button { border:1px solid #cfc6b8; border-radius:7px; background:#fff; color:#4f4942; padding:8px 11px; cursor:pointer; font-weight:700; }
+.error { margin-top:12px; padding:9px 10px; border:1px solid #fecaca; border-radius:7px; background:#fef2f2; color:#991b1b; font-size:12px; }
+.actions { display:grid; gap:9px; padding-top:14px; }
+.actions>button { display:grid; gap:4px; width:100%; padding:12px; border:1px solid #d8d0c5; border-radius:9px; background:#fff; text-align:left; cursor:pointer; color:#2d2924; }
+.actions>button:disabled { opacity:.45; cursor:not-allowed; }
+.actions strong { font:800 13px Montserrat,sans-serif; }
+.actions span { color:#6d6359; font-size:12px; line-height:1.4; }
+.form { display:grid; gap:12px; padding-top:14px; }
+.form label { display:grid; gap:5px; color:#4f4942; font-size:12px; font-weight:800; }
+.form label span { font-weight:400; color:#81786f; }
+.form input,.form select,.form textarea { width:100%; box-sizing:border-box; border:1px solid #cfc6b8; border-radius:7px; background:#fff; color:#2d2924; padding:9px 10px; font:14px Roboto,sans-serif; }
+.form textarea { resize:vertical; }
+.form footer { display:flex; justify-content:flex-end; gap:8px; padding-top:4px; }
+.form footer .primary { border-color:#6b382c; background:#6b382c; color:#fff; }
+.note { margin:0; color:#6d6359; font-size:12px; line-height:1.45; }
+.noSchool { display:grid; gap:10px; margin-top:14px; padding:13px; border:1px solid #ead5a0; border-radius:9px; background:#fffbeb; color:#7c4a03; }
+.noSchool p { margin:0; font-size:12px; line-height:1.45; }
+.danger { justify-self:start; border:1px solid #b45309; border-radius:7px; background:#fff; color:#92400e; padding:8px 11px; cursor:pointer; font-weight:800; }
+.dialog button:disabled { cursor:not-allowed; }

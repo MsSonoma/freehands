@@ -38,6 +38,13 @@ const normalizeUuid = (value) => {
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(text) ? text : null
 }
 
+export async function findNoSchoolDate({ admin, facilitatorId, learnerId, date }) {
+  const { data, error } = await admin.from('no_school_dates').select('id,reason')
+    .eq('facilitator_id', facilitatorId).eq('learner_id', learnerId).eq('date', date).maybeSingle()
+  if (error) throw error
+  return data || null
+}
+
 export async function verifyScheduleForecastLineage({ repository, facilitatorId, learnerId, forecastLineageId, lessonKey }) {
   const syllabus = await repository.findSyllabus(facilitatorId, learnerId)
   if (!syllabus?.active_revision_id) return { ok: false, status: 409, error: 'The learner has no active Syllabus for this forecast lineage.' }
@@ -215,6 +222,13 @@ export async function POST(request, deps = {}) {
 
     if (learnerError || !learner) {
       return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
+    }
+
+    const normalizedDate = normalizeScheduledDate(scheduledDate)
+    const lookupNoSchoolDate = deps.findNoSchoolDate || findNoSchoolDate
+    const blockedDate = await lookupNoSchoolDate({ admin: adminSupabase, facilitatorId: user.id, learnerId, date: normalizedDate })
+    if (blockedDate) {
+      return NextResponse.json({ error: 'Remove the day-off or holiday mark before scheduling a lesson on this date.', code: 'NO_SCHOOL_DATE' }, { status: 409 })
     }
 
     const { data: profile } = await adminSupabase

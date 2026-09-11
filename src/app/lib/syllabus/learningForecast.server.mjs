@@ -46,6 +46,7 @@ export async function createLearningForecastProposal({
     timelineItems,
     reports: authorizedReports,
     learnerGrade: learner.grade || null,
+    noSchoolDates: inputs.noSchoolDates || [],
     today: calendar.today,
   })
   const existing = await repository.findLatestLearningForecastProposal(syllabus.id, activeRevision.id)

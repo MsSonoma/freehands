@@ -134,6 +134,16 @@ test('learning forecast schema accepts first-class description and distinct orig
   assert.equal(validated.forecast_items[0].description, 'Preserve this intent.')
 })
 
+test('no-school dates remove forecast slots before generation and change proposal identity', () => {
+  const revision = activeRevision()
+  const open = buildInstructionalForecastPlan({ activeRevision: revision, today: '2026-08-31' })
+  const blocked = buildInstructionalForecastPlan({ activeRevision: revision, noSchoolDates: [{ date: '2026-09-07', reason: 'Holiday' }], today: '2026-08-31' })
+  assert.deepEqual(open.slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-09-07', 'math'], ['2026-09-08', 'science']])
+  assert.deepEqual(blocked.slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-09-08', 'science']])
+  assert.deepEqual(blocked.unfilled_slots.map((slot) => slot.planned_date), ['2026-09-08'])
+  assert.notEqual(blocked.proposal_key, open.proposal_key)
+})
+
 test('unmaterialized learning intent exposes existing binding and generation only to facilitators', () => {
   const actions = syllabusItemActionsFor({ item: item({ origin: 'learning_forecast' }), role: 'facilitator', state: 'future_unfinished' })
   assert.deepEqual(actions, [{ id: 'use_existing', label: 'Use existing lesson' }, { id: 'materialize', label: 'Generate lesson' }])

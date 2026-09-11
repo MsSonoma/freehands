@@ -356,6 +356,27 @@ test('learner-specific unscheduled lessons receive distinct provisional weekly-p
   assert.ok(items.every((item) => item.is_provisional && !item.is_explicit_schedule))
 })
 
+test('inferred Syllabus placement skips no-school dates while explicit commitments remain visible', () => {
+  const inferred = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association()],
+    noSchoolDates: [{ date: '2026-08-31', reason: 'Holiday' }],
+    today: '2026-08-26',
+  })
+  assert.equal(inferred.length, 1)
+  assert.equal(inferred[0].placement_kind, 'inferred')
+  assert.equal(inferred[0].planned_date, '2026-09-07')
+
+  const explicit = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    schedules: [{ id: 'schedule-1', lesson_key: 'generated/fractions.json', scheduled_date: '2026-08-31', created_at: '2026-08-26T10:00:00Z' }],
+    associations: [association()],
+    noSchoolDates: [{ date: '2026-08-31', reason: 'Holiday' }],
+    today: '2026-08-26',
+  })
+  assert.equal(explicit.find((item) => item.placement_kind === 'scheduled')?.planned_date, '2026-08-31')
+})
+
 test('explicit schedule outranks inferred and occupies the weekly slot without being rewritten', () => {
   const schedules = [{ lesson_key: 'generated/fractions.json', scheduled_date: '2026-08-31' }]
   const items = composeSyllabusLessonTimeline({

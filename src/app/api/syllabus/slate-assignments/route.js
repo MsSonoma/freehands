@@ -43,6 +43,10 @@ export async function POST(request, deps = {}) {
     if (earliestDate && scheduledDate < earliestDate) {
       throw new SyllabusError('Mr. Slate must be scheduled on or after the instructional lesson and cannot be scheduled in the past', 400, 'SLATE_SCHEDULE_BEFORE_INSTRUCTION')
     }
+    const noSchoolDates = typeof repository.listNoSchoolDates === 'function' ? await repository.listNoSchoolDates(context.user.id, learnerId, scheduledDate, scheduledDate) : []
+    if (noSchoolDates.some((row) => clean(row?.date).slice(0, 10) === scheduledDate)) {
+      throw new SyllabusError('Remove the day-off or holiday mark before scheduling Mr. Slate on this date.', 409, 'NO_SCHOOL_DATE')
+    }
     const assignment = await repository.createSlateAssignment({
       facilitator_id: context.user.id,
       learner_id: learnerId,

@@ -1180,6 +1180,7 @@ function LessonsPageInner(){
             revision={syllabusModel.revision}
             forecastItems={syllabusModel.forecast_items}
             timelineItems={syllabusModel.timeline_items}
+            noSchoolDates={syllabusPayload?.no_school_dates || []}
             role="learner"
             learnerId={learnerId || ''}
             planTier={planTier}

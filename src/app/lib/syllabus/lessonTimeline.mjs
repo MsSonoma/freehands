@@ -5,6 +5,7 @@ import { slateRunPurpose } from '../slateLearningModel.mjs'
 import { latestExplicitLessonSessionEvent, lifecycleEventActualKind, resolveLessonSessionLifecycle } from '../lessonSessionLifecycle.mjs'
 import { normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotations.mjs'
+import { noSchoolDateSet } from './noSchoolDates.mjs'
 
 const DAY_MS = 86400000
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
@@ -43,13 +44,14 @@ function reserveExplicitSlot({ weeklyPattern, plannedDate, subject, preferredInd
   occupied.add(available.slot)
   return { slot: available, capacity_conflict: subjectKey(available.subject) === target ? null : 'subject_capacity' }
 }
-function inferredSubjectSlot({ weeklyPattern, subject, afterDate, occupied }) {
+function inferredSubjectSlot({ weeklyPattern, subject, afterDate, occupied, blockedDates = new Set() }) {
   const start = new Date(`${afterDate}T12:00:00.000Z`)
   if (Number.isNaN(start.getTime())) return null
   const target = subjectKey(subject)
   for (let offset = 0; offset <= FORECAST_HORIZON_DAYS; offset++) {
     const cursor = new Date(start.getTime() + offset * DAY_MS)
     const plannedDate = cursor.toISOString().slice(0, 10)
+    if (blockedDates.has(plannedDate)) continue
     for (const entry of patternEntries(weeklyPattern, plannedDate)) {
       if (subjectKey(entry.subject) === target && !occupied.has(entry.slot)) {
         return { planned_date: plannedDate, sort_order: entry.index, slot: entry.slot }
@@ -89,10 +91,11 @@ function intentOccurrenceId(intent) {
 
 export function composeSyllabusLessonTimeline({
   activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
-  legacyActivities = [], lessonMetadata = [], slateAssignments = [], slateEvidenceReports = [], slateReviewReports = [],
+  legacyActivities = [], noSchoolDates = [], lessonMetadata = [], slateAssignments = [], slateEvidenceReports = [], slateReviewReports = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
 } = {}) {
+  const blockedDates = noSchoolDateSet(noSchoolDates)
   const concreteKeys = [
     ...forecastItems.map((row) => row?.lesson_key), ...associations.map((row) => row?.lesson_key), ...Object.keys(approvedLessons || {}),
     ...schedules.map((row) => row?.lesson_key), ...sessions.map((row) => row?.lesson_id || row?.lesson_key),
@@ -308,7 +311,7 @@ export function composeSyllabusLessonTimeline({
     const details = metadata.get(intent.key) || ensureMetadata(intent.key, intent.row)
     const overdue = intent.planned_date < today
     if (overdue) {
-      const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: details?.subject, afterDate: today, occupied })
+      const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: details?.subject, afterDate: today, occupied, blockedDates })
       if (slot) occupied.add(slot.slot)
       intent.capacity = { slot, capacity_conflict: slot ? null : 'no_capacity' }
       intent.rendered_date = slot?.planned_date || today
@@ -322,7 +325,7 @@ export function composeSyllabusLessonTimeline({
   const standaloneForecastCapacity = new Map()
   for (const item of (forecastItems || []).filter((row) => !row?.lesson_key && validDate(row?.planned_date))) {
     if (isoDate(item.planned_date) < today) {
-      const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: item.subject, afterDate: today, occupied })
+      const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: item.subject, afterDate: today, occupied, blockedDates })
       if (slot) occupied.add(slot.slot)
       standaloneForecastCapacity.set(item, { slot, capacity_conflict: slot ? null : 'no_capacity', rendered_date: slot?.planned_date || today, needs_placement: !slot })
     } else {
@@ -397,7 +400,7 @@ export function composeSyllabusLessonTimeline({
   ))
     .sort((left, right) => clean(left.association_id).localeCompare(clean(right.association_id)) || left.lesson_key.localeCompare(right.lesson_key))
   for (const entry of inferenceCandidates) {
-    const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: entry.subject, afterDate: today, occupied })
+    const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: entry.subject, afterDate: today, occupied, blockedDates })
     if (slot) occupied.add(slot.slot)
     output.push({
       ...entry, id: `inferred:${entry.association_id || entry.lesson_key}`, occurrence_id: `inferred:${entry.association_id || entry.lesson_key}`,
