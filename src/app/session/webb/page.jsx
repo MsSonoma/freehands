@@ -2464,23 +2464,38 @@ function WebbPageInner() {
   const videoEffH = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
   const msSBSH    = videoEffH ? `${videoEffH}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')
 
-  const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', flex: '1 1 0', overflow: 'hidden', background: '#fff', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box', '--msSideBySideH': msSBSH }
-    : { display: 'flex', flexDirection: 'column', flex: '1 1 0', overflow: 'hidden', background: '#fff' }
+  const keyboardCompact = typingViewport.keyboardVisible
+  const mainLayoutStyle = keyboardCompact
+    ? (isMobileLandscape
+      ? { display: 'flex', alignItems: 'stretch', flex: '1 1 0', minHeight: 0, overflow: 'hidden', background: '#fff', paddingLeft: 4, paddingRight: 4, boxSizing: 'border-box' }
+      : { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, overflow: 'hidden', background: '#fff' })
+    : (isMobileLandscape
+      ? { display: 'flex', alignItems: 'stretch', flex: '1 1 0', overflow: 'hidden', background: '#fff', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box', '--msSideBySideH': msSBSH }
+      : { display: 'flex', flexDirection: 'column', flex: '1 1 0', overflow: 'hidden', background: '#fff' })
 
-  const videoWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
-    : { flex: '0 0 50%', position: 'relative', width: '100%', overflow: 'hidden', minHeight: 0, boxSizing: 'border-box' }
+  const videoWrapperStyle = keyboardCompact
+    ? (isMobileLandscape
+      ? { flex: '0 0 30%', position: 'relative', overflow: 'hidden', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }
+      : { flex: '0 0 22%', position: 'relative', width: '100%', overflow: 'hidden', minHeight: 0, boxSizing: 'border-box' })
+    : (isMobileLandscape
+      ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
+      : { flex: '0 0 50%', position: 'relative', width: '100%', overflow: 'hidden', minHeight: 0, boxSizing: 'border-box' })
 
   const dynH = (isMobileLandscape && videoEffH) ? { height: videoEffH, maxHeight: videoEffH, minHeight: 0 } : {}
 
-  const videoInnerStyle = isMobileLandscape
-    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', ...dynH }
-    : { position: 'relative', overflow: 'hidden', height: 'calc(100% - 4px)', width: '92%', margin: '4px auto 0', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000' }
+  const videoInnerStyle = keyboardCompact
+    ? { position: 'relative', overflow: 'hidden', height: '100%', minHeight: 0, width: isMobileLandscape ? '100%' : '96%', margin: isMobileLandscape ? 0 : '2px auto 0', background: '#000', borderRadius: 6, boxShadow: '0 1px 6px rgba(0,0,0,0.10)' }
+    : (isMobileLandscape
+      ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', ...dynH }
+      : { position: 'relative', overflow: 'hidden', height: 'calc(100% - 4px)', width: '92%', margin: '4px auto 0', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000' })
 
-  const transcriptWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', paddingLeft: 8, boxSizing: 'border-box' }
-    : { flex: '0 0 50%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', minHeight: 0 }
+  const transcriptWrapperStyle = keyboardCompact
+    ? (isMobileLandscape
+      ? { flex: '1 1 0', display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, minHeight: 0, paddingLeft: 4, boxSizing: 'border-box' }
+      : { flex: '1 1 0', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', minHeight: 0 })
+    : (isMobileLandscape
+      ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', paddingLeft: 8, boxSizing: 'border-box' }
+      : { flex: '0 0 50%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', minHeight: 0 })
 
   // ── Media overlay effects ─────────────────────────────────────────────
 
@@ -2607,7 +2622,7 @@ function WebbPageInner() {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div style={{ height: typingViewport.keyboardVisible && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+    <div data-ms-webb-chat-compact={keyboardCompact ? 'true' : 'false'} style={{ height: typingViewport.keyboardVisible && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
       <FeatureHelpToast
         suggestion={pendingFeatureHelp?.suggestion || null}
         onConfirm={confirmFeatureHelp}
@@ -2616,18 +2631,18 @@ function WebbPageInner() {
 
       {/* Header */}
       <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '10px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 24 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: keyboardCompact ? '4px 8px' : '10px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: keyboardCompact ? 5 : 10 }}>
+            <span style={{ fontSize: keyboardCompact ? 17 : 24 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
             <div>
-              <div style={{ fontWeight: 800, fontSize: 15, letterSpacing: 0.5 }}>MRS. WEBB</div>
+              <div style={{ fontWeight: 800, fontSize: keyboardCompact ? 12 : 15, letterSpacing: 0.5 }}>MRS. WEBB</div>
               {selectedLesson
-                ? <div style={{ fontSize: 11, opacity: 0.85, maxWidth: 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedLesson.title}</div>
+                ? <div style={{ fontSize: keyboardCompact ? 9 : 11, opacity: 0.85, maxWidth: keyboardCompact ? 150 : 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedLesson.title}</div>
                 : <div style={{ fontSize: 11, opacity: 0.75, letterSpacing: 1 }}>LESSON TEACHER</div>
               }
             </div>
           </div>
-          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: keyboardCompact ? 4 : 8, alignItems: 'center' }}>
             {isChatting && objectives.length > 0 && (
               <button
                 type="button"
@@ -2635,18 +2650,19 @@ function WebbPageInner() {
                 title="View learning objectives"
                 style={{
                   ...headerBtn,
-                  display: 'flex', alignItems: 'center', gap: 5,
+                  ...(keyboardCompact ? { padding: '3px 7px', fontSize: 10 } : {}),
+                  display: 'flex', alignItems: 'center', gap: keyboardCompact ? 3 : 5,
                   background: understoodCount === objectives.length
                     ? 'rgba(13,148,136,0.45)'
                     : 'rgba(255,255,255,0.15)',
                 }}
               >
-                <span style={{ fontSize: 14 }}>&#9989;</span>
-                <span style={{ fontSize: 12 }}>{understoodCount}/{objectives.length}</span>
+                <span style={{ fontSize: keyboardCompact ? 11 : 14 }}>&#9989;</span>
+                <span style={{ fontSize: keyboardCompact ? 10 : 12 }}>{understoodCount}/{objectives.length}</span>
               </button>
             )}
             {isChatting && (
-              <button type="button" onClick={handleBack} style={headerBtn}>
+              <button type="button" onClick={handleBack} style={keyboardCompact ? { ...headerBtn, padding: '3px 7px', fontSize: 10 } : headerBtn}>
                 &#8592; Lessons
               </button>
             )}
@@ -2713,15 +2729,15 @@ function WebbPageInner() {
             {/* Media overlay: rendered as portal — see createPortal block near end of return */}
 
             {/* Overlay buttons — bottom right: Skip + Mute (always) */}
-            <div style={{ position: 'absolute', bottom: 14, right: 14, display: 'flex', gap: 10, zIndex: 10 }}>
+            <div style={{ position: 'absolute', bottom: keyboardCompact ? 4 : 14, right: keyboardCompact ? 4 : 14, display: 'flex', gap: keyboardCompact ? 4 : 10, zIndex: 10 }}>
               {engineState === 'playing' && (
-                <button type="button" onClick={skipTTS} aria-label="Skip" style={overlayBtnStyle}>
+                <button type="button" onClick={skipTTS} aria-label="Skip" style={keyboardCompact ? { ...overlayBtnStyle, width: 28, height: 28 } : overlayBtnStyle}>
                   <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" />
                   </svg>
                 </button>
               )}
-              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={overlayBtnStyle}>
+              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={keyboardCompact ? { ...overlayBtnStyle, width: 28, height: 28 } : overlayBtnStyle}>
                 {isMuted
                   ? <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
                   : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
@@ -2731,7 +2747,7 @@ function WebbPageInner() {
 
             {/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
             {isChatting && (
-              <div style={{ position: 'absolute', bottom: 14, left: 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 6, zIndex: 10 }}>
+              <div style={{ position: 'absolute', bottom: keyboardCompact ? 4 : 14, left: keyboardCompact ? 4 : 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: keyboardCompact ? 3 : 6, zIndex: 10 }}>
                 {(videoLoading || articleLoading) && (
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', background: 'rgba(0,0,0,0.45)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.02em' }}>
                     Searching the web…
@@ -2743,7 +2759,7 @@ function WebbPageInner() {
                   onClick={handleVideoButtonClick}
                   aria-label="Watch a video"
                   title={videoLoading ? 'Loading video…' : videoResource ? 'Watch a video' : 'Loading video…'}
-                  style={{ ...overlayBtnStyle, background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
+                  style={{ ...overlayBtnStyle, ...(keyboardCompact ? { width: 28, height: 28 } : {}), background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
                 >
                   {videoLoading
                     ? <svg style={{ width: '55%', height: '55%', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
@@ -2755,7 +2771,7 @@ function WebbPageInner() {
                   onClick={() => { setMediaOverlay(v => v === 'article' ? null : 'article') }}
                   aria-label="Read Wikipedia article"
                   title={articleLoading ? 'Finding Wikipedia article…' : articleResource ? `Wikipedia: ${articleResource.wikiTitle}` : 'Finding Wikipedia article…'}
-                  style={{ ...overlayBtnStyle, background: mediaOverlay === 'article' ? C.accent : '#1f2937', opacity: articleLoading ? 0.55 : 1 }}
+                  style={{ ...overlayBtnStyle, ...(keyboardCompact ? { width: 28, height: 28 } : {}), background: mediaOverlay === 'article' ? C.accent : '#1f2937', opacity: articleLoading ? 0.55 : 1 }}
                 >
                   {articleLoading
                     ? <svg style={{ width: '55%', height: '55%', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
@@ -2850,8 +2866,8 @@ function WebbPageInner() {
               style={{
                 flex: '1 1 0', minHeight: 0,
                 overflowY: 'auto', overflowX: 'hidden',
-                padding: '16px 12px 8px',
-                display: 'flex', flexDirection: 'column', gap: 8,
+                padding: keyboardCompact ? '4px 7px 3px' : '16px 12px 8px',
+                display: 'flex', flexDirection: 'column', gap: keyboardCompact ? 3 : 8,
                 background: '#f9fafb',
                 WebkitOverflowScrolling: 'touch',
               }}
@@ -2859,17 +2875,17 @@ function WebbPageInner() {
               {transcript.map((msg, i) => {
                 const isUser = msg.role === 'user'
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: 7, flexDirection: isUser ? 'row-reverse' : 'row', padding: '0 2px' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: keyboardCompact ? 4 : 7, flexDirection: isUser ? 'row-reverse' : 'row', padding: keyboardCompact ? 0 : '0 2px' }}>
                     {!isUser && (
-                      <span style={{ fontSize: 20, lineHeight: 1, flexShrink: 0, marginBottom: 1 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
+                      <span style={{ fontSize: keyboardCompact ? 15 : 20, lineHeight: 1, flexShrink: 0, marginBottom: 1 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
                     )}
                     <div style={{
-                      maxWidth: 'min(78%, 360px)',
+                      maxWidth: keyboardCompact ? 'min(88%, 420px)' : 'min(78%, 360px)',
                       background: isUser ? C.accent : '#ffffff',
                       color: isUser ? '#ffffff' : C.text,
                       borderRadius: isUser ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
-                      padding: '9px 13px',
-                      fontSize: 14, lineHeight: 1.55,
+                      padding: keyboardCompact ? '4px 7px' : '9px 13px',
+                      fontSize: keyboardCompact ? 12 : 14, lineHeight: keyboardCompact ? 1.28 : 1.55,
                       wordBreak: 'break-word',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.09)',
                       border: isUser ? 'none' : '1px solid #e5e7eb',
@@ -2938,16 +2954,17 @@ function WebbPageInner() {
 
       {/* Footer: normal chat input. Writing uses the isolated full-screen studio. */}
       {isChatting && !writingMode && (
-        <div style={footerStyle}>
+        <div style={keyboardCompact ? { ...footerStyle, padding: '3px 6px', paddingBottom: 'calc(3px + env(safe-area-inset-bottom, 0px))' } : footerStyle}>
           <TypingConversationContext
             entries={transcript}
             visible={typingViewport.keyboardVisible}
-            maxItems={6}
+            maxItems={keyboardCompact ? 3 : 6}
+            compact={keyboardCompact}
             teacherLabel="Mrs. Webb"
             accent={C.accent}
           />
           {hasAllWritingReadyNotes(objectives, learnerNotes) && !essayMode && (
-            <div style={{ marginBottom: 10 }}>
+            <div style={{ marginBottom: keyboardCompact ? 3 : 10 }}>
               <button
                 type="button"
                 onClick={handleStartWriting}
@@ -2957,11 +2974,11 @@ function WebbPageInner() {
                   background: writingEvaluating ? '#e5e7eb' : '#0d9488',
                   color: writingEvaluating ? '#9ca3af' : '#fff',
                   border: 'none',
-                  borderRadius: 10,
-                  padding: '10px 16px',
+                  borderRadius: keyboardCompact ? 7 : 10,
+                  padding: keyboardCompact ? '6px 10px' : '10px 16px',
                   cursor: writingEvaluating ? 'default' : 'pointer',
                   fontWeight: 800,
-                  fontSize: 14,
+                  fontSize: keyboardCompact ? 11 : 14,
                   fontFamily: 'inherit',
                 }}
               >
@@ -2973,6 +2990,7 @@ function WebbPageInner() {
             <StudentInput
               onSend={sendMessage}
               loading={chatLoading || !!checkError}
+              compact={keyboardCompact}
             />
           )}
         </div>
@@ -3894,7 +3912,7 @@ function WebbLessonBrowser({
 }
 
 // ── StudentInput ──────────────────────────────────────────────────────────────
-function StudentInput({ onSend, loading }) {
+function StudentInput({ onSend, loading, compact = false }) {
   const [value, setValue] = useState('')
   const ref = useRef(null)
 
@@ -3910,10 +3928,10 @@ function StudentInput({ onSend, loading }) {
   }
 
   return (
-    <div style={{ display: 'flex', gap: 8, width: '100%', alignItems: 'flex-end' }}>
+    <div style={{ display: 'flex', gap: compact ? 5 : 8, width: '100%', alignItems: 'flex-end' }}>
       <textarea
         ref={ref}
-        rows={2}
+        rows={compact ? 1 : 2}
         value={value}
         disabled={loading}
         onChange={e => setValue(e.target.value.slice(0, 400))}
@@ -3922,7 +3940,8 @@ function StudentInput({ onSend, loading }) {
         aria-label="Chat with Mrs. Webb"
         style={{
           flex: 1, border: `1.5px solid ${C.border}`, borderRadius: 10,
-          padding: '8px 12px', fontSize: 16, resize: 'none', outline: 'none',
+          padding: compact ? '5px 8px' : '8px 12px', fontSize: 16, resize: 'none', outline: 'none',
+          minHeight: compact ? 34 : 'auto', maxHeight: compact ? 38 : 'none', lineHeight: compact ? 1.15 : 1.35,
           fontFamily: 'inherit', background: loading ? '#f9fafb' : '#fff',
           color: C.text, WebkitAppearance: 'none',
         }}
@@ -3935,7 +3954,7 @@ function StudentInput({ onSend, loading }) {
           ...primaryBtn,
           opacity: (loading || !value.trim()) ? 0.5 : 1,
           cursor: (loading || !value.trim()) ? 'not-allowed' : 'pointer',
-          padding: '10px 16px', alignSelf: 'stretch',
+          padding: compact ? '6px 10px' : '10px 16px', alignSelf: 'stretch',
           display: 'flex', alignItems: 'center',
         }}
       >

@@ -23,7 +23,7 @@ test('Ms. Sonoma keeps six recent transcript entries with the input while touch 
 test('Mrs. Webb keeps six recent conversation entries with the input while touch typing', () => {
   assert.match(webb, /entries=\{transcript\}/)
   assert.match(webb, /visible=\{typingViewport\.keyboardVisible\}/)
-  assert.match(webb, /maxItems=\{6\}/)
+  assert.match(webb, /maxItems=\{keyboardCompact \? 3 : 6\}/)
   assert.match(webb, /teacherLabel="Mrs\. Webb"/)
   assert.match(webb, /height: typingViewport\.keyboardVisible && typingViewport\.visualHeight/)
 })
@@ -39,7 +39,7 @@ test('shared typing context is bounded to the most recent conversation instead o
   assert.match(context, /slice\(-Math\.max\(1, maxItems\)\)/)
   assert.match(context, /data-ms-typing-context/)
   assert.match(context, /Recent conversation/)
-  assert.match(context, /maxHeight: 'min\(24dvh, 132px\)'/)
+  assert.match(context, /maxHeight: compact \? '40px' : 'min\(24dvh, 132px\)'/)
 })
 
 test('Webb writing studio follows the visible viewport and keeps recent context while the learner types', () => {
@@ -47,9 +47,28 @@ test('Webb writing studio follows the visible viewport and keeps recent context 
   assert.match(studio, /width: typingViewport\.visualWidth/)
   assert.match(studio, /height: typingViewport\.visualHeight/)
   assert.match(studio, /entries=\{recentEntries\}/)
-  assert.match(studio, /maxItems=\{6\}/)
-  assert.match(studio, /position: typingViewport\.keyboardVisible \? 'sticky' : 'static'/)
+  assert.match(studio, /maxItems=\{keyboardCompact \? 2 : 6\}/)
+  assert.match(studio, /position: keyboardCompact \? 'relative' : 'static'/)
   assert.match(webb, /recentEntries=\{transcript\}/)
+})
+
+test('Mrs. Webb switches both discussion and essay writing into a compact keyboard-visible layout', () => {
+  assert.match(webb, /const keyboardCompact = typingViewport\.keyboardVisible/)
+  assert.match(webb, /flex: '0 0 22%'/)
+  assert.match(webb, /padding: keyboardCompact \? '4px 7px 3px'/)
+  assert.match(webb, /rows=\{compact \? 1 : 2\}/)
+  assert.match(webb, /compact=\{keyboardCompact\}/)
+  assert.match(studio, /const keyboardCompact = typingViewport\.keyboardVisible/)
+  assert.match(studio, /fontSize: keyboardCompact \? 12 : 'clamp\(15px, 2\.4vw, 19px\)'/)
+  assert.match(studio, /fontSize: keyboardCompact \? 13 : 'clamp\(23px, 4vw, 36px\)'/)
+  assert.match(studio, /rows=\{keyboardCompact \? 2 : 4\}/)
+  assert.match(studio, /minHeight: keyboardCompact \? 52 : 132/)
+  assert.match(studio, /overflowY: keyboardCompact \? 'hidden' : 'auto'/)
+  assert.equal((studio.match(/maxHeight: 44, overflowY: 'auto', flexShrink: 0/g) || []).length, 3)
+  assert.match(studio, /data-ms-webb-writing-compact/)
+  assert.match(webb, /data-ms-webb-chat-compact/)
+  assert.match(studio, />\s*Previous attempt\s*</)
+  assert.match(studio, /compact=\{keyboardCompact\}/)
 })
 
 test('lesson surfaces do not use text focus alone to keep keyboard context visible', () => {
@@ -70,6 +89,6 @@ test('touching a stale focused field releases focus before the native tap refocu
 })
 
 test('iPad text fields use at least 16px type to avoid Safari focus zoom', () => {
-  assert.match(webb, /padding: '8px 12px', fontSize: 16/)
+  assert.match(webb, /padding: compact \? '5px 8px' : '8px 12px', fontSize: 16/)
   assert.equal((sonoma.match(/fontSize: 'max\(16px, clamp\(0\.95rem, 1\.6vw, 1\.05rem\)\)'/g) || []).length, 3)
 })

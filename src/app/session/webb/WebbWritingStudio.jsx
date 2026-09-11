@@ -6,17 +6,22 @@ import { WEBB_WRITING_SUBPHASES } from '@/app/lib/webbWritingFlow.mjs'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import TypingConversationContext from '../components/TypingConversationContext'
 
-function GuidanceTranscript({ text }) {
+function GuidanceTranscript({ text, compact = false }) {
   if (!String(text || '').trim()) return null
   return (
     <div style={{
-      width: 'min(92vw, 760px)',
-      margin: '0 auto 22px',
+      width: compact ? '100%' : 'min(92vw, 760px)',
+      margin: compact ? '0 auto 3px' : '0 auto 22px',
+      padding: compact ? '0 3px' : 0,
+      boxSizing: 'border-box',
       color: '#334155',
-      fontSize: 15,
-      lineHeight: 1.65,
+      fontSize: compact ? 10.5 : 15,
+      lineHeight: compact ? 1.18 : 1.65,
       textAlign: 'center',
-      minHeight: 24,
+      minHeight: compact ? 0 : 24,
+      maxHeight: compact ? 24 : 'none',
+      overflowY: compact ? 'auto' : 'visible',
+      flexShrink: 0,
     }} aria-live="polite">
       {text}
     </div>
@@ -64,6 +69,7 @@ export default function WebbWritingStudio({
 }) {
   const inputRef = useRef(null)
   const typingViewport = useTypingViewport()
+  const keyboardCompact = typingViewport.keyboardVisible
   const blankCompleteRef = useRef(onBlankComplete)
 
   useEffect(() => {
@@ -111,16 +117,19 @@ export default function WebbWritingStudio({
       } : { inset: 0 }),
       zIndex: 1400,
       background: '#f1eee7',
-      overflowY: 'auto',
-      padding: typingViewport.keyboardVisible ? '8px 8px 16px' : 'clamp(20px, 4vw, 42px) 16px 56px',
+      overflowY: keyboardCompact ? 'hidden' : 'auto',
+      padding: keyboardCompact ? '3px 5px 5px' : 'clamp(20px, 4vw, 42px) 16px 56px',
       boxSizing: 'border-box',
       fontFamily: 'system-ui, -apple-system, sans-serif',
-    }}>
-      <div style={{ position: typingViewport.keyboardVisible ? 'sticky' : 'static', top: 0, zIndex: 4 }}>
+      display: 'flex',
+      flexDirection: 'column',
+    }} data-ms-webb-writing-compact={keyboardCompact ? 'true' : 'false'}>
+      <div style={{ position: keyboardCompact ? 'relative' : 'static', zIndex: 4, flexShrink: 0 }}>
         <TypingConversationContext
           entries={recentEntries}
           visible={typingViewport.keyboardVisible}
-          maxItems={6}
+          maxItems={keyboardCompact ? 2 : 6}
+          compact={keyboardCompact}
           teacherLabel="Mrs. Webb"
           accent="#0d9488"
         />
@@ -139,64 +148,79 @@ export default function WebbWritingStudio({
       )}
 
       {[WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(subphase) && (
-        <div style={{ animation: 'webb-writing-focus-in 0.35s ease both' }}>
-          <GuidanceTranscript text={guidance} />
-          <div style={{ width: 'min(92vw, 780px)', margin: '0 auto' }}>
-            <div style={{ textAlign: 'center', color: '#64748b', fontSize: 12, fontWeight: 800, letterSpacing: 1.25, textTransform: 'uppercase', marginBottom: 20 }}>
+        <div style={{
+          animation: 'webb-writing-focus-in 0.35s ease both',
+          ...(keyboardCompact ? { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, overflow: 'hidden' } : {}),
+        }}>
+          <GuidanceTranscript text={guidance} compact={keyboardCompact} />
+          <div style={{
+            width: keyboardCompact ? '100%' : 'min(92vw, 780px)',
+            margin: '0 auto',
+            ...(keyboardCompact ? { flex: '1 1 0', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' } : {}),
+          }}>
+            <div style={{ textAlign: 'center', color: '#64748b', fontSize: keyboardCompact ? 9 : 12, fontWeight: 800, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 3 : 20 }}>
               Sentence {activeIndex + 1} of {totalSentences}
             </div>
 
             <section style={{
               background: '#fffdf7',
               border: '1px solid #ded6c7',
-              borderRadius: 16,
-              padding: 'clamp(24px, 5vw, 44px)',
-              boxShadow: '0 20px 55px rgba(15,23,42,0.12)',
+              borderRadius: keyboardCompact ? 8 : 16,
+              padding: keyboardCompact ? '5px 7px' : 'clamp(24px, 5vw, 44px)',
+              boxShadow: keyboardCompact ? '0 4px 14px rgba(15,23,42,0.08)' : '0 20px 55px rgba(15,23,42,0.12)',
+              ...(keyboardCompact ? { flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' } : {}),
             }}>
               {currentObjective && (
-                <div style={{ marginBottom: 26, paddingBottom: 22, borderBottom: '1px solid #e7e0d2' }}>
-                  <div style={{ color: '#64748b', fontSize: 11, fontWeight: 900, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 8 }}>
+                <div style={{
+                  marginBottom: keyboardCompact ? 3 : 26,
+                  paddingBottom: keyboardCompact ? 3 : 22,
+                  borderBottom: '1px solid #e7e0d2',
+                  ...(keyboardCompact ? { maxHeight: 44, overflowY: 'auto', flexShrink: 0 } : {}),
+                }}>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 8 }}>
                     What you showed
                   </div>
-                  <div style={{ color: '#334155', fontSize: 'clamp(15px, 2.4vw, 19px)', lineHeight: 1.55, fontWeight: 650 }}>
+                  <div style={{ color: '#334155', fontSize: keyboardCompact ? 12 : 'clamp(15px, 2.4vw, 19px)', lineHeight: keyboardCompact ? 1.22 : 1.55, fontWeight: 650 }}>
                     {currentObjective}
                   </div>
                 </div>
               )}
-              <div style={{ color: '#0f766e', fontSize: 11, fontWeight: 900, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 10 }}>
+              <div style={{ color: '#0f766e', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 10 }}>
                 Your note
               </div>
               <div style={{
                 color: '#172033',
-                fontSize: 'clamp(23px, 4vw, 36px)',
-                lineHeight: 1.35,
+                fontSize: keyboardCompact ? 13 : 'clamp(23px, 4vw, 36px)',
+                lineHeight: keyboardCompact ? 1.22 : 1.35,
                 fontWeight: 720,
-                letterSpacing: '-0.02em',
-                marginBottom: subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 30 : 38,
+                letterSpacing: keyboardCompact ? '-0.01em' : '-0.02em',
+                marginBottom: keyboardCompact ? 3 : (subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 30 : 38),
+                ...(keyboardCompact ? { maxHeight: 44, overflowY: 'auto', flexShrink: 0 } : {}),
               }}>
                 {currentNote}
               </div>
 
               {subphase === WEBB_WRITING_SUBPHASES.REVIEW && priorText && (
                 <div style={{
-                  marginBottom: 28,
-                  padding: '18px 20px',
-                  borderRadius: 12,
+                  marginBottom: keyboardCompact ? 5 : 28,
+                  padding: keyboardCompact ? '5px 7px' : '18px 20px',
+                  borderRadius: keyboardCompact ? 7 : 12,
                   background: '#f1f5f9',
                   border: '1px solid #dbe4ef',
                   animation: 'webb-writing-attempt-aside 0.38s ease both',
+                  ...(keyboardCompact ? { maxHeight: 44, overflowY: 'auto', flexShrink: 0 } : {}),
                 }}>
-                  <div style={{ color: '#64748b', fontSize: 10, fontWeight: 900, letterSpacing: 1.25, textTransform: 'uppercase', marginBottom: 8 }}>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 10, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 8 }}>
                     Previous attempt
                   </div>
-                  <div style={{ color: '#475569', fontSize: 'clamp(16px, 2.6vw, 21px)', lineHeight: 1.55 }}>
+                  <div style={{ color: '#475569', fontSize: keyboardCompact ? 12 : 'clamp(16px, 2.6vw, 21px)', lineHeight: keyboardCompact ? 1.22 : 1.55 }}>
                     {priorText}
                   </div>
                 </div>
               )}
 
-              <form onSubmit={submit}>
-                <label htmlFor="webb-writing-attempt" style={{ display: 'block', color: '#0f766e', fontSize: 11, fontWeight: 900, letterSpacing: 1.4, textTransform: 'uppercase', marginBottom: 10 }}>
+              <form onSubmit={submit} style={keyboardCompact ? { marginTop: 'auto', flexShrink: 0 } : undefined}>
+                <label htmlFor="webb-writing-attempt" style={{ display: 'block', color: '#0f766e', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 3 : 10 }}>
                   {subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 'Try again' : 'Your sentence'}
                 </label>
                 <textarea
@@ -205,21 +229,22 @@ export default function WebbWritingStudio({
                   value={currentDraft}
                   onChange={event => onDraftChange?.(event.target.value)}
                   disabled={evaluating}
-                  rows={4}
+                  rows={keyboardCompact ? 2 : 4}
                   autoComplete="off"
                   spellCheck
                   style={{
                     width: '100%',
-                    resize: 'vertical',
-                    minHeight: 132,
+                    resize: keyboardCompact ? 'none' : 'vertical',
+                    minHeight: keyboardCompact ? 52 : 132,
+                    maxHeight: keyboardCompact ? 58 : 'none',
                     boxSizing: 'border-box',
                     border: '2px solid #99f6e4',
-                    borderRadius: 12,
+                    borderRadius: keyboardCompact ? 7 : 12,
                     background: '#ffffff',
                     color: '#111827',
-                    fontSize: 'clamp(18px, 3vw, 24px)',
-                    lineHeight: 1.5,
-                    padding: '16px 18px',
+                    fontSize: keyboardCompact ? 16 : 'clamp(18px, 3vw, 24px)',
+                    lineHeight: keyboardCompact ? 1.25 : 1.5,
+                    padding: keyboardCompact ? '6px 8px' : '16px 18px',
                     outline: 'none',
                     fontFamily: 'inherit',
                   }}
@@ -229,14 +254,14 @@ export default function WebbWritingStudio({
                   disabled={evaluating || !currentDraft.trim()}
                   style={{
                     width: '100%',
-                    marginTop: 14,
+                    marginTop: keyboardCompact ? 4 : 14,
                     border: 0,
-                    borderRadius: 12,
-                    padding: '13px 18px',
+                    borderRadius: keyboardCompact ? 7 : 12,
+                    padding: keyboardCompact ? '7px 10px' : '13px 18px',
                     background: evaluating || !currentDraft.trim() ? '#cbd5e1' : '#0d9488',
                     color: '#fff',
                     fontWeight: 850,
-                    fontSize: 15,
+                    fontSize: keyboardCompact ? 12 : 15,
                     cursor: evaluating || !currentDraft.trim() ? 'default' : 'pointer',
                     fontFamily: 'inherit',
                   }}

@@ -68,6 +68,16 @@ test('writing resume restores the durable composition stage instead of re-enteri
   assert.match(page, /webbStage: requestedStage/)
 })
 
+test('keyboard-visible writing keeps objective, note, retry context, and sentence input in the compact stack', () => {
+  assert.match(studio, /keyboardCompact/)
+  assert.match(studio, /What you showed/)
+  assert.match(studio, /Your note/)
+  assert.match(studio, /Previous attempt/)
+  assert.match(studio, /rows=\{keyboardCompact \? 2 : 4\}/)
+  assert.match(studio, /minHeight: keyboardCompact \? 52 : 132/)
+  assert.match(studio, /fontSize: keyboardCompact \? 16/)
+})
+
 test('normal Mrs. Webb chat input is hidden while the writing studio is active', () => {
   assert.match(page, /\{isChatting && !writingMode && \(/)
   assert.match(page, /open=\{isChatting && writingMode\}/)
