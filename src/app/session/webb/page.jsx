@@ -2607,7 +2607,7 @@ function WebbPageInner() {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div style={{ height: typingViewport.typing && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+    <div style={{ height: typingViewport.keyboardVisible && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
       <FeatureHelpToast
         suggestion={pendingFeatureHelp?.suggestion || null}
         onConfirm={confirmFeatureHelp}
@@ -2941,7 +2941,7 @@ function WebbPageInner() {
         <div style={footerStyle}>
           <TypingConversationContext
             entries={transcript}
-            visible={typingViewport.typing}
+            visible={typingViewport.keyboardVisible}
             maxItems={6}
             teacherLabel="Mrs. Webb"
             accent={C.accent}

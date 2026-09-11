@@ -26,15 +26,27 @@ test('touch typing uses the visual viewport and computes the keyboard inset', ()
   const state = measureTypingViewport(win, { activeElement: input() })
   assert.equal(state.touchLike, true)
   assert.equal(state.textEntryFocused, true)
+  assert.equal(state.keyboardVisible, true)
   assert.equal(state.typing, true)
   assert.equal(state.visualHeight, 360)
   assert.equal(state.keyboardInset, 408)
 })
 
-test('small browser chrome changes are not treated as a keyboard inset', () => {
+test('focused touch input does not enter keyboard mode for small browser chrome changes', () => {
   const win = fakeWindow({ touch: true, innerHeight: 768, visualHeight: 730 })
   const state = measureTypingViewport(win, { activeElement: input() })
-  assert.equal(state.typing, true)
+  assert.equal(state.textEntryFocused, true)
+  assert.equal(state.keyboardVisible, false)
+  assert.equal(state.typing, false)
+  assert.equal(state.keyboardInset, 0)
+})
+
+test('dismissing the touch keyboard restores normal mode even when the input keeps focus', () => {
+  const win = fakeWindow({ touch: true, innerHeight: 768, visualHeight: 768 })
+  const state = measureTypingViewport(win, { activeElement: input() })
+  assert.equal(state.textEntryFocused, true)
+  assert.equal(state.keyboardVisible, false)
+  assert.equal(state.typing, false)
   assert.equal(state.keyboardInset, 0)
 })
 

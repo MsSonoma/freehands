@@ -7916,7 +7916,7 @@ function SessionPageV2Inner() {
   const timelineLandscapeHeight = 'clamp(40px, 6vh, 56px)';
   
   const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: typingViewport.typing && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: `calc(${timelineLandscapeHeight} + 12px)`, '--msSideBySideH': msSideBySideH }
+    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: typingViewport.keyboardVisible && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: `calc(${timelineLandscapeHeight} + 12px)`, '--msSideBySideH': msSideBySideH }
     : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
   
   const videoWrapperStyle = isMobileLandscape
@@ -8454,7 +8454,7 @@ function SessionPageV2Inner() {
         position: 'fixed',
         left: 0,
         right: 0,
-        bottom: typingViewport.typing ? `${typingViewport.keyboardInset}px` : 0,
+        bottom: typingViewport.keyboardVisible ? `${typingViewport.keyboardInset}px` : 0,
         zIndex: 999,
         background: '#ffffff',
         borderTop: '1px solid #e5e7eb',
@@ -8462,7 +8462,7 @@ function SessionPageV2Inner() {
       }}>
         <TypingConversationContext
           entries={transcriptLines}
-          visible={typingViewport.typing}
+          visible={typingViewport.keyboardVisible}
           maxItems={6}
           teacherLabel="Ms. Sonoma"
           accent="#c7442e"

@@ -9,10 +9,10 @@ const context = fs.readFileSync(new URL('../components/TypingConversationContext
 
 test('Ms. Sonoma keeps six recent transcript entries with the input while touch typing', () => {
   assert.match(sonoma, /entries=\{transcriptLines\}/)
-  assert.match(sonoma, /visible=\{typingViewport\.typing\}/)
+  assert.match(sonoma, /visible=\{typingViewport\.keyboardVisible\}/)
   assert.match(sonoma, /maxItems=\{6\}/)
   assert.match(sonoma, /teacherLabel="Ms\. Sonoma"/)
-  assert.match(sonoma, /bottom: typingViewport\.typing \? `\$\{typingViewport\.keyboardInset\}px` : 0/)
+  assert.match(sonoma, /bottom: typingViewport\.keyboardVisible \? `\$\{typingViewport\.keyboardInset\}px` : 0/)
   assert.match(sonoma, /window\.visualViewport \|\| null/)
   assert.match(sonoma, /const layoutW = window\.innerWidth/)
   assert.match(sonoma, /const layoutH = window\.innerHeight/)
@@ -21,10 +21,10 @@ test('Ms. Sonoma keeps six recent transcript entries with the input while touch 
 
 test('Mrs. Webb keeps six recent conversation entries with the input while touch typing', () => {
   assert.match(webb, /entries=\{transcript\}/)
-  assert.match(webb, /visible=\{typingViewport\.typing\}/)
+  assert.match(webb, /visible=\{typingViewport\.keyboardVisible\}/)
   assert.match(webb, /maxItems=\{6\}/)
   assert.match(webb, /teacherLabel="Mrs\. Webb"/)
-  assert.match(webb, /height: typingViewport\.typing && typingViewport\.visualHeight/)
+  assert.match(webb, /height: typingViewport\.keyboardVisible && typingViewport\.visualHeight/)
 })
 
 test('touch sessions do not summon the software keyboard automatically', () => {
@@ -47,8 +47,14 @@ test('Webb writing studio follows the visible viewport and keeps recent context 
   assert.match(studio, /height: typingViewport\.visualHeight/)
   assert.match(studio, /entries=\{recentEntries\}/)
   assert.match(studio, /maxItems=\{6\}/)
-  assert.match(studio, /position: typingViewport\.typing \? 'sticky' : 'static'/)
+  assert.match(studio, /position: typingViewport\.keyboardVisible \? 'sticky' : 'static'/)
   assert.match(webb, /recentEntries=\{transcript\}/)
+})
+
+test('lesson surfaces do not use text focus alone to keep keyboard context visible', () => {
+  assert.doesNotMatch(sonoma, /typingViewport\.typing/)
+  assert.doesNotMatch(webb, /typingViewport\.typing/)
+  assert.doesNotMatch(studio, /typingViewport\.typing/)
 })
 
 test('iPad text fields use at least 16px type to avoid Safari focus zoom', () => {

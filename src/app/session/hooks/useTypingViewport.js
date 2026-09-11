@@ -39,7 +39,7 @@ export function isTextEntryElement(element) {
 
 export function measureTypingViewport(win = typeof window !== 'undefined' ? window : null, doc = typeof document !== 'undefined' ? document : null) {
   if (!win) return {
-    touchLike: false, textEntryFocused: false, typing: false,
+    touchLike: false, textEntryFocused: false, keyboardVisible: false, typing: false,
     visualHeight: 0, visualWidth: 0, offsetTop: 0, offsetLeft: 0, keyboardInset: 0,
   }
   let vv = null
@@ -53,10 +53,12 @@ export function measureTypingViewport(win = typeof window !== 'undefined' ? wind
   const keyboardInset = rawInset >= 48 ? rawInset : 0
   const touchLike = isTouchLikeDevice(win)
   const textEntryFocused = isTextEntryElement(doc?.activeElement)
+  const keyboardVisible = touchLike && textEntryFocused && keyboardInset > 0
   return {
     touchLike,
     textEntryFocused,
-    typing: touchLike && textEntryFocused,
+    keyboardVisible,
+    typing: keyboardVisible,
     visualHeight,
     visualWidth,
     offsetTop,
@@ -84,7 +86,8 @@ export default function useTypingViewport() {
       setState({
         ...measured,
         textEntryFocused,
-        typing: measured.touchLike && textEntryFocused,
+        keyboardVisible: measured.touchLike && textEntryFocused && measured.keyboardInset > 0,
+        typing: measured.touchLike && textEntryFocused && measured.keyboardInset > 0,
       })
       updateViewport()
     }

@@ -104,7 +104,7 @@ export default function WebbWritingStudio({
   return createPortal(
     <div style={{
       position: 'fixed',
-      ...(typingViewport.typing && typingViewport.visualHeight ? {
+      ...(typingViewport.keyboardVisible && typingViewport.visualHeight ? {
         top: typingViewport.offsetTop, left: typingViewport.offsetLeft,
         width: typingViewport.visualWidth || '100%', height: typingViewport.visualHeight,
         right: 'auto', bottom: 'auto',
@@ -112,14 +112,14 @@ export default function WebbWritingStudio({
       zIndex: 1400,
       background: '#f1eee7',
       overflowY: 'auto',
-      padding: typingViewport.typing ? '8px 8px 16px' : 'clamp(20px, 4vw, 42px) 16px 56px',
+      padding: typingViewport.keyboardVisible ? '8px 8px 16px' : 'clamp(20px, 4vw, 42px) 16px 56px',
       boxSizing: 'border-box',
       fontFamily: 'system-ui, -apple-system, sans-serif',
     }}>
-      <div style={{ position: typingViewport.typing ? 'sticky' : 'static', top: 0, zIndex: 4 }}>
+      <div style={{ position: typingViewport.keyboardVisible ? 'sticky' : 'static', top: 0, zIndex: 4 }}>
         <TypingConversationContext
           entries={recentEntries}
-          visible={typingViewport.typing}
+          visible={typingViewport.keyboardVisible}
           maxItems={6}
           teacherLabel="Mrs. Webb"
           accent="#0d9488"
