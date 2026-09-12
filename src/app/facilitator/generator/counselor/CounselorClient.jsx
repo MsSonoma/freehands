@@ -26,15 +26,6 @@ function fetchWithTimeout(url, options, timeoutMs = 15000) {
   return fetch(url, nextOptions).finally(() => clearTimeout(timeoutId))
 }
 
-function shouldPrefetchLessonsForMessage(message) {
-  const normalized = String(message || '').toLowerCase()
-  if (!normalized.trim()) return false
-
-  // Only prefetch lesson lists when the message likely triggers a lesson-related flow.
-  // This prevents "Processing your request..." from stalling on heavy/fragile prefetch for simple chat.
-  return /\b(lesson|lessons|schedule|calendar|assign|available|approve|generate|create|make|edit|modify|update|find|search|show me|curriculum|weekly pattern|lesson plan|planner)\b/i.test(normalized)
-}
-
 export default function CounselorClient() {
   const LAST_SELECTED_LEARNER_KEY = 'MrMentor.v1.selectedLearnerId'
   const router = useRouter()
@@ -1432,7 +1423,8 @@ export default function CounselorClient() {
         validationSummaries
       },
       learner_transcript: learnerTranscript || null,
-      goals_notes: goalsNotes || null
+      goals_notes: goalsNotes || null,
+      selected_learner_id: selectedLearnerId !== 'none' ? selectedLearnerId : null
     }
 
     const response = await fetch('/api/counselor', {
@@ -1456,128 +1448,8 @@ export default function CounselorClient() {
     }
 
     return response.json()
-  }, [learnerTranscript, goalsNotes, subjectKey, cohereChronographEnabled])
+  }, [learnerTranscript, goalsNotes, subjectKey, cohereChronographEnabled, selectedLearnerId])
   
-  // Load all lessons for interceptor
-  const loadAllLessons = useCallback(async () => {
-    const SUBJECTS = ['math', 'science', 'language arts', 'social studies', 'general']
-    const results = {}
-
-    const startedAt = Date.now()
-    console.log('[Mr. Mentor] loadAllLessons: start')
-    
-    for (const subject of SUBJECTS) {
-      try {
-        const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, {
-          cache: 'no-store'
-        })
-        if (res.ok) {
-          const list = await res.json()
-          if (Array.isArray(list)) {
-            results[subject] = list
-          }
-        }
-      } catch (err) {
-        // Silent error - continue with other subjects
-      }
-    }
-    
-    // Load generated lessons
-    const supabase = getSupabaseClient()
-    const { data: { session } } = await supabase.auth.getSession()
-    const token = session?.access_token
-    
-    if (token) {
-      try {
-        const res = await fetch('/api/facilitator/lessons/list', {
-          cache: 'no-store',
-          headers: { Authorization: `Bearer ${token}` }
-        })
-        if (res.ok) {
-          const generatedList = await res.json()
-          results['generated'] = generatedList.map(lesson => ({
-            ...lesson,
-            isGenerated: true
-          }))
-          
-          // Also add generated lessons to their subject buckets
-          for (const lesson of generatedList) {
-            const subject = lesson.subject || 'math'
-            if (!results[subject]) results[subject] = []
-            results[subject].push({
-              ...lesson,
-              isGenerated: true
-            })
-          }
-        }
-      } catch (err) {
-        // Silent error
-      }
-    }
-
-    console.log('[Mr. Mentor] loadAllLessons: done', { ms: Date.now() - startedAt })
-    
-    return results
-  }, [])
-
-  // Get loading thought based on interceptor state
-  const getLoadingThought = useCallback((flow, awaitingInput, action) => {
-    // Action-based thoughts (highest priority)
-    if (action?.type === 'generate') {
-      return "Generating your custom lesson with AI..."
-    }
-    if (action?.type === 'schedule') {
-      return "Adding this lesson to the calendar..."
-    }
-    if (action?.type === 'edit') {
-      return "Opening the lesson editor..."
-    }
-    
-    // Flow and input-based thoughts
-    if (flow === 'generate') {
-      if (awaitingInput === 'generate_topic') return "Thinking about lesson topics..."
-      if (awaitingInput === 'generate_grade_confirm') return "Checking learner's grade level..."
-      if (awaitingInput === 'generate_grade') return "Considering grade levels..."
-      if (awaitingInput === 'generate_subject') return "Identifying the subject area..."
-      if (awaitingInput === 'generate_difficulty') return "Determining difficulty level..."
-      if (awaitingInput === 'generate_title') return "Crafting the perfect title..."
-      return "Preparing lesson parameters..."
-    }
-    
-    if (flow === 'schedule') {
-      if (awaitingInput === 'schedule_date') return "Looking at the calendar..."
-      if (awaitingInput === 'schedule_lesson_search') return "Searching for lessons to schedule..."
-      if (awaitingInput === 'post_generation_schedule') return "Reviewing the generated lesson..."
-      return "Scheduling the lesson..."
-    }
-    
-    if (flow === 'search') {
-      if (awaitingInput === 'lesson_selection') return "Found several matches, reviewing them..."
-      return "Searching through your lessons..."
-    }
-    
-    if (flow === 'edit') {
-      if (awaitingInput === 'edit_changes') return "Analyzing the requested changes..."
-      if (awaitingInput === 'edit_lesson_search') return "Looking for the lesson to edit..."
-      return "Preparing to edit the lesson..."
-    }
-    
-    if (flow === 'recall') {
-      return "Searching through our conversation history..."
-    }
-    
-    if (awaitingInput === 'lesson_selection') {
-      return "Reviewing lesson options..."
-    }
-    
-    if (awaitingInput === 'lesson_action') {
-      return "Considering what to do with this lesson..."
-    }
-    
-    // Generic loading
-    return "Thinking..."
-  }, [])
-
   // Send message to Mr. Mentor
   const sendMessage = useCallback(async () => {
     const featureReplay = featureHelpReplayRef.current
@@ -1586,12 +1458,7 @@ export default function CounselorClient() {
     if (!message || loading) return
     if (pendingFeatureHelp?.message && pendingFeatureHelp.message !== message) setPendingFeatureHelp(null)
 
-    const interceptorBusy = Boolean(
-      pendingConfirmationTool ||
-      interceptorRef.current?.state?.flow ||
-      interceptorRef.current?.state?.awaitingInput ||
-      interceptorRef.current?.state?.awaitingConfirmation
-    )
+    const interceptorBusy = Boolean(pendingConfirmationTool)
     if (!featureReplay?.bypass && !interceptorBusy) {
       const suggestion = detectProductHelp(message, { surface: 'mentor' })
       if (suggestion) {
@@ -1601,24 +1468,30 @@ export default function CounselorClient() {
       }
     }
 
-    // Flags for generation confirmation flow
-    let generationConfirmed = false
+    // Generic registry-backed confirmation flow.
+    let generationConfirmed = false // backward compatibility for existing server/client contracts
+    const confirmedTools = []
     const disableTools = []
     let declineNote = null
 
-    if (pendingConfirmationTool === 'generate_lesson') {
+    if (pendingConfirmationTool) {
       const lower = message.toLowerCase()
-      const yesPattern = /\b(yes|yep|yeah|sure|ok|okay|alright|do it|go ahead|please|generate|create)\b/
-      const noPattern = /\b(no|nah|not now|stop|cancel|wait|hold on|recommend|advice|idea|later|don['’]?t|do not)\b/
+      const yesPattern = /\b(yes|yep|yeah|sure|ok|okay|alright|do it|go ahead|please|apply|save|change it|make it|materialize|generate|create)\b/
+      const noPattern = /\b(no|nah|not now|stop|cancel|wait|hold on|later|don't|do not)\b/
 
       if (yesPattern.test(lower)) {
-        generationConfirmed = true
+        confirmedTools.push(pendingConfirmationTool)
+        if (pendingConfirmationTool === 'generate_lesson') generationConfirmed = true
+        setPendingConfirmationTool(null)
+      } else if (noPattern.test(lower)) {
+        disableTools.push(pendingConfirmationTool)
+        declineNote = '(The facilitator declined the pending action. Continue without executing it.)'
+        setPendingConfirmationTool(null)
       } else {
-        disableTools.push('generate_lesson')
-        declineNote = '(User declined generation. Respond by providing assistance with the user\'s problem.)'
+        // The facilitator asked a question instead of confirming. Keep the action
+        // pending, but prevent it from executing during this explanatory turn.
+        disableTools.push(pendingConfirmationTool)
       }
-
-      setPendingConfirmationTool(null)
     }
 
     setLoading(true)
@@ -1627,25 +1500,12 @@ export default function CounselorClient() {
     setUserInput('')
 
     try {
-      // Try interceptor first
+      // The interceptor no longer owns operational actions. It only provides
+      // lightweight product-help/blindspot metadata before the registry-backed API.
       const selectedLearner = learners.find(l => l.id === selectedLearnerId)
       const learnerName = selectedLearner?.name
       const learnerGrade = selectedLearner?.grade
-
-      let allLessons = {}
-      if (shouldPrefetchLessonsForMessage(message)) {
-        setLoadingThought('Loading lessons...')
-        allLessons = await loadAllLessons()
-      }
-      
-      setLoadingThought(getLoadingThought(
-        interceptorRef.current.state.flow,
-        interceptorRef.current.state.awaitingInput,
-        null
-      ))
-      
       const interceptResult = await interceptorRef.current.process(message, {
-        allLessons,
         selectedLearnerId,
         learnerName,
         learnerGrade,
@@ -1660,846 +1520,9 @@ export default function CounselorClient() {
         fullResponse: interceptResult.response
       }, null, 2))
       
-      if (interceptResult.handled) {
-        // Update loading thought based on what we're doing
-        if (interceptResult.action) {
-          setLoadingThought(getLoadingThought(
-            interceptorRef.current.state.flow,
-            interceptorRef.current.state.awaitingInput,
-            interceptResult.action
-          ))
-        }
-        
-        // Add user message to conversation
-        const updatedHistory = [
-          ...conversationHistory,
-          { role: 'user', content: message }
-        ]
-        
-        // Handle action if present
-        if (interceptResult.action) {
-          const action = interceptResult.action
-          
-          if (action.type === 'schedule') {
-            setLoadingThought("Adding this lesson to the calendar...")
-            // Schedule the lesson
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-            
-            if (token) {
-              try {
-                await fetch('/api/facilitator/lessons/schedule', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({
-                    learner_id: selectedLearnerId,
-                    lesson_key: action.lessonKey,
-                    scheduled_date: action.scheduledDate
-                  })
-                })
-                
-                // Dispatch event to refresh calendar
-                window.dispatchEvent(new Event('mr-mentor:lesson-scheduled'))
-              } catch (err) {
-                // Error handled by response
-              }
-            }
-          } else if (action.type === 'assign' || action.type === 'unassign') {
-            setLoadingThought(action.type === 'assign'
-              ? 'Assigning this lesson to the learner...'
-              : 'Removing this lesson from the learner...'
-            )
+      // Operational interceptor handling is intentionally disabled. All actions
+      // now flow through the authoritative server tool registry.
 
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (token && selectedLearnerId) {
-              try {
-                const res = await fetch('/api/lesson-assign', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({
-                    learnerId: selectedLearnerId,
-                    lessonKey: action.lessonKey,
-                    assigned: action.type === 'assign'
-                  })
-                })
-
-                if (!res.ok) {
-                  const js = await res.json().catch(() => null)
-                  // Clear any pending confirmation state, since the action did not complete.
-                  if (interceptorRef.current?.reset) interceptorRef.current.reset()
-                  interceptResult.response = js?.error
-                    ? `I couldn't update lesson availability: ${js.error}`
-                    : "I couldn't update lesson availability. Please try again."
-                } else {
-                  window.dispatchEvent(new Event('mr-mentor:lesson-assigned'))
-                }
-              } catch (err) {
-                if (interceptorRef.current?.reset) interceptorRef.current.reset()
-                interceptResult.response = "I couldn't update lesson availability. Please try again."
-              }
-            } else {
-              if (interceptorRef.current?.reset) interceptorRef.current.reset()
-              interceptResult.response = 'Please select a learner first.'
-            }
-          } else if (action.type === 'generate') {
-            setLoadingThought("Generating your custom lesson with AI...")
-            // Generate lesson via interceptor (keeps context)
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-            
-            if (token && selectedLearnerId) {
-              try {
-                // Call generation API
-                const genResponse = await fetch('/api/facilitator/lessons/generate', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({
-                    learner_id: selectedLearnerId,
-                    title: action.title,
-                    subject: action.subject,
-                    grade: action.grade,
-                    difficulty: action.difficulty,
-                    description: action.description || '',
-                    vocab: action.vocab || '',
-                    teaching_notes: action.notes || ''
-                  })
-                })
-                
-                if (genResponse.ok) {
-                  const genData = await genResponse.json()
-                  
-                  // Store generated lesson in interceptor state for scheduling
-                  if (genData.lesson) {
-                    interceptorRef.current.state.selectedLesson = {
-                      title: genData.lesson.title,
-                      grade: genData.lesson.grade,
-                      subject: genData.lesson.subject,
-                      difficulty: genData.lesson.difficulty,
-                      lessonKey: `generated/${genData.lesson.file}`,
-                      file: genData.lesson.file,
-                      isGenerated: true,
-                      vocab: genData.lesson.vocab || [],
-                      teaching_notes: genData.lesson.teachingNotes || genData.lesson.teaching_notes || ''
-                    }
-                    
-                    // Update interceptor response with post-generation prompt
-                    let vocab = 'None'
-                    if (Array.isArray(genData.lesson.vocab) && genData.lesson.vocab.length > 0) {
-                      vocab = genData.lesson.vocab
-                        .map(v => {
-                          if (typeof v === 'string') return v
-                          if (v && typeof v === 'object') return v.word || v.term || v.name || JSON.stringify(v)
-                          return String(v)
-                        })
-                        .filter(Boolean)
-                        .join(', ')
-                    } else if (genData.lesson.vocab && typeof genData.lesson.vocab === 'string') {
-                      vocab = genData.lesson.vocab
-                    }
-                    
-                    let notes = 'None provided'
-                    const teachingNotes = genData.lesson.teachingNotes || genData.lesson.teaching_notes || ''
-                    if (teachingNotes && teachingNotes.trim()) {
-                      notes = teachingNotes.length > 150 
-                        ? teachingNotes.substring(0, 150) + '...'
-                        : teachingNotes
-                    }
-                    
-                    interceptResult.response = `The lesson "${genData.lesson.title}" has been successfully generated and validated. The lesson is ready for you to review. Here's an overview of what this lesson includes:
-
-- Title: ${genData.lesson.title}
-- Grade: ${genData.lesson.grade}
-- Difficulty: ${genData.lesson.difficulty}
-- Vocabulary: ${vocab}
-- Teaching Notes: ${notes}
-
-As a next step, you might consider adding this lesson to your learner's plan. You can either schedule it on a specific date, or assign it so it shows up as available for ${learnerName || 'this learner'}.
-
-Would you like me to schedule this lesson, or assign it to ${learnerName || 'this learner'}?`
-
-                    // Set state to await schedule vs assign
-                    interceptorRef.current.state.awaitingInput = 'post_generation_action'
-                    
-                    // Dispatch event to refresh lessons overlay
-                    window.dispatchEvent(new CustomEvent('mr-mentor:lesson-generated'))
-                  }
-                }
-              } catch (err) {
-                // Generation failed - will show in response
-              }
-            }
-          } else if (action.type === 'edit') {
-            // Trigger lesson editor
-            setActiveScreen('lessons')
-            // Could pass edit instructions as context
-          } else if (action.type === 'save_curriculum_preferences') {
-            setLoadingThought('Saving curriculum preferences...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token || !selectedLearnerId) {
-              interceptResult.response = 'Please select a learner first.'
-            } else {
-              try {
-                const res = await fetch('/api/curriculum-preferences', {
-                  method: 'POST',
-                  headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': `Bearer ${token}`
-                  },
-                  body: JSON.stringify({
-                    learnerId: selectedLearnerId,
-                    focusTopics: action.focusTopics || [],
-                    bannedTopics: action.bannedTopics || []
-                  })
-                })
-
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't save curriculum preferences: ${js.error}`
-                    : "I couldn't save curriculum preferences. Please try again."
-                } else {
-                  interceptResult.response = `Saved curriculum preferences for ${learnerName || 'this learner'}.`
-                }
-              } catch {
-                interceptResult.response = "I couldn't save curriculum preferences. Please try again."
-              }
-            }
-          } else if (action.type === 'report_curriculum_preferences') {
-            setLoadingThought('Loading curriculum preferences...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token || !selectedLearnerId) {
-              interceptResult.response = 'Please select a learner first.'
-            } else {
-              try {
-                const res = await fetch(`/api/curriculum-preferences?learnerId=${selectedLearnerId}`, {
-                  headers: {
-                    'Authorization': `Bearer ${token}`
-                  }
-                })
-
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load curriculum preferences: ${js.error}`
-                    : "I couldn't load curriculum preferences. Please try again."
-                } else {
-                  const prefs = js?.preferences || null
-                  if (!prefs) {
-                    interceptResult.response = `No curriculum preferences are saved yet for ${learnerName || 'this learner'}. If you'd like, tell me focus topics and avoid topics and I can save them.`
-                  } else {
-                    const focusTopics = Array.isArray(prefs.focus_topics)
-                      ? prefs.focus_topics
-                      : Array.isArray(prefs.focusTopics)
-                        ? prefs.focusTopics
-                        : []
-                    const bannedTopics = Array.isArray(prefs.banned_topics)
-                      ? prefs.banned_topics
-                      : Array.isArray(prefs.bannedTopics)
-                        ? prefs.bannedTopics
-                        : []
-
-                    const focusText = focusTopics.length ? focusTopics.join(', ') : '(none)'
-                    const avoidText = bannedTopics.length ? bannedTopics.join(', ') : '(none)'
-
-                    interceptResult.response = `Curriculum preferences for ${learnerName || 'this learner'}:\n\nFocus: ${focusText}\nAvoid: ${avoidText}`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't load curriculum preferences. Please try again."
-              }
-            }
-          } else if (action.type === 'report_weekly_pattern') {
-            setLoadingThought('Loading weekly pattern...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token || !selectedLearnerId) {
-              interceptResult.response = 'Please select a learner first.'
-            } else {
-              try {
-                const res = await fetch(`/api/schedule-templates?learnerId=${selectedLearnerId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load the weekly pattern: ${js.error}`
-                    : "I couldn't load the weekly pattern. Please try again."
-                } else {
-                  const templates = Array.isArray(js?.templates) ? js.templates : []
-                  const active = templates.find(t => t?.active) || templates[0] || null
-                  const pattern = active?.pattern && typeof active.pattern === 'object' ? active.pattern : null
-
-                  if (!active || !pattern) {
-                    interceptResult.response = `No weekly pattern is saved yet for ${learnerName || 'this learner'}. If you tell me subjects by day, I can help you set one up.`
-                  } else {
-                    const dayOrder = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-                    const dayLabel = (d) => d.charAt(0).toUpperCase() + d.slice(1)
-                    const dayLines = dayOrder.map((day) => {
-                      const raw = pattern?.[day]
-                      const subjects = Array.isArray(raw)
-                        ? raw
-                          .map((x) => (typeof x === 'string' ? x : (x?.subject || x?.name || '')))
-                          .map((s) => String(s || '').trim())
-                          .filter(Boolean)
-                        : []
-                      const text = subjects.length ? subjects.join(', ') : '(none)'
-                      return `${dayLabel(day)}: ${text}`
-                    })
-
-                    interceptResult.response = `Weekly pattern for ${learnerName || 'this learner'}:\n\n${dayLines.join('\n')}`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't load the weekly pattern. Please try again."
-              }
-            }
-          } else if (action.type === 'report_goals_notes') {
-            setLoadingThought('Loading goals and notes...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token) {
-              interceptResult.response = 'Please sign in first.'
-            } else {
-              try {
-                const params = new URLSearchParams()
-                const hasLearner = selectedLearnerId && selectedLearnerId !== 'none'
-                if (hasLearner) params.set('learner_id', selectedLearnerId)
-
-                const res = await fetch(`/api/goals-notes?${params.toString()}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load goals and notes: ${js.error}`
-                    : "I couldn't load goals and notes. Please try again."
-                } else {
-                  const text = String(js?.goals_notes || '').trim()
-                  if (!text) {
-                    interceptResult.response = hasLearner
-                      ? `No goals/notes are saved yet for ${learnerName || 'this learner'}.`
-                      : 'No facilitator goals/notes are saved yet.'
-                  } else {
-                    interceptResult.response = hasLearner
-                      ? `Goals and notes for ${learnerName || 'this learner'}:\n\n${text}`
-                      : `Your facilitator goals and notes:\n\n${text}`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't load goals and notes. Please try again."
-              }
-            }
-          } else if (action.type === 'report_custom_subjects') {
-            setLoadingThought('Loading custom subjects...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token) {
-              interceptResult.response = 'Please sign in first.'
-            } else {
-              try {
-                const res = await fetch('/api/custom-subjects', {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load custom subjects: ${js.error}`
-                    : "I couldn't load custom subjects. Please try again."
-                } else {
-                  const subjects = Array.isArray(js?.subjects) ? js.subjects : []
-                  const names = subjects
-                    .map((s) => String(s?.name || '').trim())
-                    .filter(Boolean)
-
-                  if (!names.length) {
-                    interceptResult.response = 'No custom subjects are saved yet.'
-                  } else {
-                    interceptResult.response = `Custom subjects (${names.length}):\n\n${names.map((n) => `- ${n}`).join('\n')}`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't load custom subjects. Please try again."
-              }
-            }
-          } else if (action.type === 'report_planned_lessons') {
-            setLoadingThought('Loading the Syllabus plan...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token || !selectedLearnerId || selectedLearnerId === 'none') {
-              interceptResult.response = 'Please select a learner first.'
-            } else {
-              try {
-                const res = await fetch(`/api/syllabus?learnerId=${selectedLearnerId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load the Syllabus plan: ${js.error}`
-                    : "I couldn't load the Syllabus plan. Please try again."
-                } else if (!js?.has_active_syllabus) {
-                  interceptResult.response = `No active Syllabus is established yet for ${learnerName || 'this learner'}.`
-                } else {
-                  const today = String(js?.resolved_today || '').slice(0, 10)
-                  const grouped = {}
-                  for (const item of (Array.isArray(js?.timeline_items) ? js.timeline_items : [])) {
-                    const date = String(item?.planned_date || '').slice(0, 10)
-                    if (!date || (today && date < today)) continue
-                    if (!grouped[date]) grouped[date] = []
-                    grouped[date].push(item)
-                  }
-                  const dates = Object.keys(grouped).sort()
-                  if (!dates.length) {
-                    interceptResult.response = `The active Syllabus has no current or future lesson occurrences for ${learnerName || 'this learner'}.`
-                  } else {
-                    const nextDates = dates.slice(0, 10)
-                    const lines = nextDates.map((date) => {
-                      const items = grouped[date]
-                      const titles = items.map((item) => String(item?.title || '').trim()).filter(Boolean).slice(0, 2)
-                      const titleText = titles.length ? ` - ${titles.join(' | ')}${items.length > titles.length ? ' | ...' : ''}` : ''
-                      return `${date}: ${items.length} Syllabus item(s)${titleText}`
-                    })
-                    interceptResult.response = `Syllabus plan for ${learnerName || 'this learner'} (showing ${nextDates.length} of ${dates.length} dates):\n\n${lines.join('\n')}`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't load the Syllabus plan. Please try again."
-              }
-            }
-          } else if (action.type === 'report_lesson_schedule') {
-            setLoadingThought('Loading scheduled lessons...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token || !selectedLearnerId || selectedLearnerId === 'none') {
-              interceptResult.response = 'Please select a learner first.'
-            } else {
-              try {
-                const toDateOnly = (d) => {
-                  const yyyy = d.getFullYear()
-                  const mm = String(d.getMonth() + 1).padStart(2, '0')
-                  const dd = String(d.getDate()).padStart(2, '0')
-                  return `${yyyy}-${mm}-${dd}`
-                }
-
-                const now = new Date()
-                const end = new Date(now)
-                end.setDate(end.getDate() + 14)
-
-                const startDate = toDateOnly(now)
-                const endDate = toDateOnly(end)
-
-                const url = `/api/lesson-schedule?learnerId=${selectedLearnerId}&startDate=${encodeURIComponent(startDate)}&endDate=${encodeURIComponent(endDate)}`
-                const res = await fetch(url, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load the lesson schedule: ${js.error}`
-                    : "I couldn't load the lesson schedule. Please try again."
-                } else {
-                  const schedule = Array.isArray(js?.schedule) ? js.schedule : []
-                  if (!schedule.length) {
-                    interceptResult.response = `No scheduled lessons found for ${learnerName || 'this learner'} in the next 14 days.`
-                  } else {
-                    const byDate = new Map()
-                    for (const row of schedule) {
-                      const date = String(row?.scheduled_date || '').slice(0, 10)
-                      if (!date) continue
-                      byDate.set(date, (byDate.get(date) || 0) + 1)
-                    }
-
-                    const lines = Array.from(byDate.entries())
-                      .sort((a, b) => a[0].localeCompare(b[0]))
-                      .slice(0, 12)
-                      .map(([d, count]) => `${d}: ${count} lesson(s)`) 
-
-                    interceptResult.response = `Scheduled lessons for ${learnerName || 'this learner'} (next 14 days):\n\n${lines.join('\n')}`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't load the lesson schedule. Please try again."
-              }
-            }
-          } else if (action.type === 'report_no_school_dates') {
-            setLoadingThought('Loading no-school dates...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token || !selectedLearnerId || selectedLearnerId === 'none') {
-              interceptResult.response = 'Please select a learner first.'
-            } else {
-              try {
-                const res = await fetch(`/api/no-school-dates?learnerId=${selectedLearnerId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load no-school dates: ${js.error}`
-                    : "I couldn't load no-school dates. Please try again."
-                } else {
-                  const dates = Array.isArray(js?.dates) ? js.dates : []
-                  if (!dates.length) {
-                    interceptResult.response = `No no-school dates are saved yet for ${learnerName || 'this learner'}.`
-                  } else {
-                    const lines = dates
-                      .map((d) => {
-                        const date = String(d?.date || '').slice(0, 10)
-                        const reason = String(d?.reason || '').trim()
-                        return reason ? `${date}: ${reason}` : date
-                      })
-                      .filter(Boolean)
-                      .sort()
-                      .slice(0, 20)
-
-                    interceptResult.response = `No-school dates for ${learnerName || 'this learner'} (showing ${Math.min(lines.length, 20)}):\n\n${lines.join('\n')}`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't load no-school dates. Please try again."
-              }
-            }
-          } else if (action.type === 'report_medals') {
-            setLoadingThought('Loading medals...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token || !selectedLearnerId || selectedLearnerId === 'none') {
-              interceptResult.response = 'Please select a learner first.'
-            } else {
-              try {
-                const res = await fetch(`/api/medals?learnerId=${selectedLearnerId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load medals: ${js.error}`
-                    : "I couldn't load medals. Please try again."
-                } else {
-                  const medals = js?.medals && typeof js.medals === 'object' ? js.medals : {}
-                  const entries = Object.values(medals)
-                  const tierCounts = { gold: 0, silver: 0, bronze: 0, none: 0 }
-                  for (const m of entries) {
-                    const tier = String(m?.medalTier || '').toLowerCase()
-                    if (tier === 'gold' || tier === 'silver' || tier === 'bronze') tierCounts[tier] += 1
-                    else tierCounts.none += 1
-                  }
-
-                  const total = entries.length
-                  if (!total) {
-                    interceptResult.response = `No medals are recorded yet for ${learnerName || 'this learner'}.`
-                  } else {
-                    interceptResult.response = `Medals for ${learnerName || 'this learner'}:\n\nTotal lessons with medals: ${total}\nGold: ${tierCounts.gold}\nSilver: ${tierCounts.silver}\nBronze: ${tierCounts.bronze}`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't load medals. Please try again."
-              }
-            }
-          } else if (action.type === 'report_account_timezone') {
-            setLoadingThought('Loading account timezone...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token) {
-              interceptResult.response = 'Please sign in first.'
-            } else {
-              try {
-                const res = await fetch('/api/profile/timezone', {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                const js = await res.json().catch(() => null)
-                const tz = js?.timezone && typeof js.timezone === 'string' ? js.timezone : null
-                interceptResult.response = tz
-                  ? `Your account timezone is set to: ${tz}`
-                  : 'No account timezone is saved yet (or it is not configured on the server).'
-              } catch {
-                interceptResult.response = "I couldn't load your account timezone. Please try again."
-              }
-            }
-          } else if (action.type === 'report_device_limits') {
-            setLoadingThought('Loading device status...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token) {
-              interceptResult.response = 'Please sign in first.'
-            } else {
-              try {
-                const res = await fetch('/api/devices/status', {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't load device status: ${js.error}`
-                    : "I couldn't load device status. Please try again."
-                } else {
-                  const cap = js?.devicesCap
-                  const active = js?.active
-                  const tier = js?.plan_tier
-                  interceptResult.response = `Device status:\n\nPlan tier: ${tier || '(unknown)'}\nActive devices: ${Number(active) || 0}\nDevice cap: ${Number.isFinite(Number(cap)) ? cap : String(cap || '(unknown)')}`
-                }
-              } catch {
-                interceptResult.response = "I couldn't load device status. Please try again."
-              }
-            }
-          } else if (action.type === 'report_daily_lesson_quota') {
-            setLoadingThought('Checking daily lesson quota...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token) {
-              interceptResult.response = 'Please sign in first.'
-            } else {
-              try {
-                const res = await fetch('/api/usage/check-lesson-quota', {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.reason
-                    ? `I couldn't check quota: ${js.reason}`
-                    : "I couldn't check quota. Please try again."
-                } else {
-                  const remaining = js?.remaining
-                  const used = js?.used
-                  const limit = js?.limit
-                  const tier = js?.tier
-                  const remainingText = remaining === -1 ? 'Unlimited' : String(remaining)
-
-                  interceptResult.response = `Daily lesson quota:\n\nTier: ${tier || '(unknown)'}\nRemaining today: ${remainingText}\nUsed today: ${Number(used) || 0}\nDaily limit: ${Number.isFinite(Number(limit)) ? limit : String(limit || '(unknown)')}`
-                }
-              } catch {
-                interceptResult.response = "I couldn't check quota. Please try again."
-              }
-            }
-          } else if (action.type === 'save_weekly_pattern') {
-            setLoadingThought('Saving weekly pattern...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token || !selectedLearnerId) {
-              interceptResult.response = 'Please select a learner first.'
-            } else {
-              try {
-                const getRes = await fetch(`/api/schedule-templates?learnerId=${selectedLearnerId}`, {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                const getJs = await getRes.json().catch(() => null)
-                const templates = Array.isArray(getJs?.templates) ? getJs.templates : []
-                const activeTemplate = templates.find(t => t?.active) || templates[0] || null
-
-                const method = activeTemplate?.id ? 'PUT' : 'POST'
-                const body = activeTemplate?.id
-                  ? { id: activeTemplate.id, pattern: action.pattern }
-                  : { learnerId: selectedLearnerId, name: 'Weekly Schedule', pattern: action.pattern, active: true }
-
-                const saveRes = await fetch('/api/schedule-templates', {
-                  method,
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify(body)
-                })
-
-                const saveJs = await saveRes.json().catch(() => null)
-                if (!saveRes.ok) {
-                  interceptResult.response = saveJs?.error
-                    ? `I couldn't save the weekly pattern: ${saveJs.error}`
-                    : "I couldn't save the weekly pattern. Please try again."
-                } else {
-                  interceptResult.response = `Weekly pattern saved for ${learnerName || 'this learner'}.`
-                }
-              } catch {
-                interceptResult.response = "I couldn't save the weekly pattern. Please try again."
-              }
-            }
-          } else if (action.type === 'add_custom_subject') {
-            setLoadingThought('Adding custom subject...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token) {
-              interceptResult.response = 'Please sign in first.'
-            } else {
-              try {
-                const res = await fetch('/api/custom-subjects', {
-                  method: 'POST',
-                  headers: {
-                    'Authorization': `Bearer ${token}`,
-                    'Content-Type': 'application/json'
-                  },
-                  body: JSON.stringify({ name: action.name })
-                })
-                const js = await res.json().catch(() => null)
-                if (!res.ok) {
-                  interceptResult.response = js?.error
-                    ? `I couldn't add that subject: ${js.error}`
-                    : "I couldn't add that subject. Please try again."
-                } else {
-                  interceptResult.response = `Added custom subject: ${js?.subject?.name || action.name}.`
-                }
-              } catch {
-                interceptResult.response = "I couldn't add that subject. Please try again."
-              }
-            }
-          } else if (action.type === 'delete_custom_subject') {
-            setLoadingThought('Deleting custom subject...')
-
-            const supabase = getSupabaseClient()
-            const { data: { session } } = await supabase.auth.getSession()
-            const token = session?.access_token
-
-            if (!token) {
-              interceptResult.response = 'Please sign in first.'
-            } else {
-              try {
-                const listRes = await fetch('/api/custom-subjects', {
-                  headers: { 'Authorization': `Bearer ${token}` }
-                })
-                const listJs = await listRes.json().catch(() => null)
-                const subjects = Array.isArray(listJs?.subjects) ? listJs.subjects : []
-                const target = subjects.find(s => String(s?.name || '').toLowerCase() === String(action.name || '').trim().toLowerCase())
-
-                if (!target?.id) {
-                  interceptResult.response = `I couldn't find a custom subject named "${action.name}".`
-                } else {
-                  const delRes = await fetch(`/api/custom-subjects?id=${encodeURIComponent(target.id)}`, {
-                    method: 'DELETE',
-                    headers: { 'Authorization': `Bearer ${token}` }
-                  })
-                  const delJs = await delRes.json().catch(() => null)
-                  if (!delRes.ok) {
-                    interceptResult.response = delJs?.error
-                      ? `I couldn't delete that subject: ${delJs.error}`
-                      : "I couldn't delete that subject. Please try again."
-                  } else {
-                    interceptResult.response = `Deleted custom subject: ${target.name}.`
-                  }
-                }
-              } catch {
-                interceptResult.response = "I couldn't delete that subject. Please try again."
-              }
-            }
-          } else if (action.type === 'generate_lesson_plan') {
-            setLoadingThought('Opening Lesson Planner...')
-
-            // Ensure the calendar overlay is mounted to receive the event.
-            setActiveScreen('calendar')
-
-            if (typeof window !== 'undefined') {
-              window.dispatchEvent(new CustomEvent('mr-mentor:open-lesson-planner', {
-                detail: {
-                  learnerId: action.learnerId || selectedLearnerId,
-                  startDate: action.startDate,
-                  durationMonths: action.durationMonths,
-                  autoGenerate: true
-                }
-              }))
-            }
-
-            interceptResult.response = `Ok. I\'m opening the Lesson Planner and generating a ${action.durationMonths}-month plan starting ${action.startDate}.`
-          }
-        }
-        
-        // Add interceptor response to conversation
-        const finalHistory = [
-          ...updatedHistory,
-          { role: 'assistant', content: interceptResult.response }
-        ]
-        setConversationHistory(finalHistory)
-        
-        // Display interceptor response in captions
-        setCaptionText(interceptResult.response)
-        const sentences = splitIntoSentences(interceptResult.response)
-        setCaptionSentences(sentences)
-        setCaptionIndex(0)
-        
-        // Play TTS for interceptor response (Mr. Mentor's voice)
-        setLoadingThought("Preparing response...")
-        try {
-          const ttsResponse = await fetch('/api/mentor-tts', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ text: interceptResult.response })
-          })
-          
-          if (ttsResponse.ok) {
-            const ttsData = await ttsResponse.json()
-            if (ttsData.audio) {
-              // Never block the UI on audio playback.
-              void playAudio(ttsData.audio)
-            }
-          }
-        } catch (err) {
-          // Silent TTS error - don't block UX
-        }
-        
-        setLoading(false)
-        setLoadingThought(null)
-        return
-      }
-      
       // Interceptor didn't handle - forward to API
       setLoadingThought("Consulting my knowledge base...")
       const forwardMessage = interceptResult.apiForward?.message || message
@@ -2565,8 +1588,10 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
           goals_notes: goalsNotes || null,
           // Include any context from interceptor
           interceptor_context: Object.keys(forwardContext).length > 0 ? forwardContext : undefined,
-          require_generation_confirmation: true,
           generation_confirmed: generationConfirmed,
+          confirmed_tools: confirmedTools,
+          selected_learner_id: selectedLearnerId !== 'none' ? selectedLearnerId : null,
+          selected_learner_name: learnerName || null,
           disableTools
         })
       })
@@ -2600,6 +1625,10 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
       if (initialToolResults.length > 0) {
         setLoadingThought("Processing tool results...")
         for (const toolResult of initialToolResults) {
+          if (toolResult?.uiAction?.type === 'navigate' && typeof toolResult.uiAction.href === 'string') {
+            router.push(toolResult.uiAction.href)
+          }
+
           if (toolResult.lesson && toolResult.lessonFile && toolResult.userId) {
             setLoadingThought("Validating generated lesson...")
             const summary = await handleLessonGeneration(toolResult, token)
@@ -2608,15 +1637,16 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
             }
           }
           
-          // Dispatch events for schedule_lesson success
-          if (toolResult.success && toolResult.scheduled) {
+          // Dispatch events for verified schedule_lesson success.
+          if (toolResult.success && toolResult.action === 'schedule_lesson') {
             setLoadingThought("Updating calendar...")
             try {
               window.dispatchEvent(new CustomEvent('mr-mentor:lesson-scheduled', {
                 detail: {
-                  learnerName: toolResult.learnerName,
+                  learnerName: toolResult.learner?.name || null,
                   scheduledDate: toolResult.scheduledDate,
-                  lessonTitle: toolResult.lessonTitle
+                  lessonTitle: toolResult.lessonTitle || null,
+                  verified: toolResult.verified === true
                 }
               }))
             } catch (err) {
@@ -2626,8 +1656,8 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
         }
       }
 
-      if (data.needsConfirmation && data.confirmationTool === 'generate_lesson') {
-        setPendingConfirmationTool('generate_lesson')
+      if (data.needsConfirmation && data.confirmationTool) {
+        setPendingConfirmationTool(data.confirmationTool)
       }
 
       if (data.needsFollowUp && data.followUp) {
@@ -2722,7 +1752,7 @@ Would you like me to schedule this lesson, or assign it to ${learnerName || 'thi
       setLoading(false)
       setLoadingThought(null)
     }
-  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp, learners, loadAllLessons, getLoadingThought, pendingConfirmationTool, pendingFeatureHelp])
+  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp, learners, pendingConfirmationTool, pendingFeatureHelp, router])
 
   const dismissFeatureHelp = useCallback(() => {
     const pending = pendingFeatureHelp

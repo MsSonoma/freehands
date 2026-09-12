@@ -1,4 +1,4 @@
-// Next.js API route for Mr. Mentor (Counselor)
+﻿// Next.js API route for Mr. Mentor (Counselor)
 // Therapeutic AI counselor for facilitators using GPT-4o
 
 import { NextResponse } from 'next/server'
@@ -22,6 +22,16 @@ const { TextToSpeechClient } = textToSpeech
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL } from '@/app/lib/aiModel'
 import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
+import {
+  MENTOR_TOOL_REGISTRY,
+  buildMentorToolPrompt,
+  getMentorCapabilities,
+  getMentorOpenAiTools,
+  getMentorTool,
+  mentorToolConfirmationPrompt,
+  mentorToolNeedsConfirmation,
+  mentorToolUsesDirectResult,
+} from '@/lib/mentor/toolRegistry'
 const OPENAI_MODEL = AI_MODEL
 
 function fetchJsonWithTimeout(url, options, timeoutMs) {
@@ -82,164 +92,45 @@ function resolveBaseUrl(request) {
   throw new Error('Cannot resolve base URL: no environment variable, request URL, or host header available')
 }
 
-// Mr. Mentor's core therapeutic system prompt
-const MENTOR_SYSTEM_PROMPT = `You are Mr. Mentor, a warm, caring professional counselor and educational consultant specializing in supporting homeschool facilitators and parents.
+// Mr. Mentor is the facilitator-facing educational planning and evidence assistant.
+// Tool descriptions are injected from the same registry used for actual dispatch.
+const MENTOR_SYSTEM_PROMPT = `You are Mr. Mentor, the adult-facing educational planning, evidence, and product assistant for Ms. Sonoma.
 
 CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} (${new Date().toISOString().split('T')[0]})
 
-INTERFACE CONTEXT:
-The user has quick access buttons visible on their screen: Calendar, Lessons, Generated Lessons, and Generator. They can click these anytime to manage lessons, view calendars, or create new content. You don't need to explain how to access these - they're always available.
+MISSION AND AUTHORITY:
+- Learner mastery is the first priority.
+- Actively inspect evidence, identify patterns, explain what is observed, and recommend concrete next steps.
+- AI may do meaningful facilitation and planning work, but the facilitator retains educational authorship, judgment, values, boundaries, and final authority.
+- The active Syllabus is the authoritative planning source. Canonical learning evidence is the authoritative source for mastery, comprehension, and retention claims.
+- Legacy schedule templates and legacy curriculum-preference records are not authoritative once a learner has an active Syllabus.
 
-The user also has a Goals clipboard (📋 button in top left of your video) where they can set persistent goals and priorities. These goals are always sent to you with each message, so you can guide conversations based on their stated priorities. If they mention wanting to set long-term goals or remember something important, suggest using the Goals clipboard. The clipboard holds up to 600 characters and persists across all conversations.
+EVIDENCE LANGUAGE:
+- Observed = directly present in current evidence or product state.
+- Inferred = a conclusion supported by observed evidence.
+- Proposed = a recommendation or draft that has not changed active educational intent.
+- Verified = an action completed through an authorized tool and confirmed by its result/readback.
+- Never turn an inference into an observation, a proposal into an active plan, or an unverified write into a completed action.
 
-Your role is to help facilitators:
-- Process their feelings and challenges around teaching
-- Clarify their educational goals and values
-- Plan curriculum and create learning schedules
-- Build confidence in their teaching abilities
-- Develop strategies for specific learning situations
-- Balance academic expectations with family dynamics
+HOW TO WORK:
+- Use tools proactively when the answer depends on current Ms. Sonoma state.
+- Read the Syllabus and learning evidence before making learner-specific progression recommendations when they are relevant.
+- Search existing lessons before generating when the facilitator asks for recommendations. Generate only when they want a new lesson created.
+- Prefer the currently selected learner. Ask which learner only when there is no unambiguous selected or named learner.
+- For educator-authority changes, follow the tool confirmation boundary. Do not silently rewrite active Syllabus intent.
+- Never claim that something was scheduled, assigned, changed, generated, or saved unless the tool result says it succeeded. Use "verified" only when the result is actually verified.
+- Keep technical implementation details and function names out of normal user-facing prose.
 
-Core Counseling Approach:
-- Use active listening and empathetic reflection
-- Ask open-ended, thought-provoking questions
-- Practice Socratic questioning to help them discover their own solutions
-- Validate their feelings and experiences
-- Offer practical, actionable suggestions when appropriate
-- Encourage growth mindset and self-compassion
+PRODUCT SURFACES:
+The facilitator experience includes Mr. Mentor, Syllabus, Calendar, Lessons, Generated Lessons, Lesson Maker, Learners, Prepare, Account, and Notifications. Use open_surface when the facilitator asks you to take them to one of these surfaces.
 
-Curriculum Planning Expertise:
-- Understand homeschool standards for K-12
-- Suggest age-appropriate topics and learning sequences
-- Help create weekly, monthly, and yearly schedules
-- Balance subjects (math, language arts, science, social studies, arts, PE)
-- Accommodate different learning styles and special needs
-- Recommend pacing and realistic expectations
+STYLE:
+- Calm, direct, intelligent, concrete, and patient.
+- Give the facilitator useful conclusions and options instead of forcing every exchange into Socratic questioning.
+- Ask a question only when it genuinely advances the work or a required decision is missing.
+- Keep the learner visible in planning discussions and separate observation, inference, proposal, and verified action.
 
-YOUR TOOLS - YOU CAN USE THESE RIGHT NOW:
-
-You have 8 function calling tools available. Use them actively during conversations:
-
-1. SEARCH_LESSONS - Search the entire lesson library
-   - When they ask "do you have lessons on X?" → USE THIS TOOL
-   - When they mention a topic → SEARCH FOR IT
-   - Searches: math, science, language arts, social studies, AND their custom lessons
-   - To find THEIR lessons: use subject="facilitator"
-   - Returns: up to 30 lessons with titles, grades, keys
-
-2. GET_LESSON_DETAILS - View full lesson content
-   - When you need to understand what's in a lesson → USE THIS TOOL
-   - When they ask "tell me about lesson X" → USE THIS TOOL
-   - Returns: vocabulary, teaching notes, question counts
-
-3. GENERATE_LESSON - Create new custom lessons (ONLY when user wants actual generation)
-   - ONLY use when user explicitly says: "create a lesson", "generate a lesson", "make me a lesson"
-   - DO NOT use when user asks: "do you have suggestions?", "what do you recommend?", "any ideas?", "give me advice"
-   - If they ask for recommendations/suggestions/advice: search existing lessons and recommend, don't generate
-   - CONFIRMATION REQUIRED: If uncertain whether they want generation vs recommendations, ASK FIRST: "Would you like me to generate a custom lesson?"
-   - Only collect parameters after they confirm they want generation
-   - ALWAYS search first to avoid duplicates
-   - Takes 30-60 seconds to complete
-   - ESCAPE HATCH: If during parameter collection user gives ANY response that isn't the parameter you asked for (you ask "What grade?" they say anything OTHER than a grade), abandon and give recommendations instead
-
-4. SCHEDULE_LESSON - Add lessons to calendars
-   - When they say "schedule this" "add that to Monday" "put it on the calendar" → YOU MUST ACTUALLY CALL THIS FUNCTION
-   - You can use the learner's NAME (like "Emma") - the system will find them
-   - Need: learner name, lesson key from search/generate, date in YYYY-MM-DD format
-   - CRITICAL: DO NOT say you've scheduled something unless you ACTUALLY call the schedule_lesson function
-   - NEVER confirm scheduling without calling the function first
-
-5. ASSIGN_LESSON - Make a lesson available to a learner (not a calendar event)
-  - When they say "assign this lesson" "make this available" "show this lesson" → YOU MUST ACTUALLY CALL THIS FUNCTION
-  - Use this when they want the learner to see the lesson as available, without picking a date
-  - You can use the learner's NAME (like "Emma") - the system will find them
-  - Need: learner name, lesson key from search/generate
-  - CRITICAL: DO NOT say you've assigned something unless you ACTUALLY call the assign_lesson function
-  - After successful assignment, ask: "I've assigned [lesson title] to [learner name]. Is that correct?"
-
-6. EDIT_LESSON - Modify existing lessons (ALL lessons: installed subjects AND facilitator-created)
-   - When they ask to change/fix/update/edit a lesson → USE THIS TOOL
-   - Can edit: vocabulary, teaching notes, blurb, questions (all types)
-   - Works on both pre-installed lessons AND custom facilitator lessons
-
-7. GET_CONVERSATION_MEMORY - Retrieve past conversation summaries
-   - When you need context from previous sessions → USE THIS TOOL
-   - When they mention something discussed before → USE THIS TOOL
-   - Automatically loads at start of each conversation for continuity
-   - Can search across all past conversations with keywords
-
-8. SEARCH_CONVERSATION_HISTORY - Search past conversations with keywords
-   - When they say "what did we discuss about X?" → USE THIS TOOL
-   - When they want to review past advice or plans → USE THIS TOOL
-   - Uses fuzzy matching to find relevant past conversations
-   - Searches both current and archived conversations
-
-CRITICAL DISTINCTION - Recommendations vs Generation:
-- If user asks "do you have suggestions?", "what lessons do you recommend?", "any ideas?", "give me advice" → SEARCH existing lessons and recommend them. DO NOT start lesson generation.
-- If user asks "create a lesson about X", "generate a lesson for X", "make me a lesson" → Use generate_lesson function.
-- NEVER assume they want generation just because they mention a topic. Default to searching and recommending.
-
-CRITICAL CONFIRMATION STEP - Before Collecting Generation Parameters:
-- NEVER start collecting generation parameters (grade, subject, difficulty) without explicit confirmation first
-- Even if user says "I need a lesson not in the library" or "recommend lessons to create", they are asking for IDEAS not actual generation
-- You MUST ask: "Would you like me to generate a custom lesson?" and wait for their response
-- Only start collecting generation parameters if they explicitly confirm they want generation ("yes", "yes, generate", "create one", "make a lesson")
-- If they say "no", "search", "recommend", "I'm not sure", "not yet", "I want ideas first" → SEARCH existing lessons and provide recommendations
-- This confirmation prevents accidentally entering generation flow when they just want suggestions
-
-CRITICAL ESCAPE MECHANISM - If You're Already Collecting Generation Parameters:
-- If user responds with ANYTHING that is NOT a direct answer to the parameter you asked for, they are trying to ESCAPE generation
-- Examples: You ask "What grade level?" and they say:
-  - "I need recommendations" → NOT a grade level → ESCAPE
-  - "I'm not ready to decide" → NOT a grade level → ESCAPE
-  - "Stop asking me this" → NOT a grade level → ESCAPE
-  - "Give me advice instead" → NOT a grade level → ESCAPE
-  - "4th" → IS a grade level → continue
-- When you detect ANY non-parameter response: IMMEDIATELY STOP collecting parameters, DO NOT call generate_lesson, respond conversationally and offer to search/recommend instead
-- Re-assess what they actually want - they're telling you they don't want to generate
-- Do NOT continue asking for the next parameter - they've changed their mind
-
-CRITICAL: When someone asks about lessons, DON'T say "I can't access" or "I'm unable to" - JUST USE THE SEARCH TOOL.
-CRITICAL: When someone asks you to schedule a lesson, you MUST call the schedule_lesson function. DO NOT confirm scheduling without actually calling it.
-CRITICAL: NEVER say "I've scheduled" or "has been scheduled" unless you actually called the schedule_lesson function and got a success response.
-CRITICAL: When someone asks you to assign a lesson to a learner (make it available), you MUST call the assign_lesson function. DO NOT confirm assignment without actually calling it.
-CRITICAL: NEVER say "I've assigned" unless you actually called assign_lesson and got a success response.
-If you need details on parameters, call get_capabilities first.
-Use these tools proactively - they expect you to search and find things for them.
-
-Best Practices:
-1. Search first - they may have already created what they need
-2. To find THEIR lessons: search with subject="facilitator"
-3. Get details to understand lesson scope before recommending
-4. Confirm actions: "I found 3 lessons you created on fractions..."
-5. Keep it conversational - never mention "function calls" or technical details
-
-Response Style:
-- Keep responses conversational and warm (2-4 paragraphs typically)
-- Speak naturally as a caring professional, not overly formal
-- Use "you" and "your" to maintain connection
-- Share insights with humility ("In my experience..." "Many parents find...")
-- Acknowledge the complexity of parenting and teaching
-
-CRITICAL: Every response MUST end with 1-2 thought-provoking questions that:
-- Help them reflect more deeply
-- Move the conversation forward
-- Encourage goal clarification or action planning
-- Explore their values and priorities
-- Examples: "What would success look like for you in this situation?" 
-  "How do you think your child would describe their ideal learning day?"
-  "What's one small step you could take this week toward that goal?"
-
-Ethical Boundaries (STRICT):
-- You are NOT a licensed therapist or medical professional.
-- Do NOT provide diagnoses or pretend to provide professional medical treatment.
-- Per-turn safety context is supplied by the application below. Follow that context rather than forcing every sensitive topic into one canned crisis paragraph.
-- Sensitive educational or parenting discussion is allowed when it is not a request for harmful operational guidance.
-- Stay focused on educational planning, parenting strategies, and emotional support around teaching.
-
-Tone: Warm, professional, empathetic, encouraging, non-judgmental, practical
-
-Keep responses focused and conversational - avoid lengthy lectures. Ask questions to understand before giving advice.`;
+${buildMentorToolPrompt()}`;
 
 function escapeForSsml(s) {
   if (!s) return ''
@@ -474,176 +365,401 @@ async function synthesizeAudio(text, logPrefix) {
   return audioContent
 }
 
-// Helper function to provide capability information
-function getCapabilitiesInfo(args) {
-  const { action } = args
-  
-  const capabilities = {
-    search_lessons: {
-      name: 'search_lessons',
-      purpose: 'Search for available lessons across ALL subjects including facilitator-created lessons. You have full access to everything in the library.',
-      when_to_use: 'When facilitator asks about available lessons, wants to find lessons on a topic, or needs to browse options. Use subject="facilitator" to find ONLY their custom-created lessons.',
-      parameters: {
-        subject: 'Optional. Filter by: math, science, language arts, social studies, or facilitator (their custom lessons)',
-        grade: 'Optional. Grade level like "3rd", "5th", "8th"',
-        searchTerm: 'Optional. Keywords to match in lesson titles'
-      },
-      returns: 'List of up to 30 matching lessons with title, grade, subject, difficulty, lessonKey (for scheduling), and blurb',
-      examples: [
-        'Search for 3rd grade multiplication: {subject: "math", grade: "3rd", searchTerm: "multiplication"}',
-        'Find facilitator-created lessons: {subject: "facilitator"}',
-        'Find their lessons on a topic: {subject: "facilitator", searchTerm: "fractions"}'
-      ]
-    },
-    
-    get_lesson_details: {
-      name: 'get_lesson_details',
-      purpose: 'Get full details of a specific lesson including vocabulary, teaching notes, and question counts',
-      when_to_use: 'When you need to understand lesson content to make recommendations or facilitator asks "tell me more about..."',
-      parameters: {
-        lessonKey: 'Required. Format: "subject/filename.json" (you get this from search_lessons results)'
-      },
-      returns: 'Lesson details: vocabulary (first 5 terms), teaching notes, question counts by type, grade, difficulty, blurb',
-      example: 'Get photosynthesis details: {lessonKey: "science/Photosynthesis_Basics.json"}'
-    },
-    
-    generate_lesson: {
-      name: 'generate_lesson',
-      purpose: 'Create a custom lesson when existing lessons don\'t meet the need AND user explicitly requests generation',
-      when_to_use: 'ONLY when facilitator uses imperative generation language: "create a lesson", "generate a lesson", "make me a lesson". DO NOT use when they ask "do you have suggestions?", "what do you recommend?", "any ideas?", or similar advice-seeking language. For recommendations, search existing lessons instead. If uncertain, ASK FIRST: "Would you like me to generate a custom lesson?" Only proceed with generation after explicit confirmation.',
-      parameters: {
-        title: 'Required. Lesson title like "Photosynthesis Basics"',
-        subject: 'Required. One of: math, science, language arts, social studies',
-        grade: 'Required. Grade level like "3rd", "5th", "8th"',
-        difficulty: 'Required. One of: Beginner, Intermediate, Advanced',
-        description: 'Required. Brief description of lesson content and what it covers',
-        vocab: 'Optional. Comma-separated vocabulary terms to emphasize',
-        notes: 'Optional. Additional guidance for lesson creation'
-      },
-      returns: 'Success confirmation with lesson file name and title. Lesson is saved to facilitator\'s library.',
-      notes: 'Takes 30-60 seconds. Requires a paid plan (Standard/Pro). ALWAYS search first before generating.',
-      example: 'Generate 5th grade science: {title: "Water Cycle", subject: "science", grade: "5th", difficulty: "Intermediate", description: "Learn about evaporation, condensation, and precipitation"}'
-    },
-    
-    schedule_lesson: {
-      name: 'schedule_lesson',
-      purpose: 'Add a lesson to a learner\'s calendar for a specific date',
-      when_to_use: 'When facilitator asks to schedule/add a lesson to a calendar, or says "put that on Monday"',
-      parameters: {
-        learnerName: 'Required. The learner\'s name (e.g., "Emma"). The system will find the matching learner.',
-        lessonKey: 'Required. Format: "subject/filename.json" (you get this from search results or after generating)',
-        scheduledDate: 'Required. Date in YYYY-MM-DD format. CRITICAL: The current year is 2025. When user says "October 26th" they mean 2025-10-26, NOT 2023. Always use year 2025 unless they specify a different year. Convert natural language like "next Monday" to proper format.'
-      },
-      returns: 'Success confirmation with scheduled date and lesson key',
-      notes: 'Use learnerName when calling schedule_lesson. If the name is ambiguous, ask the facilitator to clarify.',
-      example: 'Schedule for Emma on Dec 18: {learnerName: "Emma", lessonKey: "math/Multiplication_Basics.json", scheduledDate: "2025-12-18"}'
-    },
+// Capability information is generated from the live tool registry.
+function getCapabilitiesInfo(args = {}) {
+  return getMentorCapabilities(args?.action || 'all')
+}
 
-    assign_lesson: {
-      name: 'assign_lesson',
-      purpose: 'Assign a lesson to a learner so it shows up as available (not scheduled on a date)',
-      when_to_use: 'When facilitator asks to assign a lesson, make it available, or show it to a learner without choosing a date',
-      parameters: {
-        learnerName: 'Required. The learner\'s name (e.g., "Emma"). The system will find the matching learner.',
-        lessonKey: 'Required. Format: "subject/filename.json" (from search results or after generating).',
-        lessonTitle: 'Optional. Human-readable title for confirmation (if known). If unknown, call get_lesson_details first.'
-      },
-      returns: 'Success confirmation with learner name and lesson key',
-      notes: 'Use assign_lesson when the user says "assign" and does not request a calendar date. For calendar placement, use schedule_lesson.',
-      example: 'Assign for Emma: {learnerName: "Emma", lessonKey: "math/Multiplication_Basics.json"}'
-    },
-    
-    edit_lesson: {
-      name: 'edit_lesson',
-      purpose: 'Modify an existing lesson (works on ALL lessons: installed subjects like math/science AND facilitator-created lessons)',
-      when_to_use: 'When facilitator asks to change/fix/update/edit a lesson, correct errors, add vocabulary, improve questions, etc.',
-      parameters: {
-        lessonKey: 'Required. Format: "subject/filename.json" (from search results)',
-        updates: 'Required. Object with fields to update. Can include: title, blurb, teachingNotes, vocab (array of {term, definition}), truefalse, multiplechoice, shortanswer, fillintheblank (arrays of questions)'
-      },
-      returns: 'Success confirmation that lesson was updated',
-      notes: 'Can edit ANY lesson - both pre-installed subject lessons AND custom facilitator lessons. Get current lesson with get_lesson_details first, then send only the fields that need to change.',
-      examples: [
-        'Fix teaching notes: {lessonKey: "science/Photosynthesis.json", updates: {teachingNotes: "Updated notes..."}}',
-        'Add vocabulary: {lessonKey: "math/Fractions.json", updates: {vocab: [{term: "numerator", definition: "Top number"}, {term: "denominator", definition: "Bottom number"}]}}',
-        'Update blurb: {lessonKey: "facilitator/Custom_Lesson.json", updates: {blurb: "New description"}}'
-      ]
-    },
-    
-    get_conversation_memory: {
-      name: 'get_conversation_memory',
-      purpose: 'Retrieve conversation memory from previous sessions for continuity',
-      when_to_use: 'To maintain context across sessions, reference past discussions, or when facilitator mentions something from before',
-      parameters: {
-        learner_id: 'Optional. If discussing a specific learner, provide their ID to get learner-specific conversation history. Omit for general facilitator conversations.'
-      },
-      returns: 'Conversation summary, recent turns, and turn count. Returns null if no previous conversation exists.',
-      notes: 'This is automatically called at the start of each conversation. You can also call it explicitly when you need to reference past context.',
-      example: 'Get general memory: {} or Get learner-specific: {learner_id: "abc123"}'
-    },
-    
-    search_conversation_history: {
-      name: 'search_conversation_history',
-      purpose: 'Search past conversations using keywords (fuzzy matching)',
-      when_to_use: 'When facilitator asks "what did we discuss about X?" or wants to review past advice, plans, or topics',
-      parameters: {
-        search: 'Required. Keywords or phrases to search for in conversation summaries',
-        include_archive: 'Optional. Set to true to also search archived conversations (default: false)'
-      },
-      returns: 'List of matching conversations with summaries, dates, and learner context',
-      notes: 'Uses PostgreSQL full-text search with fuzzy matching. Searches both current and optionally archived conversations.',
-      examples: [
-        'Search recent: {search: "math curriculum"}',
-        'Search all history: {search: "Emma reading struggles", include_archive: true}'
-      ]
+function toolError(message, details = null) {
+  return { error: String(message || 'Tool action failed'), ...(details ? { details } : {}) }
+}
+
+function toolSuccess(action, message, data = {}, verified = true) {
+  return { success: true, verified: verified === true, action, message, ...data }
+}
+
+async function internalApiJson(request, pathname, { method = 'GET', body = null, searchParams = null } = {}) {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader) return { ok: false, status: 401, data: { error: 'Authentication required' } }
+  const url = new URL(pathname, resolveBaseUrl(request))
+  if (searchParams && typeof searchParams === 'object') {
+    for (const [key, value] of Object.entries(searchParams)) {
+      if (value !== undefined && value !== null && value !== '') url.searchParams.set(key, String(value))
     }
   }
-  
-  const workflow = {
-    best_practices: [
-      'SEARCH FIRST: Always search for existing lessons before generating new ones',
-      'GET DETAILS: Review lesson content before recommending to ensure good fit',
-      'EDIT WHEN NEEDED: If a lesson needs corrections or improvements, use edit_lesson',
-      'ASK FOR CLARIFICATION: If missing required parameters, ask the facilitator',
-      'CONFIRM ACTIONS: After completing an action, confirm what was done',
-      'NATURAL LANGUAGE: Don\'t mention function names or technical details to the user'
-    ],
-    
-    typical_workflow: [
-      '1. Facilitator asks about a topic',
-      '2. Search for relevant lessons',
-      '3. Review top matches with get_lesson_details',
-      '4. Recommend best fit OR generate if nothing suitable OR edit if needs changes',
-      '5. Schedule for learner if requested',
-      '6. Confirm completion and suggest next steps'
-    ],
-    
-    common_scenarios: {
-      'Need a lesson on topic X': 'search_lessons → get_lesson_details (top result) → recommend or generate → schedule',
-      'What lessons do you have on X?': 'search_lessons → list results → offer to provide details',
-      'Tell me about lesson Y': 'get_lesson_details → summarize',
-      'Create a lesson about X': 'generate_lesson (but search first!)',
-      'Schedule lesson for learner': 'schedule_lesson (need lessonKey from search/generate)',
-      'Assign lesson to learner': 'assign_lesson (need lessonKey from search/generate)',
-      'Fix/edit a lesson': 'get_lesson_details → edit_lesson (with updates)'
-    }
+  const headers = { Authorization: authHeader }
+  if (body !== null) headers['Content-Type'] = 'application/json'
+  const response = await fetch(url, { method, headers, ...(body !== null ? { body: JSON.stringify(body) } : {}) })
+  const data = await response.json().catch(() => ({}))
+  return { ok: response.ok, status: response.status, data }
+}
+
+async function resolveOwnedLearner(args, request, toolContext = {}) {
+  const authHeader = request.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ')) throw new Error('Authentication required')
+  const token = authHeader.slice(7).trim()
+  const { createClient } = await import('@supabase/supabase-js')
+  const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+  const { data: authData, error: authError } = await supabase.auth.getUser(token)
+  const user = authData?.user
+  if (authError || !user) throw new Error('Authentication required')
+  const { data: learners, error } = await supabase
+    .from('learners')
+    .select('id, name, grade')
+    .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
+    .order('created_at', { ascending: false })
+  if (error) throw new Error('Could not load the facilitator?s learners')
+  const owned = Array.isArray(learners) ? learners : []
+  const explicitId = String(args?.learnerId || '').trim()
+  if (explicitId) {
+    const match = owned.find((learner) => String(learner.id) === explicitId)
+    if (!match) throw new Error('The requested learner was not found or is not authorized for this facilitator')
+    return match
   }
-  
-  if (action && action !== 'all' && capabilities[action]) {
-    return {
-      success: true,
-      action: action,
-      details: capabilities[action],
-      message: `Retrieved details for ${action}`
-    }
+  const explicitName = String(args?.learnerName || '').trim().toLocaleLowerCase()
+  if (explicitName) {
+    const matches = owned.filter((learner) => String(learner.name || '').trim().toLocaleLowerCase() === explicitName)
+    if (matches.length === 1) return matches[0]
+    if (matches.length > 1) throw new Error('More than one learner has that name. Select the intended learner first.')
+    throw new Error('No authorized learner with that name was found')
   }
-  
+  const selectedId = String(toolContext?.selectedLearnerId || '').trim()
+  if (selectedId) {
+    const match = owned.find((learner) => String(learner.id) === selectedId)
+    if (match) return match
+  }
+  const selectedName = String(toolContext?.selectedLearnerName || '').trim().toLocaleLowerCase()
+  if (selectedName) {
+    const matches = owned.filter((learner) => String(learner.name || '').trim().toLocaleLowerCase() === selectedName)
+    if (matches.length === 1) return matches[0]
+  }
+  if (owned.length === 1) return owned[0]
+  throw new Error('Select or name a learner first')
+}
+
+function compactSyllabusItem(item = {}) {
+  const keep = [
+    'placement_kind', 'planned_date', 'subject', 'sort_order', 'title', 'description',
+    'lesson_key', 'lineage_id', 'occurrence_id', 'execution_occurrence_id', 'item_type',
+    'assigned_instructional_teacher', 'instructional_teacher', 'actual_instructional_teacher',
+    'slate_assignment_id', 'run_purpose', 'completed_at', 'status', 'metadata',
+  ]
+  return Object.fromEntries(keep.filter((key) => item[key] !== undefined).map((key) => [key, item[key]]))
+}
+
+function compactSyllabusPayload(data = {}, view = 'summary') {
+  const limit = view === 'full' ? 100 : 30
+  const active = data?.active_revision || null
+  const proposal = data?.proposed_learning_forecast || null
   return {
-    success: true,
-    capabilities: capabilities,
-    workflow: workflow,
-    message: 'Retrieved all capabilities and workflow guidance'
+    has_active_syllabus: data?.has_active_syllabus === true,
+    resolved_today: data?.resolved_today || null,
+    resolved_timezone: data?.resolved_timezone || null,
+    active_revision: active ? {
+      id: active.id,
+      revision_number: active.revision_number,
+      effective_from: active.effective_from,
+      goals: active.goals,
+      subjects: active.subjects,
+      weekly_pattern: active.weekly_pattern,
+      teaching_guidance: active.teaching_guidance,
+      planning_policy: active.planning_policy,
+    } : null,
+    timeline_items: (Array.isArray(data?.timeline_items) ? data.timeline_items : []).slice(0, limit).map(compactSyllabusItem),
+    forecast_items: (Array.isArray(data?.forecast_items) ? data.forecast_items : []).slice(0, limit).map(compactSyllabusItem),
+    no_school_dates: (Array.isArray(data?.no_school_dates) ? data.no_school_dates : []).slice(0, 100),
+    proposed_learning_forecast: proposal ? {
+      revision: proposal.revision ? { id: proposal.revision.id, base_revision_id: proposal.revision.base_revision_id, proposal_kind: proposal.revision.proposal_kind } : null,
+      forecast_items: (Array.isArray(proposal.forecast_items) ? proposal.forecast_items : []).slice(0, limit).map(compactSyllabusItem),
+    } : null,
   }
+}
+
+async function loadSyllabusData(learnerId, request) {
+  const response = await internalApiJson(request, '/api/syllabus', { searchParams: { learnerId } })
+  if (!response.ok) throw new Error(response.data?.error || 'Could not load the learner?s Syllabus')
+  return response.data
+}
+
+async function executeGetSyllabus(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    pushToolLog(toolLog, { name: 'get_syllabus', phase: 'start', context: { learnerId: learner.id } })
+    const data = await loadSyllabusData(learner.id, request)
+    const payload = compactSyllabusPayload(data, args?.view === 'full' ? 'full' : 'summary')
+    pushToolLog(toolLog, { name: 'get_syllabus', phase: 'success', context: { learnerId: learner.id, active: payload.has_active_syllabus } })
+    return toolSuccess('get_syllabus', payload.has_active_syllabus ? `Loaded the active Syllabus for ${learner.name}.` : `No active Syllabus is established for ${learner.name}.`, { learner: { id: learner.id, name: learner.name, grade: learner.grade }, syllabus: payload })
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'get_syllabus', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+async function executeGetLearningEvidence(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const limit = Math.max(1, Math.min(10, Number(args?.limit) || 5))
+    pushToolLog(toolLog, { name: 'get_learning_evidence', phase: 'start', context: { learnerId: learner.id, limit } })
+    const response = await internalApiJson(request, `/api/facilitator/learners/${encodeURIComponent(learner.id)}/evidence`, {
+      searchParams: { limit, lesson_key: args?.lessonKey || null },
+    })
+    if (!response.ok) return toolError(response.data?.error || 'Could not load learning evidence', response.data)
+    const items = (Array.isArray(response.data?.items) ? response.data.items : []).slice(0, limit).map((item) => ({
+      session: item.session,
+      lesson: item.lesson,
+      target: item.target,
+      completeness: item.completeness,
+      baseline: item.baseline,
+      assistance: item.assistance,
+      independent_evidence: item.independent_evidence,
+      retention: item.retention,
+      concept_evidence: item.concept_evidence,
+      score: item.score,
+      interventions: item.interventions,
+      interpretations: item.interpretations,
+      options: item.options,
+      learning_summary: item.learning_summary,
+    }))
+    pushToolLog(toolLog, { name: 'get_learning_evidence', phase: 'success', context: { learnerId: learner.id, reports: items.length } })
+    return toolSuccess('get_learning_evidence', `Loaded ${items.length} canonical evidence report(s) for ${learner.name}.`, {
+      learner: { id: learner.id, name: learner.name, grade: learner.grade },
+      evidence_enabled: response.data?.enabled !== false,
+      items,
+      reviews: Array.isArray(response.data?.reviews) ? response.data.reviews.slice(0, 10) : [],
+      pagination: response.data?.pagination || null,
+    })
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'get_learning_evidence', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+function addDaysIso(dateText, days) {
+  const date = new Date(`${dateText}T12:00:00Z`)
+  if (Number.isNaN(date.getTime())) return null
+  date.setUTCDate(date.getUTCDate() + days)
+  return date.toISOString().slice(0, 10)
+}
+
+async function executeGetSchedule(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const syllabus = await loadSyllabusData(learner.id, request).catch(() => null)
+    const startDate = String(args?.startDate || syllabus?.resolved_today || new Date().toISOString().slice(0, 10)).slice(0, 10)
+    const endDate = String(args?.endDate || addDaysIso(startDate, 14) || startDate).slice(0, 10)
+    pushToolLog(toolLog, { name: 'get_schedule', phase: 'start', context: { learnerId: learner.id, startDate, endDate } })
+    const response = await internalApiJson(request, '/api/lesson-schedule', { searchParams: { learnerId: learner.id, startDate, endDate } })
+    if (!response.ok) return toolError(response.data?.error || 'Could not load the lesson schedule', response.data)
+    const schedule = Array.isArray(response.data?.schedule) ? response.data.schedule : (Array.isArray(response.data) ? response.data : [])
+    pushToolLog(toolLog, { name: 'get_schedule', phase: 'success', context: { learnerId: learner.id, count: schedule.length } })
+    return toolSuccess('get_schedule', `Loaded ${schedule.length} scheduled lesson(s) for ${learner.name} from ${startDate} through ${endDate}.`, { learner: { id: learner.id, name: learner.name }, startDate, endDate, schedule: schedule.slice(0, 100) })
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'get_schedule', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+async function executeProposeSyllabusPlan(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const current = await loadSyllabusData(learner.id, request)
+    const expectedActiveRevisionId = current?.active_revision?.id
+    if (!current?.has_active_syllabus || !expectedActiveRevisionId) return toolError(`No active Syllabus is established for ${learner.name}.`)
+    const action = String(args?.action || '')
+    pushToolLog(toolLog, { name: 'propose_syllabus_plan', phase: 'start', context: { learnerId: learner.id, action } })
+    let response
+    if (action === 'forecast') {
+      response = await internalApiJson(request, '/api/syllabus/forecast', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId } })
+    } else if (action === 'suggest') {
+      response = await internalApiJson(request, '/api/syllabus/planning', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId, action: 'suggest', slots: Array.isArray(args?.slots) ? args.slots : [] } })
+    } else if (action === 'edit_forecast') {
+      response = await internalApiJson(request, '/api/syllabus/planning', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId, action: 'edit_forecast', proposalRevisionId: args?.proposalRevisionId, lineageId: args?.lineageId, title: args?.title, description: args?.description } })
+    } else if (action === 'replace_forecast') {
+      response = await internalApiJson(request, '/api/syllabus/planning', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId, action: 'replace_forecast', proposalRevisionId: args?.proposalRevisionId, lineageId: args?.lineageId, changeRequest: args?.changeRequest || '' } })
+    } else {
+      return toolError('Unsupported Syllabus proposal action')
+    }
+    if (!response.ok) return toolError(response.data?.error || 'Could not create the Syllabus proposal', response.data)
+    pushToolLog(toolLog, { name: 'propose_syllabus_plan', phase: 'success', context: { learnerId: learner.id, action } })
+    return toolSuccess('propose_syllabus_plan', `Created a ${action.replaceAll('_', ' ')} proposal for ${learner.name}. The active Syllabus was not silently rewritten.`, {
+      learner: { id: learner.id, name: learner.name },
+      proposal: response.data,
+      activeChanged: false,
+      expectedActiveRevisionId,
+    })
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'propose_syllabus_plan', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+function mergePlanDetailsPatch(activeRevision, patch = {}) {
+  const out = {}
+  const has = (key) => Object.prototype.hasOwnProperty.call(patch, key)
+  if (has('goals')) out.goals = (patch.goals && typeof patch.goals === 'object' && !Array.isArray(patch.goals)) ? { ...(activeRevision?.goals || {}), ...patch.goals } : patch.goals
+  if (has('subjects')) out.subjects = patch.subjects
+  if (has('weekly_pattern')) out.weekly_pattern = patch.weekly_pattern
+  if (has('teaching_guidance')) out.teaching_guidance = (patch.teaching_guidance && typeof patch.teaching_guidance === 'object' && !Array.isArray(patch.teaching_guidance)) ? { ...(activeRevision?.teaching_guidance || {}), ...patch.teaching_guidance } : patch.teaching_guidance
+  out.change_reason = 'Facilitator-directed Syllabus update through Mr. Mentor'
+  return out
+}
+
+async function executeUpdateSyllabusPlan(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const current = await loadSyllabusData(learner.id, request)
+    const expectedActiveRevisionId = current?.active_revision?.id
+    if (!current?.has_active_syllabus || !expectedActiveRevisionId) return toolError(`No active Syllabus is established for ${learner.name}.`)
+    const action = String(args?.action || '')
+    pushToolLog(toolLog, { name: 'update_syllabus_plan', phase: 'start', context: { learnerId: learner.id, action, expectedActiveRevisionId } })
+    let response
+    if (action === 'set_plan_details') {
+      const patch = args?.planDetailsPatch
+      if (!patch || typeof patch !== 'object' || Array.isArray(patch) || !Object.keys(patch).some((key) => ['goals', 'subjects', 'weekly_pattern', 'teaching_guidance'].includes(key))) {
+        return toolError('A planDetailsPatch with goals, subjects, weekly_pattern, or teaching_guidance is required')
+      }
+      response = await internalApiJson(request, '/api/syllabus/activate', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId, planDetails: mergePlanDetailsPatch(current.active_revision, patch) } })
+    } else if (action === 'create_day') {
+      response = await internalApiJson(request, '/api/syllabus/planning', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId, action: 'create_day', plannedDate: args?.plannedDate, subject: args?.subject, title: args?.title, description: args?.description, generationSpec: args?.generationSpec || null } })
+    } else if (action === 'edit_concept') {
+      response = await internalApiJson(request, '/api/syllabus/planning', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId, action: 'edit', lineageId: args?.lineageId, title: args?.title, description: args?.description } })
+    } else if (action === 'remove_concept') {
+      response = await internalApiJson(request, '/api/syllabus/planning', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId, action: 'remove', lineageId: args?.lineageId } })
+    } else if (action === 'activate_forecast') {
+      if (!args?.proposalRevisionId) return toolError('proposalRevisionId is required to activate a forecast proposal')
+      response = await internalApiJson(request, '/api/syllabus/activate', { method: 'POST', body: { learnerId: learner.id, expectedActiveRevisionId, proposalRevisionId: args.proposalRevisionId } })
+    } else {
+      return toolError('Unsupported active Syllabus update action')
+    }
+    if (!response.ok) return toolError(response.data?.error || 'Could not update the active Syllabus', response.data)
+    const readback = await loadSyllabusData(learner.id, request)
+    const activeRevisionId = readback?.active_revision?.id || null
+    const verified = Boolean(activeRevisionId && activeRevisionId !== expectedActiveRevisionId)
+    pushToolLog(toolLog, { name: 'update_syllabus_plan', phase: verified ? 'success' : 'error', context: { learnerId: learner.id, action, activeRevisionId } })
+    return toolSuccess('update_syllabus_plan', verified ? `Updated and verified the active Syllabus for ${learner.name}.` : `The Syllabus update returned successfully, but the new active revision could not be verified.`, { learner: { id: learner.id, name: learner.name }, previousActiveRevisionId: expectedActiveRevisionId, activeRevisionId, result: response.data }, verified)
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'update_syllabus_plan', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+async function executeMaterializeSyllabusLesson(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const current = await loadSyllabusData(learner.id, request)
+    const expectedActiveRevisionId = current?.active_revision?.id
+    if (!expectedActiveRevisionId) return toolError(`No active Syllabus is established for ${learner.name}.`)
+    const lineageId = String(args?.lineageId || '').trim()
+    if (!lineageId) return toolError('An exact Syllabus lineageId is required')
+    pushToolLog(toolLog, { name: 'materialize_syllabus_lesson', phase: 'start', context: { learnerId: learner.id, lineageId } })
+    const response = await internalApiJson(request, '/api/syllabus/materialize', { method: 'POST', body: { learnerId: learner.id, lineageId, expectedActiveRevisionId, proposalRevisionId: args?.proposalRevisionId || null, existingLessonKey: args?.existingLessonKey || null } })
+    if (!response.ok) return toolError(response.data?.error || 'Could not materialize the Syllabus lesson', response.data)
+    const readback = await loadSyllabusData(learner.id, request)
+    const items = Array.isArray(readback?.timeline_items) ? readback.timeline_items : []
+    const materialized = items.find((item) => String(item?.lineage_id || '') === lineageId && item?.lesson_key)
+    const verified = Boolean(materialized?.lesson_key || response.data?.lesson_key || response.data?.lessonKey)
+    pushToolLog(toolLog, { name: 'materialize_syllabus_lesson', phase: verified ? 'success' : 'error', context: { learnerId: learner.id, lineageId, lessonKey: materialized?.lesson_key || null } })
+    return toolSuccess('materialize_syllabus_lesson', verified ? `Materialized and verified the Syllabus lesson for ${learner.name}.` : 'Materialization returned successfully, but the lesson binding could not be verified.', { learner: { id: learner.id, name: learner.name }, lineageId, materialized: materialized ? compactSyllabusItem(materialized) : null, result: response.data }, verified)
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'materialize_syllabus_lesson', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+async function executeSetInstructionalTeacher(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const lessonKey = normalizeLessonKey(args?.lessonKey)
+    const occurrenceId = String(args?.occurrenceId || '').trim()
+    const instructionalTeacher = String(args?.instructionalTeacher || '').trim().toLowerCase()
+    if (!lessonKey || !occurrenceId || !['sonoma', 'webb'].includes(instructionalTeacher)) return toolError('lessonKey, occurrenceId, and a valid instructionalTeacher are required')
+    pushToolLog(toolLog, { name: 'set_instructional_teacher', phase: 'start', context: { learnerId: learner.id, occurrenceId, instructionalTeacher } })
+    const response = await internalApiJson(request, '/api/syllabus/lesson-associations', { method: 'PATCH', body: { learnerId: learner.id, lessonKey, occurrenceId, instructionalTeacher } })
+    if (!response.ok) return toolError(response.data?.error || 'Could not set the instructional teacher', response.data)
+    const savedTeacher = response.data?.association?.instructional_teacher || response.data?.association?.instructionalTeacher || instructionalTeacher
+    const verified = savedTeacher === instructionalTeacher
+    pushToolLog(toolLog, { name: 'set_instructional_teacher', phase: verified ? 'success' : 'error', context: { learnerId: learner.id, occurrenceId, instructionalTeacher } })
+    return toolSuccess('set_instructional_teacher', verified ? `Assigned ${instructionalTeacher === 'webb' ? 'Mrs. Webb' : 'Ms. Sonoma'} to that Syllabus occurrence for ${learner.name}.` : 'The teacher assignment returned successfully but could not be verified.', { learner: { id: learner.id, name: learner.name }, occurrenceId, instructionalTeacher, association: response.data?.association || null }, verified)
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'set_instructional_teacher', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+async function executeManageSlatePractice(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const action = String(args?.action || '')
+    pushToolLog(toolLog, { name: 'manage_slate_practice', phase: 'start', context: { learnerId: learner.id, action } })
+    let response
+    if (action === 'schedule') {
+      const lessonKey = normalizeLessonKey(args?.lessonKey)
+      if (!lessonKey || !args?.occurrenceId || !args?.scheduledDate) return toolError('lessonKey, occurrenceId, and scheduledDate are required to schedule Mr. Slate')
+      response = await internalApiJson(request, '/api/syllabus/slate-assignments', { method: 'POST', body: { learnerId: learner.id, lessonKey, occurrenceId: args.occurrenceId, scheduledDate: args.scheduledDate, runPurpose: args?.runPurpose || 'practice' } })
+    } else if (action === 'remove') {
+      if (!args?.assignmentId) return toolError('assignmentId is required to remove a Mr. Slate assignment')
+      response = await internalApiJson(request, '/api/syllabus/slate-assignments', { method: 'DELETE', body: { learnerId: learner.id, assignmentId: args.assignmentId } })
+    } else {
+      return toolError('Unsupported Mr. Slate action')
+    }
+    if (!response.ok) return toolError(response.data?.error || 'Could not update Mr. Slate practice', response.data)
+    pushToolLog(toolLog, { name: 'manage_slate_practice', phase: 'success', context: { learnerId: learner.id, action } })
+    return toolSuccess('manage_slate_practice', action === 'schedule' ? `Scheduled Mr. Slate work for ${learner.name}.` : `Removed the Mr. Slate assignment for ${learner.name}.`, { learner: { id: learner.id, name: learner.name }, result: response.data })
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'manage_slate_practice', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+async function executeManageNoSchoolDate(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const action = String(args?.action || '')
+    pushToolLog(toolLog, { name: 'manage_no_school_date', phase: 'start', context: { learnerId: learner.id, action, date: args?.date || null } })
+    if (action === 'list') {
+      const response = await internalApiJson(request, '/api/no-school-dates', { searchParams: { learnerId: learner.id } })
+      if (!response.ok) return toolError(response.data?.error || 'Could not load no-school dates', response.data)
+      return toolSuccess('manage_no_school_date', `Loaded no-school dates for ${learner.name}.`, { learner: { id: learner.id, name: learner.name }, dates: response.data?.dates || [] })
+    }
+    const date = String(args?.date || '').slice(0, 10)
+    if (!date) return toolError('A YYYY-MM-DD date is required')
+    const response = action === 'add'
+      ? await internalApiJson(request, '/api/no-school-dates', { method: 'POST', body: { learnerId: learner.id, date, reason: args?.reason || null } })
+      : action === 'remove'
+        ? await internalApiJson(request, '/api/no-school-dates', { method: 'DELETE', searchParams: { learnerId: learner.id, date } })
+        : null
+    if (!response) return toolError('Unsupported no-school-date action')
+    if (!response.ok) return toolError(response.data?.error || 'Could not update the no-school date', response.data)
+    const readback = await internalApiJson(request, '/api/no-school-dates', { searchParams: { learnerId: learner.id } })
+    const dates = Array.isArray(readback.data?.dates) ? readback.data.dates : []
+    const exists = dates.some((entry) => String(entry?.date || entry).slice(0, 10) === date)
+    const verified = readback.ok && (action === 'add' ? exists : !exists)
+    pushToolLog(toolLog, { name: 'manage_no_school_date', phase: verified ? 'success' : 'error', context: { learnerId: learner.id, action, date } })
+    return toolSuccess('manage_no_school_date', verified ? `${action === 'add' ? 'Added' : 'Removed'} and verified ${date} ${action === 'add' ? 'as' : 'from'} a no-school date for ${learner.name}.` : 'The no-school-date write returned successfully but readback did not verify it.', { learner: { id: learner.id, name: learner.name }, date, dates }, verified)
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'manage_no_school_date', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+function executeOpenSurface(args) {
+  const routes = {
+    syllabus: '/facilitator/syllabus',
+    calendar: '/facilitator/calendar',
+    lessons: '/facilitator/lessons',
+    generated_lessons: '/facilitator/generator/generated',
+    lesson_maker: '/facilitator/generator/lesson-maker',
+    learners: '/facilitator/learners',
+    prepare: '/facilitator/prepare',
+    account: '/facilitator/account',
+    notifications: '/facilitator/notifications',
+    mr_mentor: '/facilitator/generator/counselor',
+  }
+  const surface = String(args?.surface || '')
+  const base = routes[surface]
+  if (!base) return toolError('Unknown facilitator surface')
+  const href = surface === 'syllabus' && args?.learnerId ? `${base}?learnerId=${encodeURIComponent(args.learnerId)}` : base
+  return toolSuccess('open_surface', 'Opening that Ms. Sonoma surface.', { uiAction: { type: 'navigate', href }, surface })
 }
 
 // Helper function to search for lessons
@@ -1002,221 +1118,64 @@ async function executeLessonGeneration(args, request, toolLog) {
 }
 
 // Helper function to execute lesson scheduling
-async function executeLessonScheduling(args, request, toolLog) {
+async function executeLessonScheduling(args, request, toolLog, toolContext = {}) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return { error: 'Authentication required' }
-    }
-    const baseUrl = resolveBaseUrl(request)
-    pushToolLog(toolLog, {
-      name: 'schedule_lesson',
-      phase: 'start',
-      context: { learnerName: args.learnerName, scheduledDate: args.scheduledDate }
-    })
-    
-    // Validate required parameters
-    if (!args.learnerName) {
-      return { error: 'Missing learnerName - you need to specify which learner to schedule for' }
-    }
-    if (!args.lessonKey) {
-      return { error: 'Missing lessonKey - need the lesson identifier like "subject/filename.json"' }
-    }
-    if (!args.scheduledDate) {
-      return { error: 'Missing scheduledDate - need date in YYYY-MM-DD format' }
-    }
-    
-  const normalizedLessonKey = normalizeLessonKey(args.lessonKey)
-
-  // Look up the learner by name via Supabase
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
-    
-    const { data: learners, error: learnersError } = await supabase
-      .from('learners')
-      .select('id, name')
-      .order('created_at', { ascending: false })
-    
-    if (learnersError) {
-      return { error: 'Failed to fetch learners list', details: learnersError }
-    }
-    
-    const normalizedSearchName = args.learnerName.toLowerCase().trim()
-    const matchingLearner = learners.find(l => 
-      l.name?.toLowerCase().trim() === normalizedSearchName
-    )
-    
-    if (!matchingLearner) {
-      pushToolLog(toolLog, {
-        name: 'schedule_lesson',
-        phase: 'error',
-        context: { message: `Learner ${args.learnerName} not found` }
-      })
-      return { 
-        error: `Could not find a learner named "${args.learnerName}". Available learners: ${learners.map(l => l.name).join(', ')}` 
-      }
-    }
-    
-    // Call the lesson schedule API with the learner ID
-  const scheduleUrl = new URL('/api/lesson-schedule', baseUrl)
-  const schedResponse = await fetch(scheduleUrl, {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const lessonKey = normalizeLessonKey(args?.lessonKey)
+    const scheduledDate = String(args?.scheduledDate || '').slice(0, 10)
+    if (!lessonKey) return toolError('Missing lessonKey')
+    if (!scheduledDate) return toolError('Missing scheduledDate in YYYY-MM-DD format')
+    pushToolLog(toolLog, { name: 'schedule_lesson', phase: 'start', context: { learnerId: learner.id, scheduledDate, lessonKey } })
+    const response = await internalApiJson(request, '/api/lesson-schedule', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader
-      },
-      body: JSON.stringify({
-        learnerId: matchingLearner.id,
-        lessonKey: normalizedLessonKey,
-        scheduledDate: args.scheduledDate
-      })
+      body: { learnerId: learner.id, lessonKey, scheduledDate },
     })
-    
-    const result = await schedResponse.json()
-    
-    if (!schedResponse.ok) {
-      pushToolLog(toolLog, {
-        name: 'schedule_lesson',
-        phase: 'error',
-        context: { message: result.error || 'Lesson scheduling failed' }
-      })
-      return { error: result.error || 'Lesson scheduling failed', details: result }
+    if (!response.ok) {
+      pushToolLog(toolLog, { name: 'schedule_lesson', phase: 'error', context: { learnerId: learner.id, message: response.data?.error || 'Lesson scheduling failed' } })
+      return toolError(response.data?.error || 'Lesson scheduling failed', response.data)
     }
-    
-    pushToolLog(toolLog, {
-      name: 'schedule_lesson',
-      phase: 'success',
-      context: { learnerName: matchingLearner.name, scheduledDate: args.scheduledDate }
+    const readback = await internalApiJson(request, '/api/lesson-schedule', {
+      searchParams: { learnerId: learner.id, startDate: scheduledDate, endDate: scheduledDate },
     })
-    return {
-      success: true,
-  scheduledDate: args.scheduledDate,
-  lessonKey: normalizedLessonKey,
-      learnerName: matchingLearner.name,
-      message: `Lesson has been scheduled for ${matchingLearner.name} on ${args.scheduledDate}.`
-    }
-  } catch (err) {
-    pushToolLog(toolLog, {
-      name: 'schedule_lesson',
-      phase: 'error',
-      context: { message: err?.message || String(err) }
-    })
-    return { error: err.message || String(err) }
+    const rows = Array.isArray(readback.data?.schedule) ? readback.data.schedule : (Array.isArray(readback.data) ? readback.data : [])
+    const verified = readback.ok && rows.some((row) => String(normalizeLessonKey(row?.lesson_key || row?.lessonKey || '')) === String(lessonKey) && String(row?.scheduled_date || row?.scheduledDate || '').slice(0, 10) === scheduledDate)
+    pushToolLog(toolLog, { name: 'schedule_lesson', phase: verified ? 'success' : 'error', context: { learnerId: learner.id, scheduledDate, lessonKey, verified } })
+    return toolSuccess('schedule_lesson', verified ? `Scheduled and verified the lesson for ${learner.name} on ${scheduledDate}.` : `The schedule write succeeded for ${learner.name}, but readback did not verify it.`, {
+      learner: { id: learner.id, name: learner.name }, lessonKey, scheduledDate, result: response.data,
+    }, verified)
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'schedule_lesson', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
   }
 }
 
 // Helper function to execute lesson assignment (approved_lessons)
-async function executeLessonAssignment(args, request, toolLog) {
+async function executeLessonAssignment(args, request, toolLog, toolContext = {}) {
   try {
-    const authHeader = request.headers.get('authorization')
-    if (!authHeader) {
-      return { error: 'Authentication required' }
-    }
-
-    const baseUrl = resolveBaseUrl(request)
-    pushToolLog(toolLog, {
-      name: 'assign_lesson',
-      phase: 'start',
-      context: { learnerName: args.learnerName }
-    })
-
-    if (!args.learnerName) {
-      return { error: 'Missing learnerName - you need to specify which learner to assign for' }
-    }
-    if (!args.lessonKey) {
-      return { error: 'Missing lessonKey - need the lesson identifier like "subject/filename.json"' }
-    }
-
-    const normalizedLessonKey = normalizeLessonKey(args.lessonKey)
-
-    // Look up the learner by name via Supabase (route will verify authorization on write)
-    const { createClient } = await import('@supabase/supabase-js')
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.SUPABASE_SERVICE_ROLE_KEY
-    )
-
-    const { data: learners, error: learnersError } = await supabase
-      .from('learners')
-      .select('id, name')
-      .order('created_at', { ascending: false })
-
-    if (learnersError) {
-      return { error: 'Failed to fetch learners list', details: learnersError }
-    }
-
-    const normalizedSearchName = args.learnerName.toLowerCase().trim()
-    const matchingLearner = learners.find(l =>
-      l.name?.toLowerCase().trim() === normalizedSearchName
-    )
-
-    if (!matchingLearner) {
-      pushToolLog(toolLog, {
-        name: 'assign_lesson',
-        phase: 'error',
-        context: { message: `Learner ${args.learnerName} not found` }
-      })
-      return {
-        error: `Could not find a learner named "${args.learnerName}". Available learners: ${learners.map(l => l.name).join(', ')}`
-      }
-    }
-
-    const assignUrl = new URL('/api/lesson-assign', baseUrl)
-    const assignResponse = await fetch(assignUrl, {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const lessonKey = normalizeLessonKey(args?.lessonKey)
+    if (!lessonKey) return toolError('Missing lessonKey')
+    pushToolLog(toolLog, { name: 'assign_lesson', phase: 'start', context: { learnerId: learner.id, lessonKey } })
+    const response = await internalApiJson(request, '/api/lesson-assign', {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': authHeader
-      },
-      body: JSON.stringify({
-        learnerId: matchingLearner.id,
-        lessonKey: normalizedLessonKey,
-        assigned: true
-      })
+      body: { learnerId: learner.id, lessonKey, assigned: true },
     })
-
-    const result = await assignResponse.json().catch(() => ({}))
-
-    if (!assignResponse.ok) {
-      pushToolLog(toolLog, {
-        name: 'assign_lesson',
-        phase: 'error',
-        context: { message: result.error || 'Lesson assignment failed' }
-      })
-      return { error: result.error || 'Lesson assignment failed', details: result }
+    if (!response.ok) {
+      pushToolLog(toolLog, { name: 'assign_lesson', phase: 'error', context: { learnerId: learner.id, message: response.data?.error || 'Lesson assignment failed' } })
+      return toolError(response.data?.error || 'Lesson assignment failed', response.data)
     }
-
-    pushToolLog(toolLog, {
-      name: 'assign_lesson',
-      phase: 'success',
-      context: { learnerName: matchingLearner.name }
+    let lessonTitle = args?.lessonTitle || null
+    if (!lessonTitle) {
+      const details = await executeGetLessonDetails({ lessonKey }, request, toolLog)
+      if (details?.success) lessonTitle = details.title || details.lessonTitle || null
+    }
+    pushToolLog(toolLog, { name: 'assign_lesson', phase: 'success', context: { learnerId: learner.id, lessonKey } })
+    return toolSuccess('assign_lesson', `Assigned the lesson to ${learner.name}.`, {
+      learner: { id: learner.id, name: learner.name }, lessonKey, lessonTitle, result: response.data,
     })
-
-    let resolvedTitle = args.lessonTitle || null
-    if (!resolvedTitle) {
-      const details = await executeGetLessonDetails({ lessonKey: normalizedLessonKey }, request, toolLog)
-      if (details?.success && details?.title) {
-        resolvedTitle = details.title
-      }
-    }
-
-    return {
-      success: true,
-      lessonKey: normalizedLessonKey,
-      learnerName: matchingLearner.name,
-      lessonTitle: resolvedTitle,
-      message: `Lesson has been assigned for ${matchingLearner.name}.`
-    }
-  } catch (err) {
-    pushToolLog(toolLog, {
-      name: 'assign_lesson',
-      phase: 'error',
-      context: { message: err?.message || String(err) }
-    })
-    return { error: err.message || String(err) }
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'assign_lesson', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
   }
 }
 
@@ -1451,6 +1410,41 @@ async function executeSearchConversationHistory(args, request, toolLog) {
   }
 }
 
+const MENTOR_TOOL_EXECUTORS = Object.freeze({
+  get_capabilities: async (args) => getCapabilitiesInfo(args),
+  search_lessons: (args, context) => executeSearchLessons(args, context.request, context.toolLog),
+  get_lesson_details: (args, context) => executeGetLessonDetails(args, context.request, context.toolLog),
+  get_syllabus: (args, context) => executeGetSyllabus(args, context.request, context.toolLog, context),
+  get_learning_evidence: (args, context) => executeGetLearningEvidence(args, context.request, context.toolLog, context),
+  get_schedule: (args, context) => executeGetSchedule(args, context.request, context.toolLog, context),
+  propose_syllabus_plan: (args, context) => executeProposeSyllabusPlan(args, context.request, context.toolLog, context),
+  generate_lesson: (args, context) => executeLessonGeneration(args, context.request, context.toolLog),
+  schedule_lesson: (args, context) => executeLessonScheduling(args, context.request, context.toolLog, context),
+  assign_lesson: (args, context) => executeLessonAssignment(args, context.request, context.toolLog, context),
+  edit_lesson: (args, context) => executeLessonEdit(args, context.request, context.toolLog),
+  update_syllabus_plan: (args, context) => executeUpdateSyllabusPlan(args, context.request, context.toolLog, context),
+  materialize_syllabus_lesson: (args, context) => executeMaterializeSyllabusLesson(args, context.request, context.toolLog, context),
+  set_instructional_teacher: (args, context) => executeSetInstructionalTeacher(args, context.request, context.toolLog, context),
+  manage_slate_practice: (args, context) => executeManageSlatePractice(args, context.request, context.toolLog, context),
+  manage_no_school_date: (args, context) => executeManageNoSchoolDate(args, context.request, context.toolLog, context),
+  open_surface: async (args, context) => executeOpenSurface({ ...args, learnerId: args?.learnerId || context.selectedLearnerId || null }),
+  get_conversation_memory: (args, context) => executeGetConversationMemory({ ...args, learner_id: args?.learner_id || context.selectedLearnerId || null }, context.request, context.toolLog),
+  search_conversation_history: (args, context) => executeSearchConversationHistory(args, context.request, context.toolLog),
+})
+
+const MISSING_MENTOR_EXECUTORS = MENTOR_TOOL_REGISTRY.map((tool) => tool.name).filter((name) => !MENTOR_TOOL_EXECUTORS[name])
+const EXTRA_MENTOR_EXECUTORS = Object.keys(MENTOR_TOOL_EXECUTORS).filter((name) => !getMentorTool(name))
+if (MISSING_MENTOR_EXECUTORS.length || EXTRA_MENTOR_EXECUTORS.length) {
+  throw new Error(`Mr. Mentor tool registry/dispatcher mismatch. Missing: ${MISSING_MENTOR_EXECUTORS.join(', ') || 'none'}; extra: ${EXTRA_MENTOR_EXECUTORS.join(', ') || 'none'}`)
+}
+
+async function executeMentorTool(name, args, context) {
+  const registered = getMentorTool(name)
+  const executor = MENTOR_TOOL_EXECUTORS[name]
+  if (!registered || !executor) return toolError(`Unknown Mr. Mentor tool: ${name}`)
+  return executor(args || {}, context)
+}
+
 export async function POST(req) {
   const callId = createCallId()
   const logPrefix = `[Mr. Mentor][${callId}]`
@@ -1462,13 +1456,16 @@ export async function POST(req) {
     let userMessage = ''
     let conversationHistory = []
     let followup = null
-    let requireGenerationConfirmation = false
     let generationConfirmed = false
     let disableTools = []
     let subjectKey = null
     let useCohereChronograph = false
     let cohereSector = 'both'
     let cohereMode = 'standard'
+    let selectedLearnerId = null
+    let selectedLearnerName = null
+    let confirmedTools = []
+    let requestPayload = null
     
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     let learnerTranscript = null
@@ -1476,13 +1473,16 @@ export async function POST(req) {
     try {
       if (contentType.includes('application/json')) {
         const body = await req.json()
+        requestPayload = body
         userMessage = (body.message || '').trim()
         conversationHistory = Array.isArray(body.history) ? body.history : []
         learnerTranscript = body.learner_transcript || null
         goalsNotes = body.goals_notes || null
         followup = body.followup || null
-        requireGenerationConfirmation = !!body.require_generation_confirmation
         generationConfirmed = !!body.generation_confirmed
+        confirmedTools = Array.isArray(body.confirmed_tools) ? body.confirmed_tools.map((value) => String(value || '').trim()).filter(Boolean) : []
+        selectedLearnerId = typeof body.selected_learner_id === 'string' && body.selected_learner_id !== 'none' ? body.selected_learner_id.trim() : null
+        selectedLearnerName = typeof body.selected_learner_name === 'string' ? body.selected_learner_name.trim() : null
         disableTools = Array.isArray(body.disableTools) ? body.disableTools.filter(Boolean) : []
         subjectKey = typeof body.subject_key === 'string' ? body.subject_key.trim() : null
 
@@ -1526,9 +1526,13 @@ export async function POST(req) {
     systemPrompt += `\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: 'educational planning', audience: 'facilitator' })}`
     
     if (goalsNotes) {
-      systemPrompt += `\n\n=== PERSISTENT GOALS & PRIORITIES ===\nThe facilitator has set these persistent goals that should guide all conversations:\n\nPersistent Goals:\n${goalsNotes}\n\n=== END PERSISTENT GOALS ===\n\nIMPORTANT: These goals persist across all conversations. Reference them when relevant, and help the facilitator work toward them. The facilitator can update these goals anytime using the Goals clipboard button (📋) on screen.`
+      systemPrompt += `\n\n=== PERSISTENT GOALS & PRIORITIES ===\nThe facilitator has set these persistent goals that should guide all conversations:\n\nPersistent Goals:\n${goalsNotes}\n\n=== END PERSISTENT GOALS ===\n\nIMPORTANT: These goals persist across all conversations. Reference them when relevant, and help the facilitator work toward them. The facilitator can update these goals anytime using the Goals clipboard button (ðŸ“‹) on screen.`
     }
     
+    if (selectedLearnerId) {
+      systemPrompt += `\n\n=== SELECTED LEARNER TARGET ===\nLearner ID: ${selectedLearnerId}\nLearner name: ${selectedLearnerName || 'selected learner'}\nUse this learner by default for learner-scoped tools unless the facilitator explicitly names another learner.\n=== END SELECTED LEARNER TARGET ===`
+    }
+
     if (learnerTranscript) {
       systemPrompt += `\n\n=== CURRENT LEARNER CONTEXT ===\nThe facilitator has selected a specific learner to discuss. Here is their profile and progress:\n\n${learnerTranscript}\n\n=== END LEARNER CONTEXT ===\n\nIMPORTANT INSTRUCTIONS FOR THIS LEARNER:\n- When generating lessons, ALWAYS use the grade level shown in the learner profile above\n- When scheduling lessons, you can use the learner's name (e.g., "Emma", "John") and the system will find them\n- When searching for lessons, consider their current grade level and adjust difficulty accordingly\n\nUse this information to provide personalized, data-informed guidance. Reference specific achievements, struggles, or patterns you notice. Ask questions that help the facilitator reflect on this learner's unique needs and progress.`
     }
@@ -1539,7 +1543,7 @@ export async function POST(req) {
       try {
         const authHeader = req.headers.get('authorization')
         if (authHeader) {
-          const learnerId = learnerTranscript ? null : null // Extract learner ID if needed from transcript
+          const learnerId = selectedLearnerId
           const memoryUrl = new URL('/api/conversation-memory', baseUrl)
           if (learnerId) {
             memoryUrl.searchParams.set('learner_id', learnerId)
@@ -1588,7 +1592,7 @@ export async function POST(req) {
         cohereMeta = { tenantId, threadId, sector: cohereSector, subjectKey, mode: cohereMode }
 
         if (!isFollowup && userMessage) {
-          const blindspot = body?.interceptor_context?.mentor_blindspot
+          const blindspot = requestPayload?.interceptor_context?.mentor_blindspot
           const meta = {
             call_id: callId,
             ...(blindspot && typeof blindspot === 'object' ? { mentor_blindspot: blindspot } : {})
@@ -1706,244 +1710,8 @@ export async function POST(req) {
       ? [...baseMessages, { role: 'user', content: userMessage }]
       : baseMessages
 
-    // Define available functions
-    let tools = [
-      {
-        type: 'function',
-        function: {
-          name: 'get_capabilities',
-          description: 'Get detailed information about your available actions and how to use them. Call this when you need to remember how to generate lessons, schedule them, search for lessons, or understand what parameters are required.',
-          parameters: {
-            type: 'object',
-            properties: {
-              action: {
-                type: 'string',
-                description: 'Specific action to get help with (optional). Options: generate_lesson, schedule_lesson, assign_lesson, search_lessons, get_lesson_details, or omit for all capabilities.',
-                enum: ['generate_lesson', 'schedule_lesson', 'assign_lesson', 'search_lessons', 'get_lesson_details', 'all']
-              }
-            }
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'search_lessons',
-          description: 'Search for available lessons across all subjects (math, science, language arts, social studies) and facilitator-created lessons. Use this to find lessons by topic, grade, or subject. Returns lesson titles, grades, and keys for scheduling.',
-          parameters: {
-            type: 'object',
-            properties: {
-              subject: {
-                type: 'string',
-                description: 'Filter by subject (optional)',
-                enum: ['math', 'science', 'language arts', 'social studies', 'facilitator']
-              },
-              grade: {
-                type: 'string',
-                description: 'Filter by grade level like "3rd", "5th" (optional)'
-              },
-              searchTerm: {
-                type: 'string',
-                description: 'Search term to match in lesson titles or topics (optional)'
-              }
-            }
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'get_lesson_details',
-          description: 'Get full details of a specific lesson including vocabulary, teaching notes, and question types. Use this when you need to understand lesson content to make recommendations.',
-          parameters: {
-            type: 'object',
-            properties: {
-              lessonKey: {
-                type: 'string',
-                description: 'The lesson identifier in format "subject/filename" (e.g., "math/Addition_Basics.json")'
-              }
-            },
-            required: ['lessonKey']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'generate_lesson',
-          description: 'Generate a custom lesson ONLY after explicit user confirmation. NEVER call this function unless: (1) User explicitly said words like "yes, generate", "create it", "make the lesson" in their MOST RECENT message, OR (2) You just asked "Would you like me to generate a custom lesson?" and they responded "yes" or similar affirmative. DO NOT call if user asks for "recommendations", "suggestions", "ideas", or talks about lessons "not in the library" without explicit generation confirmation. When in doubt, ask confirmation first, do not call this function.',
-          parameters: {
-            type: 'object',
-            properties: {
-              title: {
-                type: 'string',
-                description: 'The lesson title (e.g., "Photosynthesis Basics")'
-              },
-              subject: {
-                type: 'string',
-                description: 'The subject area',
-                enum: ['math', 'science', 'language arts', 'social studies']
-              },
-              grade: {
-                type: 'string',
-                description: 'Grade level (e.g., "3rd", "5th", "8th")'
-              },
-              difficulty: {
-                type: 'string',
-                description: 'Difficulty level',
-                enum: ['Beginner', 'Intermediate', 'Advanced']
-              },
-              description: {
-                type: 'string',
-                description: 'Brief description of what the lesson covers'
-              },
-              vocab: {
-                type: 'string',
-                description: 'Comma-separated vocabulary terms to include (optional)'
-              },
-              notes: {
-                type: 'string',
-                description: 'Additional guidance for lesson creation (optional)'
-              }
-            },
-            required: ['title', 'subject', 'grade', 'difficulty', 'description']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'schedule_lesson',
-          description: 'Schedule a lesson for a specific learner on a specific date. Use this when the facilitator wants to add a lesson to a learner\'s calendar.',
-          parameters: {
-            type: 'object',
-            properties: {
-              learnerName: {
-                type: 'string',
-                description: 'The name of the learner (e.g., "Emma", "John"). The system will find the matching learner.'
-              },
-              lessonKey: {
-                type: 'string',
-                description: 'The lesson identifier in format "subject/filename" (e.g., "math/Addition_Basics.json")'
-              },
-              scheduledDate: {
-                type: 'string',
-                description: 'Date in YYYY-MM-DD format'
-              }
-            },
-            required: ['learnerName', 'lessonKey', 'scheduledDate']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'assign_lesson',
-          description: 'Assign a lesson to a learner so it shows up as available (not scheduled on a date). Use this when the facilitator says to assign/make available/show a lesson without picking a calendar date.',
-          parameters: {
-            type: 'object',
-            properties: {
-              learnerName: {
-                type: 'string',
-                description: 'The name of the learner (e.g., "Emma", "John"). The system will find the matching learner.'
-              },
-              lessonKey: {
-                type: 'string',
-                description: 'The lesson identifier in format "subject/filename" (e.g., "math/Addition_Basics.json")'
-              },
-              lessonTitle: {
-                type: 'string',
-                description: 'Optional human-readable title for confirmation (if known). If unknown, call get_lesson_details first.'
-              }
-            },
-            required: ['learnerName', 'lessonKey']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'edit_lesson',
-          description: 'Edit an existing lesson (works on ALL lessons: math, science, language arts, social studies, AND facilitator lessons). Use when facilitator wants to fix, update, or improve a lesson.',
-          parameters: {
-            type: 'object',
-            properties: {
-              lessonKey: {
-                type: 'string',
-                description: 'The lesson identifier in format "subject/filename" (e.g., "science/Photosynthesis.json")'
-              },
-              updates: {
-                type: 'object',
-                description: 'Object containing the fields to update. Can include: title, blurb, teachingNotes, vocab (array), truefalse (array), multiplechoice (array), shortanswer (array), fillintheblank (array)',
-                properties: {
-                  title: { type: 'string' },
-                  blurb: { type: 'string' },
-                  teachingNotes: { type: 'string' },
-                  vocab: { 
-                    type: 'array',
-                    items: { type: 'object' }
-                  },
-                  truefalse: { 
-                    type: 'array',
-                    items: { type: 'object' }
-                  },
-                  multiplechoice: { 
-                    type: 'array',
-                    items: { type: 'object' }
-                  },
-                  shortanswer: { 
-                    type: 'array',
-                    items: { type: 'object' }
-                  },
-                  fillintheblank: { 
-                    type: 'array',
-                    items: { type: 'object' }
-                  }
-                }
-              }
-            },
-            required: ['lessonKey', 'updates']
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'get_conversation_memory',
-          description: 'Retrieve conversation memory from previous sessions. This provides context continuity across conversations. Use this when you need to reference past discussions or when a facilitator mentions something from before.',
-          parameters: {
-            type: 'object',
-            properties: {
-              learner_id: {
-                type: 'string',
-                description: 'Optional. The ID of a specific learner if discussing learner-specific conversations. Omit for general facilitator conversations.'
-              }
-            }
-          }
-        }
-      },
-      {
-        type: 'function',
-        function: {
-          name: 'search_conversation_history',
-          description: 'Search past conversations using keywords with fuzzy matching. Use this when facilitator asks "what did we discuss about X?" or wants to review past advice, plans, or topics.',
-          parameters: {
-            type: 'object',
-            properties: {
-              search: {
-                type: 'string',
-                description: 'Keywords or phrases to search for in conversation summaries'
-              },
-              include_archive: {
-                type: 'boolean',
-                description: 'Optional. Set to true to also search archived conversations (default: false)'
-              }
-            },
-            required: ['search']
-          }
-        }
-      }
-    ]
+    // Define available functions from the authoritative Mr. Mentor registry.
+    let tools = getMentorOpenAiTools()
 
     // Apply per-request tool disabling (e.g., block generate_lesson after user declines)
     if (disableTools.length > 0) {
@@ -2107,12 +1875,17 @@ export async function POST(req) {
     
     // Handle function calls
     if (toolCalls && toolCalls.length > 0) {
-      // Intercept generation tool calls when confirmation is required but not yet granted
-      const hasGenerateCall = toolCalls.some(tc => tc?.function?.name === 'generate_lesson')
-      if (requireGenerationConfirmation && !generationConfirmed && hasGenerateCall) {
-        const mentorReply = 'Would you like me to generate a custom lesson?'
+      // Confirmation policy comes from the authoritative tool registry.
+      const confirmedToolSet = new Set(confirmedTools)
+      if (generationConfirmed) confirmedToolSet.add('generate_lesson')
+      const confirmationCall = toolCalls.find((toolCall) => {
+        const name = toolCall?.function?.name
+        return mentorToolNeedsConfirmation(name) && !confirmedToolSet.has(name)
+      })
+      if (confirmationCall) {
+        const confirmationTool = confirmationCall.function.name
+        const mentorReply = mentorToolConfirmationPrompt(confirmationTool)
         const audioContent = await synthesizeAudio(mentorReply, logPrefix)
-
         if (useCohereChronograph && subjectKey && cohereMeta?.tenantId && cohereMeta?.threadId) {
           try {
             const auth = await cohereGetUserAndClient(req)
@@ -2123,18 +1896,17 @@ export async function POST(req) {
                 threadId: cohereMeta.threadId,
                 role: 'assistant',
                 text: mentorReply,
-                meta: { call_id: callId, needs_confirmation: true }
+                meta: { call_id: callId, needs_confirmation: true, confirmation_tool: confirmationTool }
               })
             }
           } catch {}
         }
-
         return NextResponse.json({
           reply: mentorReply,
           audio: audioContent,
           toolLog,
           needsConfirmation: true,
-          confirmationTool: 'generate_lesson',
+          confirmationTool,
           functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
           usage: parsedBody?.usage || null
         })
@@ -2148,28 +1920,12 @@ export async function POST(req) {
         
         let result
         try {
-          if (functionName === 'get_capabilities') {
-            result = getCapabilitiesInfo(functionArgs)
-          } else if (functionName === 'search_lessons') {
-            result = await executeSearchLessons(functionArgs, req, toolLog)
-          } else if (functionName === 'get_lesson_details') {
-            result = await executeGetLessonDetails(functionArgs, req, toolLog)
-          } else if (functionName === 'generate_lesson') {
-            result = await executeLessonGeneration(functionArgs, req, toolLog)
-          } else if (functionName === 'schedule_lesson') {
-            result = await executeLessonScheduling(functionArgs, req, toolLog)
-          } else if (functionName === 'assign_lesson') {
-            result = await executeLessonAssignment(functionArgs, req, toolLog)
-          } else if (functionName === 'edit_lesson') {
-            result = await executeLessonEdit(functionArgs, req, toolLog)
-          } else if (functionName === 'get_conversation_memory') {
-            result = await executeGetConversationMemory(functionArgs, req, toolLog)
-          } else if (functionName === 'search_conversation_history') {
-            result = await executeSearchConversationHistory(functionArgs, req, toolLog)
-          } else {
-            result = { error: 'Unknown function' }
-          }
-          
+          result = await executeMentorTool(functionName, functionArgs, {
+            request: req,
+            toolLog,
+            selectedLearnerId,
+            selectedLearnerName,
+          })
         } catch (err) {
           result = { error: err.message || String(err) }
         }
@@ -2190,35 +1946,31 @@ export async function POST(req) {
         }
       })
 
-      const hasHeavyToolCall = toolCalls.some(tc => tc.function.name === 'generate_lesson')
+      const hasGenerationToolCall = toolCalls.some(tc => tc.function.name === 'generate_lesson')
+      const directResultIndex = toolCalls.findIndex(tc => mentorToolUsesDirectResult(tc.function.name))
       const firstErrorResult = parsedToolResults.find(result => result?.error)
 
-      if (hasHeavyToolCall || firstErrorResult) {
+      if (hasGenerationToolCall || directResultIndex >= 0 || firstErrorResult) {
         let mentorReplyText
-
         if (firstErrorResult) {
           mentorReplyText = `I ran into an issue: ${firstErrorResult.error}`
         } else {
-          const generationResult = parsedToolResults.find(result => result?.lessonTitle || result?.lesson)
-          mentorReplyText = generationResult?.message
-            || (generationResult?.lessonTitle
-              ? `I just generated "${generationResult.lessonTitle}". I'll validate it now.`
-              : 'I just generated a new lesson and will validate it now.')
+          const directResult = directResultIndex >= 0 ? parsedToolResults[directResultIndex] : parsedToolResults[0]
+          mentorReplyText = directResult?.message || 'The requested action completed.'
         }
-
-        return NextResponse.json({
+        const responsePayload = {
           reply: mentorReplyText,
           audio: null,
           functionCalls: toolCalls.map(tc => ({ name: tc.function.name, args: JSON.parse(tc.function.arguments) })),
           toolLog,
           toolResults: parsedToolResults,
-          followUp: {
-            assistantMessage,
-            functionResults
-          },
-          needsFollowUp: true,
-          usage: parsedBody?.usage || null
-        })
+          needsFollowUp: hasGenerationToolCall && !firstErrorResult,
+          usage: parsedBody?.usage || null,
+        }
+        if (hasGenerationToolCall && !firstErrorResult) {
+          responsePayload.followUp = { assistantMessage, functionResults }
+        }
+        return NextResponse.json(responsePayload)
       }
       
       // Call OpenAI again with function results to get final response
