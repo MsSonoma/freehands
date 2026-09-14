@@ -54,31 +54,33 @@ export async function createLearningForecastProposal({
     return {
       kind: 'proposal', reused: true, active_revision_id: activeRevision.id,
       proposal_revision: existing, forecast_items: await repository.listForecastItems(existing.id),
-      target_week_start: plan.target_week_start, additions: plan.unfilled_slots.length,
+      target_week_start: plan.target_week_start, additions: plan.unfilled_slots.length + (plan.carry_suggestions || []).length,
     }
   }
-  if (!plan.unfilled_slots.length) {
+  if (!plan.unfilled_slots.length && !(plan.carry_suggestions || []).length) {
     return { kind: 'no_action', active_revision_id: activeRevision.id, message: plan.slots.length ? 'Every lesson slot in the coming seven days already has a plan.' : 'There are no teaching slots in the coming seven days. Your weekly pattern and days off are unchanged.' }
   }
-  if (typeof generateItems !== 'function') throw new SyllabusError('Instructional forecasting is unavailable', 503, 'FORECAST_MODEL_UNAVAILABLE')
-  let generatedItems
-  try {
-    generatedItems = await generateItems({
-      slots: plan.unfilled_slots,
-      context: {
-        learner: { grade: learner.grade || null },
-        syllabus: {
-          goals: activeRevision.goals,
-          subjects: activeRevision.subjects,
-          teaching_guidance: activeRevision.teaching_guidance,
-          planning_policy: activeRevision.planning_policy,
+  let generatedItems = []
+  if (plan.unfilled_slots.length) {
+    if (typeof generateItems !== 'function') throw new SyllabusError('Instructional forecasting is unavailable', 503, 'FORECAST_MODEL_UNAVAILABLE')
+    try {
+      generatedItems = await generateItems({
+        slots: plan.unfilled_slots,
+        context: {
+          learner: { grade: learner.grade || null },
+          syllabus: {
+            goals: activeRevision.goals,
+            subjects: activeRevision.subjects,
+            teaching_guidance: activeRevision.teaching_guidance,
+            planning_policy: activeRevision.planning_policy,
+          },
+          evidence_summaries: plan.evidence_context,
+          subject_breadth: plan.subject_breadth,
         },
-        evidence_summaries: plan.evidence_context,
-        subject_breadth: plan.subject_breadth,
-      },
-    })
-  } catch {
-    throw new SyllabusError('The instructional forecast could not be generated. The active Syllabus was not changed.', 502, 'FORECAST_GENERATION_FAILED')
+      })
+    } catch {
+      throw new SyllabusError('The instructional forecast could not be generated. The active Syllabus was not changed.', 502, 'FORECAST_GENERATION_FAILED')
+    }
   }
   let built
   let planning

@@ -79,6 +79,31 @@ function futureIntentRows({ subject, forecastItems = [], timelineItems = [], tod
   return rows.sort((left, right) => left.planned_date.localeCompare(right.planned_date)).slice(0, 12)
 }
 
+function unfinishedInstructionalRows({ subject, timelineItems = [], today, limit = 4 }) {
+  const target = subjectKey(subject)
+  const rows = []
+  for (const item of timelineItems || []) {
+    const plannedDate = clean(item?.planned_date).slice(0, 10)
+    if (!plannedDate || (today && plannedDate > today) || subjectKey(item?.subject) !== target) continue
+    if (item?.placement_kind !== 'actual' || item?.historical_record === true || item?.actual_kind !== 'incomplete') continue
+    if (item?.requires_facilitator_carry !== true || !clean(item?.lesson_key)) continue
+    rows.push({
+      planned_date: plannedDate,
+      title: clean(item?.title) || 'Unfinished lesson',
+      lesson_key: clean(item.lesson_key),
+      source_occurrence_id: clean(item?.carry_source_occurrence_id) || null,
+    })
+  }
+  rows.sort((left, right) => right.planned_date.localeCompare(left.planned_date))
+  const seen = new Set()
+  return rows.filter((row) => {
+    const key = row.lesson_key.toLocaleLowerCase()
+    if (seen.has(key)) return false
+    seen.add(key)
+    return true
+  }).slice(0, limit)
+}
+
 function historicalTerritoryRows({ subject, timelineItems = [], today, limit = 12 }) {
   const target = subjectKey(subject)
   const rows = []
@@ -134,6 +159,7 @@ export function buildSubjectBreadthContext({
         completeness: report.completeness || null,
       }))
       const strands = broadInstructionalStrands(subject)
+      const unfinished = unfinishedInstructionalRows({ subject, timelineItems, today })
       return {
         subject,
         map_source: strands.length ? 'broad_subject_domains' : 'infer_for_custom_subject',
@@ -141,8 +167,9 @@ export function buildSubjectBreadthContext({
         recent_learning: recentLearning,
         recent_topic_history: historicalTerritoryRows({ subject, timelineItems, today }),
         unresolved_instructional_signals: unresolved,
+        unfinished_instructional_sequences: unfinished,
         future_intent: futureIntentRows({ subject, forecastItems, timelineItems, today }),
-        default_planning_move: unresolved.length ? 'evaluate_continue_or_return_then_branch' : 'branch',
+        default_planning_move: unresolved.length || unfinished.length ? 'evaluate_continue_or_return_then_branch' : 'branch',
       }
     }),
   }

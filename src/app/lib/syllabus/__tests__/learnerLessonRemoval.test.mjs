@@ -25,7 +25,7 @@ function forecast(id, lessonKey, plannedDate) {
   return { id, revision_id: 'revision-1', lineage_id: lineageIds[id], planned_date: plannedDate, subject: 'Math', title: id, description: `${id} description`, lesson_key: lessonKey, item_type: 'lesson', origin: 'facilitator', sort_order: id === 'other' ? 1 : 0, metadata: {} }
 }
 
-function fixture({ approvedLessons = {}, associations = [], schedules = [], forecasts = [], active = true } = {}) {
+function fixture({ approvedLessons = {}, associations = [], schedules = [], forecasts = [], active = true, scheduleDeleteErrorAfterApply = false } = {}) {
   const originalRevision = revision()
   const originalItems = structuredClone(forecasts)
   const state = {
@@ -51,20 +51,33 @@ function fixture({ approvedLessons = {}, associations = [], schedules = [], fore
     async commitRevisionActivation({ revisionId, expectedActiveRevisionId }) { assert.equal(state.syllabus.active_revision_id, expectedActiveRevisionId); const saved = state.revisions.find((row) => row.id === revisionId); saved.activated_at = NOW.toISOString(); state.syllabus.active_revision_id = revisionId; return clone(saved) },
     async deleteInactiveRevision(id) { state.revisions = state.revisions.filter((row) => row.id !== id); state.items = state.items.filter((row) => row.revision_id !== id) },
   }
-  function resultBuilder(apply) {
+  function resultBuilder(apply, errorAfterApply = null) {
     const filters = {}
     const builder = {
       eq(column, value) { filters[column] = value; return builder },
       in(column, values) { filters[column] = values; return builder },
-      then(resolve, reject) { try { apply(filters); return Promise.resolve({ error: null }).then(resolve, reject) } catch (error) { return Promise.reject(error).then(resolve, reject) } },
+      then(resolve, reject) {
+        try {
+          apply(filters)
+          return Promise.resolve({ error: errorAfterApply }).then(resolve, reject)
+        } catch (error) {
+          return Promise.reject(error).then(resolve, reject)
+        }
+      },
     }
     return builder
   }
   const admin = {
     from(table) {
       state.touchedTables.push(table)
-      if (table === 'lesson_schedule') return { delete: () => resultBuilder((filters) => { state.schedules = state.schedules.filter((row) => !filters.id?.includes(row.id)) }) }
-      if (table === 'syllabus_lesson_associations') return { delete: () => resultBuilder((filters) => { state.associations = state.associations.filter((row) => filters.id ? !filters.id.includes(row.id) : row.lesson_key !== filters.lesson_key) }) }
+      if (table === 'lesson_schedule') return { delete: () => resultBuilder(
+        (filters) => { state.schedules = state.schedules.filter((row) => !filters.id?.includes(row.id)) },
+        scheduleDeleteErrorAfterApply ? new Error('transport failed after schedule delete committed') : null,
+      ) }
+      if (table === 'syllabus_lesson_associations') return {
+        update: (values) => resultBuilder((filters) => { state.associations = state.associations.map((row) => filters.id?.includes(row.id) ? { ...row, ...clone(values) } : row) }),
+        delete: () => resultBuilder((filters) => { state.associations = state.associations.filter((row) => filters.id ? !filters.id.includes(row.id) : row.lesson_key !== filters.lesson_key) }),
+      }
       if (table === 'learners') return { update: (values) => resultBuilder(() => { state.learner = { ...state.learner, ...clone(values) } }) }
       throw new Error(`Historical or unexpected table touched: ${table}`)
     },
@@ -87,6 +100,12 @@ test('current binding detects association-only authority', async () => {
   const result = await binding({ associations: [{ id: 1, lesson_key: TARGET }], active: false })
   assert.equal(result.currentlyBound, true)
   assert.equal(result.sources.association, true)
+})
+
+test('suppressed association remains historical metadata without current learner authority', async () => {
+  const result = await binding({ associations: [{ id: 1, lesson_key: TARGET, inferred_placement_suppressed: true }], active: false })
+  assert.equal(result.currentlyBound, false)
+  assert.equal(result.sources.association, false)
 })
 
 test('current binding detects active today/future forecast-only authority', async () => {
@@ -120,7 +139,10 @@ test('removal clears every current authority while preserving prior revision, un
   assert.deepEqual(result.approvedLessons, { 'math/keep.json': true })
   assert.equal(result.removedForecastOccurrences, 1)
   assert.equal(result.removedScheduleOccurrences, 1)
-  assert.deepEqual(fx.state.associations, [{ id: 11, lesson_key: 'math/keep.json' }])
+  assert.equal(fx.state.associations.length, 2)
+  assert.equal(fx.state.associations.find((row) => row.id === 10).inferred_placement_suppressed, true)
+  assert.equal(fx.state.associations.find((row) => row.id === 11).inferred_placement_suppressed, undefined)
+  assert.equal(result.preservedHistoricalAssociation, true)
   assert.deepEqual(fx.state.schedules.map((row) => row.id), [20])
   assert.deepEqual(fx.state.revisions[0], beforeRevision)
   assert.deepEqual(fx.state.items.filter((row) => row.revision_id === 'revision-1'), beforeItems)
@@ -136,7 +158,24 @@ test('repeated removal and partial-state retry converge without additional revis
   await removeLessonFromLearner({ admin: fx.admin, repository: fx.repository, facilitatorId: FACILITATOR, learner: fx.state.learner, lessonKey: TARGET, now: NOW })
   await removeLessonFromLearner({ admin: fx.admin, repository: fx.repository, facilitatorId: FACILITATOR, learner: fx.state.learner, lessonKey: TARGET, now: NOW })
   assert.equal(fx.state.revisions.length, revisionsBefore)
-  assert.deepEqual(fx.state.associations, [])
+  assert.equal(fx.state.associations.length, 1)
+  assert.equal(fx.state.associations[0].inferred_placement_suppressed, true)
   assert.deepEqual(fx.state.learner.approved_lessons, {})
   assert.equal(fx.state.items.length, 1)
+})
+
+
+test('removal reports success when schedule delete committed even if its response is an error', async () => {
+  const fx = fixture({
+    schedules: [{ id: 21, lesson_key: TARGET, scheduled_date: '2026-09-04' }],
+    active: false,
+    scheduleDeleteErrorAfterApply: true,
+  })
+  const result = await removeLessonFromLearner({
+    admin: fx.admin, repository: fx.repository, facilitatorId: FACILITATOR, learner: fx.state.learner, lessonKey: TARGET, now: NOW,
+  })
+  assert.equal(result.removedScheduleOccurrences, 1)
+  assert.deepEqual(fx.state.schedules, [])
+  const current = await readCurrentLessonBinding({ repository: fx.repository, facilitatorId: FACILITATOR, learner: fx.state.learner, lessonKey: TARGET, now: NOW })
+  assert.equal(current.currentlyBound, false)
 })

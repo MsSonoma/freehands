@@ -229,7 +229,7 @@ test('teacher assignment rejects Slate, non-membership, and a mismatched repeate
   }
 })
 
-test('teacher assignment rejects a carried-forward occurrence after an earlier in-progress attempt began', async () => {
+test('teacher assignment rejects the consumed source intent after an in-progress attempt began', async () => {
   const admin = associationAdmin({
     facilitator_id: FACILITATOR,
     learner_id: LEARNER,
@@ -258,8 +258,8 @@ test('teacher assignment rejects a carried-forward occurrence after an earlier i
     repository,
     now: new Date('2026-08-29T12:00:00Z'),
   })
-  assert.equal(denied.status, 409)
-  assert.equal((await denied.json()).code, 'SYLLABUS_OCCURRENCE_ALREADY_STARTED')
+  assert.equal(denied.status, 403)
+  assert.equal((await denied.json()).code, 'LESSON_NOT_IN_ACTIVE_SYLLABUS')
   assert.equal(admin.state.writes.length, 0)
 
   const slateHistory = await recordHistoricalActivity(patchRequest({

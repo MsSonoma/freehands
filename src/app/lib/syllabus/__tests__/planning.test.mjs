@@ -103,7 +103,7 @@ test('editing preserves exact lineage, records educator authorship, and concurre
 })
 
 test('AI replacement changes only exact title and description while preserving slot, subject, lineage and inactive authority', async () => {
-  const original = concept({ origin: 'learning_forecast' })
+  const original = concept({ origin: 'learning_forecast', metadata: { learning_forecast: { carry_existing_lesson_key: 'generated/unfinished.json', carry_source_occurrence_id: 'syllabus:old', carry_source_date: '2026-08-28' } } })
   const sibling = concept({ id: 'item-2', lineage_id: 'bbbbbbbb-cccc-4ddd-8eee-ffffffffffff', sort_order: 1, title: 'Sibling' })
   const repo = repository()
   await repo.replaceLearningForecastProposal({ expectedActiveRevisionId: ACTIVE, planning: { ...revision(), effective_from: '2026-08-31', forecast_items: [original, sibling] }, proposalKey: 'original' })
@@ -117,6 +117,9 @@ test('AI replacement changes only exact title and description while preserving s
   assert.equal(replacementContext.syllabus.facilitator_change_request, 'Make it more hands-on.')
   assert.deepEqual(replacementContext.syllabus.current_forecast, { title: original.title, description: original.description })
   assert.equal(replaced.metadata.learning_forecast_replacement.facilitator_change_request, 'Make it more hands-on.')
+  assert.equal(replaced.metadata.learning_forecast.carry_existing_lesson_key, undefined)
+  assert.equal(replaced.metadata.learning_forecast.carry_source_occurrence_id, undefined)
+  assert.equal(replaced.metadata.learning_forecast.carry_source_date, undefined)
 })
 
 test('day-authored detailed generation settings reach canonical materialization and participate in its identity', async () => {

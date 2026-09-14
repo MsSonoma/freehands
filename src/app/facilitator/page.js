@@ -3,7 +3,7 @@
 import { fetchForecastJson } from '@/app/lib/syllabus/forecastClient.mjs'
 import { isCurrentLearnerSnapshot, resolveSyllabusSelection, lessonMutationBlockReason } from '@/app/lib/syllabus/interactionState.mjs'
 
-import { proposalForLesson } from '@/app/lib/syllabus/lessonGenerationState.mjs'
+import { forecastCarryLessonKey, proposalForLesson } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
@@ -554,6 +554,7 @@ export default function FacilitatorPage() {
 
   async function materializeForecast(item, { proposal = null, existingLessonKey = '', expectedActiveRevisionId = syllabus?.active_revision?.id } = {}) {
     const lineageId = item?.lineage_id
+    const resolvedExistingLessonKey = existingLessonKey || forecastCarryLessonKey(item)
     if (!lineageId || materializationRequest.current || recoveryRequiredLineages.has(lineageId)) return false
     const request = { learnerId, lineageId }
     materializationRequest.current = request
@@ -570,7 +571,7 @@ export default function FacilitatorPage() {
           lineageId,
           expectedActiveRevisionId,
           ...(proposal ? { proposalRevisionId: proposal.proposal_revision.id } : {}),
-          ...(existingLessonKey ? { existingLessonKey } : {}),
+          ...(resolvedExistingLessonKey ? { existingLessonKey: resolvedExistingLessonKey } : {}),
         }),
       })
       const json = await response.json()
@@ -579,7 +580,7 @@ export default function FacilitatorPage() {
         if (json?.code === 'MATERIALIZATION_RECOVERY_REQUIRED') {
           setRecoveryRequiredLineages((current) => new Set(current).add(lineageId))
         }
-        throw new Error(json.error || (existingLessonKey ? 'Could not bind this lesson to the forecast concept' : 'Could not generate this forecast lesson'))
+        throw new Error(json.error || (resolvedExistingLessonKey ? 'Could not carry this lesson into the forecast date' : 'Could not generate this forecast lesson'))
       }
       if (!applySyllabusSnapshot(json.syllabus, requestedLearnerId)) await loadCurrent(requestedLearnerId)
       return true

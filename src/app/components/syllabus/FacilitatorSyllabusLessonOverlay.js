@@ -1,6 +1,6 @@
 'use client'
 
-import { lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
+import { forecastCarryLessonKey, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import { useEffect, useState } from 'react'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 import { useRouter } from 'next/navigation'
@@ -171,6 +171,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const isConcept = isLesson && !item.lesson_key
   const isForecastGhost = isConcept && selection.suggested === true && item.origin === 'learning_forecast'
   const generation = lessonGenerationPresentation(item, { busy: generationBusy, recoveryRequired: selection.recoveryRequired })
+  const carryLessonKey = forecastCarryLessonKey(item)
   const readiness = String(item.readiness_state || '').replaceAll('_', ' ')
   const isDraft = item.readiness_state === 'draft'
   const isHistorical = item.historical_record === true || item.placement_kind === 'historical' || item.placement_kind === 'actual'
@@ -440,6 +441,10 @@ export default function FacilitatorSyllabusLessonOverlay({
       onClose?.()
       await refreshAfterChange()
     } catch (cause) {
+      // The server may have completed the removal before a late transport/readback
+      // failure. Reconcile the Syllabus before presenting an error so a removed
+      // occurrence never remains stuck on screen until a manual browser refresh.
+      await refreshAfterChange()
       setCoreError(cause?.message || 'Could not remove this Syllabus occurrence')
     } finally {
       setRemovalBusy('')
@@ -465,6 +470,7 @@ export default function FacilitatorSyllabusLessonOverlay({
       onClose?.()
       await refreshAfterChange()
     } catch (cause) {
+      await refreshAfterChange()
       setCoreError(cause?.message || 'Could not remove this lesson from the learner')
     } finally {
       setRemovalBusy('')
@@ -553,7 +559,7 @@ export default function FacilitatorSyllabusLessonOverlay({
           {isConcept && <section className={styles.detailSection}>
             <h3>{generation.label}</h3>
             {actionBlockReason && <p role="status">{actionBlockReason}</p>}
-            <p>{generation.blocked ? 'This lesson needs recovery before it can be generated.' : item.generation_status === 'generation_failed' ? 'The lesson has not been generated yet. Retry will continue this same dated entry.' : 'This is the same dated lesson from the Syllabus. Generate its content, then review and approve it.'}</p>
+            <p>{generation.blocked ? 'This lesson needs recovery before it can be generated.' : carryLessonKey ? 'This Forecast suggestion keeps the unfinished lesson provisional. Carrying it forward places that same lesson on this date only after you choose to do so.' : item.generation_status === 'generation_failed' ? 'The lesson has not been generated yet. Retry will continue this same dated entry.' : 'This is the same dated lesson from the Syllabus. Generate its content, then review and approve it.'}</p>
             <div className={styles.forecastChoices}>
               {typeof onGenerate === 'function' && <button type="button" className={styles.primary} disabled={generation.blocked || Boolean(coreBusy) || Boolean(actionBlockReason)} onClick={() => onGenerate(item)}>{generation.action}</button>}
               {canChangeIntent && typeof onGenerateWithChanges === 'function' && <button type="button" disabled={!generation.canEdit || Boolean(coreBusy) || Boolean(actionBlockReason)} onClick={() => setForecastChangeOpen((open) => !open)}>Generate with changes</button>}

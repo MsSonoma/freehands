@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 import { buildInstructionalForecastPlan, buildLearningForecastSnapshot, instructionalEvidenceContext, instructionalSlotsForWeek } from '../learningForecast.mjs'
+import { forecastCarryLessonKey, lessonGenerationPresentation } from '../lessonGenerationState.mjs'
 import { aggregateFacilitatorEvidenceSession } from '../../masteryEvidence/reporting.js'
 import { createLearningForecastProposal } from '../learningForecast.server.mjs'
 import { materializeForecastOccurrence, reconstructForecastCarryForward } from '../materialization.server.mjs'
@@ -142,6 +143,36 @@ test('no-school dates remove forecast slots before generation and change proposa
   assert.deepEqual(blocked.slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-09-01', 'science']])
   assert.deepEqual(blocked.unfilled_slots.map((slot) => slot.planned_date), ['2026-09-01'])
   assert.notEqual(blocked.proposal_key, open.proposal_key)
+})
+
+test('an incomplete current-Syllabus attempt becomes a provisional Forecast carry, never a new scheduled commitment', () => {
+  const revision = {
+    ...activeRevision(),
+    effective_from: '2026-08-01',
+    weekly_pattern: { wednesday: [{ subject: 'math' }], thursday: [{ subject: 'science' }] },
+  }
+  const incomplete = {
+    occurrence_id: 'actual:attempt-1', placement_kind: 'actual', actual_kind: 'incomplete',
+    planned_date: '2026-08-20', actual_at: '2026-08-20T15:00:00Z', subject: 'math', title: 'Equivalent Fractions',
+    lesson_key: 'generated/equivalent-fractions.json', requires_facilitator_carry: true,
+    carry_source_occurrence_id: 'syllabus:source-1', carry_source_date: '2026-08-20',
+  }
+  const plan = buildInstructionalForecastPlan({ activeRevision: revision, timelineItems: [incomplete], today: '2026-08-24' })
+  assert.deepEqual(plan.carry_suggestions.map((entry) => [entry.slot.planned_date, entry.lesson_key]), [
+    ['2026-08-26', 'generated/equivalent-fractions.json'],
+  ])
+  assert.deepEqual(plan.unfilled_slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-08-27', 'science']])
+  const built = buildLearningForecastSnapshot({
+    activeRevision: revision, plan, today: '2026-08-24',
+    generatedItems: [{ planning_move: 'branch', strand: 'life science', planning_reason: '', title: 'Plant Adaptations', description: 'Compare plant adaptations.' }],
+  })
+  const carry = built.additions.find((entry) => forecastCarryLessonKey(entry))
+  assert.equal(carry.lesson_key, null)
+  assert.equal(carry.origin, 'learning_forecast')
+  assert.equal(carry.metadata.learning_forecast.planning_move, 'continue')
+  assert.equal(carry.metadata.learning_forecast.carry_source_occurrence_id, 'syllabus:source-1')
+  assert.equal(lessonGenerationPresentation(carry).action, 'Carry lesson forward')
+  assert.equal(built.additions.some((entry) => entry.planned_date === '2026-08-26' && entry.lesson_key), false)
 })
 
 test('unmaterialized learning intent exposes existing binding and generation only to facilitators', () => {

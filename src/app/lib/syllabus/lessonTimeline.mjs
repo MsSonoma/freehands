@@ -294,28 +294,35 @@ export function composeSyllabusLessonTimeline({
     }))
   }
   const consumedIntents = new Set(historicallySatisfiedIntents)
-  for (const actual of actuals.filter((row) => actualDate(row.occurred_at) === today)) {
+  // An actual attempt consumes the exact intent it came from even after that day has
+  // passed.  A missed or incomplete lesson is evidence for Forecast; the read model
+  // never earns authority to move the intent onto another date by itself.
+  for (const actual of actuals) {
     const candidates = activeIntents.filter((intent) => !consumedIntents.has(intent) && intent.key === actual.key)
+    const actualDay = actualDate(actual.occurred_at)
     const proven = actual.occurrenceId
       ? candidates.filter((intent) => intentOccurrenceId(intent) === actual.occurrenceId)
       : []
-    const sameDay = candidates.filter((intent) => intent.planned_date === today)
-    const overdue = candidates.filter((intent) => intent.planned_date < today)
+    const sameDay = candidates.filter((intent) => intent.planned_date === actualDay)
+    const overdueToday = actualDay === today ? candidates.filter((intent) => intent.planned_date < today) : []
     const match = proven.length === 1
       ? proven[0]
-      : (sameDay.length === 1 ? sameDay[0] : (candidates.length === 1 && overdue.length === 1 ? overdue[0] : null))
-    if (match) consumedIntents.add(match)
+      : (sameDay.length === 1 ? sameDay[0] : (candidates.length === 1 && overdueToday.length === 1 ? overdueToday[0] : null))
+    if (!match) continue
+    consumedIntents.add(match)
+    actual.consumedIntentOccurrenceId = intentOccurrenceId(match)
+    actual.consumedIntentPlannedDate = match.planned_date
   }
   const placedIntents = activeIntents.filter((intent) => !consumedIntents.has(intent))
   for (const intent of placedIntents) {
     const details = metadata.get(intent.key) || ensureMetadata(intent.key, intent.row)
     const overdue = intent.planned_date < today
     if (overdue) {
-      const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: details?.subject, afterDate: today, occupied, blockedDates })
-      if (slot) occupied.add(slot.slot)
-      intent.capacity = { slot, capacity_conflict: slot ? null : 'no_capacity' }
-      intent.rendered_date = slot?.planned_date || today
-      intent.needs_placement = !slot
+      // Preserve the original authored/scheduled date. Forecast may recommend a
+      // carry on a future open slot, but only the facilitator can accept that carry.
+      intent.capacity = { slot: null, capacity_conflict: null }
+      intent.rendered_date = intent.planned_date
+      intent.needs_placement = false
     } else {
       intent.capacity = reserveExplicitSlot({ weeklyPattern: activeRevision?.weekly_pattern, plannedDate: intent.planned_date, subject: details?.subject, preferredIndex: intent.sort_order, occupied })
       intent.rendered_date = intent.planned_date
@@ -325,9 +332,7 @@ export function composeSyllabusLessonTimeline({
   const standaloneForecastCapacity = new Map()
   for (const item of (forecastItems || []).filter((row) => !row?.lesson_key && validDate(row?.planned_date))) {
     if (isoDate(item.planned_date) < today) {
-      const slot = inferredSubjectSlot({ weeklyPattern: activeRevision?.weekly_pattern, subject: item.subject, afterDate: today, occupied, blockedDates })
-      if (slot) occupied.add(slot.slot)
-      standaloneForecastCapacity.set(item, { slot, capacity_conflict: slot ? null : 'no_capacity', rendered_date: slot?.planned_date || today, needs_placement: !slot })
+      standaloneForecastCapacity.set(item, { slot: null, capacity_conflict: null, rendered_date: isoDate(item.planned_date), needs_placement: false })
     } else {
       const capacity = reserveExplicitSlot({ weeklyPattern: activeRevision?.weekly_pattern, plannedDate: isoDate(item.planned_date), subject: item.subject, preferredIndex: Number(item.sort_order || 0), occupied })
       standaloneForecastCapacity.set(item, { ...capacity, rendered_date: isoDate(item.planned_date), needs_placement: false })
@@ -349,6 +354,9 @@ export function composeSyllabusLessonTimeline({
       historical_provenance: actual.provenance || null,
       actual_started_date: actualDate(actual.started_at),
       readiness_state: actual.kind === 'completed' ? 'completed' : (actual.kind === 'in_progress' ? 'in_progress' : details.readiness_state),
+      requires_facilitator_carry: actual.kind === 'incomplete' && Boolean(actual.consumedIntentOccurrenceId),
+      carry_source_occurrence_id: actual.kind === 'incomplete' ? (actual.consumedIntentOccurrenceId || null) : null,
+      carry_source_date: actual.kind === 'incomplete' ? (actual.consumedIntentPlannedDate || null) : null,
       is_explicit_schedule: false, is_provisional: false, needs_placement: false, capacity_conflict: capacity?.capacity_conflict || null,
     }
   })
@@ -387,6 +395,7 @@ export function composeSyllabusLessonTimeline({
       item_type: intent.row?.item_type || 'lesson', placement_kind: intent.kind, is_explicit_schedule: intent.kind === 'scheduled',
       is_provisional: false, needs_placement: intent.needs_placement, capacity_conflict: intent.capacity?.capacity_conflict || null,
       is_overdue_intent: overdue, original_placement_date: overdue ? intent.planned_date : null,
+      requires_facilitator_carry: overdue,
       is_deliberate_repeat: latestCompletionByKey.has(intent.key),
       reconciled_forecast_id: intent.reconciled_forecast_id || null,
       original_scheduled_date: intent.kind === 'scheduled' ? intent.planned_date : null,
@@ -419,6 +428,7 @@ export function composeSyllabusLessonTimeline({
       planned_date: capacity?.rendered_date || item.planned_date, sort_order: capacity?.slot?.index ?? Number(item.sort_order || 0),
       placement_kind: 'syllabus', readiness_state: 'saved', is_explicit_schedule: false, capacity_conflict: capacity?.capacity_conflict || null,
       is_provisional: false, needs_placement: Boolean(capacity?.needs_placement), is_overdue_intent: overdue, original_placement_date: overdue ? isoDate(item.planned_date) : null,
+      requires_facilitator_carry: overdue,
       ...((item.item_type || 'lesson') === 'lesson' ? { assigned_instructional_teacher: 'sonoma' } : {}),
     })
   }

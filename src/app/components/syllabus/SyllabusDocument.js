@@ -293,7 +293,7 @@ export default function SyllabusDocument({
                   {item.needs_placement && <span className={styles.placementLabel}>{role === 'facilitator' ? 'Needs placement' : 'Timing to be confirmed'}</span>}
                   {item.actual_kind === 'incomplete' && <span className={styles.placementLabel}>Incomplete</span>}
                   {item.capacity_conflict && <span className={styles.placementLabel}>Manual capacity exception</span>}
-                  {item.is_overdue_intent && <span className={styles.placementLabel}>Carried into NOW from {prettyDate(item.original_placement_date, { month: 'short', day: 'numeric' })}</span>}
+                  {item.requires_facilitator_carry && item.is_overdue_intent && <span className={styles.placementLabel}>Needs facilitator carry from {prettyDate(item.original_placement_date, { month: 'short', day: 'numeric' })}</span>}
                   {item.origin === 'mastery_reforecast' && <span className={styles.statusLabel}>Mastery follow-up</span>}
                 </div>
                 {onSelectLesson && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}

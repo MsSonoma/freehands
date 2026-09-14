@@ -9,6 +9,14 @@ import { isCalendarDate, SyllabusError, validateSnapshot } from './schema.mjs'
 
 function clean(value, max) { return String(value || '').trim().slice(0, max) }
 function clone(value) { return structuredClone(value) }
+function withoutForecastCarryMetadata(metadata = {}) {
+  const next = clone(metadata || {})
+  if (!next.learning_forecast || typeof next.learning_forecast !== 'object') return next
+  delete next.learning_forecast.carry_existing_lesson_key
+  delete next.learning_forecast.carry_source_occurrence_id
+  delete next.learning_forecast.carry_source_date
+  return next
+}
 function futureItems(items, today) { return items.filter((item) => String(item.planned_date).slice(0, 10) >= today) }
 
 async function currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId }) {
@@ -133,7 +141,8 @@ export async function editFacilitatorConcept({ repository, facilitatorId, learne
   }
   const fields = conceptFields({ title, description })
   const original = matches[0]
-  const edited = { ...original, ...fields, origin: 'facilitator', metadata: { ...(original.metadata || {}), facilitator_planning: { ...(original.metadata?.facilitator_planning || {}), version: 1, action: 'edited', prior_origin: original.origin, active_revision_id: current.revision.id } } }
+  const editedMetadata = withoutForecastCarryMetadata(original.metadata)
+  const edited = { ...original, ...fields, origin: 'facilitator', metadata: { ...editedMetadata, facilitator_planning: { ...(editedMetadata.facilitator_planning || {}), version: 1, action: 'edited', prior_origin: original.origin, active_revision_id: current.revision.id } } }
   return activateSyllabus({ repository, facilitatorId, learnerId, expectedActiveRevisionId, now, today, snapshot: snapshot(current.revision, current.items.map((item) => String(item.lineage_id) === String(lineageId) ? edited : item), today, `Facilitator edited concept ${lineageId}`) })
 }
 
@@ -154,7 +163,8 @@ export async function editLearningForecastConcept({ repository, facilitatorId, l
   if (matches.length !== 1) throw new SyllabusError('This forecast concept is unavailable for editing.', 409, 'FORECAST_PROPOSAL_STALE')
   const fields = conceptFields({ title, description })
   const original = matches[0]
-  const edited = { ...original, ...fields, origin: 'facilitator', metadata: { ...(original.metadata || {}), facilitator_planning: { version: 1, action: 'edited_forecast', source_proposal_revision_id: proposal.id } } }
+  const editedMetadata = withoutForecastCarryMetadata(original.metadata)
+  const edited = { ...original, ...fields, origin: 'facilitator', metadata: { ...editedMetadata, facilitator_planning: { version: 1, action: 'edited_forecast', source_proposal_revision_id: proposal.id } } }
   const activated = await activateSyllabus({
     repository, facilitatorId, learnerId, expectedActiveRevisionId, now, today,
     snapshot: snapshot(current.revision, [...current.items.filter((item) => syllabusSlotKey(item) !== syllabusSlotKey(original)), edited], today, `Facilitator edited forecast concept ${lineageId}`, {
@@ -214,12 +224,13 @@ export async function replaceLearningForecastConcept({ repository, facilitatorId
     return { ...updated, kind: 'active', active_revision_id: updated.active_revision.id }
   }
   const planningMetadata = forecastPlanningMetadata(generated)
+  const replacementMetadata = withoutForecastCarryMetadata(selected.metadata)
   const replacement = {
     ...selected,
     ...fields,
     metadata: {
-      ...(selected.metadata || {}),
-      learning_forecast: { ...(selected.metadata?.learning_forecast || {}), ...planningMetadata },
+      ...replacementMetadata,
+      learning_forecast: { ...(replacementMetadata.learning_forecast || {}), ...planningMetadata },
       learning_forecast_replacement: { version: 1, source_proposal_revision_id: proposal.id, facilitator_change_request: requestedChange || null },
     },
   }

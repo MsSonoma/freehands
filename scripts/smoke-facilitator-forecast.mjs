@@ -33,11 +33,12 @@ let materializationAttempts = 0
 let suggestions = [
   { lineage_id: 'habitats', planned_date: date, sort_order: 1, subject: 'Science', title: 'Compare habitats', description: 'Explain two habitats using familiar examples.' },
   { lineage_id: 'writing', planned_date: '2026-09-15', sort_order: 0, subject: 'Language Arts', title: 'Explain a character', description: 'Use a story detail to explain a character choice.' },
+  { lineage_id: 'carry-unfinished', planned_date: '2026-09-17', sort_order: 0, subject: 'Math', title: 'Unfinished Fractions', description: 'Carry the unfinished lesson forward.', metadata: { learning_forecast: { carry_existing_lesson_key: 'generated/unfinished-fractions.json', carry_source_occurrence_id: 'syllabus:old-fractions', carry_source_date: '2026-09-10', planning_move: 'continue' } } },
   { lineage_id: 'holiday', planned_date: '2026-09-16', sort_order: 0, subject: 'Science', title: 'Holiday suggestion must be hidden' },
   { lineage_id: 'collision', planned_date: date, sort_order: 0, subject: 'Math', title: 'Occupied suggestion must be hidden' },
   { lineage_id: 'outside', planned_date: '2026-09-21', sort_order: 0, subject: 'Math', title: 'Outside window must be hidden' },
 ].map(x => ({ ...x, id: x.lineage_id, item_type: 'lesson', origin: 'learning_forecast', lesson_key: null }))
-const revision = () => ({ id: active, base_revision_id: null, revision_number: revisionNumber, effective_from: date, subjects: ['Math', 'Science', 'Language Arts'].map(name => ({ name })), goals: { legacy_notes: 'Connect ideas and build understanding.' }, weekly_pattern: { monday: [{ subject: 'Math' }, { subject: 'Science' }], tuesday: [{ subject: 'Language Arts' }], wednesday: [{ subject: 'Science' }] }, teaching_guidance: {}, planning_policy: {} })
+const revision = () => ({ id: active, base_revision_id: null, revision_number: revisionNumber, effective_from: date, subjects: ['Math', 'Science', 'Language Arts'].map(name => ({ name })), goals: { legacy_notes: 'Connect ideas and build understanding.' }, weekly_pattern: { monday: [{ subject: 'Math' }, { subject: 'Science' }], tuesday: [{ subject: 'Language Arts' }], wednesday: [{ subject: 'Science' }], thursday: [{ subject: 'Math' }] }, teaching_guidance: {}, planning_policy: {} })
 const proposal = () => ({ id: `proposal-${active}`, base_revision_id: active, proposal_kind: 'learning_forecast', activated_at: null })
 const payload = (learnerId) => ({ has_active_syllabus: true, active_revision: revision(), syllabus: { learner_id: learnerId, active_revision_id: active }, resolved_today: date, forecast_items: committed, timeline_items: committed, no_school_dates: daysOff, proposed_learning_forecast: { revision: proposal(), forecast_items: learnerId === A ? suggestions : [] } })
 const results = [], requests = [], unexpected = [], errors = []
@@ -98,6 +99,12 @@ try {
         committed.push(item)
         suggestions = suggestions.filter(x => x.lineage_id !== item.lineage_id)
       }
+      if (body.lineageId === 'carry-unfinished') {
+        assert.equal(body.existingLessonKey, 'generated/unfinished-fractions.json')
+        active = `qa-revision-${++revisionNumber}`
+        Object.assign(item, { lesson_key: body.existingLessonKey, readiness_state: 'approved', generation_status: undefined })
+        return json({ ok: true, kind: 'existing_lesson_bound', lesson_key: body.existingLessonKey, syllabus: payload(body.learnerId) })
+      }
       if (++materializationAttempts <= 2) {
         item.generation_status = 'generation_failed'
         return json({ code: 'MATERIALIZATION_GENERATION_FAILED', error: 'This lesson could not be generated. Retry this same Syllabus entry.' }, 502)
@@ -157,6 +164,13 @@ try {
   assert.equal(await habitat.evaluate(el => getComputedStyle(el).backgroundColor), 'rgb(241, 240, 237)')
   results.push('Home renders one full Syllabus, with automatic grey lessons in open dated slots, not in a separate panel.')
   results.push('Existing commitments, days off, and the seven-day boundary suppress conflicting suggestions.')
+  const carry = page.locator('[data-forecast-lineage="carry-unfinished"]')
+  await carry.click()
+  await page.getByRole('heading', { name: 'Forecast suggestion - unfinished lesson', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Carry lesson forward', exact: true }).click()
+  await carry.waitFor({ state: 'detached' })
+  assert.equal(requests.findLast((entry) => entry.path === '/api/syllabus/materialize')?.body?.existingLessonKey, 'generated/unfinished-fractions.json')
+  results.push('An unfinished lesson stays a grey Forecast suggestion until the facilitator carries that exact existing lesson forward.')
   await habitat.click()
   await page.getByRole('button', { name: 'Generate with changes', exact: true }).click()
   await page.getByPlaceholder('For example: make it more hands-on, or review cold fronts first.').fill('Use familiar backyard examples.')

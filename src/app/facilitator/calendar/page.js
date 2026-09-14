@@ -3,7 +3,7 @@
 import { fetchForecastJson } from '@/app/lib/syllabus/forecastClient.mjs'
 import { isCurrentLearnerSnapshot, resolveSyllabusSelection, lessonMutationBlockReason } from '@/app/lib/syllabus/interactionState.mjs'
 
-import { proposalForLesson, isUngeneratedSyllabusLesson, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
+import { forecastCarryLessonKey, proposalForLesson, isUngeneratedSyllabusLesson, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
@@ -345,6 +345,7 @@ export default function CalendarPage() {
 
   async function materializePlanningItem(item, { proposal = null, existingLessonKey = '', expectedRevisionId = activeRevisionId } = {}) {
     const lineageId = item?.lineage_id
+    const resolvedExistingLessonKey = existingLessonKey || forecastCarryLessonKey(item)
     if (!lineageId || materializationRequest.current || recoveryRequiredLineages.has(lineageId)) return false
     const request = { learnerId: selectedLearnerId, lineageId }
     materializationRequest.current = request
@@ -360,14 +361,14 @@ export default function CalendarPage() {
           lineageId,
           expectedActiveRevisionId: expectedRevisionId,
           ...(proposal?.proposal_revision?.id ? { proposalRevisionId: proposal.proposal_revision.id } : {}),
-          ...(existingLessonKey ? { existingLessonKey } : {}),
+          ...(resolvedExistingLessonKey ? { existingLessonKey: resolvedExistingLessonKey } : {}),
         }),
       })
       const json = await response.json().catch(() => ({}))
       if (!stillCurrent()) return false
       if (!response.ok) {
         if (json?.code === 'MATERIALIZATION_RECOVERY_REQUIRED') setRecoveryRequiredLineages((current) => new Set(current).add(lineageId))
-        throw new Error(json.error || (existingLessonKey ? 'Could not bind this lesson to the planned concept' : 'Could not generate this planned lesson'))
+        throw new Error(json.error || (resolvedExistingLessonKey ? 'Could not carry this lesson into the forecast date' : 'Could not generate this planned lesson'))
       }
       setSelectedLesson(null)
       if (isCurrentLearnerSnapshot(json.syllabus, selectedLearnerId)) {

@@ -42,7 +42,10 @@ export async function readCurrentLessonBinding({ repository, facilitatorId, lear
   const inputs = await currentBindingInputs({ repository, facilitatorId, learner, lessonKey, now, fallbackTimeZone })
   const approved = Object.entries(learner?.approved_lessons || {})
     .some(([key, value]) => value === true && normalizeLessonKey(key) === inputs.canonicalKey)
-  const association = inputs.associations.some((row) => normalizeLessonKey(row?.lesson_key) === inputs.canonicalKey)
+  const association = inputs.associations.some((row) => (
+    normalizeLessonKey(row?.lesson_key) === inputs.canonicalKey
+      && row?.inferred_placement_suppressed !== true
+  ))
   const forecast = inputs.forecastItems.some((row) => (
     dateOnly(row?.planned_date) >= inputs.today && normalizeLessonKey(row?.lesson_key) === inputs.canonicalKey
   ))
@@ -73,10 +76,44 @@ export async function removeLessonFromLearner({
 
   const inputs = await currentBindingInputs({ repository, facilitatorId, learner, lessonKey: canonicalKey, now, fallbackTimeZone })
   const { today } = inputs
+  const readBinding = async () => {
+    const freshLearner = typeof repository.findOwnedLearner === 'function'
+      ? (await repository.findOwnedLearner(learner.id, facilitatorId)) || learner
+      : learner
+    return readCurrentLessonBinding({ repository, facilitatorId, learner: freshLearner, lessonKey: canonicalKey, now, fallbackTimeZone })
+  }
+  const runConvergentMutation = async ({ source, message, mutate }) => {
+    try {
+      const result = await mutate()
+      if (result?.error) throw result.error
+    } catch (error) {
+      // A transport/database error can arrive after the mutation committed. Read
+      // current authority before telling the facilitator that a completed removal failed.
+      const binding = await readBinding()
+      if (binding.sources?.[source] === false) return
+      throw new SyllabusError(error?.message || message, 500, 'LESSON_REMOVAL_FAILED')
+    }
+  }
 
-  // Active revisions are immutable. If this artifact is bound to present/future
-  // forecast occurrences, activate a replacement revision without those
-  // occurrences. Prior revisions remain untouched as historical planning records.
+  const associationIds = inputs.associations
+    .filter((row) => normalizeLessonKey(row?.lesson_key) === canonicalKey)
+    .map((row) => row?.id)
+    .filter(Boolean)
+  if (associationIds.length > 0) {
+    await runConvergentMutation({
+      source: 'association',
+      message: 'Could not remove current learner lesson association authority',
+      mutate: () => admin.from('syllabus_lesson_associations')
+        .update({ inferred_placement_suppressed: true, updated_at: new Date().toISOString() })
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learner.id)
+        .in('id', associationIds),
+    })
+  }
+
+  // Active revisions are immutable. Remove only present/future lesson intent from
+  // a replacement revision. Historical revisions and the preserved association
+  // remain available as evidence; suppression prevents them from creating new intent.
   let removedForecastOccurrences = 0
   if (inputs.revision) {
     const retainedFutureItems = inputs.forecastItems.filter((item) => {
@@ -87,72 +124,77 @@ export async function removeLessonFromLearner({
     })
 
     if (removedForecastOccurrences > 0) {
-      // Capacity validation must evaluate the intended post-removal state. Keep
-      // every unrelated constraint, but exclude the exact association/schedule
-      // authorities that this convergent operation removes immediately after
-      // revision activation.
       const activationRepository = Object.create(repository)
       activationRepository.listLessonAssociations = async () => inputs.associations
         .filter((row) => normalizeLessonKey(row?.lesson_key) !== canonicalKey)
       activationRepository.listLessonSchedule = async () => inputs.schedules
         .filter((row) => normalizeLessonKey(row?.lesson_key) !== canonicalKey)
-      await activateSyllabus({
-        repository: activationRepository,
-        facilitatorId,
-        learnerId: learner.id,
-        expectedActiveRevisionId: inputs.revision.id,
-        now,
-        today,
-        snapshot: {
-          effective_from: today,
-          goals: inputs.revision.goals,
-          subjects: inputs.revision.subjects,
-          weekly_pattern: inputs.revision.weekly_pattern,
-          teaching_guidance: inputs.revision.teaching_guidance,
-          planning_policy: inputs.revision.planning_policy,
-          legacy_provenance: inputs.revision.legacy_provenance,
-          forecast_items: retainedFutureItems,
-          change_reason: `Removed ${canonicalKey} from learner availability`,
-        },
+      await runConvergentMutation({
+        source: 'forecast',
+        message: 'Could not remove current learner Syllabus intent',
+        mutate: () => activateSyllabus({
+          repository: activationRepository,
+          facilitatorId,
+          learnerId: learner.id,
+          expectedActiveRevisionId: inputs.revision.id,
+          now,
+          today,
+          snapshot: {
+            effective_from: today,
+            goals: inputs.revision.goals,
+            subjects: inputs.revision.subjects,
+            weekly_pattern: inputs.revision.weekly_pattern,
+            teaching_guidance: inputs.revision.teaching_guidance,
+            planning_policy: inputs.revision.planning_policy,
+            legacy_provenance: inputs.revision.legacy_provenance,
+            forecast_items: retainedFutureItems,
+            change_reason: `Removed ${canonicalKey} from learner current/future intent`,
+          },
+        }),
       })
     }
   }
 
-  // Legacy schedule rows are separate present/future access authority. Delete
-  // only matching current/future rows; historical schedule rows remain intact.
+  await runConvergentMutation({
+    source: 'approved',
+    message: 'Could not remove lesson availability',
+    mutate: () => admin.from('learners')
+      .update({ approved_lessons: availability.approvedLessons })
+      .eq('id', learner.id),
+  })
+
+  // Schedules are the most immediately visible current/future authority, so delete
+  // them last. No later historical cleanup is allowed to turn a successful visible
+  // removal into a false failure.
   const scheduleIds = inputs.schedules
     .filter((row) => dateOnly(row?.scheduled_date) >= today && normalizeLessonKey(row?.lesson_key) === canonicalKey)
     .map((row) => row?.id)
     .filter(Boolean)
   if (scheduleIds.length > 0) {
-    const { error } = await admin.from('lesson_schedule').delete()
-      .eq('learner_id', learner.id)
-      .in('id', scheduleIds)
-    throwMutationError(error, 'Could not remove current learner lesson schedules')
+    await runConvergentMutation({
+      source: 'schedule',
+      message: 'Could not remove current learner lesson schedules',
+      mutate: () => admin.from('lesson_schedule').delete()
+        .eq('learner_id', learner.id)
+        .in('id', scheduleIds),
+    })
   }
 
-  const associationIds = inputs.associations
-    .filter((row) => normalizeLessonKey(row?.lesson_key) === canonicalKey)
-    .map((row) => row?.id)
-    .filter(Boolean)
-  let associationDelete = admin.from('syllabus_lesson_associations').delete()
-    .eq('facilitator_id', facilitatorId)
-    .eq('learner_id', learner.id)
-  associationDelete = associationIds.length > 0
-    ? associationDelete.in('id', associationIds)
-    : associationDelete.eq('lesson_key', canonicalKey)
-  const { error: associationError } = await associationDelete
-  throwMutationError(associationError, 'Could not remove learner lesson association')
-
-  const { error: learnerError } = await admin.from('learners')
-    .update({ approved_lessons: availability.approvedLessons })
-    .eq('id', learner.id)
-  throwMutationError(learnerError, 'Could not remove lesson availability')
+  const finalBinding = await readBinding()
+  if (finalBinding.currentlyBound) {
+    const remaining = Object.entries(finalBinding.sources || {}).filter(([, active]) => active).map(([source]) => source)
+    throw new SyllabusError(
+      `The lesson still has current/future learner authority${remaining.length ? `: ${remaining.join(', ')}` : ''}`,
+      409,
+      'LESSON_REMOVAL_INCOMPLETE',
+    )
+  }
 
   return {
     lessonKey: canonicalKey,
     approvedLessons: availability.approvedLessons,
     removedForecastOccurrences,
     removedScheduleOccurrences: scheduleIds.length,
+    preservedHistoricalAssociation: associationIds.length > 0,
   }
 }

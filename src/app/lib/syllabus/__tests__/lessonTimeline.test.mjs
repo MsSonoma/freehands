@@ -715,18 +715,19 @@ test('past entries come from actual learner history rather than pre-effective fo
   assert.equal(items[0].placement_kind, 'actual')
 })
 
-test('old active-revision forecast intent is carried through the next eligible open slot instead of fabricating PAST', () => {
+test('overdue Syllabus intent stays on its authored date and waits for facilitator carry', () => {
   const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     forecastItems: [{ lesson_key: 'generated/fractions.json', planned_date: '2026-08-10', subject: 'math', title: 'Fractions' }],
     today: '2026-08-26',
   })
-  assert.ok(items.every((item) => item.planned_date === '2026-08-31'))
+  assert.deepEqual(items.map((item) => item.planned_date), ['2026-08-10'])
   assert.ok(items.every((item) => item.is_overdue_intent))
+  assert.ok(items.every((item) => item.requires_facilitator_carry))
   assert.deepEqual(items.map((item) => item.original_placement_date), ['2026-08-10'])
 })
 
-test('overdue unfinished intentions spread through finite future capacity instead of stacking today', () => {
+test('multiple overdue intentions remain historical intent and never consume future capacity automatically', () => {
   const items = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
     forecastItems: [
@@ -735,8 +736,29 @@ test('overdue unfinished intentions spread through finite future capacity instea
     ],
     today: '2026-08-26',
   })
-  assert.deepEqual(items.map((item) => item.planned_date), ['2026-08-31', '2026-09-07'])
-  assert.ok(items.every((item) => item.is_overdue_intent))
+  assert.deepEqual(items.map((item) => item.planned_date), ['2026-08-10', '2026-08-11'])
+  assert.ok(items.every((item) => item.is_overdue_intent && item.requires_facilitator_carry))
+})
+
+test('historical incomplete attempt consumes its exact source intent without silently rescheduling it', () => {
+  const activeRevision = { ...REVISION, effective_from: '2026-08-01', weekly_pattern: { monday: [{ subject: 'math' }] } }
+  const items = composeSyllabusLessonTimeline({
+    activeRevision,
+    forecastItems: [{ id: 'source-intent', lesson_key: 'generated/fractions.json', planned_date: '2026-08-17', subject: 'math', title: 'Fractions' }],
+    sessions: [{ id: 'attempt', session_id: 'browser-attempt', lesson_id: 'generated/fractions.json', started_at: '2026-08-17T14:00:00Z', ended_at: '2026-08-17T15:00:00Z' }],
+    sessionEvents: [
+      { session_id: 'attempt', lesson_id: 'generated/fractions.json', event_type: 'started', occurred_at: '2026-08-17T14:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:source-intent' } },
+      { session_id: 'attempt', lesson_id: 'generated/fractions.json', event_type: 'incomplete', occurred_at: '2026-08-17T15:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:source-intent' } },
+    ],
+    today: '2026-08-24',
+  })
+  assert.equal(items.some((item) => item.occurrence_id === 'syllabus:source-intent'), false)
+  const attempt = items.find((item) => item.occurrence_id === 'actual:attempt')
+  assert.equal(attempt.actual_kind, 'incomplete')
+  assert.equal(attempt.requires_facilitator_carry, true)
+  assert.equal(attempt.carry_source_occurrence_id, 'syllabus:source-intent')
+  assert.equal(attempt.carry_source_date, '2026-08-17')
+  assert.equal(items.some((item) => item.planned_date > '2026-08-24' && item.lesson_key === 'generated/fractions.json'), false)
 })
 
 test('an overdue intent actually started today is consumed instead of rolling forward again', () => {
@@ -767,7 +789,8 @@ test('actual occurrence provenance consumes only its overdue intent and preserve
   assert.equal(items.filter((item) => item.placement_kind === 'actual').length, 1)
   assert.equal(items.some((item) => item.occurrence_id === 'syllabus:overdue-a'), false)
   assert.equal(items.filter((item) => item.occurrence_id === 'syllabus:repeat-b').length, 1)
-  assert.equal(items.find((item) => item.occurrence_id === 'syllabus:repeat-b').planned_date, '2026-08-24')
+  assert.equal(items.find((item) => item.occurrence_id === 'syllabus:repeat-b').planned_date, '2026-08-17')
+  assert.equal(items.find((item) => item.occurrence_id === 'syllabus:repeat-b').requires_facilitator_carry, true)
 })
 
 test('actual work today reserves capacity and reconciles its corresponding intent before inference', () => {

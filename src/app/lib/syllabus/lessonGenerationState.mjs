@@ -1,5 +1,9 @@
 // Presentation/routing only. Ownership and revision checks remain server-owned.
 const RECEIPT_STATES = new Set(['generating', 'generation_failed', 'generated', 'binding_failed', 'recovery_required', 'bound'])
+export function forecastCarryLessonKey(item) {
+  const value = String(item?.metadata?.learning_forecast?.carry_existing_lesson_key || '').trim()
+  return value.includes('/') ? value : ''
+}
 export function isUngeneratedSyllabusLesson(item) {
   return Boolean(item?.lineage_id) && !item.lesson_key && (item.item_type || 'lesson') === 'lesson'
     && ['learning_forecast', 'facilitator'].includes(item.origin)
@@ -10,6 +14,7 @@ export function lessonGenerationPresentation(item, { busy = false, recoveryRequi
   if (state === 'recovery_required') return { label: 'Generation needs recovery', action: 'Recovery required', canEdit: false, blocked: true }
   if (state === 'generation_failed') return { label: 'Generation failed - retry', action: 'Retry generation', canEdit: true, blocked: false }
   if (['generating', 'generated', 'binding_failed'].includes(state)) return { label: busy ? 'Generating lesson...' : 'Generation needs to finish', action: busy ? 'Generating...' : 'Resume generation', canEdit: false, blocked: busy }
+  if (forecastCarryLessonKey(item)) return { label: 'Forecast suggestion - unfinished lesson', action: 'Carry lesson forward', canEdit: true, blocked: false }
   return { label: item?.origin === 'learning_forecast' ? 'AI forecast suggestion' : 'Ready to generate', action: 'Generate lesson', canEdit: true, blocked: false }
 }
 export function withLessonGenerationStates(items = [], receipts = []) {
