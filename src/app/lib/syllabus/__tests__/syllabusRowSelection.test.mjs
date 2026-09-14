@@ -5,7 +5,7 @@ import path from 'node:path'
 
 const documentSource = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
 const learnerSource = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
-const facilitatorSource = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+const facilitatorSource = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
 const facilitatorHomeSource = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
 const overlaySource = fs.readFileSync(path.resolve('src/app/components/syllabus/FacilitatorSyllabusLessonOverlay.js'), 'utf8')
 
@@ -55,11 +55,11 @@ test('facilitator lesson overlay is the operational control center after row sel
 test('every production facilitator Syllabus surface supplies the same operational overlay authority context', () => {
   assert.match(facilitatorHomeSource, /onSelectLesson=\{\(item, context\) => setSelectedSyllabusLesson\(\{ item, \.\.\.context \}\)\}/)
   assert.match(facilitatorHomeSource, /<FacilitatorSyllabusLessonOverlay/)
-  for (const prop of ['learnerId={learnerId}', 'accessToken={authToken}', 'planTier={plan}', "resolvedToday={syllabusPayload?.resolved_today || ''}", "activeRevisionId={syllabusModel.revision?.id || ''}"]) {
+  for (const prop of ['learnerId={learnerId}', 'accessToken={token}', 'planTier={planTier}', "resolvedToday={syllabus?.resolved_today || ''}", "activeRevisionId={syllabus?.active_revision?.id || ''}"]) {
     assert.ok(facilitatorHomeSource.includes(prop), `Facilitator Home missing ${prop}`)
   }
   for (const prop of ['learnerId={learnerId}', 'accessToken={token}', 'planTier={planTier}', "resolvedToday={syllabus?.resolved_today || ''}", "activeRevisionId={syllabus?.active_revision?.id || ''}"]) {
-    assert.ok(facilitatorSource.includes(prop), `Dedicated Syllabus missing ${prop}`)
+    assert.ok(facilitatorSource.includes(prop), `Canonical Syllabus missing ${prop}`)
   }
   assert.match(learnerSource, /onSelectLesson=\{\(item, context\) => openSyllabusLesson\(item, context\)\}/)
 })

@@ -89,7 +89,7 @@ export default function CalendarOverlay({ learnerId, tier = 'free', accessToken 
             <strong style={{ color: '#111827' }}>Syllabus Calendar</strong>
             <div style={{ color: '#6b7280', fontSize: 11 }}>Calendar reflects the same Syllabus and future plan, including provisional AI forecast suggestions.</div>
           </div>
-          <button type="button" onClick={() => router.push('/facilitator/syllabus')} style={{ padding: '6px 9px', border: '1px solid #c7442e', borderRadius: 6, background: '#fff', color: '#c7442e', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Open Syllabus</button>
+          <button type="button" onClick={() => router.push('/facilitator')} style={{ padding: '6px 9px', border: '1px solid #c7442e', borderRadius: 6, background: '#fff', color: '#c7442e', fontSize: 11, fontWeight: 800, cursor: 'pointer' }}>Open Syllabus</button>
         </div>
 
         {error && <div role="alert" style={{ padding: 8, border: '1px solid #fecaca', borderRadius: 7, background: '#fef2f2', color: '#991b1b', fontSize: 11 }}>{error}</div>}
@@ -111,7 +111,7 @@ export default function CalendarOverlay({ learnerId, tier = 'free', accessToken 
             {selectedDate && <span style={{ marginLeft: 8, color: '#6b7280', fontSize: 10 }}>{selectedItems.length} item{selectedItems.length === 1 ? '' : 's'}</span>}
           </header>
           <div style={{ padding: 8, display: 'grid', gap: 6 }}>
-            {!syllabus?.has_active_syllabus && <button type="button" onClick={() => router.push('/facilitator/syllabus')} style={{ padding: 9, border: '1px solid #e5e7eb', borderRadius: 7, background: '#fff', textAlign: 'left', cursor: 'pointer' }}><strong>No active Syllabus</strong><div style={{ marginTop: 3, color: '#6b7280', fontSize: 10 }}>Open Syllabus to establish the learner plan.</div></button>}
+            {!syllabus?.has_active_syllabus && <button type="button" onClick={() => router.push('/facilitator')} style={{ padding: 9, border: '1px solid #e5e7eb', borderRadius: 7, background: '#fff', textAlign: 'left', cursor: 'pointer' }}><strong>No active Syllabus</strong><div style={{ marginTop: 3, color: '#6b7280', fontSize: 10 }}>Open Syllabus to establish the learner plan.</div></button>}
             {syllabus?.has_active_syllabus && selectedItems.length === 0 && <div style={{ color: '#6b7280', fontSize: 11 }}>Nothing is placed on this date.</div>}
             {selectedItems.map((item) => {
               const teacher = normalizeInstructionalTeacher(item?.assigned_instructional_teacher || item?.instructional_teacher)

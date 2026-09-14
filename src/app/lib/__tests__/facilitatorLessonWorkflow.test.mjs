@@ -35,7 +35,7 @@ test('workflow return destinations preserve exact planning focus', () => {
     lessonKey: 'generated/division.json',
     occurrenceId: 'forecast:lineage-1',
   }))
-  assert.equal(syllabus.pathname, '/facilitator/syllabus')
+  assert.equal(syllabus.pathname, '/facilitator')
   assert.equal(syllabus.searchParams.get('learnerId'), 'learner 1')
   assert.equal(syllabus.searchParams.get('date'), '2026-09-11')
   assert.equal(syllabus.searchParams.get('lessonKey'), 'generated/division.json')

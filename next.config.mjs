@@ -4,6 +4,9 @@ const nextConfig = {
   // Dev writes to .next-dev; prod build/start uses .next.
   distDir: process.env.NODE_ENV === 'production' ? '.next' : '.next-dev',
   // Intentionally minimal config; rely on Next.js defaults for dev/prod.
+  async redirects() {
+    return [{ source: '/facilitator/syllabus', destination: '/facilitator', permanent: false }]
+  },
   async headers() {
     // Relax CSP specifically for billing routes to support Stripe Elements/iframes/fonts.
     // Note: If another CSP is set upstream (proxy/CDN), the most restrictive policy applies.

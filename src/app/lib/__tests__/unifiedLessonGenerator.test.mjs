@@ -24,7 +24,7 @@ test('lesson generation is one surface with Simple and Detailed modes and shared
 
 test('lesson creation and draft approval converge on Generator while Prepare is compatibility-only', () => {
   const dialog = source('components/syllabus/SyllabusDayActionDialog.js')
-  const syllabus = source('facilitator/syllabus/page.js')
+  const syllabus = source('facilitator/page.js')
   const calendar = source('facilitator/calendar/page.js')
   const prepare = source('facilitator/prepare/page.js')
   const generator = source('facilitator/generator/page.js')

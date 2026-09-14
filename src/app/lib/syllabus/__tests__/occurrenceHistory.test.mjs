@@ -267,7 +267,7 @@ test('Review History reads leave every educational authority domain unchanged', 
 
 test('Review History integration is read-only, local, exact-identity, and race guarded', () => {
   const documentSource = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
-  const pageSource = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+  const pageSource = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
   const lessonDetailSource = fs.readFileSync(path.resolve('src/app/components/syllabus/FacilitatorSyllabusLessonOverlay.js'), 'utf8')
   const overlaySource = fs.readFileSync(path.resolve('src/app/components/syllabus/LessonHistoryOverlay.js'), 'utf8')
   const routeSource = fs.readFileSync(path.resolve('src/app/api/facilitator/learners/[id]/lesson-history/[occurrenceId]/route.js'), 'utf8')
@@ -277,7 +277,7 @@ test('Review History integration is read-only, local, exact-identity, and race g
   assert.match(pageSource, /onReviewHistory=\{\(item\) => openReviewHistory\(item\)\}/)
   assert.match(documentSource, /\[learnerId, restoreWeekStart, today\]/)
   assert.match(pageSource, /setHistoryOccurrenceId\(''\)/)
-  assert.match(pageSource, /setConceptEditor\(null\)[\s\S]*setSelectedSyllabusLesson\(null\)[\s\S]*setHistoryOccurrenceId\(occurrenceId\)/)
+  assert.match(pageSource, /setSelectedSyllabusLesson\(null\)[\s\S]*setHistoryOccurrenceId\(occurrenceId\)/)
   assert.doesNotMatch(pageSource, /setPlanAheadOpen\(/)
   assert.match(overlaySource, /requestSequence\.current/)
   assert.match(overlaySource, /AbortController/)

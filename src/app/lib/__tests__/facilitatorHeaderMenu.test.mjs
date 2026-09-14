@@ -11,7 +11,7 @@ test('facilitator header menu reflects the Syllabus-first information architectu
   const menu = source.slice(start, end)
 
   const expected = [
-    ['Syllabus', '/facilitator/syllabus'],
+    ['Syllabus', '/facilitator'],
     ['Month View', '/facilitator/calendar'],
     ['Learners', '/facilitator/learners'],
     ['Lesson Library', '/facilitator/lessons'],

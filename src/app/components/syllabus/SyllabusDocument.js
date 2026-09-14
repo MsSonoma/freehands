@@ -20,7 +20,7 @@ import styles from './SyllabusDocument.module.css'
 const STATE_COPY = {
   past: { eyebrow: 'PAST / SYLLABUS RECORD', title: 'Learning record' },
   now: { eyebrow: 'NOW / YOU ARE HERE', title: 'This week' },
-  future: { eyebrow: 'FUTURE / PLANNING', title: 'Future week' },
+  future: { eyebrow: 'FUTURE / SYLLABUS', title: 'Coming up' },
 }
 
 const PLAN_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
@@ -56,20 +56,6 @@ function teachingGuidanceSummary(guidance) {
   return values
 }
 
-function OpenPlanningSlot({ slot, busy, onPlan, onSuggest }) {
-  return <div className={styles.openPlanningSlot} data-open-planning-slot={`${slot.planned_date}:${slot.sort_order}`}>
-    <div className={styles.entryBody}>
-      <p className={styles.subject}>{slot.subject}</p>
-      <h4>Open weekly slot</h4>
-      <span className={styles.openSlotLabel}>No lesson has been chosen yet.</span>
-    </div>
-    <div className={styles.openSlotActions}>
-      {typeof onPlan === 'function' && <button type="button" disabled={busy} onClick={() => onPlan(slot)}>Plan lesson</button>}
-      {typeof onSuggest === 'function' && <button type="button" disabled={busy} onClick={() => onSuggest(slot)}>Suggest with AI</button>}
-    </div>
-  </div>
-}
-
 function ForecastSuggestion({ item, busy, recoveryRequired, onSelect }) {
   const disabled = busy
   return <div
@@ -102,17 +88,16 @@ export default function SyllabusDocument({
   onAddLesson = null,
   noSchoolDates = [],
   onEditSection = null,
-  onOpenPlanning = null,
   proposedForecastItems = [],
   proposedForecastTargetWeek = '',
+  forecastWindowEnd = '',
+  onRetryForecast = null,
   forecastBusy = false,
   forecastError = '',
   forecastMessage = '',
   materializingForecastLineage = '',
   isForecastRecoveryRequired = () => false,
   planningBusy = false,
-  onPlanSlot = null,
-  onSuggestSlot = null,
   onWeekChange = null,
   restoreWeekStart = '',
   focusPlannedDate = '',
@@ -121,7 +106,7 @@ export default function SyllabusDocument({
   contentLoading = false,
   today = localCalendarDate(),
 }) {
-  const visibleItems = Array.isArray(timelineItems) ? timelineItems : forecastItems
+  const visibleItems = Array.isArray(timelineItems) ? timelineItems : (forecastItems || [])
   const noSchoolByDate = useMemo(() => noSchoolReasonMap(noSchoolDates), [noSchoolDates])
   const dayAction = onDayAction || onAddLesson
   const startedOccurrenceIds = useMemo(() => new Set(visibleItems
@@ -145,18 +130,19 @@ export default function SyllabusDocument({
     establishedNowViewportKeyRef.current = nowViewportKey
     selectedWeekRef.current.scrollIntoView({ block: 'start', inline: 'nearest' })
   }, [nowViewportKey])
-  const forecastWeekStart = proposedForecastTargetWeek ? startOfSyllabusWeek(proposedForecastTargetWeek) : ''
-  const isForecastWeek = week.state === 'future' && Boolean(forecastWeekStart) && week.week_start === forecastWeekStart
+  const forecastStart = dateOnly(proposedForecastTargetWeek)
+  const forecastEnd = dateOnly(forecastWindowEnd) || (forecastStart ? addSyllabusDays(forecastStart, 6) : '')
+  const isForecastWeek = Boolean(forecastStart) && week.week_start <= forecastEnd && addSyllabusDays(week.week_start, 6) >= forecastStart
   const planningProjection = useMemo(() => buildFuturePlanningProjection({
     weeklyPattern: revision?.weekly_pattern,
     timelineItems: visibleItems,
-    proposedForecastItems,
+    proposedForecastItems: proposedForecastItems.filter((item) => !forecastStart || (dateOnly(item.planned_date) >= forecastStart && dateOnly(item.planned_date) <= forecastEnd)),
     noSchoolDates,
     rangeStart: week.week_start,
     rangeEnd: addSyllabusDays(week.week_start, 6),
     today,
-    includeOpenSlots: role === 'facilitator' && week.state === 'future' && !isForecastWeek && Boolean(onPlanSlot || onSuggestSlot),
-  }), [revision?.weekly_pattern, visibleItems, proposedForecastItems, noSchoolDates, week.week_start, week.state, role, today, isForecastWeek, onPlanSlot, onSuggestSlot])
+    includeOpenSlots: false,
+  }), [revision?.weekly_pattern, visibleItems, proposedForecastItems, noSchoolDates, week.week_start, week.state, role, today, forecastStart, forecastEnd])
   const projectedForecast = planningProjection.forecast_items
   useEffect(() => {
     if (role !== 'facilitator' || typeof onSelectLesson !== 'function' || (!focusOccurrenceId && !focusLessonKey)) return
@@ -183,7 +169,7 @@ export default function SyllabusDocument({
     onSelectLesson(match, { syllabus_state: state, currentLesson, teacherEditable, historicalActivityAllowed, occurrenceKey, assignedTeacher })
   }, [focusLessonKey, focusOccurrenceId, focusPlannedDate, learnerId, lessonState, onSelectLesson, planningProjection.items, role, startedOccurrenceIds, today, week.week_start])
   useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
-  const copy = isForecastWeek ? { eyebrow: 'FUTURE / FORECAST', title: 'A week ahead' } : STATE_COPY[week.state]
+  const copy = STATE_COPY[week.state]
   const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
   const weekRangeLabel = `${prettyDate(week.days[0]?.date || week.week_start, { month: 'short', day: 'numeric' })} - ${prettyDate(week.days.at(-1)?.date || week.week_start, { month: 'short', day: 'numeric', year: 'numeric' })}`
   const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
@@ -226,7 +212,6 @@ export default function SyllabusDocument({
         <button type="button" onClick={() => move('earlier')}>&larr; Previous week</button>
         <button type="button" className={week.state === 'now' ? styles.nowButton : ''} onClick={() => move('now')}>This week</button>
         <button type="button" onClick={() => move('later')}>Next week &rarr;</button>
-        {role === 'facilitator' && onOpenPlanning && <button type="button" className={styles.planAheadButton} onClick={onOpenPlanning}>Plan ahead</button>}
       </nav>
 
       <section ref={selectedWeekRef} className={`${styles.week} ${styles[week.state]}`} data-syllabus-selected-week={week.week_start} aria-live="polite">
@@ -238,8 +223,7 @@ export default function SyllabusDocument({
           <time dateTime={week.week_start}>{weekRangeLabel}</time>
         </header>
         {isForecastWeek && role === 'facilitator' && <div className={styles.forecastIntro}>
-          <strong>Ms. Sonoma&apos;s forecast week</strong>
-          <span>Review the dedicated Forecast above for Ms. Sonoma&apos;s recommendations. This week view shows the Syllabus schedule itself.</span>
+          <span>Grey lessons are Ms. Sonoma&apos;s suggestions for open dates in the coming seven days. Open a suggestion to generate it, change it, or create your own lesson.</span>
         </div>}
 
         <div className={styles.entries} data-selected-week={week.week_start} aria-busy={contentLoading ? 'true' : undefined}>
@@ -247,7 +231,6 @@ export default function SyllabusDocument({
           {!contentLoading && week.days.map((day) => {
             const isNoSchool = Object.prototype.hasOwnProperty.call(noSchoolByDate, day.date)
             const suggestions = isNoSchool ? [] : projectedForecast.filter((item) => dateOnly(item.planned_date) === day.date)
-            const openPlanningSlots = isNoSchool ? [] : planningProjection.open_slots.filter((item) => dateOnly(item.planned_date) === day.date)
             const presentations = syllabusDayPresentation(day.items, suggestions)
             const dayActionAllowed = canAddLessonToSyllabusDay({
               role,
@@ -258,12 +241,12 @@ export default function SyllabusDocument({
             return <section className={`${styles.day} ${isNoSchool ? styles.dayOff : ''}`} key={day.date} data-syllabus-day={day.date} data-no-school={isNoSchool ? 'true' : undefined}>
             <header><time dateTime={day.date}>{prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>{day.date === dateOnly(today) && <span>Today</span>}{dayActionAllowed && <button type="button" className={styles.addLesson} aria-label={`Plan ${prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}`} title="Add lesson or mark day off" onClick={() => dayAction(day.date)}>+</button>}</header>
             {isNoSchool && <div className={styles.dayOffNotice}><strong>{noSchoolByDate[day.date] || 'Day off'}</strong><span>{presentations.length ? `${presentations.length} existing ${presentations.length === 1 ? 'item remains' : 'items remain'}` : 'No lessons planned'}</span></div>}
-            {!isNoSchool && presentations.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
+            {!isNoSchool && presentations.length === 0 && <p className={styles.emptyDay}>{forecastBusy && day.date >= forecastStart && day.date <= forecastEnd ? 'Preparing suggestions...' : 'No lessons'}</p>}
             {presentations.map(({ kind, item }) => {
             if (kind === 'suggested') return <ForecastSuggestion
               key={item.lineage_id || item.id}
               item={item}
-              busy={forecastBusy || Boolean(materializingForecastLineage)}
+              busy={forecastBusy || planningBusy || Boolean(materializingForecastLineage)}
               recoveryRequired={isForecastRecoveryRequired(item)}
               onSelect={role === 'facilitator' && onSelectLesson ? onSelectLesson : null}
             />
@@ -316,19 +299,12 @@ export default function SyllabusDocument({
               </div>
             )
           })}
-            {openPlanningSlots.map((slot) => <OpenPlanningSlot
-              key={slot.occurrence_id}
-              slot={slot}
-              busy={planningBusy}
-              onPlan={onPlanSlot}
-              onSuggest={onSuggestSlot}
-            />)}
           </section>
           })}
         </div>
-        {!contentLoading && week.week_start === startOfSyllabusWeek(proposedForecastTargetWeek) && role === 'facilitator' && (forecastBusy || forecastError || (!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage)) && <div className={styles.forecastStatus}>
-          {forecastBusy && <p role="status">Preparing next week&apos;s AI lesson suggestions...</p>}
-          {!forecastBusy && forecastError && <p role="alert">Next week&apos;s AI suggestions could not be prepared. The plan is unchanged and will retry when the Syllabus reloads.</p>}
+        {!contentLoading && isForecastWeek && role === 'facilitator' && (forecastBusy || forecastError || (!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage)) && <div className={styles.forecastStatus}>
+          {forecastBusy && <p role="status">Preparing lesson suggestions for the coming seven days...</p>}
+          {!forecastBusy && forecastError && <div role="alert"><p>Lesson suggestions could not be prepared. Your existing lessons are unchanged.</p>{onRetryForecast && <button type="button" disabled={planningBusy} onClick={onRetryForecast}>Retry forecast</button>}</div>}
           {!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage && <p>{forecastMessage}</p>}
         </div>}
       </section>

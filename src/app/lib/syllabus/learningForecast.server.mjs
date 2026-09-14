@@ -58,7 +58,7 @@ export async function createLearningForecastProposal({
     }
   }
   if (!plan.unfilled_slots.length) {
-    return { kind: 'no_action', active_revision_id: activeRevision.id, message: 'The next instructional week already has intent for every Syllabus slot.' }
+    return { kind: 'no_action', active_revision_id: activeRevision.id, message: plan.slots.length ? 'Every lesson slot in the coming seven days already has a plan.' : 'There are no teaching slots in the coming seven days. Your weekly pattern and days off are unchanged.' }
   }
   if (typeof generateItems !== 'function') throw new SyllabusError('Instructional forecasting is unavailable', 503, 'FORECAST_MODEL_UNAVAILABLE')
   let generatedItems

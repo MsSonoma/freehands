@@ -106,7 +106,7 @@ test('an already-authorized facilitator refresh bypasses PIN preference and prom
 
 test('facilitator layout owns refresh authorization and Syllabus no longer adds its own page PIN gate', () => {
   const layout = fs.readFileSync(path.resolve('src/app/facilitator/layout.js'), 'utf8')
-  const page = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+  const page = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
   assert.match(layout, /if \(checkFacilitatorSection\(\)\) \{/)
   assert.match(layout, /setSectionAuthorized\(true\)/)
   assert.match(layout, /ensurePinAllowed\('facilitator-page'\)/)
@@ -115,7 +115,7 @@ test('facilitator layout owns refresh authorization and Syllabus no longer adds 
 })
 
 test('facilitator Syllabus paints a shell, yields, hydrates full contents, then permits automatic forecasting', () => {
-  const page = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+  const page = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
   const route = fs.readFileSync(path.resolve('src/app/api/syllabus/route.js'), 'utf8')
   const shellRequest = page.indexOf('&view=shell')
   const yieldAfterShell = page.indexOf('await yieldToBrowser()', shellRequest)
@@ -132,7 +132,7 @@ test('facilitator Syllabus paints a shell, yields, hydrates full contents, then 
 
 test('all Syllabus modal scroll owners use the shared lock instead of restoring body overflow themselves', () => {
   const files = [
-    'src/app/facilitator/syllabus/page.js',
+    'src/app/facilitator/page.js',
     'src/app/components/syllabus/FacilitatorSyllabusLessonOverlay.js',
     'src/app/components/syllabus/LessonHistoryOverlay.js',
     'src/app/components/syllabus/SyllabusPlanEditor.js',

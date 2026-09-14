@@ -744,7 +744,7 @@ async function executeManageNoSchoolDate(args, request, toolLog, toolContext) {
 
 function executeOpenSurface(args) {
   const routes = {
-    syllabus: '/facilitator/syllabus',
+    syllabus: '/facilitator',
     calendar: '/facilitator/calendar',
     lessons: '/facilitator/lessons',
     generated_lessons: '/facilitator/generator/generated',

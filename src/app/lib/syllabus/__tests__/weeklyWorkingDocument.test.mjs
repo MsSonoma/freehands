@@ -132,7 +132,7 @@ test('inference remains a read-only composition and has no lesson_schedule write
 })
 
 test('facilitator Syllabus editor keeps recurring capacity explicit without forcing a subject onto empty days', () => {
-  const page = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+  const page = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
   assert.match(page, /weekly pattern is the recurring schedule/i)
   assert.match(page, /Days can be empty/i)
   assert.match(page, /addWeeklyPatternSlot/)

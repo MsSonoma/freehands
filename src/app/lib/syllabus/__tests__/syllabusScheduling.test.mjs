@@ -95,7 +95,7 @@ test('capacity response requests the existing PIN exception and retries the iden
 })
 
 test('Syllabus placement uses the native day dialog, unified generator, canonical schedule route, PIN retry, and authoritative reload', () => {
-  const page = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
+  const page = fs.readFileSync(new URL('../../../facilitator/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
   const generator = fs.readFileSync(new URL('../../../facilitator/generator/page.js', import.meta.url), 'utf8')

@@ -137,10 +137,10 @@ test('learning forecast schema accepts first-class description and distinct orig
 test('no-school dates remove forecast slots before generation and change proposal identity', () => {
   const revision = activeRevision()
   const open = buildInstructionalForecastPlan({ activeRevision: revision, today: '2026-08-31' })
-  const blocked = buildInstructionalForecastPlan({ activeRevision: revision, noSchoolDates: [{ date: '2026-09-07', reason: 'Holiday' }], today: '2026-08-31' })
-  assert.deepEqual(open.slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-09-07', 'math'], ['2026-09-08', 'science']])
-  assert.deepEqual(blocked.slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-09-08', 'science']])
-  assert.deepEqual(blocked.unfilled_slots.map((slot) => slot.planned_date), ['2026-09-08'])
+  const blocked = buildInstructionalForecastPlan({ activeRevision: revision, noSchoolDates: [{ date: '2026-08-31', reason: 'Holiday' }], today: '2026-08-31' })
+  assert.deepEqual(open.slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-08-31', 'math'], ['2026-09-01', 'science']])
+  assert.deepEqual(blocked.slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-09-01', 'science']])
+  assert.deepEqual(blocked.unfilled_slots.map((slot) => slot.planned_date), ['2026-09-01'])
   assert.notEqual(blocked.proposal_key, open.proposal_key)
 })
 
@@ -274,13 +274,13 @@ test('different-key bound receipt cannot retarget an existing lesson occurrence'
   assert.equal(repository.state.forecast[0].lesson_key, null)
 })
 
-test('weekly pattern owns next-week slot count and snapshot preserves existing intent', () => {
+test('weekly pattern owns rolling-week slot count and snapshot preserves existing intent', () => {
   const active = activeRevision()
   const slots = instructionalSlotsForWeek(active.weekly_pattern, '2026-09-07')
   assert.deepEqual(slots.map(({ planned_date, subject }) => ({ planned_date, subject })), [
     { planned_date: '2026-09-07', subject: 'math' }, { planned_date: '2026-09-08', subject: 'science' },
   ])
-  const existing = item()
+  const existing = item({ planned_date: '2026-08-31' })
   const plan = buildInstructionalForecastPlan({ activeRevision: active, forecastItems: [existing], timelineItems: [existing], reports: evidence(), today: '2026-08-31' })
   assert.deepEqual(plan.unfilled_slots.map((slot) => slot.subject), ['science'])
   assert.equal(JSON.stringify(plan.evidence_context).includes('SECRET RAW TRANSCRIPT'), false)
@@ -335,12 +335,13 @@ test('an unusual eight-lesson week never rewrites a four-day recurring forecast 
     today: '2026-09-10',
   })
   assert.deepEqual(plan.slots.map(({ planned_date, subject, sort_order }) => ({ planned_date, subject, sort_order })), [
+    { planned_date: '2026-09-10', subject: 'social studies', sort_order: 0 },
     { planned_date: '2026-09-14', subject: 'math', sort_order: 0 },
     { planned_date: '2026-09-15', subject: 'language arts', sort_order: 0 },
     { planned_date: '2026-09-16', subject: 'science', sort_order: 0 },
-    { planned_date: '2026-09-17', subject: 'social studies', sort_order: 0 },
   ])
   assert.equal(plan.slots.some((slot) => slot.planned_date === '2026-09-18'), false)
+  assert.deepEqual(plan.unfilled_slots.map(slot => slot.planned_date), ['2026-09-14', '2026-09-15', '2026-09-16'])
   assert.deepEqual(recurring.weekly_pattern.friday, [])
 })
 test('production facilitator evidence projects deterministic learning summary without raw authority inputs', () => {
@@ -374,7 +375,7 @@ test('model output cannot recast Slate follow-up work as instructional lessons',
 })
 
 test('identical authoritative inputs reuse the sole learning proposal; changed evidence replaces it', async () => {
-  const repository = forecastRepository()
+  const repository = forecastRepository({ forecast: [item({ planned_date: '2026-08-31' })] })
   let modelCalls = 0
   let capturedContext
   const generateItems = async ({ slots, context }) => { modelCalls++; capturedContext = context; return slots.map(() => ({ title: 'Energy transfer', description: 'Trace energy through a simple system.', planning_move: 'branch', strand: 'physical science', planning_reason: '' })) }
@@ -416,6 +417,7 @@ test('explicit proposal activation preserves learning origin and description', a
 
 test('a still-current learning forecast is accepted days later through a fresh local-date revision', async () => {
   const repository = forecastRepository({ forecast: [] })
+  repository.state.revisions[0].weekly_pattern.thursday = [{ subject: 'science' }]
   const proposal = await createLearningForecastProposal({
     repository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE,
     reports: evidence(), now: NOW,
@@ -427,6 +429,7 @@ test('a still-current learning forecast is accepted days later through a fresh l
     now: new Date('2026-09-03T14:00:00.000Z'), today: '2026-09-03',
   })
   assert.equal(accepted.active_revision.effective_from, '2026-09-03')
+  assert.ok(accepted.forecast_items.some(row => row.planned_date === '2026-09-03'))
   assert.notEqual(accepted.active_revision.id, proposal.proposal_revision.id)
   assert.equal(repository.state.revisions.find((row) => row.id === proposal.proposal_revision.id).activated_at, null)
 })
@@ -458,7 +461,7 @@ test('materializing one proposed lineage adopts only that concept and leaves sib
   assert.equal(proposedConcepts.length, 2)
   assert.equal(repository.state.syllabus.active_revision_id, ACTIVE)
   const selected = proposedConcepts[1]
-  const later = new Date('2026-09-03T14:00:00.000Z')
+  const later = new Date('2026-09-01T14:00:00.000Z')
   let generatorCalls = 0
   const materialized = await materializeForecastOccurrence({
     setInferenceSuppressed: preserveInferenceSuppression,

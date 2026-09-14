@@ -1287,10 +1287,10 @@ export default function LessonMakerPage(){
 
       {/* ── Planner promo card ── */}
       {!isReviewMode && <div
-        onClick={() => router.push('/facilitator/syllabus')}
+        onClick={() => router.push('/facilitator')}
         role="button"
         tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/syllabus')}
+        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator')}
         style={{
           marginTop: 20,
           padding: '16px 22px',

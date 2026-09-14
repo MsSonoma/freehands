@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 import { buildFuturePlanningProjection } from '../futurePlanningProjection.mjs'
-import { buildPlanAhead } from '../planning.mjs'
+import { instructionalForecastWindow } from '../forecastWindow.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '../forecastRequestIdentity.mjs'
 import { createFacilitatorConcept, createFacilitatorDayConcept, editFacilitatorConcept, replaceLearningForecastConcept } from '../planning.server.mjs'
 import { materializeForecastOccurrence } from '../materialization.server.mjs'
@@ -41,12 +41,11 @@ function repository(initial = [], { noSchoolDates = [] } = {}) {
   }
 }
 
-test('Plan Ahead remains a separate multiweek view over canonical weekly-pattern intent', () => {
-  const plan = buildPlanAhead({ weeklyPattern: revision().weekly_pattern, forecastItems: [concept()], today: '2026-08-31', weeks: 4 })
-  assert.equal(plan.length, 4)
-  assert.equal(plan[0].slots.length, 3)
-  assert.equal(plan[0].slots[0].item.title, 'Fractions')
-  assert.equal(plan[3].week_start, '2026-09-28')
+test('the automatic forecast uses a rolling seven-day window, including this week', () => {
+  assert.deepEqual(instructionalForecastWindow('2026-09-14'), { start: '2026-09-14', end: '2026-09-20' })
+  assert.deepEqual(instructionalForecastWindow('2026-09-18'), { start: '2026-09-18', end: '2026-09-24' })
+  assert.deepEqual(instructionalForecastWindow('2026-12-29'), { start: '2026-12-29', end: '2027-01-04' })
+  assert.deepEqual(instructionalForecastWindow(''), { start: '', end: '' })
 })
 
 test('future planning expands canonical weekly-pattern slots in place while preserving exact active intent', () => {
@@ -142,162 +141,91 @@ test('facilitator concept materialization delegates exact lineage and preserves 
   assert.equal(repo.state.receipts[0].status, 'generation_failed')
 })
 
-test('facilitator UI automatically POSTs forecast after authoritative refresh and keeps forecast authority facilitator-only', () => {
-  const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
-  const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
+const homeSource = () => fs.readFileSync(new URL('../../../facilitator/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const documentSource = () => fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
+
+test('facilitator Home is the full Syllabus, not a preview or separate planning workspace', () => {
+  const home = homeSource()
+  assert.match(home, /export default function FacilitatorPage/)
+  assert.match(home, /<SyllabusDocument/)
+  assert.match(home, /<FacilitatorSyllabusLessonOverlay/)
+  assert.match(home, /<SyllabusPlanEditor/)
+  assert.match(home, /<SyllabusDayActionDialog/)
+  assert.doesNotMatch(home, /SyllabusPlanningWorkspace|planAheadOpen|styles\.learningProposal|MS\. SONOMA \/ FORECAST/)
+  assert.doesNotMatch(documentSource(), /Plan ahead|OpenPlanningSlot|onPlanSlot|onSuggestSlot/)
+  assert.equal(fs.existsSync(new URL('../../../components/syllabus/SyllabusPlanningWorkspace.js', import.meta.url)), false)
+})
+
+test('the retired Syllabus URL only redirects to Home with query context preserved', () => {
+  const legacy = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
+  assert.match(legacy, /redirect\(query \? `\/facilitator\?\$\{query\}` : '\/facilitator'\)/)
+  assert.match(legacy, /await searchParams/)
+  assert.match(legacy, /params\.append/)
+  assert.doesNotMatch(legacy, /SyllabusDocument|fetch\(/)
+})
+
+test('automatic requests survive week navigation and begin only after authoritative hydration', () => {
+  const home = homeSource()
+  const start = home.indexOf('useEffect(() => {\n    if (!syllabusHydrated) return undefined')
+  const effect = home.slice(start, home.indexOf('  useEffect(() => {', start + 1))
+  assert.ok(start >= 0)
+  assert.match(effect, /refreshSequence: forecastRefreshSequence/)
+  assert.match(effect, /forecastAttempt\.current === identity/)
+  assert.equal((effect.match(/createLearningForecast\(\{ automatic: true \}\)/g) || []).length, 1)
+  assert.doesNotMatch(effect, /selectedWeekStart|learningProposal/)
+  assert.match(home, /proposal_revision\?\.base_revision_id === syllabus\.active_revision\.id/)
+  assert.match(home, /json\.kind === 'no_action'[\s\S]*?setLearningProposal\(null\)/)
+})
+
+test('grey forecast lessons are projected into dated rows and open the real per-lesson workflow', () => {
+  const home = homeSource(), doc = documentSource()
+  assert.match(home, /proposedForecastItems=/)
+  assert.match(home, /forecastWindowEnd=\{forecastWindow\.end\}/)
+  assert.match(doc, /buildFuturePlanningProjection/)
+  assert.match(doc, /syllabusDayPresentation\(day\.items, suggestions\)/)
+  assert.match(doc, /onSelect\(item, \{ suggested: true, recoveryRequired \}\)/)
+  assert.match(doc, /includeOpenSlots: false/)
+  assert.match(doc, /Retry forecast/)
+  const overlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
+  for (const action of ['Generate lesson', 'Generate with changes', 'Create your own lesson']) assert.ok(overlay.includes(action))
+  assert.match(home, /onGenerateWithChanges=/)
+  assert.match(home, /onCreateOwnLesson=\{createOwnForecastLesson\}/)
+  assert.doesNotMatch(home, /activateLearningProposal/)
+})
+
+test('grey projection never overwrites commitments or days off and cannot create beyond its window', () => {
+  const forecast = (date, order, lineage) => ({ planned_date: date, sort_order: order, lineage_id: lineage, origin: 'learning_forecast', lesson_key: null, subject: 'Math' })
+  const active = { ...forecast('2026-09-14', 0, 'active'), origin: 'facilitator', lesson_key: 'generated/committed.json' }
+  const projection = buildFuturePlanningProjection({
+    timelineItems: [active],
+    proposedForecastItems: [forecast('2026-09-14', 0, 'conflict'), forecast('2026-09-14', 1, 'open'), forecast('2026-09-16', 0, 'holiday'), forecast('2026-09-21', 0, 'too-far')],
+    noSchoolDates: [{ date: '2026-09-16' }],
+    rangeStart: '2026-09-14', rangeEnd: '2026-09-20', today: '2026-09-14',
+  })
+  assert.deepEqual(projection.forecast_items.map(item => item.lineage_id), ['open'])
+  assert.equal(projection.active_items[0].lesson_key, active.lesson_key)
+  assert.equal(projection.forecast_items[0].presentation_kind, 'suggested_inactive')
+  assert.deepEqual(projection.open_slots, [])
+})
+
+test('learner presentation never receives the facilitator forecast mutation handlers', () => {
   const learner = fs.readFileSync(new URL('../../../learn/LearnerHome.js', import.meta.url), 'utf8')
-  const automaticEffectStart = facilitator.indexOf('useEffect(() => {\n    if (!syllabusHydrated) return undefined')
-  const automaticEffect = facilitator.slice(automaticEffectStart, facilitator.indexOf('  useEffect(() => {', automaticEffectStart + 1))
-  assert.match(facilitator, /fetch\('\/api\/syllabus\/forecast'/)
-  assert.match(facilitator, /setForecastRefreshSequence\(\(current\) => current \+ 1\)/)
-  assert.match(automaticEffect, /refreshSequence: forecastRefreshSequence/)
-  assert.match(automaticEffect, /forecastAttempt\.current === identity/)
-  assert.equal((automaticEffect.match(/createLearningForecast\(\{ automatic: true \}\)/g) || []).length, 1)
-  assert.doesNotMatch(automaticEffect, /selectedWeekStart|learningProposal/)
-  assert.doesNotMatch(document, /Retry forecast|Use this forecast/)
-  assert.match(document, /role === 'facilitator' && onEditSection/)
-  assert.doesNotMatch(learner, /onEditSection=/)
+  assert.doesNotMatch(learner, /onEditSection=|onRetryForecast=|onCreateOwnLesson=/)
+  assert.match(documentSource(), /role === 'facilitator' && onSelectLesson/)
 })
 
-test('unified future-planning route enforces planning entitlement without scheduling or a second planned-lessons authority', () => {
-  const route = fs.readFileSync(new URL('../../../api/syllabus/planning/route.js', import.meta.url), 'utf8')
-  const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
-  const projection = fs.readFileSync(new URL('../futurePlanningProjection.mjs', import.meta.url), 'utf8')
-  const getRoute = fs.readFileSync(new URL('../../../api/syllabus/route.js', import.meta.url), 'utf8')
-  assert.match(route, /requireSyllabusFuturePlanning\(access\)/)
-  assert.match(route, /createFacilitatorConcept/)
-  assert.match(route, /suggestFuturePlanningConcepts/)
-  assert.match(document, /buildFuturePlanningProjection/)
-  assert.doesNotMatch(`${route}\n${document}\n${projection}`, /plannedLessons|lesson_schedule|scheduleLesson|generate-lesson-outline/)
-  assert.doesNotMatch(getRoute, /createLearningForecastProposal|generateInstructionalForecastItems/)
+test('canonical workflow keeps generation and approval separate and preserves return identity', async () => {
+  const { buildLessonWorkflowReturnHref } = await import('../../facilitatorLessonWorkflow.mjs')
+  const href = buildLessonWorkflowReturnHref({ source: 'syllabus', learnerId: LEARNER, plannedDate: '2026-09-14', lessonKey: 'generated/example.json', occurrenceId: 'exact-occurrence' })
+  const url = new URL(href, 'https://fixture.invalid')
+  assert.equal(url.pathname, '/facilitator')
+  assert.equal(url.searchParams.get('learnerId'), LEARNER)
+  assert.equal(url.searchParams.get('date'), '2026-09-14')
+  assert.equal(url.searchParams.get('occurrenceId'), 'exact-occurrence')
 })
 
-test('Syllabus UX preserves week position and keeps Forecast separate from manual Plan Ahead', () => {
-  const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
-  const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
-  const workspace = fs.readFileSync(new URL('../../../components/syllabus/SyllabusPlanningWorkspace.js', import.meta.url), 'utf8')
-  const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
-
-  assert.ok(document.includes('[learnerId, restoreWeekStart, today]'))
-  assert.ok(!document.includes('[revision?.id, today]'))
-  assert.ok(facilitator.includes('planningRequest.current'))
-  assert.ok(facilitator.includes('pageIdentity.current'))
-  assert.ok(facilitator.includes('loadSequence.current'))
-  assert.match(document, /forecastError &&/)
-  assert.ok(detailOverlay.includes('Generate with changes'))
-  assert.ok(facilitator.includes("event.key !== 'Escape'"))
-  assert.match(document, /FUTURE \/ FORECAST/)
-  assert.match(document, /Ms\. Sonoma&apos;s forecast/)
-  assert.match(document, />Plan ahead</)
-  assert.match(workspace, /SYLLABUS \/ PLAN AHEAD/)
-  assert.match(workspace, /automatic evidence-informed forecast stays one week ahead/i)
-  assert.match(facilitator, /planAheadOpen \? <SyllabusPlanningWorkspace/)
-})
-
-test('inactive forecast presentation is restored as a dedicated facilitator Forecast with per-lesson actions', () => {
-  const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
-  const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
-  const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
-  assert.match(facilitator, /styles\.learningProposal/)
-  assert.match(facilitator, /MS\. SONOMA \/ FORECAST/)
-  assert.match(facilitator, /<h2>A week ahead<\/h2>/)
-  assert.match(facilitator, /forecastProposalItems/)
-  assert.doesNotMatch(facilitator, /proposedForecastItems=/)
-  for (const action of ['Generate lesson', 'Generate with changes', 'Create your own lesson', 'Refresh forecast']) assert.match(facilitator, new RegExp(action))
-  assert.match(facilitator, /openForecastSuggestion\(item, 'change'\)/)
-  assert.match(facilitator, /openForecastSuggestion\(item, 'own'\)/)
-  assert.match(document, /Review the dedicated Forecast above/)
-  assert.doesNotMatch(document, /Use this forecast|Retry forecast/)
-  for (const action of ['AI forecast suggestion', 'Generate lesson', 'Generate with changes', 'Create your own lesson']) assert.match(detailOverlay, new RegExp(action))
-  assert.match(detailOverlay, /one-week-ahead AI suggestion from Ms\. Sonoma&apos;s forecast/)
-  assert.match(detailOverlay, /requestedForecastAction === 'change'/)
-  assert.match(detailOverlay, /requestedForecastAction === 'own'/)
-})
-
-test('forecast progress, failure, and refresh are visible in the dedicated Forecast without creating global adoption authority', () => {
-  const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
-  assert.match(facilitator, /Ms\. Sonoma is preparing the next one-week forecast/)
-  assert.match(facilitator, /forecastError && <div className=\{styles\.error\}/)
-  assert.match(facilitator, /Refresh forecast/)
-  assert.match(facilitator, /forecastProposalItems\.length > 0/)
-  assert.doesNotMatch(facilitator, /Use this forecast|activateLearningProposal/)
-  assert.match(facilitator, /setForecastError\(cause\.message\)/)
-  assert.doesNotMatch(facilitator.slice(facilitator.indexOf('async function createLearningForecast'), facilitator.indexOf('function openSectionEditor')), /setError\(cause\.message\)/)
-})
-
-test('forecast decisions stay per lesson: unchanged, facilitator-directed, or educator-authored generation', () => {
-  const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
-  const route = fs.readFileSync(new URL('../../../api/syllabus/planning/route.js', import.meta.url), 'utf8')
-  const model = fs.readFileSync(new URL('../learningForecastModel.server.mjs', import.meta.url), 'utf8')
-  assert.match(facilitator, /generateForecastWithChanges/)
-  assert.match(facilitator, /changeRequest/)
-  const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
-  assert.match(facilitator, /createOwnForecastLesson/)
-  assert.match(detailOverlay, /conceptEditMode === 'forecast-own'/)
-  assert.match(detailOverlay, /Generate my lesson/)
-  assert.match(route, /changeRequest: body\.changeRequest/)
-  assert.match(model, /facilitator_change_request/)
-  assert.doesNotMatch(facilitator, /activateLearningProposal/)
-})
-test('next week is Forecast-first while farther manual planning stays in the separate Plan Ahead workspace', () => {
-  const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
-  const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
-  const workspace = fs.readFileSync(new URL('../../../components/syllabus/SyllabusPlanningWorkspace.js', import.meta.url), 'utf8')
-  assert.match(facilitator, /SyllabusPlanningWorkspace/)
-  assert.match(facilitator, /planAheadOpen/)
-  assert.equal((document.match(/>Plan ahead</g) || []).length, 1)
-  assert.match(document, /const isForecastWeek = week\.state === 'future'/)
-  assert.match(document, /FUTURE \/ FORECAST/)
-  assert.match(document, /A week ahead/)
-  assert.match(document, /!isForecastWeek && Boolean\(onPlanSlot \|\| onSuggestSlot\)/)
-  assert.doesNotMatch(facilitator, /onPlanSlot=|onSuggestSlot=/)
-  assert.match(workspace, /Open weekly-pattern slot/)
-  assert.match(workspace, />Create your own</)
-  assert.match(workspace, />Suggest with AI</)
-  assert.match(facilitator, /This learner does not have an active Syllabus yet/)
-  for (const section of ['Goals', 'Subjects', 'Weekly pattern', 'Teaching guidance']) assert.match(document, new RegExp(section, 'i'))
-})
-test('production Syllabus callers expose selection only where the host supplies a detail workflow', () => {
-  const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
-  const home = fs.readFileSync(new URL('../../../facilitator/page.js', import.meta.url), 'utf8')
-  const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
-  const learner = fs.readFileSync(new URL('../../../learn/LearnerHome.js', import.meta.url), 'utf8')
-  assert.equal(syllabusActionPresentation({ action: { id: 'history' }, role: 'facilitator' }), 'hidden')
-  assert.equal(syllabusActionPresentation({ action: { id: 'history' }, role: 'facilitator', capabilities: { reviewHistory: true } }), 'button')
-  assert.equal(syllabusActionPresentation({ action: { id: 'materialize' }, role: 'facilitator' }), 'hidden')
-  assert.equal(syllabusActionPresentation({ action: { id: 'materialize' }, role: 'facilitator', capabilities: { lessonActions: true } }), 'button')
-  assert.equal(syllabusActionPresentation({ action: { id: 'view' }, href: '/facilitator/generator?mode=review', role: 'facilitator' }), 'link')
-  assert.ok(!document.includes("presentation === 'hidden'") && !document.includes('actionCapabilities='))
-  assert.match(document, /onSelectLesson/)
-  assert.doesNotMatch(home, /actionCapabilities=/)
-  assert.match(home, new RegExp("href: '/facilitator/syllabus'"))
-  assert.ok(facilitator.includes('onSelectLesson={(item, context) => setSelectedSyllabusLesson'))
-  assert.doesNotMatch(facilitator, /actionCapabilities=/)
-  assert.ok(learner.includes('onSelectLesson={(item, context) => openSyllabusLesson'))
-  assert.ok(!learner.includes('actionCapabilities={{ openLesson: true }}'))
-})
-
-test('production forecast identity ignores viewed week while protecting canonical identity and request sequence', () => {
-  const weekA = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-07', selectedWeekStart: '2026-09-07' })
-  const sameForecastFromAnotherView = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-07', selectedWeekStart: '2026-09-14' })
-  const nextTarget = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-14', selectedWeekStart: '2026-09-07' })
-  const nextRevision = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: 'revision-2', targetWeek: '2026-09-07' })
-  const nextLearner = buildForecastViewIdentity({ learnerId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', activeRevisionId: ACTIVE, targetWeek: '2026-09-07' })
-  assert.equal(weekA, sameForecastFromAnotherView)
-  assert.equal(weekA, buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-07' }))
-  assert.notEqual(weekA, nextTarget)
-  assert.notEqual(weekA, nextRevision)
-  assert.notEqual(weekA, nextLearner)
-  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: nextTarget, requestSequence: 1, currentSequence: 1 }), false)
-  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: sameForecastFromAnotherView, requestSequence: 1, currentSequence: 2 }), false)
-  assert.equal(isCurrentForecastResponse({ requestIdentity: weekA, currentIdentity: sameForecastFromAnotherView, requestSequence: 2, currentSequence: 2 }), true)
-  assert.equal(buildAutomaticForecastAttemptIdentity({ requestIdentity: weekA, refreshSequence: 1 }), `${weekA}:1`)
-  assert.equal(buildAutomaticForecastAttemptIdentity({ requestIdentity: sameForecastFromAnotherView, refreshSequence: 1 }), `${weekA}:1`)
-  assert.equal(buildAutomaticForecastAttemptIdentity({ requestIdentity: weekA, refreshSequence: 2 }), `${weekA}:2`)
-  const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
-  assert.match(facilitator, /targetWeek: currentTargetForecastWeek/)
-  assert.doesNotMatch(facilitator.slice(facilitator.indexOf('forecastViewIdentity.current ='), facilitator.indexOf('const planningAccess')), /selectedWeekStart/)
-  assert.match(facilitator, /forecastRequestSequence/)
-  assert.match(facilitator, /if \(!responseIsCurrent\(\)\) return/)
-  assert.match(facilitator, /forecastAttempt\.current === identity/)
+test('request identity rejects a late response after the learner or revision changed', () => {
+  const identity = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-14' })
+  assert.equal(isCurrentForecastResponse({ requestIdentity: identity, currentIdentity: identity, requestSequence: 1, currentSequence: 2 }), false)
+  assert.equal(isCurrentForecastResponse({ requestIdentity: identity, currentIdentity: 'another-learner', requestSequence: 1, currentSequence: 1 }), false)
 })

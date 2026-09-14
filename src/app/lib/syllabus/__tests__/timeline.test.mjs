@@ -462,7 +462,7 @@ test('an instructional occurrence with existing Slate sessions can schedule anot
 test('historical instructional actions preserve non-editable provenance and existing fail-closed handlers', () => {
   const document = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
   const overlay = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js'), 'utf8')
-  const facilitatorPage = fs.readFileSync(path.resolve(TEST_DIR, '../../../facilitator/syllabus/page.js'), 'utf8')
+  const facilitatorPage = fs.readFileSync(path.resolve(TEST_DIR, '../../../facilitator/page.js'), 'utf8')
   const learnerHome = fs.readFileSync(path.resolve(TEST_DIR, '../../../learn/LearnerHome.js'), 'utf8')
   assert.match(document, /const historicalActivityAllowed = item\.historical_record !== true/)
   assert.match(document, /const teacherEditable = role === 'facilitator'[\s\S]*item\.historical_record !== true/)
@@ -479,12 +479,12 @@ test('historical instructional actions preserve non-editable provenance and exis
 
 test('new Syllabus UI source contains required readable labels and no mojibake', () => {
   const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
-  for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / PLANNING', 'FUTURE / FORECAST', 'Weekly learning plan', 'Previous week', 'This week', 'Next week', 'Plan ahead', 'Open weekly slot', 'Plan lesson', 'Suggest with AI']) {
+  for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / SYLLABUS', 'Weekly learning plan', 'Previous week', 'This week', 'Next week', 'Grey lessons']) {
     assert.match(source, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
   assert.doesNotMatch(source, /\uFFFD|Ã|Â|â€|â€™|â†/u)
   assert.doesNotMatch(source, /Mastery proposals for general review|Mastery note|proposedReforecast/)
-  assert.match(source, />Plan ahead</)
+  assert.doesNotMatch(source, />Plan ahead</)
   assert.match(source, /week\.days\.map/)
   assert.doesNotMatch(source, /timeline\.weeks\.map/)
 })
@@ -514,7 +514,7 @@ test('active and suggested entries share deterministic exact-slot ordering insid
 })
 
 test('Free initial Syllabus establishment is review-only in the retained editor', () => {
-  const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../facilitator/syllabus/page.js'), 'utf8')
+  const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../facilitator/page.js'), 'utf8')
   assert.match(source, /draft && planningAccess\.can_change_intent \? <textarea/)
   assert.match(source, /draft && planningAccess\.can_change_intent \? <><ul/)
   assert.match(source, /disabled={!planningAccess\.can_change_intent}/)

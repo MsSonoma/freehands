@@ -259,8 +259,6 @@ export default function SyllabusQaHarness() {
       onEditSection={planningAllowed ? openSection : null}
       proposedForecastItems={role === 'facilitator' ? proposalItems : []}
       planningBusy={Boolean(busy)}
-      onPlanSlot={planningAllowed ? (slot) => { void createConcept(slot, { title: `QA ${slot.subject} plan`, description: 'QA educator-authored future concept.' }) } : null}
-      onSuggestSlot={planningAllowed && scenario.generation ? async (slot) => { const values = await suggest(slot); if (values) await createConcept(slot, values) } : null}
       proposedForecastTargetWeek={targetForecastWeek}
       proposalRevision={fixture.forecastProposal}
       forecastBusy={forecastStatus === 'loading'}

@@ -12,6 +12,7 @@ import { instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/
 import { moveSyllabusWeek, syllabusEntitlementsFor } from '@/app/lib/syllabus/timeline.mjs'
 import { buildLessonSchedulePayload, buildSchedulableLessonOptions, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
+import { instructionalForecastWindow } from '@/app/lib/syllabus/forecastWindow.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '@/app/lib/syllabus/forecastRequestIdentity.mjs'
 import { CORE_SUBJECTS } from '@/app/lib/subjects'
 import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
@@ -80,7 +81,7 @@ export default function CalendarPage() {
     if (typeof window === 'undefined') return
     const landing = resolveCalendarLandingParams(new URLSearchParams(window.location.search))
     if (landing.redirectToSyllabus) {
-      router.replace('/facilitator/syllabus')
+      router.replace('/facilitator')
       return
     }
     if (landing.learnerId) setSelectedLearnerId(landing.learnerId)
@@ -192,9 +193,13 @@ export default function CalendarPage() {
     forecast_items: syllabus.proposed_learning_forecast.forecast_items || [],
   } : null
   const itemsByDate = useMemo(() => groupSyllabusCalendarItems(syllabus?.timeline_items || [], {
-    proposedForecastItems: syllabus?.proposed_learning_forecast?.forecast_items || [],
+    proposedForecastItems: (syllabus?.proposed_learning_forecast?.forecast_items || []).filter((item) => {
+      const window = instructionalForecastWindow(syllabus?.resolved_today)
+      const date = String(item.planned_date || '').slice(0, 10)
+      return syllabus?.proposed_learning_forecast?.revision?.base_revision_id === syllabus?.active_revision?.id && date >= window.start && date <= window.end
+    }),
     noSchoolDates: syllabus?.no_school_dates || [],
-  }), [syllabus?.timeline_items, syllabus?.proposed_learning_forecast?.forecast_items, syllabus?.no_school_dates])
+  }), [syllabus?.timeline_items, syllabus?.proposed_learning_forecast, syllabus?.active_revision?.id, syllabus?.resolved_today, syllabus?.no_school_dates])
   const selectedItems = selectedDate ? (itemsByDate[selectedDate] || []) : []
   useEffect(() => {
     const focus = returnFocusRef.current
@@ -216,7 +221,7 @@ export default function CalendarPage() {
   }, [itemsByDate, selectedDate, syllabus]) // eslint-disable-line react-hooks/exhaustive-deps
   const activeRevisionId = String(syllabus?.active_revision?.id || '')
   const resolvedToday = syllabus?.resolved_today || selectedDate || ''
-  const currentTargetForecastWeek = resolvedToday ? moveSyllabusWeek(null, 'later', resolvedToday) : ''
+  const currentTargetForecastWeek = instructionalForecastWindow(resolvedToday).start
   const selectedLearner = learners.find((learner) => String(learner.id) === String(selectedLearnerId)) || null
   const portfolioAllowed = featuresForTier(planTier).lessonPlanner === true
   const planningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier })
@@ -249,6 +254,7 @@ export default function CalendarPage() {
       if (!responseIsCurrent()) return
       if (!response.ok) throw new Error(json.error || 'Could not prepare the future lesson forecast')
       if (json.kind === 'no_action') {
+        setSyllabus((current) => current ? { ...current, proposed_learning_forecast: null } : current)
         return
       }
       setSyllabus((current) => current ? {
@@ -518,7 +524,7 @@ export default function CalendarPage() {
             <p style={{ margin: '4px 0 0', color: '#6b7280', fontSize: 13 }}>A month view of the same Syllabus and future plan. AI forecast suggestions remain provisional until you act on them.</p>
           </div>
           <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
-            <button type="button" onClick={() => router.push('/facilitator/syllabus')} style={{ padding: '8px 12px', border: '1px solid #c7442e', borderRadius: 7, background: '#fff', color: '#c7442e', fontWeight: 800, cursor: 'pointer' }}>Syllabus view</button>
+            <button type="button" onClick={() => router.push('/facilitator')} style={{ padding: '8px 12px', border: '1px solid #c7442e', borderRadius: 7, background: '#fff', color: '#c7442e', fontWeight: 800, cursor: 'pointer' }}>Syllabus view</button>
             <button type="button" onClick={() => portfolioAllowed ? setShowPortfolio(true) : router.push('/facilitator/account/plan')} style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 7, background: '#fff', color: '#374151', fontWeight: 800, cursor: 'pointer' }}>{portfolioAllowed ? 'Portfolio' : 'Portfolio requires Pro'}</button>
           </div>
         </header>
@@ -563,7 +569,7 @@ export default function CalendarPage() {
                   <div style={{ padding: 10, border: '1px solid #e5e7eb', borderRadius: 8 }}>
                     <strong>No active Syllabus</strong>
                     <p style={{ margin: '5px 0 10px', color: '#6b7280', fontSize: 12 }}>Calendar no longer creates a separate lesson plan. Establish the learner plan in Syllabus.</p>
-                    <button type="button" onClick={() => router.push('/facilitator/syllabus')} style={{ padding: '7px 10px', border: '1px solid #c7442e', borderRadius: 6, background: '#fff', color: '#c7442e', fontWeight: 700 }}>Syllabus view</button>
+                    <button type="button" onClick={() => router.push('/facilitator')} style={{ padding: '7px 10px', border: '1px solid #c7442e', borderRadius: 6, background: '#fff', color: '#c7442e', fontWeight: 700 }}>Syllabus view</button>
                   </div>
                 )}
                 {syllabus?.has_active_syllabus && selectedItems.length === 0 && <p style={{ margin: 0, color: '#6b7280', fontSize: 13 }}>Nothing is placed on this date in the active Syllabus.</p>}

@@ -45,8 +45,8 @@ test('QA harness uses actual Syllabus components and has no production-capable d
   const harness = read('src/app/qa/syllabus/SyllabusQaHarness.js')
   assert.match(harness, /components\/syllabus\/SyllabusDocument/)
   assert.doesNotMatch(harness, /components\/syllabus\/SyllabusPlanningWorkspace|planAheadOpen/)
-  assert.match(harness, /onPlanSlot=/)
-  assert.match(harness, /onSuggestSlot=/)
+  assert.doesNotMatch(harness, /onPlanSlot=/)
+  assert.doesNotMatch(harness, /onSuggestSlot=/)
   assert.match(harness, /components\/syllabus\/LessonHistoryOverlay/)
   assert.match(harness, /resolveActionHref=\{\(\) => null\}/)
   assert.match(harness, /loadHistory=\{loadHistory\}/)
@@ -57,7 +57,7 @@ test('QA harness uses actual Syllabus components and has no production-capable d
 })
 
 test('production auth and API defaults remain intact and separate from QA injection seams', () => {
-  const facilitator = read('src/app/facilitator/syllabus/page.js')
+  const facilitator = read('src/app/facilitator/page.js')
   const overlay = read('src/app/components/syllabus/LessonHistoryOverlay.js')
   assert.match(facilitator, /useAccessControl\(\{ requiredAuth: 'required' \}\)/)
   assert.match(facilitator, /getSupabaseClient\(\)/)

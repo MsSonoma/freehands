@@ -591,7 +591,7 @@ test('current application surfaces expose no mastery-reforecast creation or pres
   assert.equal(fs.existsSync(path.join(root, 'src/app/lib/syllabus/proposals.server.mjs')), false)
   assert.equal(fs.existsSync(path.join(root, 'src/app/lib/syllabus/reforecast.mjs')), false)
 
-  const facilitatorPage = fs.readFileSync(path.join(root, 'src/app/facilitator/syllabus/page.js'), 'utf8')
+  const facilitatorPage = fs.readFileSync(path.join(root, 'src/app/facilitator/page.js'), 'utf8')
   const documentSource = fs.readFileSync(path.join(root, 'src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
   const revisionsSource = fs.readFileSync(path.join(root, 'src/app/lib/syllabus/revisions.server.mjs'), 'utf8')
   const repositorySource = fs.readFileSync(path.join(root, 'src/app/lib/syllabus/supabaseRepository.server.mjs'), 'utf8')
@@ -693,7 +693,7 @@ test('authenticated has read-only Syllabus tables and commit execution remains s
 })
 
 test('the conservative subject editor keeps activation effective today while Slate scheduling has its own explicit date', () => {
-  const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'syllabus', 'page.js'), 'utf8')
+  const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'page.js'), 'utf8')
   assert.match(source, /Schedule Mr\. Slate/)
   assert.match(source, /type="date"/)
   assert.match(source, /scheduledDate/)
@@ -703,7 +703,7 @@ test('the conservative subject editor keeps activation effective today while Sla
 })
 
 test('Syllabus Teaching Guidance uses connected human-readable controls instead of raw subject JSON', () => {
-  const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'syllabus', 'page.js'), 'utf8')
+  const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'page.js'), 'utf8')
   assert.doesNotMatch(source, /JSON\.stringify\(preferences\.subject_preferences/)
   assert.match(source, /teaching_guidance: updateTeachingGuidanceList\(current\.teaching_guidance/)
   assert.match(source, /teachingGuidanceOverride: teachingGuidanceOverrideFrom\(normalizedGuidance\)/)

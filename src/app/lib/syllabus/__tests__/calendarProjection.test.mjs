@@ -105,7 +105,7 @@ test('production navigation no longer links to Calendar Planner or Calendar Cust
   const generator = source('facilitator/generator/page.js')
   assert.doesNotMatch(home, /calendar\?tab=planner|calendar\?tab=subjects/)
   assert.doesNotMatch(generator, /calendar\?tab=planner/)
-  assert.match(generator, /\/facilitator\/syllabus/)
+  assert.match(generator, /\/facilitator/)
 })
 test('Mentor calendar and reporting use the canonical Syllabus instead of planned_lessons', () => {
   const mentorCalendar = source('facilitator/generator/counselor/overlays/CalendarOverlay.jsx')

@@ -3,6 +3,7 @@ import { addSyllabusDays, startOfSyllabusWeek } from './timeline.mjs'
 import { subjectBalancedInstructionalEvidenceContext } from './evidenceProjection.mjs'
 import { buildSubjectBreadthContext, forecastPlanningMetadata } from './learningBreadth.mjs'
 import { noSchoolDateSet } from './noSchoolDates.mjs'
+import { instructionalForecastWindow } from './forecastWindow.mjs'
 
 export { instructionalEvidenceContext } from './evidenceProjection.mjs'
 export { buildSubjectBreadthContext } from './learningBreadth.mjs'
@@ -79,11 +80,12 @@ function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWee
 
 export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], timelineItems = [], reports = [], learnerGrade = null, noSchoolDates = [], today }) {
   if (!activeRevision?.id) throw new Error('An active Syllabus revision is required')
-  const targetWeekStart = nextInstructionalForecastWeek(today)
-  const targetWeekEnd = addSyllabusDays(targetWeekStart, 6)
+  const { start: targetWeekStart, end: targetWeekEnd } = instructionalForecastWindow(today)
+  if (!targetWeekStart) throw new Error('A valid local date is required for forecasting')
   const blockedDates = noSchoolDateSet(noSchoolDates)
   const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart).filter((slot) => !blockedDates.has(slot.planned_date))
   const occupied = new Set(timelineItems.filter((item) => {
+    if (item?.item_type === 'slate_assignment') return false
     const date = String(item?.planned_date || '').slice(0, 10)
     return date >= targetWeekStart && date <= targetWeekEnd
   }).map((item) => `${String(item.planned_date).slice(0, 10)}:${Number(item.sort_order || 0)}`))

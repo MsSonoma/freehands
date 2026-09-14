@@ -133,12 +133,12 @@ export default function FacilitatorSyllabusLessonOverlay({
     setRepeatMode(false)
     setLearnerLessonBound(false)
     setRemovalBusy('')
-    setForecastChangeOpen(selection?.requestedForecastAction === 'change')
+    setForecastChangeOpen(false)
     setForecastChangeRequest('')
-    setConceptEditMode(selection?.requestedForecastAction === 'own' ? 'forecast-own' : '')
-    setConceptTitle(selection?.requestedForecastAction === 'own' ? (item.title || '') : '')
-    setConceptDescription(selection?.requestedForecastAction === 'own' ? (item.description || '') : '')
-  }, [item, selection?.assignedTeacher, selection?.requestedForecastAction])
+    setConceptEditMode('')
+    setConceptTitle('')
+    setConceptDescription('')
+  }, [item, selection?.assignedTeacher])
 
   useEffect(() => {
     setLearnerLessonBound(false)
@@ -548,7 +548,7 @@ export default function FacilitatorSyllabusLessonOverlay({
           {isConcept && <section className={styles.detailSection}>
             {isForecastGhost ? <>
               <h3>AI forecast suggestion</h3>
-              <p>{selection.recoveryRequired ? 'This forecast needs recovery before a lesson can be generated.' : 'This is a one-week-ahead AI suggestion from Ms. Sonoma&apos;s forecast. No lesson file has been generated yet.'}</p>
+              <p>{selection.recoveryRequired ? 'This forecast needs recovery before a lesson can be generated.' : 'This grey lesson is an automatic suggestion for an open Syllabus date. No lesson file has been generated or approved yet.'}</p>
               <div className={styles.forecastChoices}>
                 {typeof onGenerate === 'function' && <button type="button" className={styles.primary} disabled={selection.recoveryRequired || coreBusy === 'forecast-change'} onClick={() => onGenerate(item)}>Generate lesson</button>}
                 {typeof onGenerateWithChanges === 'function' && <button type="button" disabled={selection.recoveryRequired || coreBusy === 'forecast-change'} onClick={() => setForecastChangeOpen((open) => !open)}>Generate with changes</button>}

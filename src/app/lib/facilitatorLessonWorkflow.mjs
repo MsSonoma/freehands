@@ -35,7 +35,7 @@ export function buildLessonWorkflowReturnHref({
   const normalizedSource = normalizeLessonWorkflowSource(source)
   if (normalizedSource === 'library') return '/facilitator/lessons'
 
-  const path = normalizedSource === 'calendar' ? '/facilitator/calendar' : '/facilitator/syllabus'
+  const path = normalizedSource === 'calendar' ? '/facilitator/calendar' : '/facilitator'
   const params = new URLSearchParams()
   if (learnerId) params.set('learnerId', String(learnerId))
   if (plannedDate) params.set('date', String(plannedDate).slice(0, 10))

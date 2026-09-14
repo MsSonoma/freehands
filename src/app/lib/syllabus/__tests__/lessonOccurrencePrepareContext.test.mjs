@@ -4,7 +4,7 @@ import fs from 'node:fs'
 
 import { buildLessonGeneratorReviewHref } from '../../facilitatorLessonWorkflow.mjs'
 
-const syllabusSource = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const syllabusSource = fs.readFileSync(new URL('../../../facilitator/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 const generatorSource = fs.readFileSync(new URL('../../../facilitator/generator/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 const prepareSource = fs.readFileSync(new URL('../../../facilitator/prepare/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 const documentSource = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')

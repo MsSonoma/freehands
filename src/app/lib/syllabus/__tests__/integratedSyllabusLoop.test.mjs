@@ -201,8 +201,9 @@ test('integrated educator intent, evidence, proposal identity, and exact existin
   assert.equal(repository.state.syllabus.active_revision_id, ACTIVE)
   assert.equal(first.proposal_revision.activated_at, null)
   assert.deepEqual(first.forecast_items.filter((row) => row.origin === 'learning_forecast').map((row) => [row.planned_date, row.subject]), [
-    ['2026-09-08', 'science'],
-    ['2026-09-09', 'math'],
+    ['2026-08-31', 'math'],
+    ['2026-09-01', 'science'],
+    ['2026-09-02', 'math'],
   ])
   assert.equal(first.forecast_items.find((row) => row.lineage_id === authoredIntent().lineage_id).title, authoredIntent().title)
   assert.equal(contexts[0].syllabus.goals.learning, activeRevision().goals.learning)

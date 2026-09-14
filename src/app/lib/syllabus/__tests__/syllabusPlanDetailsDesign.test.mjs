@@ -8,7 +8,7 @@ const documentCss = fs.readFileSync(path.resolve('src/app/components/syllabus/Sy
 const editorSource = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusPlanEditor.js'), 'utf8')
 const editorCss = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusPlanEditor.module.css'), 'utf8')
 const facilitatorHome = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
-const facilitatorSyllabus = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+const facilitatorSyllabus = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
 
 test('plan configuration is collapsed behind one Plan details disclosure and revision bookkeeping is hidden', () => {
   assert.match(documentSource, /<details className=\{styles\.planDetails\}>\s*<summary>Plan details<\/summary>/)
@@ -36,8 +36,8 @@ test('all four plan sections remain editable through the shared facilitator edit
     assert.ok(documentSource.includes(`onEditSection('${section}')`))
   }
   assert.match(facilitatorHome, /import SyllabusPlanEditor from '@\/app\/components\/syllabus\/SyllabusPlanEditor'/)
-  assert.match(facilitatorHome, /onEditSection=\{syllabusPlanningAccess\.can_change_intent \? setEditingSyllabusSection : null\}/)
-  assert.match(facilitatorHome, /editingSyllabusSection && syllabusModel\.kind === 'active' && <SyllabusPlanEditor/)
+  assert.match(facilitatorHome, /onEditSection=\{planningAccess\.can_change_intent && syllabusHydrated \? openSectionEditor : null\}/)
+  assert.match(facilitatorHome, /editingSection && syllabus\?\.has_active_syllabus && <SyllabusPlanEditor/)
   assert.match(facilitatorSyllabus, /editingSection && syllabus\?\.has_active_syllabus && <SyllabusPlanEditor/)
 })
 

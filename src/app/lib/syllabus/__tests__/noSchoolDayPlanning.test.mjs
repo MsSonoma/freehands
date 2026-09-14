@@ -61,7 +61,7 @@ test('Syllabus and Calendar share day actions and all new instructional write pa
   const source = (relative) => fs.readFileSync(new URL(relative, root), 'utf8')
   const document = source('components/syllabus/SyllabusDocument.js')
   const dialog = source('components/syllabus/SyllabusDayActionDialog.js')
-  const syllabusPage = source('facilitator/syllabus/page.js')
+  const syllabusPage = source('facilitator/page.js')
   const calendarPage = source('facilitator/calendar/page.js')
   const calendar = source('facilitator/calendar/LessonCalendar.js')
   const schedule = source('api/lesson-schedule/route.js')

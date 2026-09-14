@@ -1009,7 +1009,7 @@ test('association endpoint derives readiness and source from verified artifact s
 })
 
 test('facilitator Syllabus routes draft review to Generator without changing revision data', () => {
-  const source = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+  const source = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
   assert.match(source, /syllabus\?\.timeline_items \|\| syllabus\?\.forecast_items/)
   assert.match(source, /Review draft/)
   assert.match(source, /buildLessonGeneratorReviewHref/)
@@ -1343,7 +1343,7 @@ test('Slate occurrence storage is server-owned, immutable, and never backfilled 
 test('SyllabusDocument keeps rows readable while facilitator controls live in the lesson overlay', () => {
   const document = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
   const overlay = fs.readFileSync(path.resolve('src/app/components/syllabus/FacilitatorSyllabusLessonOverlay.js'), 'utf8')
-  const facilitatorPage = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/page.js'), 'utf8')
+  const facilitatorPage = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
   assert.match(document, /syllabusTeacherLabel\(item\)/)
   assert.match(document, /item\.slate_annotations/)
   assert.match(document, /item\.historical_activity_annotations/)

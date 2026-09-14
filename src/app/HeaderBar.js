@@ -9,7 +9,7 @@ import { ensurePinAllowed, setInFacilitatorSection } from '@/app/lib/pinGate';
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs';
 
 const FACILITATOR_MENU_ITEMS = Object.freeze([
-  { label: 'Syllabus', href: '/facilitator/syllabus', primary: true },
+  { label: 'Syllabus', href: '/facilitator', primary: true },
   { label: 'Month View', href: '/facilitator/calendar' },
   { label: 'Learners', href: '/facilitator/learners' },
   { label: 'Lesson Library', href: '/facilitator/lessons' },
