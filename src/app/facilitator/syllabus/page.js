@@ -8,6 +8,7 @@ import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay
 import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
 import SyllabusPlanEditor from '@/app/components/syllabus/SyllabusPlanEditor'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
+import SyllabusPlanningWorkspace from '@/app/components/syllabus/SyllabusPlanningWorkspace'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
 import SyllabusDayActionDialog from '@/app/components/syllabus/SyllabusDayActionDialog'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
@@ -191,6 +192,7 @@ export default function SyllabusPage() {
   const [legacyWebbCompletions, setLegacyWebbCompletions] = useState({})
   const [error, setError] = useState('')
   const [selectedWeekStart, setSelectedWeekStart] = useState('')
+  const [planAheadOpen, setPlanAheadOpen] = useState(false)
   const [returnFocus, setReturnFocus] = useState({ plannedDate: '', lessonKey: '', occurrenceId: '' })
   const [editingSection, setEditingSection] = useState('')
   const [conceptEditor, setConceptEditor] = useState(null)
@@ -882,6 +884,7 @@ export default function SyllabusPage() {
     setSyllabusHydrated(false)
     setForecastBusy(false)
     setSelectedWeekStart('')
+    setPlanAheadOpen(false)
     setReturnFocus({ plannedDate: '', lessonKey: '', occurrenceId: '' })
     setEditingSection('')
     setConceptEditor(null)
@@ -1012,7 +1015,25 @@ export default function SyllabusPage() {
               <div className={styles.forecastHeader}><div><p className={styles.eyebrow}>{draft ? 'Future direction' : 'Educational record and future plan'}</p><h2>{draft ? 'Future plan' : 'Lesson timeline'}</h2></div><span>{displayForecast.length} item{displayForecast.length === 1 ? '' : 's'}</span></div>
               {forecastGroups.length ? forecastGroups.map(([label, items]) => <div className={styles.forecastWeek} key={label}><h3>{label}</h3><ul>{items.map((item) => <li key={item.id || `${item.lineage_id}-${item.planned_date}`}><span className={styles.forecastDate}>{new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' })}</span><div><strong>{item.subject}:</strong> {item.title}{item.description && <p>{item.description}</p>}{!draft && item.placement_kind === 'inferred' && <em> Provisional weekly-pattern placement</em>}{!draft && item.placement_kind === 'scheduled' && <em> Explicit calendar date</em>}{!draft && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && <><br /><a href={item.readiness_state === 'draft' ? buildLessonGeneratorReviewHref({ learnerId, lessonKey: item.lesson_key, source: 'syllabus', plannedDate: item.planned_date, occurrenceId: item.occurrence_id || '', expectedActiveRevisionId: syllabus?.active_revision?.id || '' }) : buildLessonWorkflowReturnHref({ source: 'syllabus', learnerId })}>{item.readiness_state === 'draft' ? 'Review draft' : 'Open in Syllabus'}</a></>}</div></li>)}</ul></div>) : <p className={styles.muted}>No learner-specific lessons are recorded yet.</p>}
             </section>
-          </div> : <SyllabusDocument
+          </div> : (planAheadOpen ? <SyllabusPlanningWorkspace
+              revision={syllabus.active_revision}
+              items={[...(learningProposal?.forecast_items || []), ...(syllabus.forecast_items || [])]}
+              noSchoolDates={syllabus.no_school_dates || []}
+              today={syllabus.resolved_today}
+              busy={working || Boolean(materializingLineage)}
+              error={error}
+              canPlan={planningAccess.can_change_intent && syllabusHydrated}
+              canGenerate={planningAccess.can_change_intent && syllabusHydrated}
+              canSuggest={planningAccess.can_change_intent && syllabusHydrated}
+              onClose={() => setPlanAheadOpen(false)}
+              onCreate={(slot, values) => planningPost('create', { plannedDate: slot.planned_date, sortOrder: slot.sort_order, title: values.title, description: values.description })}
+              onEdit={(item, values) => item.origin === 'learning_forecast'
+                ? planningPost('edit_forecast', { proposalRevisionId: learningProposal?.proposal_revision?.id, lineageId: item.lineage_id, title: values.title, description: values.description })
+                : editPlannedConcept(item, values)}
+              onRemove={(item) => planningPost('remove', { lineageId: item.lineage_id })}
+              onGenerate={(item) => materializeForecast(item, { proposal: item.origin === 'learning_forecast' ? learningProposal : null })}
+              onSuggest={(slot) => planningPost('suggest', { slots: [{ planned_date: slot.planned_date, sort_order: slot.sort_order }] })}
+            /> : <SyllabusDocument
               revision={syllabus.active_revision}
               forecastItems={syllabus.forecast_items}
               timelineItems={syllabus.timeline_items}
@@ -1025,6 +1046,7 @@ export default function SyllabusPage() {
               noSchoolDates={syllabus.no_school_dates || []}
               onDayAction={syllabusHydrated ? openDayAction : null}
               onEditSection={planningAccess.can_change_intent && syllabusHydrated ? openSectionEditor : null}
+              onOpenPlanning={planningAccess.can_change_intent && syllabusHydrated ? () => setPlanAheadOpen(true) : null}
               proposedForecastItems={learningProposal?.forecast_items || []}
               proposedForecastTargetWeek={currentTargetForecastWeek}
               forecastBusy={forecastBusy}
@@ -1033,8 +1055,6 @@ export default function SyllabusPage() {
               materializingForecastLineage={materializingLineage}
               isForecastRecoveryRequired={(item) => recoveryRequiredLineages.has(item.lineage_id)}
               planningBusy={working || Boolean(materializingLineage)}
-              onPlanSlot={planningAccess.can_change_intent && syllabusHydrated ? planFutureSlot : null}
-              onSuggestSlot={planningAccess.can_change_intent && syllabusHydrated ? suggestFutureSlot : null}
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
               restoreWeekStart={selectedWeekStart}
               focusPlannedDate={returnFocus.plannedDate}
@@ -1042,7 +1062,7 @@ export default function SyllabusPage() {
               focusOccurrenceId={returnFocus.occurrenceId}
               today={syllabus.resolved_today}
               contentLoading={contentLoading && !Array.isArray(syllabus.timeline_items)}
-            />}
+            />)}
 
           {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
             selection={selectedSyllabusLesson}

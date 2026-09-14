@@ -3,6 +3,7 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 import { buildFuturePlanningProjection } from '../futurePlanningProjection.mjs'
+import { buildPlanAhead } from '../planning.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '../forecastRequestIdentity.mjs'
 import { createFacilitatorConcept, createFacilitatorDayConcept, editFacilitatorConcept, replaceLearningForecastConcept } from '../planning.server.mjs'
 import { materializeForecastOccurrence } from '../materialization.server.mjs'
@@ -39,6 +40,14 @@ function repository(initial = [], { noSchoolDates = [] } = {}) {
     async updateForecastMaterialization(id, values) { Object.assign(state.receipts.find((row) => row.id === id), values) },
   }
 }
+
+test('Plan Ahead remains a separate multiweek view over canonical weekly-pattern intent', () => {
+  const plan = buildPlanAhead({ weeklyPattern: revision().weekly_pattern, forecastItems: [concept()], today: '2026-08-31', weeks: 4 })
+  assert.equal(plan.length, 4)
+  assert.equal(plan[0].slots.length, 3)
+  assert.equal(plan[0].slots[0].item.title, 'Fractions')
+  assert.equal(plan[3].week_start, '2026-09-28')
+})
 
 test('future planning expands canonical weekly-pattern slots in place while preserving exact active intent', () => {
   const plan = buildFuturePlanningProjection({
@@ -163,9 +172,10 @@ test('unified future-planning route enforces planning entitlement without schedu
   assert.doesNotMatch(getRoute, /createLearningForecastProposal|generateInstructionalForecastItems/)
 })
 
-test('Syllabus UX preserves week position and hardens overlays and async planning races', () => {
+test('Syllabus UX preserves week position and keeps Forecast separate from manual Plan Ahead', () => {
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
+  const workspace = fs.readFileSync(new URL('../../../components/syllabus/SyllabusPlanningWorkspace.js', import.meta.url), 'utf8')
   const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
 
   assert.ok(document.includes('[learnerId, restoreWeekStart, today]'))
@@ -176,10 +186,12 @@ test('Syllabus UX preserves week position and hardens overlays and async plannin
   assert.match(document, /forecastError &&/)
   assert.ok(detailOverlay.includes('Generate with changes'))
   assert.ok(facilitator.includes("event.key !== 'Escape'"))
-  assert.match(document, /Open weekly slot/)
-  assert.match(document, /onPlanSlot/)
-  assert.match(document, /onSuggestSlot/)
-  assert.doesNotMatch(facilitator, /SyllabusPlanningWorkspace|planAheadOpen/)
+  assert.match(document, /FUTURE \/ FORECAST/)
+  assert.match(document, /Ms\. Sonoma&apos;s forecast/)
+  assert.match(document, />Plan ahead</)
+  assert.match(workspace, /SYLLABUS \/ PLAN AHEAD/)
+  assert.match(workspace, /automatic evidence-informed forecast stays one week ahead/i)
+  assert.match(facilitator, /planAheadOpen \? <SyllabusPlanningWorkspace/)
 })
 
 test('inactive forecast presentation stays readable in the weekly document and keeps its actions in the detail overlay', () => {
@@ -223,17 +235,21 @@ test('forecast decisions stay per lesson: unchanged, facilitator-directed, or ed
   assert.match(model, /facilitator_change_request/)
   assert.doesNotMatch(facilitator, /activateLearningProposal/)
 })
-test('future Syllabus weeks are the planning surface and no separate Plan Ahead workspace remains in production', () => {
+test('next week is Forecast-first while farther manual planning stays in the separate Plan Ahead workspace', () => {
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
-  assert.doesNotMatch(facilitator, /SyllabusPlanningWorkspace|planAheadOpen/)
-  assert.doesNotMatch(document, />Plan ahead</)
-  assert.match(document, /FUTURE \/ PLANNING/)
-  assert.match(document, /Open weekly slot/)
-  assert.match(document, />Plan lesson</)
-  assert.match(document, />Suggest with AI</)
-  assert.match(facilitator, /onPlanSlot=/)
-  assert.match(facilitator, /onSuggestSlot=/)
+  const workspace = fs.readFileSync(new URL('../../../components/syllabus/SyllabusPlanningWorkspace.js', import.meta.url), 'utf8')
+  assert.match(facilitator, /SyllabusPlanningWorkspace/)
+  assert.match(facilitator, /planAheadOpen/)
+  assert.equal((document.match(/>Plan ahead</g) || []).length, 1)
+  assert.match(document, /const isForecastWeek = week\.state === 'future'/)
+  assert.match(document, /FUTURE \/ FORECAST/)
+  assert.match(document, /A week ahead/)
+  assert.match(document, /!isForecastWeek && Boolean\(onPlanSlot \|\| onSuggestSlot\)/)
+  assert.doesNotMatch(facilitator, /onPlanSlot=|onSuggestSlot=/)
+  assert.match(workspace, /Open weekly-pattern slot/)
+  assert.match(workspace, />Create your own</)
+  assert.match(workspace, />Suggest with AI</)
   assert.match(facilitator, /This learner does not have an active Syllabus yet/)
   for (const section of ['Goals', 'Subjects', 'Weekly pattern', 'Teaching guidance']) assert.match(document, new RegExp(section, 'i'))
 })

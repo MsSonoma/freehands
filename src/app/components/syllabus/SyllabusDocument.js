@@ -102,6 +102,7 @@ export default function SyllabusDocument({
   onAddLesson = null,
   noSchoolDates = [],
   onEditSection = null,
+  onOpenPlanning = null,
   proposedForecastItems = [],
   proposedForecastTargetWeek = '',
   forecastBusy = false,
@@ -144,6 +145,8 @@ export default function SyllabusDocument({
     establishedNowViewportKeyRef.current = nowViewportKey
     selectedWeekRef.current.scrollIntoView({ block: 'start', inline: 'nearest' })
   }, [nowViewportKey])
+  const forecastWeekStart = proposedForecastTargetWeek ? startOfSyllabusWeek(proposedForecastTargetWeek) : ''
+  const isForecastWeek = week.state === 'future' && Boolean(forecastWeekStart) && week.week_start === forecastWeekStart
   const planningProjection = useMemo(() => buildFuturePlanningProjection({
     weeklyPattern: revision?.weekly_pattern,
     timelineItems: visibleItems,
@@ -152,8 +155,8 @@ export default function SyllabusDocument({
     rangeStart: week.week_start,
     rangeEnd: addSyllabusDays(week.week_start, 6),
     today,
-    includeOpenSlots: role === 'facilitator' && week.state === 'future',
-  }), [revision?.weekly_pattern, visibleItems, proposedForecastItems, noSchoolDates, week.week_start, week.state, role, today])
+    includeOpenSlots: role === 'facilitator' && week.state === 'future' && !isForecastWeek && Boolean(onPlanSlot || onSuggestSlot),
+  }), [revision?.weekly_pattern, visibleItems, proposedForecastItems, noSchoolDates, week.week_start, week.state, role, today, isForecastWeek, onPlanSlot, onSuggestSlot])
   const projectedForecast = planningProjection.forecast_items
   useEffect(() => {
     if (role !== 'facilitator' || typeof onSelectLesson !== 'function' || (!focusOccurrenceId && !focusLessonKey)) return
@@ -180,7 +183,7 @@ export default function SyllabusDocument({
     onSelectLesson(match, { syllabus_state: state, currentLesson, teacherEditable, historicalActivityAllowed, occurrenceKey, assignedTeacher })
   }, [focusLessonKey, focusOccurrenceId, focusPlannedDate, learnerId, lessonState, onSelectLesson, planningProjection.items, role, startedOccurrenceIds, today, week.week_start])
   useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
-  const copy = STATE_COPY[week.state]
+  const copy = isForecastWeek ? { eyebrow: 'FUTURE / FORECAST', title: 'A week ahead' } : STATE_COPY[week.state]
   const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
   const weekRangeLabel = `${prettyDate(week.days[0]?.date || week.week_start, { month: 'short', day: 'numeric' })} - ${prettyDate(week.days.at(-1)?.date || week.week_start, { month: 'short', day: 'numeric', year: 'numeric' })}`
   const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
@@ -223,7 +226,7 @@ export default function SyllabusDocument({
         <button type="button" onClick={() => move('earlier')}>&larr; Previous week</button>
         <button type="button" className={week.state === 'now' ? styles.nowButton : ''} onClick={() => move('now')}>This week</button>
         <button type="button" onClick={() => move('later')}>Next week &rarr;</button>
-
+        {role === 'facilitator' && onOpenPlanning && <button type="button" className={styles.planAheadButton} onClick={onOpenPlanning}>Plan ahead</button>}
       </nav>
 
       <section ref={selectedWeekRef} className={`${styles.week} ${styles[week.state]}`} data-syllabus-selected-week={week.week_start} aria-live="polite">
@@ -234,6 +237,10 @@ export default function SyllabusDocument({
           </div>
           <time dateTime={week.week_start}>{weekRangeLabel}</time>
         </header>
+        {isForecastWeek && role === 'facilitator' && <div className={styles.forecastIntro}>
+          <strong>Ms. Sonoma&apos;s forecast</strong>
+          <span>These are provisional lesson directions based on this learner&apos;s current Syllabus and learning evidence. Open a suggestion to generate it, change it, or create your own lesson.</span>
+        </div>}
 
         <div className={styles.entries} data-selected-week={week.week_start} aria-busy={contentLoading ? 'true' : undefined}>
           {contentLoading && <div className={styles.loadingEntries} role="status" aria-live="polite"><strong>Loading Syllabus contents</strong><span>Bringing in this learner&apos;s current lessons and history.</span><i /><i /><i /></div>}
