@@ -142,7 +142,7 @@ test('facilitator concept materialization delegates exact lineage and preserves 
   assert.equal(repo.state.receipts[0].status, 'generation_failed')
 })
 
-test('facilitator UI automatically POSTs forecast after authoritative refresh, keeps forecast rows decision-free, and keeps learner document control-free', () => {
+test('facilitator UI automatically POSTs forecast after authoritative refresh and keeps forecast authority facilitator-only', () => {
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   const learner = fs.readFileSync(new URL('../../../learn/LearnerHome.js', import.meta.url), 'utf8')
@@ -194,29 +194,33 @@ test('Syllabus UX preserves week position and keeps Forecast separate from manua
   assert.match(facilitator, /planAheadOpen \? <SyllabusPlanningWorkspace/)
 })
 
-test('inactive forecast presentation stays readable in the weekly document and keeps its actions in the detail overlay', () => {
+test('inactive forecast presentation is restored as a dedicated facilitator Forecast with per-lesson actions', () => {
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
   const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
   const detailOverlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
-  assert.ok(!facilitator.includes('styles.learningProposal') && !facilitator.includes('Proposed forecast') && !facilitator.includes('Next week&apos;s open Syllabus slots'))
-  assert.ok(facilitator.includes('proposedForecastItems={learningProposal?.forecast_items || []}'))
-  assert.match(document, /AI forecast suggestion/)
-
-  assert.ok(document.includes('data-forecast-lineage={item.lineage_id}'))
-  assert.ok(document.includes('onSelect(item, { suggested: true, recoveryRequired })'))
-  assert.doesNotMatch(document, /suggestionAction|Use this forecast|Retry forecast/)
+  assert.match(facilitator, /styles\.learningProposal/)
+  assert.match(facilitator, /MS\. SONOMA \/ FORECAST/)
+  assert.match(facilitator, /<h2>A week ahead<\/h2>/)
+  assert.match(facilitator, /forecastProposalItems/)
+  assert.doesNotMatch(facilitator, /proposedForecastItems=/)
+  for (const action of ['Generate lesson', 'Generate with changes', 'Create your own lesson', 'Refresh forecast']) assert.match(facilitator, new RegExp(action))
+  assert.match(facilitator, /openForecastSuggestion\(item, 'change'\)/)
+  assert.match(facilitator, /openForecastSuggestion\(item, 'own'\)/)
+  assert.match(document, /Review the dedicated Forecast above/)
+  assert.doesNotMatch(document, /Use this forecast|Retry forecast/)
   for (const action of ['AI forecast suggestion', 'Generate lesson', 'Generate with changes', 'Create your own lesson']) assert.match(detailOverlay, new RegExp(action))
-  assert.match(detailOverlay, /one-week-ahead AI suggestion inside the future plan/)
-  assert.match(document, /buildFuturePlanningProjection/)
-  assert.match(document, /syllabusDayPresentation/)
+  assert.match(detailOverlay, /one-week-ahead AI suggestion from Ms\. Sonoma&apos;s forecast/)
+  assert.match(detailOverlay, /requestedForecastAction === 'change'/)
+  assert.match(detailOverlay, /requestedForecastAction === 'own'/)
 })
 
-test('forecast progress and failure stay quiet inside the exact target week without a second planning decision', () => {
+test('forecast progress, failure, and refresh are visible in the dedicated Forecast without creating global adoption authority', () => {
   const facilitator = fs.readFileSync(new URL('../../../facilitator/syllabus/page.js', import.meta.url), 'utf8')
-  const document = fs.readFileSync(new URL('../../../components/syllabus/SyllabusDocument.js', import.meta.url), 'utf8')
-  assert.match(document, /week\.week_start === startOfSyllabusWeek\(proposedForecastTargetWeek\)/)
-  assert.match(document, /Preparing next week&apos;s AI lesson suggestions/)
-  assert.doesNotMatch(document, /Retry forecast|Use this forecast/)
+  assert.match(facilitator, /Ms\. Sonoma is preparing the next one-week forecast/)
+  assert.match(facilitator, /forecastError && <div className=\{styles\.error\}/)
+  assert.match(facilitator, /Refresh forecast/)
+  assert.match(facilitator, /forecastProposalItems\.length > 0/)
+  assert.doesNotMatch(facilitator, /Use this forecast|activateLearningProposal/)
   assert.match(facilitator, /setForecastError\(cause\.message\)/)
   assert.doesNotMatch(facilitator.slice(facilitator.indexOf('async function createLearningForecast'), facilitator.indexOf('function openSectionEditor')), /setError\(cause\.message\)/)
 })

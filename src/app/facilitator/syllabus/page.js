@@ -549,6 +549,16 @@ export default function SyllabusPage() {
     }
   }
 
+  function openForecastSuggestion(item, requestedForecastAction = '') {
+    if (!item) return
+    setSelectedSyllabusLesson({
+      item,
+      suggested: true,
+      recoveryRequired: recoveryRequiredLineages.has(item.lineage_id),
+      requestedForecastAction,
+    })
+  }
+
   async function materializeForecast(item, { proposal = null, existingLessonKey = '', expectedActiveRevisionId = syllabus?.active_revision?.id } = {}) {
     const lineageId = item?.lineage_id
     if (!lineageId || recoveryRequiredLineages.has(lineageId)) return
@@ -592,6 +602,9 @@ export default function SyllabusPage() {
   const forecastGroups = useMemo(() => groupForecast(displayForecast), [displayForecast])
   const guidanceSubjects = guidanceSubjectNames(displayRevision?.teaching_guidance, displayRevision?.subjects)
   const referencedSubjects = useMemo(() => referencedSubjectKeys(draft?.weekly_pattern, draft?.forecast_items), [draft?.weekly_pattern, draft?.forecast_items])
+  const forecastProposalItems = useMemo(() => [...(learningProposal?.forecast_items || [])]
+    .filter((item) => item?.origin === 'learning_forecast')
+    .sort((a, b) => dateOnly(a.planned_date).localeCompare(dateOnly(b.planned_date)) || Number(a.sort_order || 0) - Number(b.sort_order || 0)), [learningProposal?.forecast_items])
 
   function addDraftSubject() {
     const name = newSubject.trim()
@@ -969,6 +982,42 @@ export default function SyllabusPage() {
 
           {draft && !editingActiveSyllabus && <section className={styles.proposalBanner}><div><strong>Syllabus proposal</strong><p>Review the complete plan. Activation creates a new immutable revision effective today.</p></div><div className={styles.effectiveDate}><strong>Effective today</strong><span>{dateOnly(draft.effective_from)}</span></div></section>}
 
+          {!draft && syllabus?.has_active_syllabus && !planAheadOpen && <section className={styles.learningProposal} aria-label="Ms. Sonoma forecast">
+            <div className={styles.proposalHeading}>
+              <div>
+                <p className={styles.eyebrow}>MS. SONOMA / FORECAST</p>
+                <h2>A week ahead</h2>
+                <p>Ms. Sonoma reviews the learner&apos;s current Syllabus, learning evidence, and recent instructional territory to suggest what should come next. These are recommendations, not changes to the active Syllabus.</p>
+              </div>
+              <span>{currentTargetForecastWeek ? weekLabel(currentTargetForecastWeek) : 'Next week'}</span>
+            </div>
+
+            {forecastBusy && <p className={styles.statusMessage} role="status">Ms. Sonoma is preparing the next one-week forecast...</p>}
+            {!forecastBusy && forecastError && <div className={styles.error} role="alert">{forecastError}</div>}
+            {forecastProposalItems.length > 0 && <div className={styles.changeList}>
+              {forecastProposalItems.map((item) => {
+                const recoveryRequired = recoveryRequiredLineages.has(item.lineage_id)
+                const itemBusy = materializingLineage === item.lineage_id || replacingLineage === item.lineage_id
+                return <article key={item.lineage_id} data-forecast-lineage={item.lineage_id}>
+                  <strong>{item.subject}: {item.title}</strong>
+                  {item.description && <p>{item.description}</p>}
+                  <small>Suggested for {new Date(`${dateOnly(item.planned_date)}T12:00:00`).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}.</small>
+                  {recoveryRequired && <p><strong>Recovery required before this suggestion can generate a lesson.</strong></p>}
+                  <div className={styles.conceptActions}>
+                    <button type="button" className={styles.primaryButton} disabled={!planningAccess.can_change_intent || forecastBusy || itemBusy || recoveryRequired} onClick={() => void materializeForecast(item, { proposal: learningProposal })}>{materializingLineage === item.lineage_id ? 'Generating...' : 'Generate lesson'}</button>
+                    <button type="button" className={styles.secondaryButton} disabled={!planningAccess.can_change_intent || forecastBusy || itemBusy || recoveryRequired} onClick={() => openForecastSuggestion(item, 'change')}>Generate with changes</button>
+                    <button type="button" className={styles.secondaryButton} disabled={!planningAccess.can_change_intent || forecastBusy || itemBusy || recoveryRequired} onClick={() => openForecastSuggestion(item, 'own')}>Create your own lesson</button>
+                  </div>
+                </article>
+              })}
+            </div>}
+            {!forecastBusy && forecastProposalItems.length === 0 && <p className={styles.statusMessage}>{learningMessage || 'Ms. Sonoma does not have a new lesson recommendation for the next forecast week yet.'}</p>}
+            <div className={styles.proposalDecision}>
+              <p>{learningMessage || 'Forecast suggestions remain provisional until you choose what to do with each lesson.'}</p>
+              {planningAccess.can_change_intent && <button type="button" className={styles.secondaryButton} disabled={forecastBusy || Boolean(materializingLineage) || Boolean(replacingLineage)} onClick={() => { forecastAttempt.current = ''; void createLearningForecast() }}>{forecastBusy ? 'Forecasting...' : 'Refresh forecast'}</button>}
+            </div>
+          </section>}
+
           {draft && !editingActiveSyllabus ? <div className={styles.contentGrid}>
             <div className={styles.sideColumn}>
               <section className={styles.section}>
@@ -1047,13 +1096,7 @@ export default function SyllabusPage() {
               onDayAction={syllabusHydrated ? openDayAction : null}
               onEditSection={planningAccess.can_change_intent && syllabusHydrated ? openSectionEditor : null}
               onOpenPlanning={planningAccess.can_change_intent && syllabusHydrated ? () => setPlanAheadOpen(true) : null}
-              proposedForecastItems={learningProposal?.forecast_items || []}
               proposedForecastTargetWeek={currentTargetForecastWeek}
-              forecastBusy={forecastBusy}
-              forecastError={forecastError}
-              forecastMessage={learningMessage}
-              materializingForecastLineage={materializingLineage}
-              isForecastRecoveryRequired={(item) => recoveryRequiredLineages.has(item.lineage_id)}
               planningBusy={working || Boolean(materializingLineage)}
               onWeekChange={(weekStart) => setSelectedWeekStart(weekStart)}
               restoreWeekStart={selectedWeekStart}

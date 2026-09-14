@@ -238,8 +238,8 @@ export default function SyllabusDocument({
           <time dateTime={week.week_start}>{weekRangeLabel}</time>
         </header>
         {isForecastWeek && role === 'facilitator' && <div className={styles.forecastIntro}>
-          <strong>Ms. Sonoma&apos;s forecast</strong>
-          <span>These are provisional lesson directions based on this learner&apos;s current Syllabus and learning evidence. Open a suggestion to generate it, change it, or create your own lesson.</span>
+          <strong>Ms. Sonoma&apos;s forecast week</strong>
+          <span>Review the dedicated Forecast above for Ms. Sonoma&apos;s recommendations. This week view shows the Syllabus schedule itself.</span>
         </div>}
 
         <div className={styles.entries} data-selected-week={week.week_start} aria-busy={contentLoading ? 'true' : undefined}>
