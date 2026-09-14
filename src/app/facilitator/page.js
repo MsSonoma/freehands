@@ -1,5 +1,6 @@
 'use client'
 
+import { proposalForLesson } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
@@ -472,7 +473,7 @@ export default function FacilitatorPage() {
       const json = await response.json()
       if (!pageIdentity.current.startsWith(`${requestLearnerId}:`)) return null
       if (!response.ok) throw new Error(json.error || 'Could not update Syllabus planning')
-      if (action === 'replace_forecast') {
+      if (action === 'replace_forecast' && json.proposal_revision) {
         setLearningProposal(json)
         return json
       }
@@ -499,9 +500,9 @@ export default function FacilitatorPage() {
   }
 
   async function createOwnForecastLesson(item, values) {
-    const proposalRevisionId = learningProposal?.proposal_revision?.id
-    if (!item?.lineage_id || !proposalRevisionId || !values?.title?.trim() || !values?.description?.trim()) return false
-    const result = await planningPost('edit_forecast', {
+    const proposalRevisionId = proposalForLesson(item, learningProposal, syllabus?.forecast_items || [], syllabus?.active_revision?.id)?.proposal_revision?.id
+    if (!item?.lineage_id || !values?.title?.trim() || !values?.description?.trim()) return false
+    const result = await planningPost(proposalRevisionId ? 'edit_forecast' : 'edit', {
       proposalRevisionId,
       lineageId: item.lineage_id,
       title: values.title,
@@ -512,14 +513,14 @@ export default function FacilitatorPage() {
     return materializeForecast(edited, { expectedActiveRevisionId: result.active_revision.id })
   }
   async function generateForecastWithChanges(item, changeRequest) {
-    if (!item?.lineage_id || replacingLineage || !learningProposal?.proposal_revision?.id) return false
+    if (!item?.lineage_id || replacingLineage) return false
     setReplacingLineage(item.lineage_id)
     try {
-      const replacement = await planningPost('replace_forecast', { proposalRevisionId: learningProposal.proposal_revision.id, lineageId: item.lineage_id, changeRequest })
+      const replacement = await planningPost('replace_forecast', { proposalRevisionId: proposalForLesson(item, learningProposal, syllabus?.forecast_items || [], syllabus?.active_revision?.id)?.proposal_revision?.id, lineageId: item.lineage_id, changeRequest })
       const revised = replacement?.forecast_items?.find((candidate) => String(candidate.lineage_id) === String(item.lineage_id))
-      if (!replacement?.proposal_revision?.id || !revised) return false
+      if ((!replacement?.proposal_revision?.id && !replacement?.active_revision?.id) || !revised) return false
       return await materializeForecast(revised, {
-        proposal: { proposal_revision: replacement.proposal_revision, forecast_items: replacement.forecast_items || [] },
+        proposal: replacement.proposal_revision ? { proposal_revision: replacement.proposal_revision, forecast_items: replacement.forecast_items || [] } : null,
         expectedActiveRevisionId: replacement.active_revision_id || syllabus.active_revision.id,
       })
     } finally {
@@ -529,7 +530,9 @@ export default function FacilitatorPage() {
 
   async function materializeForecast(item, { proposal = null, existingLessonKey = '', expectedActiveRevisionId = syllabus?.active_revision?.id } = {}) {
     const lineageId = item?.lineage_id
-    if (!lineageId || recoveryRequiredLineages.has(lineageId)) return
+    if (!lineageId || materializingLineage || recoveryRequiredLineages.has(lineageId)) return false
+    const requestedLearnerId = learnerId
+    const stillCurrent = () => pageIdentity.current.startsWith(`${requestedLearnerId}:`)
     setMaterializingLineage(lineageId)
     setError('')
     try {
@@ -545,6 +548,7 @@ export default function FacilitatorPage() {
         }),
       })
       const json = await response.json()
+      if (!stillCurrent()) return false
       if (!response.ok) {
         if (json?.code === 'MATERIALIZATION_RECOVERY_REQUIRED') {
           setRecoveryRequiredLineages((current) => new Set(current).add(lineageId))
@@ -554,7 +558,10 @@ export default function FacilitatorPage() {
       await loadCurrent()
       return true
     } catch (cause) {
-      setError(cause.message)
+      if (!stillCurrent()) return false
+      // Adoption may already have succeeded; refresh before permitting a retry.
+      await loadCurrent(requestedLearnerId)
+      if (stillCurrent()) setError(cause.message)
       return false
     } finally {
       setMaterializingLineage('')
@@ -1050,7 +1057,7 @@ export default function FacilitatorPage() {
             }}
             onGenerate={(item) => {
               setSelectedSyllabusLesson(null)
-              void materializeForecast(item, { proposal: item.origin === 'learning_forecast' ? learningProposal : null })
+              void materializeForecast(item, { proposal: proposalForLesson(item, learningProposal, syllabus?.forecast_items || [], syllabus?.active_revision?.id) })
             }}
             onGenerateWithChanges={(item, changeRequest) => generateForecastWithChanges(item, changeRequest)}
             onCreateOwnLesson={createOwnForecastLesson}

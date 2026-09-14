@@ -59,8 +59,9 @@ export function buildFuturePlanningProjection({
   const occupiedSlots = new Set(activeItems
     .filter((item) => item?.item_type !== 'slate_assignment' && validDate(item?.planned_date))
     .map(syllabusSlotKey))
+  const activeLineages = new Set((timelineItems || []).map(item => String(item?.lineage_id || '')).filter(Boolean))
   const forecastItems = provisionalForecastPlanningItems(proposedForecastItems, { rangeStart: start, rangeEnd: end, noSchoolDates })
-    .filter((item) => !occupiedSlots.has(syllabusSlotKey(item)))
+    .filter((item) => !activeLineages.has(String(item.lineage_id)) && !occupiedSlots.has(syllabusSlotKey(item)))
   const reservedSlots = new Set([...occupiedSlots, ...forecastItems.map(syllabusSlotKey)])
   const openSlots = []
 

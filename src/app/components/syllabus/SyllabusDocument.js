@@ -15,6 +15,7 @@ import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling
 import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/lib/syllabus/learnerPresentation.mjs'
 import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
 import { buildFuturePlanningProjection } from '@/app/lib/syllabus/futurePlanningProjection.mjs'
+import { isUngeneratedSyllabusLesson, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import styles from './SyllabusDocument.module.css'
 
 const STATE_COPY = {
@@ -56,21 +57,22 @@ function teachingGuidanceSummary(guidance) {
   return values
 }
 
-function ForecastSuggestion({ item, busy, recoveryRequired, onSelect }) {
+function ForecastSuggestion({ item, busy, generating, recoveryRequired, suggested = true, onSelect }) {
   const disabled = busy
+  const generation = lessonGenerationPresentation(item, { busy: generating, recoveryRequired })
   return <div
     className={`${styles.suggestedEntry} ${onSelect && !disabled ? styles.selectableEntry : ''}`}
     data-forecast-lineage={item.lineage_id}
     role={onSelect && !disabled ? 'button' : undefined}
     tabIndex={onSelect && !disabled ? 0 : undefined}
     aria-label={onSelect && !disabled ? `Open AI forecast suggestion details for ${item.title}` : undefined}
-    onClick={onSelect && !disabled ? () => onSelect(item, { suggested: true, recoveryRequired }) : undefined}
-    onKeyDown={onSelect && !disabled ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(item, { suggested: true, recoveryRequired }) } } : undefined}
+    onClick={onSelect && !disabled ? () => onSelect(item, { suggested, recoveryRequired: generation.blocked }) : undefined}
+    onKeyDown={onSelect && !disabled ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(item, { suggested, recoveryRequired: generation.blocked }) } } : undefined}
   >
     <div className={styles.entryBody}>
       <p className={styles.subject}>{item.subject}</p>
       <h4>{item.title}</h4>
-      <span className={styles.suggestedLabel}>{recoveryRequired ? 'Recovery required' : 'AI forecast suggestion'}</span>
+      <span className={styles.suggestedLabel}>{generation.label}</span>
     </div>
     {onSelect && !disabled && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
   </div>
@@ -243,9 +245,11 @@ export default function SyllabusDocument({
             {isNoSchool && <div className={styles.dayOffNotice}><strong>{noSchoolByDate[day.date] || 'Day off'}</strong><span>{presentations.length ? `${presentations.length} existing ${presentations.length === 1 ? 'item remains' : 'items remain'}` : 'No lessons planned'}</span></div>}
             {!isNoSchool && presentations.length === 0 && <p className={styles.emptyDay}>{forecastBusy && day.date >= forecastStart && day.date <= forecastEnd ? 'Preparing suggestions...' : 'No lessons'}</p>}
             {presentations.map(({ kind, item }) => {
-            if (kind === 'suggested') return <ForecastSuggestion
+            if (kind === 'suggested' || isUngeneratedSyllabusLesson(item)) return <ForecastSuggestion
               key={item.lineage_id || item.id}
               item={item}
+              suggested={kind === 'suggested'}
+              generating={materializingForecastLineage === item.lineage_id}
               busy={forecastBusy || planningBusy || Boolean(materializingForecastLineage)}
               recoveryRequired={isForecastRecoveryRequired(item)}
               onSelect={role === 'facilitator' && onSelectLesson ? onSelectLesson : null}
@@ -292,7 +296,6 @@ export default function SyllabusDocument({
                   {item.capacity_conflict && <span className={styles.placementLabel}>Manual capacity exception</span>}
                   {item.is_overdue_intent && <span className={styles.placementLabel}>Carried into NOW from {prettyDate(item.original_placement_date, { month: 'short', day: 'numeric' })}</span>}
                   {item.origin === 'mastery_reforecast' && <span className={styles.statusLabel}>Mastery follow-up</span>}
-                  {item.origin === 'learning_forecast' && !item.lesson_key && <span className={styles.statusLabel}>Planned concept</span>}
                 </div>
                 {onSelectLesson && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
                 {role === 'learner' && week.state === 'now' && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}

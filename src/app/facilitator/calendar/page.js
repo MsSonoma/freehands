@@ -1,5 +1,6 @@
 'use client'
 
+import { proposalForLesson, isUngeneratedSyllabusLesson, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
@@ -33,12 +34,12 @@ function prettyDate(value) {
 }
 
 function statusLabel(item) {
-  if (item?.planning_state === 'forecast' || item?.presentation_kind === 'suggested_inactive') return 'AI forecast suggestion'
+  if (isUngeneratedSyllabusLesson(item)) return lessonGenerationPresentation(item).label
   if (item?.actual_kind === 'completed' || item?.historical_record === true) return 'Completed'
   if (item?.actual_kind === 'in_progress') return 'In progress'
   if (item?.actual_kind === 'incomplete') return 'Incomplete'
   if (item?.needs_placement) return 'Needs placement'
-  if (!item?.lesson_key) return 'Planned concept'
+  if (!item?.lesson_key) return 'Ready to generate'
   if (item?.item_type === 'slate_assignment') return 'Mr. Slate practice'
   if (item?.readiness_state) return String(item.readiness_state).replaceAll('_', ' ')
   return 'Planned'
@@ -301,7 +302,7 @@ export default function CalendarPage() {
       })
       const json = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(json.error || 'Could not update future planning')
-      if (action === 'replace_forecast') {
+      if (action === 'replace_forecast' && json.proposal_revision) {
         setSyllabus((current) => current ? {
           ...current,
           proposed_learning_forecast: {
@@ -322,7 +323,7 @@ export default function CalendarPage() {
 
   async function materializePlanningItem(item, { proposal = null, existingLessonKey = '', expectedRevisionId = activeRevisionId } = {}) {
     const lineageId = item?.lineage_id
-    if (!lineageId || recoveryRequiredLineages.has(lineageId)) return false
+    if (!lineageId || materializingLineage || recoveryRequiredLineages.has(lineageId)) return false
     setMaterializingLineage(lineageId)
     setError('')
     try {
@@ -346,7 +347,9 @@ export default function CalendarPage() {
       await refreshPlanningViews()
       return true
     } catch (cause) {
-      setError(cause.message || 'Could not prepare this planned lesson')
+      await refreshPlanningViews()
+      setSelectedLesson(null)
+      setError(cause.message || 'Could not generate this lesson')
       return false
     } finally {
       setMaterializingLineage('')
@@ -360,9 +363,9 @@ export default function CalendarPage() {
   }
 
   async function createOwnForecastLesson(item, values) {
-    const proposalRevisionId = learningProposal?.proposal_revision?.id
-    if (!item?.lineage_id || !proposalRevisionId || !values?.title?.trim() || !values?.description?.trim()) return false
-    const result = await planningPost('edit_forecast', {
+    const proposalRevisionId = proposalForLesson(item, learningProposal, syllabus?.forecast_items || [], activeRevisionId)?.proposal_revision?.id
+    if (!item?.lineage_id || !values?.title?.trim() || !values?.description?.trim()) return false
+    const result = await planningPost(proposalRevisionId ? 'edit_forecast' : 'edit', {
       proposalRevisionId,
       lineageId: item.lineage_id,
       title: values.title,
@@ -374,18 +377,18 @@ export default function CalendarPage() {
   }
 
   async function generateForecastWithChanges(item, changeRequest) {
-    if (!item?.lineage_id || !learningProposal?.proposal_revision?.id || replacingLineage) return false
+    if (!item?.lineage_id || replacingLineage) return false
     setReplacingLineage(item.lineage_id)
     try {
       const replacement = await planningPost('replace_forecast', {
-        proposalRevisionId: learningProposal.proposal_revision.id,
+        proposalRevisionId: proposalForLesson(item, learningProposal, syllabus?.forecast_items || [], activeRevisionId)?.proposal_revision?.id,
         lineageId: item.lineage_id,
         changeRequest,
       })
       const revised = replacement?.forecast_items?.find((candidate) => String(candidate.lineage_id) === String(item.lineage_id))
-      if (!replacement?.proposal_revision?.id || !revised) return false
+      if ((!replacement?.proposal_revision?.id && !replacement?.active_revision?.id) || !revised) return false
       return materializePlanningItem(revised, {
-        proposal: { proposal_revision: replacement.proposal_revision, forecast_items: replacement.forecast_items || [] },
+        proposal: replacement.proposal_revision ? { proposal_revision: replacement.proposal_revision, forecast_items: replacement.forecast_items || [] } : null,
         expectedRevisionId: replacement.active_revision_id || activeRevisionId,
       })
     } finally {
@@ -580,7 +583,7 @@ export default function CalendarPage() {
                       type="button"
                       key={item.occurrence_id || item.id || `${item.title}-${item.sort_order}`}
                       onClick={() => selectCalendarItem(item)}
-                      style={{ width: '100%', textAlign: 'left', padding: 10, border: item?.planning_state === 'forecast' ? '1px dashed #c9c5bf' : '1px solid #e5e7eb', borderRadius: 8, background: item?.planning_state === 'forecast' ? '#f1f0ed' : syllabusCalendarItemCompleted(item) ? '#f9fafb' : '#fff', cursor: 'pointer' }}
+                      style={{ width: '100%', textAlign: 'left', padding: 10, border: isUngeneratedSyllabusLesson(item) ? '1px dashed #c9c5bf' : '1px solid #e5e7eb', borderRadius: 8, background: isUngeneratedSyllabusLesson(item) ? '#f1f0ed' : syllabusCalendarItemCompleted(item) ? '#f9fafb' : '#fff', cursor: 'pointer' }}
                     >
                       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'baseline' }}>
                         <span style={{ fontSize: 11, fontWeight: 800, textTransform: 'uppercase', color: '#6b7280' }}>{item.subject || 'Lesson'}</span>
@@ -588,7 +591,7 @@ export default function CalendarPage() {
                       </div>
                       <div style={{ marginTop: 3, fontWeight: 800, color: '#111827' }}>{item.title || 'Untitled lesson'}</div>
                       {teacher && item.item_type !== 'slate_assignment' && <div style={{ marginTop: 4, fontSize: 11, color: '#6b7280' }}>{instructionalTeacherLabel(teacher)}</div>}
-                      {!item.lesson_key && <div style={{ marginTop: 5, fontSize: 11, color: '#6b382c' }}>{item?.planning_state === 'forecast' ? 'Open this AI suggestion to use, change, or replace it' : 'Open to plan or prepare this concept'}</div>}
+                      {!item.lesson_key && <div style={{ marginTop: 5, fontSize: 11, color: '#6b382c' }}>{item?.planning_state === 'forecast' ? 'Open this AI suggestion to use, change, or replace it' : 'Open to generate or retry this lesson'}</div>}
                     </button>
                   )
                 })}
@@ -647,11 +650,11 @@ export default function CalendarPage() {
           onRemoveConcept={async (item) => Boolean(await planningPost('remove', { lineageId: item.lineage_id }))}
           onUseExisting={(item) => {
             setSelectedLesson(null)
-            void openExistingLessonPicker(item.planned_date, { mode: 'bind', item, proposal: item.origin === 'learning_forecast' ? learningProposal : null })
+            void openExistingLessonPicker(item.planned_date, { mode: 'bind', item, proposal: proposalForLesson(item, learningProposal, syllabus?.forecast_items || [], activeRevisionId) })
           }}
           onGenerate={(item) => {
             setSelectedLesson(null)
-            void materializePlanningItem(item, { proposal: item.origin === 'learning_forecast' ? learningProposal : null })
+            void materializePlanningItem(item, { proposal: proposalForLesson(item, learningProposal, syllabus?.forecast_items || [], activeRevisionId) })
           }}
           onGenerateWithChanges={generateForecastWithChanges}
           onCreateOwnLesson={createOwnForecastLesson}

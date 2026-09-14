@@ -7,7 +7,7 @@ import { aggregateFacilitatorEvidenceSession } from '../../masteryEvidence/repor
 import { createLearningForecastProposal } from '../learningForecast.server.mjs'
 import { materializeForecastOccurrence, reconstructForecastCarryForward } from '../materialization.server.mjs'
 import { composeSyllabusLessonTimeline } from '../lessonTimeline.mjs'
-import { activateProposedSyllabus, adoptLearningForecastLineage, carryForwardLearningForecastProposal } from '../revisions.server.mjs'
+import { activateProposedSyllabus, adoptLearningForecastLineage, carryForwardLearningForecastProposal, getActiveSyllabus } from '../revisions.server.mjs'
 import { validateSnapshot } from '../schema.mjs'
 import { syllabusItemActionsFor } from '../timeline.mjs'
 
@@ -904,4 +904,36 @@ test('forecast route stays separate from full-generation quota and materializati
   assert.match(materializeRoute, /facilitator\/lessons\/generate\/route\.js/)
   assert.match(materializeRoute, /mode:\s*'proposal'/)
   assert.doesNotMatch(materializeRoute, /lesson_schedule|scheduleLesson/)
+})
+
+
+test('failed forecast reload and retry keep one active lineage and reuse its generation receipt', async () => {
+  const repository = forecastRepository({ forecast: [] })
+  repository.listForecastMaterializationStates = async () => repository.state.receipts
+  const proposal = await createLearningForecastProposal({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, reports: [], now: NOW,
+    generateItems: async ({ slots }) => slots.map(slot => ({ title: `${slot.subject} lesson`, description: 'Explain one idea.' })),
+  })
+  const selected = proposal.forecast_items.find(row => row.origin === 'learning_forecast')
+  const common = { repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: selected.lineage_id, now: NOW, setInferenceSuppressed: preserveInferenceSuppression }
+  await assert.rejects(materializeForecastOccurrence({ ...common, proposalRevisionId: proposal.proposal_revision.id, expectedActiveRevisionId: ACTIVE,
+    generateLesson: async () => { throw new Error('Controlled first-attempt failure') },
+  }), { code: 'MATERIALIZATION_GENERATION_FAILED' })
+  const receipt = structuredClone(repository.state.receipts[0])
+  const reload = await getActiveSyllabus({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, now: NOW })
+  const failed = reload.timeline_items.find(row => row.lineage_id === selected.lineage_id)
+  assert.equal(failed.generation_status, 'generation_failed')
+  assert.equal(failed.lesson_key, null)
+  assert.equal(failed.planned_date, selected.planned_date)
+  assert.equal(JSON.stringify(reload).includes('Controlled first-attempt failure'), false)
+  const result = await materializeForecastOccurrence({ ...common, expectedActiveRevisionId: reload.active_revision.id,
+    generateLesson: async ({ materializationOperation }) => {
+      assert.equal(materializationOperation.id, receipt.id)
+      assert.equal(materializationOperation.recoverOnly, false)
+      return { lessonKey: 'generated/retried-exact.json' }
+    },
+  })
+  assert.equal(repository.state.receipts.length, 1)
+  assert.equal(repository.state.receipts[0].status, 'bound')
+  assert.equal(result.syllabus.forecast_items.filter(row => row.lineage_id === selected.lineage_id).length, 1)
+  assert.equal(result.lesson_key, 'generated/retried-exact.json')
 })

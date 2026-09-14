@@ -27,6 +27,7 @@ const date = '2026-09-14'
 let active = 'qa-revision-1', revisionNumber = 1, failForecast = false, forecastDelay = 80
 let committed = [{ id: 'qa-committed', occurrence_id: 'qa-committed', lineage_id: 'committed', planned_date: date, sort_order: 0, title: 'Committed Math', subject: 'Math', lesson_key: 'generated/committed.json', readiness_state: 'approved', item_type: 'lesson', origin: 'facilitator', placement_kind: 'scheduled', is_explicit_schedule: true }]
 let daysOff = [{ date: '2026-09-16', reason: 'Family day' }]
+let materializationAttempts = 0
 let suggestions = [
   { lineage_id: 'habitats', planned_date: date, sort_order: 1, subject: 'Science', title: 'Compare habitats', description: 'Explain two habitats using familiar examples.' },
   { lineage_id: 'writing', planned_date: '2026-09-15', sort_order: 0, subject: 'Language Arts', title: 'Explain a character', description: 'Use a story detail to explain a character choice.' },
@@ -83,11 +84,23 @@ try {
     if (url.pathname === '/api/syllabus/materialize') {
       const body = request.postDataJSON()
       assert.equal(body.expectedActiveRevisionId, active)
-      const item = suggestions.find(x => x.lineage_id === body.lineageId)
-      assert.ok(item)
+      let item = committed.find(x => x.lineage_id === body.lineageId)
+      if (item) assert.equal(body.proposalRevisionId, undefined, 'Active entry must not be re-adopted from a proposal')
+      else {
+        item = suggestions.find(x => x.lineage_id === body.lineageId)
+        assert.ok(item)
+        assert.equal(body.proposalRevisionId, proposal().id)
+        active = `qa-revision-${++revisionNumber}`
+        item = { ...item, occurrence_id: item.lineage_id, placement_kind: 'intent' }
+        committed.push(item)
+        suggestions = suggestions.filter(x => x.lineage_id !== item.lineage_id)
+      }
+      if (++materializationAttempts <= 2) {
+        item.generation_status = 'generation_failed'
+        return json({ code: 'MATERIALIZATION_GENERATION_FAILED', error: 'This lesson could not be generated. Retry this same Syllabus entry.' }, 502)
+      }
       active = `qa-revision-${++revisionNumber}`
-      committed.push({ ...item, origin: 'learning_forecast', lesson_key: `generated/${item.lineage_id}.json`, readiness_state: 'draft', occurrence_id: item.lineage_id, placement_kind: 'intent' })
-      suggestions = suggestions.filter(x => x.lineage_id !== item.lineage_id)
+      Object.assign(item, { lesson_key: `generated/${item.lineage_id}.json`, readiness_state: 'draft', generation_status: 'bound' })
       return json({ ok: true, kind: 'materialized', lesson_key: `generated/${item.lineage_id}.json` })
     }
     if (url.pathname === '/api/facilitator/pin') return json({ hasPin: false })
@@ -125,6 +138,21 @@ try {
   results.push('Reload restores the full Syllabus and automatically reloads its grey forecast.')
   await habitat.click()
   await page.getByRole('button', { name: 'Generate lesson', exact: true }).click()
+  await habitat.getByText('Generation failed - retry', { exact: true }).waitFor()
+  assert.equal(await page.locator('[data-forecast-lineage="habitats"]').count(), 1)
+  await page.locator('[data-forecast-lineage="writing"]').waitFor()
+  await page.locator('[data-forecast-lineage="habitats"][role="button"]').click()
+  await page.getByRole('button', { name: 'Retry generation', exact: true }).click()
+  await habitat.getByText('Generation failed - retry', { exact: true }).waitFor()
+  results.push('Failure refreshes the same dated entry; an immediate retry targets active lineage rather than adopting again.')
+  await page.reload()
+  await habitat.getByText('Generation failed - retry', { exact: true }).waitFor()
+  assert.equal(await page.getByText('Planned concept', { exact: true }).count(), 0)
+  await page.locator('[data-forecast-lineage="habitats"][role="button"]').click()
+  await page.getByRole('button', { name: 'Generate with changes', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Create your own lesson', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Retry generation', exact: true }).click()
+  results.push('Reload preserves failure status and the same generation controls; retry does not create another planned object.')
   await habitat.waitFor({ state: 'detached' })
   await page.getByText('Compare habitats', { exact: true }).waitFor()
   await page.locator('[data-forecast-lineage="writing"]').waitFor()

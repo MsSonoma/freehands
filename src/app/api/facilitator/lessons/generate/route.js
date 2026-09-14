@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server.js'
+import { isMissingStorageObject } from '../../../../lib/syllabus/storageObjectErrors.server.mjs'
 import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitlements.js'
 import { AI_MODEL } from '../../../../lib/aiModel.js'
 import { canonicalizeAiGeneratedLessonChoices } from '../../../../lib/aiGeneratedChoiceOrder.mjs'
@@ -317,8 +318,7 @@ export async function POST(request, deps = {}){
     const loadArtifact = async (identity) => {
       const { data, error } = await storage.download(identity.storagePath)
       if (error) {
-        const missing = error.statusCode === 404 || /not found|does not exist/i.test(String(error.message || ''))
-        if (missing) return null
+        if (await isMissingStorageObject(error)) return null
         throw new Error(error.message || 'Lesson artifact recovery failed')
       }
       return JSON.parse(await storageLessonText(data))

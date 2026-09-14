@@ -295,7 +295,7 @@ export async function materializeForecastOccurrence({
         throw failure
       }
       await repository.updateForecastMaterialization(receipt.id, { status: 'generation_failed', last_error: clean(error?.message).slice(0, 500) || 'Lesson generation failed' }).catch(() => {})
-      throw new SyllabusError('The planned concept was preserved, but the full lesson could not be generated.', 502, 'MATERIALIZATION_GENERATION_FAILED')
+      throw new SyllabusError('This lesson could not be generated. Retry this same Syllabus entry.', 502, 'MATERIALIZATION_GENERATION_FAILED')
     }
     try {
       await repository.updateForecastMaterialization(receipt.id, { lesson_key: lessonKey, status: 'generated', last_error: null })

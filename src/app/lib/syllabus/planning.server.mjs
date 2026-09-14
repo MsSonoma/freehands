@@ -127,9 +127,13 @@ export async function editFacilitatorConcept({ repository, facilitatorId, learne
   const current = await currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId })
   const matches = current.items.filter((item) => String(item.lineage_id) === String(lineageId))
   if (matches.length !== 1 || matches[0].lesson_key || String(matches[0].planned_date).slice(0, 10) < today) throw new SyllabusError('This concept is unavailable for editing.', 409, 'CONCEPT_NOT_EDITABLE')
+  if (typeof repository.findForecastMaterialization === 'function') {
+    const receipt = await repository.findForecastMaterialization(current.syllabus.id, lineageId)
+    if (receipt && (receipt.lesson_key || receipt.status !== 'generation_failed')) throw new SyllabusError('Finish recovery for this lesson before changing it.', 409, 'MATERIALIZATION_RECOVERY_REQUIRED')
+  }
   const fields = conceptFields({ title, description })
   const original = matches[0]
-  const edited = { ...original, ...fields, origin: 'facilitator', metadata: { ...(original.metadata || {}), facilitator_planning: { version: 1, action: 'edited', prior_origin: original.origin, active_revision_id: current.revision.id } } }
+  const edited = { ...original, ...fields, origin: 'facilitator', metadata: { ...(original.metadata || {}), facilitator_planning: { ...(original.metadata?.facilitator_planning || {}), version: 1, action: 'edited', prior_origin: original.origin, active_revision_id: current.revision.id } } }
   return activateSyllabus({ repository, facilitatorId, learnerId, expectedActiveRevisionId, now, today, snapshot: snapshot(current.revision, current.items.map((item) => String(item.lineage_id) === String(lineageId) ? edited : item), today, `Facilitator edited concept ${lineageId}`) })
 }
 
@@ -167,13 +171,21 @@ export async function editLearningForecastConcept({ repository, facilitatorId, l
 
 export async function replaceLearningForecastConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, proposalRevisionId, lineageId, changeRequest = '', generateItems, reports, loadReports = loadRecentMasteryReports, resolveLesson, now = new Date(), today = now.toISOString().slice(0, 10) }) {
   const current = await currentPlanning({ repository, facilitatorId, learnerId, expectedActiveRevisionId })
-  const proposal = await repository.findRevision(proposalRevisionId, current.syllabus.id)
-  const canonical = await repository.findLatestLearningForecastProposal(current.syllabus.id, current.revision.id)
-  if (!proposal || proposal.id !== canonical?.id || proposal.activated_at) throw new SyllabusError('This instructional forecast is no longer current.', 409, 'FORECAST_PROPOSAL_STALE')
-  const proposalItems = await repository.listForecastItems(proposal.id)
-  const matches = proposalItems.filter((item) => String(item.lineage_id) === String(lineageId) && item.origin === 'learning_forecast' && !item.lesson_key)
+  const proposal = proposalRevisionId ? await repository.findRevision(proposalRevisionId, current.syllabus.id) : null
+  if (proposalRevisionId) {
+    const canonical = await repository.findLatestLearningForecastProposal(current.syllabus.id, current.revision.id)
+    if (!proposal || proposal.id !== canonical?.id || proposal.base_revision_id !== current.revision.id || proposal.activated_at) throw new SyllabusError('This instructional forecast is no longer current.', 409, 'FORECAST_PROPOSAL_STALE')
+  }
+  const proposalItems = proposal ? await repository.listForecastItems(proposal.id) : current.items
+  const matches = proposalItems.filter((item) => String(item.lineage_id) === String(lineageId) && ['learning_forecast', 'facilitator'].includes(item.origin) && !item.lesson_key)
   if (matches.length !== 1) throw new SyllabusError('Only an exact provisional forecast concept can be replaced.', 409, 'FORECAST_PROPOSAL_STALE')
   const selected = matches[0]
+  if (String(selected.planned_date).slice(0, 10) < today) throw new SyllabusError('This lesson is in the past.', 409, 'CONCEPT_NOT_EDITABLE')
+  await assertInstructionalDateOpen(repository, facilitatorId, learnerId, String(selected.planned_date).slice(0, 10))
+  if (typeof repository.findForecastMaterialization === 'function') {
+    const receipt = await repository.findForecastMaterialization(current.syllabus.id, lineageId)
+    if (receipt && (receipt.lesson_key || receipt.status !== 'generation_failed')) throw new SyllabusError('Finish recovery for this lesson before changing it.', 409, 'MATERIALIZATION_RECOVERY_REQUIRED')
+  }
   const requestedChange = clean(changeRequest, 2000)
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
   const replacementSlots = [{ planned_date: selected.planned_date, subject: selected.subject, sort_order: selected.sort_order }]
@@ -197,6 +209,10 @@ export async function replaceLearningForecastConcept({ repository, facilitatorId
     }))[0]
   } catch { throw new SyllabusError('A replacement idea could not be generated. The current forecast was preserved.', 502, 'FORECAST_REPLACEMENT_FAILED') }
   const fields = conceptFields(generated)
+  if (!proposal) {
+    const updated = await editFacilitatorConcept({ repository, facilitatorId, learnerId, expectedActiveRevisionId, lineageId, ...fields, now, today })
+    return { ...updated, kind: 'active', active_revision_id: updated.active_revision.id }
+  }
   const planningMetadata = forecastPlanningMetadata(generated)
   const replacement = {
     ...selected,

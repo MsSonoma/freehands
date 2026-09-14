@@ -183,11 +183,14 @@ test('grey forecast lessons are projected into dated rows and open the real per-
   assert.match(home, /forecastWindowEnd=\{forecastWindow\.end\}/)
   assert.match(doc, /buildFuturePlanningProjection/)
   assert.match(doc, /syllabusDayPresentation\(day\.items, suggestions\)/)
-  assert.match(doc, /onSelect\(item, \{ suggested: true, recoveryRequired \}\)/)
+  assert.match(doc, /onSelect\(item, \{ suggested, recoveryRequired: generation\.blocked \}\)/)
   assert.match(doc, /includeOpenSlots: false/)
   assert.match(doc, /Retry forecast/)
   const overlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')
-  for (const action of ['Generate lesson', 'Generate with changes', 'Create your own lesson']) assert.ok(overlay.includes(action))
+  const generationState = fs.readFileSync(new URL('../lessonGenerationState.mjs', import.meta.url), 'utf8')
+  for (const action of ['Generate lesson', 'Generate with changes', 'Create your own lesson', 'Retry generation']) assert.ok(`${overlay}\n${generationState}`.includes(action))
+  assert.match(overlay, /generation\.action/)
+  assert.match(doc, /isUngeneratedSyllabusLesson\(item\)/)
   assert.match(home, /onGenerateWithChanges=/)
   assert.match(home, /onCreateOwnLesson=\{createOwnForecastLesson\}/)
   assert.doesNotMatch(home, /activateLearningProposal/)
@@ -228,4 +231,36 @@ test('request identity rejects a late response after the learner or revision cha
   const identity = buildForecastViewIdentity({ learnerId: LEARNER, activeRevisionId: ACTIVE, targetWeek: '2026-09-14' })
   assert.equal(isCurrentForecastResponse({ requestIdentity: identity, currentIdentity: identity, requestSequence: 1, currentSequence: 2 }), false)
   assert.equal(isCurrentForecastResponse({ requestIdentity: identity, currentIdentity: 'another-learner', requestSequence: 1, currentSequence: 1 }), false)
+})
+
+
+test('generation with changes handles an already-selected lesson in place without recreating a proposal', async () => {
+  const original = concept({ origin: 'learning_forecast' })
+  const repo = repository([original])
+  const result = await replaceLearningForecastConcept({ repository: repo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE,
+    lineageId: original.lineage_id, changeRequest: 'Use familiar examples.', reports: [], now: NOW, today: '2026-08-31',
+    generateItems: async ({ slots, context }) => {
+      assert.equal(slots.length, 1)
+      assert.equal(context.syllabus.facilitator_change_request, 'Use familiar examples.')
+      return [{ title: 'Fractions with examples', description: 'Use familiar examples to compare fractions.' }]
+    },
+  })
+  assert.equal(result.kind, 'active')
+  assert.equal(result.proposal_revision, undefined)
+  const edited = result.forecast_items.find(row => row.lineage_id === original.lineage_id)
+  assert.equal(edited.title, 'Fractions with examples')
+  assert.equal(edited.planned_date, original.planned_date)
+  assert.equal(edited.lineage_id, original.lineage_id)
+})
+
+
+test('an in-flight or ambiguous generation cannot be rewritten through custom lesson editing', async () => {
+  for (const status of ['generating', 'generated', 'binding_failed', 'recovery_required']) {
+    const repo = repository([concept({ origin: 'learning_forecast' })])
+    repo.findForecastMaterialization = async () => ({ status, lesson_key: null })
+    await assert.rejects(editFacilitatorConcept({ repository: repo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE,
+      lineageId: concept().lineage_id, title: 'Changed', description: 'Must not alter pending generation.', now: NOW, today: '2026-08-31',
+    }), { code: 'MATERIALIZATION_RECOVERY_REQUIRED' })
+    assert.equal(repo.state.syllabus.active_revision_id, ACTIVE)
+  }
 })

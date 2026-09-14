@@ -109,6 +109,12 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to claim forecast materialization')
       return data
     },
+    async listForecastMaterializationStates(syllabusId) {
+      const { data, error } = await admin.from('syllabus_forecast_materializations')
+        .select('lineage_id,status').eq('syllabus_id', syllabusId)
+      throwOn(error, 'Failed to read lesson generation states')
+      return data || []
+    },
     async findForecastMaterialization(syllabusId, lineageId) {
       const { data, error } = await admin.from('syllabus_forecast_materializations')
         .select('*')

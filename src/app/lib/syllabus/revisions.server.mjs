@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { withLessonGenerationStates } from './lessonGenerationState.mjs'
 import { SyllabusError, validateSnapshot } from './schema.mjs'
 import { buildLegacySeed } from './legacySeed.server.mjs'
 import { applyTeachingGuidanceOverride } from './teachingGuidance.mjs'
@@ -105,12 +106,15 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
     ? await repository.findLatestLearningForecastProposal(syllabus.id, activeRevision.id)
     : null
   const learningForecastItems = learningForecastRevision ? await repository.listForecastItems(learningForecastRevision.id) : []
+  // Ownership is verified above; expose only status, never raw storage errors.
+  const generationStates = typeof repository.listForecastMaterializationStates === 'function'
+    ? await repository.listForecastMaterializationStates(syllabus.id) : []
   return {
     has_active_syllabus: true,
     syllabus,
     active_revision: activeRevision,
-    forecast_items: forecastItems,
-    timeline_items: timelineItems,
+    forecast_items: withLessonGenerationStates(forecastItems, generationStates),
+    timeline_items: withLessonGenerationStates(timelineItems, generationStates),
     no_school_dates: noSchoolDates,
     proposed_learning_forecast: learningForecastRevision ? {
       revision: learningForecastRevision,
