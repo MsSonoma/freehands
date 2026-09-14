@@ -166,7 +166,7 @@ test('the retired Syllabus URL only redirects to Home with query context preserv
 
 test('automatic requests survive week navigation and begin only after authoritative hydration', () => {
   const home = homeSource()
-  const start = home.indexOf('useEffect(() => {\n    if (!syllabusHydrated) return undefined')
+  const start = home.indexOf('useEffect(() => {\n    if (!syllabusHydrated ||')
   const effect = home.slice(start, home.indexOf('  useEffect(() => {', start + 1))
   assert.ok(start >= 0)
   assert.match(effect, /refreshSequence: forecastRefreshSequence/)
@@ -183,7 +183,9 @@ test('grey forecast lessons are projected into dated rows and open the real per-
   assert.match(home, /forecastWindowEnd=\{forecastWindow\.end\}/)
   assert.match(doc, /buildFuturePlanningProjection/)
   assert.match(doc, /syllabusDayPresentation\(day\.items, suggestions\)/)
-  assert.match(doc, /onSelect\(item, \{ suggested, recoveryRequired: generation\.blocked \}\)/)
+  assert.match(doc, /onSelect\(item, \{ suggested, recoveryRequired: recoveryRequired \|\| item\.generation_status === 'recovery_required' \}\)/)
+  assert.doesNotMatch(doc, /onSelect && !disabled|busy=\{forecastBusy \|\| planningBusy/)
+  assert.match(home, /actionBlockReason=\{lessonMutationBlockReason/)
   assert.match(doc, /includeOpenSlots: false/)
   assert.match(doc, /Retry forecast/)
   const overlay = fs.readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8')

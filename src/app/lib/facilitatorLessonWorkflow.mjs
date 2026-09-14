@@ -31,6 +31,7 @@ export function buildLessonWorkflowReturnHref({
   plannedDate = '',
   lessonKey = '',
   occurrenceId = '',
+  reviewComplete = false,
 } = {}) {
   const normalizedSource = normalizeLessonWorkflowSource(source)
   if (normalizedSource === 'library') return '/facilitator/lessons'
@@ -42,6 +43,8 @@ export function buildLessonWorkflowReturnHref({
   const canonicalKey = normalizeLessonKey(lessonKey)
   if (canonicalKey) params.set('lessonKey', canonicalKey)
   if (occurrenceId) params.set('occurrenceId', String(occurrenceId))
+  // Navigation-only flag: close review UI, never grant approval from a URL.
+  if (reviewComplete) params.set('review', 'complete')
   const query = params.toString()
   return query ? `${path}?${query}` : path
 }

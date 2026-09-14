@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server.js'
+import { requireAssociationLearner, upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
+import { validateLearnerId } from '../../../../lib/syllabus/schema.mjs'
 import { featuresForTier, resolveEffectiveTier } from '../../../../lib/entitlements.js'
 import { buildCanonicalLessonIdentity } from '../../../../lib/facilitatorPreparation.mjs'
 
@@ -88,6 +90,16 @@ export async function POST(request, deps = {}){
   const file = (body?.file || '').toString()
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
 
+  let learnerId = ''
+  if (body?.learnerId != null) {
+    try {
+      learnerId = validateLearnerId(body.learnerId)
+      await requireAssociationLearner(supabase, user.id, learnerId)
+    } catch (error) {
+      return NextResponse.json({ error: error.message || 'Learner not found or unauthorized' }, { status: error.status || 403 })
+    }
+  }
+
   try {
     const storagePath = `facilitator-lessons/${user.id}/${file}`
     const lessonStorage = supabase.storage.from('lessons')
@@ -138,6 +150,22 @@ export async function POST(request, deps = {}){
     }
     const totalTime = Date.now() - startTime
     const identity = buildCanonicalLessonIdentity({ file, ownerId: user.id, storagePath })
+    let association = null
+    if (learnerId) {
+      try {
+        // Reuse the confirmed artifact instead of asking a second client request to read it again.
+        association = await upsertLessonAssociation({
+          admin: supabase, facilitatorId: user.id, learnerId,
+          lessonKey: identity.lessonKey, subject: confirmedLesson.subject, title: confirmedLesson.title,
+          readinessState: 'approved', associationSource: 'generator', verifyLearner: false,
+        })
+      } catch {
+        return NextResponse.json({
+          error: 'The lesson is approved, but the Syllabus update could not be confirmed. Retry to finish; approval will not be duplicated.',
+          code: 'APPROVAL_ASSOCIATION_FAILED', retryable: true,
+        }, { status: 503 })
+      }
+    }
     return NextResponse.json({
       ok: true,
       approved: true,
@@ -147,6 +175,7 @@ export async function POST(request, deps = {}){
       storagePath,
       ownerId: user.id,
       lesson: confirmedLesson,
+      ...(association ? { association } : {}),
       timeMs: totalTime,
     })
   } catch (e) {

@@ -1,5 +1,8 @@
 'use client'
 
+import { fetchForecastJson } from '@/app/lib/syllabus/forecastClient.mjs'
+import { isCurrentLearnerSnapshot, resolveSyllabusSelection, lessonMutationBlockReason } from '@/app/lib/syllabus/interactionState.mjs'
+
 import { proposalForLesson } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -207,6 +210,9 @@ export default function FacilitatorPage() {
   const [dayActionError, setDayActionError] = useState('')
   const [forecastRefreshSequence, setForecastRefreshSequence] = useState(0)
   const forecastAttempt = useRef('')
+  const forecastController = useRef(null)
+  const materializationRequest = useRef(null)
+  useEffect(() => () => { forecastController.current?.abort() }, [])
   const forecastRequestSequence = useRef(0)
   const forecastViewIdentity = useRef('')
   const loadSequence = useRef(0)
@@ -241,7 +247,7 @@ export default function FacilitatorPage() {
         const returnDate = returnParams.get('date') || ''
         const preferredLearner = safeItems.some((item) => String(item.id) === String(requestedLearner)) ? requestedLearner : remembered
         if (returnDate) setSelectedWeekStart(startOfSyllabusWeek(returnDate))
-        setReturnFocus({ plannedDate: returnDate, lessonKey: returnParams.get('lessonKey') || '', occurrenceId: returnParams.get('occurrenceId') || '' })
+        setReturnFocus({ plannedDate: returnDate, lessonKey: returnParams.get('lessonKey') || '', occurrenceId: returnParams.get('occurrenceId') || '', open: returnParams.get('review') !== 'complete' })
         setToken(session?.access_token || '')
         setLearners(safeItems)
         setLearnerId(safeItems.some((item) => String(item.id) === String(preferredLearner)) ? preferredLearner : (safeItems[0]?.id || ''))
@@ -257,6 +263,26 @@ export default function FacilitatorPage() {
     })()
     return () => { cancelled = true }
   }, [isAuthenticated])
+
+  function applySyllabusSnapshot(snapshot, id = learnerId) {
+    if (!isCurrentLearnerSnapshot(snapshot, id) || !pageIdentity.current.startsWith(`${id}:`)) return false
+    loadSequence.current++
+    forecastRequestSequence.current++
+    forecastController.current?.abort()
+    forecastController.current = null
+    pageIdentity.current = `${id}:${snapshot.active_revision.id}`
+    setSyllabus(snapshot)
+    setLearningProposal(snapshot.proposed_learning_forecast ? {
+      proposal_revision: snapshot.proposed_learning_forecast.revision,
+      forecast_items: snapshot.proposed_learning_forecast.forecast_items || [],
+    } : null)
+    setSyllabusHydrated(true)
+    setLoading(false)
+    setContentLoading(false)
+    setForecastBusy(false)
+    setForecastRefreshSequence(current => current + 1)
+    return true
+  }
 
   async function loadCurrent(id = learnerId) {
     if (!id || !token) return
@@ -283,16 +309,8 @@ export default function FacilitatorPage() {
       setDraft(null)
       setNewSubject('')
       setAvailableSubjects([])
-      setSyllabus((current) => {
-        const sameRevision = current?.active_revision?.id && current.active_revision.id === shell.active_revision?.id
-        if (!sameRevision || !Array.isArray(current.timeline_items)) return shell
-        return {
-          ...shell,
-          forecast_items: current.forecast_items || [],
-          timeline_items: current.timeline_items,
-          proposed_learning_forecast: current.proposed_learning_forecast || null,
-        }
-      })
+      // Preserve the visible document until its full replacement arrives.
+      setSyllabus(current => Array.isArray(current?.timeline_items) ? current : shell)
       setLoading(false)
 
       if (!shell.has_active_syllabus) {
@@ -332,7 +350,7 @@ export default function FacilitatorPage() {
   useEffect(() => { if (learnerId && token) loadCurrent(learnerId) }, [learnerId, token]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
-    if (!syllabusHydrated) return undefined
+    if (!syllabusHydrated || materializingLineage || replacingLineage || working) return undefined
     const activeId = syllabus?.active_revision?.id
     if (!activeId || !currentTargetForecastWeek || !planningAccess.can_change_intent) return undefined
     const identity = buildAutomaticForecastAttemptIdentity({
@@ -348,7 +366,7 @@ export default function FacilitatorPage() {
       void createLearningForecast({ automatic: true })
     })()
     return () => { cancelled = true }
-  }, [forecastRefreshSequence, syllabus?.active_revision?.id, syllabus?.resolved_today, learnerId, planningAccess.can_change_intent, syllabusHydrated]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [forecastRefreshSequence, syllabus?.active_revision?.id, syllabus?.resolved_today, learnerId, planningAccess.can_change_intent, syllabusHydrated, materializingLineage, replacingLineage, working]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!inlineModalOpen) return undefined
@@ -426,16 +444,19 @@ export default function FacilitatorPage() {
       requestSequence,
       currentSequence: forecastRequestSequence.current,
     })
+    forecastController.current?.abort()
+    const controller = new AbortController()
+    forecastController.current = controller
     setForecastBusy(true)
     setForecastError('')
     setLearningMessage('')
     try {
-      const response = await fetch('/api/syllabus/forecast', {
+      const { response, json } = await fetchForecastJson('/api/syllabus/forecast', {
+        signal: controller.signal,
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ learnerId, expectedActiveRevisionId: syllabus.active_revision.id }),
       })
-      const json = await response.json()
       if (!responseIsCurrent()) return
       if (!response.ok) throw new Error(json.error || 'Could not prepare the forecast')
       if (json.kind === 'no_action') {
@@ -452,7 +473,10 @@ export default function FacilitatorPage() {
       setForecastError(cause.message)
       if (!automatic) forecastAttempt.current = ''
     } finally {
-      if (responseIsCurrent()) setForecastBusy(false)
+      if (forecastController.current === controller) {
+        forecastController.current = null
+        setForecastBusy(false)
+      }
     }
   }
 
@@ -530,7 +554,9 @@ export default function FacilitatorPage() {
 
   async function materializeForecast(item, { proposal = null, existingLessonKey = '', expectedActiveRevisionId = syllabus?.active_revision?.id } = {}) {
     const lineageId = item?.lineage_id
-    if (!lineageId || materializingLineage || recoveryRequiredLineages.has(lineageId)) return false
+    if (!lineageId || materializationRequest.current || recoveryRequiredLineages.has(lineageId)) return false
+    const request = { learnerId, lineageId }
+    materializationRequest.current = request
     const requestedLearnerId = learnerId
     const stillCurrent = () => pageIdentity.current.startsWith(`${requestedLearnerId}:`)
     setMaterializingLineage(lineageId)
@@ -555,7 +581,7 @@ export default function FacilitatorPage() {
         }
         throw new Error(json.error || (existingLessonKey ? 'Could not bind this lesson to the forecast concept' : 'Could not generate this forecast lesson'))
       }
-      await loadCurrent()
+      if (!applySyllabusSnapshot(json.syllabus, requestedLearnerId)) await loadCurrent(requestedLearnerId)
       return true
     } catch (cause) {
       if (!stillCurrent()) return false
@@ -564,7 +590,10 @@ export default function FacilitatorPage() {
       if (stillCurrent()) setError(cause.message)
       return false
     } finally {
-      setMaterializingLineage('')
+      if (materializationRequest.current === request) {
+        materializationRequest.current = null
+        if (stillCurrent()) setMaterializingLineage('')
+      }
     }
   }
 
@@ -862,6 +891,13 @@ export default function FacilitatorPage() {
     loadSequence.current++
     forecastAttempt.current = ''
     planningRequest.current = ''
+    forecastController.current?.abort()
+    forecastController.current = null
+    materializationRequest.current = null
+    setMaterializingLineage('')
+    setReplacingLineage('')
+    setWorking(false)
+    pageIdentity.current = `${nextLearnerId}:`
     setLearnerId(nextLearnerId)
     setSyllabus(null)
     setLearningProposal(null)
@@ -880,10 +916,16 @@ export default function FacilitatorPage() {
     setError('')
     setForecastError('')
     localStorage.setItem('learner_id', nextLearnerId)
+    // Consume the old review deep-link when the educator explicitly changes learner.
+    const url = new URL(window.location.href)
+    url.searchParams.set('learnerId', nextLearnerId)
+    for (const key of ['date', 'lessonKey', 'occurrenceId', 'review']) url.searchParams.delete(key)
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
   }
 
   function openFacilitatorLessonWorkflow(item) {
     if (!item?.lesson_key) return
+    setSelectedSyllabusLesson(null)
     router.push(buildLessonGeneratorReviewHref({
       learnerId,
       lessonKey: item.lesson_key,
@@ -902,6 +944,8 @@ export default function FacilitatorPage() {
     setSelectedSyllabusLesson(null)
     setHistoryOccurrenceId(occurrenceId)
   }
+
+  const resolvedSyllabusLesson = resolveSyllabusSelection(selectedSyllabusLesson, syllabus, learningProposal?.forecast_items || [])
 
   if (authLoading) return <main className={styles.page}><p>Loading…</p></main>
   if (!isAuthenticated) return <main className={styles.page}><GatedOverlay show gateType={gateType || 'auth'} feature="Syllabus" emoji="🧭" description="Sign in to view and activate a learner's educational plan." /></main>
@@ -1026,12 +1070,15 @@ export default function FacilitatorPage() {
               focusPlannedDate={returnFocus.plannedDate}
               focusLessonKey={returnFocus.lessonKey}
               focusOccurrenceId={returnFocus.occurrenceId}
+              openFocusedLesson={returnFocus.open !== false}
               today={syllabus.resolved_today}
               contentLoading={contentLoading && !Array.isArray(syllabus.timeline_items)}
             />}
 
-          {selectedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
-            selection={selectedSyllabusLesson}
+          {resolvedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
+            selection={resolvedSyllabusLesson}
+            generationBusy={materializingLineage === resolvedSyllabusLesson.item?.lineage_id}
+            actionBlockReason={lessonMutationBlockReason({ item: resolvedSyllabusLesson.item, suggested: resolvedSyllabusLesson.suggested, forecastBusy, materializingLineage, replacingLineage, planningBusy: working, hydrated: syllabusHydrated })}
             learnerId={learnerId}
             accessToken={token}
             planTier={planTier}

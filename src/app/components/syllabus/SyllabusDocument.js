@@ -57,24 +57,23 @@ function teachingGuidanceSummary(guidance) {
   return values
 }
 
-function ForecastSuggestion({ item, busy, generating, recoveryRequired, suggested = true, onSelect }) {
-  const disabled = busy
+function ForecastSuggestion({ item, generating, recoveryRequired, suggested = true, onSelect }) {
   const generation = lessonGenerationPresentation(item, { busy: generating, recoveryRequired })
   return <div
-    className={`${styles.suggestedEntry} ${onSelect && !disabled ? styles.selectableEntry : ''}`}
+    className={`${styles.suggestedEntry} ${onSelect ? styles.selectableEntry : ''}`}
     data-forecast-lineage={item.lineage_id}
-    role={onSelect && !disabled ? 'button' : undefined}
-    tabIndex={onSelect && !disabled ? 0 : undefined}
-    aria-label={onSelect && !disabled ? `Open AI forecast suggestion details for ${item.title}` : undefined}
-    onClick={onSelect && !disabled ? () => onSelect(item, { suggested, recoveryRequired: generation.blocked }) : undefined}
-    onKeyDown={onSelect && !disabled ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(item, { suggested, recoveryRequired: generation.blocked }) } } : undefined}
+    role={onSelect ? 'button' : undefined}
+    tabIndex={onSelect ? 0 : undefined}
+    aria-label={onSelect ? `Open AI forecast suggestion details for ${item.title}` : undefined}
+    onClick={onSelect ? () => onSelect(item, { suggested, recoveryRequired: recoveryRequired || item.generation_status === 'recovery_required' }) : undefined}
+    onKeyDown={onSelect ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelect(item, { suggested, recoveryRequired: recoveryRequired || item.generation_status === 'recovery_required' }) } } : undefined}
   >
     <div className={styles.entryBody}>
       <p className={styles.subject}>{item.subject}</p>
       <h4>{item.title}</h4>
       <span className={styles.suggestedLabel}>{generation.label}</span>
     </div>
-    {onSelect && !disabled && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
+    {onSelect && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
   </div>
 }
 export default function SyllabusDocument({
@@ -105,6 +104,7 @@ export default function SyllabusDocument({
   focusPlannedDate = '',
   focusLessonKey = '',
   focusOccurrenceId = '',
+  openFocusedLesson = true,
   contentLoading = false,
   today = localCalendarDate(),
 }) {
@@ -147,7 +147,7 @@ export default function SyllabusDocument({
   }), [revision?.weekly_pattern, visibleItems, proposedForecastItems, noSchoolDates, week.week_start, week.state, role, today, forecastStart, forecastEnd])
   const projectedForecast = planningProjection.forecast_items
   useEffect(() => {
-    if (role !== 'facilitator' || typeof onSelectLesson !== 'function' || (!focusOccurrenceId && !focusLessonKey)) return
+    if (!openFocusedLesson || role !== 'facilitator' || typeof onSelectLesson !== 'function' || (!focusOccurrenceId && !focusLessonKey)) return
     const match = planningProjection.items.find((candidate) => {
       const candidateOccurrence = String(candidate?.occurrence_id || candidate?.id || '')
       const sourceOccurrence = String(candidate?.source_occurrence_id || '')
@@ -169,7 +169,7 @@ export default function SyllabusDocument({
       && match.historical_record !== true
       && !startedOccurrenceIds.has(String(occurrenceKey))
     onSelectLesson(match, { syllabus_state: state, currentLesson, teacherEditable, historicalActivityAllowed, occurrenceKey, assignedTeacher })
-  }, [focusLessonKey, focusOccurrenceId, focusPlannedDate, learnerId, lessonState, onSelectLesson, planningProjection.items, role, startedOccurrenceIds, today, week.week_start])
+  }, [focusLessonKey, focusOccurrenceId, focusPlannedDate, openFocusedLesson, learnerId, lessonState, onSelectLesson, planningProjection.items, role, startedOccurrenceIds, today, week.week_start])
   useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
   const copy = STATE_COPY[week.state]
   const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
@@ -250,7 +250,6 @@ export default function SyllabusDocument({
               item={item}
               suggested={kind === 'suggested'}
               generating={materializingForecastLineage === item.lineage_id}
-              busy={forecastBusy || planningBusy || Boolean(materializingForecastLineage)}
               recoveryRequired={isForecastRecoveryRequired(item)}
               onSelect={role === 'facilitator' && onSelectLesson ? onSelectLesson : null}
             />

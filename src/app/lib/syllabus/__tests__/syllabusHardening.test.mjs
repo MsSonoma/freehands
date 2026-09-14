@@ -124,7 +124,7 @@ test('facilitator Syllabus paints a shell, yields, hydrates full contents, then 
   assert.ok(yieldAfterShell > shellRequest)
   assert.ok(fullRequest > yieldAfterShell)
   assert.match(page, /contentLoading/)
-  assert.match(page, /if \(!syllabusHydrated\) return undefined/)
+  assert.match(page, /if \(!syllabusHydrated \|\| materializingLineage \|\| replacingLineage \|\| working\) return undefined/)
   assert.match(page, /contentLoading=\{contentLoading && !Array\.isArray\(syllabus\.timeline_items\)\}/)
   assert.match(page, /onEditSection=\{planningAccess\.can_change_intent && syllabusHydrated/)
   assert.match(route, /searchParams\.get\('view'\) === 'shell' \? 'shell' : 'full'/)

@@ -459,8 +459,8 @@ export default function LessonMakerPage(){
     return session?.access_token || ''
   }
 
-  function reviewReturnHref() {
-    return buildLessonWorkflowReturnHref({ source: entryContext.source, learnerId: intendedLearnerId, plannedDate: entryContext.plannedDate, lessonKey: generatedLessonKey, occurrenceId: entryContext.occurrenceId })
+  function reviewReturnHref({ reviewComplete = false } = {}) {
+    return buildLessonWorkflowReturnHref({ source: entryContext.source, learnerId: intendedLearnerId, plannedDate: entryContext.plannedDate, lessonKey: generatedLessonKey, occurrenceId: entryContext.occurrenceId, reviewComplete })
   }
 
   async function loadGeneratedLessonReview(lessonKey = generatedLessonKey) {
@@ -512,7 +512,7 @@ export default function LessonMakerPage(){
   }
 
   async function approveGeneratedLesson() {
-    if (!generatedLessonKey || !intendedLearnerId || generatedLessonDraft?.approved === true) return
+    if (approving || !generatedLessonKey || !intendedLearnerId || generatedLessonDraft?.approved === true) return
     setApproving(true)
     setReviewError('')
     setMessage('')
@@ -523,16 +523,19 @@ export default function LessonMakerPage(){
       const response = await fetch('/api/facilitator/lessons/approve', {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ file }),
+        body: JSON.stringify({ file, learnerId: intendedLearnerId }),
       })
       const json = await response.json().catch(() => ({}))
       if (!response.ok || json?.approved !== true || json?.lesson?.approved !== true) {
         throw new Error(json?.error || 'Approval failed')
       }
+      if (json?.association?.learner_id !== intendedLearnerId || json?.association?.lesson_key !== (json.lessonKey || generatedLessonKey) || !['approved', 'available'].includes(json?.association?.readiness_state)) {
+        throw new Error('Approval was saved, but the learner plan has not confirmed it. Retry to finish.')
+      }
       setGeneratedLessonDraft(json.lesson)
-      await refreshGeneratedLessonAssociation(json?.lessonKey || generatedLessonKey)
+      setRevisionOpen(false)
       setToast({ message: 'Lesson approved. Returning to the learner plan.', type: 'success' })
-      router.push(reviewReturnHref())
+      router.replace(reviewReturnHref({ reviewComplete: true }))
     } catch (error) {
       setReviewError(error?.message || 'Could not approve the lesson')
     } finally {

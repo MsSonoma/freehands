@@ -1,5 +1,8 @@
 'use client'
 
+import { fetchForecastJson } from '@/app/lib/syllabus/forecastClient.mjs'
+import { isCurrentLearnerSnapshot, resolveSyllabusSelection, lessonMutationBlockReason } from '@/app/lib/syllabus/interactionState.mjs'
+
 import { proposalForLesson, isUngeneratedSyllabusLesson, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
@@ -74,9 +77,15 @@ export default function CalendarPage() {
   const [replacingLineage, setReplacingLineage] = useState('')
   const [recoveryRequiredLineages, setRecoveryRequiredLineages] = useState(() => new Set())
   const forecastAttempt = useRef('')
+  const forecastController = useRef(null)
+  const materializationRequest = useRef(null)
+  useEffect(() => () => { forecastController.current?.abort() }, [])
   const forecastRequestSequence = useRef(0)
   const forecastViewIdentity = useRef('')
   const returnFocusRef = useRef({ date: '', lessonKey: '', occurrenceId: '' })
+  const calendarLearner = useRef(selectedLearnerId)
+  calendarLearner.current = selectedLearnerId
+  const calendarLoadSequence = useRef(0)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
@@ -131,6 +140,7 @@ export default function CalendarPage() {
 
   const loadSyllabus = useCallback(async () => {
     if (!selectedLearnerId || !accessToken) return
+    const loadId = ++calendarLoadSequence.current
     setError('')
     try {
       const response = await fetch(`/api/syllabus?learnerId=${encodeURIComponent(selectedLearnerId)}`, {
@@ -138,13 +148,13 @@ export default function CalendarPage() {
         headers: { Authorization: `Bearer ${accessToken}` },
       })
       const json = await response.json().catch(() => ({}))
+      if (loadId !== calendarLoadSequence.current || calendarLearner.current !== selectedLearnerId) return
       if (!response.ok) throw new Error(json.error || 'Could not load the Syllabus calendar')
       setSyllabus(json)
       setForecastRefreshSequence((current) => current + 1)
       setSelectedDate((current) => current || returnFocusRef.current.date || json.resolved_today || '')
     } catch (cause) {
-      setSyllabus(null)
-      setError(cause?.message || 'Could not load the Syllabus calendar')
+      if (loadId === calendarLoadSequence.current && calendarLearner.current === selectedLearnerId) setError(cause?.message || 'Could not load the Syllabus calendar')
     }
   }, [accessToken, selectedLearnerId])
 
@@ -171,6 +181,11 @@ export default function CalendarPage() {
   useEffect(() => {
     if (!selectedLearnerId || !accessToken) return
     forecastAttempt.current = ''
+    forecastController.current?.abort()
+    forecastController.current = null
+    materializationRequest.current = null
+    setMaterializingLineage('')
+    setReplacingLineage('')
     forecastRequestSequence.current++
     setForecastBusy(false)
     setForecastError('')
@@ -193,6 +208,7 @@ export default function CalendarPage() {
     proposal_revision: syllabus.proposed_learning_forecast.revision,
     forecast_items: syllabus.proposed_learning_forecast.forecast_items || [],
   } : null
+  const resolvedCalendarLesson = resolveSyllabusSelection(selectedLesson, syllabus, learningProposal?.forecast_items || [])
   const itemsByDate = useMemo(() => groupSyllabusCalendarItems(syllabus?.timeline_items || [], {
     proposedForecastItems: (syllabus?.proposed_learning_forecast?.forecast_items || []).filter((item) => {
       const window = instructionalForecastWindow(syllabus?.resolved_today)
@@ -209,7 +225,7 @@ export default function CalendarPage() {
       setSelectedDate(focus.date)
       return
     }
-    if (focus.lessonKey || focus.occurrenceId) {
+    if (new URLSearchParams(window.location.search).get('review') !== 'complete' && (focus.lessonKey || focus.occurrenceId)) {
       const match = (itemsByDate[focus.date] || []).find((candidate) => {
         const occurrence = String(candidate?.occurrence_id || candidate?.id || '')
         const sourceOccurrence = String(candidate?.source_occurrence_id || '')
@@ -243,15 +259,18 @@ export default function CalendarPage() {
       requestSequence,
       currentSequence: forecastRequestSequence.current,
     })
+    forecastController.current?.abort()
+    const controller = new AbortController()
+    forecastController.current = controller
     setForecastBusy(true)
     setForecastError('')
     try {
-      const response = await fetch('/api/syllabus/forecast', {
+      const { response, json } = await fetchForecastJson('/api/syllabus/forecast', {
+        signal: controller.signal,
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({ learnerId: selectedLearnerId, expectedActiveRevisionId: activeRevisionId }),
       })
-      const json = await response.json().catch(() => ({}))
       if (!responseIsCurrent()) return
       if (!response.ok) throw new Error(json.error || 'Could not prepare the future lesson forecast')
       if (json.kind === 'no_action') {
@@ -271,12 +290,15 @@ export default function CalendarPage() {
       setForecastError(cause.message || 'Could not prepare the future lesson forecast')
       if (!automatic) forecastAttempt.current = ''
     } finally {
-      if (responseIsCurrent()) setForecastBusy(false)
+      if (forecastController.current === controller) {
+        forecastController.current = null
+        setForecastBusy(false)
+      }
     }
   }
 
   useEffect(() => {
-    if (!syllabus?.has_active_syllabus || !activeRevisionId || !currentTargetForecastWeek || !planningAccess.can_change_intent || !forecastRefreshSequence) return undefined
+    if (materializingLineage || replacingLineage || !syllabus?.has_active_syllabus || !activeRevisionId || !currentTargetForecastWeek || !planningAccess.can_change_intent || !forecastRefreshSequence) return undefined
     const identity = buildAutomaticForecastAttemptIdentity({
       requestIdentity: forecastViewIdentity.current,
       refreshSequence: forecastRefreshSequence,
@@ -290,7 +312,7 @@ export default function CalendarPage() {
       void createLearningForecast({ automatic: true })
     })()
     return () => { cancelled = true }
-  }, [activeRevisionId, currentTargetForecastWeek, forecastRefreshSequence, planningAccess.can_change_intent, selectedLearnerId, syllabus?.has_active_syllabus]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [activeRevisionId, currentTargetForecastWeek, forecastRefreshSequence, planningAccess.can_change_intent, selectedLearnerId, syllabus?.has_active_syllabus, materializingLineage, replacingLineage]) // eslint-disable-line react-hooks/exhaustive-deps
   async function planningPost(action, payload = {}) {
     if (!selectedLearnerId || !accessToken || !activeRevisionId) return null
     setError('')
@@ -323,7 +345,10 @@ export default function CalendarPage() {
 
   async function materializePlanningItem(item, { proposal = null, existingLessonKey = '', expectedRevisionId = activeRevisionId } = {}) {
     const lineageId = item?.lineage_id
-    if (!lineageId || materializingLineage || recoveryRequiredLineages.has(lineageId)) return false
+    if (!lineageId || materializationRequest.current || recoveryRequiredLineages.has(lineageId)) return false
+    const request = { learnerId: selectedLearnerId, lineageId }
+    materializationRequest.current = request
+    const stillCurrent = () => calendarLearner.current === request.learnerId
     setMaterializingLineage(lineageId)
     setError('')
     try {
@@ -339,20 +364,33 @@ export default function CalendarPage() {
         }),
       })
       const json = await response.json().catch(() => ({}))
+      if (!stillCurrent()) return false
       if (!response.ok) {
         if (json?.code === 'MATERIALIZATION_RECOVERY_REQUIRED') setRecoveryRequiredLineages((current) => new Set(current).add(lineageId))
         throw new Error(json.error || (existingLessonKey ? 'Could not bind this lesson to the planned concept' : 'Could not generate this planned lesson'))
       }
       setSelectedLesson(null)
-      await refreshPlanningViews()
+      if (isCurrentLearnerSnapshot(json.syllabus, selectedLearnerId)) {
+        calendarLoadSequence.current++
+        forecastRequestSequence.current++
+        forecastController.current?.abort()
+        forecastController.current = null
+        setForecastBusy(false)
+        setSyllabus(json.syllabus)
+        setForecastRefreshSequence(current => current + 1)
+      } else await refreshPlanningViews()
       return true
     } catch (cause) {
+      if (!stillCurrent()) return false
       await refreshPlanningViews()
       setSelectedLesson(null)
       setError(cause.message || 'Could not generate this lesson')
       return false
     } finally {
-      setMaterializingLineage('')
+      if (materializationRequest.current === request) {
+        materializationRequest.current = null
+        if (stillCurrent()) setMaterializingLineage('')
+      }
     }
   }
 
@@ -635,9 +673,11 @@ export default function CalendarPage() {
         />
       )}
 
-      {selectedLesson && (
+      {resolvedCalendarLesson && (
         <FacilitatorSyllabusLessonOverlay
-          selection={selectedLesson}
+          selection={resolvedCalendarLesson}
+          generationBusy={materializingLineage === selectedLesson.item?.lineage_id}
+          actionBlockReason={lessonMutationBlockReason({ item: resolvedCalendarLesson.item, suggested: resolvedCalendarLesson.suggested, forecastBusy, materializingLineage, replacingLineage })}
           learnerId={selectedLearnerId}
           accessToken={accessToken}
           planTier={planTier}

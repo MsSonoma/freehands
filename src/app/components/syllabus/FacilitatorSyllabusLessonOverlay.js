@@ -85,6 +85,8 @@ export default function FacilitatorSyllabusLessonOverlay({
   onGenerateWithChanges,
   onCreateOwnLesson,
   canChangeIntent = false,
+  generationBusy = false,
+  actionBlockReason = '',
   onRecordHistoricalActivity,
   historicalActivityBusy = false,
   legacyWebbCompletion = null,
@@ -139,7 +141,7 @@ export default function FacilitatorSyllabusLessonOverlay({
     setConceptEditMode('')
     setConceptTitle('')
     setConceptDescription('')
-  }, [item, selection?.assignedTeacher])
+  }, [learnerId, item?.lineage_id, item?.occurrence_id, item?.lesson_key, selection?.assignedTeacher]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     setLearnerLessonBound(false)
@@ -168,7 +170,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const isSlateAssignment = itemType === 'slate_assignment'
   const isConcept = isLesson && !item.lesson_key
   const isForecastGhost = isConcept && selection.suggested === true && item.origin === 'learning_forecast'
-  const generation = lessonGenerationPresentation(item, { recoveryRequired: selection.recoveryRequired })
+  const generation = lessonGenerationPresentation(item, { busy: generationBusy, recoveryRequired: selection.recoveryRequired })
   const readiness = String(item.readiness_state || '').replaceAll('_', ' ')
   const isDraft = item.readiness_state === 'draft'
   const isHistorical = item.historical_record === true || item.placement_kind === 'historical' || item.placement_kind === 'actual'
@@ -403,6 +405,7 @@ export default function FacilitatorSyllabusLessonOverlay({
 
   function reviewDraft() {
     if (!isDraft || !item.lesson_key) return
+    onClose?.()
     if (typeof onOpenLesson === 'function') {
       onOpenLesson(item, selection)
       return
@@ -500,7 +503,7 @@ export default function FacilitatorSyllabusLessonOverlay({
     const title = conceptTitle.trim()
     const description = conceptDescription.trim()
     const handler = conceptEditMode === 'forecast-own' ? onCreateOwnLesson : onEditConcept
-    if (!title || !description || typeof handler !== 'function') return
+    if (actionBlockReason || generationBusy || !title || !description || typeof handler !== 'function') return
     setCoreBusy('concept-edit')
     setCoreError('')
     setMessage('')
@@ -517,7 +520,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   }
   async function generateForecastWithChanges() {
     const request = forecastChangeRequest.trim()
-    if (!isConcept || !generation.canEdit || !request || typeof onGenerateWithChanges !== 'function') return
+    if (actionBlockReason || generationBusy || !isConcept || !generation.canEdit || !request || typeof onGenerateWithChanges !== 'function') return
     setCoreBusy('forecast-change')
     setCoreError('')
     setMessage('')
@@ -549,17 +552,18 @@ export default function FacilitatorSyllabusLessonOverlay({
           {teacherEditable && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy || coreBusy === 'teacher'} onChange={(event) => void handleTeacherChange(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
           {isConcept && <section className={styles.detailSection}>
             <h3>{generation.label}</h3>
+            {actionBlockReason && <p role="status">{actionBlockReason}</p>}
             <p>{generation.blocked ? 'This lesson needs recovery before it can be generated.' : item.generation_status === 'generation_failed' ? 'The lesson has not been generated yet. Retry will continue this same dated entry.' : 'This is the same dated lesson from the Syllabus. Generate its content, then review and approve it.'}</p>
             <div className={styles.forecastChoices}>
-              {typeof onGenerate === 'function' && <button type="button" className={styles.primary} disabled={generation.blocked || Boolean(coreBusy)} onClick={() => onGenerate(item)}>{generation.action}</button>}
-              {canChangeIntent && typeof onGenerateWithChanges === 'function' && <button type="button" disabled={!generation.canEdit || Boolean(coreBusy)} onClick={() => setForecastChangeOpen((open) => !open)}>Generate with changes</button>}
-              {canChangeIntent && typeof onCreateOwnLesson === 'function' && <button type="button" disabled={!generation.canEdit || Boolean(coreBusy)} onClick={() => beginConceptEdit('forecast-own')}>Create your own lesson</button>}
+              {typeof onGenerate === 'function' && <button type="button" className={styles.primary} disabled={generation.blocked || Boolean(coreBusy) || Boolean(actionBlockReason)} onClick={() => onGenerate(item)}>{generation.action}</button>}
+              {canChangeIntent && typeof onGenerateWithChanges === 'function' && <button type="button" disabled={!generation.canEdit || Boolean(coreBusy) || Boolean(actionBlockReason)} onClick={() => setForecastChangeOpen((open) => !open)}>Generate with changes</button>}
+              {canChangeIntent && typeof onCreateOwnLesson === 'function' && <button type="button" disabled={!generation.canEdit || Boolean(coreBusy) || Boolean(actionBlockReason)} onClick={() => beginConceptEdit('forecast-own')}>Create your own lesson</button>}
             </div>
             {forecastChangeOpen && <div className={styles.forecastChange}>
               <label className={styles.field}>What would you like to change?<textarea autoFocus rows={4} value={forecastChangeRequest} onChange={(event) => setForecastChangeRequest(event.target.value)} placeholder="For example: make it more hands-on, or review cold fronts first." /></label>
               <div className={styles.secondaryActions}><button type="button" disabled={Boolean(coreBusy)} onClick={() => { setForecastChangeOpen(false); setForecastChangeRequest('') }}>Cancel</button><button type="button" className={styles.primary} disabled={!forecastChangeRequest.trim() || Boolean(coreBusy) || !generation.canEdit} onClick={() => void generateForecastWithChanges()}>{coreBusy === 'forecast-change' ? 'Generating...' : 'Generate with changes'}</button></div>
             </div>}
-            {!isForecastGhost && <div className={styles.secondaryActions}>{canChangeIntent && typeof onRemoveConcept === 'function' && <button type="button" disabled={Boolean(coreBusy) || !generation.canEdit} onClick={() => void removePlannedConcept()}>Remove lesson</button>}{canChangeIntent && typeof onUseExisting === 'function' && <button type="button" disabled={generation.blocked || Boolean(coreBusy)} onClick={() => onUseExisting(item)}>Use existing lesson</button>}</div>}
+            {!isForecastGhost && <div className={styles.secondaryActions}>{canChangeIntent && typeof onRemoveConcept === 'function' && <button type="button" disabled={Boolean(coreBusy) || !generation.canEdit} onClick={() => void removePlannedConcept()}>Remove lesson</button>}{canChangeIntent && typeof onUseExisting === 'function' && <button type="button" disabled={generation.blocked || Boolean(coreBusy) || Boolean(actionBlockReason)} onClick={() => onUseExisting(item)}>Use existing lesson</button>}</div>}
           </section>}
           {conceptEditMode && <section className={styles.detailSection}>
             <h3>{conceptEditMode === 'forecast-own' ? 'Create your own lesson' : 'Edit planned concept'}</h3>
@@ -567,7 +571,7 @@ export default function FacilitatorSyllabusLessonOverlay({
             <div className={styles.forecastChange}>
               <label className={styles.field}>Title<input autoFocus value={conceptTitle} onChange={(event) => setConceptTitle(event.target.value)} /></label>
               <label className={styles.field}>Brief description<textarea rows={4} value={conceptDescription} onChange={(event) => setConceptDescription(event.target.value)} /></label>
-              <div className={styles.secondaryActions}><button type="button" disabled={coreBusy === 'concept-edit'} onClick={() => setConceptEditMode('')}>Cancel</button><button type="button" className={styles.primary} disabled={!conceptTitle.trim() || !conceptDescription.trim() || coreBusy === 'concept-edit'} onClick={() => void saveConceptEdit()}>{coreBusy === 'concept-edit' ? 'Saving...' : conceptEditMode === 'forecast-own' ? 'Generate my lesson' : 'Save educator intent'}</button></div>
+              <div className={styles.secondaryActions}><button type="button" disabled={coreBusy === 'concept-edit'} onClick={() => setConceptEditMode('')}>Cancel</button><button type="button" className={styles.primary} disabled={!conceptTitle.trim() || !conceptDescription.trim() || coreBusy === 'concept-edit' || Boolean(actionBlockReason) || !generation.canEdit} onClick={() => void saveConceptEdit()}>{coreBusy === 'concept-edit' ? 'Saving...' : conceptEditMode === 'forecast-own' ? 'Generate my lesson' : 'Save educator intent'}</button></div>
             </div>
           </section>}
           {slateEditorOpen && <section className={styles.detailSection}><h3>Schedule Mr. Slate</h3><p>Schedule a separate supplemental practice session. This does not change the instructional teacher or complete the lesson.</p><label className={styles.field}>Mr. Slate session date<input type="date" min={[dateOnly(displayedDate), dateOnly(resolvedToday)].filter(Boolean).sort().at(-1) || ''} value={slateDate} onChange={(event) => setSlateDate(event.target.value)} /></label><div className={styles.secondaryActions}><button type="button" onClick={() => setSlateEditorOpen(false)}>Cancel</button><button type="button" disabled={!slateDate || coreBusy === 'slate'} onClick={() => void saveSlateSchedule()}>{coreBusy === 'slate' ? 'Scheduling...' : 'Schedule supplemental session'}</button></div></section>}

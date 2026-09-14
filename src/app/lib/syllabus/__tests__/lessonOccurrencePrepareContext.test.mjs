@@ -45,18 +45,20 @@ test('review href preserves date, occurrence, and active revision without treati
 test('Generator reads exact review context and returns it with the approved lesson identity', () => {
   assert.match(generatorSource, /params\.get\('occurrenceId'\)/)
   assert.match(generatorSource, /params\.get\('expectedActiveRevisionId'\)/)
-  assert.match(generatorSource, /buildLessonWorkflowReturnHref\(\{ source: entryContext\.source, learnerId: intendedLearnerId, plannedDate: entryContext\.plannedDate, lessonKey: generatedLessonKey, occurrenceId: entryContext\.occurrenceId \}\)/)
+  assert.match(generatorSource, /buildLessonWorkflowReturnHref\(\{ source: entryContext\.source, learnerId: intendedLearnerId, plannedDate: entryContext\.plannedDate, lessonKey: generatedLessonKey, occurrenceId: entryContext\.occurrenceId, reviewComplete \}\)/)
 })
 
 test('Syllabus return opens the correct week and focuses the exact lesson or occurrence', () => {
   assert.match(syllabusSource, /startOfSyllabusWeek\(returnDate\)/)
-  assert.match(syllabusSource, /setReturnFocus\(\{ plannedDate: returnDate, lessonKey: returnParams\.get\('lessonKey'\) \|\| '', occurrenceId: returnParams\.get\('occurrenceId'\) \|\| '' \}\)/)
+  assert.match(syllabusSource, /setReturnFocus\(\{ plannedDate: returnDate, lessonKey: returnParams\.get\('lessonKey'\) \|\| '', occurrenceId: returnParams\.get\('occurrenceId'\) \|\| '', open: returnParams\.get\('review'\) !== 'complete' \}\)/)
   assert.match(documentSource, /focusOccurrenceId/)
   assert.match(documentSource, /focusPlannedDate/)
   assert.match(documentSource, /dateOnly\(candidate\?\.planned_date\) === dateOnly\(focusPlannedDate\)/)
   assert.match(documentSource, /sourceOccurrence === String\(focusOccurrenceId\)/)
   assert.match(documentSource, /String\(candidate\?\.lesson_key \|\| ''\) === String\(focusLessonKey\)/)
   assert.match(documentSource, /onSelectLesson\(match,/)
+  assert.match(documentSource, /if \(!openFocusedLesson/)
+  assert.match(generatorSource, /reviewReturnHref\(\{ reviewComplete: true \}\)/)
 })
 
 test('legacy Prepare handoff forwards exact context without persisting a new preparation workflow', () => {

@@ -24,7 +24,9 @@ const access = `${encode({ alg: 'HS256', typ: 'JWT' })}.${encode({ sub: OWNER, a
 const user = { id: OWNER, aud: 'authenticated', role: 'authenticated', email: 'fixture@example.test', user_metadata: {} }
 const session = { access_token: access, refresh_token: 'fixture-only', token_type: 'bearer', expires_in: 3600, expires_at: stamp + 3600, user }
 const date = '2026-09-14'
-let active = 'qa-revision-1', revisionNumber = 1, failForecast = false, forecastDelay = 80
+let active = 'qa-revision-1', revisionNumber = 1, failForecast = false, forecastDelay = 2200
+let blockSyllabusReadsAfterGeneration = false
+let approvedLesson = false
 let committed = [{ id: 'qa-committed', occurrence_id: 'qa-committed', lineage_id: 'committed', planned_date: date, sort_order: 0, title: 'Committed Math', subject: 'Math', lesson_key: 'generated/committed.json', readiness_state: 'approved', item_type: 'lesson', origin: 'facilitator', placement_kind: 'scheduled', is_explicit_schedule: true }]
 let daysOff = [{ date: '2026-09-16', reason: 'Family day' }]
 let materializationAttempts = 0
@@ -37,7 +39,7 @@ let suggestions = [
 ].map(x => ({ ...x, id: x.lineage_id, item_type: 'lesson', origin: 'learning_forecast', lesson_key: null }))
 const revision = () => ({ id: active, base_revision_id: null, revision_number: revisionNumber, effective_from: date, subjects: ['Math', 'Science', 'Language Arts'].map(name => ({ name })), goals: { legacy_notes: 'Connect ideas and build understanding.' }, weekly_pattern: { monday: [{ subject: 'Math' }, { subject: 'Science' }], tuesday: [{ subject: 'Language Arts' }], wednesday: [{ subject: 'Science' }] }, teaching_guidance: {}, planning_policy: {} })
 const proposal = () => ({ id: `proposal-${active}`, base_revision_id: active, proposal_kind: 'learning_forecast', activated_at: null })
-const payload = (learnerId) => ({ has_active_syllabus: true, active_revision: revision(), syllabus: { learner_id: learnerId, active_revision_id: active }, resolved_today: date, forecast_items: committed, timeline_items: committed, no_school_dates: daysOff, proposed_learning_forecast: null })
+const payload = (learnerId) => ({ has_active_syllabus: true, active_revision: revision(), syllabus: { learner_id: learnerId, active_revision_id: active }, resolved_today: date, forecast_items: committed, timeline_items: committed, no_school_dates: daysOff, proposed_learning_forecast: { revision: proposal(), forecast_items: learnerId === A ? suggestions : [] } })
 const results = [], requests = [], unexpected = [], errors = []
 let browser
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms))
@@ -69,6 +71,7 @@ try {
     if (!url.pathname.startsWith('/api/')) return route.continue()
     requests.push({ method: request.method(), path: url.pathname, query: url.search, body: request.postDataJSON?.() })
     if (url.pathname === '/api/syllabus') {
+      if (blockSyllabusReadsAfterGeneration) { unexpected.push('Redundant Syllabus reload after generation'); return json({ error: 'Unexpected redundant reload' }, 500) }
       const data = payload(url.searchParams.get('learnerId'))
       if (url.searchParams.get('view') === 'shell') return json({ ...data, timeline_items: undefined, forecast_items: [] })
       return json(data)
@@ -101,7 +104,26 @@ try {
       }
       active = `qa-revision-${++revisionNumber}`
       Object.assign(item, { lesson_key: `generated/${item.lineage_id}.json`, readiness_state: 'draft', generation_status: 'bound' })
-      return json({ ok: true, kind: 'materialized', lesson_key: `generated/${item.lineage_id}.json` })
+      await sleep(1100)
+      blockSyllabusReadsAfterGeneration = true
+      return json({ ok: true, kind: 'materialized', lesson_key: `generated/${item.lineage_id}.json`, syllabus: payload(body.learnerId) })
+    }
+    if (url.pathname === '/api/facilitator/lessons/get') return json({
+      id: 'habitats', title: 'Compare habitats', subject: 'science', grade: '5', difficulty: 'intermediate',
+      description: 'Explain two habitats using familiar examples.', approved: approvedLesson,
+      vocab: [], teachingNotes: 'Use familiar examples.', truefalse: [], multiplechoice: [], fillintheblank: [], shortanswer: [], test: [],
+    })
+    if (url.pathname === '/api/facilitator/lessons/approve') {
+      const body = request.postDataJSON()
+      assert.equal(body.learnerId, A)
+      assert.equal(body.file, 'habitats.json')
+      approvedLesson = true
+      const item = committed.find(row => row.lineage_id === 'habitats')
+      item.readiness_state = 'approved'
+      return json({ ok: true, approved: true, lessonKey: item.lesson_key,
+        lesson: { title: item.title, subject: 'science', approved: true },
+        association: { learner_id: A, lesson_key: item.lesson_key, readiness_state: 'approved' },
+      })
     }
     if (url.pathname === '/api/facilitator/pin') return json({ hasPin: false })
     if (request.method() !== 'GET') unexpected.push(`${request.method()} ${url.pathname}`)
@@ -112,6 +134,18 @@ try {
   await page.goto(`${origin}/facilitator`)
   const habitat = page.locator('[data-forecast-lineage="habitats"]')
   await habitat.waitFor()
+  assert.equal(await habitat.getAttribute('role'), 'button')
+  await habitat.click()
+  await page.getByText('These suggestions are refreshing.', { exact: false }).waitFor()
+  assert.equal(await page.getByRole('button', { name: 'Generate lesson', exact: true }).isEnabled(), false)
+  await page.getByRole('button', { name: 'Close', exact: true }).first().click()
+  await page.locator('[data-forecast-lineage="writing"]').focus()
+  await page.keyboard.press('Enter')
+  await page.getByRole('dialog').waitFor()
+  await page.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Generate lesson' && !b.disabled))
+  await page.getByRole('button', { name: 'Close', exact: true }).first().click()
+  forecastDelay = 80
+  results.push('Saved forecast rows open by click and keyboard during slow refresh; conflicting actions unlock in the already-open overlay.')
   assert.equal(await page.locator('[aria-label="Avery Syllabus"]').count(), 1)
   assert.equal(await page.getByText('Committed Math', { exact: true }).count(), 1)
   assert.equal(await page.getByText('Occupied suggestion must be hidden', { exact: true }).count(), 0)
@@ -151,14 +185,38 @@ try {
   await page.locator('[data-forecast-lineage="habitats"][role="button"]').click()
   await page.getByRole('button', { name: 'Generate with changes', exact: true }).waitFor()
   await page.getByRole('button', { name: 'Create your own lesson', exact: true }).waitFor()
+  await page.evaluate(() => { window.__noReloadMarker = 'continuous-lesson-workflow' })
+  const readCountBeforeGeneration = requests.filter(x => x.path === '/api/syllabus').length
   await page.getByRole('button', { name: 'Retry generation', exact: true }).click()
   results.push('Reload preserves failure status and the same generation controls; retry does not create another planned object.')
+  await page.locator('[data-forecast-lineage="writing"]').click()
+  await page.getByText('Another lesson is being generated.', { exact: false }).waitFor()
+  assert.equal(await page.getByRole('button', { name: 'Generate lesson', exact: true }).isEnabled(), false)
   await habitat.waitFor({ state: 'detached' })
+  await page.getByRole('button', { name: 'Close', exact: true }).first().click()
+  assert.equal(requests.filter(x => x.path === '/api/syllabus').length, readCountBeforeGeneration)
+  assert.equal(await page.evaluate(() => window.__noReloadMarker), 'continuous-lesson-workflow')
+  blockSyllabusReadsAfterGeneration = false
+  results.push('During generation other details stay clickable; the returned draft updates immediately without a Syllabus reload.')
   await page.getByText('Compare habitats', { exact: true }).waitFor()
   await page.locator('[data-forecast-lineage="writing"]').waitFor()
   assert.equal(committed.find(x => x.lineage_id === 'habitats').readiness_state, 'draft')
   assert.equal(requests.filter(x => x.path.includes('/approve')).length, 0)
   results.push('Selecting one suggestion produces a draft in the same slot, preserves other suggestions, and never auto-approves.')
+  await page.getByRole('button', { name: 'Open details for Compare habitats', exact: true }).click()
+  await page.getByRole('button', { name: 'Review & approve draft', exact: true }).click()
+  await page.getByRole('button', { name: 'Approve lesson', exact: true }).waitFor()
+  await page.getByRole('button', { name: 'Approve lesson', exact: true }).click()
+  await page.waitForURL(url => url.pathname === '/facilitator' && url.searchParams.get('review') === 'complete')
+  const approvedRow = page.getByRole('button', { name: 'Open details for Compare habitats', exact: true })
+  await approvedRow.waitFor()
+  assert.ok((await approvedRow.textContent()).includes('approved'))
+  assert.equal(await page.getByRole('dialog').count(), 0)
+  assert.equal(await approvedRow.evaluate(el => el.closest('[data-syllabus-day]').dataset.syllabusDay), date)
+  assert.equal(await page.evaluate(() => window.__noReloadMarker), 'continuous-lesson-workflow')
+  assert.equal(requests.filter(x => x.path === '/api/facilitator/lessons/approve').length, 1)
+  assert.equal(requests.filter(x => x.path === '/api/syllabus/lesson-associations' && x.method === 'POST').length, 0)
+  results.push('Draft review -> approval -> same scheduled entry completes without browser reload, duplicate approval, or a stuck overlay.')
   await page.locator('select').first().selectOption(B)
   await page.getByText('Blair only suggestion', { exact: true }).waitFor()
   assert.equal(await page.locator('[data-forecast-lineage="writing"]').count(), 0)
@@ -184,6 +242,30 @@ try {
   await page.setViewportSize({ width: 1024, height: 768 })
   await page.screenshot({ path: path.join(output, 'facilitator-desktop.png'), fullPage: true })
   results.push('Mobile and tablet widths render without horizontal overflow.')
+  // Exercise timeout through the actual built page; shorten only the forecast deadline in this isolated context.
+  await context.addInitScript(() => {
+    const nativeSetTimeout = window.setTimeout.bind(window)
+    window.setTimeout = (handler, delay, ...args) => nativeSetTimeout(handler, delay === 65000 ? 350 : delay, ...args)
+  })
+  forecastDelay = 1600
+  const timeoutPage = await context.newPage()
+  timeoutPage.on('pageerror', error => errors.push(error.message))
+  await timeoutPage.goto(`${origin}/facilitator?learnerId=${A}`)
+  const cachedWriting = timeoutPage.locator('[data-forecast-lineage="writing"]')
+  await cachedWriting.waitFor()
+  await timeoutPage.getByRole('button', { name: 'Retry forecast', exact: true }).waitFor()
+  await cachedWriting.click()
+  assert.equal(await timeoutPage.getByRole('button', { name: 'Generate lesson', exact: true }).isEnabled(), true)
+  await timeoutPage.getByRole('button', { name: 'Close', exact: true }).first().click()
+  forecastDelay = 80
+  await timeoutPage.getByRole('button', { name: 'Retry forecast', exact: true }).click()
+  await timeoutPage.getByRole('button', { name: 'Retry forecast', exact: true }).waitFor({ state: 'detached' })
+  await cachedWriting.click()
+  await timeoutPage.waitForFunction(() => [...document.querySelectorAll('button')].some(b => b.textContent === 'Generate lesson' && !b.disabled))
+  assert.equal(await timeoutPage.getByRole('button', { name: 'Generate lesson', exact: true }).isEnabled(), true)
+  await sleep(1650)
+  await timeoutPage.close()
+  results.push('A timed-out refresh preserves clickable saved suggestions, releases action locks, and retries without a page reload.')
   assert.deepEqual(errors, [])
   assert.deepEqual(unexpected, [])
   fs.writeFileSync(path.join(output, 'browser-results.json'), JSON.stringify({ passed: results.length, results, errors, unexpected, forecastRequests: requests.filter(x => x.path === '/api/syllabus/forecast').length }, null, 2))

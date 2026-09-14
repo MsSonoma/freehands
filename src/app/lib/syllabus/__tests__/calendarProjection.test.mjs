@@ -79,7 +79,7 @@ test('calendar is a second view of the same Syllabus future plan and can refresh
   assert.match(calendar, /\/api\/syllabus\?learnerId=/)
   assert.match(calendar, /timeline_items/)
   assert.match(calendar, /proposed_learning_forecast/)
-  assert.match(calendar, /fetch\('\/api\/syllabus\/forecast'/)
+  assert.match(calendar, /fetchForecastJson\('\/api\/syllabus\/forecast'/)
   assert.match(calendar, /buildAutomaticForecastAttemptIdentity/)
   assert.match(calendar, /\/api\/syllabus\/planning/)
   assert.match(calendar, /\/api\/syllabus\/materialize/)
