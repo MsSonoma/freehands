@@ -81,7 +81,7 @@ export function unfinishedLessonCarrySuggestions({ activeRevision, timelineItems
   return { suggestions, remaining_slots: remaining }
 }
 
-function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWeekStart, targetWeekEnd, learnerGrade, evidenceContext, subjectBreadth, blockedDates, carrySuggestions = [] }) {
+function inputIdentity({ activeRevision, forecastItems, proposedForecastItems, timelineItems, targetWeekStart, targetWeekEnd, learnerGrade, evidenceContext, subjectBreadth, blockedDates, carrySuggestions = [] }) {
   return createHash('sha256').update(JSON.stringify({
     active_revision_id: activeRevision.id,
     target_week: [targetWeekStart, targetWeekEnd],
@@ -104,6 +104,10 @@ function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWee
       sort_order: item.sort_order,
       planning: forecastPlanningMetadata(item?.metadata?.learning_forecast || {}),
     })),
+    proposed_forecast_items: proposedForecastItems.map((item) => ({
+      lineage_id: item.lineage_id, planned_date: String(item.planned_date).slice(0, 10),
+      subject: item.subject, title: item.title, sort_order: item.sort_order, lesson_key: item.lesson_key || null,
+    })),
     occupied_timeline: timelineItems.filter((item) => {
       const date = String(item?.planned_date || '').slice(0, 10)
       return date >= targetWeekStart && date <= targetWeekEnd
@@ -124,13 +128,25 @@ function inputIdentity({ activeRevision, forecastItems, timelineItems, targetWee
   })).digest('hex')
 }
 
-export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], timelineItems = [], reports = [], learnerGrade = null, noSchoolDates = [], today }) {
+export function instructionalWeekIsFilled({ activeRevision, timelineItems = [], proposedForecastItems = [], noSchoolDates = [], weekStart } = {}) {
+  const targetWeekStart = startOfSyllabusWeek(weekStart)
+  if (!activeRevision?.weekly_pattern || !targetWeekStart) return false
+  const blockedDates = noSchoolDateSet(noSchoolDates)
+  const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart).filter((slot) => !blockedDates.has(slot.planned_date))
+  const occupied = new Set([...timelineItems, ...proposedForecastItems].filter((item) => {
+    if (item?.item_type === 'slate_assignment') return false
+    return startOfSyllabusWeek(item?.planned_date) === targetWeekStart
+  }).map((item) => `${String(item.planned_date).slice(0, 10)}:${Number(item.sort_order || 0)}`))
+  return slots.every((slot) => occupied.has(`${slot.planned_date}:${slot.sort_order}`))
+}
+
+export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], proposedForecastItems = [], timelineItems = [], reports = [], learnerGrade = null, noSchoolDates = [], today, targetWeekStart: requestedTargetWeekStart = '' }) {
   if (!activeRevision?.id) throw new Error('An active Syllabus revision is required')
-  const { start: targetWeekStart, end: targetWeekEnd } = instructionalForecastWindow(today)
+  const { start: targetWeekStart, end: targetWeekEnd } = instructionalForecastWindow(today, requestedTargetWeekStart)
   if (!targetWeekStart) throw new Error('A valid local date is required for forecasting')
   const blockedDates = noSchoolDateSet(noSchoolDates)
   const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart).filter((slot) => !blockedDates.has(slot.planned_date))
-  const occupied = new Set(timelineItems.filter((item) => {
+  const occupied = new Set([...timelineItems, ...proposedForecastItems].filter((item) => {
     if (item?.item_type === 'slate_assignment') return false
     const date = String(item?.planned_date || '').slice(0, 10)
     return date >= targetWeekStart && date <= targetWeekEnd
@@ -144,13 +160,13 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
     learnerGrade,
     slots: unfilledSlots,
     reports,
-    forecastItems,
+    forecastItems: [...forecastItems, ...proposedForecastItems],
     timelineItems,
     today,
     perSubjectEvidenceLimit: 8,
   })
   const proposalKey = inputIdentity({
-    activeRevision, forecastItems, timelineItems, targetWeekStart, targetWeekEnd,
+    activeRevision, forecastItems, proposedForecastItems, timelineItems, targetWeekStart, targetWeekEnd,
     learnerGrade, evidenceContext, subjectBreadth, blockedDates, carrySuggestions: carryPlan.suggestions,
   })
   return {
@@ -165,7 +181,7 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
   }
 }
 
-export function buildLearningForecastSnapshot({ activeRevision, forecastItems = [], plan, generatedItems = [], today }) {
+export function buildLearningForecastSnapshot({ activeRevision, forecastItems = [], existingProposalItems = null, plan, generatedItems = [], today }) {
   if (generatedItems.length !== plan.unfilled_slots.length) throw new Error('Forecast model returned an unexpected number of items')
   const carryAdditions = (plan.carry_suggestions || []).map(({ slot, lesson_key: lessonKey, title, subject, source_occurrence_id: sourceOccurrenceId, source_date: sourceDate }) => ({
     lineage_id: stableUuid(`${plan.proposal_key}:carry:${slot.planned_date}:${slot.sort_order}:${lessonKey}:${sourceOccurrenceId}`),
@@ -218,7 +234,8 @@ export function buildLearningForecastSnapshot({ activeRevision, forecastItems = 
     }
   })
   const additions = [...carryAdditions, ...generatedAdditions]
-  const retained = structuredClone(forecastItems).filter((item) => String(item?.planned_date || '').slice(0, 10) >= today)
+  const retentionSource = Array.isArray(existingProposalItems) ? existingProposalItems : forecastItems
+  const retained = structuredClone(retentionSource).filter((item) => String(item?.planned_date || '').slice(0, 10) >= today)
   const allItems = [...retained, ...additions].sort((left, right) => (
     String(left.planned_date).localeCompare(String(right.planned_date))
     || Number(left.sort_order || 0) - Number(right.sort_order || 0)

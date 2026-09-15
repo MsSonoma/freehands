@@ -30,6 +30,9 @@
 .week.future { border-color:#b9ab98; color:#564f47; }
 .weekHeader { display:flex; justify-content:space-between; gap:18px; align-items:center; padding:11px 0 9px; border-bottom:1px solid #cfc6b8; }
 .weekHeader h3 { margin:2px 0 0; font-size:21px; }.weekHeader time { color:#756b61; font:12px Roboto,sans-serif; white-space:nowrap; }
+.weekHeaderActions { display:flex; align-items:center; gap:10px; }
+.forecastButton { min-height:32px; padding:6px 12px; border:1px solid #6b382c; background:#fff; color:#6b382c; cursor:pointer; font:700 12px Montserrat,sans-serif; }
+.forecastButton:disabled { opacity:.45; cursor:default; }
 .forecastIntro { display:grid; gap:3px; padding:10px 0 11px; border-bottom:1px solid #cfc6b8; font:12px/1.45 Roboto,sans-serif; }
 .forecastIntro strong { color:#6b382c; font:800 12px Montserrat,sans-serif; }
 .forecastIntro span { color:#665f57; }
@@ -78,4 +81,4 @@
 .entryChevron { align-self:center; color:#9a9187; font:22px/1 Georgia,serif; }
 .selectableEntry .preparing { grid-column:1 / -1; }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }
-@media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader { align-items:stretch; flex-direction:column; gap:7px; } .planDetailsBody { grid-template-columns:1fr; } .planPatternSection { grid-column:auto; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; } .weekHeader time { white-space:normal; } }
+@media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader { align-items:stretch; flex-direction:column; gap:7px; }.weekHeaderActions { justify-content:space-between; } .planDetailsBody { grid-template-columns:1fr; } .planPatternSection { grid-column:auto; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; } .weekHeader time { white-space:normal; } }

@@ -32,6 +32,8 @@ export async function POST(request, deps = {}) {
       resolveLesson: (lessonKey) => loadLessonForFollowUp({ lessonKey, facilitatorId: context.user.id, admin: context.admin }),
       now: deps.now || new Date(),
       fallbackTimeZone: context.user?.user_metadata?.timezone,
+      targetWeekStart: body?.targetWeekStart || '',
+      automatic: body?.automatic === true,
     })
     return NextResponse.json({ ok: true, ...result }, { status: result.kind === 'proposal' && !result.reused ? 201 : 200 })
   } catch (error) {

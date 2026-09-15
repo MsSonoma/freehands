@@ -33,7 +33,7 @@ import { CORE_SUBJECTS } from '@/app/lib/subjects'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import { buildLessonGeneratorReviewHref, buildLessonWorkflowReturnHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import styles from './syllabus/syllabus.module.css'
-import { instructionalForecastWindow } from '@/app/lib/syllabus/forecastWindow.mjs'
+import { instructionalForecastMode, instructionalForecastWindow } from '@/app/lib/syllabus/forecastWindow.mjs'
 
 const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
 const DAY_LABELS = Object.fromEntries(DAYS.map((day) => [day, day[0].toUpperCase() + day.slice(1)]))
@@ -220,8 +220,9 @@ export default function FacilitatorPage() {
   const pageIdentity = useRef('')
   const currentPageIdentity = `${learnerId}:${syllabus?.active_revision?.id || ''}`
   pageIdentity.current = currentPageIdentity
-  const forecastWindow = instructionalForecastWindow(syllabus?.resolved_today)
-  const currentTargetForecastWeek = forecastWindow.start
+  const currentTargetForecastWeek = startOfSyllabusWeek(selectedWeekStart || syllabus?.resolved_today)
+  const forecastWindow = instructionalForecastWindow(syllabus?.resolved_today, currentTargetForecastWeek)
+  const forecastMode = instructionalForecastMode(syllabus?.resolved_today, currentTargetForecastWeek)
   forecastViewIdentity.current = buildForecastViewIdentity({
     learnerId,
     activeRevisionId: syllabus?.active_revision?.id,
@@ -352,7 +353,7 @@ export default function FacilitatorPage() {
   useEffect(() => {
     if (!syllabusHydrated || materializingLineage || replacingLineage || working) return undefined
     const activeId = syllabus?.active_revision?.id
-    if (!activeId || !currentTargetForecastWeek || !planningAccess.can_change_intent) return undefined
+    if (!activeId || !currentTargetForecastWeek || forecastMode !== 'automatic' || !planningAccess.can_change_intent) return undefined
     const identity = buildAutomaticForecastAttemptIdentity({
       requestIdentity: forecastViewIdentity.current,
       refreshSequence: forecastRefreshSequence,
@@ -363,10 +364,10 @@ export default function FacilitatorPage() {
       await yieldToBrowser()
       if (cancelled || forecastAttempt.current === identity) return
       forecastAttempt.current = identity
-      void createLearningForecast({ automatic: true })
+      void createLearningForecast({ automatic: true, targetWeekStart: currentTargetForecastWeek })
     })()
     return () => { cancelled = true }
-  }, [forecastRefreshSequence, syllabus?.active_revision?.id, syllabus?.resolved_today, learnerId, planningAccess.can_change_intent, syllabusHydrated, materializingLineage, replacingLineage, working]) // eslint-disable-line react-hooks/exhaustive-deps
+  }, [forecastRefreshSequence, syllabus?.active_revision?.id, syllabus?.resolved_today, learnerId, planningAccess.can_change_intent, syllabusHydrated, materializingLineage, replacingLineage, working, currentTargetForecastWeek, forecastMode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (!inlineModalOpen) return undefined
@@ -434,7 +435,7 @@ export default function FacilitatorPage() {
     }
   }
 
-  async function createLearningForecast({ automatic = false } = {}) {
+  async function createLearningForecast({ automatic = false, targetWeekStart = currentTargetForecastWeek } = {}) {
     if (!syllabusHydrated || !planningAccess.can_change_intent || !token || !syllabus?.active_revision?.id || forecastBusy) return
     const requestIdentity = forecastViewIdentity.current
     const requestSequence = ++forecastRequestSequence.current
@@ -455,12 +456,11 @@ export default function FacilitatorPage() {
         signal: controller.signal,
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ learnerId, expectedActiveRevisionId: syllabus.active_revision.id }),
+        body: JSON.stringify({ learnerId, expectedActiveRevisionId: syllabus.active_revision.id, targetWeekStart, automatic }),
       })
       if (!responseIsCurrent()) return
       if (!response.ok) throw new Error(json.error || 'Could not prepare the forecast')
       if (json.kind === 'no_action') {
-        setLearningProposal(null)
         setLearningMessage(json.message)
         return
       }
@@ -1062,7 +1062,8 @@ export default function FacilitatorPage() {
               forecastBusy={forecastBusy}
               forecastError={forecastError}
               forecastMessage={learningMessage}
-              onRetryForecast={planningAccess.can_change_intent && syllabusHydrated ? () => void createLearningForecast() : null}
+              onRetryForecast={planningAccess.can_change_intent && syllabusHydrated ? () => void createLearningForecast({ targetWeekStart: currentTargetForecastWeek }) : null}
+              onForecastWeek={planningAccess.can_change_intent && syllabusHydrated ? (weekStart) => void createLearningForecast({ targetWeekStart: weekStart }) : null}
               materializingForecastLineage={materializingLineage}
               isForecastRecoveryRequired={(item) => recoveryRequiredLineages.has(item.lineage_id)}
               planningBusy={working || Boolean(materializingLineage)}

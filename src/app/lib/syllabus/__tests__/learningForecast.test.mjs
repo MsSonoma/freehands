@@ -364,15 +364,16 @@ test('an unusual eight-lesson week never rewrites a four-day recurring forecast 
     timelineItems: unusualCurrentWeek,
     reports: [],
     today: '2026-09-10',
+    targetWeekStart: '2026-09-14',
   })
   assert.deepEqual(plan.slots.map(({ planned_date, subject, sort_order }) => ({ planned_date, subject, sort_order })), [
-    { planned_date: '2026-09-10', subject: 'social studies', sort_order: 0 },
     { planned_date: '2026-09-14', subject: 'math', sort_order: 0 },
     { planned_date: '2026-09-15', subject: 'language arts', sort_order: 0 },
     { planned_date: '2026-09-16', subject: 'science', sort_order: 0 },
+    { planned_date: '2026-09-17', subject: 'social studies', sort_order: 0 },
   ])
   assert.equal(plan.slots.some((slot) => slot.planned_date === '2026-09-18'), false)
-  assert.deepEqual(plan.unfilled_slots.map(slot => slot.planned_date), ['2026-09-14', '2026-09-15', '2026-09-16'])
+  assert.deepEqual(plan.unfilled_slots.map(slot => slot.planned_date), ['2026-09-14', '2026-09-15', '2026-09-16', '2026-09-17'])
   assert.deepEqual(recurring.weekly_pattern.friday, [])
 })
 test('production facilitator evidence projects deterministic learning summary without raw authority inputs', () => {
@@ -405,31 +406,39 @@ test('model output cannot recast Slate follow-up work as instructional lessons',
   }), /authority boundary/)
 })
 
-test('identical authoritative inputs reuse the sole learning proposal; changed evidence replaces it', async () => {
+test('an existing week stays stable and forecasting the next week extends the same proposal', async () => {
   const repository = forecastRepository({ forecast: [item({ planned_date: '2026-08-31' })] })
   let modelCalls = 0
-  let capturedContext
-  const generateItems = async ({ slots, context }) => { modelCalls++; capturedContext = context; return slots.map(() => ({ title: 'Energy transfer', description: 'Trace energy through a simple system.', planning_move: 'branch', strand: 'physical science', planning_reason: '' })) }
-  const invoke = (reports) => createLearningForecastProposal({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, reports, generateItems, now: NOW })
-  const first = await invoke(evidence())
+  const generateItems = async ({ slots }) => { modelCalls++; return slots.map((slot) => ({ title: `${slot.subject} direction`, description: `Plan ${slot.subject} deliberately.`, planning_move: 'branch', strand: 'physical science' })) }
+  const invoke = (targetWeekStart, automatic = false) => createLearningForecastProposal({ repository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, reports: evidence(), generateItems, now: NOW, targetWeekStart, automatic })
+  const first = await invoke('2026-08-31')
   assert.equal(first.reused, false)
-  assert.equal(repository.state.syllabus.active_revision_id, ACTIVE)
-  assert.equal(capturedContext.evidence_summaries[0].learning_summary.headline, 'Ready to progress')
-  assert.equal(capturedContext.learner.grade, '5th')
-  assert.equal(capturedContext.subject_breadth.learner_grade, '5th')
-  assert.equal(capturedContext.subject_breadth.subjects[0].subject, 'science')
-  assert.ok(capturedContext.subject_breadth.subjects[0].broad_strands.includes('physical science'))
-  assert.equal(JSON.stringify(capturedContext).includes('SECRET RAW TRANSCRIPT'), false)
-  const second = await invoke(evidence())
+  const firstLineages = new Set(first.forecast_items.map((row) => row.lineage_id))
+  const second = await invoke('2026-08-31')
   assert.equal(second.reused, true)
   assert.equal(modelCalls, 1)
-  const third = await invoke(evidence('Needs slower pacing'))
-  assert.equal(third.reused, false)
+  const extended = await invoke('2026-09-07', true)
+  assert.equal(extended.reused, false)
   assert.equal(modelCalls, 2)
+  assert.ok([...firstLineages].every((lineage) => extended.forecast_items.some((row) => row.lineage_id === lineage)))
+  assert.ok(extended.forecast_items.some((row) => String(row.planned_date).startsWith('2026-09-07')))
   assert.equal(repository.state.revisions.filter((row) => row.proposal_kind === 'learning_forecast' && !row.activated_at).length, 1)
-  const generatedForecast = repository.state.forecast.find((row) => row.origin === 'learning_forecast' && row.metadata?.learning_forecast?.strand === 'physical science')
-  assert.equal(generatedForecast.metadata.learning_forecast.planning_move, 'branch')
-  assert.equal(repository.state.revisions.some((row) => row.proposal_kind === 'mastery_reforecast'), false)
+})
+
+test('automatic next-week forecasting waits for prior-week coverage and farther weeks require confirmation', async () => {
+  const openRepository = forecastRepository({ forecast: [item({ planned_date: '2026-08-31', subject: 'math', lesson_key: 'math/current.json' })] })
+  let calls = 0
+  const generateItems = async ({ slots }) => { calls++; return slots.map((slot) => ({ title: `${slot.subject} idea`, description: `Teach ${slot.subject}.` })) }
+  const blocked = await createLearningForecastProposal({ repository: openRepository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, reports: [], generateItems, now: NOW, targetWeekStart: '2026-09-07', automatic: true })
+  assert.equal(blocked.kind, 'no_action')
+  assert.equal(blocked.reason, 'prior_week_open')
+  assert.equal(calls, 0)
+
+  await assert.rejects(createLearningForecastProposal({ repository: openRepository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, reports: [], generateItems, now: NOW, targetWeekStart: '2026-09-14', automatic: true }), { code: 'FORECAST_CONFIRMATION_REQUIRED' })
+  const manual = await createLearningForecastProposal({ repository: openRepository, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE, reports: [], generateItems, now: NOW, targetWeekStart: '2026-09-14', automatic: false })
+  assert.equal(manual.kind, 'proposal')
+  assert.equal(manual.target_week_start, '2026-09-14')
+  assert.equal(calls, 1)
 })
 
 test('explicit proposal activation preserves learning origin and description', async () => {

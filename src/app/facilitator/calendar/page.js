@@ -269,14 +269,11 @@ export default function CalendarPage() {
         signal: controller.signal,
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ learnerId: selectedLearnerId, expectedActiveRevisionId: activeRevisionId }),
+        body: JSON.stringify({ learnerId: selectedLearnerId, expectedActiveRevisionId: activeRevisionId, targetWeekStart: currentTargetForecastWeek, automatic }),
       })
       if (!responseIsCurrent()) return
       if (!response.ok) throw new Error(json.error || 'Could not prepare the future lesson forecast')
-      if (json.kind === 'no_action') {
-        setSyllabus((current) => current ? { ...current, proposed_learning_forecast: null } : current)
-        return
-      }
+      if (json.kind === 'no_action') return
       setSyllabus((current) => current ? {
         ...current,
         proposed_learning_forecast: {

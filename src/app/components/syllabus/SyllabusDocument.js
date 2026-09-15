@@ -15,6 +15,7 @@ import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling
 import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/lib/syllabus/learnerPresentation.mjs'
 import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
 import { buildFuturePlanningProjection } from '@/app/lib/syllabus/futurePlanningProjection.mjs'
+import { instructionalForecastMode } from '@/app/lib/syllabus/forecastWindow.mjs'
 import { isUngeneratedSyllabusLesson, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import styles from './SyllabusDocument.module.css'
 
@@ -93,6 +94,7 @@ export default function SyllabusDocument({
   proposedForecastTargetWeek = '',
   forecastWindowEnd = '',
   onRetryForecast = null,
+  onForecastWeek = null,
   forecastBusy = false,
   forecastError = '',
   forecastMessage = '',
@@ -172,6 +174,7 @@ export default function SyllabusDocument({
   }, [focusLessonKey, focusOccurrenceId, focusPlannedDate, openFocusedLesson, learnerId, lessonState, onSelectLesson, planningProjection.items, role, startedOccurrenceIds, today, week.week_start])
   useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
   const copy = STATE_COPY[week.state]
+  const selectedForecastMode = instructionalForecastMode(today, week.week_start)
   const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
   const weekRangeLabel = `${prettyDate(week.days[0]?.date || week.week_start, { month: 'short', day: 'numeric' })} - ${prettyDate(week.days.at(-1)?.date || week.week_start, { month: 'short', day: 'numeric', year: 'numeric' })}`
   const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
@@ -222,7 +225,7 @@ export default function SyllabusDocument({
             <p className={styles.stateLabel}>{copy.eyebrow}</p>
             <h3>{copy.title}</h3>
           </div>
-          <time dateTime={week.week_start}>{weekRangeLabel}</time>
+          <div className={styles.weekHeaderActions}><time dateTime={week.week_start}>{weekRangeLabel}</time>{role === 'facilitator' && selectedForecastMode === 'manual' && onForecastWeek && <button type="button" className={styles.forecastButton} disabled={forecastBusy} onClick={() => onForecastWeek(week.week_start)}>Forecast</button>}</div>
         </header>
         {isForecastWeek && role === 'facilitator' && <div className={styles.forecastIntro}>
           <span>Grey lessons are Ms. Sonoma&apos;s suggestions for open dates in the coming seven days. Open a suggestion to generate it, change it, or create your own lesson.</span>

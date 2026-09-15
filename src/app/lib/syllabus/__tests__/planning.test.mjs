@@ -3,7 +3,7 @@ import fs from 'node:fs'
 import test from 'node:test'
 
 import { buildFuturePlanningProjection } from '../futurePlanningProjection.mjs'
-import { instructionalForecastWindow } from '../forecastWindow.mjs'
+import { instructionalForecastMode, instructionalForecastWindow } from '../forecastWindow.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '../forecastRequestIdentity.mjs'
 import { createFacilitatorConcept, createFacilitatorDayConcept, editFacilitatorConcept, replaceLearningForecastConcept } from '../planning.server.mjs'
 import { materializeForecastOccurrence } from '../materialization.server.mjs'
@@ -41,10 +41,14 @@ function repository(initial = [], { noSchoolDates = [] } = {}) {
   }
 }
 
-test('the automatic forecast uses a rolling seven-day window, including this week', () => {
+test('forecast targets whole selected weeks and requires confirmation beyond next week', () => {
   assert.deepEqual(instructionalForecastWindow('2026-09-14'), { start: '2026-09-14', end: '2026-09-20' })
-  assert.deepEqual(instructionalForecastWindow('2026-09-18'), { start: '2026-09-18', end: '2026-09-24' })
-  assert.deepEqual(instructionalForecastWindow('2026-12-29'), { start: '2026-12-29', end: '2027-01-04' })
+  assert.deepEqual(instructionalForecastWindow('2026-09-18'), { start: '2026-09-14', end: '2026-09-20' })
+  assert.deepEqual(instructionalForecastWindow('2026-09-18', '2026-09-28'), { start: '2026-09-28', end: '2026-10-04' })
+  assert.equal(instructionalForecastMode('2026-09-18', '2026-09-14'), 'automatic')
+  assert.equal(instructionalForecastMode('2026-09-18', '2026-09-21'), 'automatic')
+  assert.equal(instructionalForecastMode('2026-09-18', '2026-09-28'), 'manual')
+  assert.equal(instructionalForecastMode('2026-09-18', '2026-09-07'), 'past')
   assert.deepEqual(instructionalForecastWindow(''), { start: '', end: '' })
 })
 
@@ -167,17 +171,19 @@ test('the retired Syllabus URL only redirects to Home with query context preserv
   assert.doesNotMatch(legacy, /SyllabusDocument|fetch\(/)
 })
 
-test('automatic requests survive week navigation and begin only after authoritative hydration', () => {
+test('automatic forecast follows the viewed week but stops before the manual horizon', () => {
   const home = homeSource()
   const start = home.indexOf('useEffect(() => {\n    if (!syllabusHydrated ||')
   const effect = home.slice(start, home.indexOf('  useEffect(() => {', start + 1))
   assert.ok(start >= 0)
+  assert.match(effect, /forecastMode !== 'automatic'/)
   assert.match(effect, /refreshSequence: forecastRefreshSequence/)
   assert.match(effect, /forecastAttempt\.current === identity/)
-  assert.equal((effect.match(/createLearningForecast\(\{ automatic: true \}\)/g) || []).length, 1)
-  assert.doesNotMatch(effect, /selectedWeekStart|learningProposal/)
-  assert.match(home, /proposal_revision\?\.base_revision_id === syllabus\.active_revision\.id/)
-  assert.match(home, /json\.kind === 'no_action'[\s\S]*?setLearningProposal\(null\)/)
+  assert.equal((effect.match(/createLearningForecast\(\{ automatic: true, targetWeekStart: currentTargetForecastWeek \}\)/g) || []).length, 1)
+  assert.match(home, /currentTargetForecastWeek = startOfSyllabusWeek\(selectedWeekStart \|\| syllabus\?\.resolved_today\)/)
+  assert.match(home, /targetWeekStart, automatic/)
+  assert.match(home, /onForecastWeek=.*createLearningForecast\(\{ targetWeekStart: weekStart \}\)/)
+  assert.doesNotMatch(home, /json\.kind === 'no_action'[\s\S]{0,120}setLearningProposal\(null\)/)
 })
 
 test('grey forecast lessons are projected into dated rows and open the real per-lesson workflow', () => {
@@ -188,6 +194,8 @@ test('grey forecast lessons are projected into dated rows and open the real per-
   assert.match(doc, /syllabusDayPresentation\(day\.items, suggestions\)/)
   assert.match(doc, /onSelect\(item, \{ suggested, recoveryRequired: recoveryRequired \|\| item\.generation_status === 'recovery_required' \}\)/)
   assert.doesNotMatch(doc, /onSelect && !disabled|busy=\{forecastBusy \|\| planningBusy/)
+  assert.equal((doc.match(/>Forecast<\/button>/g) || []).length, 1)
+  assert.match(doc, /selectedForecastMode === 'manual'/)
   assert.match(home, /actionBlockReason=\{lessonMutationBlockReason/)
   assert.match(doc, /includeOpenSlots: false/)
   assert.match(doc, /Retry forecast/)

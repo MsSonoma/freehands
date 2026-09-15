@@ -2,7 +2,9 @@ import { resolveCalendarContext } from '../calendarDate.mjs'
 import { loadRecentMasteryReports } from './masteryReports.server.mjs'
 import { composeSyllabusLessonTimeline } from './lessonTimeline.mjs'
 import { loadSyllabusTimelineInputs } from './lessonTimelineInputs.server.mjs'
-import { buildInstructionalForecastPlan, buildLearningForecastSnapshot } from './learningForecast.mjs'
+import { buildInstructionalForecastPlan, buildLearningForecastSnapshot, instructionalWeekIsFilled } from './learningForecast.mjs'
+import { instructionalForecastMode } from './forecastWindow.mjs'
+import { addSyllabusDays, startOfSyllabusWeek } from './timeline.mjs'
 import { SyllabusError, validateSnapshot } from './schema.mjs'
 
 function conflict() {
@@ -21,6 +23,8 @@ export async function createLearningForecastProposal({
   resolveLesson,
   now = new Date(),
   fallbackTimeZone,
+  targetWeekStart = '',
+  automatic = false,
 }) {
   const learner = await repository.findOwnedLearner(learnerId, facilitatorId)
   if (!learner) throw new SyllabusError('Learner not found or unauthorized', 403, 'FORBIDDEN')
@@ -39,17 +43,40 @@ export async function createLearningForecastProposal({
     today: calendar.today,
     timeZone: calendar.timeZone,
   })
+  const requestedWeek = startOfSyllabusWeek(targetWeekStart || calendar.today)
+  const forecastMode = instructionalForecastMode(calendar.today, requestedWeek)
+  if (!requestedWeek || forecastMode === 'past' || forecastMode === 'none') {
+    throw new SyllabusError('Forecasting is only available for the current or a future Syllabus week.', 422, 'FORECAST_WEEK_INVALID')
+  }
+  if (automatic && forecastMode === 'manual') {
+    throw new SyllabusError('This week requires facilitator confirmation before forecasting.', 409, 'FORECAST_CONFIRMATION_REQUIRED')
+  }
+  const existing = await repository.findLatestLearningForecastProposal(syllabus.id, activeRevision.id)
+  const existingProposalItems = existing ? await repository.listForecastItems(existing.id) : []
+  if (automatic && requestedWeek === addSyllabusDays(startOfSyllabusWeek(calendar.today), 7)) {
+    const priorWeekFilled = instructionalWeekIsFilled({
+      activeRevision,
+      timelineItems,
+      proposedForecastItems: existingProposalItems,
+      noSchoolDates: inputs.noSchoolDates || [],
+      weekStart: startOfSyllabusWeek(calendar.today),
+    })
+    if (!priorWeekFilled) {
+      return { kind: 'no_action', active_revision_id: activeRevision.id, target_week_start: requestedWeek, reason: 'prior_week_open', message: 'The prior week still has open lesson slots.' }
+    }
+  }
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
   const plan = buildInstructionalForecastPlan({
     activeRevision,
     forecastItems: inputs.forecastItems,
+    proposedForecastItems: existingProposalItems,
     timelineItems,
     reports: authorizedReports,
     learnerGrade: learner.grade || null,
     noSchoolDates: inputs.noSchoolDates || [],
     today: calendar.today,
+    targetWeekStart: requestedWeek,
   })
-  const existing = await repository.findLatestLearningForecastProposal(syllabus.id, activeRevision.id)
   if (existing?.proposal_key === plan.proposal_key && String(existing.effective_from).slice(0, 10) === calendar.today) {
     return {
       kind: 'proposal', reused: true, active_revision_id: activeRevision.id,
@@ -58,7 +85,8 @@ export async function createLearningForecastProposal({
     }
   }
   if (!plan.unfilled_slots.length && !(plan.carry_suggestions || []).length) {
-    return { kind: 'no_action', active_revision_id: activeRevision.id, message: plan.slots.length ? 'Every lesson slot in the coming seven days already has a plan.' : 'There are no teaching slots in the coming seven days. Your weekly pattern and days off are unchanged.' }
+    if (existing) return { kind: 'proposal', reused: true, active_revision_id: activeRevision.id, proposal_revision: existing, forecast_items: existingProposalItems, target_week_start: plan.target_week_start, additions: 0 }
+    return { kind: 'no_action', active_revision_id: activeRevision.id, target_week_start: plan.target_week_start, message: plan.slots.length ? 'Every lesson slot in this week already has a plan.' : 'There are no teaching slots in this week. Your weekly pattern and days off are unchanged.' }
   }
   let generatedItems = []
   if (plan.unfilled_slots.length) {
@@ -85,7 +113,7 @@ export async function createLearningForecastProposal({
   let built
   let planning
   try {
-    built = buildLearningForecastSnapshot({ activeRevision, forecastItems: inputs.forecastItems, plan, generatedItems, today: calendar.today })
+    built = buildLearningForecastSnapshot({ activeRevision, forecastItems: inputs.forecastItems, existingProposalItems: existing ? existingProposalItems : null, plan, generatedItems, today: calendar.today })
     planning = validateSnapshot(built.snapshot, { today: calendar.today, allowLegacyOrigins: true })
   } catch {
     throw new SyllabusError('The instructional forecast could not be generated. The active Syllabus was not changed.', 502, 'FORECAST_GENERATION_FAILED')
