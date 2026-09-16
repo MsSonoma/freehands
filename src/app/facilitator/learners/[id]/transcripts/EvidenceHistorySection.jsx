@@ -59,6 +59,70 @@ function Facet({ title, value }) {
   );
 }
 
+function DiagnosticComprehensionDetails({ diagnostic }) {
+  const episodes = Array.isArray(diagnostic?.episodes) ? diagnostic.episodes : [];
+  if (!episodes.length) return null;
+
+  return (
+    <div>
+      <strong>During-learning comprehension</strong>
+      {episodes.map((episode, index) => {
+        const target = episode?.target?.term || episode?.target?.text || null;
+        const observations = Array.isArray(episode?.observations) ? episode.observations : [];
+        const inferred = episode?.inferred || {};
+        const understood = Array.isArray(inferred.understood) ? inferred.understood : [];
+        const unclear = Array.isArray(inferred.unclear) ? inferred.unclear : [];
+        const misconceptions = Array.isArray(inferred.misconceptions) ? inferred.misconceptions : [];
+        const summaries = Array.isArray(inferred.summaries) ? inferred.summaries : [];
+        const strategies = Array.isArray(episode?.strategies) ? episode.strategies : [];
+        return (
+          <div key={episode?.interaction_id || index} className={styles.contextBlock} style={{ marginTop: 8 }}>
+            <div><strong>{target ? `Clarification: ${target}` : 'Clarification episode'}</strong></div>
+            {observations.length > 0 && (
+              <div style={{ marginTop: 6 }}>
+                <strong>Observed</strong>
+                <ul className={styles.detailList}>
+                  {observations.map((item, observationIndex) => (
+                    <li key={`${item?.occurred_at || observationIndex}-${observationIndex}`}>
+                      {item?.learner_message
+                        ? `Learner: “${item.learner_message}”`
+                        : item?.observed_signal === 'requested_alternative_representation'
+                          ? 'The learner requested a different explanation.'
+                          : item?.observed_signal === 'self_reported_unresolved'
+                            ? 'The learner reported that the target still did not make sense.'
+                            : item?.observed_signal === 'self_reported_understanding'
+                              ? 'The learner reported that the explanation now made sense.'
+                              : 'A learner clarification signal was recorded.'}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+            {(understood.length > 0 || unclear.length > 0 || misconceptions.length > 0 || summaries.length > 0) && (
+              <div style={{ marginTop: 6 }}>
+                <strong>Inferred</strong>
+                <ul className={styles.detailList}>
+                  {understood.map((item) => <li key={`understood-${item}`}>Appears understood: {item}</li>)}
+                  {unclear.map((item) => <li key={`unclear-${item}`}>Still unclear: {item}</li>)}
+                  {misconceptions.map((item) => <li key={`misconception-${item}`}>Expressed misconception: {item}</li>)}
+                  {summaries.map((item) => <li key={`summary-${item}`}>{item}</li>)}
+                </ul>
+              </div>
+            )}
+            {strategies.length > 0 && (
+              <p><strong>Teaching approaches used:</strong> {strategies.join(', ').replaceAll('_', ' ')}</p>
+            )}
+            <p><strong>Resolution:</strong> {episode?.resolution === 'self_reported_understanding'
+              ? 'Learner reported understanding; mastery was not inferred from that report.'
+              : episode?.resolution === 'unresolved_self_report'
+                ? 'Learner last reported that the target was still unresolved.'
+                : 'No resolution was inferred from closing the interaction.'}</p>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
 function EvidenceDetails({ report, transcript, onOpenTranscript }) {
   const facts = [
     ...(report.baseline?.supporting_evidence || []),
@@ -83,6 +147,8 @@ function EvidenceDetails({ report, transcript, onOpenTranscript }) {
         ) : (
           <p>No Stage 5-7 result facts were available for this session.</p>
         )}
+
+        <DiagnosticComprehensionDetails diagnostic={report.diagnostic_comprehension} />
 
         {(report.assistance?.events || []).length > 0 && (
           <div>
@@ -167,7 +233,7 @@ function EvidenceCard({ report, transcripts, onOpenTranscript }) {
 
       <div className={styles.facetGrid}>
         <Facet title="Before instruction" value={report.baseline} />
-        <Facet title="During learning" value={report.assistance} />
+        <Facet title="During learning" value={report.diagnostic_comprehension} />
         <Facet title="Independent evidence" value={report.independent_evidence} />
         <Facet title="Retention" value={report.retention} />
       </div>

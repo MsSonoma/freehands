@@ -13,6 +13,7 @@ import { NextResponse } from 'next/server'
 import { validateInput } from '@/lib/contentSafety'
 import { AI_MODEL } from '@/app/lib/aiModel'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
+import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = AI_MODEL
@@ -104,6 +105,7 @@ function buildFeedbackSystem(lesson, learnerName, isCorrect, attemptNumber, isLa
   } else if (attemptNumber === 1) {
     lines.push(
       `The student answered INCORRECTLY on their first try.`,
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.HINT_SAFE }),
       `1. Be gently encouraging — do NOT say "wrong", "incorrect", or "that's not right".`,
       `2. Give a subtle, helpful hint that nudges them toward the correct answer without giving it away.`,
       `3. Invite them to try again in a warm way.`,
@@ -111,6 +113,7 @@ function buildFeedbackSystem(lesson, learnerName, isCorrect, attemptNumber, isLa
   } else if (attemptNumber === 2) {
     lines.push(
       `The student answered INCORRECTLY on their second try — this is getting tricky.`,
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.HINT_SAFE }),
       `1. Acknowledge it's a tough one. Stay warm and supportive.`,
       `2. Give a stronger, more direct hint — still not revealing the answer, but clearly pointing toward it.`,
       `3. Encourage one more try.`,
@@ -119,6 +122,7 @@ function buildFeedbackSystem(lesson, learnerName, isCorrect, attemptNumber, isLa
     // 3rd wrong — reveal
     lines.push(
       `The student has answered incorrectly 3 times. Time to gently reveal the correct answer.`,
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.RECOVERY_EXPLANATION }),
       `1. Let them know it's okay — this was a tricky one.`,
       `2. State the correct answer clearly (it is provided in the user message).`,
       `3. Give a very brief, encouraging explanation if helpful.`,

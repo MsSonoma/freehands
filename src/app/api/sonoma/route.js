@@ -7,6 +7,7 @@ import path from 'node:path'
 import textToSpeech from '@google-cloud/text-to-speech'
 import { validateInput, validateOutput, hardenInstructions, getFallbackResponse, classifyConversationSafety } from '@/lib/contentSafety'
 import { AI_MODEL } from '@/app/lib/aiModel'
+import { buildInstructionalResponseContract, parseInstructionalJsonResponse } from '@/app/lib/comprehensionSignals.mjs'
 
 // Providers
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
@@ -179,6 +180,7 @@ export async function POST(req) {
   let innertext = ''
   let skipAudio = false
   let lessonTopic = ''
+  let responseMode = 'text'
 
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     try {
@@ -191,6 +193,7 @@ export async function POST(req) {
           innertext = body.innertext || ''
           skipAudio = Boolean(body.skipAudio)
           lessonTopic = body.lessonTopic || ''
+          responseMode = body.responseMode || 'text'
           // Got structured body
           instructions = instruction
         } catch {
@@ -203,6 +206,7 @@ export async function POST(req) {
         instructions = form.get('instruction')?.toString() || form.get('instructions')?.toString() || ''
         innertext = form.get('innertext')?.toString() ?? ''
         skipAudio = String(form.get('skipAudio') ?? '').toLowerCase() === 'true'
+        responseMode = form.get('responseMode')?.toString() || 'text'
         // Received URL-encoded form payload
       } else {
         // Fallback: treat entire body as text instructions
@@ -218,6 +222,7 @@ export async function POST(req) {
 
     const trimmedInstructions = typeof instructions === 'string' ? instructions.trim() : ''
     const trimmedInnertext = typeof innertext === 'string' ? innertext.trim() : ''
+    const structuredInstructional = responseMode === 'instructional_json'
 
     if (!trimmedInstructions) {
       // Missing instructions payload
@@ -268,7 +273,10 @@ export async function POST(req) {
       }
     }
     // CONTENT SAFETY: Harden instructions with safety preamble
-    const hardenedInstructions = hardenInstructions(trimmedInstructions, lessonTopic || 'educational content', [], safetyClassification)
+    const responseInstructions = structuredInstructional
+      ? `${trimmedInstructions}\n\n${buildInstructionalResponseContract()}`
+      : trimmedInstructions
+    const hardenedInstructions = hardenInstructions(responseInstructions, lessonTopic || 'educational content', [], safetyClassification)
     
     // Minimal user payload: single user message containing instructions + (optional) innertext
     const combined = trimmedInnertext
@@ -360,17 +368,31 @@ export async function POST(req) {
       }
     }
 
+    let learnerReply = msSonomaReply
+    let diagnostic = null
+    let strategy = null
+    if (structuredInstructional) {
+      const parsed = parseInstructionalJsonResponse(msSonomaReply)
+      if (parsed) {
+        learnerReply = parsed.reply
+        diagnostic = parsed.diagnostic
+        strategy = parsed.strategy
+      } else if (/^\s*(?:\{|```)/.test(msSonomaReply || '')) {
+        learnerReply = 'I want to explain that clearly. Tell me which part is still not making sense.'
+      }
+    }
+
     let audioContent = skipAudio ? null : undefined
-    if (!skipAudio && msSonomaReply) {
+    if (!skipAudio && learnerReply) {
       // Check TTS cache first
-      if (ttsCache.has(msSonomaReply)) {
-        audioContent = ttsCache.get(msSonomaReply)
+      if (ttsCache.has(learnerReply)) {
+        audioContent = ttsCache.get(learnerReply)
       } else {
       const ttsClient = await getTtsClient()
       if (ttsClient) {
         try {
           // Build SSML from plain text so we can add natural pauses for MC choices without changing transcripts
-          const ssml = toSsml(msSonomaReply)
+          const ssml = toSsml(learnerReply)
           const [ttsResponse] = await ttsClient.synthesizeSpeech({
             input: { ssml },
             voice: DEFAULT_VOICE,
@@ -382,7 +404,7 @@ export async function POST(req) {
               : Buffer.from(ttsResponse.audioContent).toString('base64')
             // Insert into cache with naive LRU truncation
             try {
-              ttsCache.set(msSonomaReply, audioContent)
+              ttsCache.set(learnerReply, audioContent)
               if (ttsCache.size > TTS_CACHE_MAX) {
                 const firstKey = ttsCache.keys().next().value
                 ttsCache.delete(firstKey)
@@ -398,7 +420,7 @@ export async function POST(req) {
 
     // Reply generated
 
-  return NextResponse.json({ reply: msSonomaReply, audio: audioContent })
+  return NextResponse.json({ reply: learnerReply, audio: audioContent, diagnostic, strategy })
   } catch (error) {
     // Unexpected error
     return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })

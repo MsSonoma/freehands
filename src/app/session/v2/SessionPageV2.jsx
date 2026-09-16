@@ -59,6 +59,9 @@ import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import CaptionPanel from '../components/CaptionPanel';
+import StudyPanel from './StudyPanel';
+import VocabularyPanel from './VocabularyPanel';
+import { normalizeLessonVocabulary, getVocabularyTerms, buildVocabularyPromptChunk } from '@/app/lib/lessonVocabulary.mjs';
 import FeatureHelpToast from '../components/FeatureHelpToast';
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript } from '@/app/lib/productHelp.mjs';
 import TypingConversationContext from '../components/TypingConversationContext';
@@ -118,9 +121,14 @@ const SESSION_TUTORIAL_STEPS = [
     body: 'Ms. Sonoma reads the lesson to you. Press Repeat (blue button) to hear a sentence again, or Next Sentence (green button) to move forward.',
   },
   {
-    icon: '✋',
+    icon: '?',
     title: 'Ask a Question',
-    body: 'During exercises and worksheets, tap the blue "✋" question button to ask Ms. Sonoma anything about the lesson. She will answer and bring you right back.',
+    body: 'Tap the blue question button when you have your own question about the lesson. Ms. Sonoma will answer it and keep the question separate from your regular work.',
+  },
+  {
+    icon: '\u{1F91A}',
+    title: 'Study Something That Does Not Make Sense',
+    body: 'Tap the hand beside a Ms. Sonoma sentence to study that exact part. You can ask for another explanation, say you still do not understand, or explain what is confusing you. Use Words to open the lesson vocabulary anytime during learning.',
   },
   {
     icon: '\u23f1\ufe0f',
@@ -540,6 +548,9 @@ function SessionPageV2Inner() {
   const videoRef = useRef(null);
   const transcriptRef = useRef(null);
   const audioEngineRef = useRef(null);
+  const studyAudioEngineRef = useRef(null);
+  const studyResumeMainAudioRef = useRef(false);
+  const wordsResumeMainAudioRef = useRef(false);
   const eventBusRef = useRef(null); // Shared EventBus for all services
   const orchestratorRef = useRef(null);
   const snapshotServiceRef = useRef(null);
@@ -549,6 +560,8 @@ function SessionPageV2Inner() {
   const answerInputRef = useRef(null);
   const openingActionInputRef = useRef(null);
   const openingActionsControllerRef = useRef(null);
+  const openingActionActiveRef = useRef(false);
+  const showWordsRef = useRef(false);
   const askReturnQuestionRef = useRef('');
   const askExitSpeechLockRef = useRef(false);
   const comprehensionPhaseRef = useRef(null);
@@ -862,6 +875,7 @@ function SessionPageV2Inner() {
   const [showFullscreenPlayTimer, setShowFullscreenPlayTimer] = useState(false);
   const [visualAidsData, setVisualAidsData] = useState(null);
   const [showVisualAids, setShowVisualAids] = useState(false);
+  const [showWords, setShowWords] = useState(false);
 
   // Plan entitlements (used for view-only gating inside the session).
   const [planTier, setPlanTier] = useState('free');
@@ -938,6 +952,14 @@ function SessionPageV2Inner() {
   useEffect(() => {
     openingActionBusyRef.current = openingActionBusy;
   }, [openingActionBusy]);
+
+  useEffect(() => {
+    openingActionActiveRef.current = openingActionActive;
+  }, [openingActionActive]);
+
+  useEffect(() => {
+    showWordsRef.current = showWords;
+  }, [showWords]);
 
   useEffect(() => {
     // If the Ask panel is dismissed mid-flight, ensure the shortcut can be used again next time.
@@ -1314,7 +1336,13 @@ function SessionPageV2Inner() {
       const latest = transcriptPersistLatestRef.current;
       try {
         const safeLines = Array.isArray(latest?.lines)
-          ? latest.lines.map((l) => ({ text: String(l?.text || ''), role: l?.role === 'user' ? 'user' : 'assistant' }))
+          ? latest.lines.map((l) => ({
+              text: String(l?.text || ''),
+              role: l?.role === 'user' ? 'user' : 'assistant',
+              ...(l?.phase ? { phase: String(l.phase) } : {}),
+              ...(l?.kind ? { kind: String(l.kind) } : {}),
+              ...(l?.featureId ? { featureId: String(l.featureId) } : {}),
+            }))
           : [];
         const safeIdx = Number.isFinite(latest?.activeIdx) ? latest.activeIdx : -1;
         snapshotServiceRef.current.saveProgress('transcript', {
@@ -1395,37 +1423,12 @@ function SessionPageV2Inner() {
     });
   }, []);
 
-  // Vocab terms for caption highlighting (Discussion/Teaching)
-  const vocabTerms = useMemo(() => {
-    if (!lessonData) return [];
-    // Vocab entries may be plain strings OR objects like { term, word, name, definition }
-    const normalizeList = (arr = []) => (Array.isArray(arr) ? arr : [])
-      .map((t) => {
-        if (!t) return '';
-        if (typeof t === 'string') return t.trim();
-        // Object shape: prefer .term, then .word, then .name
-        return String(t.term || t.word || t.name || '').trim();
-      })
-      .filter(Boolean);
-    const explicit = normalizeList(lessonData.vocabulary || lessonData.vocab || lessonData.vocab_terms);
-    const fallback = (() => {
-      const rawTitle = String(lessonData.title || lessonId || '').trim();
-      if (!rawTitle) return [];
-      const stop = new Set(['with','and','the','of','a','an','to','in','on','for','by','vs','versus','about','into','from']);
-      return rawTitle
-        .split(/[^A-Za-z]+/)
-        .map(w => w.trim())
-        .filter(w => w && !stop.has(w.toLowerCase()))
-        .slice(0, 5);
-    })();
-    const terms = explicit.length ? explicit : fallback;
-    const dedup = new Map();
-    for (const t of terms) {
-      const key = t.toLowerCase();
-      if (!dedup.has(key)) dedup.set(key, t);
-    }
-    return Array.from(dedup.values()).sort((a, b) => b.length - a.length);
-  }, [lessonData, lessonId]);
+  // Canonical vocabulary for highlighting, the persistent Words surface, Ask, and Study.
+  const normalizedVocabulary = useMemo(() => normalizeLessonVocabulary(lessonData || {}), [lessonData]);
+  const vocabTerms = useMemo(
+    () => getVocabularyTerms(lessonData || {}, { fallbackTitle: lessonData?.title || lessonId || '' }),
+    [lessonData, lessonId],
+  );
 
   useEffect(() => {
     resumePhaseRef.current = resumePhase;
@@ -1495,6 +1498,7 @@ function SessionPageV2Inner() {
 
   // Desktop keeps keyboard-style focus convenience. Touch devices never summon the software keyboard automatically.
   useEffect(() => {
+    if (openingActionActive || showWords) return;
     if (!shouldAutoFocusTextInput()) return;
     const awaiting =
       (currentPhase === 'comprehension' && comprehensionState === 'awaiting-answer') ||
@@ -1508,7 +1512,7 @@ function SessionPageV2Inner() {
         try { answerInputRef.current.focus(); } catch {}
       }
     }
-  }, [currentPhase, comprehensionState, exerciseState, worksheetState, testState]);
+  }, [currentPhase, comprehensionState, exerciseState, worksheetState, testState, openingActionActive, showWords]);
   
   // Load lesson data
   useEffect(() => {
@@ -2325,7 +2329,13 @@ function SessionPageV2Inner() {
             // If snapshot is already at the beginning, start fresh and clear any stale captions.
             resetTranscriptState({ persist: true });
           } else if (storedLines && storedLines.length) {
-            const normalized = storedLines.map((l) => ({ text: String(l?.text || ''), role: l?.role === 'user' ? 'user' : 'assistant' }));
+            const normalized = storedLines.map((l) => ({
+              text: String(l?.text || ''),
+              role: l?.role === 'user' ? 'user' : 'assistant',
+              ...(l?.phase ? { phase: String(l.phase) } : {}),
+              ...(l?.kind ? { kind: String(l.kind) } : {}),
+              ...(l?.featureId ? { featureId: String(l.featureId) } : {}),
+            }));
             setTranscriptLines(normalized);
             // Mark how many lines came from prior sessions so the next save only includes new lines.
             sessionTranscriptStartIdxRef.current = normalized.length;
@@ -3866,12 +3876,29 @@ function SessionPageV2Inner() {
     return next;
   }, []);
 
+  const closeStudyAction = useCallback(() => {
+    const controller = openingActionsControllerRef.current;
+    try { studyAudioEngineRef.current?.stop?.(); } catch {}
+    try { controller?.completeStudy?.(); } catch {}
+    setOpeningActionActive(false);
+    setOpeningActionType(null);
+    setOpeningActionState({});
+    setOpeningActionInput('');
+    setOpeningActionError('');
+    setOpeningActionBusy(false);
+    const shouldResume = studyResumeMainAudioRef.current === true;
+    studyResumeMainAudioRef.current = false;
+    if (shouldResume) void audioEngineRef.current?.resume?.();
+  }, []);
+
   const handleOpeningActionCancel = useCallback(() => {
+    if (openingActionType === 'study') {
+      closeStudyAction();
+      return;
+    }
     const controller = openingActionsControllerRef.current;
     stopAudioSafe({ force: true });
-    if (controller?.cancelCurrent) {
-      controller.cancelCurrent();
-    }
+    if (controller?.cancelCurrent) controller.cancelCurrent();
     setOpeningActionActive(false);
     setOpeningActionType(null);
     setOpeningActionState({});
@@ -3881,7 +3908,7 @@ function SessionPageV2Inner() {
     askAnswerShortcutLoadingRef.current = false;
     setAskAnswerShortcutLoading(false);
     askReturnQuestionRef.current = '';
-  }, [stopAudioSafe]);
+  }, [closeStudyAction, openingActionType, stopAudioSafe]);
 
   const buildAskContext = useCallback(() => {
     const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'this lesson').toString();
@@ -3889,31 +3916,7 @@ function SessionPageV2Inner() {
     const subject = (lessonData?.subject || subjectParam || 'general').toString();
     const difficulty = (lessonData?.difficulty || 'moderate').toString();
 
-    const rawVocabArray = (() => {
-      const possible = lessonData?.vocabulary || lessonData?.vocab || lessonData?.vocab_terms;
-      return Array.isArray(possible) ? possible : null;
-    })();
-
-    let vocabChunk = '';
-    if (rawVocabArray && rawVocabArray.length) {
-      const items = rawVocabArray.slice(0, 12).map((v) => {
-        if (typeof v === 'string') return { term: v, definition: '' };
-        const term = (v && (v.term || v.word || v.title || v.key || '')) || '';
-        const def = (v && (v.definition || v.meaning || v.explainer || '')) || '';
-        return { term: String(term).trim(), definition: String(def).trim() };
-      }).filter((x) => x.term);
-
-      if (items.length) {
-        const withDefs = items.some((x) => x.definition);
-        if (withDefs) {
-          const pairs = items.slice(0, 6).map((x) => `${x.term}: ${x.definition || 'definition not provided'}`).join('; ');
-          vocabChunk = `Relevant vocab for this lesson (use provided meanings): ${pairs}.`;
-        } else {
-          const list = items.map((x) => x.term).join(', ');
-          vocabChunk = `Relevant vocab for this lesson (use provided meanings): ${list}.`;
-        }
-      }
-    }
+    const vocabChunk = buildVocabularyPromptChunk(lessonData || {}, { limit: 6 });
 
     const formatProblem = (item) => {
       if (!item) return '';
@@ -4228,6 +4231,148 @@ function SessionPageV2Inner() {
     }
   }, [addMasteryAssistanceForItem, getEvidenceItemContext]);
 
+  const handleWordsOpen = useCallback(() => {
+    const phase = normalizePhaseAlias(currentPhaseRef.current || currentPhase);
+    if (!['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(phase)) return;
+    const mainAudio = audioEngineRef.current;
+    const wasPlaying = !!mainAudio?.isPlaying;
+    wordsResumeMainAudioRef.current = wasPlaying;
+    if (wasPlaying) {
+      try { mainAudio.pause(); } catch {}
+    }
+    setShowVisualAids(false);
+    setShowGames(false);
+    setShowFullscreenPlayTimer(false);
+    setShowWords(true);
+  }, [currentPhase]);
+
+  const handleWordsClose = useCallback(() => {
+    setShowWords(false);
+    const shouldResume = wordsResumeMainAudioRef.current === true;
+    wordsResumeMainAudioRef.current = false;
+    if (shouldResume) void audioEngineRef.current?.resume?.();
+  }, []);
+
+  const buildStudyContext = useCallback((target = {}) => {
+    const base = buildAskContext();
+    const index = Number.isFinite(Number(target?.transcriptIndex)) ? Number(target.transcriptIndex) : null;
+    const surroundingContext = index == null
+      ? ''
+      : (transcriptLines || [])
+        .slice(Math.max(0, index - 1), Math.min((transcriptLines || []).length, index + 2))
+        .map((line) => String(line?.text || '').trim())
+        .filter(Boolean)
+        .join(' | ')
+        .slice(0, 1200);
+    let lessonContext = '';
+    try {
+      lessonContext = JSON.stringify(buildInstructionalLessonView(lessonData || {})).slice(0, 6000);
+    } catch {}
+    return {
+      ...base,
+      teachingStage: target?.sourceStage || teachingStage || null,
+      surroundingContext,
+      lessonContext,
+    };
+  }, [buildAskContext, lessonData, teachingStage, transcriptLines]);
+
+  const handleStudyStart = useCallback(async (target) => {
+    const controller = openingActionsControllerRef.current;
+    const phase = normalizePhaseAlias(currentPhaseRef.current || currentPhase);
+    if (!controller || !['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(phase)) return;
+
+    const wordsHadMainAudio = wordsResumeMainAudioRef.current === true;
+    wordsResumeMainAudioRef.current = false;
+    setShowWords(false);
+    setShowVisualAids(false);
+    setShowGames(false);
+    setShowFullscreenPlayTimer(false);
+    setOpeningActionError('');
+    controller.setPhase?.(phase);
+    const mainAudio = audioEngineRef.current;
+    const wasPlaying = !!mainAudio?.isPlaying;
+    studyResumeMainAudioRef.current = wasPlaying || wordsHadMainAudio;
+    if (wasPlaying) {
+      try { mainAudio.pause(); } catch {}
+    }
+
+    try {
+      try { await studyAudioEngineRef.current?.initialize?.(); } catch {}
+      const result = controller.startStudy({
+        ...target,
+        sourcePhase: phase,
+        sourceStage: target?.sourceStage || teachingStage || null,
+      });
+      if (!result?.success) throw new Error(result?.error || 'Study could not start');
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Study start error:', err);
+      const shouldResume = studyResumeMainAudioRef.current === true;
+      studyResumeMainAudioRef.current = false;
+      if (shouldResume) void mainAudio?.resume?.();
+      setOpeningActionError('Study is unavailable right now.');
+    }
+  }, [currentPhase, syncOpeningActionState, teachingStage]);
+
+  const handleStudySubmit = useCallback(async (mode = 'typed') => {
+    const controller = openingActionsControllerRef.current;
+    if (!controller || openingActionBusyRef.current) return;
+    const target = openingActionState?.data?.target || openingActionState?.target || {};
+    const message = mode === 'typed' ? String(openingActionInput || '').trim() : '';
+    if (mode === 'typed' && !message) {
+      setOpeningActionError('Tell Ms. Sonoma what is confusing you.');
+      return;
+    }
+
+    openingActionBusyRef.current = true;
+    setOpeningActionBusy(true);
+    setOpeningActionError('');
+    try {
+      const itemContext = getActiveEvidenceItemContext();
+      const result = await controller.submitStudyMessage(message, buildStudyContext(target), { mode });
+      if (result?.success) {
+        void masteryEvidenceClientRef.current?.recordAskUsed({
+          ...itemContext,
+          askMode: `study_${result.inputMode || mode}`,
+          prompt: result.learnerMessage,
+          response: result.answer,
+          answerRevealed: false,
+          interactionId: result.interactionId,
+          turnIndex: result.turnIndex,
+          inputMode: result.inputMode || mode,
+          strategyUsed: result.strategy,
+          targetType: target?.type || null,
+          targetText: target?.text || null,
+          targetTerm: target?.term || null,
+        });
+        void masteryEvidenceClientRef.current?.recordComprehensionSignal({
+          ...itemContext,
+          source: 'study',
+          interactionId: result.interactionId,
+          turnIndex: result.turnIndex,
+          inputMode: result.inputMode || mode,
+          learnerMessage: result.learnerMessage,
+          observedSignal: result.observedSignal,
+          targetType: target?.type || null,
+          targetText: target?.text || null,
+          targetTerm: target?.term || null,
+          targetDefinition: target?.definition || null,
+          sourceStage: target?.sourceStage || teachingStage || null,
+          strategyUsed: result.strategy,
+          diagnostic: result.diagnostic,
+        });
+      }
+      if (mode === 'typed') setOpeningActionInput('');
+      syncOpeningActionState();
+    } catch (err) {
+      console.error('[SessionPageV2] Study submit error:', err);
+      setOpeningActionError('Could not continue Study. Try again.');
+    } finally {
+      openingActionBusyRef.current = false;
+      setOpeningActionBusy(false);
+    }
+  }, [buildStudyContext, getActiveEvidenceItemContext, openingActionInput, openingActionState, syncOpeningActionState, teachingStage]);
+
   const handleOpeningAskStart = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
     if (!controller || openingActionBusy) return;
@@ -4279,7 +4424,27 @@ function SessionPageV2Inner() {
           ...itemContext,
           askMode: 'freeform',
           prompt: question,
+          response: result.answer,
           answerRevealed: false,
+          interactionId: result.interactionId,
+          turnIndex: result.turnIndex,
+          inputMode: 'typed',
+          strategyUsed: result.strategy,
+          targetType: 'ask',
+          targetText: getActiveFlowQuestionText() || null,
+        });
+        void masteryEvidenceClientRef.current?.recordComprehensionSignal({
+          ...itemContext,
+          source: 'ask',
+          interactionId: result.interactionId,
+          turnIndex: result.turnIndex,
+          inputMode: 'typed',
+          learnerMessage: question,
+          targetType: 'ask',
+          targetText: getActiveFlowQuestionText() || null,
+          sourceStage: itemContext?.phase === 'teaching' ? teachingStage : null,
+          strategyUsed: result.strategy,
+          diagnostic: result.diagnostic,
         });
         if (itemContext?.phase === 'test') {
           addMasteryAssistanceForItem(itemContext, {
@@ -4297,7 +4462,7 @@ function SessionPageV2Inner() {
       openingActionBusyRef.current = false;
       setOpeningActionBusy(false);
     }
-  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext, addMasteryAssistanceForItem, appendTranscriptLine, pendingFeatureHelp]);
+  }, [openingActionInput, syncOpeningActionState, buildAskContext, getActiveEvidenceItemContext, getActiveFlowQuestionText, addMasteryAssistanceForItem, appendTranscriptLine, pendingFeatureHelp, teachingStage]);
 
   const handleOpeningAskWhatsTheAnswer = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -5220,6 +5385,8 @@ function SessionPageV2Inner() {
   useEffect(() => {
     if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
 
+    const studyEngine = new AudioEngine({ videoElement: null });
+    studyAudioEngineRef.current = studyEngine;
     const openingController = new OpeningActionsController(
       eventBusRef.current,
       audioEngineRef.current,
@@ -5227,7 +5394,8 @@ function SessionPageV2Inner() {
         phase: currentPhase,
         subject: lessonData.subject || 'math',
         learnerGrade: lessonData.grade || '',
-        difficulty: lessonData.difficulty || 'moderate'
+        difficulty: lessonData.difficulty || 'moderate',
+        studyAudioEngine: studyEngine,
       }
     );
 
@@ -5275,6 +5443,8 @@ function SessionPageV2Inner() {
       try { unsubComplete?.(); } catch {}
       try { unsubCancel?.(); } catch {}
       try { openingController.destroy(); } catch {}
+      try { studyEngine.stop(); } catch {}
+      studyAudioEngineRef.current = null;
       openingActionsControllerRef.current = null;
       setOpeningActionActive(false);
       setOpeningActionType(null);
@@ -5284,6 +5454,19 @@ function SessionPageV2Inner() {
       setOpeningActionBusy(false);
     };
   }, [lessonData, audioReady]);
+
+  useEffect(() => {
+    openingActionsControllerRef.current?.setPhase?.(normalizePhaseAlias(currentPhase));
+  }, [currentPhase]);
+
+  useEffect(() => {
+    if (!showWords) return;
+    const phase = normalizePhaseAlias(currentPhase);
+    if (!['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(phase)) {
+      wordsResumeMainAudioRef.current = false;
+      setShowWords(false);
+    }
+  }, [currentPhase, showWords]);
 
   // If learnerProfile finishes loading after a Q&A phase was entered, initialize that phase and start any pending play timer.
   useEffect(() => {
@@ -5477,6 +5660,7 @@ function SessionPageV2Inner() {
       conceptCompleted: savedTeaching.conceptCompleted === true,
       conceptSentences: Array.isArray(savedTeaching.conceptSentences) ? savedTeaching.conceptSentences : [],
       vocabSentences: Array.isArray(savedTeaching.vocabSentences) ? savedTeaching.vocabSentences : [],
+      lectureSentences: Array.isArray(savedTeaching.lectureSentences) ? savedTeaching.lectureSentences : [],
       exampleSentences: Array.isArray(savedTeaching.exampleSentences) ? savedTeaching.exampleSentences : []
     } : null;
 
@@ -6704,6 +6888,7 @@ function SessionPageV2Inner() {
   
   // Handle keyboard hotkeys
   const handleHotkey = (data) => {
+    if (openingActionActiveRef.current || showWordsRef.current) return;
     const { action, phase, key } = data;
     
     addEvent(`âŒ¨ï¸ Hotkey: ${key} (${action})`);
@@ -7525,6 +7710,7 @@ function SessionPageV2Inner() {
   };
   
   const nextSentence = async () => {
+    if (openingActionActiveRef.current || showWordsRef.current) return;
     if (!teachingControllerRef.current) return;
     
     // Show loading if GPT content isn't ready
@@ -7537,6 +7723,7 @@ function SessionPageV2Inner() {
   };
   
   const repeatSentence = () => {
+    if (openingActionActiveRef.current || showWordsRef.current) return;
     if (!teachingControllerRef.current) return;
     void masteryEvidenceClientRef.current?.recordInteractionEvent({
       eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
@@ -8157,7 +8344,7 @@ function SessionPageV2Inner() {
             }}
           >
             {(() => {
-              const canShowAsk = !!openingActionsControllerRef.current && !openingActionActive && normalizePhaseAlias(currentPhase) !== 'test';
+              const canShowAsk = !!openingActionsControllerRef.current && !openingActionActive && !showWords && normalizePhaseAlias(currentPhase) !== 'test';
               const disabled = openingActionBusy || !canShowAsk;
               if (!canShowAsk) return null;
               return (
@@ -8187,7 +8374,32 @@ function SessionPageV2Inner() {
               );
             })()}
 
-            {Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
+            {!openingActionActive && !showWords && normalizedVocabulary.length > 0 && ['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(normalizePhaseAlias(currentPhase)) && (
+              <button
+                type="button"
+                onClick={handleWordsOpen}
+                aria-label="Lesson words"
+                title="Lesson words"
+                style={{
+                  background: '#7c3aed',
+                  color: '#fff',
+                  border: 'none',
+                  minHeight: 'clamp(34px, 6.2vw, 52px)',
+                  padding: '0 14px',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: 999,
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 8px rgba(124,58,237,0.32)',
+                  fontSize: 'clamp(13px, 2.2vw, 16px)',
+                  fontWeight: 800,
+                }}
+              >
+                Words
+              </button>
+            )}
+
+            {!openingActionActive && !showWords && Array.isArray(visualAidsData) && visualAidsData.length > 0 && (
               <button
                 type="button"
                 onClick={() => {
@@ -8432,6 +8644,24 @@ function SessionPageV2Inner() {
             isMobilePortrait={!isMobileLandscape && (typeof window !== 'undefined' ? window.innerWidth <= 768 : false)}
             footerHeight={footerHeight}
           />
+        ) : openingActionActive && openingActionType === 'study' ? (
+          <StudyPanel
+            state={openingActionState}
+            input={openingActionInput}
+            setInput={setOpeningActionInput}
+            busy={openingActionBusy}
+            error={openingActionError}
+            onSubmit={() => handleStudySubmit('typed')}
+            onQuickAction={handleStudySubmit}
+            onClose={closeStudyAction}
+            inputRef={openingActionInputRef}
+          />
+        ) : showWords ? (
+          <VocabularyPanel
+            entries={normalizedVocabulary}
+            onStudy={handleStudyStart}
+            onClose={handleWordsClose}
+          />
         ) : (
           <CaptionPanel
             sentences={transcriptLines}
@@ -8442,6 +8672,14 @@ function SessionPageV2Inner() {
             phase={currentPhase}
             vocabTerms={vocabTerms}
             captionStartIndex={currentPhase === 'test' ? testCaptionStartIndex : -1}
+            studyEnabled={!openingActionActive && !showWords}
+            onStudyRequest={(line, originalIndex) => handleStudyStart({
+              type: 'sentence',
+              text: String(line?.text || ''),
+              transcriptIndex: originalIndex,
+              sourcePhase: line?.phase || currentPhase,
+              sourceStage: normalizePhaseAlias(currentPhase) === 'teaching' ? teachingStage : null,
+            })}
           />
         )}
       </div>
@@ -8482,7 +8720,7 @@ function SessionPageV2Inner() {
               (currentPhase === 'test' && testState === 'awaiting-go')
             );
 
-            if (!awaitingGo || openingActionActive) return null;
+            if (!awaitingGo || openingActionActive || showWords) return null;
 
             const phaseName = getCurrentPhaseName();
             const timerMode = phaseName ? currentTimerMode[phaseName] : null;
@@ -8740,7 +8978,7 @@ function SessionPageV2Inner() {
               </div>
             );
 
-            if (!action) return null;
+            if (!action || action === 'study') return null;
 
             if (action === 'ask') {
               const phaseAlias = normalizePhaseAlias(currentPhase);
@@ -9288,7 +9526,7 @@ function SessionPageV2Inner() {
             const needBeginExercise = (currentPhase === 'exercise' && (!exerciseState || exerciseState === 'idle'));
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
             const needBeginTest = (currentPhase === 'test' && (!testState || testState === 'idle'));
-            if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest)) return null;
+            if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest) || openingActionActive || showWords) return null;
             if (baselineState === 'awaiting-response' || retentionState === 'awaiting-response') return null;
             // Hide Begin while the play-time-expired countdown is running — clicking Begin
             // at this point would restart the play timer and give double time.
@@ -9452,7 +9690,7 @@ function SessionPageV2Inner() {
           })()}
 
           {/* Discussion sentence controls — Repeat/Next during overview and vocab playback */}
-          {currentPhase === 'discussion' &&
+          {currentPhase === 'discussion' && !openingActionActive && !showWords &&
            (discussionState === 'playing-greeting' || discussionState === 'playing-vocab') && (
             <div style={{
               display: 'flex',
@@ -9501,7 +9739,7 @@ function SessionPageV2Inner() {
           )}
 
           {/* Teaching controls (footer) */}
-          {currentPhase === 'teaching' && (
+          {currentPhase === 'teaching' && !openingActionActive && !showWords && (
             <div style={{
               display: 'flex',
               gap: 12,
@@ -9565,7 +9803,7 @@ function SessionPageV2Inner() {
           {/* Exercise conversation chat input */}
           {currentPhase === 'exercise' &&
            (exerciseState === 'chatting' || exerciseState === 'awaiting-response') &&
-           !openingActionActive && (
+           !openingActionActive && !showWords && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -9635,7 +9873,7 @@ function SessionPageV2Inner() {
           {/* Discussion chat input — shown when in the Socratic conversation */}
           {currentPhase === 'discussion' &&
            (discussionState === 'chatting' || discussionState === 'awaiting-response') &&
-           !openingActionActive && (
+           !openingActionActive && !showWords && (
             <div style={{
               display: 'flex',
               alignItems: 'center',
@@ -9720,7 +9958,7 @@ function SessionPageV2Inner() {
               (qaPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
               (qaPhase === 'test' && testState === 'awaiting-answer');
 
-            if (!qaPhase || !awaitingAnswer || openingActionActive) return null;
+            if (!qaPhase || !awaitingAnswer || openingActionActive || showWords) return null;
 
             const q =
               qaPhase === 'comprehension' ? currentComprehensionQuestion :

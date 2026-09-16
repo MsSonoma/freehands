@@ -11,7 +11,7 @@ function stripMarkdown(text) {
     .replace(/_([^_]+)_/g, '$1');
 }
 
-function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1 }) {
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false }) {
   const [canScroll, setCanScroll] = useState(false);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
@@ -265,15 +265,39 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
                 }
               }
             } catch {}
+            const startOffset = Number.isFinite(captionStartIndex) && captionStartIndex > 0 ? captionStartIndex : 0;
+            const originalIndex = idx + startOffset;
+            const canStudy = !!studyEnabled
+              && typeof onStudyRequest === 'function'
+              && s.role !== 'user'
+              && s.kind !== 'product_help'
+              && phase !== 'test'
+              && ['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(phase)
+              && !!String(text || '').trim();
             return (
               <div key={idx} data-idx={idx} style={{ ...containerBase, ...(activeContainer || {}) }} aria-current={isActive ? 'true' : undefined}>
-                {s.role === 'user' ? (
-                  <div style={{ ...textBase, ...userText }}>{text}</div>
-                ) : mcRender ? (
-                  <div style={{ ...textBase, ...activeText }}>{mcRender}</div>
-                ) : (
-                  <div style={{ ...textBase, ...activeText }}>{highlighted || text}</div>
-                )}
+                <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    {s.role === 'user' ? (
+                      <div style={{ ...textBase, ...userText }}>{text}</div>
+                    ) : mcRender ? (
+                      <div style={{ ...textBase, ...activeText }}>{mcRender}</div>
+                    ) : (
+                      <div style={{ ...textBase, ...activeText }}>{highlighted || text}</div>
+                    )}
+                  </div>
+                  {canStudy ? (
+                    <button
+                      type="button"
+                      onClick={() => onStudyRequest(s, originalIndex)}
+                      aria-label="Study this with Ms. Sonoma"
+                      title="Study this"
+                      style={{ flex: '0 0 auto', border: '1px solid #d97706', background: '#fffbeb', color: '#92400e', borderRadius: 8, minWidth: 34, height: 32, padding: '0 8px', cursor: 'pointer', fontSize: 17, lineHeight: 1 }}
+                    >
+                      {'\u{1F91A}'}
+                    </button>
+                  ) : null}
+                </div>
               </div>
             );
           })}

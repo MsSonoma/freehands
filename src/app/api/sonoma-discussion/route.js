@@ -11,6 +11,7 @@
 import { NextResponse } from 'next/server'
 import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
+import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL } from '@/app/lib/aiModel'
@@ -91,6 +92,7 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
   if (objectiveStatus === 'no_answer') {
     lines.push(
       `\nThe learner explicitly said they do not know or are not sure. This is NOT successful comprehension and must not be praised as if it were correct. Stay on the same checkpoint. Teach ONE small, useful piece of that idea in plain age-appropriate language, then ask ONE easier scaffolded question that the learner can answer from what you just taught. Do not simply repeat the previous question.`,
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.RECOVERY_EXPLANATION }),
     )
   } else if (objectiveStatus === 'reproduced') {
     lines.push(
@@ -99,10 +101,12 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
   } else if (objectiveStatus === 'partial') {
     lines.push(
       `\nThe evaluator found the latest response PARTIAL. Acknowledge the part that is actually correct, then ask ONE small question for the essential missing part of the central concept. Do not demand extra details that are merely examples, modifiers, or secondary consequences.`,
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.RECOVERY_EXPLANATION }),
     )
   } else if (objectiveStatus === 'incorrect') {
     lines.push(
       `\nThe evaluator found the latest response INCORRECT. Calmly correct the specific misconception, then ask ONE simpler question about the same central concept. Do not use praise that implies the incorrect answer was correct.`,
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.RECOVERY_EXPLANATION }),
     )
   }
 

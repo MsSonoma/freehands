@@ -14,7 +14,7 @@ import {
   RETENTION_PROTOCOL_VERSION,
 } from './retention.js';
 
-export const FACILITATOR_EVIDENCE_REPORT_VERSION = 'facilitator-evidence-v1';
+export const FACILITATOR_EVIDENCE_REPORT_VERSION = 'facilitator-evidence-v2';
 
 const ASSISTANCE_EVENT_LABELS = Object.freeze({
   [STAGE_2_EVIDENCE_EVENT_TYPES.HINT_GIVEN]: 'Hint used',
@@ -485,8 +485,11 @@ function summarizeRetention(session, events) {
 
 function assistanceEntry(event) {
   let label = ASSISTANCE_EVENT_LABELS[event.event_type];
-  if (event.event_type === STAGE_2_EVIDENCE_EVENT_TYPES.ASK_USED && event?.payload?.current_answer_requested === true) {
-    label = 'Asked for the answer';
+  if (event.event_type === STAGE_2_EVIDENCE_EVENT_TYPES.ASK_USED) {
+    const mode = asText(event?.payload?.ask_mode);
+    if (event?.payload?.current_answer_requested === true) label = 'Asked for the answer';
+    else if (mode?.startsWith('study_')) label = 'Used Study help';
+    else label = 'Asked Ms. Sonoma';
   }
   return {
     type: event.event_type,
@@ -497,10 +500,118 @@ function assistanceEntry(event) {
   };
 }
 
+function uniqueTexts(values = []) {
+  const seen = new Set();
+  const result = [];
+  for (const value of values) {
+    const text = asText(value);
+    if (!text) continue;
+    const key = text.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    result.push(text);
+  }
+  return result;
+}
+
+function summarizeDiagnosticComprehension(events) {
+  const signals = events.filter((event) => event.event_type === STAGE_2_EVIDENCE_EVENT_TYPES.COMPREHENSION_SIGNAL);
+  if (!signals.length) {
+    return {
+      state: 'not_recorded',
+      label: 'Diagnostic comprehension not recorded',
+      detail: 'No structured learner-expressed comprehension signals were recorded in this session.',
+      episodes: [],
+    };
+  }
+
+  const strategiesByInteraction = new Map();
+  for (const event of events) {
+    if (event.event_type !== STAGE_2_EVIDENCE_EVENT_TYPES.ASK_USED) continue;
+    const interactionId = asText(event?.payload?.interaction_id);
+    const strategy = asText(event?.payload?.strategy_used);
+    if (!interactionId || !strategy) continue;
+    if (!strategiesByInteraction.has(interactionId)) strategiesByInteraction.set(interactionId, []);
+    strategiesByInteraction.get(interactionId).push(strategy);
+  }
+
+  const groups = new Map();
+  for (const event of signals) {
+    const interactionId = asText(event?.payload?.interaction_id) || `signal:${event.event_id}`;
+    if (!groups.has(interactionId)) groups.set(interactionId, []);
+    groups.get(interactionId).push(event);
+  }
+
+  const episodes = Array.from(groups.entries()).map(([interactionId, group]) => {
+    const ordered = group.slice().sort(compareEvents);
+    const first = ordered[0] || {};
+    const last = ordered.at(-1) || {};
+    const understood = uniqueTexts(ordered.flatMap((event) => asArray(event?.result?.understood)));
+    const unclear = uniqueTexts(ordered.flatMap((event) => asArray(event?.result?.unclear)));
+    const misconceptions = uniqueTexts(ordered.flatMap((event) => asArray(event?.result?.misconceptions)));
+    const summaries = uniqueTexts(ordered.map((event) => event?.result?.summary));
+    const statuses = uniqueTexts(ordered.map((event) => event?.result?.status));
+    const observations = ordered.map((event) => ({
+      occurred_at: asTimestamp(event.occurred_at),
+      learner_message: asText(event?.payload?.learner_message),
+      input_mode: asText(event?.payload?.input_mode),
+      observed_signal: asText(event?.payload?.observed_signal),
+    }));
+    const strategies = uniqueTexts([
+      ...(strategiesByInteraction.get(interactionId) || []),
+      ...ordered.map((event) => event?.payload?.strategy_used),
+    ]);
+    const lastStatus = asText(last?.result?.status);
+    const lastObserved = asText(last?.payload?.observed_signal);
+    const resolution = lastStatus === 'self_reported_understanding' || lastObserved === 'self_reported_understanding'
+      ? 'self_reported_understanding'
+      : (lastStatus === 'unresolved' || lastObserved === 'self_reported_unresolved' ? 'unresolved_self_report' : 'unknown');
+
+    return {
+      interaction_id: interactionId,
+      source: asText(first?.payload?.source) || 'unknown',
+      target: {
+        type: asText(first?.payload?.target_type),
+        text: asText(first?.payload?.target_text),
+        term: asText(first?.payload?.target_term),
+        definition: asText(first?.payload?.target_definition),
+      },
+      phase: asText(first?.payload?.source_phase) || asText(first?.phase),
+      stage: asText(first?.payload?.source_stage),
+      observations,
+      inferred: { statuses, understood, unclear, misconceptions, summaries },
+      strategies,
+      resolution,
+    };
+  });
+
+  return {
+    state: 'observed',
+    label: episodes.length === 1 ? 'Learner clarification observed' : `${episodes.length} learner clarifications observed`,
+    detail: 'Learner-expressed understanding and confusion were recorded separately from mastery and assistance qualification.',
+    episodes,
+  };
+}
+
 function summarizeAssistance(evidenceSession, events, independentEvidence, retention) {
-  const assistanceEvents = events
-    .filter((event) => ASSISTANCE_EVENT_LABELS[event.event_type])
-    .map(assistanceEntry);
+  const assistanceEvents = [];
+  const seenAskInteractions = new Set();
+  for (const event of events) {
+    if (!ASSISTANCE_EVENT_LABELS[event.event_type]) continue;
+    if (event.event_type === STAGE_2_EVIDENCE_EVENT_TYPES.ASK_USED) {
+      const interactionId = asText(event?.payload?.interaction_id);
+      if (interactionId) {
+        const mode = asText(event?.payload?.ask_mode);
+        const family = event?.payload?.current_answer_requested === true
+          ? 'answer_request'
+          : (mode?.startsWith('study_') ? 'study' : 'ask');
+        const key = `${interactionId}:${family}`;
+        if (seenAskInteractions.has(key)) continue;
+        seenAskInteractions.add(key);
+      }
+    }
+    assistanceEvents.push(assistanceEntry(event));
+  }
   if (
     independentEvidence.state === 'independent_success_after_recovery'
     && !assistanceEvents.some((event) => event.type === 'recovery_derived')
@@ -777,6 +888,7 @@ export function aggregateFacilitatorEvidenceSession({ trackedSession = {}, evide
   const retention = summarizeRetention(evidenceSession, orderedEvents);
   const concept_evidence = summarizeWebbConceptEvidence(orderedEvents);
   const assistance = summarizeAssistance(evidenceSession, orderedEvents, independent_evidence, retention);
+  const diagnostic_comprehension = summarizeDiagnosticComprehension(orderedEvents);
   const completeness = summarizeCompleteness(evidenceSession, [baseline, independent_evidence, retention]);
   const options = buildOptions(independent_evidence, retention, concept_evidence);
   const startedAt = asTimestamp(evidenceSession?.started_at || trackedSession?.started_at);
@@ -806,6 +918,7 @@ export function aggregateFacilitatorEvidenceSession({ trackedSession = {}, evide
     completeness,
     baseline,
     assistance,
+    diagnostic_comprehension,
     independent_evidence,
     retention,
     concept_evidence,

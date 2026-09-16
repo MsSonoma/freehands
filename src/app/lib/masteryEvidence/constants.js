@@ -20,6 +20,7 @@ export const STAGE_2_EVIDENCE_EVENT_TYPES = Object.freeze({
   RETRY_REQUESTED: 'retry_requested',
   ANSWER_REVEALED: 'answer_revealed',
   ASK_USED: 'ask_used',
+  COMPREHENSION_SIGNAL: 'comprehension_signal',
   REPEAT_USED: 'repeat_used',
   VISUAL_AID_USED: 'visual_aid_used',
   QUESTION_SET_REFRESHED: 'question_set_refreshed',

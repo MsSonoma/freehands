@@ -30,10 +30,20 @@ import { pickNextRiddle, renderRiddle } from '@/app/lib/riddles';
 import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
 import { fetchTTS } from './services';
 import { getGradeAndDifficultyStyle } from '../utils/constants';
+import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs';
+import { fallbackComprehensionDiagnostic } from '@/app/lib/comprehensionSignals.mjs';
+
+function makeInteractionId() {
+  try {
+    if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') return crypto.randomUUID();
+  } catch {}
+  return `interaction_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+}
 
 export class OpeningActionsController {
   #eventBus;
   #audioEngine;
+  #studyAudioEngine;
   #phase;
   #subject;
   #learnerGrade;
@@ -41,16 +51,20 @@ export class OpeningActionsController {
 
   #actionNonce = 0;
   #askHistory = [];
+  #studyHistory = [];
+  #interactionId = null;
+  #turnIndex = 0;
 
   #fillInFunTemplatePromise = null;
   
   // Current action state
-  #currentAction = null; // 'ask' | 'riddle' | 'poem' | 'story' | 'fill-in-fun' | 'joke' | null
+  #currentAction = null; // 'ask' | 'study' | 'riddle' | 'poem' | 'story' | 'fill-in-fun' | 'joke' | null
   #actionState = {}; // Action-specific state
   
   constructor(eventBus, audioEngine, options = {}) {
     this.#eventBus = eventBus;
     this.#audioEngine = audioEngine;
+    this.#studyAudioEngine = options.studyAudioEngine || audioEngine;
     this.#phase = options.phase || null;
     this.#subject = options.subject || 'math';
     this.#learnerGrade = options.learnerGrade || '';
@@ -83,22 +97,20 @@ export class OpeningActionsController {
     this.#actionNonce += 1;
     this.#currentAction = 'ask';
     this.#askHistory = [];
+    this.#interactionId = makeInteractionId();
+    this.#turnIndex = 0;
     this.#actionState = {
       stage: 'awaiting-input', // 'awaiting-input' | 'confirming' | 'generating' | 'complete'
       question: '',
-      answer: ''
+      answer: '',
+      interactionId: this.#interactionId,
+      turnIndex: 0,
     };
-    
-    this.#eventBus.emit('openingActionStart', {
-      action: 'ask',
-      type: 'ask',
-      phase: this.#phase
-    });
-    
+
+    this.#eventBus.emit('openingActionStart', { action: 'ask', type: 'ask', phase: this.#phase });
     const greeting = 'I\'m listening. What would you like to know?';
     await this.#audioEngine.speak(greeting);
-    
-    return { success: true, message: 'Ask action started' };
+    return { success: true, message: 'Ask action started', interactionId: this.#interactionId };
   }
   
   /**
@@ -111,8 +123,10 @@ export class OpeningActionsController {
     }
 
     const nonce = this.#actionNonce;
-    
+    const turnIndex = this.#turnIndex + 1;
+    this.#turnIndex = turnIndex;
     this.#actionState.question = question;
+    this.#actionState.turnIndex = turnIndex;
     this.#actionState.stage = 'generating';
 
     const {
@@ -121,15 +135,14 @@ export class OpeningActionsController {
       problemChunk = '',
       subject: ctxSubject,
       difficulty: ctxDifficulty,
-      gradeLevel: ctxGradeLevel
+      gradeLevel: ctxGradeLevel,
     } = askContext || {};
 
     const lessonTitle = (ctxLessonTitle || this.#subject || 'this topic').toString();
     const subject = (ctxSubject || this.#subject || 'math').toString();
     const gradeLevel = ctxGradeLevel || this.#learnerGrade;
     const difficulty = ctxDifficulty || this.#difficulty;
-    
-    // Call Ms. Sonoma API
+
     try {
       const instruction = [
         `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(gradeLevel, difficulty)}`,
@@ -141,96 +154,58 @@ export class OpeningActionsController {
         this.#askHistory.length
           ? `Conversation continuity (internal; do not quote this label):\n${this.#askHistory.slice(-4).map(turn => `${turn.role === 'assistant' ? 'Ms. Sonoma' : 'Learner'}: ${turn.content}`).join('\n')}`
           : '',
-        this.#askHistory.length ? 'Treat the prior Ms. Sonoma lines as words you already said, including application-delivered feature scripts. Do not repeat them. Continue naturally.' : '',
+        this.#askHistory.length ? 'Treat the prior Ms. Sonoma lines as words you already said. Do not repeat them. Continue naturally.' : '',
+        buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.CONCEPTUAL_ASK }),
         'Answer their question directly in 2-3 short sentences. Give a real, specific answer.',
-        'Use the provided vocab meanings when relevant so words with multiple definitions stay on-topic.',
-        'Be warm and age-appropriate. Do not use filler phrases like "That\'s a great question" or "Keep thinking about it" — just answer.',
-        'Do not ask the learner any questions in your reply.'
-      ].filter(Boolean).join(' ');
-      
-      let response;
-      try {
-        response = await fetch('/api/sonoma', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          // Ask uses the frontend audio engine for speech; skip server-side TTS to
-          // avoid large base64 payloads and reduce failure risk.
-          body: JSON.stringify({ instruction, innertext: question, skipAudio: true, lessonTopic: lessonTitle })
-        });
-      } catch (fetchErr) {
-        console.error('[OpeningActionsController] Ask fetch network error:', fetchErr?.message || fetchErr);
-        throw fetchErr;
-      }
-      
+        'Use the provided vocabulary meanings when relevant so words with multiple definitions stay on-topic.',
+        'Be warm and age-appropriate. Skip filler praise and answer the question itself.',
+        'Do not ask the learner any questions in your reply.',
+      ].filter(Boolean).join('\n');
+
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          instruction,
+          innertext: question,
+          skipAudio: true,
+          lessonTopic: lessonTitle,
+          responseMode: 'instructional_json',
+        }),
+      });
       if (!response.ok) {
         const errBody = await response.text().catch(() => '');
-        console.error('[OpeningActionsController] Ask API non-ok:', response.status, errBody);
         throw new Error(`Sonoma API request failed (status ${response.status}): ${errBody}`);
       }
-      
-      let data;
-      try {
-        data = await response.json();
-      } catch (jsonErr) {
-        console.error('[OpeningActionsController] Ask response JSON parse failed:', jsonErr?.message);
-        throw jsonErr;
-      }
-      const answer = data.reply || data.text || 'That\'s an interesting question! Let me think about that.';
-      
+      const data = await response.json();
+      const answer = String(data?.reply || '').trim() || 'I could not explain that clearly yet. Try asking it another way.';
+      const diagnostic = data?.diagnostic || fallbackComprehensionDiagnostic({ inputMode: 'typed', learnerMessage: question });
+      const strategy = data?.strategy || 'other';
+
       this.#actionState.answer = answer;
+      this.#actionState.diagnostic = diagnostic;
+      this.#actionState.strategy = strategy;
       this.#actionState.stage = 'complete';
       this.#askHistory.push({ role: 'user', content: String(question || '') }, { role: 'assistant', content: answer });
 
-      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
-        return { success: false, cancelled: true };
-      }
-      
-      try {
-        await this.#audioEngine.speak(answer);
-      } catch (err) {
-        // If playback is interrupted (skip/stop), do not fail the flow.
-      }
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') return { success: false, cancelled: true };
+      try { await this.#audioEngine.speak(answer); } catch {}
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') return { success: false, cancelled: true };
+      try { await this.#audioEngine.speak('Do you have any more questions?'); } catch {}
 
-      // Ask follow-up after answering (requested parity: always invite more questions)
-      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
-        return { success: false, cancelled: true };
-      }
-      try {
-        await this.#audioEngine.speak('Do you have any more questions?');
-      } catch (err) {
-        // Ignore interruptions
-      }
-      
-      return { success: true, answer };
+      return { success: true, answer, diagnostic, strategy, interactionId: this.#interactionId, turnIndex };
     } catch (err) {
       console.error('[OpeningActionsController] Ask API error:', err);
-      
-      const fallback = 'That\'s a great question! Keep thinking about it.';
+      const fallback = 'I could not get that explanation clearly. Try asking it another way.';
+      const diagnostic = fallbackComprehensionDiagnostic({ inputMode: 'typed', learnerMessage: question });
       this.#actionState.answer = fallback;
+      this.#actionState.diagnostic = diagnostic;
+      this.#actionState.strategy = 'other';
       this.#actionState.stage = 'complete';
       this.#askHistory.push({ role: 'user', content: String(question || '') }, { role: 'assistant', content: fallback });
-
-      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
-        return { success: false, cancelled: true };
-      }
-      
-      try {
-        await this.#audioEngine.speak(fallback);
-      } catch (err) {
-        // Ignore interruptions
-      }
-
-      // Ask follow-up after fallback as well
-      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') {
-        return { success: false, cancelled: true };
-      }
-      try {
-        await this.#audioEngine.speak('Do you have any more questions?');
-      } catch (err) {
-        // Ignore interruptions
-      }
-      
-      return { success: true, answer: fallback };
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') return { success: false, cancelled: true };
+      try { await this.#audioEngine.speak(fallback); } catch {}
+      return { success: true, answer: fallback, diagnostic, strategy: 'other', interactionId: this.#interactionId, turnIndex, degraded: true };
     }
   }
   
@@ -289,6 +264,177 @@ export class OpeningActionsController {
     this.#actionState = {};
   }
   
+  /**
+   * Start Riddle action
+   */
+  async #speakStudy(text) {
+    const spoken = String(text || '').trim();
+    const engine = this.#studyAudioEngine;
+    if (!spoken || !engine) return;
+    if (typeof engine.speak === 'function') {
+      await engine.speak(spoken);
+      return;
+    }
+    let audioBase64 = null;
+    try { audioBase64 = await fetchTTS(spoken); } catch {}
+    if (typeof engine.playAudio === 'function') await engine.playAudio(audioBase64, [spoken]);
+  }
+
+  setPhase(phase) {
+    this.#phase = phase || null;
+  }
+
+  startStudy(target = {}) {
+    const normalizedTarget = {
+      type: target?.type === 'vocabulary' ? 'vocabulary' : 'sentence',
+      text: String(target?.text || target?.term || '').trim(),
+      term: String(target?.term || '').trim(),
+      definition: String(target?.definition || '').trim(),
+      transcriptIndex: Number.isFinite(Number(target?.transcriptIndex)) ? Number(target.transcriptIndex) : null,
+      sourcePhase: target?.sourcePhase || this.#phase || null,
+      sourceStage: target?.sourceStage || null,
+    };
+    if (!normalizedTarget.text && !normalizedTarget.term) return { success: false, error: 'Study target required' };
+
+    this.#actionNonce += 1;
+    this.#currentAction = 'study';
+    this.#studyHistory = [];
+    this.#interactionId = makeInteractionId();
+    this.#turnIndex = 0;
+    this.#actionState = {
+      stage: 'awaiting-input',
+      target: normalizedTarget,
+      history: [],
+      strategyHistory: [],
+      interactionId: this.#interactionId,
+      turnIndex: 0,
+      resolution: 'unknown',
+    };
+    this.#eventBus.emit('openingActionStart', { action: 'study', type: 'study', phase: this.#phase });
+    return { success: true, interactionId: this.#interactionId, target: normalizedTarget };
+  }
+
+  async submitStudyMessage(message, studyContext = {}, { mode = 'typed' } = {}) {
+    if (this.#currentAction !== 'study') return { success: false, error: 'Study action not active' };
+    const allowedModes = new Set(['typed', 'reframe', 'deepen', 'understood']);
+    const inputMode = allowedModes.has(mode) ? mode : 'typed';
+    const quickMessages = {
+      reframe: 'Explain it another way.',
+      deepen: "I still don't understand.",
+      understood: 'That makes sense now.',
+    };
+    const learnerMessage = String(inputMode === 'typed' ? message : quickMessages[inputMode] || message || '').trim();
+    if (!learnerMessage) return { success: false, error: 'Message required' };
+
+    const nonce = this.#actionNonce;
+    const turnIndex = this.#turnIndex + 1;
+    this.#turnIndex = turnIndex;
+    this.#actionState.stage = 'generating';
+    this.#actionState.turnIndex = turnIndex;
+
+    const observedSignal = inputMode === 'reframe'
+      ? 'requested_alternative_representation'
+      : inputMode === 'deepen'
+        ? 'self_reported_unresolved'
+        : inputMode === 'understood'
+          ? 'self_reported_understanding'
+          : null;
+
+    if (inputMode === 'understood') {
+      const answer = "I'm glad that makes more sense. You can keep studying this or go back when you're ready.";
+      const diagnostic = fallbackComprehensionDiagnostic({ inputMode, learnerMessage });
+      this.#studyHistory.push({ role: 'user', content: learnerMessage }, { role: 'assistant', content: answer });
+      this.#actionState.history = [...this.#studyHistory];
+      this.#actionState.stage = 'awaiting-input';
+      this.#actionState.resolution = 'self_reported_understanding';
+      this.#actionState.strategyHistory = [...(this.#actionState.strategyHistory || []), 'acknowledgement'];
+      void this.#speakStudy(answer).catch(() => {});
+      return { success: true, answer, diagnostic, strategy: 'acknowledgement', observedSignal, interactionId: this.#interactionId, turnIndex, inputMode, learnerMessage };
+    }
+
+    const target = this.#actionState.target || {};
+    const lessonTitle = String(studyContext?.lessonTitle || this.#subject || 'this lesson');
+    const gradeLevel = studyContext?.gradeLevel || this.#learnerGrade;
+    const difficulty = studyContext?.difficulty || this.#difficulty;
+    const subject = studyContext?.subject || this.#subject;
+    const senseMode = inputMode === 'reframe'
+      ? SENSE_MAKING_MODES.STUDY_REFRAME
+      : inputMode === 'deepen'
+        ? SENSE_MAKING_MODES.STUDY_DEEPEN
+        : (turnIndex > 1 ? SENSE_MAKING_MODES.RECOVERY_EXPLANATION : SENSE_MAKING_MODES.FIRST_EXPLANATION);
+    const historyText = this.#studyHistory.slice(-8).map((turn) => `${turn.role === 'assistant' ? 'Ms. Sonoma' : 'Learner'}: ${turn.content}`).join('\n');
+    const strategies = Array.isArray(this.#actionState.strategyHistory) ? this.#actionState.strategyHistory : [];
+
+    const instruction = [
+      `You are Ms. Sonoma. ${getGradeAndDifficultyStyle(gradeLevel, difficulty)}`,
+      `Lesson title: "${lessonTitle}".`,
+      subject ? `Subject: ${subject}.` : '',
+      target.type === 'vocabulary'
+        ? `The learner is studying the vocabulary term "${target.term || target.text}".${target.definition ? ` Lesson definition: ${target.definition}` : ''}`
+        : `The learner selected this exact lesson sentence because something about it did not make sense: "${target.text}".`,
+      studyContext?.surroundingContext ? `Nearby lesson context (internal): ${studyContext.surroundingContext}` : '',
+      studyContext?.vocabChunk || '',
+      studyContext?.problemChunk || '',
+      studyContext?.teachingStage ? `Current teaching stage: ${studyContext.teachingStage}.` : '',
+      studyContext?.lessonContext ? `Filtered instructional lesson context (internal; no held-out assessment answers): ${studyContext.lessonContext}` : '',
+      historyText ? `Study conversation so far (internal):\n${historyText}` : '',
+      strategies.length ? `Strategies already tried: ${strategies.join(', ')}. Do not repeat a failed representation unless the learner specifically asks.` : '',
+      `Learner's latest message: "${learnerMessage}".`,
+      buildSenseMakingGuidance({ mode: senseMode }),
+      'Reply in 2-4 short, age-appropriate spoken sentences. Teach the selected target, not the whole lesson.',
+      'You may end with ONE small sense-check question when it will help locate the disconnect. This is teaching, not grading.',
+      'Never claim the learner has mastered the idea. Never tell the learner that Study is over or that they must return to the lesson.',
+    ].filter(Boolean).join('\n');
+
+    try {
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, innertext: learnerMessage, skipAudio: true, lessonTopic: lessonTitle, responseMode: 'instructional_json' }),
+      });
+      if (!response.ok) throw new Error(`Study request failed (${response.status})`);
+      const data = await response.json();
+      const answer = String(data?.reply || '').trim() || 'Let me try that a different way.';
+      const diagnostic = data?.diagnostic || fallbackComprehensionDiagnostic({ inputMode, learnerMessage });
+      const strategy = data?.strategy || 'other';
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'study') return { success: false, cancelled: true };
+
+      this.#studyHistory.push({ role: 'user', content: learnerMessage }, { role: 'assistant', content: answer });
+      this.#actionState.history = [...this.#studyHistory];
+      this.#actionState.strategyHistory = [...strategies, strategy];
+      this.#actionState.stage = 'awaiting-input';
+      if (inputMode === 'deepen') this.#actionState.resolution = 'unresolved_self_report';
+      void this.#speakStudy(answer).catch(() => {});
+      return { success: true, answer, diagnostic, strategy, observedSignal, interactionId: this.#interactionId, turnIndex, inputMode, learnerMessage };
+    } catch (err) {
+      console.error('[OpeningActionsController] Study API error:', err);
+      const answer = 'I could not get that explanation clearly. Try telling me which part is confusing you.';
+      const diagnostic = fallbackComprehensionDiagnostic({ inputMode, learnerMessage });
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'study') return { success: false, cancelled: true };
+      this.#studyHistory.push({ role: 'user', content: learnerMessage }, { role: 'assistant', content: answer });
+      this.#actionState.history = [...this.#studyHistory];
+      this.#actionState.stage = 'awaiting-input';
+      void this.#speakStudy(answer).catch(() => {});
+      return { success: true, answer, diagnostic, strategy: 'other', observedSignal, interactionId: this.#interactionId, turnIndex, inputMode, learnerMessage, degraded: true };
+    }
+  }
+
+  completeStudy() {
+    if (this.#currentAction !== 'study') return;
+    this.#actionNonce += 1;
+    try { this.#studyAudioEngine?.stop?.(); } catch {}
+    this.#eventBus.emit('openingActionComplete', {
+      action: 'study',
+      type: 'study',
+      phase: this.#phase,
+      resolution: this.#actionState?.resolution || 'unknown',
+      interactionId: this.#interactionId,
+    });
+    this.#currentAction = null;
+    this.#actionState = {};
+    this.#studyHistory = [];
+  }
+
   /**
    * Start Riddle action
    */
@@ -965,8 +1111,10 @@ export class OpeningActionsController {
    */
   destroy() {
     this.#actionNonce += 1;
+    try { this.#studyAudioEngine?.stop?.(); } catch {}
     this.#currentAction = null;
     this.#actionState = {};
+    this.#studyHistory = [];
   }
 
   /**
@@ -977,6 +1125,9 @@ export class OpeningActionsController {
 
     // Invalidate any in-flight action work/speech.
     this.#actionNonce += 1;
+    if (this.#currentAction === 'study') {
+      try { this.#studyAudioEngine?.stop?.(); } catch {}
+    }
     this.#eventBus.emit('openingActionCancel', {
       action: this.#currentAction,
       type: this.#currentAction,

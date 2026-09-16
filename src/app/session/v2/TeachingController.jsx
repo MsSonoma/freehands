@@ -28,6 +28,7 @@
 import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
 import { splitIntoSentences as sharedSplitIntoSentences } from '../utils/textProcessing';
+import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs';
 
 export class TeachingController {
   // Private state
@@ -808,14 +809,14 @@ export class TeachingController {
       blurb ? `Lesson context (for reference): ${blurb}` : '',
       // teachingNotes are internal educator instructions — intentionally excluded here
       //   to prevent the model from mirroring teacher-facing language to the student.
-      vocabContext ? `Vocabulary in this lesson (do not define them yet — that comes next; use only to understand what the lesson covers):\n${vocabContext}` : '',
+      vocabContext ? `Vocabulary in this lesson (use these meanings as internal context; introduce or ground a term early when the concept would otherwise be unclear):\n${vocabContext}` : '',
       '',
       questionContext,
       '',
       'Your task: Speak 3 to 5 short sentences that introduce the main idea of this lesson.',
       'Explain what this topic is and why it matters in everyday life.',
-      'Do NOT define vocabulary words yet — that comes next.',
-      'Do NOT give worked examples yet — that comes after.',
+      'You may briefly explain a necessary term or use one tiny concrete model or analogy when that is what makes the main idea intelligible. Do not turn this into a full definitions list or a full worked practice problem.',
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.FIRST_EXPLANATION }),
       'Do NOT greet or introduce yourself. Begin speaking immediately.',
       'Do NOT ask any questions.',
       'Do NOT use numbered lists, bullet points, or any list formatting.',
@@ -937,6 +938,8 @@ export class TeachingController {
       teachingNotes ? `Teaching notes: ${teachingNotes}` : '',
       '',
       'CRITICAL ACCURACY: All definitions must be factually accurate. If vocab definitions are provided above, base your teaching on that content - paraphrase naturally but preserve meaning exactly.',
+      'Connect each formal word to an idea, object, action, quantity, or familiar situation the learner can already understand when useful. Exposure to a definition is not the same as understanding it.',
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.FIRST_EXPLANATION }),
       '',
       'Kid-friendly: Use simple everyday words a 5 year old can understand. Keep sentences short (about 6-12 words). One idea per sentence.',
       '',
@@ -1072,7 +1075,8 @@ export class TeachingController {
       '',
       'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
       'End on the final example. Do NOT add a wrap-up segue or announce the next phase; the application owns that transition.',
-      `Examples: Show 2-3 tiny worked examples appropriate for this lesson. If needed to cover all question content, you may show up to 5 tiny examples. ${vocabContext} You compute every step. Be concise, warm, and playful. Do not add definitions or broad explanations. Give only the examples.`,
+      `Examples: Show 2-3 tiny worked examples appropriate for this lesson. If needed to cover all question content, you may show up to 5 tiny examples. ${vocabContext} You compute every step. Be concise, warm, and playful. Briefly explain why each model or step represents the idea when that connection is not obvious. Do not drift into a separate lecture.`,
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.FIRST_EXPLANATION }),
       '',
       teachingNotes ? `Teaching notes: ${teachingNotes}` : '',
       '',
@@ -1464,11 +1468,11 @@ export class TeachingController {
       `Grade: ${grade}`,
       `Lesson topic (do not say aloud): "${lessonTitle}"`,
       '',
-      'The learner now knows the vocabulary. You are in the middle of teaching the lesson right now.',
+      'The vocabulary has been introduced. Do not assume the learner understands a word merely because it was previously defined. You are in the middle of teaching the lesson right now.',
       'Your task: Speak 4 to 6 short sentences that teach the main ideas of this lesson.',
       'Explain how the concepts connect. Use present tense. Make it feel like a real lesson, not a list.',
-      'Do NOT redefine any words — that was already done.',
-      'Do NOT give worked examples yet — that comes next.',
+      'Use vocabulary naturally, and briefly re-ground a word when its meaning is necessary for the current idea. You may use a tiny concrete example or contrast when it makes the connection clear, but save full worked practice for the examples stage.',
+      buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.FIRST_EXPLANATION }),
       'Do NOT greet or introduce yourself. Begin speaking immediately.',
       'Do NOT ask any questions.',
       'Do NOT use numbered lists, bullet points, or any list formatting.',
@@ -1844,8 +1848,8 @@ export class TeachingController {
     }
     await this.#audioEngine.playAudio(sampleAudio || '', [sampleText]);
 
-    // 5. Prompt learner to use the question button
-    const raiseHandText = 'Press the blue raised hand button to ask a question.';
+    // 5. Prompt learner to use the help controls
+    const raiseHandText = 'Use the blue question button for your own question. Tap the hand beside a sentence if that sentence does not make sense.';
     let raiseHandAudio = ttsCache.get(raiseHandText);
     if (!raiseHandAudio) {
       raiseHandAudio = await fetchTTS(raiseHandText);
