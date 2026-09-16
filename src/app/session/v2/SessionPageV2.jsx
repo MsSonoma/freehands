@@ -7416,6 +7416,27 @@ function SessionPageV2Inner() {
       }
       trackedSessionIdForEvidence = sessionResult.id;
       trackedExecutionSessionIdRef.current = sessionResult.id;
+      if (sessionResult.snapshotHandoffId) {
+        snapshotServiceRef.current?.fenceWrites?.('takeover-handoff');
+        const transfer = await snapshotServiceRef.current?.claimTakeoverSnapshot?.({
+          handoffId: sessionResult.snapshotHandoffId,
+          targetExecutionSessionId: sessionResult.id,
+          targetBrowserSessionId: browserSessionId,
+        });
+        if (!transfer?.ok) {
+          throw new Error('The protected lesson is yours, but its saved progress is still transferring. Retry Resume. Your work has not been erased.');
+        }
+        snapshotServiceRef.current?.bindExecutionOwner?.({
+          executionSessionId: sessionResult.id,
+          browserSessionId,
+        });
+        executionFencedRef.current = false;
+        if (typeof window !== 'undefined') {
+          delete window.__PREVENT_SNAPSHOT_SAVE__;
+          window.location.reload();
+        }
+        return;
+      }
       snapshotServiceRef.current?.bindExecutionOwner?.({
         executionSessionId: sessionResult.id,
         browserSessionId,

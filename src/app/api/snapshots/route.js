@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { newestSnapshot, rehomeSnapshotForTakeover, snapshotLessonMatchesExecution, snapshotMatchesScope, snapshotUpdatedAtMs } from '../../lib/snapshotTakeoverHandoff.mjs';
+import { handoffFallbackReady, isStrictlyNewerSnapshot, newestSnapshot, rehomeSnapshotForTakeover, snapshotLessonMatchesExecution, snapshotMatchesScope, snapshotUpdatedAtMs } from '../../lib/snapshotTakeoverHandoff.mjs';
 
 function getEnv() {
   return {
@@ -364,11 +364,19 @@ async function handleSnapshotHandoff({ body, user, db, svc }) {
       return NextResponse.json({ ok: true, state: handoff.state, snapshot: existing, handoffId: handoff.id });
     }
 
-    const sharedLocal = body?.data && snapshotMatchesScope(body.data, {
+    const durableSource = snapshotMatchesScope(existing, {
+      learnerId,
+      lessonKey,
+      browserSessionId: handoff.source_browser_session_id,
+    }) ? existing : null;
+    const sharedLocalCandidate = body?.data && snapshotMatchesScope(body.data, {
       learnerId,
       lessonKey,
       browserSessionId: handoff.source_browser_session_id,
     }) ? body.data : null;
+    const sharedLocal = sharedLocalCandidate && isStrictlyNewerSnapshot(sharedLocalCandidate, durableSource)
+      ? sharedLocalCandidate
+      : null;
     let source = handoff.state === 'source_ready' && snapshotMatchesScope(handoff.source_snapshot, {
       learnerId,
       lessonKey,
@@ -379,12 +387,7 @@ async function handleSnapshotHandoff({ body, user, db, svc }) {
       source = sharedLocal;
       claimSource = 'shared_local_cache';
     }
-    if (!source && body?.allow_fallback === true) {
-      const durableSource = snapshotMatchesScope(existing, {
-        learnerId,
-        lessonKey,
-        browserSessionId: handoff.source_browser_session_id,
-      }) ? existing : null;
+    if (!source && body?.allow_fallback === true && handoffFallbackReady(handoff.created_at)) {
       if (durableSource) {
         source = durableSource;
         claimSource = 'durable_fallback';

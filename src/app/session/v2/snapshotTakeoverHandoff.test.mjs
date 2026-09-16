@@ -2,6 +2,8 @@ import assert from 'node:assert/strict'
 import test from 'node:test'
 
 import {
+  handoffFallbackReady,
+  isStrictlyNewerSnapshot,
   newestSnapshot,
   rehomeSnapshotForTakeover,
   snapshotLessonMatchesExecution,
@@ -59,4 +61,13 @@ test('takeover rehomes only ownership identity and preserves exact test progress
   assert.equal(moved.currentPhase, 'test')
   assert.equal(moved.lastUpdated, source.lastUpdated)
   assert.equal(moved.ownershipHandoff.claimSource, 'source_device')
+})
+test('target cache cannot outrun an equally fresh durable snapshot while source still has a handoff grace window', () => {
+  const durable = snapshot('2026-09-16T17:01:00.000Z')
+  const mirroredLocal = structuredClone(durable)
+  const fresherLocal = snapshot('2026-09-16T17:01:01.000Z')
+  assert.equal(isStrictlyNewerSnapshot(mirroredLocal, durable), false)
+  assert.equal(isStrictlyNewerSnapshot(fresherLocal, durable), true)
+  assert.equal(handoffFallbackReady('2026-09-16T17:00:00.000Z', new Date('2026-09-16T17:00:04.999Z')), false)
+  assert.equal(handoffFallbackReady('2026-09-16T17:00:00.000Z', new Date('2026-09-16T17:00:05.000Z')), true)
 })

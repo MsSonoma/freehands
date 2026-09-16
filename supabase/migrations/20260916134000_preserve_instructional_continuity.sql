@@ -196,7 +196,7 @@ begin
         and s.session_id = p_browser_session_id
         and s.instructional_teacher = p_instructional_teacher
         and s.ended_at is not null
-        and s.ended_reason in ('expired', 'moved', 'released')
+        and s.ended_reason in ('expired', 'moved', 'released', 'taken_over')
         and exists (
           select 1 from public.lesson_session_events e
           where e.session_id = s.id
@@ -245,9 +245,18 @@ begin
       where id = v_requested_active.id
       returning * into v_requested_active;
 
+    select h.id into v_handoff_id
+      from public.lesson_snapshot_handoffs h
+      where h.target_execution_session_id = v_requested_active.id
+        and h.target_browser_session_id = p_browser_session_id
+        and h.state in ('pending', 'source_ready')
+      order by h.created_at desc, h.id desc
+      limit 1;
+
     return jsonb_build_object(
       'state', 'reused', 'id', v_requested_active.id, 'conflict', false,
       'takeover', false, 'instructionalTeacher', v_requested_active.instructional_teacher,
+      'snapshotHandoffId', v_handoff_id,
       'expiredSessionIds', to_jsonb(v_expired_session_ids),
       'replacedSessionIds', to_jsonb(v_replaced_session_ids),
       'existingSession', jsonb_build_object(

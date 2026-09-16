@@ -491,7 +491,7 @@ export class SnapshotService {
     }
   }
 
-  async claimTakeoverSnapshot({ handoffId, targetExecutionSessionId, targetBrowserSessionId, attempts = 12, delayMs = 250 } = {}) {
+  async claimTakeoverSnapshot({ handoffId, targetExecutionSessionId, targetBrowserSessionId, attempts = 24, delayMs = 250 } = {}) {
     if (!handoffId || !targetExecutionSessionId || !targetBrowserSessionId) return { ok: false, noHandoff: true };
     const token = await this.#getAuthToken();
     if (!token) return { ok: false, unauthorized: true };

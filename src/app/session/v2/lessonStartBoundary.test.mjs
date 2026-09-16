@@ -61,7 +61,8 @@ test('baseline and retention remain behind canonical identity and ahead of instr
 })
 
 test('resume reuses tracking identity and Start Over waits at the fresh Begin gate', () => {
-  assert.match(trackingHook, /if \(sessionIdRef\.current\) \{\s*return \{ id: sessionIdRef\.current \};?\s*\}/)
+  assert.ok(trackingHook.includes('return sessionStartResultRef.current || { id: sessionIdRef.current };'))
+  assert.ok(trackingHook.includes('sessionStartResultRef.current = result'))
   assert.match(sessionPage, /startOverInProgressRef\.current = true[\s\S]*?resumePhaseRef\.current = null[\s\S]*?Start Over only resets durable progress[\s\S]*?setCurrentPhase\('idle'\)/)
 
   const startOver = between(

@@ -29,6 +29,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
   const [tracking, setTracking] = useState(false);
   const [conflictingSession, setConflictingSession] = useState(null);
   const sessionIdRef = useRef(null);
+  const sessionStartResultRef = useRef(null);
   const sessionMetaRef = useRef({ learnerId, lessonId, browserSessionId: null, occurrenceId: null, instructionalTeacher: null });
   const pollIntervalRef = useRef(null);
   const realtimeChannelRef = useRef(null);
@@ -41,7 +42,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     }
 
     if (sessionIdRef.current) {
-      return { id: sessionIdRef.current };
+      return sessionStartResultRef.current || { id: sessionIdRef.current };
     }
 
     const withTimeout = async (promise, ms, label) => {
@@ -72,6 +73,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
       
       if (result?.id) {
         sessionIdRef.current = result.id;
+        sessionStartResultRef.current = result;
         setSessionId(result.id);
         sessionMetaRef.current = { learnerId, lessonId, browserSessionId, occurrenceId, instructionalTeacher };
         console.log('[SESSION] sessionIdRef.current set to:', result.id);
@@ -103,6 +105,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     
     if (success) {
       sessionIdRef.current = null;
+      sessionStartResultRef.current = null;
       setSessionId(null);
       sessionMetaRef.current = { learnerId, lessonId, browserSessionId: null, occurrenceId: null, instructionalTeacher: null };
     }
@@ -168,6 +171,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
 
       const reason = String(rawReason || sessionRow?.ended_reason || 'ended').trim().toLowerCase();
       sessionIdRef.current = null;
+      sessionStartResultRef.current = null;
       setSessionId(null);
 
       if (reason === 'taken_over') {
@@ -230,6 +234,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
   const adoptSession = useCallback((adoptedSessionId, browserSessionId, meta = {}) => {
     if (!adoptedSessionId || !browserSessionId) return null;
     sessionIdRef.current = adoptedSessionId;
+    sessionStartResultRef.current = { id: adoptedSessionId };
     setSessionId(adoptedSessionId);
     terminalHandledRef.current = false;
     sessionMetaRef.current = {
