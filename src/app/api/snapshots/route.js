@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { newestSnapshot, rehomeSnapshotForTakeover, snapshotLessonMatchesExecution, snapshotMatchesScope, snapshotUpdatedAtMs } from '../../lib/snapshotTakeoverHandoff.mjs';
 
 function getEnv() {
   return {
@@ -231,6 +232,190 @@ function normalizeSnapshotShape(obj) {
   return out;
 }
 
+async function readDurableSnapshot({ db, svc, userId, learnerId, lessonKey }) {
+  const current = await dbGetSnapshot(db, userId, learnerId, lessonKey);
+  if (!current.error) return current.data || null;
+  if (!isUndefinedColumnOrTable(current.error) || !svc) return null;
+  const allForLearner = await storageReadSnapshotsForLearner(svc, 'learner-snapshots', userId, learnerId);
+  return allForLearner?.[lessonKey] || null;
+}
+
+async function writeDurableSnapshot({ db, svc, userId, learnerId, lessonKey, snapshot }) {
+  const payload = normalizeSnapshotShape(snapshot);
+  const up = await dbUpsertSnapshot(db, userId, learnerId, lessonKey, payload);
+  if (up.ok) return { ok: true, snapshot: payload, storage: 'db' };
+  if (!isUndefinedColumnOrTable(up.error) || !svc) return { ok: false, error: up.error || new Error('Snapshot persistence unavailable') };
+  const allForLearner = await storageReadSnapshotsForLearner(svc, 'learner-snapshots', userId, learnerId);
+  const byLesson = allForLearner && typeof allForLearner === 'object' ? allForLearner : {};
+  byLesson[lessonKey] = payload;
+  await storageWriteSnapshotsForLearner(svc, 'learner-snapshots', userId, learnerId, byLesson);
+  return { ok: true, snapshot: payload, storage: 'storage' };
+}
+
+async function userOwnsSnapshotLearner(db, learnerId) {
+  try {
+    const { data, error } = await db.from('learners').select('id').eq('id', learnerId).maybeSingle();
+    return !error && String(data?.id || '') === String(learnerId || '');
+  } catch {
+    return false;
+  }
+}
+
+async function loadSnapshotHandoffBySource(svc, { sourceExecutionSessionId, sourceBrowserSessionId }) {
+  if (!svc) return null;
+  const sourceId = normalizeUuid(sourceExecutionSessionId);
+  const browserId = normalizeUuid(sourceBrowserSessionId);
+  if (!sourceId || !browserId) return null;
+  const { data, error } = await svc.from('lesson_snapshot_handoffs')
+    .select('*')
+    .eq('source_execution_session_id', sourceId)
+    .eq('source_browser_session_id', browserId)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
+  return error ? null : data;
+}
+
+async function loadSnapshotHandoffById(svc, handoffId) {
+  const id = normalizeUuid(handoffId);
+  if (!svc || !id) return null;
+  const { data, error } = await svc.from('lesson_snapshot_handoffs').select('*').eq('id', id).maybeSingle();
+  return error ? null : data;
+}
+
+async function verifySnapshotHandoffSessions(svc, handoff) {
+  if (!svc || !handoff) return { ok: false, state: 'handoff_missing' };
+  const [{ data: source, error: sourceError }, { data: target, error: targetError }] = await Promise.all([
+    svc.from('lesson_sessions').select('id, learner_id, lesson_id, session_id, instructional_teacher, ended_at, ended_reason').eq('id', handoff.source_execution_session_id).maybeSingle(),
+    svc.from('lesson_sessions').select('id, learner_id, lesson_id, session_id, instructional_teacher, ended_at, ended_reason').eq('id', handoff.target_execution_session_id).maybeSingle(),
+  ]);
+  if (sourceError || targetError || !source || !target) return { ok: false, state: 'session_missing' };
+  const scopeMatches = String(source.learner_id) === String(handoff.learner_id)
+    && String(target.learner_id) === String(handoff.learner_id)
+    && String(source.lesson_id) === String(handoff.lesson_id)
+    && String(target.lesson_id) === String(handoff.lesson_id)
+    && String(source.session_id) === String(handoff.source_browser_session_id)
+    && String(target.session_id) === String(handoff.target_browser_session_id)
+    && source.instructional_teacher === handoff.instructional_teacher
+    && target.instructional_teacher === handoff.instructional_teacher;
+  if (!scopeMatches) return { ok: false, state: 'scope_mismatch' };
+  if (source.ended_at == null || source.ended_reason !== 'taken_over') return { ok: false, state: 'source_not_taken_over' };
+  if (target.ended_at != null) return { ok: false, state: 'target_no_longer_active', endedReason: target.ended_reason || 'ended' };
+  return { ok: true, source, target };
+}
+
+async function handleSnapshotHandoff({ body, user, db, svc }) {
+  const action = String(body?.handoff_action || '').trim();
+  const learnerId = typeof body?.learner_id === 'string' ? body.learner_id : '';
+  const lessonKey = typeof body?.lesson_key === 'string' ? body.lesson_key : '';
+  if (!learnerId || !lessonKey || !svc) {
+    return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_UNAVAILABLE' }, { status: 503 });
+  }
+  if (!await userOwnsSnapshotLearner(db, learnerId)) {
+    return NextResponse.json({ ok: false, code: 'FORBIDDEN' }, { status: 403 });
+  }
+
+  if (action === 'source_offer') {
+    const sourceExecutionSessionId = normalizeUuid(body?.source_execution_session_id);
+    const sourceBrowserSessionId = normalizeUuid(body?.source_browser_session_id);
+    const candidate = body?.data && typeof body.data === 'object' ? body.data : null;
+    const handoff = await loadSnapshotHandoffBySource(svc, { sourceExecutionSessionId, sourceBrowserSessionId });
+    if (!handoff || String(handoff.learner_id) !== learnerId || !snapshotLessonMatchesExecution(lessonKey, handoff.lesson_id)) {
+      return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_NOT_FOUND' }, { status: 404 });
+    }
+    if (['claimed', 'fallback_claimed'].includes(handoff.state)) {
+      return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_ALREADY_CLAIMED', state: handoff.state }, { status: 409 });
+    }
+    const ownership = await verifySnapshotHandoffSessions(svc, handoff);
+    if (!ownership.ok) return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_OWNERSHIP_LOST', state: ownership.state }, { status: 409 });
+    if (!snapshotMatchesScope(candidate, { learnerId, lessonKey, browserSessionId: handoff.source_browser_session_id })) {
+      return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_SOURCE_INVALID' }, { status: 400 });
+    }
+    const durable = await readDurableSnapshot({ db, svc, userId: user.id, learnerId, lessonKey });
+    const durableSource = snapshotMatchesScope(durable, { learnerId, lessonKey, browserSessionId: handoff.source_browser_session_id }) ? durable : null;
+    const freshest = newestSnapshot(candidate, durableSource);
+    const { error } = await svc.from('lesson_snapshot_handoffs').update({
+      state: 'source_ready',
+      source_snapshot: freshest,
+      source_snapshot_updated_at: new Date(snapshotUpdatedAtMs(freshest) || Date.now()).toISOString(),
+      source_ready_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq('id', handoff.id).in('state', ['pending', 'source_ready']);
+    if (error) return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_STORE_FAILED' }, { status: 500 });
+    return NextResponse.json({ ok: true, state: 'source_ready', handoffId: handoff.id });
+  }
+
+  if (action === 'target_claim') {
+    const handoff = await loadSnapshotHandoffById(svc, body?.handoff_id);
+    const targetExecutionSessionId = normalizeUuid(body?.target_execution_session_id);
+    const targetBrowserSessionId = normalizeUuid(body?.target_browser_session_id);
+    if (!handoff || String(handoff.learner_id) !== learnerId || !snapshotLessonMatchesExecution(lessonKey, handoff.lesson_id)) {
+      return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_NOT_FOUND' }, { status: 404 });
+    }
+    if (handoff.target_execution_session_id !== targetExecutionSessionId || handoff.target_browser_session_id !== targetBrowserSessionId) {
+      return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_TARGET_MISMATCH' }, { status: 409 });
+    }
+    const ownership = await verifySnapshotHandoffSessions(svc, handoff);
+    if (!ownership.ok) return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_OWNERSHIP_LOST', state: ownership.state }, { status: 409 });
+
+    const existing = await readDurableSnapshot({ db, svc, userId: user.id, learnerId, lessonKey });
+    if (['claimed', 'fallback_claimed'].includes(handoff.state)
+      && snapshotMatchesScope(existing, { learnerId, lessonKey, browserSessionId: targetBrowserSessionId })) {
+      return NextResponse.json({ ok: true, state: handoff.state, snapshot: existing, handoffId: handoff.id });
+    }
+
+    const sharedLocal = body?.data && snapshotMatchesScope(body.data, {
+      learnerId,
+      lessonKey,
+      browserSessionId: handoff.source_browser_session_id,
+    }) ? body.data : null;
+    let source = handoff.state === 'source_ready' && snapshotMatchesScope(handoff.source_snapshot, {
+      learnerId,
+      lessonKey,
+      browserSessionId: handoff.source_browser_session_id,
+    }) ? handoff.source_snapshot : null;
+    let claimSource = source ? 'source_device' : null;
+    if (!source && sharedLocal) {
+      source = sharedLocal;
+      claimSource = 'shared_local_cache';
+    }
+    if (!source && body?.allow_fallback === true) {
+      const durableSource = snapshotMatchesScope(existing, {
+        learnerId,
+        lessonKey,
+        browserSessionId: handoff.source_browser_session_id,
+      }) ? existing : null;
+      if (durableSource) {
+        source = durableSource;
+        claimSource = 'durable_fallback';
+      }
+    }
+    if (!source) {
+      return NextResponse.json({ ok: true, state: 'pending', handoffId: handoff.id });
+    }
+
+    const rehomed = rehomeSnapshotForTakeover(source, {
+      targetBrowserSessionId,
+      sourceExecutionSessionId: handoff.source_execution_session_id,
+      targetExecutionSessionId: handoff.target_execution_session_id,
+      claimSource,
+    });
+    const persisted = await writeDurableSnapshot({ db, svc, userId: user.id, learnerId, lessonKey, snapshot: rehomed });
+    if (!persisted.ok) return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_PERSIST_FAILED' }, { status: 500 });
+    const terminalState = claimSource === 'durable_fallback' ? 'fallback_claimed' : 'claimed';
+    const { error } = await svc.from('lesson_snapshot_handoffs').update({
+      state: terminalState,
+      source_snapshot: null,
+      claim_source: claimSource,
+      claimed_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    }).eq('id', handoff.id).in('state', ['pending', 'source_ready']);
+    if (error) return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_FINALIZE_FAILED' }, { status: 500 });
+    return NextResponse.json({ ok: true, state: terminalState, snapshot: persisted.snapshot, handoffId: handoff.id, claimSource });
+  }
+
+  return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_ACTION_INVALID' }, { status: 400 });
+}
 export async function GET(req) {
   try {
     const user = await getUserFromAuthHeader(req);
@@ -270,8 +455,25 @@ export async function POST(req) {
     const auth = req.headers.get('authorization') || req.headers.get('Authorization');
     const token = auth?.startsWith('Bearer ') ? auth.split(' ')[1] : null;
     const db = getUserScopedClient(token);
-    if (!db) return NextResponse.json({ ok: true, hint: 'Supabase env not configured (soft)' });
     const body = await req.json().catch(() => ({}));
+    if (!db) {
+      if (body?.handoff_action) {
+        return NextResponse.json({ ok: false, code: 'SNAPSHOT_HANDOFF_UNAVAILABLE' }, { status: 503 });
+      }
+      return NextResponse.json({ ok: true, hint: 'Supabase env not configured (soft)' });
+    }
+    const { svc: handoffService } = getClients() || {};
+    if (body?.handoff_action) {
+      try {
+        return await handleSnapshotHandoff({ body, user, db, svc: handoffService });
+      } catch (handoffError) {
+        return NextResponse.json({
+          ok: false,
+          code: 'SNAPSHOT_HANDOFF_FAILED',
+          error: handoffError?.message || 'Snapshot handoff failed',
+        }, { status: 500 });
+      }
+    }
     const learner_id = typeof body?.learner_id === 'string' && body.learner_id ? body.learner_id : null;
     const lesson_key = typeof body?.lesson_key === 'string' && body.lesson_key ? body.lesson_key : null;
     const data = body?.data && typeof body.data === 'object' ? body.data : null;

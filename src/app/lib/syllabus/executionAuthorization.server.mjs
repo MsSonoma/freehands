@@ -7,6 +7,7 @@ import { loadSyllabusTimelineInputs } from './lessonTimelineInputs.server.mjs'
 import { DEFAULT_INSTRUCTIONAL_TEACHER, normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 
 export const SYLLABUS_EXECUTION_COOKIE = 'syllabus_execution'
+export const SYLLABUS_TAKEOVER_COOKIE = 'syllabus_takeover'
 const PROOF_TTL_SECONDS = 120
 
 function clean(value) { return String(value || '').trim() }
@@ -17,6 +18,13 @@ function proofKey(secret) {
 }
 function signature(payload, secret) {
   return createHmac('sha256', proofKey(secret)).update(payload).digest('base64url')
+}
+function takeoverProofKey(secret) {
+  if (!secret) throw new SyllabusError('Syllabus takeover authorization is not configured', 500, 'EXECUTION_NOT_CONFIGURED')
+  return createHmac('sha256', secret).update('ms-sonoma-syllabus-takeover-v1').digest()
+}
+function takeoverSignature(payload, secret) {
+  return createHmac('sha256', takeoverProofKey(secret)).update(payload).digest('base64url')
 }
 function safeEqual(left, right) {
   const a = Buffer.from(left || '')
@@ -50,6 +58,31 @@ export function executionProofMatches(proof, scope) {
     && proof.today === scope.today)
 }
 
+export function createSyllabusTakeoverProof(scope, secret, now = new Date()) {
+  const payload = Buffer.from(JSON.stringify({ ...scope, exp: Math.floor(now.getTime() / 1000) + PROOF_TTL_SECONDS })).toString('base64url')
+  return `${payload}.${takeoverSignature(payload, secret)}`
+}
+
+export function readSyllabusTakeoverProof(value, secret, now = new Date()) {
+  try {
+    const [payload, suppliedSignature] = clean(value).split('.')
+    if (!payload || !suppliedSignature || !safeEqual(takeoverSignature(payload, secret), suppliedSignature)) return null
+    const proof = JSON.parse(Buffer.from(payload, 'base64url').toString('utf8'))
+    return Number(proof.exp) >= Math.floor(now.getTime() / 1000) ? proof : null
+  } catch {
+    return null
+  }
+}
+
+export function takeoverProofMatches(proof, scope) {
+  return Boolean(proof
+    && proof.facilitatorId === scope.facilitatorId
+    && proof.learnerId === scope.learnerId
+    && proof.lessonKey === scope.lessonKey
+    && proof.occurrenceId === scope.occurrenceId
+    && proof.instructionalTeacher === scope.instructionalTeacher
+    && proof.expectedConflictingSessionId === scope.expectedConflictingSessionId)
+}
 export async function resolveSyllabusExecution({
   repository,
   admin,
@@ -119,9 +152,23 @@ export async function resolveSyllabusExecution({
   const sourceMatches = requestedOccurrenceId
     ? candidates.filter((item) => item?.placement_kind === 'actual' && clean(item.source_occurrence_id) === requestedOccurrenceId)
     : []
-  const occurrence = sourceMatches.length === 1
-    ? sourceMatches[0]
-    : (sourceMatches.length === 0 && directMatches.length === 1
+  const sourceInProgress = sourceMatches.filter((item) => item?.actual_kind === 'in_progress')
+  const sourceCompleted = sourceMatches.filter((item) => item?.actual_kind === 'completed')
+  const sourceIncomplete = sourceMatches.filter((item) => item?.actual_kind === 'incomplete')
+  const latestActual = (items) => [...items].sort((left, right) => {
+    const leftTime = Date.parse(left?.actual_started_date || left?.actual_at || left?.planned_date || '')
+    const rightTime = Date.parse(right?.actual_started_date || right?.actual_at || right?.planned_date || '')
+    if (Number.isFinite(leftTime) && Number.isFinite(rightTime) && leftTime !== rightTime) return rightTime - leftTime
+    return String(right?.occurrence_id || '').localeCompare(String(left?.occurrence_id || ''))
+  })[0] || null
+  const continuedSource = sourceInProgress.length === 1
+    ? sourceInProgress[0]
+    : (sourceInProgress.length > 1
+        ? null
+        : (sourceCompleted.length > 0 ? latestActual(sourceCompleted) : latestActual(sourceIncomplete)))
+  const occurrence = sourceMatches.length > 0
+    ? continuedSource
+    : (directMatches.length === 1
         ? directMatches[0]
         : (!requestedOccurrenceId && candidates.length === 1 ? candidates[0] : null))
   if (!occurrence) {
@@ -130,7 +177,8 @@ export async function resolveSyllabusExecution({
   const isToday = clean(occurrence.planned_date).slice(0, 10) === calendar.today
   const completedRepeat = occurrence.actual_kind === 'completed'
   const instructionalTeacher = normalizeInstructionalTeacher(occurrence.assigned_instructional_teacher || occurrence.instructional_teacher) || DEFAULT_INSTRUCTIONAL_TEACHER
-  const resumeBrowserSessionId = sourceMatches.length === 1
+  const resolvedFromSourceOccurrence = sourceMatches.length > 0 && occurrence === continuedSource
+  const resumeBrowserSessionId = resolvedFromSourceOccurrence
     && occurrence?.placement_kind === 'actual'
     && normalizeInstructionalTeacher(occurrence?.actual_instructional_teacher) === 'sonoma'
     && !completedRepeat

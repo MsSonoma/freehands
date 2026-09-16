@@ -1,4 +1,4 @@
-﻿"use client";
+"use client";
 
 /**
  * Session Page V2 - Full Session Flow
@@ -1022,6 +1022,9 @@ function SessionPageV2Inner() {
   const [isTakenOverNotification, setIsTakenOverNotification] = useState(false);
   const [executionEndedReason, setExecutionEndedReason] = useState(null);
   const executionFencedRef = useRef(false);
+  const pendingSnapshotHandoffRef = useRef(null);
+  const [executionRecoveryLoading, setExecutionRecoveryLoading] = useState(false);
+  const [executionRecoveryError, setExecutionRecoveryError] = useState('');
 
   const fenceInstructionalExecution = useCallback((reason = 'ownership-lost') => {
     executionFencedRef.current = true;
@@ -1038,11 +1041,27 @@ function SessionPageV2Inner() {
   // autoStart useEffect cleanup (stopPolling) — destroying the Realtime subscription.
   const handleSessionTakenOver = useCallback((session) => {
     fenceInstructionalExecution('taken_over');
+    void snapshotServiceRef.current?.offerTakeoverSnapshot?.({
+      sourceExecutionSessionId: session?.id || trackedExecutionSessionIdRef.current,
+      sourceBrowserSessionId: session?.session_id || browserSessionId,
+    });
     setExecutionEndedReason(null);
+    setExecutionRecoveryError('');
     setIsTakenOverNotification(true);
     setConflictingSession(session);
     setShowTakeoverDialog(true);
-  }, [fenceInstructionalExecution]);
+
+    // The Realtime row is the execution that just ended, not the new owner.
+    // Refresh the conflict so Take Back is scoped to the current active execution.
+    const learnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
+    const executionLessonKey = goldenKeyLessonKey || lessonKey;
+    if (learnerId && executionLessonKey && browserSessionId) {
+      void import('@/app/lib/sessionTracking').then(async ({ checkLessonSessionConflict }) => {
+        const latest = await checkLessonSessionConflict(learnerId, executionLessonKey, browserSessionId);
+        if (latest?.conflict && latest.existingSession) setConflictingSession(latest.existingSession);
+      }).catch(() => {});
+    }
+  }, [browserSessionId, fenceInstructionalExecution, goldenKeyLessonKey, learnerProfile?.id, lessonKey]);
 
   const handleSessionEnded = useCallback((session, reason) => {
     const normalized = String(reason || session?.ended_reason || '').trim().toLowerCase();
@@ -7382,7 +7401,7 @@ function SessionPageV2Inner() {
     // Start (or conflict-check) session tracking before the orchestrator begins.
     // This is required for Calendar history to detect completions reliably.
     const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
-    const trackingLessonId = lessonKey || null;
+    const trackingLessonId = goldenKeyLessonKey || lessonKey || null;
     if (trackingLearnerId && trackingLearnerId !== 'demo' && trackingLessonId && browserSessionId) {
       const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
       const sessionResult = await requireProtectedSessionCreation(() => withTimeout(
@@ -7635,18 +7654,48 @@ function SessionPageV2Inner() {
 
   const handleSessionTakeover = useCallback(async (pinCode) => {
     const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
-    const trackingLessonId = lessonKey || null;
-
+    const trackingLessonId = goldenKeyLessonKey || lessonKey || null;
     if (!trackingLearnerId || !trackingLessonId || !browserSessionId) {
       throw new Error('Session not initialized');
     }
+
+    const pendingHandoff = pendingSnapshotHandoffRef.current;
+    if (pendingHandoff?.handoffId && pendingHandoff?.targetExecutionSessionId) {
+      const transfer = await snapshotServiceRef.current?.claimTakeoverSnapshot?.({
+        handoffId: pendingHandoff.handoffId,
+        targetExecutionSessionId: pendingHandoff.targetExecutionSessionId,
+        targetBrowserSessionId: browserSessionId,
+      });
+      if (!transfer?.ok) {
+        throw new Error('The lesson changed devices, but the latest saved progress has not transferred yet. Keep the other lesson window open and retry.');
+      }
+      trackedExecutionSessionIdRef.current = pendingHandoff.targetExecutionSessionId;
+      snapshotServiceRef.current?.bindExecutionOwner?.({
+        executionSessionId: pendingHandoff.targetExecutionSessionId,
+        browserSessionId,
+      });
+      executionFencedRef.current = false;
+      if (typeof window !== 'undefined') delete window.__PREVENT_SNAPSHOT_SAVE__;
+      try { startSessionPolling?.(); } catch {}
+      pendingSnapshotHandoffRef.current = null;
+      if (typeof window !== 'undefined') window.location.reload();
+      return;
+    }
+
+    const { checkLessonSessionConflict } = await import('@/app/lib/sessionTracking');
+    const latestConflict = await checkLessonSessionConflict(trackingLearnerId, trackingLessonId, browserSessionId);
+    const expectedConflict = latestConflict?.conflict ? latestConflict.existingSession : null;
+    if (!expectedConflict?.id) {
+      throw new Error('The other execution is no longer active. Use Resume lesson here to reacquire this lesson without losing progress.');
+    }
+    setConflictingSession(expectedConflict);
 
     const supabase = getSupabaseClient();
     const { data: authSession } = await supabase?.auth.getSession() || {};
     const token = authSession?.session?.access_token;
     if (!token) throw new Error('Sign in is required to authorize this takeover.');
     const authorizationLessonKey = `${subjectParam}/${lessonId.endsWith('.json') ? lessonId : `${lessonId}.json`}`;
-    const authorizationResponse = await fetch('/api/syllabus/execution', {
+    const authorizationResponse = await fetch('/api/syllabus/execution/takeover', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({
@@ -7654,43 +7703,134 @@ function SessionPageV2Inner() {
         lessonKey: authorizationLessonKey,
         occurrenceId: occurrenceIdParam,
         instructionalTeacher: 'sonoma',
-        exceptionPin: pinCode,
+        expectedConflictingSessionId: expectedConflict.id,
+        takeoverPin: pinCode,
       }),
     });
     const authorizationResult = await authorizationResponse.json().catch(() => null);
     if (!authorizationResponse.ok || !authorizationResult?.ok) {
-      throw new Error(authorizationResult?.error || 'This Syllabus occurrence could not be authorized for takeover.');
+      throw new Error(authorizationResult?.error || 'This lesson takeover could not be authorized.');
     }
 
     const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
-    const result = await startTrackedSession(browserSessionId, deviceName, pinCode, conflictingSession?.id, authorizedOccurrenceId, 'sonoma');
+    const result = await startTrackedSession(
+      browserSessionId,
+      deviceName,
+      true,
+      expectedConflict.id,
+      authorizationResult.occurrenceId,
+      'sonoma'
+    );
     if (!result?.id || result?.conflict) {
       throw new Error('Unable to take over this lesson session. The existing session is still active.');
     }
     trackedExecutionSessionIdRef.current = result.id;
+    // Keep Snapshot writes fenced until the new owner has adopted the transferred state.
+    // This prevents stale target state from racing the handoff into durable storage.
+    snapshotServiceRef.current?.fenceWrites?.('takeover-handoff');
+
+    const sameLessonContinuation = String(expectedConflict.lesson_id || '') === String(trackingLessonId || '');
+    if (sameLessonContinuation && !result.snapshotHandoffId) {
+      throw new Error('Takeover succeeded, but the continuity handoff was not created. The saved lesson state has been preserved; do not start over.');
+    }
+    if (result.snapshotHandoffId) {
+      pendingSnapshotHandoffRef.current = {
+        handoffId: result.snapshotHandoffId,
+        targetExecutionSessionId: result.id,
+      };
+      const transfer = await snapshotServiceRef.current?.claimTakeoverSnapshot?.({
+        handoffId: result.snapshotHandoffId,
+        targetExecutionSessionId: result.id,
+        targetBrowserSessionId: browserSessionId,
+      });
+      if (!transfer?.ok) {
+        throw new Error('Takeover succeeded, but the latest lesson progress has not transferred yet. Keep the other lesson window open and retry.');
+      }
+      pendingSnapshotHandoffRef.current = null;
+    }
+
     snapshotServiceRef.current?.bindExecutionOwner?.({
       executionSessionId: result.id,
       browserSessionId,
     });
+    executionFencedRef.current = false;
+    if (typeof window !== 'undefined') delete window.__PREVENT_SNAPSHOT_SAVE__;
     try { startSessionPolling?.(); } catch {}
 
-    // Clear local snapshot so reload pulls the latest remote snapshot.
-    // Also set a one-shot sessionStorage flag so SnapshotService skips the
-    // localStorage cache on the post-reload load — ensuring the taking-over device
-    // always reads the shared Supabase snapshot, not its own stale local copy.
-    try {
-      localStorage.removeItem(`atomic_snapshot:${trackingLearnerId}:${trackingLessonId}`);
-    } catch {}
-    try { sessionStorage.setItem('__snapshot_skip_local__', '1'); } catch {}
-
+    setExecutionRecoveryError('');
     setIsTakenOverNotification(false);
     setShowTakeoverDialog(false);
     setConflictingSession(null);
+    if (typeof window !== 'undefined') window.location.reload();
+  }, [browserSessionId, goldenKeyLessonKey, learnerProfile?.id, lessonId, lessonKey, occurrenceIdParam, startTrackedSession, startSessionPolling, subjectParam]);
 
-    if (typeof window !== 'undefined') {
-      window.location.reload();
+  const handleRecoverExecution = useCallback(async () => {
+    if (executionRecoveryLoading) return;
+    const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
+    const trackingLessonId = goldenKeyLessonKey || lessonKey || null;
+    if (!trackingLearnerId || !trackingLessonId || !browserSessionId) return;
+    setExecutionRecoveryLoading(true);
+    setExecutionRecoveryError('');
+    try {
+      const supabase = getSupabaseClient();
+      const { data: authSession } = await supabase?.auth.getSession() || {};
+      const token = authSession?.session?.access_token;
+      if (!token) throw new Error('Sign in is required to resume this lesson.');
+      const authorizationLessonKey = `${subjectParam}/${lessonId.endsWith('.json') ? lessonId : `${lessonId}.json`}`;
+      const requestAuthorization = async (exceptionPin) => {
+        const response = await fetch('/api/syllabus/execution', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            learnerId: trackingLearnerId,
+            lessonKey: authorizationLessonKey,
+            occurrenceId: occurrenceIdParam,
+            instructionalTeacher: 'sonoma',
+            ...(exceptionPin ? { exceptionPin } : {}),
+          }),
+        });
+        return { response, json: await response.json().catch(() => ({})) };
+      };
+      let authorization = await requestAuthorization();
+      if (authorization.response.status === 409 && authorization.json?.code === 'SYLLABUS_EXECUTION_PIN_REQUIRED') {
+        const pin = await requestFacilitatorPinException({ message: authorization.json.error });
+        if (!pin) throw new Error('Resume was not authorized.');
+        authorization = await requestAuthorization(pin);
+      }
+      if (!authorization.response.ok || !authorization.json?.ok) {
+        throw new Error(authorization.json?.error || 'This lesson could not be reauthorized.');
+      }
+
+      const deviceName = typeof navigator !== 'undefined' ? navigator.userAgent : 'Unknown';
+      const result = await startTrackedSession(
+        browserSessionId,
+        deviceName,
+        false,
+        null,
+        authorization.json.occurrenceId,
+        'sonoma'
+      );
+      if (result?.conflict) {
+        setConflictingSession(result.existingSession);
+        setIsTakenOverNotification(false);
+        setExecutionEndedReason(null);
+        setShowTakeoverDialog(true);
+        return;
+      }
+      if (!result?.id) throw new Error('Unable to reacquire this lesson execution.');
+      trackedExecutionSessionIdRef.current = result.id;
+      snapshotServiceRef.current?.bindExecutionOwner?.({ executionSessionId: result.id, browserSessionId });
+      executionFencedRef.current = false;
+      if (typeof window !== 'undefined') delete window.__PREVENT_SNAPSHOT_SAVE__;
+      try { startSessionPolling?.(); } catch {}
+      setExecutionEndedReason(null);
+      if (typeof window !== 'undefined') window.location.reload();
+    } catch (cause) {
+      setExecutionRecoveryError(cause?.message || 'Could not resume this lesson yet.');
+    } finally {
+      setExecutionRecoveryLoading(false);
     }
-  }, [authorizedOccurrenceId, browserSessionId, conflictingSession?.id, learnerProfile?.id, lessonId, lessonKey, occurrenceIdParam, startTrackedSession, startSessionPolling, subjectParam]);
+  }, [browserSessionId, executionRecoveryLoading, goldenKeyLessonKey, learnerProfile?.id, lessonId, lessonKey, occurrenceIdParam, startTrackedSession, startSessionPolling, subjectParam]);
 
   const handleCancelTakeover = useCallback(() => {
     setIsTakenOverNotification(false);
@@ -10363,13 +10503,19 @@ function SessionPageV2Inner() {
           <div style={{ maxWidth: 480, background: '#fff', borderRadius: 12, padding: 24, textAlign: 'center', boxShadow: '0 20px 60px rgba(0,0,0,0.25)' }}>
             <h2 style={{ marginTop: 0 }}>Lesson session paused</h2>
             <p style={{ lineHeight: 1.5 }}>
-              {executionEndedReason === 'expired'
-                ? 'This lesson was inactive long enough for its execution lock to be released. Your saved work is still available.'
-                : 'This browser no longer owns the active lesson execution. Your saved work has been protected.'}
+              This browser no longer owns the protected lesson execution. The learner's lesson progress has been preserved and can be resumed instead of starting over.
             </p>
-            <button type="button" onClick={() => { window.location.href = '/learn'; }} style={{ padding: '10px 16px', borderRadius: 8, border: 0, cursor: 'pointer' }}>
-              Return to learner home
-            </button>
+            {executionRecoveryError ? (
+              <p style={{ color: '#b91c1c', fontSize: 14, lineHeight: 1.4 }}>{executionRecoveryError}</p>
+            ) : null}
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'center', flexWrap: 'wrap' }}>
+              <button type="button" disabled={executionRecoveryLoading} onClick={handleRecoverExecution} style={{ padding: '10px 16px', borderRadius: 8, border: 0, cursor: executionRecoveryLoading ? 'wait' : 'pointer', fontWeight: 700 }}>
+                {executionRecoveryLoading ? 'Resuming...' : 'Resume lesson here'}
+              </button>
+              <button type="button" onClick={() => { window.location.href = '/learn'; }} style={{ padding: '10px 16px', borderRadius: 8, border: '1px solid #d1d5db', background: '#fff', cursor: 'pointer' }}>
+                Return to learner home
+              </button>
+            </div>
           </div>
         </div>
       )}

@@ -15,8 +15,8 @@ export default function SessionTakeoverDialog({
   const handleSubmit = async (e) => {
     e.preventDefault()
     
-    if (pinCode.length !== 4) {
-      setError('PIN must be 4 digits')
+    if (!/^\d{4,8}$/.test(pinCode)) {
+      setError('PIN must be 4-8 digits')
       return
     }
 
@@ -108,14 +108,14 @@ export default function SessionTakeoverDialog({
 
         <form onSubmit={handleSubmit}>
           <label style={{ display: 'block', marginBottom: 8, fontSize: 14, fontWeight: 600, color: '#374151' }}>
-            Enter your 4-digit PIN to continue:
+            Enter your 4-8 digit PIN to continue:
           </label>
           
           <input
             type="text"
             inputMode="numeric"
             pattern="[0-9]*"
-            maxLength={4}
+            maxLength={8}
             value={pinCode}
             onChange={(e) => {
               const val = e.target.value.replace(/\D/g, '')
@@ -189,7 +189,7 @@ export default function SessionTakeoverDialog({
             
             <button
               type="submit"
-              disabled={loading || pinCode.length !== 4}
+              disabled={loading || !/^\d{4,8}$/.test(pinCode)}
               style={{
                 flex: 1,
                 padding: '12px 20px',
@@ -197,9 +197,9 @@ export default function SessionTakeoverDialog({
                 fontWeight: 600,
                 borderRadius: 8,
                 border: 'none',
-                background: (loading || pinCode.length !== 4) ? '#9ca3af' : '#2563eb',
+                background: (loading || !/^\d{4,8}$/.test(pinCode)) ? '#9ca3af' : '#2563eb',
                 color: '#fff',
-                cursor: (loading || pinCode.length !== 4) ? 'not-allowed' : 'pointer',
+                cursor: (loading || !/^\d{4,8}$/.test(pinCode)) ? 'not-allowed' : 'pointer',
                 transition: 'all 0.2s'
               }}
             >

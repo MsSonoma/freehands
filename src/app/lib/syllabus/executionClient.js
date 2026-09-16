@@ -49,6 +49,21 @@ export async function authorizeProtectedOccurrence({ learnerId, lessonKey, occur
   return { ...authorization.result, occurrenceId: canonicalOccurrenceId }
 }
 
+export async function authorizeProtectedTakeover({ learnerId, lessonKey, occurrenceId, instructionalTeacher, expectedConflictingSessionId, takeoverPin }, deps = {}) {
+  if (!learnerId || !lessonKey || !occurrenceId || !instructionalTeacher || !expectedConflictingSessionId || !takeoverPin) {
+    throw new Error('Takeover authorization requires the learner, lesson, occurrence, conflict, and Facilitator PIN.')
+  }
+  const token = await (deps.accessToken || accessToken)()
+  const fetchImpl = deps.fetch || fetch
+  const response = await fetchImpl('/api/syllabus/execution/takeover', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ learnerId, lessonKey, occurrenceId, instructionalTeacher, expectedConflictingSessionId, takeoverPin }),
+  })
+  const result = await response.json().catch(() => ({}))
+  if (!response.ok || !result?.ok) throw new Error(result?.error || 'This lesson takeover could not be authorized.')
+  return result
+}
 export async function startProtectedInstructionalSession({ learnerId, lessonKey, occurrenceId, instructionalTeacher, requestPin }, deps = {}) {
   if (!['sonoma', 'webb'].includes(instructionalTeacher)) throw new Error('A valid instructional teacher assignment is required.')
   const authorize = deps.authorizeProtectedOccurrence || authorizeProtectedOccurrence
@@ -61,7 +76,16 @@ export async function startProtectedInstructionalSession({ learnerId, lessonKey,
   if (result?.conflict) {
     const takeoverPin = await requestPin?.({ message: 'This lesson is active on another device. Enter the Facilitator PIN to continue here.' })
     if (!takeoverPin) throw new Error('This lesson remains active on another device.')
-    result = await start(learnerId, lessonKey, browserSessionId, deviceName, takeoverPin, result.existingSession?.id, authorization.occurrenceId, instructionalTeacher)
+    const authorizeTakeover = deps.authorizeProtectedTakeover || authorizeProtectedTakeover
+    await authorizeTakeover({
+      learnerId,
+      lessonKey,
+      occurrenceId: authorization.occurrenceId,
+      instructionalTeacher,
+      expectedConflictingSessionId: result.existingSession?.id,
+      takeoverPin,
+    }, deps)
+    result = await start(learnerId, lessonKey, browserSessionId, deviceName, true, result.existingSession?.id, authorization.occurrenceId, instructionalTeacher)
   }
   if (!result?.id || result?.conflict) throw new Error('Unable to confirm this protected lesson session.')
   return { ...result, occurrenceId: authorization.occurrenceId }

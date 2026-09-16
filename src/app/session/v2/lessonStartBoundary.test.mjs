@@ -78,7 +78,8 @@ test('pre-Begin conflict checks are read-only while start and takeover stay prot
   assert.doesNotMatch(preBegin, /startTrackedSession|\/execution\/start/)
   assert.match(trackingClient, /Check-only:[\s\S]*?Does NOT create or modify any session rows/)
   assert.match(sessionPage, /requireProtectedSessionCreation\(\(\) => withTimeout\([\s\S]*?startTrackedSession\(/)
-  assert.match(sessionPage, /startTrackedSession\(browserSessionId, deviceName, pinCode, conflictingSession\?\.id, authorizedOccurrenceId, 'sonoma'\)/)
+  assert.match(sessionPage, /fetch\('\/api\/syllabus\/execution\/takeover'/)
+  assert.match(sessionPage, /startTrackedSession\([\s\S]{0,500}true,[\s\S]{0,500}expectedConflict\.id/)
 })
 
 test('SESSION_STARTED evidence is emitted only after deliberate canonical start succeeds', () => {

@@ -166,6 +166,9 @@ export function composeSyllabusLessonTimeline({
     const sessionLifecycleEvents = sessionIds.flatMap((id) => lifecycleEventsBySession.get(id) || [])
     const lifecycle = resolveLessonSessionLifecycle(session, sessionLifecycleEvents)
     const terminal = lifecycle.event
+    const startedEvent = [...sessionLifecycleEvents]
+      .filter((event) => clean(event?.event_type) === 'started')
+      .sort((left, right) => compareTimestamp(left?.occurred_at, right?.occurred_at) || clean(left?.id).localeCompare(clean(right?.id)))[0] || null
     const key = resolveKey(terminal?.lesson_id || terminal?.lesson_key || session?.lesson_id || session?.lesson_key)
     if (!key) continue
     const identity = clean(session?.id || session?.session_id) || clean(terminal?.id)
@@ -190,6 +193,9 @@ export function composeSyllabusLessonTimeline({
       kind: lifecycle.status,
       occurred_at: lifecycle.occurredAt,
       started_at: startedAt,
+      continuationOfSessionId: clean(startedEvent?.metadata?.continuation_of_session_id) || null,
+      terminalReason: clean(terminal?.metadata?.reason) || null,
+      replacementBrowserSessionId: clean(terminal?.metadata?.replacement_browser_session_id) || null,
     }
     if (terminal) actuals.push(actual)
     else if (lifecycle.status === 'completed') actuals.push({ ...actual, kind: 'completed' })
@@ -200,9 +206,20 @@ export function composeSyllabusLessonTimeline({
     const key = resolveKey(event.lesson_id || event.lesson_key)
     if (key) actuals.push({ key, id: clean(event.id) || `${key}:${event.occurred_at}:${event.event_type}`, kind: lifecycleEventActualKind(event.event_type), occurred_at: event.occurred_at, started_at: event.occurred_at })
   }
-  actuals.sort((left, right) => compareTimestamp(left.started_at, right.started_at) || compareTimestamp(left.occurred_at, right.occurred_at) || left.id.localeCompare(right.id))
+  const continuedExecutionIds = new Set(actuals.map((actual) => clean(actual.continuationOfSessionId)).filter(Boolean))
+  for (const source of actuals) {
+    if (source.terminalReason !== 'taken_over' || !source.replacementBrowserSessionId || !source.occurrenceId || !source.instructionalTeacher) continue
+    const continuation = actuals.find((candidate) => candidate.id !== source.id
+      && candidate.key === source.key
+      && candidate.occurrenceId === source.occurrenceId
+      && candidate.browserSessionId === source.replacementBrowserSessionId
+      && candidate.instructionalTeacher === source.instructionalTeacher)
+    if (continuation) continuedExecutionIds.add(source.id)
+  }
+  const instructionalActuals = actuals.filter((actual) => !continuedExecutionIds.has(actual.id))
+  instructionalActuals.sort((left, right) => compareTimestamp(left.started_at, right.started_at) || compareTimestamp(left.occurred_at, right.occurred_at) || left.id.localeCompare(right.id))
   const latestCompletionByKey = new Map()
-  for (const actual of actuals) {
+  for (const actual of instructionalActuals) {
     ensureMetadata(actual.key)
     if (actual.kind !== 'completed') continue
     const current = latestCompletionByKey.get(actual.key)
@@ -282,7 +299,7 @@ export function composeSyllabusLessonTimeline({
 
   const occupied = new Set()
   const actualCapacity = new Map()
-  for (const actual of actuals) {
+  for (const actual of instructionalActuals) {
     if (actualDate(actual.occurred_at) !== today) continue
     const details = metadata.get(actual.key) || ensureMetadata(actual.key)
     actualCapacity.set(actual, reserveExplicitSlot({
@@ -297,7 +314,7 @@ export function composeSyllabusLessonTimeline({
   // An actual attempt consumes the exact intent it came from even after that day has
   // passed.  A missed or incomplete lesson is evidence for Forecast; the read model
   // never earns authority to move the intent onto another date by itself.
-  for (const actual of actuals) {
+  for (const actual of instructionalActuals) {
     const candidates = activeIntents.filter((intent) => !consumedIntents.has(intent) && intent.key === actual.key)
     const actualDay = actualDate(actual.occurred_at)
     const proven = actual.occurrenceId
@@ -339,7 +356,7 @@ export function composeSyllabusLessonTimeline({
     }
   }
 
-  const output = actuals.map((actual) => {
+  const output = instructionalActuals.map((actual) => {
     const details = metadata.get(actual.key) || defaultMetadata(actual.key)
     const capacity = actualCapacity.get(actual)
     return {
@@ -403,7 +420,7 @@ export function composeSyllabusLessonTimeline({
     })
   }
 
-  const keysWithActualOrIntent = new Set([...actuals.map((actual) => actual.key), ...activeIntents.map((intent) => intent.key)])
+  const keysWithActualOrIntent = new Set([...instructionalActuals.map((actual) => actual.key), ...activeIntents.map((intent) => intent.key)])
   const inferenceCandidates = [...metadata.values()].filter((entry) => (
     !keysWithActualOrIntent.has(entry.lesson_key) && entry.inferred_placement_suppressed !== true
   ))

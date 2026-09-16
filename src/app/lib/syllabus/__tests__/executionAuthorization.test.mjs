@@ -5,8 +5,9 @@ import test from 'node:test'
 
 import { POST as authorizeExecution } from '../../../api/syllabus/execution/route.js'
 import { POST as startExecution } from '../../../api/syllabus/execution/start/route.js'
+import { POST as authorizeTakeover } from '../../../api/syllabus/execution/takeover/route.js'
 import { requireProtectedSessionCreation } from '../../../session/v2/protectedSessionBoundary.mjs'
-import { createSyllabusExecutionProof, resolveSyllabusExecution } from '../executionAuthorization.server.mjs'
+import { createSyllabusExecutionProof, createSyllabusTakeoverProof, resolveSyllabusExecution } from '../executionAuthorization.server.mjs'
 import { getActiveSyllabus } from '../revisions.server.mjs'
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
@@ -47,6 +48,19 @@ function request(body, cookie = '') {
 
 function executionCookie(scope, now = new Date('2026-08-23T16:00:00Z'), secret = 'test-secret') {
   return `syllabus_execution=${createSyllabusExecutionProof({ instructionalTeacher: 'sonoma', ...scope }, secret, now)}`
+}
+
+function takeoverCookies(scope, expectedConflictingSessionId, now = new Date('2026-08-23T16:00:00Z'), secret = 'test-secret') {
+  const execution = executionCookie(scope, now, secret)
+  const takeover = createSyllabusTakeoverProof({
+    facilitatorId: scope.facilitatorId,
+    learnerId: scope.learnerId,
+    lessonKey: scope.lessonKey,
+    occurrenceId: scope.occurrenceId,
+    instructionalTeacher: 'sonoma',
+    expectedConflictingSessionId,
+  }, secret, now)
+  return `${execution}; syllabus_takeover=${takeover}`
 }
 
 function fakeTransactionalStarter(active = [], options = {}) {
@@ -375,6 +389,39 @@ test('historical continuation authorizes and launches with the canonical source 
   assert.equal((await retry.json()).resumeBrowserSessionId, null)
 })
 
+test('takeover continuation resolves the one active execution instead of treating repeated actual rows as ambiguous', async () => {
+  const original = forecast('takeover-source', 'math/takeover-source.json', '2026-08-23')
+  const newBrowser = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+  const decision = await resolveSyllabusExecution({
+    repository: repository({
+      forecast: [original],
+      sessions: [
+        {
+          id: 'old-execution', session_id: RESUME_BROWSER, learner_id: LEARNER, lesson_id: original.lesson_key,
+          instructional_teacher: 'sonoma', started_at: '2026-08-23T14:00:00Z', ended_at: '2026-08-23T14:20:00Z', ended_reason: 'taken_over',
+        },
+        {
+          id: 'new-execution', session_id: newBrowser, learner_id: LEARNER, lesson_id: original.lesson_key,
+          instructional_teacher: 'sonoma', started_at: '2026-08-23T14:20:00Z', ended_at: null,
+        },
+      ],
+      events: [
+        { id: 'old-started', session_id: 'old-execution', learner_id: LEARNER, lesson_id: original.lesson_key, event_type: 'started', occurred_at: '2026-08-23T14:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:takeover-source', instructional_teacher: 'sonoma' } },
+        { id: 'old-restarted', session_id: 'old-execution', learner_id: LEARNER, lesson_id: original.lesson_key, event_type: 'restarted', occurred_at: '2026-08-23T14:20:00Z', metadata: { reason: 'taken_over', replacement_browser_session_id: newBrowser } },
+        { id: 'new-started', session_id: 'new-execution', learner_id: LEARNER, lesson_id: original.lesson_key, event_type: 'started', occurred_at: '2026-08-23T14:20:00Z', metadata: { syllabus_occurrence_id: 'syllabus:takeover-source', instructional_teacher: 'sonoma', continuation_of_session_id: 'old-execution', continuation_reason: 'takeover' } },
+      ],
+    }),
+    admin: {},
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    lessonKey: original.lesson_key,
+    occurrenceId: 'syllabus:takeover-source',
+    now: new Date('2026-08-23T16:00:00Z'),
+  })
+  assert.equal(decision.occurrence.occurrence_id, 'actual:new-execution')
+  assert.equal(decision.resumeBrowserSessionId, newBrowser)
+  assert.equal(decision.allowedWithoutPin, true)
+})
 test('completed source occurrence never grants snapshot resume authority', async () => {
   const original = forecast('completed-source', 'math/completed-source.json', '2026-08-20')
   const completedRepository = repository({
@@ -604,24 +651,52 @@ test('different browser conflicts without takeover authorization and does not mu
   assert.deepEqual(missingPinStore.state.created, [])
 })
 
-test('different browser takeover requires valid scoped proof, fresh PIN, and expected conflict identity', async () => {
+test('different browser takeover requires a separately signed takeover proof scoped to the exact conflict', async () => {
   const scope = { facilitatorId: FACILITATOR, learnerId: LEARNER, lessonKey: 'math/today.json', occurrenceId: 'syllabus:today', today: '2026-08-23' }
   const activeId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
   const active = [{ id: activeId, session_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', lesson_id: 'math/today.json', device_name: 'Other device' }]
-  const invalidPinStore = fakeTransactionalStarter(active)
-  const invalid = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverPin: '0000', expectedConflictingSessionId: activeId }, executionCookie(scope)), startDeps(invalidPinStore))
-  assert.equal(invalid.status, 403)
-  assert.equal((await invalid.json()).code, 'INVALID_FACILITATOR_PIN')
-  assert.equal(invalidPinStore.state.calls.length, 0)
+
+  const rawPinStore = fakeTransactionalStarter(active)
+  const rawPin = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverPin: '2468', expectedConflictingSessionId: activeId }, executionCookie(scope)), startDeps(rawPinStore))
+  assert.equal(rawPin.status, 403)
+  assert.equal((await rawPin.json()).code, 'TAKEOVER_AUTHORIZATION_REQUIRED')
+  assert.equal(rawPinStore.state.calls.length, 0)
 
   const successStore = fakeTransactionalStarter(active)
-  const success = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverPin: '2468', expectedConflictingSessionId: activeId }, executionCookie(scope)), startDeps(successStore))
+  const success = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverAuthorized: true, expectedConflictingSessionId: activeId }, takeoverCookies(scope, activeId)), startDeps(successStore))
   assert.equal(success.status, 200)
   assert.equal((await success.json()).takeover, true)
   assert.equal(successStore.state.created.length, 1)
   assert.deepEqual(successStore.state.ended, [activeId])
   assert.equal(successStore.state.calls[0].p_allow_takeover, true)
   assert.equal(successStore.state.calls[0].p_expected_conflicting_session_id, activeId)
+
+  const wrongConflictStore = fakeTransactionalStarter(active)
+  const wrongConflict = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverAuthorized: true, expectedConflictingSessionId: activeId }, takeoverCookies(scope, 'ffffffff-ffff-4fff-8fff-ffffffffffff')), startDeps(wrongConflictStore))
+  assert.equal(wrongConflict.status, 403)
+  assert.equal((await wrongConflict.json()).code, 'TAKEOVER_AUTHORIZATION_REQUIRED')
+  assert.equal(wrongConflictStore.state.calls.length, 0)
+})
+
+test('takeover authorization verifies one 4-8 digit Facilitator PIN and mints both scoped proofs', async () => {
+  const assigned = forecast('today', 'math/today.json', '2026-08-23')
+  let pinChecks = 0
+  const response = await authorizeTakeover(request({
+    learnerId: LEARNER,
+    lessonKey: assigned.lesson_key,
+    occurrenceId: 'syllabus:today',
+    expectedConflictingSessionId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee',
+    takeoverPin: '24682468',
+  }), {
+    ...startDeps(fakeTransactionalStarter()),
+    repository: repository({ forecast: [assigned] }),
+    verifyFacilitatorPinForUser: async (_admin, _user, pin) => { pinChecks += 1; return pin === '24682468' },
+  })
+  assert.equal(response.status, 200)
+  assert.equal(pinChecks, 1)
+  const cookies = response.headers.get('set-cookie') || ''
+  assert.match(cookies, /syllabus_execution=/)
+  assert.match(cookies, /syllabus_takeover=/)
 })
 
 test('a competing session appearing before the transactional decision cannot be silently replaced', async () => {
@@ -638,7 +713,7 @@ test('stale expected conflict identity cannot replace a newer active session', a
   const scope = { facilitatorId: FACILITATOR, learnerId: LEARNER, lessonKey: 'math/today.json', occurrenceId: 'syllabus:today', today: '2026-08-23' }
   const newer = { id: 'ffffffff-ffff-4fff-8fff-ffffffffffff', session_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', lesson_id: 'math/today.json' }
   const sessions = fakeTransactionalStarter([newer])
-  const response = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverPin: '2468', expectedConflictingSessionId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' }, executionCookie(scope)), startDeps(sessions))
+  const response = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverAuthorized: true, expectedConflictingSessionId: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee' }, takeoverCookies(scope, 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee')), startDeps(sessions))
   const result = await response.json()
   assert.equal(result.conflict, true)
   assert.equal(result.staleConflict, true)
@@ -650,7 +725,7 @@ test('failed transactional replacement preserves the existing active session', a
   const activeId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
   const active = [{ id: activeId, session_id: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa', lesson_id: 'math/today.json' }]
   const sessions = fakeTransactionalStarter(active, { failInsert: true })
-  const response = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverPin: '2468', expectedConflictingSessionId: activeId }, executionCookie(scope)), startDeps(sessions))
+  const response = await startExecution(request({ learnerId: LEARNER, lessonId: 'math/today.json', browserSessionId: 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb', occurrenceId: 'syllabus:today', takeoverAuthorized: true, expectedConflictingSessionId: activeId }, takeoverCookies(scope, activeId)), startDeps(sessions))
   assert.equal(response.status, 500)
   assert.deepEqual(sessions.state.active, active)
   assert.deepEqual(sessions.state.ended, [])
@@ -708,7 +783,8 @@ test('session boundary uses server authorization and does not accept cached faci
   assert.match(startRoute, /lessonKey,\s+occurrenceId,\s+instructionalTeacher,\s+today: proof\.today/)
   assert.doesNotMatch(startRoute, /occurrenceId:\s*proof\.occurrenceId/)
   assert.match(session, /startTrackedSession\(browserSessionId, deviceName, null, null, authorizedOccurrenceId, 'sonoma'\)/)
-  assert.match(session, /startTrackedSession\(browserSessionId, deviceName, pinCode, conflictingSession\?\.id, authorizedOccurrenceId, 'sonoma'\)/)
+  assert.match(session, /fetch\('\/api\/syllabus\/execution\/takeover'/)
+  assert.match(session, /startTrackedSession\([\s\S]{0,500}true,[\s\S]{0,500}expectedConflict\.id/)
   assert.match(startRoute, /start_lesson_session_transactional/)
   assert.doesNotMatch(startRoute, /from\('lesson_sessions'\)/)
   assert.doesNotMatch(startRoute, /createSessionStore|listActiveForLesson|listActiveForLearner/)

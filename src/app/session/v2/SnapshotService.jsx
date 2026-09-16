@@ -18,6 +18,7 @@
  */
 
 import { shouldUseAccountPersistence } from '@/app/learn/demoLearner.mjs';
+import { newestSnapshot } from '@/app/lib/snapshotTakeoverHandoff.mjs';
 
 export class SnapshotService {
   // Private state
@@ -445,10 +446,90 @@ export class SnapshotService {
   fenceWrites(reason = 'ownership-lost') {
     this.#writesFenced = true;
     this.#fenceReason = String(reason || 'ownership-lost');
-    this.#snapshot = null;
-    this.#deleteFromLocalStorage();
+    // Ownership loss freezes writes only. Learner progress remains intact locally
+    // until canonical completion or an explicit Start Over deletes it.
   }
 
+  exportSnapshotForHandoff() {
+    return newestSnapshot(this.#snapshot, this.#loadFromLocalStorage());
+  }
+
+  adoptTransferredSnapshot(snapshot) {
+    if (!snapshot || typeof snapshot !== 'object') return false;
+    if (String(snapshot.sessionId || '') !== String(this.#sessionId || '')) return false;
+    if (String(snapshot.learnerId || '') !== String(this.#learnerId || '')) return false;
+    if (String(snapshot.lessonKey || '') !== String(this.#lessonKey || '')) return false;
+    this.#snapshot = snapshot;
+    this.#saveToLocalStorage(snapshot);
+    this.#lastSaveTime = Date.now();
+    return true;
+  }
+
+  async offerTakeoverSnapshot({ sourceExecutionSessionId, sourceBrowserSessionId } = {}) {
+    const snapshot = this.exportSnapshotForHandoff();
+    if (!snapshot) return { ok: false, noSnapshot: true };
+    const token = await this.#getAuthToken();
+    if (!token) return { ok: false, unauthorized: true };
+    try {
+      const resp = await fetch('/api/snapshots', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+        body: JSON.stringify({
+          handoff_action: 'source_offer',
+          learner_id: this.#learnerId,
+          lesson_key: this.#lessonKey,
+          source_execution_session_id: sourceExecutionSessionId || this.#executionSessionId,
+          source_browser_session_id: sourceBrowserSessionId || this.#executionBrowserSessionId,
+          data: snapshot,
+        }),
+      });
+      const result = await resp.json().catch(() => null);
+      return { ok: resp.ok && result?.ok === true, ...(result || {}) };
+    } catch (err) {
+      console.error('[SnapshotService] Takeover source handoff error:', this.#formatErrorForLog(err));
+      return { ok: false };
+    }
+  }
+
+  async claimTakeoverSnapshot({ handoffId, targetExecutionSessionId, targetBrowserSessionId, attempts = 12, delayMs = 250 } = {}) {
+    if (!handoffId || !targetExecutionSessionId || !targetBrowserSessionId) return { ok: false, noHandoff: true };
+    const token = await this.#getAuthToken();
+    if (!token) return { ok: false, unauthorized: true };
+    const localCandidate = this.#loadFromLocalStorage();
+    for (let attempt = 0; attempt < attempts; attempt++) {
+      const allowFallback = attempt === attempts - 1;
+      try {
+        const resp = await fetch('/api/snapshots', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json', Accept: 'application/json' },
+          body: JSON.stringify({
+            handoff_action: 'target_claim',
+            learner_id: this.#learnerId,
+            lesson_key: this.#lessonKey,
+            handoff_id: handoffId,
+            target_execution_session_id: targetExecutionSessionId,
+            target_browser_session_id: targetBrowserSessionId,
+            allow_fallback: allowFallback,
+            ...(localCandidate ? { data: localCandidate } : {}),
+          }),
+        });
+        const result = await resp.json().catch(() => null);
+        if (!resp.ok || result?.ok === false) return { ok: false, ...(result || {}) };
+        if (result?.snapshot) {
+          const adopted = this.adoptTransferredSnapshot(result.snapshot);
+          return { ok: adopted, adopted, ...result };
+        }
+        if (result?.state !== 'pending') return { ok: false, ...(result || {}) };
+      } catch (err) {
+        if (attempt === attempts - 1) {
+          console.error('[SnapshotService] Takeover target handoff error:', this.#formatErrorForLog(err));
+          return { ok: false };
+        }
+      }
+      if (attempt < attempts - 1) await new Promise(resolve => setTimeout(resolve, delayMs));
+    }
+    return { ok: false, state: 'pending' };
+  }
   get writesFenced() {
     return this.#writesFenced;
   }

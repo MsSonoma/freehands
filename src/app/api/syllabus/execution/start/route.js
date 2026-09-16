@@ -1,13 +1,15 @@
 import { NextResponse } from 'next/server.js'
 import { normalizeLessonKey } from '../../../../lib/lessonKeyNormalization.js'
-import { verifyFacilitatorPinForUser } from '../../../../lib/facilitatorPin.server.mjs'
 import { getSyllabusRequestContext } from '../../../../lib/syllabus/request.server.mjs'
 import { createSyllabusRepository } from '../../../../lib/syllabus/supabaseRepository.server.mjs'
 import { validateLearnerId } from '../../../../lib/syllabus/schema.mjs'
 import {
   executionProofMatches,
   readSyllabusExecutionProof,
+  readSyllabusTakeoverProof,
+  takeoverProofMatches,
   SYLLABUS_EXECUTION_COOKIE,
+  SYLLABUS_TAKEOVER_COOKIE,
 } from '../../../../lib/syllabus/executionAuthorization.server.mjs'
 
 export const dynamic = 'force-dynamic'
@@ -75,15 +77,24 @@ export async function POST(request, deps = {}) {
     }
 
     const deviceName = String(body?.deviceName || '').trim() || null
-    const allowTakeover = Boolean(body?.takeoverPin)
     const expectedConflictingSessionId = normalizeUuid(body?.expectedConflictingSessionId)
-    if (allowTakeover) {
+    const takeoverRequested = body?.takeoverAuthorized === true || Boolean(body?.takeoverPin) || Boolean(expectedConflictingSessionId)
+    let allowTakeover = false
+    if (takeoverRequested) {
       if (!expectedConflictingSessionId) {
         return NextResponse.json({ error: 'The observed conflicting session is required for takeover', code: 'EXPECTED_CONFLICT_REQUIRED' }, { status: 409 })
       }
-      const verifyPin = deps.verifyFacilitatorPinForUser || verifyFacilitatorPinForUser
-      if (!await verifyPin(context.admin, context.user.id, body.takeoverPin)) {
-        return NextResponse.json({ error: 'Invalid Facilitator PIN', code: 'INVALID_FACILITATOR_PIN' }, { status: 403 })
+      const takeoverProof = readSyllabusTakeoverProof(cookieValue(request, SYLLABUS_TAKEOVER_COOKIE), secret, now)
+      allowTakeover = takeoverProofMatches(takeoverProof, {
+        facilitatorId: context.user.id,
+        learnerId,
+        lessonKey,
+        occurrenceId,
+        instructionalTeacher,
+        expectedConflictingSessionId,
+      })
+      if (!allowTakeover) {
+        return NextResponse.json({ error: 'A fresh Facilitator PIN authorization is required for takeover', code: 'TAKEOVER_AUTHORIZATION_REQUIRED' }, { status: 403 })
       }
     }
 

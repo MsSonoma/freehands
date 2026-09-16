@@ -456,6 +456,74 @@ test('an unused Retry stays planned until canonical learner start creates an act
   ])
 })
 
+test('same-occurrence takeover is one educational attempt even though execution ownership has multiple rows', () => {
+  const planned = forecastLesson({ id: 'takeover-source', title: 'Fractions Continuation' })
+  const oldBrowser = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const newBrowser = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [planned],
+    associations: [association({ readiness_state: 'available' })],
+    sessions: [
+      { id: 'old-execution', session_id: oldBrowser, lesson_id: 'generated/fractions.json', instructional_teacher: 'sonoma', started_at: '2026-09-07T14:00:00Z', ended_at: '2026-09-07T14:20:00Z', ended_reason: 'taken_over' },
+      { id: 'new-execution', session_id: newBrowser, lesson_id: 'generated/fractions.json', instructional_teacher: 'sonoma', started_at: '2026-09-07T14:20:00Z', ended_at: null },
+    ],
+    sessionEvents: [
+      { id: 'old-started', session_id: 'old-execution', lesson_id: 'generated/fractions.json', event_type: 'started', occurred_at: '2026-09-07T14:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:takeover-source', instructional_teacher: 'sonoma' } },
+      { id: 'old-taken-over', session_id: 'old-execution', lesson_id: 'generated/fractions.json', event_type: 'restarted', occurred_at: '2026-09-07T14:20:00Z', metadata: { reason: 'taken_over', replacement_browser_session_id: newBrowser } },
+      { id: 'new-started', session_id: 'new-execution', lesson_id: 'generated/fractions.json', event_type: 'started', occurred_at: '2026-09-07T14:20:00Z', metadata: { syllabus_occurrence_id: 'syllabus:takeover-source', instructional_teacher: 'sonoma', continuation_of_session_id: 'old-execution', continuation_reason: 'takeover' } },
+    ],
+    today: '2026-09-07',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].occurrence_id, 'actual:new-execution')
+  assert.equal(items[0].source_occurrence_id, 'syllabus:takeover-source')
+  assert.equal(items[0].actual_kind, 'in_progress')
+})
+
+test('legacy same-occurrence takeover metadata also collapses the replaced execution segment', () => {
+  const oldBrowser = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const newBrowser = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association()],
+    sessions: [
+      { id: 'legacy-old', session_id: oldBrowser, lesson_id: 'generated/fractions.json', instructional_teacher: 'sonoma', started_at: '2026-08-18T10:00:00Z', ended_at: '2026-08-18T10:20:00Z', ended_reason: 'taken_over' },
+      { id: 'legacy-new', session_id: newBrowser, lesson_id: 'generated/fractions.json', instructional_teacher: 'sonoma', started_at: '2026-08-18T10:20:00Z', ended_at: null },
+    ],
+    sessionEvents: [
+      { id: 'legacy-old-start', session_id: 'legacy-old', lesson_id: 'generated/fractions.json', event_type: 'started', occurred_at: '2026-08-18T10:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:legacy-source', instructional_teacher: 'sonoma' } },
+      { id: 'legacy-old-taken', session_id: 'legacy-old', lesson_id: 'generated/fractions.json', event_type: 'restarted', occurred_at: '2026-08-18T10:20:00Z', metadata: { reason: 'taken_over', replacement_browser_session_id: newBrowser, syllabus_occurrence_id: 'syllabus:legacy-source' } },
+      { id: 'legacy-new-start', session_id: 'legacy-new', lesson_id: 'generated/fractions.json', event_type: 'started', occurred_at: '2026-08-18T10:20:00Z', metadata: { syllabus_occurrence_id: 'syllabus:legacy-source', instructional_teacher: 'sonoma' } },
+    ],
+    today: '2026-08-26',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].occurrence_id, 'actual:legacy-new')
+  assert.equal(items[0].actual_kind, 'in_progress')
+})
+test('expired execution followed by same-browser resume remains one educational lesson attempt', () => {
+  const browser = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association()],
+    sessions: [
+      { id: 'expired-execution', session_id: browser, lesson_id: 'generated/fractions.json', instructional_teacher: 'sonoma', started_at: '2026-09-07T14:00:00Z', ended_at: '2026-09-07T14:20:00Z', ended_reason: 'expired' },
+      { id: 'resumed-execution', session_id: browser, lesson_id: 'generated/fractions.json', instructional_teacher: 'sonoma', started_at: '2026-09-07T14:21:00Z', ended_at: null },
+    ],
+    sessionEvents: [
+      { id: 'expired-start', session_id: 'expired-execution', lesson_id: 'generated/fractions.json', event_type: 'started', occurred_at: '2026-09-07T14:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:expired-source', instructional_teacher: 'sonoma' } },
+      { id: 'expired-terminal', session_id: 'expired-execution', lesson_id: 'generated/fractions.json', event_type: 'incomplete', occurred_at: '2026-09-07T14:20:00Z', metadata: { reason: 'execution-lease-expired' } },
+      { id: 'resumed-start', session_id: 'resumed-execution', lesson_id: 'generated/fractions.json', event_type: 'started', occurred_at: '2026-09-07T14:21:00Z', metadata: { syllabus_occurrence_id: 'syllabus:expired-source', instructional_teacher: 'sonoma', continuation_of_session_id: 'expired-execution', continuation_reason: 'resume_after_expired' } },
+    ],
+    today: '2026-09-07',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].occurrence_id, 'actual:resumed-execution')
+  assert.equal(items[0].source_occurrence_id, 'syllabus:expired-source')
+  assert.equal(items[0].actual_kind, 'in_progress')
+  assert.equal(items[0].actual_browser_session_id, browser)
+})
 test('ended session with no terminal event is completed at ended_at', () => {
   const ended = composeSyllabusLessonTimeline({
     activeRevision: REVISION,

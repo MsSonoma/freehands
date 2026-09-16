@@ -50,7 +50,7 @@ export async function checkLessonSessionConflict(learnerId, lessonId, browserSes
  * @param {string} deviceName - Optional device name for display
  * @returns {Promise<{id: string}|{conflict: true, existingSession: object}>} Session result
  */
-export async function startLessonSession(learnerId, lessonId, browserSessionId = null, deviceName = null, takeoverPin = null, expectedConflictingSessionId = null, occurrenceId = null, instructionalTeacher = null) {
+export async function startLessonSession(learnerId, lessonId, browserSessionId = null, deviceName = null, takeoverAuthorized = false, expectedConflictingSessionId = null, occurrenceId = null, instructionalTeacher = null) {
   if (learnerId === 'demo') return null;
   if (!learnerId || !lessonId || !hasSupabaseEnv()) {
     throw new Error('Unable to start this lesson securely. Return to the Syllabus and try again.');
@@ -71,7 +71,7 @@ export async function startLessonSession(learnerId, lessonId, browserSessionId =
         deviceName,
         occurrenceId,
         instructionalTeacher,
-        ...(takeoverPin ? { takeoverPin, expectedConflictingSessionId } : {}),
+        ...(takeoverAuthorized ? { takeoverAuthorized: true, expectedConflictingSessionId } : {}),
       }),
     });
     const payload = await response.json().catch(() => null);

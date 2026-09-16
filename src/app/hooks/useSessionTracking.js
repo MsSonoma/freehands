@@ -35,7 +35,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
   const isMountedRef = useRef(true);
   const terminalHandledRef = useRef(false); // guard: handle each ownership-ending transition once
 
-  const startSession = async (browserSessionId = null, deviceName = null, takeoverPin = null, expectedConflictingSessionId = null, occurrenceId = null, instructionalTeacher = null) => {
+  const startSession = async (browserSessionId = null, deviceName = null, takeoverAuthorized = false, expectedConflictingSessionId = null, occurrenceId = null, instructionalTeacher = null) => {
     if (!learnerId || !lessonId) {
       return null;
     }
@@ -59,7 +59,7 @@ export function useSessionTracking(learnerId, lessonId, autoStart = true, onSess
     setTracking(true);
     try {
       const result = await withTimeout(
-        startLessonSession(learnerId, lessonId, browserSessionId, deviceName, takeoverPin, expectedConflictingSessionId, occurrenceId, instructionalTeacher),
+        startLessonSession(learnerId, lessonId, browserSessionId, deviceName, takeoverAuthorized, expectedConflictingSessionId, occurrenceId, instructionalTeacher),
         10000,
         'startLessonSession'
       );
