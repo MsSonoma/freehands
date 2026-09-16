@@ -12,6 +12,10 @@ import { featuresForTier } from '@/app/lib/entitlements'
 import { buildLessonSchedulePayload, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 import { buildLessonGeneratorReviewHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
+import { getLearner } from '@/app/facilitator/learners/clientApi'
+import { getStoredAssessments, saveAssessments } from '@/app/session/assessment/assessmentStore'
+import { buildAssessmentPhaseSets, resolveLearnerAssessmentTargets } from '@/app/session/assessment/assessmentSets'
+import { loadLesson } from '@/app/session/v2/services'
 import styles from './FacilitatorSyllabusLessonOverlay.module.css'
 
 function dateOnly(value) {
@@ -115,6 +119,9 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [conceptEditMode, setConceptEditMode] = useState('')
   const [conceptTitle, setConceptTitle] = useState('')
   const [conceptDescription, setConceptDescription] = useState('')
+  const [printOpen, setPrintOpen] = useState(false)
+  const [printBusy, setPrintBusy] = useState('')
+  const [printError, setPrintError] = useState('')
 
   useEffect(() => acquirePageScrollLock(), [])
 
@@ -141,6 +148,9 @@ export default function FacilitatorSyllabusLessonOverlay({
     setConceptEditMode('')
     setConceptTitle('')
     setConceptDescription('')
+    setPrintOpen(false)
+    setPrintBusy('')
+    setPrintError('')
   }, [learnerId, item?.lineage_id, item?.occurrence_id, item?.lesson_key, selection?.assignedTeacher]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -192,6 +202,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const canRegenerateOwnedLesson = canEditOwnedLesson && coreAuthority
   const canScheduleSlateCore = isLesson && item.lesson_key && !isDraft && !isHistorical && coreAuthority
   const canRepeat = !repeatDeliveryActive && selection.syllabus_state === 'completed_historical' && isLesson && item.lesson_key && (typeof onRepeat === 'function' || coreAuthority)
+  const canPrintMaterials = coreAuthority && isLesson && Boolean(item.lesson_key) && !isDraft
   const availableToLearner = localAvailable || item.readiness_state === 'available'
   const displayedDate = localPlannedDate || dateOnly(item.planned_date)
 
@@ -421,6 +432,67 @@ export default function FacilitatorSyllabusLessonOverlay({
     }))
   }
 
+  async function loadPrintableLesson() {
+    const { subject, fileName } = splitLessonKey(item.lesson_key)
+    if (!fileName) throw new Error('This lesson does not have printable content.')
+    if (subject.toLowerCase() === 'generated') {
+      const response = await fetch(`/api/facilitator/lessons/get?${new URLSearchParams({ file: item.lesson_key })}`, {
+        cache: 'no-store',
+        headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      const lesson = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(lesson?.error || 'Could not load this lesson for printing.')
+      return lesson
+    }
+    return loadLesson(fileName, subject)
+  }
+
+  async function handlePrintMaterial(kind) {
+    if (!canPrintMaterials || !['worksheet', 'test'].includes(kind)) return
+    const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null
+    setPrintBusy(kind)
+    setPrintError('')
+    try {
+      const stored = await getStoredAssessments(item.lesson_key, { learnerId })
+      let source = Array.isArray(stored?.[kind]) && stored[kind].length ? stored[kind] : null
+      let lesson = null
+
+      if (!source) {
+        const [loadedLesson, learner] = await Promise.all([
+          loadPrintableLesson(),
+          getLearner(learnerId),
+        ])
+        if (!learner) throw new Error('Could not load the learner settings needed for this worksheet and test.')
+        lesson = loadedLesson
+        const targets = resolveLearnerAssessmentTargets(learner, { learnerId })
+        const sets = buildAssessmentPhaseSets({ lessonData: lesson, targets })
+        if (!sets) throw new Error('Worksheet and test content are unavailable for this lesson.')
+        await saveAssessments(item.lesson_key, sets, { learnerId })
+        source = sets[kind]
+      }
+
+      if (!Array.isArray(source) || !source.length) {
+        throw new Error(`${kind === 'worksheet' ? 'Worksheet' : 'Test'} content is unavailable for this lesson.`)
+      }
+
+      const { createAssessmentPdf } = await import('@/app/session/assessment/printPdf')
+      await createAssessmentPdf({
+        items: source.map((question, index) => ({ ...question, number: question.number || index + 1 })),
+        label: kind,
+        lessonTitle: lesson?.title || item.title || 'Lesson',
+        fileBase: item.lesson_key,
+        previewWin,
+      })
+    } catch (cause) {
+      try {
+        if (previewWin && !previewWin.closed && previewWin.location?.href === 'about:blank') previewWin.close()
+      } catch {}
+      setPrintError(cause?.message || `Could not print the ${kind}.`)
+    } finally {
+      setPrintBusy('')
+    }
+  }
+
   async function removeExactSyllabusOccurrence() {
     if (!canRemoveExactOccurrence) return
     const confirmed = window.confirm('This removes only this occurrence from the Syllabus. The lesson, other occurrences, and existing learning history remain.')
@@ -545,6 +617,15 @@ export default function FacilitatorSyllabusLessonOverlay({
       <section className={styles.overlay} role="dialog" aria-modal="true" aria-label={`Lesson details for ${item.title || 'lesson'}`}>
         <header><div><p className={styles.subject}>{item.subject || 'Lesson'}</p><h2>{item.title || 'Untitled lesson'}</h2></div><button type="button" className={styles.close} onClick={onClose} aria-label="Close">Close</button></header>
         <div className={styles.body}>
+          {printOpen ? <section className={styles.detailSection}>
+            <h3>Print lesson materials</h3>
+            <p>Open the learner&apos;s worksheet or test in a printable PDF preview. Printing here does not start the lesson.</p>
+            {printError && <div className={styles.errorMessage} role="alert">{printError}</div>}
+            <div className={styles.secondaryActions}>
+              <button type="button" className={styles.primary} disabled={Boolean(printBusy)} onClick={() => void handlePrintMaterial('worksheet')}>{printBusy === 'worksheet' ? 'Opening worksheet...' : 'Print Worksheet'}</button>
+              <button type="button" className={styles.primary} disabled={Boolean(printBusy)} onClick={() => void handlePrintMaterial('test')}>{printBusy === 'test' ? 'Opening test...' : 'Print Test'}</button>
+            </div>
+          </section> : <>
           {item.description && <p className={styles.description}>{item.description}</p>}
           {message && <div className={styles.statusMessage} role="status">{message}</div>}
           {coreError && <div className={styles.errorMessage} role="alert">{coreError}</div>}
@@ -582,10 +663,13 @@ export default function FacilitatorSyllabusLessonOverlay({
           </section>}
           {slateEditorOpen && <section className={styles.detailSection}><h3>Schedule Mr. Slate</h3><p>Schedule a separate supplemental practice session. This does not change the instructional teacher or complete the lesson.</p><label className={styles.field}>Mr. Slate session date<input type="date" min={[dateOnly(displayedDate), dateOnly(resolvedToday)].filter(Boolean).sort().at(-1) || ''} value={slateDate} onChange={(event) => setSlateDate(event.target.value)} /></label><div className={styles.secondaryActions}><button type="button" onClick={() => setSlateEditorOpen(false)}>Cancel</button><button type="button" disabled={!slateDate || coreBusy === 'slate'} onClick={() => void saveSlateSchedule()}>{coreBusy === 'slate' ? 'Scheduling...' : 'Schedule supplemental session'}</button></div></section>}
           {isLesson && item.lesson_key && selection.historicalActivityAllowed && typeof onRecordHistoricalActivity === 'function' && <HistoricalActivityControl item={item} legacyWebbCompletion={legacyWebbCompletion} busy={historicalActivityBusy} onRecord={onRecordHistoricalActivity} />}
+          </>}
         </div>
         <footer>
+          {printOpen ? <div className={styles.secondaryActions}><button type="button" disabled={Boolean(printBusy)} onClick={() => { setPrintOpen(false); setPrintError('') }}>Back</button></div> : <>
           <div className={styles.secondaryActions}>
             {historyAvailable && <button type="button" onClick={openHistory}>Review history</button>}
+            {canPrintMaterials && <button type="button" onClick={() => { setPrintOpen(true); setPrintError('') }}>Print</button>}
             {schedulingAvailable && <button type="button" disabled={coreBusy === 'schedule'} onClick={openSchedule}>{localExplicitSchedule ? 'Reschedule' : 'Schedule'}</button>}
             {canDeliver && !availableToLearner && <button type="button" disabled={coreBusy === 'availability'} onClick={() => void handleMakeAvailable()}>{coreBusy === 'availability' ? 'Making available...' : 'Make available'}</button>}
             {canRegenerateOwnedLesson && <button type="button" onClick={() => setRevisionOpen(true)}>Regenerate with changes</button>}
@@ -598,6 +682,7 @@ export default function FacilitatorSyllabusLessonOverlay({
           </div>
           {isDraft && item.lesson_key && <button type="button" className={styles.primary} onClick={reviewDraft}>Review & approve draft</button>}
           {canDeliver && <button type="button" className={styles.primary} disabled={coreBusy === 'start'} onClick={() => void handleStartNow()}>{coreBusy === 'start' ? 'Starting...' : 'Start now'}</button>}
+          </>}
         </footer>
       </section>
     </div>

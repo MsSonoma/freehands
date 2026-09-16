@@ -58,6 +58,8 @@ import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinG
 import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
+import { buildAssessmentPhaseSets, resolveLearnerAssessmentTarget } from '../assessment/assessmentSets';
+import { createAssessmentPdf, shareOrPreviewPdf as shareOrPreviewAssessmentPdf } from '../assessment/printPdf';
 import CaptionPanel from '../components/CaptionPanel';
 import StudyPanel from './StudyPanel';
 import VocabularyPanel from './VocabularyPanel';
@@ -1994,57 +1996,15 @@ function SessionPageV2Inner() {
 
   // Learner target helper: no silent defaults. Returns positive integer or null (caller must block start).
   const getLearnerTarget = useCallback((phaseName) => {
-    const asNumber = (v) => {
-      const n = Number(v);
-      return Number.isFinite(n) ? n : null;
-    };
-
-    const parsedTargets = (() => {
-      const t = learnerProfile?.targets;
-      if (!t) return null;
-      if (typeof t === 'object') return t;
-      if (typeof t === 'string') {
-        try { return JSON.parse(t); } catch { return null; }
-      }
-      return null;
-    })();
-
-    const fromFlat = asNumber(learnerProfile && learnerProfile[phaseName]);
-    const fromNested = asNumber(parsedTargets?.[phaseName]);
-    // Legacy V1 fallback: some learners stored comprehension under "discussion" (V1 alias)
-    const fromLegacy = phaseName === 'comprehension'
-      ? (asNumber(learnerProfile && learnerProfile.discussion) ?? asNumber(parsedTargets?.discussion))
-      : null;
-
-    let fromOverride = null;
-    // Use the pinned session learner id (or loaded profile id) to avoid override lookups drifting mid-session.
     const lid = sessionLearnerIdRef.current || learnerProfile?.id || null;
-    try {
-      const overrideKeys = [];
-      if (lid && lid !== 'demo') {
-        overrideKeys.push(`target_${phaseName}_${lid}`);
-      }
-      overrideKeys.push(`target_${phaseName}`);
-
-      for (const key of overrideKeys) {
-        const raw = typeof window !== 'undefined' ? localStorage.getItem(key) : null;
-        const num = asNumber(raw);
-        if (num && num > 0) {
-          fromOverride = num;
-          break;
-        }
-      }
-    } catch {}
-
-    const raw = [fromFlat, fromNested, fromLegacy, fromOverride].find(v => Number.isFinite(v) && v > 0) ?? null;
+    const raw = resolveLearnerAssessmentTarget(learnerProfile, phaseName, { learnerId: lid || '' });
     if (!Number.isFinite(raw) || raw <= 0) {
       setLearnerError(`Missing question count for ${phaseName}. Update Questions per Phase and retry.`);
       setError(null);
-      addEvent(`⚠️ Missing learner target for ${phaseName}`);
+      addEvent(`\u26A0\uFE0F Missing learner target for ${phaseName}`);
       return null;
     }
-
-    return Math.trunc(raw);
+    return raw;
   }, [learnerProfile]);
 
   const getAssessmentStorageKey = useCallback(() => {
@@ -2081,108 +2041,28 @@ function SessionPageV2Inner() {
     }
   }, [getAssessmentStorageKey, learnerProfile]);
 
-  const questionKey = useCallback((q) => {
-    return (q?.prompt || q?.question || q?.Q || q?.q || '').toString().trim().toLowerCase();
-  }, []);
-
-  // Build all phase question sets from a single shuffled pool so questions are
-  // never repeated across phases until the full pool has been exhausted, at which
-  // point the pool is reshuffled and dealing continues.
+  // Build all phase question sets from one canonical shuffle. The shared helper is
+  // also used by facilitator-side Syllabus printing, so printing before a lesson
+  // establishes the exact worksheet/test that the learner later receives.
   const buildAllPhaseSets = useCallback(() => {
     if (!lessonData) return null;
-    // Return cached result if available for this lessonData reference.
-    // This guarantees all phases and the print handler draw from the same random shuffle.
     if (buildAllPhaseSetsCache.current?.lessonData === lessonData) {
       return buildAllPhaseSetsCache.current.sets;
     }
 
-    const tf = Array.isArray(lessonData.truefalse)
-      ? lessonData.truefalse.map(q => ({ ...q, sourceType: 'tf', type: 'tf' })) : [];
-    const mc = Array.isArray(lessonData.multiplechoice)
-      ? lessonData.multiplechoice.map(q => ({ ...q, sourceType: 'mc', type: 'mc' })) : [];
-    const fib = Array.isArray(lessonData.fillintheblank)
-      ? lessonData.fillintheblank.map(q => ({ ...q, sourceType: 'fib', type: 'fib' })) : [];
-    const sa = Array.isArray(lessonData.shortanswer)
-      ? lessonData.shortanswer.map(q => ({ ...q, sourceType: 'short', type: 'short' })) : [];
-    const reservedTestSource = getReservedAssessmentItems(lessonData);
-
-    // Deduplicate by question text
-    const seen = new Set();
-    const uniquePool = [];
-    for (const q of [...tf, ...mc, ...fib, ...sa]) {
-      const key = questionKey(q);
-      if (key && seen.has(key)) continue;
-      if (key) seen.add(key);
-      uniquePool.push(q);
-    }
-    if (!uniquePool.length) return null;
-
-    const shuffle = (arr) => {
-      const a = [...arr];
-      for (let i = a.length - 1; i > 0; i--) {
-        const j = Math.floor(Math.random() * (i + 1));
-        [a[i], a[j]] = [a[j], a[i]];
-      }
-      return a;
-    };
-
-    const compTarget     = getLearnerTarget('comprehension') || 5;
-    const exerciseTarget = getLearnerTarget('exercise')      || 10;
-    const worksheetTarget = getLearnerTarget('worksheet')   || 15;
-    const testTarget     = getLearnerTarget('test')         || 10;
-    const totalNeeded = compTarget + exerciseTarget + worksheetTarget + testTarget;
-
-    // Cap SA/FITB (secondary) at 20% of total so MC/TF remain the majority.
-    const primaryItems   = shuffle(uniquePool.filter(q => q.sourceType === 'tf' || q.sourceType === 'mc'));
-    const secondaryItems = shuffle(uniquePool.filter(q => q.sourceType === 'fib' || q.sourceType === 'short'));
-    const maxSecondary   = Math.max(0, Math.round(totalNeeded * 0.2));
-    const cappedPool = shuffle([...primaryItems, ...secondaryItems.slice(0, maxSecondary)]);
-
-    // Deal n items with guaranteed no within-phase repeats: each full pass through
-    // the pool is independently shuffled, so no question appears twice within any
-    // single pass. Phases never cross pass boundaries, eliminating within-phase dups.
-    const dealPhase = (pool, n) => {
-      const result = [];
-      while (result.length < n) {
-        const batch = shuffle([...pool]);
-        result.push(...batch.slice(0, Math.min(batch.length, n - result.length)));
-      }
-      return result;
-    };
-
-    // Build each phase independently; prefer questions not yet used in prior phases
-    // (best-effort cross-phase deduplication — falls back to full pool if pool is small).
-    const usedKeys = new Set();
-    const buildPhase = (target) => {
-      const fresh = cappedPool.filter(q => !usedKeys.has(questionKey(q)));
-      const pool = fresh.length >= target ? fresh : cappedPool;
-      const questions = dealPhase(pool, target);
-      questions.forEach(q => usedKeys.add(questionKey(q)));
-      return questions.map((q, idx) => ({ ...q, number: q.number || (idx + 1) }));
-    };
-
-    const buildReservedTestPhase = () => {
-      if (!reservedTestSource.length) return buildPhase(testTarget);
-      return dealPhase(reservedTestSource, testTarget)
-        .map((q, idx) => ({
-          ...q,
-          assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
-          assessment_role: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
-          sourceRole: q.sourceRole || 'test',
-          evidence_purpose: q.evidence_purpose || 'test',
-          number: q.number || (idx + 1),
-        }));
-    };
-
-    const sets = {
-      comprehension: tagItemsForPhase(buildPhase(compTarget), 'comprehension'),
-      exercise:      tagItemsForPhase(buildPhase(exerciseTarget), 'exercise'),
-      worksheet:     tagItemsForPhase(buildPhase(worksheetTarget), 'worksheet'),
-      test:          buildReservedTestPhase(),
-    };
+    const sets = buildAssessmentPhaseSets({
+      lessonData,
+      targets: {
+        comprehension: getLearnerTarget('comprehension') || 5,
+        exercise: getLearnerTarget('exercise') || 10,
+        worksheet: getLearnerTarget('worksheet') || 15,
+        test: getLearnerTarget('test') || 10,
+      },
+    });
+    if (!sets) return null;
     buildAllPhaseSetsCache.current = { lessonData, sets };
     return sets;
-  }, [lessonData, getLearnerTarget, questionKey]);
+  }, [lessonData, getLearnerTarget]);
 
   const resolveAssessmentIsolation = useCallback(async () => {
     if (!lessonData) return null;
@@ -2622,200 +2502,23 @@ function SessionPageV2Inner() {
   }, []);
 
   const shareOrPreviewPdf = useCallback(async (blob, fileName = 'document.pdf', previewWin = null) => {
-    try {
-      const supportsFile = typeof File !== 'undefined';
-      const file = supportsFile ? new File([blob], fileName, { type: 'application/pdf' }) : null;
-      if (file && navigator?.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ files: [file], title: fileName });
-        return;
-      }
-    } catch {
-      /* fall through */
-    }
-
-    try {
-      const url = URL.createObjectURL(blob);
-      const win = previewWin && previewWin.document ? previewWin : null;
-      if (win) {
-        try { win.addEventListener('beforeunload', () => URL.revokeObjectURL(url)); } catch {}
-        win.location.href = url;
-      } else {
-        window.location.href = url;
-        setTimeout(() => { try { URL.revokeObjectURL(url); } catch {} }, 10000);
-      }
-      return;
-    } catch {
-      /* fall through */
-    }
-
-    try {
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = fileName;
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(() => {
-        try { URL.revokeObjectURL(url); } catch {}
-        try { document.body.removeChild(a); } catch {}
-      }, 10000);
-    } catch {
-      /* noop */
-    }
+    await shareOrPreviewAssessmentPdf(blob, fileName, previewWin);
   }, []);
 
   const createPdfForItems = useCallback(async (items = [], label = 'worksheet', previewWin = null) => {
     try {
-      const doc = new jsPDF();
-      const pageHeight = doc.internal.pageSize.getHeight();
-      const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'Lesson').trim();
-      const niceLabel = label.charAt(0).toUpperCase() + label.slice(1);
-
-      const shrinkFIBBlanks = (s, answerLength = 0) => {
-        if (!s) return s;
-        return s.replace(/_{4,}/g, (m) => {
-          let targetSize = 12;
-          if (answerLength > 0) {
-            targetSize = Math.max(12, Math.min(60, answerLength * 2));
-          } else {
-            targetSize = Math.max(12, Math.round(m.length * 0.66));
-          }
-          return '_'.repeat(targetSize);
-        });
-      };
-
-      const renderLineText = (item) => {
-        let base = String(item.prompt || item.question || item.Q || item.q || '');
-        const qType = String(item.type || '').toLowerCase();
-        const isFIB = item.sourceType === 'fib' || /fill\s*in\s*the\s*blank|fillintheblank/.test(qType);
-        const isTF = item.sourceType === 'tf' || /^(true\s*\/\s*false|truefalse|tf)$/i.test(qType);
-        if (isFIB) {
-          let answerLength = 0;
-          const answer = item.answer || item.expected || item.correct || item.key || '';
-          if (Array.isArray(item.answers) && item.answers.length > 0) {
-            answerLength = Math.max(...item.answers.map((a) => String(a || '').trim().length));
-          } else if (answer) {
-            answerLength = String(answer).trim().length;
-          }
-          base = shrinkFIBBlanks(base, answerLength);
-        }
-        const trimmed = base.trimStart();
-        if (isTF && !/^true\s*\/\s*false\s*:/i.test(trimmed) && !/^true\s*false\s*:/i.test(trimmed)) {
-          base = `True/False: ${base}`;
-        }
-        let choicesLine = null;
-        const opts = Array.isArray(item?.options)
-          ? item.options.filter(Boolean)
-          : (Array.isArray(item?.choices) ? item.choices.filter(Boolean) : []);
-        if (opts.length) {
-          const labels = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
-          const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.\:\)\-]\s*/i;
-          const parts = opts.map((o, i) => {
-            const raw = String(o ?? '').trim();
-            const cleaned = raw.replace(anyLabel, '').trim();
-            const lbl = labels[i] || '';
-            return `${lbl}.\u00A0${cleaned}`;
-          });
-          choicesLine = parts.join('   ');
-        }
-        return { prompt: base, choicesLine };
-      };
-
-      const topMargin = 28;
-      const bottomMargin = 18;
-      const left = 14;
-      const maxWidth = 182;
-      const choiceIndent = 6;
-      const minBodyFont = 8;
-      const maxBodyFont = 18; // allow larger text on short sets while still fitting the page
-      const minChoiceFont = 8;
-
-      const getLineHeight = (size) => Math.max(size * 0.5, 4.5);
-
-      const measureContentHeight = (bodySize) => {
-        const choiceSize = Math.max(minChoiceFont, Math.min(bodySize - 1, Math.round(bodySize * 0.92)));
-        const promptLineHeight = getLineHeight(bodySize);
-        const choiceLineHeight = getLineHeight(choiceSize);
-        let height = 0;
-
-        doc.setFontSize(bodySize);
-        items.forEach((item, idx) => {
-          const num = item.number || idx + 1;
-          const { prompt: promptText, choicesLine } = renderLineText(item);
-          const promptLines = doc.splitTextToSize(`${num}. ${promptText}`, maxWidth);
-          height += promptLines.length * promptLineHeight;
-
-          if (choicesLine) {
-            doc.setFontSize(choiceSize);
-            const choiceLines = doc.splitTextToSize(choicesLine, maxWidth - choiceIndent);
-            height += choiceLines.length * choiceLineHeight;
-            doc.setFontSize(bodySize);
-          }
-
-          const spacer = label === 'worksheet' ? Math.max(bodySize * 0.35, 3) : Math.max(bodySize * 0.7, 4);
-          height += spacer;
-        });
-
-        return height;
-      };
-
-      const availableHeight = pageHeight - topMargin - bottomMargin;
-      let bodyFontSize = minBodyFont;
-      for (let size = maxBodyFont; size >= minBodyFont; size -= 0.5) {
-        if (measureContentHeight(size) <= availableHeight) {
-          bodyFontSize = size;
-          break;
-        }
-      }
-
-      const choiceFontSize = Math.max(minChoiceFont, Math.min(bodyFontSize - 1, Math.round(bodyFontSize * 0.92)));
-      const promptLineHeight = getLineHeight(bodyFontSize);
-      const choiceLineHeight = getLineHeight(choiceFontSize);
-      const spacerSize = label === 'worksheet' ? Math.max(bodyFontSize * 0.35, 3) : Math.max(bodyFontSize * 0.7, 4);
-      const bottomLimit = pageHeight - bottomMargin;
-
-      doc.setTextColor(0, 0, 0);
-      const headerSize = Math.min(20, Math.max(12, bodyFontSize + 2));
-      doc.setFontSize(headerSize);
-      const headerText = `${lessonTitle} ${niceLabel}`;
-      doc.text(headerText, 12, 14);
-      doc.setDrawColor(180, 180, 180);
-      doc.line(12, 18, 198, 18);
-
-      let y = topMargin;
-
-      const drawParagraph = (text, fontSize, lineHeight, indent = 0) => {
-        doc.setFontSize(fontSize);
-        const lines = doc.splitTextToSize(text, maxWidth - indent);
-        for (const line of lines) {
-          if (y > bottomLimit) {
-            doc.addPage();
-            y = topMargin;
-          }
-          doc.text(line, left + indent, y);
-          y += lineHeight;
-        }
-      };
-
-      items.forEach((item, idx) => {
-        const num = item.number || idx + 1;
-        const { prompt: promptText, choicesLine } = renderLineText(item);
-        drawParagraph(`${num}. ${promptText}`, bodyFontSize, promptLineHeight, 0);
-        if (choicesLine) {
-          drawParagraph(choicesLine, choiceFontSize, choiceLineHeight, choiceIndent);
-        }
-        y += spacerSize;
+      await createAssessmentPdf({
+        items,
+        label,
+        lessonTitle: (lessonData?.title || lessonKey || lessonId || 'Lesson').trim(),
+        fileBase: lessonKey || lessonId || 'lesson',
+        previewWin,
       });
-
-      const fileBase = String(lessonKey || lessonId || 'lesson').replace(/\.json$/i, '');
-      const fileName = `${fileBase}-${label}.pdf`;
-      const blob = doc.output('blob');
-      await shareOrPreviewPdf(blob, fileName, previewWin);
     } catch (err) {
       console.error('[SessionPageV2] PDF generation failed', err);
       setDownloadError('Failed to generate PDF.');
     }
-  }, [lessonData, lessonKey, lessonId, shareOrPreviewPdf]);
+  }, [lessonData, lessonKey, lessonId]);
 
   const handleTestOverrideAnswer = useCallback(async (index) => {
     const ok = await ensurePinAllowed('facilitator');
