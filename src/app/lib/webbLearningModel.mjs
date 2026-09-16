@@ -1,6 +1,6 @@
 import { WEBB_WRITING_SUBPHASES, latestWritingAttempt, normalizeWritingSubphase } from './webbWritingFlow.mjs'
 
-export const WEBB_SNAPSHOT_VERSION = 6
+export const WEBB_SNAPSHOT_VERSION = 7
 
 export const WEBB_SESSION_STAGES = Object.freeze({
   RESEARCH: 'research',
@@ -400,7 +400,7 @@ function migrateWebbSnapshotLegacy(saved = {}) {
   }
 }
 
-/** v6 reconciles comprehension evidence and restores a durable research/writing/essay stage. */
+/** v7 preserves durable research/writing/essay state and adds additive Mrs. Webb pacing/play snapshot fields. */
 export function migrateWebbSnapshot(saved = {}) {
   const restored = migrateWebbSnapshotLegacy(saved)
   const reconciled = {

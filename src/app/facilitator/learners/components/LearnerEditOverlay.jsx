@@ -9,6 +9,7 @@ import {
 	getDefaultPhaseTimers
 } from '@/app/session/utils/phaseTimerDefaults';
 import { InlineExplainer } from '@/components/FacilitatorHelp';
+import WebbTimerSettings from './WebbTimerSettings';
 
 const GRADES = ['K', ...Array.from({length: 12}, (_, i) => String(i + 1))];
 const TARGETS = Array.from({length: 18}, (_, i) => String(i + 3)); // 3-20
@@ -66,6 +67,15 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [savingPlayDependentOnWork, setSavingPlayDependentOnWork] = useState(false);
 	const [showDependentTooltip, setShowDependentTooltip] = useState(false);
 	const [phaseTimers, setPhaseTimers] = useState(getDefaultPhaseTimers());
+	const [webbTimerSettings, setWebbTimerSettings] = useState({
+		responsePacingEnabled: true,
+		reminderIntervalMin: '2',
+		playTimesEnabled: true,
+		playTimeMin: '5',
+		researchMidpointEnabled: true,
+		transitionEnabled: true,
+		writingMidpointEnabled: true,
+	});
 	const [hoveredTooltip, setHoveredTooltip] = useState(null);
 	const [clickedTooltip, setClickedTooltip] = useState(null);
 	const [showHelp, setShowHelp] = useState(false);
@@ -112,6 +122,15 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPlayTimersEnabled(learner.play_timers_enabled !== false);
 		setPlayDependentOnWork(learner.play_dependent_on_work === true);
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
+		setWebbTimerSettings({
+			responsePacingEnabled: learner.webb_response_pacing_enabled !== false,
+			reminderIntervalMin: String(learner.webb_response_reminder_interval_min ?? 2),
+			playTimesEnabled: learner.webb_play_times_enabled !== false,
+			playTimeMin: String(learner.webb_play_time_min ?? 5),
+			researchMidpointEnabled: learner.webb_play_research_midpoint_enabled !== false,
+			transitionEnabled: learner.webb_play_transition_enabled !== false,
+			writingMidpointEnabled: learner.webb_play_writing_midpoint_enabled !== false,
+		});
 		setAutoAdvancePhases(learner.auto_advance_phases !== false); // Default true if not set
 		setSlateSettings({ ...DEFAULT_SLATE_SETTINGS, ...(learner.slate_settings || {}) });
 		setDailyFollowUpsEnabled(learner.daily_followups_enabled === true);
@@ -187,6 +206,13 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				auto_advance_phases: autoAdvancePhases,
 				slate_settings: slateSettings,
 				...phaseTimers,
+				webb_response_pacing_enabled: webbTimerSettings.responsePacingEnabled !== false,
+				webb_response_reminder_interval_min: Math.max(1, Math.min(30, Number(webbTimerSettings.reminderIntervalMin || 2))),
+				webb_play_times_enabled: webbTimerSettings.playTimesEnabled !== false,
+				webb_play_time_min: Math.max(1, Math.min(60, Number(webbTimerSettings.playTimeMin || 5))),
+				webb_play_research_midpoint_enabled: webbTimerSettings.researchMidpointEnabled !== false,
+				webb_play_transition_enabled: webbTimerSettings.transitionEnabled !== false,
+				webb_play_writing_midpoint_enabled: webbTimerSettings.writingMidpointEnabled !== false,
 			});
 			onClose();
 		} catch (error) {
@@ -1300,6 +1326,8 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 										</div>
 									</div>
 								))}
+
+							<WebbTimerSettings value={webbTimerSettings} onChange={setWebbTimerSettings} />
 
 							{/* Golden Key Bonus */}
 							<div style={{

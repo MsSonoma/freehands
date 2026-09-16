@@ -159,6 +159,7 @@ export default function LearnersPage() {
 		try {
 			await updateLearner(learner.id, updates);
 			setItems(prev => prev.map((x, i) => i === idx ? { ...x, ...updates } : x));
+			broadcastLearnerSettingsPatch(learner.id, updates);
 			
 			// Update localStorage if this is the current learner
 			if (String(selectedLearnerId) === String(learner.id)) {

@@ -66,6 +66,8 @@ export default function WebbWritingStudio({
   onNextSentence,
   isLastSentence,
   recentEntries = [],
+  responseTimer = null,
+  onLearnerActivity,
 }) {
   const inputRef = useRef(null)
   const typingViewport = useTypingViewport()
@@ -124,6 +126,11 @@ export default function WebbWritingStudio({
       display: 'flex',
       flexDirection: 'column',
     }} data-ms-webb-writing-compact={keyboardCompact ? 'true' : 'false'}>
+      {responseTimer && (
+        <div style={{ position: 'absolute', top: keyboardCompact ? 4 : 12, right: keyboardCompact ? 5 : 14, zIndex: 8 }}>
+          {responseTimer}
+        </div>
+      )}
       <div style={{ position: keyboardCompact ? 'relative' : 'static', zIndex: 4, flexShrink: 0 }}>
         <TypingConversationContext
           entries={recentEntries}
@@ -227,7 +234,10 @@ export default function WebbWritingStudio({
                   ref={inputRef}
                   id="webb-writing-attempt"
                   value={currentDraft}
-                  onChange={event => onDraftChange?.(event.target.value)}
+                  onChange={event => {
+                    onLearnerActivity?.()
+                    onDraftChange?.(event.target.value)
+                  }}
                   disabled={evaluating}
                   rows={keyboardCompact ? 2 : 4}
                   autoComplete="off"

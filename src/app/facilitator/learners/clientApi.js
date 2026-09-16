@@ -63,6 +63,13 @@ function writeLocal(list) {
       daily_followups_enabled,
       weekly_reviews_enabled,
       weekly_review_day,
+      webb_response_pacing_enabled,
+      webb_response_reminder_interval_min,
+      webb_play_times_enabled,
+      webb_play_time_min,
+      webb_play_research_midpoint_enabled,
+      webb_play_transition_enabled,
+      webb_play_writing_midpoint_enabled,
       ...rest
     } = item;
     return rest;
@@ -151,6 +158,13 @@ export async function createLearner(payload) {
         play_exercise_enabled: payload.play_exercise_enabled !== false,
         play_worksheet_enabled: payload.play_worksheet_enabled !== false,
         play_test_enabled: payload.play_test_enabled !== false,
+        webb_response_pacing_enabled: payload.webb_response_pacing_enabled !== false,
+        webb_response_reminder_interval_min: payload.webb_response_reminder_interval_min !== undefined ? Number(payload.webb_response_reminder_interval_min) : 2,
+        webb_play_times_enabled: payload.webb_play_times_enabled !== false,
+        webb_play_time_min: payload.webb_play_time_min !== undefined ? Number(payload.webb_play_time_min) : 5,
+        webb_play_research_midpoint_enabled: payload.webb_play_research_midpoint_enabled !== false,
+        webb_play_transition_enabled: payload.webb_play_transition_enabled !== false,
+        webb_play_writing_midpoint_enabled: payload.webb_play_writing_midpoint_enabled !== false,
         humor_level: humorLevel,
         ask_disabled: !!payload.ask_disabled,
         poem_disabled: !!payload.poem_disabled,
@@ -175,6 +189,13 @@ export async function createLearner(payload) {
       play_exercise_enabled: payload.play_exercise_enabled !== false,
       play_worksheet_enabled: payload.play_worksheet_enabled !== false,
       play_test_enabled: payload.play_test_enabled !== false,
+      webb_response_pacing_enabled: payload.webb_response_pacing_enabled !== false,
+      webb_response_reminder_interval_min: payload.webb_response_reminder_interval_min !== undefined ? Number(payload.webb_response_reminder_interval_min) : 2,
+      webb_play_times_enabled: payload.webb_play_times_enabled !== false,
+      webb_play_time_min: payload.webb_play_time_min !== undefined ? Number(payload.webb_play_time_min) : 5,
+      webb_play_research_midpoint_enabled: payload.webb_play_research_midpoint_enabled !== false,
+      webb_play_transition_enabled: payload.webb_play_transition_enabled !== false,
+      webb_play_writing_midpoint_enabled: payload.webb_play_writing_midpoint_enabled !== false,
     }, uid);
     if (!error2) { supabaseLearnersMode = 'json'; return normalizeRow(data2); }
     if (isUndefinedColumnOrTable(error2)) { supabaseLearnersMode = 'disabled'; return createLocal(payload); }
@@ -265,6 +286,13 @@ export async function updateLearner(id, updates) {
         ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
         ...(updates.play_timers_enabled !== undefined ? { play_timers_enabled: !!updates.play_timers_enabled } : {}),
         ...(updates.play_dependent_on_work !== undefined ? { play_dependent_on_work: !!updates.play_dependent_on_work } : {}),
+        ...(updates.webb_response_pacing_enabled !== undefined ? { webb_response_pacing_enabled: !!updates.webb_response_pacing_enabled } : {}),
+        ...(updates.webb_response_reminder_interval_min !== undefined ? { webb_response_reminder_interval_min: Number(updates.webb_response_reminder_interval_min) } : {}),
+        ...(updates.webb_play_times_enabled !== undefined ? { webb_play_times_enabled: !!updates.webb_play_times_enabled } : {}),
+        ...(updates.webb_play_time_min !== undefined ? { webb_play_time_min: Number(updates.webb_play_time_min) } : {}),
+        ...(updates.webb_play_research_midpoint_enabled !== undefined ? { webb_play_research_midpoint_enabled: !!updates.webb_play_research_midpoint_enabled } : {}),
+        ...(updates.webb_play_transition_enabled !== undefined ? { webb_play_transition_enabled: !!updates.webb_play_transition_enabled } : {}),
+        ...(updates.webb_play_writing_midpoint_enabled !== undefined ? { webb_play_writing_midpoint_enabled: !!updates.webb_play_writing_midpoint_enabled } : {}),
         ...(typeof humorLevel === 'string' ? { humor_level: humorLevel } : {}),
         ...(updates.ask_disabled !== undefined ? { ask_disabled: !!updates.ask_disabled } : {}),
         ...(updates.poem_disabled !== undefined ? { poem_disabled: !!updates.poem_disabled } : {}),
@@ -309,6 +337,13 @@ export async function updateLearner(id, updates) {
       ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
       ...(updates.play_timers_enabled !== undefined ? { play_timers_enabled: !!updates.play_timers_enabled } : {}),
       ...(updates.play_dependent_on_work !== undefined ? { play_dependent_on_work: !!updates.play_dependent_on_work } : {}),
+      ...(updates.webb_response_pacing_enabled !== undefined ? { webb_response_pacing_enabled: !!updates.webb_response_pacing_enabled } : {}),
+      ...(updates.webb_response_reminder_interval_min !== undefined ? { webb_response_reminder_interval_min: Number(updates.webb_response_reminder_interval_min) } : {}),
+      ...(updates.webb_play_times_enabled !== undefined ? { webb_play_times_enabled: !!updates.webb_play_times_enabled } : {}),
+      ...(updates.webb_play_time_min !== undefined ? { webb_play_time_min: Number(updates.webb_play_time_min) } : {}),
+      ...(updates.webb_play_research_midpoint_enabled !== undefined ? { webb_play_research_midpoint_enabled: !!updates.webb_play_research_midpoint_enabled } : {}),
+      ...(updates.webb_play_transition_enabled !== undefined ? { webb_play_transition_enabled: !!updates.webb_play_transition_enabled } : {}),
+      ...(updates.webb_play_writing_midpoint_enabled !== undefined ? { webb_play_writing_midpoint_enabled: !!updates.webb_play_writing_midpoint_enabled } : {}),
       ...(updates.tts_unskippable !== undefined ? { tts_unskippable: !!updates.tts_unskippable } : {}),
     };
     const { data: data2, error: error2 } = await updateWithOwner(supabase, id, jsonPayload, uid);
@@ -402,6 +437,13 @@ function normalizeRow(row) {
     test_play_min: c(row.test_play_min),
     test_work_min: c(row.test_work_min),
     golden_key_bonus_min: c(row.golden_key_bonus_min),
+    webb_response_pacing_enabled: row.webb_response_pacing_enabled !== false,
+    webb_response_reminder_interval_min: c(row.webb_response_reminder_interval_min),
+    webb_play_times_enabled: row.webb_play_times_enabled !== false,
+    webb_play_time_min: c(row.webb_play_time_min),
+    webb_play_research_midpoint_enabled: row.webb_play_research_midpoint_enabled !== false,
+    webb_play_transition_enabled: row.webb_play_transition_enabled !== false,
+    webb_play_writing_midpoint_enabled: row.webb_play_writing_midpoint_enabled !== false,
     slate_settings: row.slate_settings || null,
   };
   console.log('[LEARNER NORMALIZE] Input:', { 
@@ -481,6 +523,13 @@ function updateLocal(id, updates) {
       ...(updates.play_test_enabled !== undefined ? { play_test_enabled: !!updates.play_test_enabled } : {}),
       ...(updates.play_timers_enabled !== undefined ? { play_timers_enabled: !!updates.play_timers_enabled } : {}),
       ...(updates.play_dependent_on_work !== undefined ? { play_dependent_on_work: !!updates.play_dependent_on_work } : {}),
+      ...(updates.webb_response_pacing_enabled !== undefined ? { webb_response_pacing_enabled: !!updates.webb_response_pacing_enabled } : {}),
+      ...(updates.webb_response_reminder_interval_min !== undefined ? { webb_response_reminder_interval_min: Number(updates.webb_response_reminder_interval_min) } : {}),
+      ...(updates.webb_play_times_enabled !== undefined ? { webb_play_times_enabled: !!updates.webb_play_times_enabled } : {}),
+      ...(updates.webb_play_time_min !== undefined ? { webb_play_time_min: Number(updates.webb_play_time_min) } : {}),
+      ...(updates.webb_play_research_midpoint_enabled !== undefined ? { webb_play_research_midpoint_enabled: !!updates.webb_play_research_midpoint_enabled } : {}),
+      ...(updates.webb_play_transition_enabled !== undefined ? { webb_play_transition_enabled: !!updates.webb_play_transition_enabled } : {}),
+      ...(updates.webb_play_writing_midpoint_enabled !== undefined ? { webb_play_writing_midpoint_enabled: !!updates.webb_play_writing_midpoint_enabled } : {}),
     };
     list[idx] = updated; writeLocal(list); return updated;
   }

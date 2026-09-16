@@ -3,6 +3,8 @@ import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import WebbWritingStudio from './WebbWritingStudio'
+import WebbResponseTimer from './WebbResponseTimer'
+import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
 import TypingConversationContext from '../components/TypingConversationContext'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import FeatureHelpToast from '../components/FeatureHelpToast'
@@ -13,6 +15,10 @@ import {
 } from '@/app/lib/webbObjectiveState.mjs'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
+import { getLearner } from '@/app/facilitator/learners/clientApi'
+import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
+import { finalizeGoldenKeyForSession } from '@/app/lib/goldenKeyClient'
+import { createWebbAttentionNotification, recordWebbPacingEvent } from '@/app/lib/webbPacingClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { endLessonSession } from '@/app/lib/sessionTracking'
 import { useSessionTracking } from '@/app/hooks/useSessionTracking'
@@ -48,6 +54,19 @@ import {
   mergeWebbMasterySummaries,
   summarizeWebbMastery,
 } from '@/app/lib/webbMasteryModel.mjs'
+import {
+  WEBB_PACING_REMINDERS,
+  createWebbResponseTurn,
+  expectsLearnerResponse,
+  learnerRequestedHelp,
+  midpointThreshold,
+  normalizeWebbPacingSettings,
+  pauseWebbResponseTurn,
+  reminderStageForElapsed,
+  responseElapsedSeconds as getResponseElapsedSeconds,
+  resumeWebbResponseTurn,
+  webbPlayDurationSeconds,
+} from './webbPacing.mjs'
 
 // CSS animations
 if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style')) {
@@ -182,6 +201,23 @@ function WebbPageInner() {
   const [completionState, setCompletionState] = useState('idle') // idle | saving | failed
   const [completionError, setCompletionError] = useState('')
 
+  // Mrs. Webb response pacing is deliberately separate from mastery evidence.
+  const [learnerProfile, setLearnerProfile] = useState(null)
+  const [learnerProfileLoaded, setLearnerProfileLoaded] = useState(false)
+  const [responseTurn, setResponseTurn] = useState(null)
+  const responseTurnRef = useRef(null)
+  const [responseElapsedSeconds, setResponseElapsedSeconds] = useState(0)
+  const lastLearnerActivityRef = useRef(0)
+  const responseArmSignatureRef = useRef(null)
+  const escalationNotificationInFlightRef = useRef(false)
+  const escalationNotificationLastAttemptRef = useRef(0)
+  const [playMilestones, setPlayMilestones] = useState({})
+  const playMilestonesRef = useRef({})
+  const [activePlayBreak, setActivePlayBreak] = useState(null)
+  const activePlayBreakRef = useRef(null)
+  const pendingPlayMilestoneRef = useRef(null)
+  const webbPacingSettings = normalizeWebbPacingSettings(learnerProfile || {})
+
   function commitLearningState(next) {
     learningStateRef.current = next
     learnerNotesRef.current = next.learnerNotes
@@ -312,6 +348,12 @@ function WebbPageInner() {
   const [webbOwnershipEndedReason, setWebbOwnershipEndedReason] = useState(null)
   const webbExecutionFencedRef = useRef(false)
   const currentWebbLessonKey = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id || null
+  const webbGoldenKeyActive = learnerProfile?.golden_keys_enabled !== false
+    && !!currentWebbLessonKey
+    && !!learnerProfile?.active_golden_keys?.[currentWebbLessonKey]
+  const webbGoldenKeyBonusMin = webbGoldenKeyActive
+    ? Math.max(0, Number(learnerProfile?.golden_key_bonus_min || 0))
+    : 0
 
   const freezeWebbExecution = useCallback((reason) => {
     webbExecutionFencedRef.current = true
@@ -385,13 +427,43 @@ function WebbPageInner() {
   const webbSessionStartRef = useRef(null)
   useEffect(() => {
     try { learnerName.current = localStorage.getItem('learner_name') || '' } catch {}
-    const id = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
+    const id = routeLearnerId || (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
     setLearnerId(id)
     setWebbCompletionMap(getWebbCompletionForLearner(id))
     loadLessons(id)
     // Migrate: remove old single-key snapshot from before per-lesson keys
     try { localStorage.removeItem('webb_session') } catch {}
-  }, [])
+  }, []) // route learner is immutable for this mounted lesson surface
+
+  useEffect(() => {
+    if (!learnerId) return undefined
+    let cancelled = false
+    setLearnerProfileLoaded(false)
+    if (learnerId === 'demo') {
+      setLearnerProfile(null)
+      setLearnerProfileLoaded(true)
+    } else {
+      void getLearner(learnerId)
+        .then(profile => {
+          if (cancelled) return
+          setLearnerProfile(profile || null)
+          if (profile?.name) learnerName.current = profile.name
+        })
+        .catch(error => { console.warn('[Webb pacing] Learner settings load failed:', error?.message || error) })
+        .finally(() => { if (!cancelled) setLearnerProfileLoaded(true) })
+    }
+    const unsubscribe = subscribeLearnerSettingsPatches(message => {
+      if (String(message?.learnerId || '') !== String(learnerId)) return
+      const patch = message?.patch && typeof message.patch === 'object' ? message.patch : null
+      if (!patch) return
+      setLearnerProfile(current => ({ ...(current || {}), ...patch }))
+      setLearnerProfileLoaded(true)
+    })
+    return () => {
+      cancelled = true
+      try { unsubscribe?.() } catch {}
+    }
+  }, [learnerId])
 
   // ── Per-lesson snapshot helpers ────────────────────────────────────────
   function snapKey(lesson) {
@@ -489,7 +561,23 @@ function WebbPageInner() {
       setAcceptedSentences(composition.acceptedSentences || {})
       setEssay(composition.essay || null)
       setEssayMode(!!composition.essayMode)
-      snapshotRef.current = { ...saved, ...restored, ...composition, selectedLesson }
+      const restoredPacing = saved.webbPacing && typeof saved.webbPacing === 'object' ? saved.webbPacing : {}
+      const restoredTurn = restoredPacing.responseTurn?.id ? restoredPacing.responseTurn : null
+      responseTurnRef.current = restoredTurn
+      escalationNotificationInFlightRef.current = false
+      escalationNotificationLastAttemptRef.current = 0
+      setResponseTurn(restoredTurn)
+      setResponseElapsedSeconds(restoredTurn ? getResponseElapsedSeconds(restoredTurn, Date.now()) : 0)
+      const restoredMilestones = restoredPacing.playMilestones && typeof restoredPacing.playMilestones === 'object' ? restoredPacing.playMilestones : {}
+      playMilestonesRef.current = restoredMilestones
+      setPlayMilestones(restoredMilestones)
+      const restoredBreak = restoredPacing.activePlayBreak?.endsAt && Date.parse(restoredPacing.activePlayBreak.endsAt) > Date.now()
+        ? restoredPacing.activePlayBreak
+        : null
+      activePlayBreakRef.current = restoredBreak
+      setActivePlayBreak(restoredBreak)
+      pendingPlayMilestoneRef.current = null
+      snapshotRef.current = { ...saved, ...restored, ...composition, selectedLesson, webbPacing: { responseTurn: restoredTurn, playMilestones: restoredMilestones, activePlayBreak: restoredBreak } }
       setPhase(PHASE.CHATTING)
       setOfferResume(false)
       const resumeLk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
@@ -533,11 +621,16 @@ function WebbPageInner() {
     webbStage: webbStageRef.current,
     writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, essay, essayMode,
     pendingWritingReview: pendingWritingReviewRef.current,
+    webbPacing: {
+      responseTurn: responseTurnRef.current,
+      playMilestones: playMilestonesRef.current,
+      activePlayBreak: activePlayBreakRef.current,
+    },
   }
   useEffect(() => {
     if (webbExecutionFencedRef.current || offerResume || phase !== PHASE.CHATTING || !selectedLesson) return
     snapshotSaveRef.current()
-  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, essay, essayMode])
+  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, essay, essayMode, responseTurn, playMilestones, activePlayBreak])
 
   submitWritingAttemptRef.current = submitWritingAttempt
   useEffect(() => {
@@ -722,11 +815,11 @@ function WebbPageInner() {
   }
 
   // ── Transcript helpers ────────────────────────────────────────────────
-  function addMsg(text) {
+  function addMsg(text, meta = {}) {
     const t = String(text || '').trim()
     if (!t) return
     setTranscript(prev => {
-      const next = [...prev, { text: t, role: 'assistant' }]
+      const next = [...prev, { ...meta, text: t, role: 'assistant' }]
       setActiveIndex(next.length - 1)
       return next
     })
@@ -738,6 +831,374 @@ function WebbPageInner() {
     if (!t) return
     setTranscript(prev => [...prev, { text: t, role: 'user' }])
   }
+
+  function commitResponseTurn(next) {
+    responseTurnRef.current = next
+    setResponseTurn(next)
+    if (!next) setResponseElapsedSeconds(0)
+  }
+
+  function commitPlayMilestones(next) {
+    playMilestonesRef.current = next || {}
+    setPlayMilestones(next || {})
+  }
+
+  function commitActivePlayBreak(next) {
+    activePlayBreakRef.current = next || null
+    setActivePlayBreak(next || null)
+  }
+
+  function pacingContext() {
+    const tracked = canonicalSessionRef.current
+    const activeLearnerId = tracked?.learnerId || routeLearnerId || learnerId
+    const lessonKey = tracked?.lessonKey || currentWebbLessonKey
+    if (!tracked?.id || !activeLearnerId) return null
+    return { tracked, learnerId: activeLearnerId, lessonKey }
+  }
+
+  function emitWebbPacingEvent(eventType, eventKeySuffix, extra = {}) {
+    const context = pacingContext()
+    if (!context) return
+    void recordWebbPacingEvent({
+      learnerId: context.learnerId,
+      sessionId: context.tracked.id,
+      lessonKey: context.lessonKey,
+      turnId: extra.turnId || null,
+      eventType,
+      eventKey: `webb:${context.tracked.id}:${eventKeySuffix}`,
+      elapsedSeconds: extra.elapsedSeconds,
+      reminderStage: extra.reminderStage,
+      metadata: extra.metadata || {},
+    })
+  }
+
+  function persistWebbPacing(overrides = {}) {
+    if (!selectedLesson || webbExecutionFencedRef.current) return
+    const pacing = {
+      responseTurn: Object.prototype.hasOwnProperty.call(overrides, 'responseTurn') ? overrides.responseTurn : responseTurnRef.current,
+      playMilestones: Object.prototype.hasOwnProperty.call(overrides, 'playMilestones') ? overrides.playMilestones : playMilestonesRef.current,
+      activePlayBreak: Object.prototype.hasOwnProperty.call(overrides, 'activePlayBreak') ? overrides.activePlayBreak : activePlayBreakRef.current,
+    }
+    saveLearningSnapshot({ webbPacing: pacing })
+  }
+
+  function noteWebbLearnerActivity() {
+    const now = Date.now()
+    lastLearnerActivityRef.current = now
+    const current = responseTurnRef.current
+    if (current) responseTurnRef.current = { ...current, lastActivityAt: new Date(now).toISOString() }
+  }
+
+  function startWebbResponseTurn(stage, signature) {
+    if (!learnerProfileLoaded || !webbPacingSettings.responsePacingEnabled) return
+    if (responseTurnRef.current || activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
+    const context = pacingContext()
+    if (!context) return
+    const now = Date.now()
+    const turnId = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `webb-turn-${now}`
+    const turn = createWebbResponseTurn({ stage, nowMs: now, turnId })
+    responseArmSignatureRef.current = signature || null
+    escalationNotificationInFlightRef.current = false
+    escalationNotificationLastAttemptRef.current = 0
+    lastLearnerActivityRef.current = 0
+    commitResponseTurn(turn)
+    setResponseElapsedSeconds(0)
+    emitWebbPacingEvent('response_turn_started', `turn:${turn.id}:started`, {
+      turnId: turn.id,
+      reminderStage: 0,
+      metadata: { stage: turn.stage },
+    })
+    persistWebbPacing({ responseTurn: turn })
+  }
+
+  function finishWebbResponseTurn(text, reason = 'response') {
+    const current = responseTurnRef.current
+    if (!current) return
+    const elapsed = getResponseElapsedSeconds(current, Date.now())
+    emitWebbPacingEvent('response_received', `turn:${current.id}:response`, {
+      turnId: current.id,
+      elapsedSeconds: elapsed,
+      reminderStage: current.reminderStage || 0,
+      metadata: {
+        stage: current.stage,
+        reason,
+        requestedHelp: learnerRequestedHelp(text),
+        highestReminderStage: current.reminderStage || 0,
+        escalated: current.escalated === true,
+      },
+    })
+    commitResponseTurn(null)
+    responseArmSignatureRef.current = null
+    lastLearnerActivityRef.current = 0
+    persistWebbPacing({ responseTurn: null })
+  }
+
+  function cancelWebbResponseTurn(reason = 'cancelled') {
+    const current = responseTurnRef.current
+    if (!current) return
+    commitResponseTurn(null)
+    responseArmSignatureRef.current = null
+    lastLearnerActivityRef.current = 0
+    persistWebbPacing({ responseTurn: null })
+    if (reason === 'learner-setting-disabled') return
+  }
+
+  function pauseWebbPacingForNavigation() {
+    const current = responseTurnRef.current
+    if (!current) return
+    const paused = pauseWebbResponseTurn(current, Date.now())
+    commitResponseTurn(paused)
+    persistWebbPacing({ responseTurn: paused })
+  }
+
+  function addWebbPacingReminder(stage, elapsed) {
+    const current = responseTurnRef.current
+    const message = WEBB_PACING_REMINDERS[stage]
+    if (!current || !message || stage <= Number(current.reminderStage || 0)) return
+    const next = { ...current, reminderStage: stage }
+    commitResponseTurn(next)
+    emitWebbPacingEvent('response_reminder', `turn:${current.id}:reminder:${stage}`, {
+      turnId: current.id,
+      elapsedSeconds: elapsed,
+      reminderStage: stage,
+      metadata: { stage: current.stage },
+    })
+    persistWebbPacing({ responseTurn: next })
+    addMsg(message, { kind: 'pacing', pacingStage: stage })
+  }
+
+  async function deliverWebbEscalationNotification(turn, elapsed) {
+    if (!turn?.id || turn.notificationDelivered || escalationNotificationInFlightRef.current) return
+    if (Date.now() - escalationNotificationLastAttemptRef.current < 15000) return
+    const context = pacingContext()
+    if (!context) return
+    escalationNotificationInFlightRef.current = true
+    escalationNotificationLastAttemptRef.current = Date.now()
+    try {
+      const result = await createWebbAttentionNotification({
+        learnerId: context.learnerId,
+        learnerName: learnerName.current,
+        sessionId: context.tracked.id,
+        lessonKey: context.lessonKey,
+        lessonTitle: selectedLesson?.title || '',
+        turnId: turn.id,
+        stage: turn.stage,
+        elapsedSeconds: elapsed,
+      })
+      const current = responseTurnRef.current
+      if (result?.ok && current?.id === turn.id && !current.notificationDelivered) {
+        const delivered = { ...current, notificationDelivered: true }
+        commitResponseTurn(delivered)
+        persistWebbPacing({ responseTurn: delivered })
+      }
+    } catch (error) {
+      console.warn('[Webb pacing] Facilitator escalation delivery failed:', error?.message || error)
+    } finally {
+      escalationNotificationInFlightRef.current = false
+    }
+  }
+
+  function escalateWebbResponseTurn(elapsed) {
+    const current = responseTurnRef.current
+    if (!current || current.escalated) return
+    const next = { ...current, reminderStage: 5, escalated: true, notificationDelivered: current.notificationDelivered === true }
+    commitResponseTurn(next)
+    emitWebbPacingEvent('facilitator_escalated', `turn:${current.id}:escalated`, {
+      turnId: current.id,
+      elapsedSeconds: elapsed,
+      reminderStage: 5,
+      metadata: { stage: current.stage },
+    })
+    persistWebbPacing({ responseTurn: next })
+    void deliverWebbEscalationNotification(next, elapsed)
+  }
+
+  function queueWebbPlayBreak(milestone, alsoMark = []) {
+    if (!webbPacingSettings.playTimesEnabled || activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
+    if (playMilestonesRef.current?.[milestone]) return
+    const marked = { ...playMilestonesRef.current }
+    for (const key of [milestone, ...alsoMark]) marked[key] = true
+    commitPlayMilestones(marked)
+    pendingPlayMilestoneRef.current = milestone
+    persistWebbPacing({ playMilestones: marked })
+
+    void (async () => {
+      await waitForTTSIdle()
+      if (webbExecutionFencedRef.current || pendingPlayMilestoneRef.current !== milestone) return
+      if (!webbPacingSettings.playTimesEnabled) {
+        pendingPlayMilestoneRef.current = null
+        return
+      }
+      const durationSeconds = webbPlayDurationSeconds(webbPacingSettings, {
+        goldenKeyActive: webbGoldenKeyActive,
+        goldenKeyBonusMin: webbGoldenKeyBonusMin,
+      })
+      const now = Date.now()
+      const breakState = {
+        id: `webb-play-${milestone}-${now}`,
+        milestone,
+        milestones: [milestone, ...alsoMark],
+        startedAt: new Date(now).toISOString(),
+        endsAt: new Date(now + durationSeconds * 1000).toISOString(),
+        durationSeconds,
+        goldenKeyBonusMin: webbGoldenKeyActive ? webbGoldenKeyBonusMin : 0,
+      }
+      pendingPlayMilestoneRef.current = null
+      cancelWebbResponseTurn('play-break')
+      commitActivePlayBreak(breakState)
+      emitWebbPacingEvent('play_break_started', `play:${milestone}:started`, {
+        metadata: {
+          milestone,
+          collapsedMilestones: alsoMark,
+          durationSeconds,
+          goldenKeyBonusMin: breakState.goldenKeyBonusMin,
+        },
+      })
+      persistWebbPacing({ playMilestones: marked, activePlayBreak: breakState, responseTurn: null })
+    })()
+  }
+
+  function finishWebbPlayBreak(reason = 'expired') {
+    const current = activePlayBreakRef.current
+    if (!current) return
+    emitWebbPacingEvent('play_break_completed', `play:${current.milestone}:completed`, {
+      metadata: {
+        milestone: current.milestone,
+        reason,
+        plannedDurationSeconds: current.durationSeconds,
+      },
+    })
+    commitActivePlayBreak(null)
+    persistWebbPacing({ activePlayBreak: null })
+  }
+
+  useEffect(() => {
+    const current = responseTurnRef.current
+    if (!current) return
+    const shouldPause = phase !== PHASE.CHATTING
+      || chatLoading
+      || engineState === 'playing'
+      || !!mediaOverlay
+      || !!activePlayBreak
+      || !!pendingFeatureHelp
+      || !!webbOwnershipEndedReason
+      || webbExecutionFencedRef.current
+    const next = shouldPause ? pauseWebbResponseTurn(current, Date.now()) : resumeWebbResponseTurn(current, Date.now())
+    if (next !== current) {
+      commitResponseTurn(next)
+      persistWebbPacing({ responseTurn: next })
+    }
+  }, [phase, chatLoading, engineState, mediaOverlay, activePlayBreak, pendingFeatureHelp, webbOwnershipEndedReason]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (webbPacingSettings.responsePacingEnabled || !responseTurnRef.current) return
+    cancelWebbResponseTurn('learner-setting-disabled')
+  }, [webbPacingSettings.responsePacingEnabled]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (webbPacingSettings.playTimesEnabled || !activePlayBreakRef.current) return
+    finishWebbPlayBreak('learner-setting-disabled')
+  }, [webbPacingSettings.playTimesEnabled]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!learnerProfileLoaded || !responseTurn?.id || !webbPacingSettings.responsePacingEnabled) return undefined
+    const tick = () => {
+      const current = responseTurnRef.current
+      if (!current) return
+      const elapsed = getResponseElapsedSeconds(current, Date.now())
+      setResponseElapsedSeconds(elapsed)
+      const interactionBlocked = phase !== PHASE.CHATTING
+        || chatLoading
+        || engineState === 'playing'
+        || !!mediaOverlay
+        || !!activePlayBreakRef.current
+        || !!pendingFeatureHelp
+        || !!webbOwnershipEndedReason
+        || !!current.pauseStartedAt
+      if (interactionBlocked) return
+      if (Date.now() - lastLearnerActivityRef.current < 8000) return
+      if (current.escalated && Number(current.reminderStage || 0) >= 5) {
+        if (!current.notificationDelivered) void deliverWebbEscalationNotification(current, elapsed)
+        return
+      }
+      const dueStage = reminderStageForElapsed(elapsed, webbPacingSettings.reminderIntervalMin)
+      if (dueStage <= Number(current.reminderStage || 0)) return
+      if (dueStage >= 5) escalateWebbResponseTurn(elapsed)
+      else addWebbPacingReminder(dueStage, elapsed)
+    }
+    tick()
+    const timer = setInterval(tick, 1000)
+    return () => clearInterval(timer)
+  }, [learnerProfileLoaded, responseTurn?.id, webbPacingSettings.responsePacingEnabled, webbPacingSettings.reminderIntervalMin, phase, chatLoading, engineState, mediaOverlay, activePlayBreak, pendingFeatureHelp, webbOwnershipEndedReason]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!learnerProfileLoaded || !webbPacingSettings.playTimesEnabled) return
+    if (phase !== PHASE.CHATTING || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || writingMode || chatLoading) return
+    if (activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
+    const threshold = midpointThreshold(objectives.length)
+    const midpointDue = !!threshold
+      && webbPacingSettings.researchMidpointEnabled
+      && !playMilestonesRef.current['research-midpoint']
+      && understoodObj.length >= threshold
+    const transitionDue = objectives.length > 0
+      && webbPacingSettings.transitionEnabled
+      && !playMilestonesRef.current['research-to-writing']
+      && hasAllWritingReadyNotes(objectives, learnerNotesRef.current)
+    if (transitionDue) queueWebbPlayBreak('research-to-writing', midpointDue ? ['research-midpoint'] : [])
+    else if (midpointDue) queueWebbPlayBreak('research-midpoint')
+  }, [learnerProfileLoaded, webbPacingSettings.playTimesEnabled, webbPacingSettings.researchMidpointEnabled, webbPacingSettings.transitionEnabled, phase, writingMode, chatLoading, objectives, understoodObj.length, learnerNotes, activePlayBreak]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!learnerProfileLoaded || !webbPacingSettings.playTimesEnabled || !webbPacingSettings.writingMidpointEnabled) return
+    if (phase !== PHASE.CHATTING || webbStageRef.current !== WEBB_SESSION_STAGES.WRITING || !writingMode || chatLoading || writingEvaluating) return
+    if (activePlayBreakRef.current || pendingPlayMilestoneRef.current || playMilestonesRef.current['writing-midpoint']) return
+    const threshold = midpointThreshold(objectives.length)
+    if (!threshold) return
+    const acceptedCount = objectives.filter((_, index) => acceptedSentences?.[index]?.provenance === 'learner-message').length
+    if (acceptedCount >= threshold && acceptedCount < objectives.length) queueWebbPlayBreak('writing-midpoint')
+  }, [learnerProfileLoaded, webbPacingSettings.playTimesEnabled, webbPacingSettings.writingMidpointEnabled, phase, writingMode, writingSubphase, chatLoading, writingEvaluating, objectives, acceptedSentences, activePlayBreak]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!learnerProfileLoaded || !webbPacingSettings.responsePacingEnabled) return undefined
+    if (phase !== PHASE.CHATTING || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || writingMode || chatLoading) return undefined
+    if (responseTurnRef.current || activePlayBreakRef.current || pendingPlayMilestoneRef.current || mediaOverlay || pendingFeatureHelp) return undefined
+    if (objectives.length > 0 && hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return undefined
+    const last = transcript.at(-1)
+    if (last?.role !== 'assistant' || last?.kind === 'pacing' || !expectsLearnerResponse(last?.text)) return undefined
+    const signature = `research:${transcript.length}:${last.text}`
+    if (responseArmSignatureRef.current === signature) return undefined
+    responseArmSignatureRef.current = signature
+    let cancelled = false
+    void (async () => {
+      await waitForTTSIdle()
+      if (cancelled) return
+      if (webbExecutionFencedRef.current || responseTurnRef.current || activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
+      if (webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return
+      startWebbResponseTurn('research', signature)
+    })()
+    return () => { cancelled = true }
+  }, [learnerProfileLoaded, webbPacingSettings.responsePacingEnabled, phase, writingMode, chatLoading, transcript, objectives, mediaOverlay, activePlayBreak, pendingFeatureHelp]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (!learnerProfileLoaded || !webbPacingSettings.responsePacingEnabled) return undefined
+    if (phase !== PHASE.CHATTING || webbStageRef.current !== WEBB_SESSION_STAGES.WRITING || !writingMode || chatLoading || writingEvaluating) return undefined
+    if (![WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(writingSubphase)) return undefined
+    if (responseTurnRef.current || activePlayBreakRef.current || pendingPlayMilestoneRef.current || pendingFeatureHelp) return undefined
+    const attempts = Array.isArray(writingAttempts?.[writingIndex]) ? writingAttempts[writingIndex].length : 0
+    const signature = `writing:${writingIndex}:${writingSubphase}:${attempts}`
+    if (responseArmSignatureRef.current === signature) return undefined
+    responseArmSignatureRef.current = signature
+    let cancelled = false
+    void (async () => {
+      await waitForTTSIdle()
+      if (cancelled) return
+      if (webbExecutionFencedRef.current || responseTurnRef.current || activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
+      if (webbStageRef.current !== WEBB_SESSION_STAGES.WRITING || !writingMode) return
+      if (![WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(writingSubphase)) return
+      startWebbResponseTurn('writing', signature)
+    })()
+    return () => { cancelled = true }
+  }, [learnerProfileLoaded, webbPacingSettings.responsePacingEnabled, phase, writingMode, writingIndex, writingSubphase, writingAttempts, chatLoading, writingEvaluating, activePlayBreak, pendingFeatureHelp]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Like addMsg but tags the transcript entry with a passage index so the
   // bubble renderer can show a citation link back to the article highlight.
@@ -1371,6 +1832,18 @@ function WebbPageInner() {
     setExpandedObj(null)
     setEssayMode(false)
     setEssay(null)
+    responseTurnRef.current = null
+    escalationNotificationInFlightRef.current = false
+    escalationNotificationLastAttemptRef.current = 0
+    setResponseTurn(null)
+    setResponseElapsedSeconds(0)
+    responseArmSignatureRef.current = null
+    lastLearnerActivityRef.current = 0
+    playMilestonesRef.current = {}
+    setPlayMilestones({})
+    activePlayBreakRef.current = null
+    setActivePlayBreak(null)
+    pendingPlayMilestoneRef.current = null
     webbSessionStartRef.current = new Date().toISOString()
 
     let startupObjectives
@@ -1456,6 +1929,7 @@ function WebbPageInner() {
     const objectiveIndex = writingIndex
     const note = learnerNotesRef.current[objectiveIndex]
     if (!isWritingReadyNote(note)) return
+    finishWebbResponseTurn(trimmed, 'writing-submitted')
     const priorSentences = objectives.slice(0, objectiveIndex)
       .map((_, index) => acceptedSentences?.[index]?.text)
       .map(value => String(value || '').trim())
@@ -1671,6 +2145,7 @@ function WebbPageInner() {
   async function sendMessage(text) {
     if (webbExecutionFencedRef.current || phase !== PHASE.CHATTING || !objectives.length || checkError || writingMode || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH) return
     if (!text.trim() || chatLoading) return
+    finishWebbResponseTurn(text, 'research-submitted')
     const replay = featureHelpReplayRef.current?.message === text ? featureHelpReplayRef.current : null
     if (replay) featureHelpReplayRef.current = null
     if (pendingFeatureHelp?.message && pendingFeatureHelp.message !== text) setPendingFeatureHelp(null)
@@ -2199,6 +2674,19 @@ function WebbPageInner() {
       setCompletionError('Your work is safe, but lesson completion could not be recorded. Please try again.')
       return
     }
+    if (tracked.learnerId && tracked.learnerId !== 'demo') {
+      try {
+        await finalizeGoldenKeyForSession({
+          learnerId: tracked.learnerId,
+          lessonKey: lk,
+          executionSessionId: tracked.id,
+          browserSessionId: getProtectedBrowserSessionId(),
+          awardEarnedKey: false,
+        })
+      } catch (error) {
+        console.warn('[Webb pacing] Golden Key finalization failed after completed lesson:', error?.message || error)
+      }
+    }
     stopWebbSessionPolling()
     const currentSummary = summarizeWebbMastery(objectives, objectiveEvidence)
     const previousSummary = getWebbCompletionForLearner(learnerId)?.[lk]?.masterySummary || null
@@ -2443,6 +2931,7 @@ function WebbPageInner() {
   async function handleExit() {
     const { ensurePinAllowed } = await import('@/app/lib/pinGate')
     if (!await ensurePinAllowed('session-exit')) return
+    pauseWebbPacingForNavigation()
     runGenerationRef.current += 1
     objectiveQueueRef.current.invalidate()
     skipTTS()
@@ -2451,6 +2940,7 @@ function WebbPageInner() {
   }
 
   function handleBack() {
+    pauseWebbPacingForNavigation()
     runGenerationRef.current += 1
     objectiveQueueRef.current.invalidate()
     skipTTS()
@@ -2628,6 +3118,7 @@ function WebbPageInner() {
         onConfirm={confirmFeatureHelp}
         onDismiss={dismissFeatureHelp}
       />
+      <WebbPlayBreakOverlay playBreak={activePlayBreak} onComplete={finishWebbPlayBreak} />
 
       {/* Header */}
       <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
@@ -2643,6 +3134,14 @@ function WebbPageInner() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: keyboardCompact ? 4 : 8, alignItems: 'center' }}>
+            {isChatting && responseTurn && (
+              <WebbResponseTimer
+                turn={responseTurn}
+                elapsedSeconds={responseElapsedSeconds}
+                settings={webbPacingSettings}
+                compact={keyboardCompact}
+              />
+            )}
             {isChatting && objectives.length > 0 && (
               <button
                 type="button"
@@ -2989,6 +3488,7 @@ function WebbPageInner() {
           {webbStageRef.current === WEBB_SESSION_STAGES.RESEARCH && (
             <StudentInput
               onSend={sendMessage}
+              onActivity={noteWebbLearnerActivity}
               loading={chatLoading || !!checkError}
               compact={keyboardCompact}
             />
@@ -3517,6 +4017,15 @@ function WebbPageInner() {
         totalSentences={objectives.length}
         guidance={writingGuidance}
         evaluating={writingEvaluating}
+        responseTimer={responseTurn ? (
+          <WebbResponseTimer
+            turn={responseTurn}
+            elapsedSeconds={responseElapsedSeconds}
+            settings={webbPacingSettings}
+            compact={keyboardCompact}
+          />
+        ) : null}
+        onLearnerActivity={noteWebbLearnerActivity}
         onDraftChange={setWritingDraft}
         onSubmit={submitWritingAttempt}
         onBlankComplete={handleWritingBlankComplete}
@@ -3912,7 +4421,7 @@ function WebbLessonBrowser({
 }
 
 // ── StudentInput ──────────────────────────────────────────────────────────────
-function StudentInput({ onSend, loading, compact = false }) {
+function StudentInput({ onSend, onActivity, loading, compact = false }) {
   const [value, setValue] = useState('')
   const ref = useRef(null)
 
@@ -3934,7 +4443,10 @@ function StudentInput({ onSend, loading, compact = false }) {
         rows={compact ? 1 : 2}
         value={value}
         disabled={loading}
-        onChange={e => setValue(e.target.value.slice(0, 400))}
+        onChange={e => {
+          onActivity?.()
+          setValue(e.target.value.slice(0, 400))
+        }}
         onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); submit() } }}
         placeholder={loading ? 'Mrs. Webb is thinking\u2026' : 'Type a message\u2026'}
         aria-label="Chat with Mrs. Webb"
