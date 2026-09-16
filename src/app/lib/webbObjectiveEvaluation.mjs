@@ -1,5 +1,5 @@
 import { createLearnerNote, sourceLearnerMessage } from './webbLearnerEvidence.mjs'
-import { classifyWebbObjectiveAttempt } from './webbMasteryModel.mjs'
+import { classifyWebbObjectiveAttempt, detectsLearnerNonAnswer } from './webbMasteryModel.mjs'
 import { reconcileWebbObjectiveState } from './webbObjectiveState.mjs'
 
 // The application chooses ONE learner response. The model only judges its meaning.
@@ -75,6 +75,14 @@ export async function evaluateWebbObjectives({
     const remaining = candidates()
     if (!remaining.length) break
     const source = sourceLearnerMessage(conversation, sourceMessageIndex)
+    if (detectsLearnerNonAnswer(source.text)) {
+      const current = remaining[0]
+      if (current) {
+        evaluationStatus[current.i] = 'no_answer'
+        sentenceQuality[current.i] = false
+      }
+      continue
+    }
     const contextStart = Math.max(0, sourceMessageIndex - (quick ? 8 : 30))
     const raw = await callModel(JUDGMENT_INSTRUCTIONS, JSON.stringify({
       instructional_context: lesson,

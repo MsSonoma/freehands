@@ -391,6 +391,20 @@ test('a model-supplied message number cannot redirect credit or notes to the tea
 })
 
 
+test('I do not know cannot complete an objective even if the evaluator would return correct', async () => {
+  let modelCalls = 0
+  const result = await evaluateWebbObjectives({
+    objectives: OBJECTIVES,
+    conversation: first("I don't know"),
+    callModel: async () => { modelCalls += 1; return judgment(0, 'correct', true, 'fixed_fact') },
+  })
+  assert.equal(modelCalls, 0)
+  assert.deepEqual(result.newlyCompleted, [])
+  assert.deepEqual(result.learnerNotes, {})
+  assert.deepEqual(result.objectiveEvidence, {})
+  assert.equal(result.evaluationStatus[0], 'no_answer')
+  assert.equal(result.sentenceQuality[0], false)
+})
 test('correct fixed facts taught by Webb count as assisted comprehension without requiring invented synonyms', async () => {
   const conversation = [teacher('Roald Dahl wrote The Magic Finger. Who wrote it?'), learner('Roald Dahl wrote The Magic Finger.')]
   const result = await routeResult(conversation, judgment(0, 'correct', true, 'fixed_fact'))

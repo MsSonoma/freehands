@@ -44,6 +44,13 @@ test('Ms. Sonoma Ask resolves product help before recording mastery assistance',
   assert.match(controller, /Treat the prior Ms. Sonoma lines as words you already said/)
 })
 
+test('Ms. Sonoma treats an explicit non-answer as a teaching signal, never success', () => {
+  const source = read('src/app/api/sonoma-discussion/route.js')
+  assert.match(source, /objectiveStatus === 'no_answer'/)
+  assert.match(source, /NOT successful comprehension/)
+  assert.match(source, /Teach ONE small, useful piece/)
+  assert.match(source, /same checkpoint/)
+})
 test('transition ownership forbids outgoing duplicate segues', () => {
   const discussion = read('src/app/api/sonoma-discussion/route.js')
   const teaching = read('src/app/session/v2/TeachingController.jsx')

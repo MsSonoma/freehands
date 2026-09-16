@@ -5,6 +5,7 @@ import {
   addWebbAssistance,
   classifyWebbObjectiveAttempt,
   compareLearnerToAssistant,
+  detectsLearnerNonAnswer,
   mergeWebbMasterySummaries,
   summarizeWebbMastery,
 } from '../webbMasteryModel.mjs'
@@ -22,6 +23,24 @@ test('independent first-response success can establish mastery', () => {
   assert.equal(result.retention, 'not_measured')
 })
 
+test('explicit non-answers can never become comprehension even if an evaluator says correct', () => {
+  for (const text of ["I don't know", 'idk', 'not sure', 'I have no idea', "I don't remember"]) {
+    assert.equal(detectsLearnerNonAnswer(text), true)
+    const result = classifyWebbObjectiveAttempt({
+      objectiveIndex: 0,
+      objective,
+      evaluation: evaluate('correct', 1),
+      conversation: [assistant('Why did the colonists object?'), learner(text)],
+    })
+    assert.equal(result.coverage, 'not_covered')
+    assert.equal(result.comprehension, 'not_demonstrated')
+    assert.equal(result.mastery, 'pending')
+    assert.equal(result.latestAttempt.accuracy, 'no_answer')
+    assert.equal(result.latestAttempt.nonAnswer, true)
+    assert.equal(result.latestAttempt.masteryOutcome, 'unavailable')
+  }
+  assert.equal(detectsLearnerNonAnswer("I'm not sure, but I think they had no vote."), false)
+})
 test('a first-turn direct fact is demonstrated comprehension when Webb did not supply it', () => {
   const authorObjective = 'The learner understands that Roald Dahl wrote The Magic Finger.'
   const result = classifyWebbObjectiveAttempt({

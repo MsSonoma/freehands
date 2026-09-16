@@ -88,7 +88,11 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
     )
   }
 
-  if (objectiveStatus === 'reproduced') {
+  if (objectiveStatus === 'no_answer') {
+    lines.push(
+      `\nThe learner explicitly said they do not know or are not sure. This is NOT successful comprehension and must not be praised as if it were correct. Stay on the same checkpoint. Teach ONE small, useful piece of that idea in plain age-appropriate language, then ask ONE easier scaffolded question that the learner can answer from what you just taught. Do not simply repeat the previous question.`,
+    )
+  } else if (objectiveStatus === 'reproduced') {
     lines.push(
       `\nThe evaluator found that the learner's latest answer is materially correct but closely reproduces wording that was already supplied. Do NOT call it wrong, and do NOT restate the definition or sentence again. Acknowledge that they found the right idea, then ask ONE small transfer question about the same concept: a simple example, consequence, comparison, or "what would happen if" question. This gives the learner a chance to show meaning in their own language rather than repeat yours.`,
     )
