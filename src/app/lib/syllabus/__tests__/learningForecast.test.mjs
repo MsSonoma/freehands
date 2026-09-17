@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 
-import { buildInstructionalForecastPlan, buildLearningForecastSnapshot, instructionalEvidenceContext, instructionalSlotsForWeek } from '../learningForecast.mjs'
+import { buildInstructionalForecastPlan, buildLearningForecastSnapshot, instructionalEvidenceContext, instructionalSlotsForWeek, instructionalWeekIsFilled } from '../learningForecast.mjs'
 import { forecastCarryLessonKey, lessonGenerationPresentation } from '../lessonGenerationState.mjs'
 import { aggregateFacilitatorEvidenceSession } from '../../masteryEvidence/reporting.js'
 import { createLearningForecastProposal } from '../learningForecast.server.mjs'
@@ -143,6 +143,103 @@ test('no-school dates remove forecast slots before generation and change proposa
   assert.deepEqual(blocked.slots.map((slot) => [slot.planned_date, slot.subject]), [['2026-09-01', 'science']])
   assert.deepEqual(blocked.unfilled_slots.map((slot) => slot.planned_date), ['2026-09-01'])
   assert.notEqual(blocked.proposal_key, open.proposal_key)
+})
+
+test('current-week forecasting ignores elapsed empty slots for a learner starting midweek', () => {
+  const revision = {
+    ...activeRevision(),
+    effective_from: '2026-09-16',
+    subjects: [{ name: 'Math' }, { name: 'Science' }, { name: 'Language Arts' }, { name: 'Social Studies' }],
+    weekly_pattern: {
+      monday: [{ subject: 'Math' }],
+      tuesday: [{ subject: 'Science' }],
+      wednesday: [{ subject: 'Language Arts' }],
+      thursday: [{ subject: 'Social Studies' }],
+    },
+  }
+  const plan = buildInstructionalForecastPlan({
+    activeRevision: revision,
+    forecastItems: [],
+    timelineItems: [],
+    reports: [],
+    today: '2026-09-16',
+    targetWeekStart: '2026-09-14',
+  })
+  assert.deepEqual(plan.slots.map((slot) => [slot.planned_date, slot.subject]), [
+    ['2026-09-16', 'Language Arts'],
+    ['2026-09-17', 'Social Studies'],
+  ])
+  assert.deepEqual(plan.unfilled_slots.map((slot) => slot.planned_date), ['2026-09-16', '2026-09-17'])
+  const built = buildLearningForecastSnapshot({
+    activeRevision: revision,
+    plan,
+    generatedItems: [
+      { planning_move: 'branch', strand: 'writing and composition', title: 'Writing a Strong Paragraph', description: 'Build one focused paragraph with supporting details.' },
+      { planning_move: 'branch', strand: 'geography and human-environment relationships', title: 'Reading Regional Maps', description: 'Use maps to compare regions and human-environment relationships.' },
+    ],
+    today: '2026-09-16',
+  })
+  assert.doesNotThrow(() => validateSnapshot(built.snapshot, { today: '2026-09-16', allowLegacyOrigins: true }))
+  assert.deepEqual(built.additions.map((item) => item.planned_date), ['2026-09-16', '2026-09-17'])
+})
+
+test('current-week completion ignores elapsed empty slots but still requires today and future slots', () => {
+  const revision = {
+    ...activeRevision(),
+    weekly_pattern: {
+      monday: [{ subject: 'math' }],
+      tuesday: [{ subject: 'science' }],
+      wednesday: [{ subject: 'math' }],
+      thursday: [{ subject: 'science' }],
+    },
+  }
+  const wednesday = item({ planned_date: '2026-09-16', subject: 'math', sort_order: 0 })
+  const thursday = item({ planned_date: '2026-09-17', subject: 'science', sort_order: 0, lineage_id: LINEAGE_B })
+  assert.equal(instructionalWeekIsFilled({
+    activeRevision: revision,
+    timelineItems: [wednesday],
+    weekStart: '2026-09-14',
+    today: '2026-09-16',
+  }), false)
+  assert.equal(instructionalWeekIsFilled({
+    activeRevision: revision,
+    timelineItems: [wednesday, thursday],
+    weekStart: '2026-09-14',
+    today: '2026-09-16',
+  }), true)
+})
+test('midweek learner with no prior lessons creates a valid current-week forecast proposal', async () => {
+  const repository = forecastRepository({ forecast: [] })
+  repository.state.revisions[0] = {
+    ...repository.state.revisions[0],
+    effective_from: '2026-09-16',
+    subjects: [{ name: 'Math' }, { name: 'Science' }, { name: 'Language Arts' }, { name: 'Social Studies' }],
+    weekly_pattern: {
+      monday: [{ subject: 'Math' }],
+      tuesday: [{ subject: 'Science' }],
+      wednesday: [{ subject: 'Language Arts' }],
+      thursday: [{ subject: 'Social Studies' }],
+    },
+  }
+  const result = await createLearningForecastProposal({
+    repository,
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    expectedActiveRevisionId: ACTIVE,
+    reports: [],
+    now: new Date('2026-09-16T16:00:00.000Z'),
+    targetWeekStart: '2026-09-14',
+    generateItems: async ({ slots }) => slots.map((slot) => ({
+      planning_move: 'branch',
+      strand: slot.subject === 'Language Arts' ? 'writing and composition' : 'geography and human-environment relationships',
+      title: `${slot.subject} starting point`,
+      description: `Begin age-appropriate ${slot.subject} instruction.`,
+    })),
+  })
+  assert.equal(result.kind, 'proposal')
+  assert.equal(result.reused, false)
+  assert.deepEqual(result.forecast_items.map((row) => row.planned_date), ['2026-09-16', '2026-09-17'])
+  assert.equal(repository.state.writes, 1)
 })
 
 test('an incomplete current-Syllabus attempt becomes a provisional Forecast carry, never a new scheduled commitment', () => {

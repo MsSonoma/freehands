@@ -60,6 +60,7 @@ export async function createLearningForecastProposal({
       proposedForecastItems: existingProposalItems,
       noSchoolDates: inputs.noSchoolDates || [],
       weekStart: startOfSyllabusWeek(calendar.today),
+      today: calendar.today,
     })
     if (!priorWeekFilled) {
       return { kind: 'no_action', active_revision_id: activeRevision.id, target_week_start: requestedWeek, reason: 'prior_week_open', message: 'The prior week still has open lesson slots.' }

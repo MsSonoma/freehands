@@ -128,11 +128,14 @@ function inputIdentity({ activeRevision, forecastItems, proposedForecastItems, t
   })).digest('hex')
 }
 
-export function instructionalWeekIsFilled({ activeRevision, timelineItems = [], proposedForecastItems = [], noSchoolDates = [], weekStart } = {}) {
+export function instructionalWeekIsFilled({ activeRevision, timelineItems = [], proposedForecastItems = [], noSchoolDates = [], weekStart, today = '' } = {}) {
   const targetWeekStart = startOfSyllabusWeek(weekStart)
   if (!activeRevision?.weekly_pattern || !targetWeekStart) return false
+  const currentWeekStart = startOfSyllabusWeek(today)
   const blockedDates = noSchoolDateSet(noSchoolDates)
-  const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart).filter((slot) => !blockedDates.has(slot.planned_date))
+  const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart)
+    .filter((slot) => !blockedDates.has(slot.planned_date))
+    .filter((slot) => targetWeekStart !== currentWeekStart || slot.planned_date >= today)
   const occupied = new Set([...timelineItems, ...proposedForecastItems].filter((item) => {
     if (item?.item_type === 'slate_assignment') return false
     return startOfSyllabusWeek(item?.planned_date) === targetWeekStart
@@ -144,8 +147,11 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
   if (!activeRevision?.id) throw new Error('An active Syllabus revision is required')
   const { start: targetWeekStart, end: targetWeekEnd } = instructionalForecastWindow(today, requestedTargetWeekStart)
   if (!targetWeekStart) throw new Error('A valid local date is required for forecasting')
+  const currentWeekStart = startOfSyllabusWeek(today)
   const blockedDates = noSchoolDateSet(noSchoolDates)
-  const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart).filter((slot) => !blockedDates.has(slot.planned_date))
+  const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart)
+    .filter((slot) => !blockedDates.has(slot.planned_date))
+    .filter((slot) => targetWeekStart !== currentWeekStart || slot.planned_date >= today)
   const occupied = new Set([...timelineItems, ...proposedForecastItems].filter((item) => {
     if (item?.item_type === 'slate_assignment') return false
     const date = String(item?.planned_date || '').slice(0, 10)
