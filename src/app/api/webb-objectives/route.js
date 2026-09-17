@@ -272,6 +272,7 @@ export async function POST(req, deps = {}) {
         objectiveEvidence: body.objectiveEvidence || {},
         priorPromptExposure: body.priorPromptExposure || {},
         recoverNotes: body.recoverNotes === true,
+        targetObjectiveIndex: Number.isInteger(body.targetObjectiveIndex) ? body.targetObjectiveIndex : null,
       })
       return NextResponse.json(result)
     }

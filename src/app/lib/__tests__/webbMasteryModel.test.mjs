@@ -5,6 +5,8 @@ import {
   addWebbAssistance,
   classifyWebbObjectiveAttempt,
   compareLearnerToAssistant,
+  detectsLearnerAcknowledgement,
+  detectsLearnerInformationRequest,
   detectsLearnerNonAnswer,
   mergeWebbMasterySummaries,
   summarizeWebbMastery,
@@ -40,6 +42,29 @@ test('explicit non-answers can never become comprehension even if an evaluator s
     assert.equal(result.latestAttempt.masteryOutcome, 'unavailable')
   }
   assert.equal(detectsLearnerNonAnswer("I'm not sure, but I think they had no vote."), false)
+})
+test('information requests and bare acknowledgements are not comprehension evidence', () => {
+  for (const [text, status] of [
+    ['what is a concluding sentence', 'information_request'],
+    ['Can you explain that?', 'information_request'],
+    ['okay', 'acknowledgement'],
+    ['got it', 'acknowledgement'],
+  ]) {
+    const result = classifyWebbObjectiveAttempt({
+      objectiveIndex: 0,
+      objective,
+      evaluation: evaluate('correct', 1),
+      conversation: [assistant('Explain the idea in your own words.'), learner(text)],
+    })
+    assert.equal(result.coverage, 'not_covered')
+    assert.equal(result.comprehension, 'not_demonstrated')
+    assert.equal(result.mastery, 'pending')
+    assert.equal(result.latestAttempt.accuracy, status)
+    assert.equal(result.latestAttempt.ineligibleResponse, true)
+  }
+  assert.equal(detectsLearnerInformationRequest('what is a concluding sentence'), true)
+  assert.equal(detectsLearnerAcknowledgement('okay'), true)
+  assert.equal(detectsLearnerInformationRequest('Because it tells what the paragraph is about?'), false)
 })
 test('a first-turn direct fact is demonstrated comprehension when Webb did not supply it', () => {
   const authorObjective = 'The learner understands that Roald Dahl wrote The Magic Finger.'

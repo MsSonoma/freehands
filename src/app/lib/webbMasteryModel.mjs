@@ -5,7 +5,7 @@ import {
   qualifyConversationalMasteryOpportunity,
 } from './masteryEvidence/mastery.js'
 
-export const WEBB_MASTERY_PROTOCOL_VERSION = 'webb-conversational-mastery-v1'
+export const WEBB_MASTERY_PROTOCOL_VERSION = 'webb-conversational-mastery-v2'
 
 export const WEBB_OBJECTIVE_STATES = Object.freeze({
   NOT_COVERED: 'not_covered',
@@ -41,6 +41,29 @@ export function detectsLearnerNonAnswer(text) {
   if (!normalized) return true
   const value = normalized.replace(/^(?:um|uh|hmm|hm|well|sorry)\s+/, '')
   return /^(?:i\s+)?(?:don'?t|do not)\s+know(?:\s+(?:the\s+answer|that|this|anything(?:\s+about\s+(?:it|that|this))?))?$|^i\s+dunno$|^idk$|^(?:i(?:'m| am)\s+)?not\s+sure(?:\s+at\s+all)?$|^(?:i\s+)?(?:have|got)\s+no\s+idea$|^no\s+idea$|^(?:i\s+)?(?:don'?t|do not)\s+remember$|^i\s+(?:forgot|forget)$/i.test(value)
+}
+
+export function detectsLearnerInformationRequest(text) {
+  const normalized = normalizeText(text)
+  if (!normalized) return false
+  const value = normalized.replace(/^(?:um|uh|hmm|hm|well|sorry)\s+/, '')
+  return /^(?:what|who|where|when|why|how)\s+(?:is|are|was|were|do|does|did|can|could|would|will|should)\b/.test(value)
+    || /^(?:can|could|would|will)\s+you\s+(?:please\s+)?(?:explain|tell|show|define|teach|help|remind)\b/.test(value)
+    || /^(?:please\s+)?(?:explain|define|teach|show)\s+(?:me\b|what\b|how\b|why\b|this\b|that\b|it\b)/.test(value)
+    || /^(?:please\s+)?tell\s+me\s+(?:what|who|where|when|why|how|about)\b/.test(value)
+}
+
+export function detectsLearnerAcknowledgement(text) {
+  const normalized = normalizeText(text)
+  if (!normalized) return false
+  return /^(?:ok|okay|yes|yeah|yep|yup|sure|right|alright|all right|cool|thanks|thank you|got it|i get it|i understand|understood|makes sense)$/.test(normalized)
+}
+
+export function classifyWebbLearnerResponseEligibility(text) {
+  if (detectsLearnerNonAnswer(text)) return { eligible: false, status: 'no_answer' }
+  if (detectsLearnerInformationRequest(text)) return { eligible: false, status: 'information_request' }
+  if (detectsLearnerAcknowledgement(text)) return { eligible: false, status: 'acknowledgement' }
+  return { eligible: true, status: 'answer' }
 }
 
 export function detectsAnswerRequest(text) {
@@ -129,8 +152,10 @@ export function classifyWebbObjectiveAttempt({
   const learnerMessage = conversation?.[sourceMessageIndex]
   if (!learnerMessage || learnerMessage.role !== 'user') return null
 
-  const nonAnswer = detectsLearnerNonAnswer(learnerMessage.content)
-  const accuracy = nonAnswer ? 'no_answer' : evaluation?.accuracy
+  const responseEligibility = classifyWebbLearnerResponseEligibility(learnerMessage.content)
+  const ineligibleResponse = !responseEligibility.eligible
+  const nonAnswer = responseEligibility.status === 'no_answer'
+  const accuracy = ineligibleResponse ? responseEligibility.status : evaluation?.accuracy
   const correct = accuracy === 'correct'
   const priorAttempts = Array.isArray(previousEvidence?.attempts) ? previousEvidence.attempts : []
   const replay = priorAttempts.find(attempt =>
@@ -147,7 +172,7 @@ export function classifyWebbObjectiveAttempt({
   })
   const evidenceKind = evaluation?.evidenceKind === 'fixed_fact' ? 'fixed_fact' : 'meaning'
   const reproduction = findClearAnswerReproduction(conversation, sourceMessageIndex, { fixedFact: evidenceKind === 'fixed_fact' })
-  const answerRequested = !nonAnswer && detectsAnswerRequest(learnerMessage.content)
+  const answerRequested = !ineligibleResponse && detectsAnswerRequest(learnerMessage.content)
   const isFirstResponse = priorAttempts.length === 0
   const qualification = qualifyConversationalMasteryOpportunity({
     hasStableConceptIdentity: !!String(objective || '').trim(),
@@ -161,14 +186,14 @@ export function classifyWebbObjectiveAttempt({
     answerReproduction: !!reproduction,
   })
   const clean = qualification.eligible
-  const covered = !nonAnswer && ((correct && !answerRequested) || (assistance.length > 0 && priorAttempts.length > 0))
+  const covered = !ineligibleResponse && ((correct && !answerRequested) || (assistance.length > 0 && priorAttempts.length > 0))
   // Identifying a fixed fact is not a paraphrasing task. Exposure still blocks independent mastery.
-  const comprehension = !nonAnswer && correct && (!reproduction || evidenceKind === 'fixed_fact') && !answerRequested ? 'demonstrated' : 'not_demonstrated'
+  const comprehension = !ineligibleResponse && correct && (!reproduction || evidenceKind === 'fixed_fact') && !answerRequested ? 'demonstrated' : 'not_demonstrated'
 
   let masteryOutcome = MASTERY_OUTCOMES.UNAVAILABLE
   let independenceStatus = INDEPENDENCE_STATUSES.UNAVAILABLE
   let independenceReason = INDEPENDENCE_REASONS.ELIGIBLE
-  if (nonAnswer) {
+  if (ineligibleResponse) {
     independenceStatus = INDEPENDENCE_STATUSES.UNAVAILABLE
     masteryOutcome = MASTERY_OUTCOMES.UNAVAILABLE
   } else if (answerRequested) {
@@ -212,6 +237,8 @@ export function classifyWebbObjectiveAttempt({
     reproduction,
     answerRequested,
     nonAnswer,
+    ineligibleResponse,
+    responseEligibilityStatus: responseEligibility.status,
     assistanceBeforeResponse: assistance,
     qualification,
     occurredAt,

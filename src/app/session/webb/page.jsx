@@ -232,6 +232,7 @@ function WebbPageInner() {
   const canonicalSessionRef = useRef(null)
   const masteryEvidenceClientRef = useRef(null)
   const priorObjectiveExposureRef = useRef({})
+  const objectiveTargetRef = useRef(null)
   const [articleSources,     setArticleSources]    = useState(() => {
     const ALL = ['simple-wikipedia','wikipedia','kiddle','ducksters','wikijunior']
     if (typeof window === 'undefined') return ALL
@@ -488,7 +489,7 @@ function WebbPageInner() {
         lessonData: lesson,
         mastery: { protocolVersion: INDEPENDENT_MASTERY_PROTOCOL_VERSION },
         retention: { protocolVersion: RETENTION_PROTOCOL_VERSION },
-        teachingProtocol: { protocolVersion: 'webb-conversation-v1', protocolHash: null },
+        teachingProtocol: { protocolVersion: 'webb-conversation-v2', protocolHash: null },
         startedAt: webbSessionStartRef.current || new Date().toISOString(),
       })
       void client.recordSessionStarted({ initialPhase: 'discussion' })
@@ -585,12 +586,20 @@ function WebbPageInner() {
       preloadResources(selectedLesson)
       const history = saved.chatMessages || []
       const progress = webbObjectiveProgress(saved.objectives, restored)
+      const restoredTarget = Number.isInteger(saved.objectiveTargetIndex) && progress.remainingIndices.includes(saved.objectiveTargetIndex)
+        ? saved.objectiveTargetIndex
+        : (progress.remainingIndices[0] ?? null)
+      objectiveTargetRef.current = restoredTarget
+      snapshotRef.current = { ...snapshotRef.current, objectiveTargetIndex: restoredTarget }
       if (composition.webbStage === WEBB_SESSION_STAGES.RESEARCH) {
         const pendingResponse = history.at(-1)?.role === 'user'
         const untrackedLegacy = Number(rawSaved.snapshotVersion || 0) < 5
           && !restored.understoodObj.length && history.some(message => message.role === 'user')
-        if (pendingResponse || untrackedLegacy || progress.missingNoteIndices.length > 0) {
-          // Research recovery is valid only while the durable stage is research.
+        if (pendingResponse) {
+          // A refresh resumes the exact objective that owned the unanswered learner turn.
+          await completeResearchTurn(history, saved.objectives, { recoverNotes: false })
+        } else if (untrackedLegacy || progress.missingNoteIndices.length > 0) {
+          // Legacy note recovery walks historical learner turns chronologically, one objective per turn.
           await completeResearchTurn(history, saved.objectives, { recoverNotes: true })
         }
       } else if (composition.webbStage === WEBB_SESSION_STAGES.WRITING && progress.missingNoteIndices.length > 0) {
@@ -617,6 +626,7 @@ function WebbPageInner() {
     snapshotVersion: WEBB_SNAPSHOT_VERSION,
     webbSessionStartedAt: webbSessionStartRef.current,
     selectedLesson, chatMessages, transcript, objectives,
+    objectiveTargetIndex: objectiveTargetRef.current,
     ...learningStateRef.current,
     webbStage: webbStageRef.current,
     writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, essay, essayMode,
@@ -1704,6 +1714,7 @@ function WebbPageInner() {
     webbStageRef.current = requestedStage
     const snapshot = {
       ...merged,
+      objectiveTargetIndex: objectiveTargetRef.current,
       webbStage: requestedStage,
       pendingWritingReview,
       snapshotVersion: WEBB_SNAPSHOT_VERSION,
@@ -1734,7 +1745,7 @@ function WebbPageInner() {
   }
 
   // Foreground and media checks share this queue and exactly the same result reducer.
-  async function checkObjectivesAfterTurn(updatedMessages, currentObjectives = objectives, _currentCovered, { recoverNotes = false } = {}) {
+  async function checkObjectivesAfterTurn(updatedMessages, currentObjectives = objectives, _currentCovered, { recoverNotes = false, targetObjectiveIndex = null } = {}) {
     const run = runGenerationRef.current
     return objectiveQueueRef.current.run(async (isCurrent) => {
       const active = () => isCurrent() && run === runGenerationRef.current && !webbExecutionFencedRef.current
@@ -1750,6 +1761,7 @@ function WebbPageInner() {
           understoodIndices: current.understoodObj,
           objectiveEvidence: current.objectiveEvidence,
           priorPromptExposure: priorObjectiveExposureRef.current,
+          targetObjectiveIndex: Number.isInteger(targetObjectiveIndex) ? targetObjectiveIndex : null,
           conversation: updatedMessages, lesson: selectedLesson, quick: !recoverNotes, recoverNotes,
         }),
       })
@@ -1818,6 +1830,7 @@ function WebbPageInner() {
     setMediaOverlay(null)
     setPageError('')
     setObjectives([])
+    objectiveTargetRef.current = null
     commitLearningState(emptyWebbObjectiveState())
     setNewlySavedNote(null)
     pendingWritingReviewRef.current = null
@@ -1880,6 +1893,7 @@ function WebbPageInner() {
       await initializeWebbEvidence(canonicalSessionRef.current, lesson)
       // Never expose learner input until the objective map and prior-exposure state are ready.
       priorObjectiveExposureRef.current = Object.fromEntries(startupObjectives.map((_, index) => [index, true]))
+      objectiveTargetRef.current = startupObjectives.length ? 0 : null
       setObjectives(startupObjectives)
       await loadPriorObjectiveExposure(startupObjectives, lesson)
     } catch (cause) {
@@ -2086,9 +2100,15 @@ function WebbPageInner() {
     saveLearningSnapshot({ chatMessages: nextHistory, objectives: currentObjectives })
     try {
       const priorProgress = webbObjectiveProgress(currentObjectives, learningStateRef.current)
+      const shouldRecoverNotes = recoverNotes || priorProgress.missingNoteIndices.length > 0
+      const configuredTarget = objectiveTargetRef.current
+      const targetObjectiveIndex = !shouldRecoverNotes && Number.isInteger(configuredTarget) && priorProgress.remainingIndices.includes(configuredTarget)
+        ? configuredTarget
+        : (!shouldRecoverNotes ? (priorProgress.remainingIndices[0] ?? null) : null)
       const evidenceHistory = nextHistory.filter(message => message?.kind !== 'product_help')
       const checked = await checkObjectivesAfterTurn(evidenceHistory, currentObjectives, null, {
-        recoverNotes: recoverNotes || priorProgress.missingNoteIndices.length > 0,
+        recoverNotes: shouldRecoverNotes,
+        targetObjectiveIndex,
       })
       if (!checked || !active()) return
       const { progress, data: checkData } = checked
@@ -2096,8 +2116,12 @@ function WebbPageInner() {
         throw new Error('You have completed the learning goals. A saved note still needs recovery; retry without repeating your answer.')
       }
       const firstRemainingIndex = progress.remainingIndices[0]
-      const status = checkData.evaluationStatus?.[firstRemainingIndex]
-      const masteryStatus = ['partial', 'incorrect', 'reproduced'].includes(status) ? status : null
+      objectiveTargetRef.current = firstRemainingIndex ?? null
+      const evaluatedTargetIndex = Number.isInteger(targetObjectiveIndex)
+        ? targetObjectiveIndex
+        : (Object.keys(checkData.evaluationStatus || {}).map(Number).find(Number.isInteger) ?? firstRemainingIndex)
+      const status = checkData.evaluationStatus?.[evaluatedTargetIndex]
+      const masteryStatus = ['partial', 'incorrect', 'reproduced', 'no_answer', 'information_request', 'acknowledgement'].includes(status) ? status : null
       const lastUser = [...nextHistory].reverse().find(message => message.role === 'user')
       const answerRequested = detectsAnswerRequest(lastUser?.content || '')
       const res = await fetch('/api/webb-chat', {
@@ -2124,10 +2148,15 @@ function WebbPageInner() {
       const finalHistory = [...nextHistory, assistantMsg]
       setChatMessages(finalHistory)
       addMsg(data.reply)
-      if (Number.isInteger(firstRemainingIndex) && (masteryStatus || answerRequested)) {
-        markObjectiveAssistance(firstRemainingIndex,
-          answerRequested ? WEBB_ASSISTANCE_TYPES.ANSWER_REVEALED : WEBB_ASSISTANCE_TYPES.CORRECTION,
-          finalHistory.length - 1)
+      const assistanceType = answerRequested
+        ? WEBB_ASSISTANCE_TYPES.ANSWER_REVEALED
+        : ['no_answer', 'information_request'].includes(masteryStatus)
+          ? WEBB_ASSISTANCE_TYPES.DIRECT_TEACHING
+          : ['partial', 'incorrect', 'reproduced'].includes(masteryStatus)
+            ? WEBB_ASSISTANCE_TYPES.CORRECTION
+            : null
+      if (Number.isInteger(evaluatedTargetIndex) && assistanceType) {
+        markObjectiveAssistance(evaluatedTargetIndex, assistanceType, finalHistory.length - 1)
       }
       retryTurnRef.current = null
     } catch (cause) {
@@ -2335,6 +2364,7 @@ function WebbPageInner() {
     closeObjectivesPanel()
     setMediaOverlay(null)
     const obj = objectives[objIdx]
+    objectiveTargetRef.current = objIdx
     markObjectiveAssistance(objIdx, WEBB_ASSISTANCE_TYPES.DIRECT_TEACHING)
     setChatLoading(true)
     try {
@@ -2945,6 +2975,7 @@ function WebbPageInner() {
     objectiveQueueRef.current.invalidate()
     skipTTS()
     try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
+    objectiveTargetRef.current = null
     setSelectedLesson(null)
     setMediaOverlay(null)
     router.push('/learn')

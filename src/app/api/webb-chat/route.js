@@ -108,7 +108,19 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
     )
   }
 
-  if (masteryStatus === 'partial') {
+  if (masteryStatus === 'no_answer') {
+    lines.push(
+      `\nThe learner explicitly said they do not know or are not sure. This is not comprehension evidence. Stay on goal #1. Teach ONE small, useful piece of that idea in plain age-appropriate language, then ask ONE easier question about the same goal. Do not praise the non-answer as correct and do not move to another goal.`,
+    )
+  } else if (masteryStatus === 'information_request') {
+    lines.push(
+      `\nThe learner asked Mrs. Webb for information or explanation instead of answering the current learning question. This is not comprehension evidence. Answer the learner's request briefly and directly using goal #1 as the teaching target, then ask ONE simple question that lets the learner explain that same idea in their own words. Do not treat the request itself as success and do not move to another goal.`,
+    )
+  } else if (masteryStatus === 'acknowledgement') {
+    lines.push(
+      `\nThe learner gave only an acknowledgement such as yes, okay, or got it. That does not demonstrate the current goal. Stay on goal #1 and ask ONE focused, age-appropriate question that requires the learner to express the idea, without claiming they already demonstrated it.`,
+    )
+  } else if (masteryStatus === 'partial') {
     lines.push(
       `\nThe mastery evaluator has already determined that the student's latest response to goal #1 is PARTIAL. Treat that classification as authoritative; do not re-grade it. Identify and acknowledge the specific part that is actually correct, but do not imply that the whole answer is correct. Briefly teach the missing or unclear part, then ask the student to try the idea again in their own words. Keep the tone warm and matter-of-fact, not congratulatory.`,
     )

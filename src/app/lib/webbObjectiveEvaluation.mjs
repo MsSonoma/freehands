@@ -1,5 +1,5 @@
 import { createLearnerNote, sourceLearnerMessage } from './webbLearnerEvidence.mjs'
-import { classifyWebbObjectiveAttempt, detectsLearnerNonAnswer } from './webbMasteryModel.mjs'
+import { classifyWebbLearnerResponseEligibility, classifyWebbObjectiveAttempt } from './webbMasteryModel.mjs'
 import { reconcileWebbObjectiveState } from './webbObjectiveState.mjs'
 
 // The application chooses ONE learner response. The model only judges its meaning.
@@ -24,17 +24,21 @@ function parseJudgments(raw, candidates, sourceMessageIndex) {
   if (!parsed || !Array.isArray(parsed.evaluations)) throw new Error('The learning evaluator returned no judgments.')
   const allowed = new Set(candidates.map(({ i }) => i))
   const seen = new Set()
-  return parsed.evaluations.map(row => {
-    if (!row || !Number.isInteger(row.objectiveIndex) || !allowed.has(row.objectiveIndex)
-      || seen.has(row.objectiveIndex) || !['correct', 'partial', 'incorrect'].includes(row.accuracy)
+  const accepted = []
+  for (const row of parsed.evaluations) {
+    if (!row || !Number.isInteger(row.objectiveIndex)) throw new Error('The learning evaluator returned invalid judgments.')
+    // Objective selection belongs to the application. Ignore any model attempt to award a different objective.
+    if (!allowed.has(row.objectiveIndex)) continue
+    if (seen.has(row.objectiveIndex) || !['correct', 'partial', 'incorrect'].includes(row.accuracy)
       || typeof row.sentenceOk !== 'boolean' || !['fixed_fact', 'meaning'].includes(row.evidenceKind)) {
       throw new Error('The learning evaluator returned invalid judgments.')
     }
     seen.add(row.objectiveIndex)
     // The trusted source is bound here, never chosen or rewritten by the model.
-    return { objectiveIndex: row.objectiveIndex, accuracy: row.accuracy,
-      sentenceOk: row.sentenceOk, evidenceKind: row.evidenceKind, sourceMessageIndex }
-  })
+    accepted.push({ objectiveIndex: row.objectiveIndex, accuracy: row.accuracy,
+      sentenceOk: row.sentenceOk, evidenceKind: row.evidenceKind, sourceMessageIndex })
+  }
+  return accepted
 }
 
 // Shared by Sonoma and Webb. Injected transport keeps the real handoff testable.
@@ -42,7 +46,7 @@ export async function evaluateWebbObjectives({
   callModel, objectives = [], completedIndices = [], understoodIndices = null,
   coveredIndices = [], legacyNoteReadyIndices = null, conversation = [], lesson = {},
   quick = false, objectiveEvidence: priorObjectiveEvidence = {}, priorPromptExposure = {},
-  recoverNotes = false,
+  recoverNotes = false, targetObjectiveIndex = null,
 } = {}) {
   const suppliedUnderstood = Array.isArray(understoodIndices) ? understoodIndices
     : (Array.isArray(legacyNoteReadyIndices) ? legacyNoteReadyIndices : completedIndices)
@@ -50,8 +54,17 @@ export async function evaluateWebbObjectives({
     coveredObj: coveredIndices, understoodObj: suppliedUnderstood, objectiveEvidence: priorObjectiveEvidence,
   }, conversation)
   const understood = new Set(state.understoodObj)
-  const candidates = () => objectives.map((obj, i) => ({ obj, i }))
-    .filter(({ i }) => !understood.has(i) || (recoverNotes && !state.learnerNotes[i]))
+  const candidates = () => {
+    const remaining = objectives.map((obj, i) => ({ obj, i }))
+      .filter(({ i }) => !understood.has(i) || (recoverNotes && !state.learnerNotes[i]))
+    if (!remaining.length) return []
+    if (recoverNotes) return remaining.slice(0, 1)
+    const requested = Number.isInteger(targetObjectiveIndex) && typeof objectives[targetObjectiveIndex] === 'string'
+      ? targetObjectiveIndex
+      : null
+    if (requested === null) return remaining.slice(0, 1)
+    return remaining.filter(({ i }) => i === requested).slice(0, 1)
+  }
   const evaluationStatus = {}
   const sentenceQuality = {}
   const finish = () => {
@@ -75,10 +88,11 @@ export async function evaluateWebbObjectives({
     const remaining = candidates()
     if (!remaining.length) break
     const source = sourceLearnerMessage(conversation, sourceMessageIndex)
-    if (detectsLearnerNonAnswer(source.text)) {
+    const eligibility = classifyWebbLearnerResponseEligibility(source.text)
+    if (!eligibility.eligible) {
       const current = remaining[0]
       if (current) {
-        evaluationStatus[current.i] = 'no_answer'
+        evaluationStatus[current.i] = eligibility.status
         sentenceQuality[current.i] = false
       }
       continue

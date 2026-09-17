@@ -106,13 +106,16 @@ test('source validation rejects wrong roles, invented words, negation changes an
   assert.equal(evaluationSource(first('1.5'), { sourceMessageIndex: 1, quote: '15' }), null)
 })
 
-test('invalid objective judgment is an evaluation error, never credited mastery with a missing note', async () => {
+test('out-of-target objective judgments are ignored and can never receive credit', async () => {
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'check', objectives: OBJECTIVES, conversation: first('Roald Dahl') }),
+    body: JSON.stringify({ action: 'check', objectives: OBJECTIVES, targetObjectiveIndex: 0, conversation: first('Roald Dahl') }),
   }), { apiKey: 'offline-test', callModel: async () => judgment(999) })
-  assert.equal(response.status, 500)
-  assert.ok((await response.json()).error)
+  assert.equal(response.status, 200)
+  const result = await response.json()
+  assert.deepEqual(result.newlyCompleted, [])
+  assert.deepEqual(result.learnerNotes, {})
+  assert.deepEqual(result.objectiveEvidence, {})
 })
 
 test('v4 already-demonstrated answer recovers its note on resume without a model call or regrading', () => {
@@ -405,6 +408,90 @@ test('I do not know cannot complete an objective even if the evaluator would ret
   assert.equal(result.evaluationStatus[0], 'no_answer')
   assert.equal(result.sentenceQuality[0], false)
 })
+test('information requests and bare acknowledgements are rejected before semantic evaluation', async () => {
+  for (const [text, status] of [
+    ['what is a concluding sentence', 'information_request'],
+    ['Can you explain that?', 'information_request'],
+    ['okay', 'acknowledgement'],
+  ]) {
+    let modelCalls = 0
+    const result = await evaluateWebbObjectives({
+      objectives: OBJECTIVES,
+      targetObjectiveIndex: 0,
+      conversation: first(text),
+      callModel: async () => { modelCalls += 1; return judgment(0, 'correct') },
+    })
+    assert.equal(modelCalls, 0)
+    assert.deepEqual(result.newlyCompleted, [])
+    assert.deepEqual(result.learnerNotes, {})
+    assert.equal(result.evaluationStatus[0], status)
+  }
+})
+
+test('a live learner turn can only affect the backend-selected objective', async () => {
+  const objectives = [
+    'The learner can explain that a paragraph should focus on one main idea.',
+    "The learner can explain that supporting details stay connected to the paragraph's main idea.",
+    'The learner can explain that examples, facts, and reasons can be supporting details.',
+  ]
+  const conversation = [teacher('What should a paragraph focus on?'), learner('i love cats cause they are fluffy and cute')]
+  const result = await evaluateWebbObjectives({
+    objectives,
+    targetObjectiveIndex: 0,
+    conversation,
+    priorPromptExposure: { 0: false, 1: false, 2: false },
+    callModel: async () => JSON.stringify({ evaluations: [
+      { objectiveIndex: 0, accuracy: 'incorrect', sentenceOk: true, evidenceKind: 'meaning' },
+      { objectiveIndex: 1, accuracy: 'correct', sentenceOk: true, evidenceKind: 'meaning' },
+      { objectiveIndex: 2, accuracy: 'correct', sentenceOk: true, evidenceKind: 'meaning' },
+    ] }),
+  })
+  assert.deepEqual(result.newlyCompleted, [])
+  assert.deepEqual(Object.keys(result.objectiveEvidence), ['0'])
+  assert.equal(result.evaluationStatus[0], 'incorrect')
+  assert.equal(result.evaluationStatus[1], undefined)
+  assert.equal(result.evaluationStatus[2], undefined)
+})
+
+test('one correct response cannot complete more than its active objective', async () => {
+  const objectives = [
+    'The learner can explain that good writers check whether each sentence fits the topic.',
+    'The learner can explain that a paragraph with a clear topic sentence is easier to understand.',
+  ]
+  const conversation = [teacher('How can a writer keep a paragraph focused?'), learner('a sentence needs supporting details, a topic sentence, and conclusion.')]
+  const result = await evaluateWebbObjectives({
+    objectives,
+    targetObjectiveIndex: 0,
+    conversation,
+    priorPromptExposure: { 0: false, 1: false },
+    callModel: async () => JSON.stringify({ evaluations: [
+      { objectiveIndex: 0, accuracy: 'correct', sentenceOk: true, evidenceKind: 'meaning' },
+      { objectiveIndex: 1, accuracy: 'correct', sentenceOk: true, evidenceKind: 'meaning' },
+    ] }),
+  })
+  assert.deepEqual(result.newlyCompleted, [0])
+  assert.equal(result.learnerNotes[0].text, conversation[1].content)
+  assert.equal(result.learnerNotes[1], undefined)
+})
+
+test('a valid answer still completes exactly the active objective', async () => {
+  const objectives = [
+    'The learner can explain that a paragraph should focus on one main idea.',
+    'The learner can explain what supporting details do.',
+  ]
+  const conversation = [teacher('What should a paragraph focus on?'), learner('a paragraph should have one main idea')]
+  const result = await evaluateWebbObjectives({
+    objectives,
+    targetObjectiveIndex: 0,
+    conversation,
+    priorPromptExposure: { 0: false, 1: false },
+    callModel: async () => JSON.stringify({ evaluations: [
+      { objectiveIndex: 0, accuracy: 'correct', sentenceOk: true, evidenceKind: 'meaning' },
+    ] }),
+  })
+  assert.deepEqual(result.newlyCompleted, [0])
+  assert.equal(result.learnerNotes[0].text, conversation[1].content)
+})
 test('correct fixed facts taught by Webb count as assisted comprehension without requiring invented synonyms', async () => {
   const conversation = [teacher('Roald Dahl wrote The Magic Finger. Who wrote it?'), learner('Roald Dahl wrote The Magic Finger.')]
   const result = await routeResult(conversation, judgment(0, 'correct', true, 'fixed_fact'))
@@ -437,7 +524,7 @@ test('short supplied factual names remain assisted, never independent mastery', 
 
 test('current-turn binding cannot silently substitute an earlier answer', async () => {
   const conversation = [...first('The Magic Finger was written by Roald Dahl.'), teacher('Who is the narrator?', 'a2'), learner('a girl', 'u2')]
-  const result = await routeResult(conversation, judgment(1, 'correct', false, 'fixed_fact'))
+  const result = await routeResult(conversation, judgment(1, 'correct', false, 'fixed_fact'), { targetObjectiveIndex: 1 })
   assert.equal(result.learnerNotes[1].sourceMessageId, 'u2')
   assert.equal(result.learnerNotes[1].text, 'a girl')
   assert.deepEqual(result.newlyCompleted, [1])
