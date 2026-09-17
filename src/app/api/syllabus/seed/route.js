@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server.js'
+import { resolveCalendarContext } from '../../../lib/calendarDate.mjs'
 import { buildLegacySeed } from '../../../lib/syllabus/legacySeed.server.mjs'
 import { getSyllabusRequestContext } from '../../../lib/syllabus/request.server.mjs'
 import { createSyllabusRepository } from '../../../lib/syllabus/supabaseRepository.server.mjs'
@@ -12,7 +13,22 @@ export async function GET(request, deps = {}) {
     if (context.error) return NextResponse.json({ error: context.error }, { status: context.status })
     const learnerId = validateLearnerId(new URL(request.url).searchParams.get('learnerId'))
     const repository = deps.repository || createSyllabusRepository(context.admin)
-    const seed = await buildLegacySeed({ repository, facilitatorId: context.user.id, learnerId })
+    const now = deps.now || new Date()
+    const profileTimeZone = typeof repository.findFacilitatorTimeZone === 'function'
+      ? await repository.findFacilitatorTimeZone(context.user.id)
+      : null
+    const today = deps.today || resolveCalendarContext({
+      now,
+      profileTimeZone,
+      fallbackTimeZone: context.user?.user_metadata?.timezone,
+    }).today
+    const seed = await buildLegacySeed({
+      repository,
+      facilitatorId: context.user.id,
+      learnerId,
+      now,
+      today,
+    })
     if (!seed) return NextResponse.json({ error: 'Learner not found or unauthorized' }, { status: 403 })
     return NextResponse.json({ seed })
   } catch (error) {
