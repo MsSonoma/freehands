@@ -516,10 +516,13 @@ export async function bindMaterializedForecast({
   if (matches[0].lesson_key === lessonKey) {
     return { syllabus, active_revision: activeRevision, forecast_items: forecastItems, reused: true }
   }
+  const original = matches[0]
+  const canonicalTitle = String(lessonTitle || '').trim()
+  const canonicalSubject = String(lessonSubject || '').trim()
+  const placementAuthorityUnchanged = !canonicalSubject
+    || canonicalSubject.toLocaleLowerCase() === String(original.subject || '').trim().toLocaleLowerCase()
   const nextItems = forecastItems.map((item) => {
     if (String(item.lineage_id) !== String(lineageId)) return item
-    const canonicalTitle = String(lessonTitle || '').trim()
-    const canonicalSubject = String(lessonSubject || '').trim()
     return {
       ...item,
       lesson_key: lessonKey,
@@ -561,6 +564,10 @@ export async function bindMaterializedForecast({
     now,
     today,
     expectedActiveRevisionId,
+    // Binding an artifact to an already-active occurrence does not create new
+    // placement authority. Preserve previously authorized manual exceptions.
+    // A canonical subject change still re-runs capacity validation.
+    skipCapacityCheck: placementAuthorityUnchanged,
   })
 }
 

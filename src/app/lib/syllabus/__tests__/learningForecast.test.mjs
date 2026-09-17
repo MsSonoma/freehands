@@ -785,6 +785,69 @@ test('generation failure leaves multi-sibling carry-forward current and independ
   assert.equal(forecastModelCalls, 1)
 })
 
+test('PIN-authorized out-of-pattern occurrence binds an existing generated artifact without reauthorizing placement', async () => {
+  const repository = forecastRepository({ forecast: [item({
+    origin: 'facilitator',
+    planned_date: '2026-09-02',
+    subject: 'science',
+    sort_order: 1,
+    title: 'Circulatory System',
+    metadata: { facilitator_planning: { version: 1, action: 'created_day', active_revision_id: ACTIVE } },
+  })] })
+  const receipt = {
+    id: 'capacity-retry-receipt',
+    syllabus_id: SYLLABUS,
+    lineage_id: LINEAGE_A,
+    lesson_key: 'generated/circulatory-system.json',
+    status: 'binding_failed',
+    generation_input_hash: '',
+  }
+  repository.state.receipts.push(receipt)
+  repository.claimForecastMaterialization = async ({ generationInputHash }) => {
+    receipt.generation_input_hash = generationInputHash
+    return { claimed: false, receipt: structuredClone(receipt) }
+  }
+  let generatorCalls = 0
+  const result = await materializeForecastOccurrence({
+    repository,
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    lineageId: LINEAGE_A,
+    expectedActiveRevisionId: ACTIVE,
+    now: NOW,
+    setInferenceSuppressed: preserveInferenceSuppression,
+    generateLesson: async () => { generatorCalls++; return { lessonKey: 'generated/duplicate.json' } },
+  })
+  const bound = result.syllabus.forecast_items.find((row) => row.lineage_id === LINEAGE_A)
+  assert.equal(generatorCalls, 0)
+  assert.equal(result.reused, true)
+  assert.equal(bound.lesson_key, 'generated/circulatory-system.json')
+  assert.equal(bound.planned_date, '2026-09-02')
+  assert.equal(bound.subject, 'science')
+  assert.equal(bound.sort_order, 1)
+  assert.equal(repository.state.receipts[0].status, 'bound')
+})
+
+test('existing-lesson binding that changes subject still enforces weekly-pattern capacity', async () => {
+  const repository = forecastRepository({ forecast: [item({
+    origin: 'facilitator',
+    planned_date: '2026-09-01',
+    subject: 'science',
+    sort_order: 0,
+  })] })
+  await assert.rejects(materializeForecastOccurrence({
+    repository,
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    lineageId: LINEAGE_A,
+    expectedActiveRevisionId: ACTIVE,
+    existingLesson: { lessonKey: 'math/existing.json', title: 'Existing Math Lesson', subject: 'math' },
+    now: NOW,
+    setInferenceSuppressed: preserveInferenceSuppression,
+    generateLesson: async () => { throw new Error('must not generate') },
+  }), { code: 'SYLLABUS_CAPACITY_PIN_REQUIRED' })
+  assert.equal(repository.state.syllabus.active_revision_id, ACTIVE)
+})
 test('binding failure keeps B-based siblings current and retry reuses artifact before rebasing onto C', async () => {
   const repository = forecastRepository({ forecast: [] })
   const active = repository.state.revisions.find((row) => row.id === ACTIVE)
