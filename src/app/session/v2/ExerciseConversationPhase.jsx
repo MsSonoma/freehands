@@ -233,6 +233,7 @@ export class ExerciseConversationPhase {
    */
   async #askCurrentQuestion() {
     if (this.#destroyed) return
+    const askGeneration = this.#submitGen
     const question = this.#questions[this.#questionIndex]
     this.#emit('questionStart', {
       questionIndex: this.#questionIndex,
@@ -245,7 +246,7 @@ export class ExerciseConversationPhase {
       this.#emit('exerciseConvMessage', { role: 'assistant', text })
       await this.#speakAndWait(text)
     }
-    if (this.#destroyed) return
+    if (this.#destroyed || askGeneration !== this.#submitGen) return
     // Audio complete — now it's the learner's turn
     this.#state = 'chatting'
     this.#emit('questionReady', {
@@ -254,6 +255,7 @@ export class ExerciseConversationPhase {
       totalQuestions: this.#questions.length,
     })
     this.#emitStateChange()
+    this.#emit('learnerTurnReady', { phase: 'exercise', questionIndex: this.#questionIndex, itemId: question?.id || null, question, turnKind: 'question' })
   }
 
   #complete() {
@@ -356,6 +358,8 @@ export class ExerciseConversationPhase {
     const trimmed = String(userText || '').trim()
     if (!trimmed) return
 
+    const question = this.#questions[this.#questionIndex]
+    this.#emit('learnerTurnEnded', { phase: 'exercise', questionIndex: this.#questionIndex, itemId: question?.id || null, turnKind: 'question', reason: 'response' })
     const gen = ++this.#submitGen  // invalidates any previous in-flight chain
 
     // Disable input while Ms. Sonoma processes + responds
@@ -460,9 +464,10 @@ export class ExerciseConversationPhase {
             await this.#askCurrentQuestion()
           }
         } else {
-          // Still on same question — let the learner try again
+          // Still on same question - let the learner try again
           this.#state = 'chatting'
           this.#emitStateChange()
+          this.#emit('learnerTurnReady', { phase: 'exercise', questionIndex: this.#questionIndex, itemId: q?.id || null, question: q, turnKind: 'retry' })
           this.#emit('retryRequested', {
             questionIndex: this.#questionIndex,
             question: q,
@@ -476,6 +481,8 @@ export class ExerciseConversationPhase {
       if (gen === this.#submitGen && !this.#destroyed) {
         this.#state = 'chatting'
         this.#emitStateChange()
+        const question = this.#questions[this.#questionIndex]
+        this.#emit('learnerTurnReady', { phase: 'exercise', questionIndex: this.#questionIndex, itemId: question?.id || null, question, turnKind: 'recovery' })
       }
     }
   }
@@ -483,6 +490,9 @@ export class ExerciseConversationPhase {
   /** Skip current question (mark wrong, advance). */
   skip() {
     if (this.#state === 'complete') return
+    const question = this.#questions[this.#questionIndex]
+    this.#emit('learnerTurnEnded', { phase: 'exercise', questionIndex: this.#questionIndex, itemId: question?.id || null, turnKind: 'question', reason: 'skip' })
+    this.#submitGen++
     try { this.#audioEngine.stop() } catch {}
     this.#removeAudioEndListener()
     this.#complete()

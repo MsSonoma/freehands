@@ -213,6 +213,10 @@ export class DiscussionPhase {
     const text = userText?.trim();
     if (!text) return;
 
+    this.#removeAudioEndListener();
+    try { this.#audioEngine.stop(); } catch {}
+    this.#eventBus.emit('learnerTurnEnded', { phase: 'discussion', turnKind: 'discussion', reason: 'response' });
+
     // Bump generation — any in-flight async chain from a previous call will bail out
     const gen = ++this.#submitGen;
 
@@ -235,7 +239,7 @@ export class DiscussionPhase {
             action: 'check',
             objectives:       this.#objectives,
             completedIndices: this.#completedIndices,
-            conversation:     this.#chatHistory.filter(m => m.kind !== 'product_help').map(m => ({ role: m.role, content: m.content })),
+            conversation:     this.#instructionalChatHistory(),
             lesson:           this.#lessonData,
             quick:            true,
           }),
@@ -283,7 +287,7 @@ export class DiscussionPhase {
         body: JSON.stringify({
           lesson:              this.#lessonData,
           learnerName:         this.#learnerName,
-          messages:            this.#chatHistory.map(m => ({ role: m.role, content: m.content })),
+          messages:            this.#instructionalChatHistory(),
           remainingObjectives,
           allObjectivesMet:    allMet,
           objectiveStatus,
@@ -330,6 +334,7 @@ export class DiscussionPhase {
       } else {
         this.#state = 'chatting';
         this.#emitStateChange();
+        this.#emitLearnerTurnReady('discussion');
       }
     });
 
@@ -346,6 +351,7 @@ export class DiscussionPhase {
       } else {
         this.#state = 'chatting';
         this.#emitStateChange();
+        this.#emitLearnerTurnReady('discussion');
       }
     }
   }
@@ -372,6 +378,7 @@ export class DiscussionPhase {
     if (this.#state === 'complete') return;
     try { this.#audioEngine.stop(); } catch {}
     this.#removeAudioEndListener();
+    this.#eventBus.emit('learnerTurnEnded', { phase: 'discussion', turnKind: 'discussion', reason: 'skip' });
     this.#state = 'complete';
     this.#emitStateChange();
     this.#eventBus.emit('discussionComplete', {});
@@ -384,6 +391,22 @@ export class DiscussionPhase {
   }
 
   // ── Private helpers ────────────────────────────────────────────────────────
+
+  #instructionalChatHistory() {
+    return this.#chatHistory
+      .filter(m => m.kind !== 'product_help' && m.kind !== 'attention_reminder')
+      .map(m => ({ role: m.role, content: m.content }));
+  }
+
+  #emitLearnerTurnReady(turnKind = 'discussion') {
+    if (this.#destroyed || this.#state !== 'chatting') return;
+    this.#eventBus.emit('learnerTurnReady', {
+      phase: 'discussion',
+      turnKind,
+      questionIndex: null,
+      itemId: null,
+    });
+  }
 
   #emitStateChange() {
     this.#eventBus.emit('discussionStateChange', {
@@ -462,6 +485,7 @@ export class DiscussionPhase {
       // Emit greetingPlaying so SessionPageV2 starts/validates the work timer
       this.#eventBus.emit('greetingPlaying', { greetingText: '' });
       this.#eventBus.emit('greetingComplete', {});
+      this.#emitLearnerTurnReady('discussion-resume');
       return;
     }
 
@@ -485,13 +509,18 @@ export class DiscussionPhase {
     const audio = this.#sentenceAudios.get(key) || null;
 
     if (key === 'trans:0') {
-      // Open the chat input immediately — don't wait for audio to finish.
-      // The TTS plays in the background; if the user submits before it ends,
-      // the reply audio will naturally take over.
+      // Keep the input available immediately, but response pacing begins only
+      // after the transition speech actually yields the floor.
       this.#state = 'chatting';
       this.#emitStateChange();
       this.#eventBus.emit('greetingComplete', {});
-      this.#audioEngine.playAudio(audio || '', [text]).catch(() => {});
+      this.#setupAudioEndListener(() => {
+        if (!this.#destroyed && this.#state === 'chatting') this.#emitLearnerTurnReady('discussion');
+      });
+      this.#audioEngine.playAudio(audio || '', [text]).catch(() => {
+        this.#removeAudioEndListener();
+        if (!this.#destroyed && this.#state === 'chatting') this.#emitLearnerTurnReady('discussion');
+      });
       return;
     }
 

@@ -49,6 +49,7 @@ export class TestPhase {
   
   #listeners = new Map();
   #audioEndListener = null;
+  #learnerTurnAudioEndListener = null;
   #questionPlaybackToken = 0;
   #interactionInFlight = false;
   #resumeState = null;
@@ -296,9 +297,12 @@ export class TestPhase {
       return;
     }
     this.#interactionInFlight = true;
+    const question = this.#questions[this.#currentQuestionIndex];
+    this.#cancelLearnerTurnReady();
+    this.#questionPlaybackToken++;
+    this.#emit('learnerTurnEnded', { phase: 'test', questionIndex: this.#currentQuestionIndex, itemId: question?.id || null, turnKind: 'question', reason: 'response' });
     
     try {
-      const question = this.#questions[this.#currentQuestionIndex];
       const acceptable = buildAcceptableList(question);
       const isCorrect = await judgeAnswer(answer, acceptable, question);
 
@@ -411,6 +415,9 @@ export class TestPhase {
     this.#interactionInFlight = true;
     
     const question = this.#questions[this.#currentQuestionIndex];
+    this.#cancelLearnerTurnReady();
+    this.#questionPlaybackToken++;
+    this.#emit('learnerTurnEnded', { phase: 'test', questionIndex: this.#currentQuestionIndex, itemId: question?.id || null, turnKind: 'question', reason: 'skip' });
 
     // Stop any current question TTS so it cannot continue after skipping.
     try {
@@ -461,10 +468,14 @@ export class TestPhase {
   // Resets to awaiting-answer so the learner can re-submit without reloading.
   recover() {
     if (this.#state === 'complete' || this.#state === 'idle' || this.#state === 'reviewing') return;
+    this.#cancelLearnerTurnReady();
+    this.#questionPlaybackToken++;
     try { this.#audioEngine.stop(); } catch {}
     this.#interactionInFlight = false;
     this.#state = 'awaiting-answer';
     this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+    const question = this.#questions[this.#currentQuestionIndex];
+    this.#emit('learnerTurnReady', { phase: 'test', questionIndex: this.#currentQuestionIndex, itemId: question?.id || null, question, turnKind: 'recovery' });
   }
   
   // Public API: Start review
@@ -546,6 +557,7 @@ export class TestPhase {
   
   // Private: Question playback
   async #playCurrentQuestion() {
+    this.#cancelLearnerTurnReady();
     const playbackToken = ++this.#questionPlaybackToken;
 
     if (this.#currentQuestionIndex >= this.#questions.length) {
@@ -605,12 +617,38 @@ export class TestPhase {
       ttsCache.prefetch(nextSpoken);
     }
     
-    // TTS plays in background - don't await so user can answer while listening
+    // The input stays available immediately, but pacing begins only after the test question yields.
+    this.#armLearnerTurnReady({ playbackToken, question, questionIndex, turnKind: 'question' });
     this.#audioEngine.playAudio(audioBase64 || '', [captionQuestion]).catch(err => {
       console.error('[TestPhase] Question TTS playback error:', err);
+      this.#cancelLearnerTurnReady();
+      this.#emitLearnerTurnReadyIfCurrent({ playbackToken, question, questionIndex, turnKind: 'question' });
     });
   }
   
+  #cancelLearnerTurnReady() {
+    if (this.#learnerTurnAudioEndListener) {
+      try { this.#audioEngine.off('end', this.#learnerTurnAudioEndListener); } catch {}
+      this.#learnerTurnAudioEndListener = null;
+    }
+  }
+
+  #emitLearnerTurnReadyIfCurrent({ playbackToken, question, questionIndex, turnKind = 'question' }) {
+    if (playbackToken !== this.#questionPlaybackToken) return;
+    if (this.#state !== 'awaiting-answer' || this.#currentQuestionIndex !== questionIndex || this.#interactionInFlight) return;
+    this.#emit('learnerTurnReady', { phase: 'test', questionIndex, itemId: question?.id || null, question, turnKind });
+  }
+
+  #armLearnerTurnReady({ playbackToken, question, questionIndex, turnKind = 'question' }) {
+    this.#cancelLearnerTurnReady();
+    this.#learnerTurnAudioEndListener = (data = {}) => {
+      if (!(data.completed || data.skipped || data.timeout)) return;
+      this.#cancelLearnerTurnReady();
+      this.#emitLearnerTurnReadyIfCurrent({ playbackToken, question, questionIndex, turnKind });
+    };
+    this.#audioEngine.on('end', this.#learnerTurnAudioEndListener);
+  }
+
   // Private: Question progression
   #advanceQuestion() {
     this.#currentQuestionIndex++;
@@ -675,6 +713,8 @@ export class TestPhase {
   
   // Private: Completion
   #complete() {
+    this.#cancelLearnerTurnReady();
+    this.#questionPlaybackToken++;
     this.#state = 'complete';
     
     // Remove audio listener
@@ -696,6 +736,8 @@ export class TestPhase {
   
   // Public: Cleanup
   destroy() {
+    this.#cancelLearnerTurnReady();
+    this.#questionPlaybackToken++;
     if (this.#audioEndListener) {
       this.#audioEngine.off('end', this.#audioEndListener);
       this.#audioEndListener = null;

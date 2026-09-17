@@ -110,6 +110,19 @@ import SessionTakeoverDialog from '../components/SessionTakeoverDialog';
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements';
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay';
 import { shouldAutoShowSessionTutorial } from '@/app/learn/demoLearner.mjs';
+import {
+  createSonomaResponseTurn,
+  isSameSonomaTurnScope,
+  isSonomaActivitySnoozed,
+  markSonomaLearnerActivity,
+  newSonomaTurnId,
+  pauseSonomaResponseTurn,
+  resumeSonomaResponseTurn,
+  sonomaReminderForStage,
+  sonomaReminderStageForElapsed,
+  sonomaResponseElapsedSeconds,
+} from './sonomaResponsePacing.mjs';
+import { createSonomaAttentionNotification, recordSonomaPacingEvent } from '@/app/lib/sonomaResponsePacingClient.js';
 
 const SESSION_TUTORIAL_STEPS = [
   {
@@ -860,6 +873,14 @@ function SessionPageV2Inner() {
   const [showDiscussionObjectives, setShowDiscussionObjectives] = useState(false);
   const [newlyCompletedDiscussionObj, setNewlyCompletedDiscussionObj] = useState(null); // {text, completedCount, totalCount}
   const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState({ type: 'overview', index: 0, total: 0, text: '', waitingForNext: false });
+
+  // Learner-turn response pacing is intentionally separate from work/play timers and mastery evidence.
+  const [sonomaResponseTurn, setSonomaResponseTurn] = useState(null);
+  const sonomaResponseTurnRef = useRef(null);
+  const sonomaPacingBlockedRef = useRef(false);
+  const sonomaReminderAudioActiveRef = useRef(null);
+  const sonomaNotificationInFlightRef = useRef(false);
+  const sonomaNotificationLastAttemptRef = useRef(0);
   
   // Opening actions state
   const [openingActionActive, setOpeningActionActive] = useState(false);
@@ -2219,6 +2240,14 @@ function SessionPageV2Inner() {
 
           setResumePhase(resumePhaseName);
           resumePhaseRef.current = resumePhaseName;
+          const restoredResponseTurn = resumePhaseName ? snapshot?.phaseData?.[resumePhaseName]?.responsePacing : null;
+          if (restoredResponseTurn?.id && restoredResponseTurn?.startedAt) {
+            sonomaResponseTurnRef.current = restoredResponseTurn;
+            setSonomaResponseTurn(restoredResponseTurn);
+          } else {
+            sonomaResponseTurnRef.current = null;
+            setSonomaResponseTurn(null);
+          }
 
           const isBeginningPhase = !resumePhaseName || resumePhaseName === 'idle';
 
@@ -2276,7 +2305,9 @@ function SessionPageV2Inner() {
           }
         } else {
           resetTranscriptState();
-          addEvent('💾 No snapshot found - Starting fresh');
+          sonomaResponseTurnRef.current = null;
+          setSonomaResponseTurn(null);
+          addEvent('No snapshot found - Starting fresh');
         }
       }).catch(err => {
         if (cancelled) return;
@@ -3562,6 +3593,269 @@ function SessionPageV2Inner() {
     return ok2;
   }, [speakSystemLine]);
 
+  const persistSonomaResponseTurn = useCallback((turn, phaseOverride = null) => {
+    const service = snapshotServiceRef.current;
+    const phase = phaseOverride || turn?.phase || currentPhaseRef.current;
+    if (!service || !phase || phase === 'idle' || phase === 'complete') return;
+    void service.saveProgress('sonoma-response-pacing', {
+      phaseOverride: phase,
+      responsePacing: turn || null,
+    }).catch(() => {});
+  }, []);
+
+  const commitSonomaResponseTurn = useCallback((turn, { persist = true, phaseOverride = null } = {}) => {
+    sonomaResponseTurnRef.current = turn || null;
+    setSonomaResponseTurn(turn || null);
+    if (persist) persistSonomaResponseTurn(turn || null, phaseOverride);
+  }, [persistSonomaResponseTurn]);
+
+  const getSonomaPacingContext = useCallback(() => ({
+    learnerId: sessionLearnerIdRef.current || learnerProfileRef.current?.id || null,
+    executionSessionId: trackedExecutionSessionIdRef.current || null,
+    browserSessionId: browserSessionId || null,
+    lessonKey: goldenKeyLessonKeyRef.current || goldenKeyLessonKey || lessonKey || null,
+    lessonTitle: lessonData?.title || lessonId || 'this Ms. Sonoma lesson',
+    learnerName: learnerProfileRef.current?.name || (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'Learner',
+  }), [browserSessionId, goldenKeyLessonKey, lessonData?.title, lessonId, lessonKey]);
+
+  const sendSonomaPacingEvent = useCallback((eventType, turn, elapsedSeconds, extra = {}) => {
+    if (!turn?.id) return;
+    const context = getSonomaPacingContext();
+    if (!context.learnerId || !context.executionSessionId || !context.browserSessionId) return;
+    const suffix = extra.eventSuffix || eventType;
+    void recordSonomaPacingEvent({
+      ...context,
+      turnId: turn.id,
+      phase: turn.phase,
+      turnKind: turn.turnKind,
+      questionIndex: turn.questionIndex,
+      eventType,
+      eventKey: `sonoma:${context.executionSessionId}:${turn.id}:${suffix}`,
+      elapsedSeconds,
+      reminderStage: extra.reminderStage ?? turn.reminderStage ?? 0,
+      metadata: extra.metadata || {},
+    });
+  }, [getSonomaPacingContext]);
+
+  const startSonomaResponseTurn = useCallback((data = {}) => {
+    const phase = normalizePhaseAlias(data.phase || currentPhaseRef.current);
+    if (!['discussion', 'comprehension', 'exercise', 'worksheet', 'test'].includes(phase)) return null;
+    if (executionFencedRef.current || executionEndedReason) return null;
+
+    const candidate = { ...data, phase };
+    const existing = sonomaResponseTurnRef.current;
+    if (existing && isSameSonomaTurnScope(existing, candidate)) {
+      const resumed = existing.pauseStartedAt ? resumeSonomaResponseTurn(existing, Date.now()) : existing;
+      if (resumed !== existing) commitSonomaResponseTurn(resumed);
+      return resumed;
+    }
+    if (existing) persistSonomaResponseTurn(null, existing.phase);
+
+    const nowMs = Date.now();
+    const turn = createSonomaResponseTurn({
+      phase,
+      questionIndex: data.questionIndex,
+      itemId: data.itemId || data.question?.id || null,
+      turnKind: data.turnKind || (phase === 'discussion' ? 'discussion' : 'question'),
+      turnId: newSonomaTurnId(nowMs),
+      nowMs,
+    });
+    commitSonomaResponseTurn(turn);
+    sendSonomaPacingEvent('response_turn_started', turn, 0, {
+      eventSuffix: 'started',
+      metadata: { itemId: turn.itemId || null },
+    });
+    return turn;
+  }, [commitSonomaResponseTurn, executionEndedReason, persistSonomaResponseTurn, sendSonomaPacingEvent]);
+
+  const finishSonomaResponseTurn = useCallback((data = {}) => {
+    const turn = sonomaResponseTurnRef.current;
+    if (!turn) return null;
+    const phase = normalizePhaseAlias(data.phase || turn.phase);
+    if (phase && phase !== turn.phase) return null;
+    const elapsedSeconds = sonomaResponseElapsedSeconds(turn, Date.now());
+    const reminderAudio = sonomaReminderAudioActiveRef.current;
+    if (reminderAudio?.turnId === turn.id) {
+      sonomaReminderAudioActiveRef.current = null;
+      try { audioEngineRef.current?.stop?.(); } catch {}
+    }
+    if ((data.reason || 'response') === 'response') {
+      sendSonomaPacingEvent('response_received', turn, elapsedSeconds, {
+        eventSuffix: 'response',
+        metadata: { reason: 'response', reminderStageReached: turn.reminderStage || 0 },
+      });
+    }
+    commitSonomaResponseTurn(null, { phaseOverride: turn.phase });
+    return { turn, elapsedSeconds };
+  }, [commitSonomaResponseTurn, sendSonomaPacingEvent]);
+
+  const clearSonomaResponseTurn = useCallback((phase = null) => {
+    const turn = sonomaResponseTurnRef.current;
+    if (!turn) return;
+    if (phase && normalizePhaseAlias(phase) !== turn.phase) return;
+    const reminderAudio = sonomaReminderAudioActiveRef.current;
+    if (reminderAudio?.turnId === turn.id) {
+      sonomaReminderAudioActiveRef.current = null;
+      try { audioEngineRef.current?.stop?.(); } catch {}
+    }
+    commitSonomaResponseTurn(null, { phaseOverride: turn.phase });
+  }, [commitSonomaResponseTurn]);
+
+  const noteSonomaLearnerActivity = useCallback(() => {
+    const turn = sonomaResponseTurnRef.current;
+    if (!turn) return;
+    sonomaResponseTurnRef.current = markSonomaLearnerActivity(turn, Date.now());
+  }, []);
+
+  const speakSonomaAttentionLine = useCallback((text, turnId, stage) => {
+    const spoken = String(text || '').trim();
+    if (!spoken || !turnId || sonomaPacingBlockedRef.current) return;
+    void (async () => {
+      try {
+        const audio = await fetchTTS(spoken);
+        const live = sonomaResponseTurnRef.current;
+        if (!live || live.id !== turnId || live.reminderStage < stage || sonomaPacingBlockedRef.current) return;
+        sonomaReminderAudioActiveRef.current = { turnId, stage };
+        audioEngineRef.current?.playAudio(audio || '', [spoken]).catch(() => {
+          if (sonomaReminderAudioActiveRef.current?.turnId === turnId) sonomaReminderAudioActiveRef.current = null;
+        });
+      } catch {}
+    })();
+  }, []);
+
+  const deliverSonomaReminder = useCallback((stage) => {
+    const current = sonomaResponseTurnRef.current;
+    if (!current || stage < 1 || stage > 4 || stage <= Number(current.reminderStage || 0)) return;
+    if (sonomaPacingBlockedRef.current || isSonomaActivitySnoozed(current, Date.now())) return;
+    const text = sonomaReminderForStage(stage, current.phase);
+    if (!text) return;
+    const nowMs = Date.now();
+    const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
+    const next = {
+      ...current,
+      reminderStage: stage,
+      lastReminderAt: new Date(nowMs).toISOString(),
+    };
+    commitSonomaResponseTurn(next);
+    sendSonomaPacingEvent('response_reminder', next, elapsedSeconds, {
+      eventSuffix: `reminder:${stage}`,
+      reminderStage: stage,
+      metadata: { reminderText: text },
+    });
+    appendTranscriptLine({ text, role: 'assistant', phase: current.phase, kind: 'attention_reminder' }, { immediate: true });
+    speakSonomaAttentionLine(text, next.id, stage);
+  }, [appendTranscriptLine, commitSonomaResponseTurn, sendSonomaPacingEvent, speakSonomaAttentionLine]);
+
+  const deliverSonomaFacilitatorEscalation = useCallback(() => {
+    const current = sonomaResponseTurnRef.current;
+    if (!current || current.notificationDelivered || sonomaNotificationInFlightRef.current) return;
+    const nowMs = Date.now();
+    if (nowMs - sonomaNotificationLastAttemptRef.current < 15000) return;
+    const reminderAt = Date.parse(String(current.lastReminderAt || ''));
+    if (Number(current.reminderStage || 0) < 4 || !Number.isFinite(reminderAt) || nowMs - reminderAt < 60000) return;
+
+    const context = getSonomaPacingContext();
+    if (!context.learnerId || !context.executionSessionId || !context.browserSessionId || executionFencedRef.current) return;
+    const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
+    const staged = Number(current.reminderStage || 0) >= 5
+      ? current
+      : { ...current, reminderStage: 5, escalated: true };
+    if (staged !== current) commitSonomaResponseTurn(staged);
+
+    sonomaNotificationInFlightRef.current = true;
+    sonomaNotificationLastAttemptRef.current = nowMs;
+    void createSonomaAttentionNotification({
+      ...context,
+      turnId: staged.id,
+      phase: staged.phase,
+      turnKind: staged.turnKind,
+      questionIndex: staged.questionIndex,
+      elapsedSeconds,
+    }).then((result) => {
+      const live = sonomaResponseTurnRef.current;
+      if (!result?.ok || !live || live.id !== staged.id) return;
+      const deliveredAt = new Date().toISOString();
+      const delivered = {
+        ...live,
+        reminderStage: 5,
+        escalated: true,
+        notificationDelivered: true,
+        notificationDeliveredAt: deliveredAt,
+      };
+      commitSonomaResponseTurn(delivered);
+      sendSonomaPacingEvent('facilitator_escalated', delivered, sonomaResponseElapsedSeconds(delivered, Date.now()), {
+        eventSuffix: 'facilitator-escalated',
+        reminderStage: 5,
+        metadata: { duplicateNotification: result?.duplicate === true },
+      });
+      const confirmation = "I've let your facilitator know. We can still continue when you're ready.";
+      appendTranscriptLine({ text: confirmation, role: 'assistant', phase: delivered.phase, kind: 'attention_reminder' }, { immediate: true });
+      speakSonomaAttentionLine(confirmation, delivered.id, 5);
+    }).finally(() => {
+      sonomaNotificationInFlightRef.current = false;
+    });
+  }, [appendTranscriptLine, commitSonomaResponseTurn, getSonomaPacingContext, sendSonomaPacingEvent, speakSonomaAttentionLine]);
+
+  const sonomaPacingBlocked = Boolean(
+    engineState === 'playing'
+    || openingActionActive
+    || showWords
+    || showVisualAids
+    || showGames
+    || showFullscreenPlayTimer
+    || showPlayTimeExpired
+    || showWorkExpiredSkipPlay
+    || showTimerControl
+    || showTimerSettingsEdit
+    || showTakeoverDialog
+    || executionEndedReason
+    || executionRecoveryLoading
+    || pendingFeatureHelp
+    || showDiscussionObjectives
+    || showTutorial
+    || timerPaused
+  );
+
+  useEffect(() => {
+    sonomaPacingBlockedRef.current = sonomaPacingBlocked;
+    const current = sonomaResponseTurnRef.current;
+    if (!current) return;
+    const next = sonomaPacingBlocked
+      ? pauseSonomaResponseTurn(current, Date.now())
+      : resumeSonomaResponseTurn(current, Date.now());
+    if (next !== current) commitSonomaResponseTurn(next);
+  }, [sonomaPacingBlocked, commitSonomaResponseTurn]);
+
+  useEffect(() => {
+    if (!sonomaResponseTurn?.id) return undefined;
+    const tick = () => {
+      const current = sonomaResponseTurnRef.current;
+      if (!current || sonomaPacingBlockedRef.current || current.pauseStartedAt || executionFencedRef.current) return;
+      const nowMs = Date.now();
+      if (isSonomaActivitySnoozed(current, nowMs)) return;
+      const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
+      const dueStage = sonomaReminderStageForElapsed(elapsedSeconds);
+      const deliveredStage = Number(current.reminderStage || 0);
+      if (dueStage <= deliveredStage && !(deliveredStage >= 5 && !current.notificationDelivered)) return;
+      if (dueStage >= 5) {
+        if (deliveredStage < 4) {
+          deliverSonomaReminder(4);
+          return;
+        }
+        deliverSonomaFacilitatorEscalation();
+        return;
+      }
+      if (dueStage >= 1) deliverSonomaReminder(Math.min(4, dueStage));
+    };
+    tick();
+    const intervalId = window.setInterval(tick, 1000);
+    const onVisibility = () => { if (!document.hidden) tick(); };
+    document.addEventListener('visibilitychange', onVisibility);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibility);
+    };
+  }, [sonomaResponseTurn?.id, deliverSonomaFacilitatorEscalation, deliverSonomaReminder]);
   const getActiveFlowQuestionText = useCallback(() => {
     const formatProblem = (item) => {
       if (!item) return '';
@@ -3982,6 +4276,7 @@ function SessionPageV2Inner() {
       ? ''
       : (transcriptLines || [])
         .slice(Math.max(0, index - 1), Math.min((transcriptLines || []).length, index + 2))
+        .filter((line) => line?.kind !== 'attention_reminder')
         .map((line) => String(line?.text || '').trim())
         .filter(Boolean)
         .join(' | ')
@@ -4672,6 +4967,7 @@ function SessionPageV2Inner() {
     
     engine.on('end', (data) => {
       addEvent(`ðŸ AudioEngine END (completed: ${data.completed}, skipped: ${data.skipped || false})`);
+      sonomaReminderAudioActiveRef.current = null;
       setEngineState('idle');
       // Show repeat button if there's audio to replay
       if (engine.hasAudioToReplay) {
@@ -4712,6 +5008,7 @@ function SessionPageV2Inner() {
     
     engine.on('error', (data) => {
       addEvent(`âŒ AudioEngine ERROR: ${data.message}`);
+      sonomaReminderAudioActiveRef.current = null;
       setEngineState('error');
     });
     
@@ -5326,11 +5623,18 @@ function SessionPageV2Inner() {
       setDiscussionState('chatting');
     });
     
+    const unsubLearnerTurnReady = eventBusRef.current.on('learnerTurnReady', (data) => {
+      if (data?.phase === 'discussion') startSonomaResponseTurn(data);
+    });
+    const unsubLearnerTurnEnded = eventBusRef.current.on('learnerTurnEnded', (data) => {
+      if (data?.phase === 'discussion') finishSonomaResponseTurn(data);
+    });
     const unsubDiscussionComplete = eventBusRef.current.on('discussionComplete', (data) => {
       if (didComplete) return;
       didComplete = true;
 
       addEvent('Discussion complete - proceeding to exercise');
+      clearSonomaResponseTurn('discussion');
       setDiscussionState('complete');
 
       // Cleanup FIRST to remove discussion audio end listener.
@@ -5340,6 +5644,8 @@ function SessionPageV2Inner() {
       try { unsubGreetingPlaying?.(); } catch {}
       try { unsubGreetingComplete?.(); } catch {}
       try { unsubObjectiveComplete?.(); } catch {}
+      try { unsubLearnerTurnReady?.(); } catch {}
+      try { unsubLearnerTurnEnded?.(); } catch {}
       try { unsubDiscussionComplete?.(); } catch {}
 
       try { phase.destroy(); } catch {}
@@ -5575,6 +5881,9 @@ function SessionPageV2Inner() {
       recordEvidenceItemPresented('comprehension', data);
     });
 
+    phase.on('learnerTurnReady', (data) => startSonomaResponseTurn(data));
+    phase.on('learnerTurnEnded', (data) => finishSonomaResponseTurn(data));
+
     phase.on('answerSubmitted', (data) => {
       setComprehensionScore(data.score);
       setComprehensionTotalQuestions(data.totalQuestions);
@@ -5601,6 +5910,7 @@ function SessionPageV2Inner() {
     });
     
     phase.on('comprehensionComplete', (data) => {
+      clearSonomaResponseTurn('comprehension');
       addEvent(`âœ… Comprehension complete: ${data.answer || '(skipped)'}`);
       setComprehensionState('complete');
       
@@ -5833,6 +6143,9 @@ function SessionPageV2Inner() {
       recordEvidenceItemPresented('exercise', data);
     });
 
+    phase.on('learnerTurnReady', (data) => startSonomaResponseTurn(data));
+    phase.on('learnerTurnEnded', (data) => finishSonomaResponseTurn(data));
+
     phase.on('answerSubmitted', (data) => {
       recordEvidenceAnswerSubmitted('exercise', data);
     });
@@ -5858,6 +6171,7 @@ function SessionPageV2Inner() {
     });
     
     phase.on('exerciseComplete', (data) => {
+      clearSonomaResponseTurn('exercise');
       addEvent(`ðŸŽ‰ Exercise complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       setExerciseState('complete');
       
@@ -6072,6 +6386,9 @@ function SessionPageV2Inner() {
       addEvent('â“ Fill in the blank...');
       recordEvidenceItemPresented('worksheet', data);
     });
+
+    phase.on('learnerTurnReady', (data) => startSonomaResponseTurn(data));
+    phase.on('learnerTurnEnded', (data) => finishSonomaResponseTurn(data));
     
     phase.on('answerSubmitted', (data) => {
       const result = data.isCorrect ? 'âœ… Correct!' : `âŒ Incorrect - Answer: ${data.correctAnswer}`;
@@ -6107,6 +6424,7 @@ function SessionPageV2Inner() {
     });
     
     phase.on('worksheetComplete', (data) => {
+      clearSonomaResponseTurn('worksheet');
       addEvent(`ðŸŽ‰ Worksheet complete! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%)`);
       setWorksheetState('complete');
       
@@ -6356,6 +6674,9 @@ function SessionPageV2Inner() {
       addEvent('â“ Answer the test question...');
       recordEvidenceItemPresented('test', data);
     });
+
+    phase.on('learnerTurnReady', (data) => startSonomaResponseTurn(data));
+    phase.on('learnerTurnEnded', (data) => finishSonomaResponseTurn(data));
     
     phase.on('answerSubmitted', (data) => {
       const result = data.isCorrect ? 'âœ… Correct!' : 'âŒ Incorrect';
@@ -6415,6 +6736,7 @@ function SessionPageV2Inner() {
     });
     
     phase.on('testComplete', (data) => {
+      clearSonomaResponseTurn('test');
       addEvent(`ðŸŽ‰ Test complete! Final grade: ${data.grade} (${data.percentage}%)`);
       setTestState('complete');
       
@@ -7685,6 +8007,7 @@ function SessionPageV2Inner() {
     if (!discussionPhaseRef.current) return;
     const message = String(discussionResponse || '').trim();
     if (!message) return;
+    finishSonomaResponseTurn({ phase: 'discussion', reason: 'response' });
     if (pendingFeatureHelp?.message && pendingFeatureHelp.message !== message) setPendingFeatureHelp(null);
     const suggestion = detectProductHelp(message, { surface: 'sonoma' });
     if (suggestion) {
@@ -7730,6 +8053,9 @@ function SessionPageV2Inner() {
       const audio = await fetchTTS(script);
       await audioEngineRef.current?.playAudio(audio || '', [script]);
     } catch {}
+    if (pending.phase === 'discussion' && discussionPhaseRef.current?.state === 'chatting') {
+      startSonomaResponseTurn({ phase: 'discussion', turnKind: 'discussion-product-help-return' });
+    }
   };
   
   const skipDiscussion = () => {
@@ -9759,7 +10085,7 @@ function SessionPageV2Inner() {
                   background: '#fff',
                   color: '#111827',
                 }}
-                onChange={(e) => setDiscussionResponse(e.target.value)}
+                onChange={(e) => { setDiscussionResponse(e.target.value); noteSonomaLearnerActivity(); }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
                     e.preventDefault();
@@ -10027,7 +10353,7 @@ function SessionPageV2Inner() {
                         background: '#fff',
                         color: '#111827'
                       }}
-                      onChange={(e) => setValue(e.target.value)}
+                      onChange={(e) => { setValue(e.target.value); noteSonomaLearnerActivity(); }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
                           onSubmit();

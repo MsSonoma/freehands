@@ -63,6 +63,8 @@ export class WorksheetPhase {
   
   #listeners = new Map();
   #audioEndListener = null;
+  #learnerTurnAudioEndListener = null;
+  #learnerTurnToken = 0;
   
   constructor(options = {}) {
     this.#audioEngine = options.audioEngine;
@@ -291,6 +293,9 @@ export class WorksheetPhase {
     }
     
     const question = this.#questions[this.#currentQuestionIndex];
+    this.#cancelLearnerTurnReady();
+    this.#learnerTurnToken++;
+    this.#emit('learnerTurnEnded', { phase: 'worksheet', questionIndex: this.#currentQuestionIndex, itemId: question?.id || null, turnKind: 'question', reason: 'response' });
     const acceptable = buildAcceptableList(question);
     const isCorrect = await judgeAnswer(answer, acceptable, question);
 
@@ -381,6 +386,13 @@ export class WorksheetPhase {
       } catch (error) {
         console.warn('[WorksheetPhase] Failed to play hint:', error);
       }
+      this.#emit('learnerTurnReady', {
+        phase: 'worksheet',
+        questionIndex: this.#currentQuestionIndex,
+        itemId: question?.id || null,
+        question,
+        turnKind: 'retry',
+      });
       this.#emit('retryRequested', {
         questionIndex: this.#currentQuestionIndex,
         question,
@@ -434,6 +446,13 @@ export class WorksheetPhase {
       return;
     }
 
+    if (this.#state === 'awaiting-answer') {
+      const activeQuestion = this.#questions[this.#currentQuestionIndex];
+      this.#cancelLearnerTurnReady();
+      this.#learnerTurnToken++;
+      this.#emit('learnerTurnEnded', { phase: 'worksheet', questionIndex: this.#currentQuestionIndex, itemId: activeQuestion?.id || null, turnKind: 'question', reason: 'skip' });
+    }
+
     // Stop any audio first
     try {
       this.#audioEngine.stop();
@@ -484,9 +503,13 @@ export class WorksheetPhase {
   // Resets to awaiting-answer so the learner can re-submit without reloading.
   recover() {
     if (this.#state === 'complete' || this.#state === 'idle') return;
+    this.#cancelLearnerTurnReady();
+    this.#learnerTurnToken++;
     try { this.#audioEngine.stop(); } catch {}
     this.#state = 'awaiting-answer';
     this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+    const question = this.#questions[this.#currentQuestionIndex];
+    this.#emit('learnerTurnReady', { phase: 'worksheet', questionIndex: this.#currentQuestionIndex, itemId: question?.id || null, question, turnKind: 'recovery' });
   }
   
   // Getters
@@ -517,6 +540,8 @@ export class WorksheetPhase {
   
   // Private: Question playback
   async #playCurrentQuestion() {
+    this.#cancelLearnerTurnReady();
+    const learnerTurnToken = ++this.#learnerTurnToken;
     if (this.#currentQuestionIndex >= this.#questions.length) {
       this.#complete();
       return;
@@ -562,9 +587,12 @@ export class WorksheetPhase {
       ttsCache.prefetch(nextQuestion);
     }
     
-    // TTS plays in background - don't await so user can answer while listening
+    // The learner can answer immediately, but pacing begins only after the spoken question yields.
+    this.#armLearnerTurnReady({ learnerTurnToken, question, questionIndex: this.#currentQuestionIndex, turnKind: 'question' });
     this.#audioEngine.playAudio(audioBase64 || '', [captionQuestion]).catch(err => {
       console.error('[WorksheetPhase] Question TTS playback error:', err);
+      this.#cancelLearnerTurnReady();
+      this.#emitLearnerTurnReadyIfCurrent({ learnerTurnToken, question, questionIndex: this.#currentQuestionIndex, turnKind: 'question' });
     });
   }
   
@@ -576,6 +604,8 @@ export class WorksheetPhase {
   
   // Private: Completion
   #complete() {
+    this.#cancelLearnerTurnReady();
+    this.#learnerTurnToken++;
     this.#state = 'complete';
     
     // Remove audio listener
@@ -592,6 +622,29 @@ export class WorksheetPhase {
     });
   }
   
+  #cancelLearnerTurnReady() {
+    if (this.#learnerTurnAudioEndListener) {
+      try { this.#audioEngine.off('end', this.#learnerTurnAudioEndListener); } catch {}
+      this.#learnerTurnAudioEndListener = null;
+    }
+  }
+
+  #emitLearnerTurnReadyIfCurrent({ learnerTurnToken, question, questionIndex, turnKind = 'question' }) {
+    if (learnerTurnToken !== this.#learnerTurnToken) return;
+    if (this.#state !== 'awaiting-answer' || this.#currentQuestionIndex !== questionIndex) return;
+    this.#emit('learnerTurnReady', { phase: 'worksheet', questionIndex, itemId: question?.id || null, question, turnKind });
+  }
+
+  #armLearnerTurnReady({ learnerTurnToken, question, questionIndex, turnKind = 'question' }) {
+    this.#cancelLearnerTurnReady();
+    this.#learnerTurnAudioEndListener = (data = {}) => {
+      if (!(data.completed || data.skipped || data.timeout)) return;
+      this.#cancelLearnerTurnReady();
+      this.#emitLearnerTurnReadyIfCurrent({ learnerTurnToken, question, questionIndex, turnKind });
+    };
+    this.#audioEngine.on('end', this.#learnerTurnAudioEndListener);
+  }
+
   // Private: Audio coordination
   #setupAudioEndListener(callback) {
     // Remove previous listener
@@ -611,6 +664,8 @@ export class WorksheetPhase {
   
   // Public: Cleanup
   destroy() {
+    this.#cancelLearnerTurnReady();
+    this.#learnerTurnToken++;
     if (this.#audioEndListener) {
       this.#audioEngine.off('end', this.#audioEndListener);
       this.#audioEndListener = null;

@@ -37,9 +37,14 @@ export default function FacilitatorNotificationsPage() {
   const [notifications, setNotifications] = useState([]);
   const [busyIds, setBusyIds] = useState(() => new Set());
 
+  const visibleNotifications = useMemo(() => {
+    if (prefs?.enabled !== false) return notifications;
+    return notifications.filter((n) => n?.category === 'learner-attention');
+  }, [notifications, prefs?.enabled]);
+
   const unreadCount = useMemo(() => {
-    return notifications.filter((n) => !n.read_at).length;
-  }, [notifications]);
+    return visibleNotifications.filter((n) => !n.read_at).length;
+  }, [visibleNotifications]);
 
   const refresh = async () => {
     setError('');
@@ -65,7 +70,6 @@ export default function FacilitatorNotificationsPage() {
     if (authLoading) return;
     if (!isAuthenticated) return;
     refresh();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [authLoading, isAuthenticated]);
 
   const openPrefs = () => {
@@ -201,12 +205,12 @@ export default function FacilitatorNotificationsPage() {
             borderRadius: 12,
             padding: 14
           }}>
-            {(!prefs || prefs.enabled) ? (
-              notifications.length === 0 ? (
+            {(!prefs || prefs.enabled || visibleNotifications.length > 0) ? (
+              visibleNotifications.length === 0 ? (
                 <p style={{ color: '#6b7280', margin: 0 }}>No notifications yet.</p>
               ) : (
                 <div style={{ display: 'grid', gap: 10 }}>
-                  {notifications.map((n) => {
+                  {visibleNotifications.map((n) => {
                     const isRead = !!n.read_at;
                     const busy = busyIds.has(n.id);
 

@@ -271,6 +271,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
               && typeof onStudyRequest === 'function'
               && s.role !== 'user'
               && s.kind !== 'product_help'
+              && s.kind !== 'attention_reminder'
               && phase !== 'test'
               && ['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(phase)
               && !!String(text || '').trim();
