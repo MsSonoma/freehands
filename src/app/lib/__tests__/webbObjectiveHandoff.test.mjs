@@ -29,11 +29,11 @@ const GENERATION_LESSON = {
 
 const VALID_GENERATED_PLAN = {
   objectives: [
-    { role: 'opening', atomic_focus: 'central problem', connection: 'establishes the situation', objective: 'The learner can explain the central problem the character faces.' },
-    { role: 'development', atomic_focus: 'first attempt', connection: 'shows the first response', objective: 'The learner can explain what the character tries first.' },
-    { role: 'development', atomic_focus: 'turning clue', connection: 'changes the search', objective: 'The learner can explain what clue changes the search.' },
-    { role: 'development', atomic_focus: 'supporting event', connection: 'provides evidence before interpretation', objective: 'The learner can identify the event that best supports the lesson about responsibility.' },
-    { role: 'conclusion', atomic_focus: 'responsibility theme', connection: 'synthesizes the earlier events', objective: 'The learner can explain the lesson the story suggests about responsibility.' },
+    { atomic_focus: 'central problem', objective: 'The learner can explain the central problem the character faces.' },
+    { atomic_focus: 'first attempt', objective: 'The learner can explain what the character tries first.' },
+    { atomic_focus: 'turning clue', objective: 'The learner can explain what clue changes the search.' },
+    { atomic_focus: 'supporting event', objective: 'The learner can identify the event that best supports the lesson about responsibility.' },
+    { atomic_focus: 'responsibility theme', objective: 'The learner can explain the lesson the story suggests about responsibility.' },
   ],
 }
 
@@ -207,20 +207,20 @@ test('model failure does not mutate supplied learning state', async () => {
 test('objective generation repairs bundled draft rows and exposes only the ordered objective strings', async () => {
   const bundled = {
     objectives: [
-      { role: 'opening', atomic_focus: 'character and problem', connection: 'sets up the story', objective: 'The learner can explain who the main character is and what problem the character faces.' },
-      { role: 'development', atomic_focus: 'first attempt', connection: 'follows the problem', objective: 'The learner can explain what the character tries first.' },
-      { role: 'development', atomic_focus: 'turning clue', connection: 'changes the search', objective: 'The learner can explain what clue changes the search.' },
-      { role: 'development', atomic_focus: 'resolution', connection: 'resolves the search', objective: 'The learner can explain how the problem is solved.' },
-      { role: 'conclusion', atomic_focus: 'lesson and evidence', connection: 'closes on meaning', objective: 'The learner can explain the lesson about responsibility and identify the event that supports it.' },
+      { atomic_focus: 'character and problem', objective: 'The learner can explain who the main character is and what problem the character faces.' },
+      { atomic_focus: 'first attempt', objective: 'The learner can explain what the character tries first.' },
+      { atomic_focus: 'turning clue', objective: 'The learner can explain what clue changes the search.' },
+      { atomic_focus: 'resolution', objective: 'The learner can explain how the problem is solved.' },
+      { atomic_focus: 'lesson and evidence', objective: 'The learner can explain the lesson about responsibility and identify the event that supports it.' },
     ],
   }
   const repaired = {
     objectives: [
-      { role: 'opening', atomic_focus: 'central problem', connection: 'establishes the situation', objective: 'The learner can explain the central problem the character faces.' },
-      { role: 'development', atomic_focus: 'first attempt', connection: 'shows the first response', objective: 'The learner can explain what the character tries first.' },
-      { role: 'development', atomic_focus: 'turning clue', connection: 'changes the search', objective: 'The learner can explain what clue changes the search.' },
-      { role: 'development', atomic_focus: 'supporting event', connection: 'provides evidence before interpretation', objective: 'The learner can identify the event that best supports the lesson about responsibility.' },
-      { role: 'conclusion', atomic_focus: 'responsibility theme', connection: 'synthesizes the earlier events', objective: 'The learner can explain the lesson the story suggests about responsibility.' },
+      { atomic_focus: 'central problem', objective: 'The learner can explain the central problem the character faces.' },
+      { atomic_focus: 'first attempt', objective: 'The learner can explain what the character tries first.' },
+      { atomic_focus: 'turning clue', objective: 'The learner can explain what clue changes the search.' },
+      { atomic_focus: 'supporting event', objective: 'The learner can identify the event that best supports the lesson about responsibility.' },
+      { atomic_focus: 'responsibility theme', objective: 'The learner can explain the lesson the story suggests about responsibility.' },
     ],
   }
   let calls = 0
@@ -243,7 +243,7 @@ test('objective generation repairs bundled draft rows and exposes only the order
       assert.match(system, /one focused comprehension question/i)
       return JSON.stringify(bundled)
     }
-    assert.match(system, /failed the atomic essay-plan validator/i)
+    assert.match(system, /failed the atomic mastery-objective validator/i)
     const repairInput = JSON.parse(user)
     assert.ok(repairInput.validator_violations.some(value => /row 1 combines/.test(value)))
     assert.ok(repairInput.validator_violations.some(value => /row 5 combines/.test(value)))
@@ -261,7 +261,7 @@ test('objective generation repairs an initial plan with too few objectives', asy
   const { response, calls } = await generateThroughRoute([tooFew, VALID_GENERATED_PLAN], ({ index, system, user, responseFormat }) => {
     assert.equal(responseFormat?.type, 'json_object')
     if (index === 1) {
-      assert.match(system, /failed the atomic essay-plan validator/i)
+      assert.match(system, /failed the atomic mastery-objective validator/i)
       const repairInput = JSON.parse(user)
       assert.match(repairInput.validator_violations.join(' '), /invalid objective count/i)
       assert.equal(repairInput.draft_plan, null)
@@ -277,7 +277,7 @@ test('objective generation repairs an initial plan with too many objectives', as
   const tooMany = { objectives: [
     ...VALID_GENERATED_PLAN.objectives,
     ...Array.from({ length: 4 }, (_, index) => ({
-      role: 'development', atomic_focus: `extra ${index}`, connection: 'extra detail', objective: `The learner can explain extra detail ${index}.`,
+      atomic_focus: `extra ${index}`, objective: `The learner can explain extra detail ${index}.`,
     })),
   ] }
   const { response, calls } = await generateThroughRoute([tooMany, VALID_GENERATED_PLAN])
@@ -302,7 +302,7 @@ test('objective generation repairs malformed JSON before failing lesson startup'
 test('objective generation makes one fresh regeneration after a failed repair', async () => {
   const tooFew = { objectives: VALID_GENERATED_PLAN.objectives.slice(0, 4) }
   const { response, calls } = await generateThroughRoute([tooFew, '{still invalid', VALID_GENERATED_PLAN], ({ index, system }) => {
-    if (index === 2) assert.match(system, /Start over from the lesson and assessment questions/i)
+    if (index === 2) assert.match(system, /Start over and return one fresh complete mastery map/i)
   })
   assert.equal(response.status, 200)
   assert.equal(calls, 3)
@@ -326,17 +326,17 @@ test('writing evaluator returns a separate structural-position judgment bound to
       objectiveIndex: 1, totalObjectives: 3, priorSentences: ['This story begins with an unusual problem.'],
     }),
   }), { apiKey: 'offline-test', callModel: async (system, user) => {
-    assert.match(system, /POSITION_FIT/)
+    assert.match(system, /SLOT_FIT/)
+    assert.match(system, /ADDS_NEW_INFORMATION/)
     assert.match(system, /Do not require a transition word/)
     const input = JSON.parse(user)
-    assert.equal(input.essay_position.objective_index, 1)
-    assert.equal(input.essay_position.position_role, 'development')
-    assert.deepEqual(input.essay_position.prior_accepted_learner_sentences, ['This story begins with an unusual problem.'])
+    assert.equal(input.slot.role, 'body')
+    assert.deepEqual(input.prior_accepted_learner_sentences, ['This story begins with an unusual problem.'])
     assert.equal(input.learner_proposed_sentence, 'The narrator is a girl.')
-    return 'correct|yes|no'
+    return 'correct|yes|no|yes|yes'
   } })
   assert.equal(response.status, 200)
-  assert.deepEqual(await response.json(), { accuracy: 'correct', sentenceOk: true, positionFit: false })
+  assert.deepEqual(await response.json(), { accuracy: 'correct', conceptFit: 'correct', sentenceOk: true, slotFit: false, addsNewInformation: true, paragraphFit: true, positionFit: false, duplicateOfIndex: null })
 })
 
 test('explicitly contradictory discourse cues cannot override essay position even when the model says yes', async () => {
@@ -348,9 +348,9 @@ test('explicitly contradictory discourse cues cannot override essay position eve
     const response = await POST(new Request('http://localhost/api/webb-objectives', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ action: 'check-writing', note: 'accurate learner note', lesson: { title: 'Plants', subject: 'science', grade: '4' }, ...testCase }),
-    }), { apiKey: 'offline-test', callModel: async () => 'correct|yes|yes' })
+    }), { apiKey: 'offline-test', callModel: async () => 'correct|yes|yes|yes|yes' })
     assert.equal(response.status, 200)
-    assert.deepEqual(await response.json(), { accuracy: 'correct', sentenceOk: true, positionFit: false })
+    assert.deepEqual(await response.json(), { accuracy: 'correct', conceptFit: 'correct', sentenceOk: true, slotFit: false, addsNewInformation: true, paragraphFit: true, positionFit: false, duplicateOfIndex: null })
   }
 })
 

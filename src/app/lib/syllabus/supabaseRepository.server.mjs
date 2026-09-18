@@ -315,6 +315,17 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load recent lesson sessions')
       return data || []
     },
+    async findWebbCompositionForSession(facilitatorId, learnerId, executionSessionId) {
+      if (!executionSessionId) return null
+      const { data, error } = await admin.from('webb_compositions').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .eq('execution_session_id', executionSessionId)
+        .maybeSingle()
+      if (error?.code === '42P01') return null
+      throwOn(error, 'Failed to load Mrs. Webb composition')
+      return data || null
+    },
     async listEvidenceSessions(facilitatorId, learnerId, sessionIds) {
       if (!sessionIds.length) return []
       const { data, error } = await admin.from('learning_evidence_sessions').select('*')

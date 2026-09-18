@@ -1,4 +1,4 @@
-import { aggregateFacilitatorEvidenceSession } from '../masteryEvidence/reporting.js'
+﻿import { aggregateFacilitatorEvidenceSession } from '../masteryEvidence/reporting.js'
 import { buildReviewRunSummary, REVIEW_TYPES } from '../masteryEvidence/followUps.js'
 import { resolveCalendarContext } from '../calendarDate.mjs'
 import { normalizeInstructionalTeacher, instructionalTeacherLabel } from './instructionalTeacher.mjs'
@@ -185,6 +185,25 @@ export async function loadSyllabusOccurrenceHistory({
   }
 
   const teacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || canonicalSession?.instructional_teacher || legacyRecord?.instructional_teacher)
+  let composition = null
+  if (canonicalSession && teacher === 'webb' && typeof repository.findWebbCompositionForSession === 'function') {
+    try {
+      const row = await repository.findWebbCompositionForSession(facilitatorId, learnerId, canonicalSession.id)
+      if (row?.essay || row?.status) {
+        composition = {
+          id: row.id || null,
+          status: row.status || 'draft',
+          essay: clean(row.essay) || null,
+          protocolVersion: row.protocol_version || null,
+          appBuildId: row.app_build_id || null,
+          finalizedAt: row.finalized_at || null,
+          updatedAt: row.updated_at || null,
+        }
+      }
+    } catch {
+      composition = null
+    }
+  }
   const sessionRecords = []
   if (canonicalSession) {
     const base = transcriptBase({ facilitatorId, learnerId, lessonKey: item.lesson_key, teacher })
@@ -239,6 +258,7 @@ export async function loadSyllabusOccurrenceHistory({
         slate: evidenceDomain.reports.filter((report) => report.authority === 'slate'),
       },
       reviews: evidenceDomain.reviews,
+      composition,
       sessionRecords,
       transcriptStatus: sessionRecords.length ? 'available' : 'unavailable',
     },

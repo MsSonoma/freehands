@@ -1,6 +1,7 @@
-import { WEBB_WRITING_SUBPHASES, latestWritingAttempt, normalizeWritingSubphase } from './webbWritingFlow.mjs'
+﻿import { WEBB_WRITING_SUBPHASES, latestWritingAttempt, normalizeWritingSubphase } from './webbWritingFlow.mjs'
+import { assembleWebbCompositionEssay, nextCompositionSlotIndex } from './webbCompositionModel.mjs'
 
-export const WEBB_SNAPSHOT_VERSION = 7
+export const WEBB_SNAPSHOT_VERSION = 8
 
 export const WEBB_SESSION_STAGES = Object.freeze({
   RESEARCH: 'research',
@@ -78,17 +79,25 @@ export function createVerbatimLearnerRecord({ objectiveIndex, evaluation, conver
   }
 }
 
-export function createWritingAttempt({ objectiveIndex, text, message, accuracy, sentenceOk, positionFit = true, attemptedAt }) {
-  const fitsPosition = positionFit !== false
+export function createWritingAttempt({ objectiveIndex = null, slotIndex = objectiveIndex, slotId = null, slotRole = null, text, message, accuracy, sentenceOk, positionFit = true, slotFit = positionFit, addsNewInformation = true, paragraphFit = true, attemptedAt }) {
+  const fitsSlot = slotFit !== false && positionFit !== false
+  const adds = addsNewInformation !== false
+  const fitsParagraph = paragraphFit !== false
   return {
     objectiveIndex,
+    slotIndex,
+    slotId,
+    slotRole,
     text: String(text ?? ''),
     sourceMessageId: message?.id || null,
     sourceMessageCreatedAt: message?.createdAt || null,
     accuracy,
     sentenceOk: sentenceOk === true,
-    positionFit: fitsPosition,
-    accepted: accuracy === 'correct' && sentenceOk === true && fitsPosition,
+    positionFit: fitsSlot && adds && fitsParagraph,
+    slotFit: fitsSlot,
+    addsNewInformation: adds,
+    paragraphFit: fitsParagraph,
+    accepted: accuracy === 'correct' && sentenceOk === true && fitsSlot && adds && fitsParagraph,
     attemptedAt: attemptedAt || new Date().toISOString(),
     assistance: 'mrs-webb-guidance',
     provenance: 'learner-message',
@@ -156,15 +165,17 @@ function inferPendingWritingReview(snapshot, objectiveIndex) {
  */
 export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot?.objectives || []) {
   const list = Array.isArray(objectives) ? objectives : []
+  const compositionPlan = snapshot?.compositionPlan?.slots?.length ? snapshot.compositionPlan : null
+  const writingUnits = compositionPlan ? compositionPlan.slots : list
   const acceptedSentences = snapshot?.acceptedSentences || {}
   const writingAttempts = snapshot?.writingAttempts || {}
   const savedIndex = asIndex(snapshot?.writingIndex)
   const savedSubphase = normalizeWritingSubphase(snapshot?.writingSubphase, !!snapshot?.writingMode)
   const explicitStage = normalizedWebbStage(snapshot?.webbStage)
   const savedEssay = String(snapshot?.essay || '').trim() ? snapshot.essay : null
-  const essay = savedEssay || assembleLearnerEssay(list, acceptedSentences) || null
-  const nextIndex = nextWritingObjectiveIndex(list, acceptedSentences)
-  const acceptedCount = list.filter((_, index) => validAcceptedWritingSentence(acceptedSentences?.[index])).length
+  const essay = savedEssay || (compositionPlan ? assembleWebbCompositionEssay(compositionPlan, acceptedSentences) : assembleLearnerEssay(list, acceptedSentences)) || null
+  const nextIndex = compositionPlan ? nextCompositionSlotIndex(compositionPlan, acceptedSentences) : nextWritingObjectiveIndex(list, acceptedSentences)
+  const acceptedCount = writingUnits.filter((_, index) => validAcceptedWritingSentence(acceptedSentences?.[index])).length
   const attemptCount = Object.values(writingAttempts).reduce((count, attempts) => count + (Array.isArray(attempts) ? attempts.length : 0), 0)
   const hasDraft = String(snapshot?.writingDraft || '').trim().length > 0
   const currentAccepted = savedIndex !== null && validAcceptedWritingSentence(acceptedSentences?.[savedIndex])
@@ -173,14 +184,14 @@ export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot
   if (completedEssayStage && essay && nextIndex === -1) {
     return {
       webbStage: WEBB_SESSION_STAGES.ESSAY,
-      writingMode: false, writingIndex: savedIndex ?? Math.max(0, list.length - 1),
+      writingMode: false, writingIndex: savedIndex ?? Math.max(0, writingUnits.length - 1),
       writingSubphase: WEBB_WRITING_SUBPHASES.IDLE, writingDraft: '',
-      writingAttempts, acceptedSentences, essay, essayMode: snapshot?.essayMode === true, pendingWritingReview: null,
+      writingAttempts, acceptedSentences, essay, essayMode: snapshot?.essayMode === true, pendingWritingReview: null, compositionPlan,
     }
   }
 
-  const allSentencesAccepted = list.length > 0 && acceptedCount === list.length
-  const committedIndex = currentAccepted ? savedIndex : allSentencesAccepted ? list.length - 1 : null
+  const allSentencesAccepted = writingUnits.length > 0 && acceptedCount === writingUnits.length
+  const committedIndex = currentAccepted ? savedIndex : allSentencesAccepted ? writingUnits.length - 1 : null
   const committedGate = committedIndex !== null && (
     ((explicitStage === WEBB_SESSION_STAGES.WRITING || snapshot?.writingMode)
       && savedSubphase === WEBB_WRITING_SUBPHASES.COMMITTED)
@@ -193,7 +204,7 @@ export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot
       webbStage: WEBB_SESSION_STAGES.WRITING,
       writingMode: true, writingIndex: committedIndex, writingSubphase: WEBB_WRITING_SUBPHASES.COMMITTED,
       writingDraft: '', writingAttempts, acceptedSentences, essay: snapshot?.essay || null, essayMode: false,
-      pendingWritingReview: null,
+      pendingWritingReview: null, compositionPlan,
     }
   }
 
@@ -207,11 +218,11 @@ export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot
       webbStage: WEBB_SESSION_STAGES.RESEARCH,
       writingMode: false, writingIndex: savedIndex ?? 0, writingSubphase: WEBB_WRITING_SUBPHASES.IDLE,
       writingDraft: String(snapshot?.writingDraft || ''), writingAttempts, acceptedSentences,
-      essay: snapshot?.essay || null, essayMode: false, pendingWritingReview: null,
+      essay: snapshot?.essay || null, essayMode: false, pendingWritingReview: null, compositionPlan,
     }
   }
 
-  const writingIndex = savedIndex !== null && list[savedIndex] && !validAcceptedWritingSentence(acceptedSentences?.[savedIndex])
+  const writingIndex = savedIndex !== null && writingUnits[savedIndex] && !validAcceptedWritingSentence(acceptedSentences?.[savedIndex])
     ? savedIndex : nextIndex
   const latestAttempt = latestWritingAttempt(writingAttempts, writingIndex)
   let writingSubphase = savedSubphase
@@ -226,27 +237,37 @@ export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot
   return {
     webbStage: WEBB_SESSION_STAGES.WRITING,
     writingMode: true, writingIndex, writingSubphase, writingDraft,
-    writingAttempts, acceptedSentences, essay: snapshot?.essay || null, essayMode: false, pendingWritingReview,
+    writingAttempts, acceptedSentences, essay: snapshot?.essay || null, essayMode: false, pendingWritingReview, compositionPlan,
   }
 }
 
 function writingPositionRole(context = {}) {
+  const explicitRole = String(context?.slot?.role || context?.role || '').trim().toLowerCase()
+  if (['topic', 'body', 'conclusion'].includes(explicitRole)) return explicitRole
   const index = Number(context?.objectiveIndex)
   const total = Number(context?.totalObjectives)
   if (!Number.isInteger(index) || index < 0) return 'unspecified'
-  if (index === 0) return 'opening'
+  if (index === 0) return 'topic'
   if (Number.isInteger(total) && total > 0 && index === total - 1) return 'conclusion'
-  return 'development'
+  return 'body'
 }
 
 function safeWritingRetry(evaluation = {}, context = {}) {
-  if (evaluation.accuracy === 'correct' && evaluation.sentenceOk === true && evaluation.positionFit === false) {
-    const role = writingPositionRole(context)
-    if (role === 'opening') return "Your idea is accurate and complete, but the first sentence needs to introduce the essay's main thought. Look at what this essay is about overall, then try again in your own words."
-    if (role === 'conclusion') return 'Your idea is accurate and complete, but the final sentence needs to close the essay instead of opening a new thought. Look back at what you already explained, then bring the essay to a finish in your own words.'
-    return 'Your idea is accurate and complete, but this sentence does not connect cleanly to the essay so far. Look at the sentence before it and decide how this idea should follow from it, then try again in your own words.'
+  const role = writingPositionRole(context)
+  if (evaluation.sentenceOk === true && evaluation.addsNewInformation === false) {
+    return 'This sentence is complete, but it repeats work the paragraph already did. Look at what this part still needs to add, then try again in your own words.'
   }
-  return 'Reread your sentence. Check that it says the same accurate idea as your note and is a complete thought, then try again in your own words.'
+  if (evaluation.sentenceOk === true && evaluation.paragraphFit === false) {
+    return 'This sentence works by itself, but it does not connect cleanly to the paragraph around it yet. Look at the ideas before it and try again in your own words.'
+  }
+  if (evaluation.accuracy === 'correct' && evaluation.sentenceOk === true && evaluation.positionFit === false) {
+    if (role === 'topic') return "Your sentence is complete, but the topic sentence needs to introduce what the whole paragraph will explain. Think about the big idea that connects your research, then try again in your own words."
+    if (role === 'conclusion') return 'Your sentence is complete, but the conclusion needs to close the paragraph instead of opening a new thought. Look back at what you actually explained, then finish that same thought in your own words.'
+    return 'Your idea is accurate and complete, but this sentence does not add a distinct, connected step to the paragraph so far. Look at what you have already said and decide what this part needs to add, then try again in your own words.'
+  }
+  if (role === 'topic') return 'Try the topic sentence again. Make it one complete thought that tells the reader what the whole paragraph will explain, using your own words.'
+  if (role === 'conclusion') return 'Try the conclusion again. Make it one complete thought that closes the ideas you already developed, using your own words.'
+  return 'Reread your sentence. Check that it accurately uses the research for this part, adds a new connected idea, and is a complete thought, then try again in your own words.'
 }
 
 export function buildWritingGuidanceInstructions(note, evaluation = {}, context = {}) {
@@ -254,17 +275,22 @@ export function buildWritingGuidanceInstructions(note, evaluation = {}, context 
   const index = Number(context?.objectiveIndex)
   const total = Number(context?.totalObjectives)
   const priorSentences = Array.isArray(context?.priorSentences)
-    ? context.priorSentences.map(value => String(value || '').trim()).filter(Boolean).slice(0, Number.isInteger(index) && index >= 0 ? index : 0)
+    ? context.priorSentences.map(value => String(value || '').trim()).filter(Boolean)
     : []
+  const sourceNotes = Array.isArray(context?.sourceNotes)
+    ? context.sourceNotes.map(value => String(value?.text || value || '').trim()).filter(Boolean)
+    : (String(note || '').trim() ? [String(note).trim()] : [])
+  const slot = context?.slot || null
+  const controllingIdea = String(context?.controllingIdea || '').trim()
   return [
-    `The research stage is finished. Guide the learner to transform this exact learner-authored note into an essay-ready sentence: "${String(note || '')}".`,
-    context?.objective ? `The current ordered essay objective is: "${String(context.objective)}".` : '',
-    `The evaluator found conceptual accuracy: ${evaluation.accuracy || 'partial'}; sentence readiness: ${evaluation.sentenceOk ? 'yes' : 'no'}; position fit: ${evaluation.positionFit === false ? 'no' : 'yes'}. Treat those judgments as authoritative.`,
-    Number.isInteger(index) && Number.isInteger(total) && total > 0 ? `This is sentence ${index + 1} of ${total}; its structural role is ${role}.` : '',
+    `The research stage is finished. You are coaching one learner-authored sentence in a planned paragraph.`,
+    controllingIdea ? `The paragraph's private controlling idea is: "${controllingIdea}". Do not give this wording to the learner; use it only to guide questions.` : '',
+    slot?.focus ? `This sentence's private composition focus is: "${String(slot.focus)}". Its role is ${role}.` : `The structural role is ${role}.`,
+    sourceNotes.length ? `The learner-authored research available for this slot is context only: ${JSON.stringify(sourceNotes)}.` : `This ${role} sentence is a writing-structure sentence and is not required to restate a mastery objective.`,
+    `The evaluator found concept fit: ${evaluation.accuracy || evaluation.conceptFit || 'partial'}; sentence readiness: ${evaluation.sentenceOk ? 'yes' : 'no'}; slot fit: ${evaluation.slotFit === false || evaluation.positionFit === false ? 'no' : 'yes'}; adds distinct information: ${evaluation.addsNewInformation === false ? 'no' : 'yes'}; paragraph fit: ${evaluation.paragraphFit === false ? 'no' : 'yes'}. Treat those judgments as authoritative.`,
+    Number.isInteger(index) && Number.isInteger(total) && total > 0 ? `This is sentence ${index + 1} of ${total}.` : '',
     priorSentences.length ? `The accepted learner-written sentences before this one are context only: ${JSON.stringify(priorSentences)}.` : '',
-    evaluation.accuracy === 'correct' && evaluation.sentenceOk === true && evaluation.positionFit === false
-      ? `The content and sentence form are already acceptable. Focus only on structural fit: help the learner notice whether this sentence should introduce, develop, connect, synthesize, or close the surrounding thought. Do not require a particular transition word and do not supply one.`
-      : `Guide the learner to notice and repair the problem, then ask for another attempt in their own words. You may identify an incomplete thought, missing subject or action, punctuation issue, ambiguity, misconception, or lost connection to the note.`,
+    `Guide the learner to notice the specific problem, then ask for another attempt in their own words. For a topic sentence, help them identify the paragraph's big idea. For a body sentence, help them decide what distinct information this slot should add. For a conclusion, help them close what they already explained.`,
     `Never write, dictate, complete, rewrite, or offer a model sentence for the learner. Do not say "write" followed by suggested prose. The words accepted into the essay must come from the learner.`,
     `Use 2-3 short, warm sentences, no markdown.`,
   ].filter(Boolean).join('\n')
@@ -278,9 +304,14 @@ export function sanitizeWritingGuidance(reply, evaluation = {}, context = {}) {
   const suppliesWording =
     /\b(?:you could|you can|try to|please)\s+(?:write|say|use)\b/i.test(text) ||
     /\b(?:write|say|try|use)\s*:\s*/i.test(text) ||
-    /\b(?:here(?:'s| is)|for example)\b[^.!?]{0,40}["“]/i.test(text) ||
-    /["“][^"”]*(?:\s+[^"”]+){5,}["”]/.test(text)
-  return suppliesWording ? fallback : text
+    /\b(?:here(?:'s| is)|for example)\b[^.!?]{0,40}["â€œ]/i.test(text) ||
+    /["â€œ][^"â€]*(?:\s+[^"â€]+){5,}["â€]/.test(text)
+  const normalizePrivate = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
+  const normalizedReply = normalizePrivate(text)
+  const privatePhrases = [context?.controllingIdea, context?.slot?.focus]
+    .map(normalizePrivate).filter(value => value.split(/\s+/).length >= 4)
+  const leaksPrivatePlan = privatePhrases.some(value => normalizedReply.includes(value))
+  return suppliesWording || leaksPrivatePlan ? fallback : text
 }
 
 function findLegacySource(chatMessages, response) {

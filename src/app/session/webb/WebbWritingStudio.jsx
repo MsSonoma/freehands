@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef } from 'react'
 import { createPortal } from 'react-dom'
@@ -53,6 +53,8 @@ export default function WebbWritingStudio({
   subphase,
   note,
   objective,
+  slot = null,
+  sourceNotes = [],
   draft,
   previousAttempt,
   acceptedSentences,
@@ -96,6 +98,10 @@ export default function WebbWritingStudio({
 
   const currentNote = String(note?.text || '').trim()
   const currentObjective = String(objective || '').trim()
+  const currentRole = String(slot?.role || '').trim().toLowerCase()
+  const researchNotes = (Array.isArray(sourceNotes) ? sourceNotes : []).map(value => String(value?.text || value || '').trim()).filter(Boolean)
+  const visibleResearchNotes = researchNotes.length ? researchNotes : (currentNote ? [currentNote] : [])
+  const slotLabel = currentRole === 'topic' ? 'Topic sentence' : currentRole === 'conclusion' ? 'Conclusion' : currentRole === 'body' ? 'Body sentence' : ''
   const currentDraft = String(draft || '')
   const priorText = String(previousAttempt?.text || '').trim()
   const entries = Object.entries(acceptedSentences || {})
@@ -144,6 +150,7 @@ export default function WebbWritingStudio({
       {subphase === WEBB_WRITING_SUBPHASES.BLANK && (
         <div style={{ animation: 'webb-writing-paper-in 0.55s ease both' }}>
           <GuidanceTranscript text={guidance} />
+          {storageWarning && <div style={{ width: 'min(92vw, 820px)', margin: '0 auto 12px', padding: '9px 12px', borderRadius: 9, background: '#fff7ed', color: '#9a3412', fontSize: 12, fontWeight: 700 }}>{storageWarning}</div>}
           <Paper>
             <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: 'uppercase' }}>
               Your essay
@@ -177,35 +184,27 @@ export default function WebbWritingStudio({
               boxShadow: keyboardCompact ? '0 4px 14px rgba(15,23,42,0.08)' : '0 20px 55px rgba(15,23,42,0.12)',
               ...(keyboardCompact ? { flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' } : {}),
             }}>
-              {currentObjective && (
-                <div style={{
-                  marginBottom: keyboardCompact ? 3 : 26,
-                  paddingBottom: keyboardCompact ? 3 : 22,
-                  borderBottom: '1px solid #e7e0d2',
-                  ...(keyboardCompact ? { maxHeight: 44, overflowY: 'auto', flexShrink: 0 } : {}),
-                }}>
-                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 8 }}>
-                    What you showed
+              {slotLabel && (
+                <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 3 : 12 }}>
+                  {slotLabel}
+                </div>
+              )}
+              {!slot && currentObjective && (
+                <div style={{ marginBottom: keyboardCompact ? 3 : 20, paddingBottom: keyboardCompact ? 3 : 18, borderBottom: '1px solid #e7e0d2' }}>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>What you showed</div>
+                  <div style={{ color: '#334155', fontSize: keyboardCompact ? 12 : 17, lineHeight: 1.5, fontWeight: 650 }}>{currentObjective}</div>
+                </div>
+              )}
+              {visibleResearchNotes.length > 0 && currentRole !== 'topic' && currentRole !== 'conclusion' && (
+                <div style={{ marginBottom: keyboardCompact ? 3 : (subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 30 : 38) }}>
+                  <div style={{ color: '#0f766e', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 10 }}>
+                    {visibleResearchNotes.length > 1 ? 'Your research notes' : 'Your research note'}
                   </div>
-                  <div style={{ color: '#334155', fontSize: keyboardCompact ? 12 : 'clamp(15px, 2.4vw, 19px)', lineHeight: keyboardCompact ? 1.22 : 1.55, fontWeight: 650 }}>
-                    {currentObjective}
+                  <div style={{ display: 'grid', gap: keyboardCompact ? 3 : 10 }}>
+                    {visibleResearchNotes.map((text, index) => <div key={index} style={{ color: '#172033', fontSize: keyboardCompact ? 13 : 'clamp(19px, 3.4vw, 30px)', lineHeight: keyboardCompact ? 1.22 : 1.35, fontWeight: 720 }}>{text}</div>)}
                   </div>
                 </div>
               )}
-              <div style={{ color: '#0f766e', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 10 }}>
-                Your note
-              </div>
-              <div style={{
-                color: '#172033',
-                fontSize: keyboardCompact ? 13 : 'clamp(23px, 4vw, 36px)',
-                lineHeight: keyboardCompact ? 1.22 : 1.35,
-                fontWeight: 720,
-                letterSpacing: keyboardCompact ? '-0.01em' : '-0.02em',
-                marginBottom: keyboardCompact ? 3 : (subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 30 : 38),
-                ...(keyboardCompact ? { maxHeight: 44, overflowY: 'auto', flexShrink: 0 } : {}),
-              }}>
-                {currentNote}
-              </div>
 
               {subphase === WEBB_WRITING_SUBPHASES.REVIEW && priorText && (
                 <div style={{
@@ -287,21 +286,18 @@ export default function WebbWritingStudio({
       {subphase === WEBB_WRITING_SUBPHASES.COMMITTED && (
         <div style={{ animation: 'webb-writing-paper-in 0.4s ease both' }}>
           <GuidanceTranscript text={guidance} />
+          {storageWarning && <div style={{ width: 'min(92vw, 820px)', margin: '0 auto 12px', padding: '9px 12px', borderRadius: 9, background: '#fff7ed', color: '#9a3412', fontSize: 12, fontWeight: 700 }}>{storageWarning}</div>}
           <div style={{ width: 'min(92vw, 820px)', margin: '0 auto 18px' }}>
-            {currentObjective && (
+            {(slotLabel || currentObjective || visibleResearchNotes.length > 0) && (
               <div style={{ background: '#fffdf7', border: '1px solid #ded6c7', borderRadius: 12, padding: '18px 20px' }}>
                 <div style={{ color: '#64748b', fontSize: 10, fontWeight: 900, letterSpacing: 1.3, textTransform: 'uppercase', marginBottom: 7 }}>
-                  What you showed
+                  {slotLabel || 'What you showed'}
                 </div>
-                <div style={{ color: '#334155', fontSize: 16, lineHeight: 1.5, fontWeight: 650, marginBottom: 12 }}>
-                  {currentObjective}
-                </div>
-                <div style={{ color: '#0f766e', fontSize: 10, fontWeight: 900, letterSpacing: 1.3, textTransform: 'uppercase', marginBottom: 6 }}>
-                  Your note
-                </div>
-                <div style={{ color: '#475569', fontSize: 15, lineHeight: 1.5 }}>
-                  {currentNote}
-                </div>
+                {!slot && currentObjective && <div style={{ color: '#334155', fontSize: 16, lineHeight: 1.5, fontWeight: 650, marginBottom: 12 }}>{currentObjective}</div>}
+                {visibleResearchNotes.length > 0 && currentRole !== 'topic' && currentRole !== 'conclusion' && <div>
+                  <div style={{ color: '#0f766e', fontSize: 10, fontWeight: 900, letterSpacing: 1.3, textTransform: 'uppercase', marginBottom: 6 }}>{visibleResearchNotes.length > 1 ? 'Research notes used' : 'Research note used'}</div>
+                  {visibleResearchNotes.map((text, index) => <div key={index} style={{ color: '#475569', fontSize: 15, lineHeight: 1.5 }}>{text}</div>)}
+                </div>}
               </div>
             )}
           </div>

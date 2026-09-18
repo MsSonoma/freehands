@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
@@ -73,6 +73,7 @@ function repository(overrides = {}) {
     async listAllTrackedSessions() { state.historyReads += 1; return sessions },
     async listAllLessonSessionEvents() { return sessionEvents },
     async listLegacyActivityRecords() { return overrides.legacyActivities || [] },
+    async findWebbCompositionForSession(_facilitatorId, _learnerId, executionSessionId) { return overrides.composition && executionSessionId === 'session-a' ? overrides.composition : null },
     async listEvidenceSessions(_facilitatorId, _learnerId, sessionIds) { return evidence.filter((row) => sessionIds.includes(row.session_id)) },
     async listAllSlateEvidenceSessions() { return overrides.slateEvidence || [] },
     async listEvidenceEvents(_facilitatorId, _learnerId, evidenceIds) { return evidenceEvents.filter((row) => evidenceIds.includes(row.evidence_session_id)) },
@@ -100,6 +101,19 @@ test('exact repeated occurrence resolves only its own canonical session, evidenc
   assert.equal(result.detail.evidence.primary.learning_summary.headline, 'Demonstrated independently')
   assert.equal(result.detail.sessionRecords[0].transcript.url, 'https://example.test/browser-a')
   assert.doesNotMatch(JSON.stringify(result), /session-b|browser-b|check-b|never-send-this-answer|answer_key/)
+})
+
+test('Mrs. Webb history returns the persisted learner essay as a separate composition artifact', async () => {
+  const result = await load('actual:session-a', { repository: repository({ composition: {
+    id: 'composition-a', status: 'final', essay: 'Emma wrote this paragraph herself.',
+    protocol_version: 'webb-composition-v1', finalized_at: '2026-08-10T15:00:00Z', updated_at: '2026-08-10T15:00:00Z',
+  } }) })
+  assert.equal(result.kind, 'ok')
+  assert.deepEqual(result.detail.composition, {
+    id: 'composition-a', status: 'final', essay: 'Emma wrote this paragraph herself.',
+    protocolVersion: 'webb-composition-v1', appBuildId: null, finalizedAt: '2026-08-10T15:00:00Z', updatedAt: '2026-08-10T15:00:00Z',
+  })
+  assert.equal(result.detail.evidence.primary.session.id, 'session-a')
 })
 
 test('same-title and same-lesson occurrences never cross-resolve', async () => {

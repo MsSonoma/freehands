@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
@@ -34,7 +34,7 @@ function SummaryConclusion({ summary }) {
   const planningMeaning = String(summary?.planning_meaning || '').trim()
   const hints = Number(summary?.assistance_counts?.hints || 0)
   const retries = Number(summary?.assistance_counts?.retries || 0)
-  const assistance = [hints > 0 ? `${hints} ${hints === 1 ? 'hint' : 'hints'}` : '', retries > 0 ? `${retries} ${retries === 1 ? 'retry' : 'retries'}` : ''].filter(Boolean).join(' · ')
+  const assistance = [hints > 0 ? `${hints} ${hints === 1 ? 'hint' : 'hints'}` : '', retries > 0 ? `${retries} ${retries === 1 ? 'retry' : 'retries'}` : ''].filter(Boolean).join(' Â· ')
   return <>
     <h3>{summary?.headline || 'Structured learning evidence unavailable'}</h3>
     <p>{summary?.narrative || 'This occurrence is part of the Syllabus record, but structured learning evidence is unavailable.'}</p>
@@ -75,14 +75,14 @@ function TranscriptDetail({ record, lessonTitle, onBack, loadTranscript = null }
     return () => controller.abort()
   }, [loadTranscript, record])
   return <>
-    <button type="button" className={styles.backButton} onClick={onBack}>← Back to lesson history</button>
+    <button type="button" className={styles.backButton} onClick={onBack}>â† Back to lesson history</button>
     <div className={styles.transcriptHeading}><div><p className={styles.kicker}>Session transcript</p><h2>{lessonTitle}</h2></div><span>{record.teacherName}</span></div>
     {record.transcript.kind === 'pdf'
       ? <iframe className={styles.pdfFrame} title={`${lessonTitle} transcript`} src={record.transcript.url} />
       : error
         ? <p className={styles.localError} role="alert">{error}</p>
         : text === null
-          ? <p className={styles.status} role="status">Loading transcript…</p>
+          ? <p className={styles.status} role="status">Loading transcriptâ€¦</p>
           : <pre className={styles.transcriptText}>{text}</pre>}
   </>
 }
@@ -163,12 +163,12 @@ export default function LessonHistoryOverlay({ learnerId, occurrenceId, accessTo
   const report = detail?.evidence?.primary
   return <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose() }}>
     <section ref={dialogRef} className={styles.dialog} role="dialog" aria-modal="true" aria-labelledby={detail ? 'lesson-history-title' : undefined} aria-label={detail ? undefined : 'Lesson history'}>
-      <button ref={closeRef} type="button" className={styles.closeButton} aria-label="Close lesson history" onClick={onClose}>×</button>
+      <button ref={closeRef} type="button" className={styles.closeButton} aria-label="Close lesson history" onClick={onClose}>Ã—</button>
       <div className={styles.scrollBody}>
         {transcriptRecord && detail
           ? <TranscriptDetail record={transcriptRecord} lessonTitle={occurrence?.lessonTitle || 'Lesson'} onBack={() => setTranscriptRecord(null)} loadTranscript={loadTranscript} />
           : <>
-            {loading && <p className={styles.status} role="status">Loading this lesson’s history…</p>}
+            {loading && <p className={styles.status} role="status">Loading this lessonâ€™s historyâ€¦</p>}
             {error && <div className={styles.error} role="alert"><h2>Lesson history unavailable</h2><p>{error}</p><button type="button" onClick={() => setRetrySequence((value) => value + 1)}>Try again</button></div>}
             {detail && <>
               <header className={styles.header}>
@@ -186,6 +186,13 @@ export default function LessonHistoryOverlay({ learnerId, occurrenceId, accessTo
                 <p className={styles.sectionLabel}>What this tells us</p>
                 <SummaryConclusion summary={report?.learning_summary} />
               </section>
+
+              {detail.composition?.essay && <section className={styles.section}>
+                <p className={styles.sectionLabel}>Learner writing</p>
+                <h3>Mrs. Webb essay</h3>
+                <p style={{ whiteSpace: 'pre-wrap', color: '#1f2937', fontSize: 16, lineHeight: 1.7, margin: '10px 0 0' }}>{detail.composition.essay}</p>
+                <p style={{ color: '#64748b', fontSize: 12, margin: '12px 0 0' }}>Saved learner-authored composition{detail.composition.status === 'final' ? ' | Final' : ' | Draft'}{detail.composition.finalizedAt ? ` | ${formatDate(detail.composition.finalizedAt, true)}` : ''}</p>
+              </section>}
 
               <ReviewSection title="Daily Follow-Up" reports={detail.reviews?.daily} />
               <ReviewSection title="Weekly Review" reports={detail.reviews?.weekly} />

@@ -1,4 +1,4 @@
-import test from 'node:test'
+﻿import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   WEBB_SESSION_STAGES,
@@ -80,19 +80,22 @@ test('writing guidance contract asks for learner retry and forbids supplied pros
   assert.match(instructions, /another attempt in their own words/i)
   assert.match(instructions, /Never write, dictate, complete, rewrite, or offer a model sentence/i)
   assert.match(instructions, /taxes with no say/)
-  const unsafe = sanitizeWritingGuidance('You could write: “The colonists opposed taxation without representation.”')
+  const unsafe = sanitizeWritingGuidance('You could write: â€œThe colonists opposed taxation without representation.â€')
   assert.doesNotMatch(unsafe, /colonists opposed/i)
   assert.match(unsafe, /try again in your own words/i)
   assert.equal(sanitizeWritingGuidance('Who is your sentence about? Add that, then try again.'), 'Who is your sentence about? Add that, then try again.')
   const positionContext = { objective: 'The learner can explain the next consequence.', objectiveIndex: 1, totalObjectives: 3, priorSentences: ['The first learner sentence.'] }
   const positionEvaluation = { accuracy: 'correct', sentenceOk: true, positionFit: false }
   const positionInstructions = buildWritingGuidanceInstructions('the next consequence', positionEvaluation, positionContext)
-  assert.match(positionInstructions, /position fit: no/i)
+  assert.match(positionInstructions, /slot fit: no/i)
   assert.match(positionInstructions, /sentence 2 of 3/i)
   assert.match(positionInstructions, /accepted learner-written sentences before this one are context only/i)
-  assert.match(positionInstructions, /Focus only on structural fit/i)
+  assert.match(positionInstructions, /specific problem/i)
   const positionFallback = sanitizeWritingGuidance('', positionEvaluation, positionContext)
-  assert.match(positionFallback, /does not connect cleanly to the essay so far/i)
+  assert.match(positionFallback, /does not add a distinct, connected step/i)
+  const privateContext = { slot: { role: 'topic', focus: 'how historians compare evidence to understand the past' }, controllingIdea: 'Historians compare evidence to understand the past' }
+  const leaked = sanitizeWritingGuidance('Think about historians compare evidence to understand the past.', {}, privateContext)
+  assert.doesNotMatch(leaked, /historians compare evidence to understand the past/i)
 })
 
 test('essay assembly is deterministic and requires traceable learner-authored sentences', () => {
