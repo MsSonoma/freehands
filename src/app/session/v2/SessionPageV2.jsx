@@ -868,7 +868,9 @@ function SessionPageV2Inner() {
   // Learner-turn response pacing is intentionally separate from work/play timers and mastery evidence.
   const [sonomaResponseTurn, setSonomaResponseTurn] = useState(null);
   const sonomaResponseTurnRef = useRef(null);
+  const [sonomaHelpHoldActive, setSonomaHelpHoldActive] = useState(false);
   const sonomaPacingBlockedRef = useRef(false);
+  const sonomaPacingHelpHoldRef = useRef(false);
   const sonomaReminderAudioActiveRef = useRef(null);
   const sonomaNotificationInFlightRef = useRef(false);
   const sonomaNotificationLastAttemptRef = useRef(0);
@@ -3698,14 +3700,46 @@ function SessionPageV2Inner() {
     sonomaResponseTurnRef.current = markSonomaLearnerActivity(turn, Date.now());
   }, []);
 
+  const beginSonomaHelpHold = useCallback(() => {
+    if (sonomaPacingHelpHoldRef.current) return;
+    sonomaPacingHelpHoldRef.current = true;
+    setSonomaHelpHoldActive(true);
+
+    const current = sonomaResponseTurnRef.current;
+    if (!current) return;
+
+    const reminderAudio = sonomaReminderAudioActiveRef.current;
+    if (reminderAudio?.turnId === current.id) {
+      sonomaReminderAudioActiveRef.current = null;
+      try { audioEngineRef.current?.stop?.(); } catch {}
+    }
+
+    const nowMs = Date.now();
+    const active = markSonomaLearnerActivity(current, nowMs);
+    const paused = pauseSonomaResponseTurn(active, nowMs);
+    commitSonomaResponseTurn(paused);
+  }, [commitSonomaResponseTurn]);
+
+  const endSonomaHelpHold = useCallback(() => {
+    if (!sonomaPacingHelpHoldRef.current) return;
+    sonomaPacingHelpHoldRef.current = false;
+    setSonomaHelpHoldActive(false);
+
+    const current = sonomaResponseTurnRef.current;
+    if (!current) return;
+
+    const active = markSonomaLearnerActivity(current, Date.now());
+    commitSonomaResponseTurn(active);
+  }, [commitSonomaResponseTurn]);
+
   const speakSonomaAttentionLine = useCallback((text, turnId, stage) => {
     const spoken = String(text || '').trim();
-    if (!spoken || !turnId || sonomaPacingBlockedRef.current) return;
+    if (!spoken || !turnId || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current) return;
     void (async () => {
       try {
         const audio = await fetchTTS(spoken);
         const live = sonomaResponseTurnRef.current;
-        if (!live || live.id !== turnId || live.reminderStage < stage || sonomaPacingBlockedRef.current) return;
+        if (!live || live.id !== turnId || live.reminderStage < stage || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current) return;
         sonomaReminderAudioActiveRef.current = { turnId, stage };
         audioEngineRef.current?.playAudio(audio || '', [spoken]).catch(() => {
           if (sonomaReminderAudioActiveRef.current?.turnId === turnId) sonomaReminderAudioActiveRef.current = null;
@@ -3717,7 +3751,7 @@ function SessionPageV2Inner() {
   const deliverSonomaReminder = useCallback((stage) => {
     const current = sonomaResponseTurnRef.current;
     if (!current || stage < 1 || stage > 4 || stage <= Number(current.reminderStage || 0)) return;
-    if (sonomaPacingBlockedRef.current || isSonomaActivitySnoozed(current, Date.now())) return;
+    if (sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isSonomaActivitySnoozed(current, Date.now())) return;
     const text = sonomaReminderForStage(stage, current.phase);
     if (!text) return;
     const nowMs = Date.now();
@@ -3739,7 +3773,7 @@ function SessionPageV2Inner() {
 
   const deliverSonomaFacilitatorEscalation = useCallback(() => {
     const current = sonomaResponseTurnRef.current;
-    if (!current || current.notificationDelivered || sonomaNotificationInFlightRef.current) return;
+    if (!current || current.notificationDelivered || sonomaNotificationInFlightRef.current || sonomaPacingHelpHoldRef.current) return;
     const nowMs = Date.now();
     if (nowMs - sonomaNotificationLastAttemptRef.current < 15000) return;
     const reminderAt = Date.parse(String(current.lastReminderAt || ''));
@@ -3753,6 +3787,7 @@ function SessionPageV2Inner() {
       : { ...current, reminderStage: 5, escalated: true };
     if (staged !== current) commitSonomaResponseTurn(staged);
 
+    if (sonomaPacingHelpHoldRef.current) return;
     sonomaNotificationInFlightRef.current = true;
     sonomaNotificationLastAttemptRef.current = nowMs;
     void createSonomaAttentionNotification({
@@ -3788,7 +3823,8 @@ function SessionPageV2Inner() {
   }, [appendTranscriptLine, commitSonomaResponseTurn, getSonomaPacingContext, sendSonomaPacingEvent, speakSonomaAttentionLine]);
 
   const sonomaPacingBlocked = Boolean(
-    engineState === 'playing'
+    sonomaHelpHoldActive
+    || engineState === 'playing'
     || openingActionActive
     || showWords
     || showVisualAids
@@ -3821,7 +3857,7 @@ function SessionPageV2Inner() {
     if (!sonomaResponseTurn?.id) return undefined;
     const tick = () => {
       const current = sonomaResponseTurnRef.current;
-      if (!current || sonomaPacingBlockedRef.current || current.pauseStartedAt || executionFencedRef.current) return;
+      if (!current || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || current.pauseStartedAt || executionFencedRef.current) return;
       const nowMs = Date.now();
       if (isSonomaActivitySnoozed(current, nowMs)) return;
       const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
@@ -3893,16 +3929,18 @@ function SessionPageV2Inner() {
     setOpeningActionInput('');
     setOpeningActionError('');
     setOpeningActionBusy(false);
+    endSonomaHelpHold();
     const shouldResume = studyResumeMainAudioRef.current === true;
     studyResumeMainAudioRef.current = false;
     if (shouldResume) void audioEngineRef.current?.resume?.();
-  }, []);
+  }, [endSonomaHelpHold]);
 
   const handleOpeningActionCancel = useCallback(() => {
     if (openingActionType === 'study') {
       closeStudyAction();
       return;
     }
+    if (openingActionType === 'ask') endSonomaHelpHold();
     const controller = openingActionsControllerRef.current;
     stopAudioSafe({ force: true });
     if (controller?.cancelCurrent) controller.cancelCurrent();
@@ -3915,7 +3953,7 @@ function SessionPageV2Inner() {
     askAnswerShortcutLoadingRef.current = false;
     setAskAnswerShortcutLoading(false);
     askReturnQuestionRef.current = '';
-  }, [closeStudyAction, openingActionType, stopAudioSafe]);
+  }, [closeStudyAction, endSonomaHelpHold, openingActionType, stopAudioSafe]);
 
   const buildAskContext = useCallback(() => {
     const lessonTitle = (lessonData?.title || lessonKey || lessonId || 'this lesson').toString();
@@ -4289,6 +4327,7 @@ function SessionPageV2Inner() {
     const phase = normalizePhaseAlias(currentPhaseRef.current || currentPhase);
     if (!controller || !['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(phase)) return;
 
+    beginSonomaHelpHold();
     const wordsHadMainAudio = wordsResumeMainAudioRef.current === true;
     wordsResumeMainAudioRef.current = false;
     setShowWords(false);
@@ -4314,13 +4353,14 @@ function SessionPageV2Inner() {
       if (!result?.success) throw new Error(result?.error || 'Study could not start');
       syncOpeningActionState();
     } catch (err) {
+      endSonomaHelpHold();
       console.error('[SessionPageV2] Study start error:', err);
       const shouldResume = studyResumeMainAudioRef.current === true;
       studyResumeMainAudioRef.current = false;
       if (shouldResume) void mainAudio?.resume?.();
       setOpeningActionError('Study is unavailable right now.');
     }
-  }, [currentPhase, syncOpeningActionState, teachingStage]);
+  }, [beginSonomaHelpHold, currentPhase, endSonomaHelpHold, syncOpeningActionState, teachingStage]);
 
   const handleStudySubmit = useCallback(async (mode = 'typed') => {
     const controller = openingActionsControllerRef.current;
@@ -4384,18 +4424,20 @@ function SessionPageV2Inner() {
   const handleOpeningAskStart = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
     if (!controller || openingActionBusy) return;
+    beginSonomaHelpHold();
     askReturnQuestionRef.current = getActiveFlowQuestionText();
     setOpeningActionError('');
     setOpeningActionBusy(true);
     try {
       await controller.startAsk();
     } catch (err) {
+      endSonomaHelpHold();
       console.error('[SessionPageV2] Ask start error:', err);
       setOpeningActionError('Ask is unavailable right now. Try again.');
     } finally {
       setOpeningActionBusy(false);
     }
-  }, [openingActionBusy, getActiveFlowQuestionText]);
+  }, [beginSonomaHelpHold, endSonomaHelpHold, openingActionBusy, getActiveFlowQuestionText]);
 
   const handleOpeningAskSubmit = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -5413,6 +5455,7 @@ function SessionPageV2Inner() {
 
     const handleOpeningStart = (data) => {
       const actionType = data?.type || data?.action || null;
+      if (actionType === 'ask' || actionType === 'study') beginSonomaHelpHold();
       addEvent(`Opening action start: ${actionType || 'unknown'}`);
       setOpeningActionActive(true);
       setOpeningActionType(actionType);
@@ -5424,6 +5467,7 @@ function SessionPageV2Inner() {
 
     const handleOpeningComplete = (data) => {
       const actionType = data?.type || data?.action || null;
+      if (actionType === 'ask' || actionType === 'study') endSonomaHelpHold();
       addEvent(`Opening action complete: ${actionType || 'unknown'}`);
       setOpeningActionActive(false);
       setOpeningActionType(null);
@@ -5435,6 +5479,7 @@ function SessionPageV2Inner() {
 
     const handleOpeningCancel = (data) => {
       const actionType = data?.type || data?.action || null;
+      if (actionType === 'ask' || actionType === 'study') endSonomaHelpHold();
       addEvent(`Opening action cancelled: ${actionType || 'unknown'}`);
       setOpeningActionActive(false);
       setOpeningActionType(null);
@@ -5463,7 +5508,7 @@ function SessionPageV2Inner() {
       setOpeningActionError('');
       setOpeningActionBusy(false);
     };
-  }, [lessonData, audioReady]);
+  }, [lessonData, audioReady, beginSonomaHelpHold, endSonomaHelpHold]);
 
   useEffect(() => {
     openingActionsControllerRef.current?.setPhase?.(normalizePhaseAlias(currentPhase));
@@ -10082,6 +10127,8 @@ function SessionPageV2Inner() {
                   background: '#fff',
                   color: '#111827',
                 }}
+                onFocus={noteSonomaLearnerActivity}
+                onPointerDown={noteSonomaLearnerActivity}
                 onChange={(e) => { setDiscussionResponse(e.target.value); noteSonomaLearnerActivity(); }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -10350,6 +10397,8 @@ function SessionPageV2Inner() {
                         background: '#fff',
                         color: '#111827'
                       }}
+                      onFocus={noteSonomaLearnerActivity}
+                      onPointerDown={noteSonomaLearnerActivity}
                       onChange={(e) => { setValue(e.target.value); noteSonomaLearnerActivity(); }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {
