@@ -5437,7 +5437,7 @@ function SessionPageV2Inner() {
   useEffect(() => {
     if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
 
-    const studyEngine = new AudioEngine({ videoElement: null });
+    const studyEngine = new AudioEngine({ videoElement: videoRef.current });
     studyAudioEngineRef.current = studyEngine;
     const openingController = new OpeningActionsController(
       eventBusRef.current,
