@@ -5,10 +5,18 @@ import { startLessonSession } from '../sessionTracking.js'
 
 export function getProtectedBrowserSessionId() {
   if (typeof window === 'undefined') return null
-  let value = sessionStorage.getItem('lesson_session_id')
+  const key = 'lesson_session_id'
+  let value = null
+  try { value = localStorage.getItem(key) } catch {}
+  if (!value) {
+    try { value = sessionStorage.getItem(key) } catch {}
+  }
   if (!value) {
     value = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null
-    if (value) sessionStorage.setItem('lesson_session_id', value)
+  }
+  if (value) {
+    try { localStorage.setItem(key, value) } catch {}
+    try { sessionStorage.setItem(key, value) } catch {}
   }
   return value
 }

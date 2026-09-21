@@ -23,6 +23,7 @@ const learnerApi = read('src/app/facilitator/learners/clientApi.js')
 const takeoverDialog = read('src/app/session/components/SessionTakeoverDialog.jsx')
 const capacityModule = read('src/app/lib/syllabus/capacity.mjs')
 const executionStartRoute = read('src/app/api/syllabus/execution/start/route.js')
+const executionClient = read('src/app/lib/syllabus/executionClient.js')
 const executionCompleteRoute = read('src/app/api/syllabus/execution/complete/route.js')
 
 test('instructional execution ownership keeps historical end reasons but no longer auto-expires a foreign browser', () => {
@@ -76,7 +77,7 @@ test('shared snapshots and educational evidence reject writes from a losing exec
   assert.match(snapshotRoute, /action === 'target_claim'/)
   assert.match(sessionPage, /pendingSnapshotHandoffRef/)
   assert.match(sessionPage, /sessionResult\.snapshotHandoffId/)
-  assert.match(sessionPage, /saved progress is still transferring/)
+  assert.match(sessionPage, /snapshot transfer was unavailable|latest snapshot could not be transferred/)
   assert.match(sessionPage, /Resume lesson here/)
   assert.match(sessionPage, /fetch\('\/api\/syllabus\/execution\/takeover'/)
   assert.match(takeoverDialog, /\^\\d\{4,8\}\$/)
@@ -86,15 +87,31 @@ test('shared snapshots and educational evidence reject writes from a losing exec
   assert.match(evidenceRoute, /code: 'EVIDENCE_OWNERSHIP_LOST'/)
 })
 
-test('takeover keeps target Snapshot writes fenced until transferred state is adopted', () => {
+test('PIN takeover becomes usable before snapshot recovery and snapshot failure cannot revoke it', () => {
   const start = sessionPage.indexOf('const handleSessionTakeover = useCallback')
   const end = sessionPage.indexOf('const handleRecoverExecution = useCallback')
   const takeover = sessionPage.slice(start, end)
-  const fence = takeover.indexOf("fenceWrites?.('takeover-handoff')")
-  const claim = takeover.indexOf('claimTakeoverSnapshot?.', fence)
-  const bind = takeover.indexOf('bindExecutionOwner?.', claim)
-  assert.ok(fence >= 0 && claim > fence && bind > claim)
+  const bind = takeover.indexOf('bindExecutionOwner?.')
+  const claim = takeover.indexOf('claimTakeoverSnapshot?.', bind)
+  assert.ok(bind >= 0 && claim > bind)
+  assert.doesNotMatch(takeover, /fenceWrites\?\.\('takeover-handoff'\)/)
+  assert.match(takeover, /Takeover succeeded\. The latest snapshot could not be transferred/)
 })
+test('instructional browser identity survives ordinary same-browser tab and refresh changes', () => {
+  assert.match(executionClient, /localStorage\.getItem\(key\)/)
+  assert.match(executionClient, /sessionStorage\.getItem\(key\)/)
+  assert.match(executionClient, /localStorage\.setItem\(key, value\)/)
+  assert.match(sessionPage, /getProtectedBrowserSessionId\(\)/)
+  assert.doesNotMatch(sessionPage, /sessionStorage\.getItem\('lesson_session_id'\)/)
+})
+
+test('SnapshotService uses the authenticated lesson client and snapshot persistence errors fail visibly', () => {
+  assert.match(sessionPage, /const supabase = getSupabaseClient\(\);/)
+  assert.doesNotMatch(sessionPage, /createBrowserClient/)
+  assert.match(snapshotRoute, /code: 'SNAPSHOT_PERSIST_FAILED'/)
+  assert.match(snapshotRoute, /status: 500/)
+})
+
 test('Syllabus capacity stays planning-only and cannot fence or terminate instructional runtime', () => {
   assert.match(capacityModule, /capacity_conflict|daily_capacity|subject_capacity/)
   const runtime = [sessionPage, trackingClient, executionStartRoute, executionCompleteRoute].join('\n')

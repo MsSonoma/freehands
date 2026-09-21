@@ -512,7 +512,11 @@ export async function POST(req) {
       return NextResponse.json({ ok: true });
     }
     if (!isUndefinedColumnOrTable(up.error)) {
-      return NextResponse.json({ ok: true, hint: up.error?.message || 'Upsert error (soft)' });
+      return NextResponse.json({
+        ok: false,
+        code: 'SNAPSHOT_PERSIST_FAILED',
+        error: up.error?.message || 'Snapshot persistence failed',
+      }, { status: 500 });
     }
 
     // Fallback to storage

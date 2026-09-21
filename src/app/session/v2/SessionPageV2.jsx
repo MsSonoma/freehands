@@ -20,8 +20,8 @@
 import { Suspense, useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import jsPDF from 'jspdf';
-import { createBrowserClient } from '@supabase/ssr';
 import { getSupabaseClient } from '@/app/lib/supabaseClient';
+import { getProtectedBrowserSessionId } from '@/app/lib/syllabus/executionClient';
 import { getLearner, updateLearner } from '@/app/facilitator/learners/clientApi';
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
 import { applyGoldenKeyToLesson, finalizeGoldenKeyForSession } from '@/app/lib/goldenKeyClient';
@@ -547,18 +547,9 @@ function SessionPageV2Inner() {
   const regenerateParam = searchParams?.get('regenerate'); // Support generated lessons
   const goldenKeyFromUrl = searchParams?.get('goldenKey') === 'true';
 
-  // Stable session id (persists across refreshes in this tab; V1 parity)
-  const [browserSessionId] = useState(() => {
-    if (typeof window === 'undefined') return null;
-    let sid = sessionStorage.getItem('lesson_session_id');
-    if (!sid) {
-      sid = (typeof crypto !== 'undefined' && crypto?.randomUUID)
-        ? crypto.randomUUID()
-        : `sid_${Math.random().toString(16).slice(2)}_${Date.now()}`;
-      try { sessionStorage.setItem('lesson_session_id', sid); } catch {}
-    }
-    return sid;
-  });
+  // Stable browser identity. Persist across tabs and refreshes in this browser profile so
+  // an ordinary same-device continuation is never misclassified as a cross-device takeover.
+  const [browserSessionId] = useState(() => getProtectedBrowserSessionId());
   
   const videoRef = useRef(null);
   const transcriptRef = useRef(null);
@@ -2196,10 +2187,10 @@ function SessionPageV2Inner() {
     const sessionId = browserSessionId;
     const learnerId = learnerProfile.id;
 
-    const supabase = createBrowserClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL,
-      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-    );
+    // Use the same authenticated Supabase client as the rest of the learner session.
+    // A separately constructed client could have no auth session and silently leave
+    // lesson snapshots local-only, defeating cross-device recovery.
+    const supabase = getSupabaseClient();
 
     try {
       const service = new SnapshotService({
@@ -7441,27 +7432,8 @@ function SessionPageV2Inner() {
       }
       trackedSessionIdForEvidence = sessionResult.id;
       trackedExecutionSessionIdRef.current = sessionResult.id;
-      if (sessionResult.snapshotHandoffId) {
-        snapshotServiceRef.current?.fenceWrites?.('takeover-handoff');
-        const transfer = await snapshotServiceRef.current?.claimTakeoverSnapshot?.({
-          handoffId: sessionResult.snapshotHandoffId,
-          targetExecutionSessionId: sessionResult.id,
-          targetBrowserSessionId: browserSessionId,
-        });
-        if (!transfer?.ok) {
-          throw new Error('The protected lesson is yours, but its saved progress is still transferring. Retry Resume. Your work has not been erased.');
-        }
-        snapshotServiceRef.current?.bindExecutionOwner?.({
-          executionSessionId: sessionResult.id,
-          browserSessionId,
-        });
-        executionFencedRef.current = false;
-        if (typeof window !== 'undefined') {
-          delete window.__PREVENT_SNAPSHOT_SAVE__;
-          window.location.reload();
-        }
-        return;
-      }
+      // Once the protected start succeeds, this browser owns the execution. Snapshot
+      // recovery is a continuity aid, not a second authorization gate.
       snapshotServiceRef.current?.bindExecutionOwner?.({
         executionSessionId: sessionResult.id,
         browserSessionId,
@@ -7469,6 +7441,21 @@ function SessionPageV2Inner() {
       executionFencedRef.current = false;
       if (typeof window !== 'undefined') delete window.__PREVENT_SNAPSHOT_SAVE__;
       try { startSessionPolling?.(); } catch {}
+
+      if (sessionResult.snapshotHandoffId) {
+        const transfer = await snapshotServiceRef.current?.claimTakeoverSnapshot?.({
+          handoffId: sessionResult.snapshotHandoffId,
+          targetExecutionSessionId: sessionResult.id,
+          targetBrowserSessionId: browserSessionId,
+        });
+        pendingSnapshotHandoffRef.current = null;
+        if (transfer?.ok) {
+          setExecutionRecoveryError('');
+          if (typeof window !== 'undefined') window.location.reload();
+          return;
+        }
+        showFeatureGateNotice('Lesson ownership is restored. The snapshot transfer was unavailable, so Ms. Sonoma will continue from any progress already saved in this browser.');
+      }
     }
 
     if (options?.ignoreResume) {
@@ -7705,16 +7692,12 @@ function SessionPageV2Inner() {
       throw new Error('Session not initialized');
     }
 
+    // A prior PIN attempt may already have transferred execution ownership even if
+    // snapshot adoption failed afterward. Never make the facilitator authorize that
+    // same successful takeover again. Rebind the active owner and treat snapshot
+    // recovery as best-effort continuity.
     const pendingHandoff = pendingSnapshotHandoffRef.current;
     if (pendingHandoff?.handoffId && pendingHandoff?.targetExecutionSessionId) {
-      const transfer = await snapshotServiceRef.current?.claimTakeoverSnapshot?.({
-        handoffId: pendingHandoff.handoffId,
-        targetExecutionSessionId: pendingHandoff.targetExecutionSessionId,
-        targetBrowserSessionId: browserSessionId,
-      });
-      if (!transfer?.ok) {
-        throw new Error('The lesson changed devices, but the latest saved progress has not transferred yet. Keep the other lesson window open and retry.');
-      }
       trackedExecutionSessionIdRef.current = pendingHandoff.targetExecutionSessionId;
       snapshotServiceRef.current?.bindExecutionOwner?.({
         executionSessionId: pendingHandoff.targetExecutionSessionId,
@@ -7723,8 +7706,22 @@ function SessionPageV2Inner() {
       executionFencedRef.current = false;
       if (typeof window !== 'undefined') delete window.__PREVENT_SNAPSHOT_SAVE__;
       try { startSessionPolling?.(); } catch {}
+
+      const transfer = await snapshotServiceRef.current?.claimTakeoverSnapshot?.({
+        handoffId: pendingHandoff.handoffId,
+        targetExecutionSessionId: pendingHandoff.targetExecutionSessionId,
+        targetBrowserSessionId: browserSessionId,
+      });
       pendingSnapshotHandoffRef.current = null;
-      if (typeof window !== 'undefined') window.location.reload();
+      setExecutionRecoveryError('');
+      setIsTakenOverNotification(false);
+      setShowTakeoverDialog(false);
+      setConflictingSession(null);
+      if (transfer?.ok) {
+        if (typeof window !== 'undefined') window.location.reload();
+        return;
+      }
+      showFeatureGateNotice('Takeover is already active here. The snapshot transfer was unavailable, so Ms. Sonoma will continue from any progress already saved in this browser.');
       return;
     }
 
@@ -7770,15 +7767,20 @@ function SessionPageV2Inner() {
     if (!result?.id || result?.conflict) {
       throw new Error('Unable to take over this lesson session. The existing session is still active.');
     }
-    trackedExecutionSessionIdRef.current = result.id;
-    // Keep Snapshot writes fenced until the new owner has adopted the transferred state.
-    // This prevents stale target state from racing the handoff into durable storage.
-    snapshotServiceRef.current?.fenceWrites?.('takeover-handoff');
 
+    // PIN authorization is authoritative. The new execution becomes usable before
+    // attempting snapshot recovery so a failed handoff can never strand ownership.
+    trackedExecutionSessionIdRef.current = result.id;
+    snapshotServiceRef.current?.bindExecutionOwner?.({
+      executionSessionId: result.id,
+      browserSessionId,
+    });
+    executionFencedRef.current = false;
+    if (typeof window !== 'undefined') delete window.__PREVENT_SNAPSHOT_SAVE__;
+    try { startSessionPolling?.(); } catch {}
+
+    let transferredSnapshot = false;
     const sameLessonContinuation = String(expectedConflict.lesson_id || '') === String(trackingLessonId || '');
-    if (sameLessonContinuation && !result.snapshotHandoffId) {
-      throw new Error('Takeover succeeded, but the continuity handoff was not created. The saved lesson state has been preserved; do not start over.');
-    }
     if (result.snapshotHandoffId) {
       pendingSnapshotHandoffRef.current = {
         handoffId: result.snapshotHandoffId,
@@ -7789,26 +7791,21 @@ function SessionPageV2Inner() {
         targetExecutionSessionId: result.id,
         targetBrowserSessionId: browserSessionId,
       });
-      if (!transfer?.ok) {
-        throw new Error('Takeover succeeded, but the latest lesson progress has not transferred yet. Keep the other lesson window open and retry.');
-      }
       pendingSnapshotHandoffRef.current = null;
+      transferredSnapshot = transfer?.ok === true;
+      if (!transferredSnapshot) {
+        showFeatureGateNotice('Takeover succeeded. The latest snapshot could not be transferred, so Ms. Sonoma will continue from any progress already saved in this browser.');
+      }
+    } else if (sameLessonContinuation) {
+      showFeatureGateNotice('Takeover succeeded. No continuity handoff was available, so Ms. Sonoma will continue from any progress already saved in this browser.');
     }
-
-    snapshotServiceRef.current?.bindExecutionOwner?.({
-      executionSessionId: result.id,
-      browserSessionId,
-    });
-    executionFencedRef.current = false;
-    if (typeof window !== 'undefined') delete window.__PREVENT_SNAPSHOT_SAVE__;
-    try { startSessionPolling?.(); } catch {}
 
     setExecutionRecoveryError('');
     setIsTakenOverNotification(false);
     setShowTakeoverDialog(false);
     setConflictingSession(null);
-    if (typeof window !== 'undefined') window.location.reload();
-  }, [browserSessionId, goldenKeyLessonKey, learnerProfile?.id, lessonId, lessonKey, occurrenceIdParam, startTrackedSession, startSessionPolling, subjectParam]);
+    if (transferredSnapshot && typeof window !== 'undefined') window.location.reload();
+  }, [browserSessionId, goldenKeyLessonKey, learnerProfile?.id, lessonId, lessonKey, occurrenceIdParam, showFeatureGateNotice, startTrackedSession, startSessionPolling, subjectParam]);
 
   const handleRecoverExecution = useCallback(async () => {
     if (executionRecoveryLoading) return;
