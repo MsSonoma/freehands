@@ -1,4 +1,4 @@
-﻿import { WEBB_WRITING_SUBPHASES, latestWritingAttempt, normalizeWritingSubphase } from './webbWritingFlow.mjs'
+import { WEBB_WRITING_SUBPHASES, latestWritingAttempt, normalizeWritingSubphase } from './webbWritingFlow.mjs'
 import { assembleWebbCompositionEssay, nextCompositionSlotIndex } from './webbCompositionModel.mjs'
 
 export const WEBB_SNAPSHOT_VERSION = 8
@@ -304,8 +304,8 @@ export function sanitizeWritingGuidance(reply, evaluation = {}, context = {}) {
   const suppliesWording =
     /\b(?:you could|you can|try to|please)\s+(?:write|say|use)\b/i.test(text) ||
     /\b(?:write|say|try|use)\s*:\s*/i.test(text) ||
-    /\b(?:here(?:'s| is)|for example)\b[^.!?]{0,40}["â€œ]/i.test(text) ||
-    /["â€œ][^"â€]*(?:\s+[^"â€]+){5,}["â€]/.test(text)
+    /\b(?:here(?:'s| is)|for example)\b[^.!?]{0,40}["“]/i.test(text) ||
+    /["“][^"”]*(?:\s+[^"”]+){5,}["”]/.test(text)
   const normalizePrivate = value => String(value || '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim()
   const normalizedReply = normalizePrivate(text)
   const privatePhrases = [context?.controllingIdea, context?.slot?.focus]

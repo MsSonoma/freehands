@@ -7,6 +7,7 @@ const studio = fs.readFileSync(new URL('../WebbWritingStudio.jsx', import.meta.u
 const route = fs.readFileSync(new URL('../../../api/webb-objectives/route.js', import.meta.url), 'utf8')
   + fs.readFileSync(new URL('../../../lib/webbObjectiveEvaluation.mjs', import.meta.url), 'utf8')
 const model = fs.readFileSync(new URL('../../../lib/webbLearningModel.mjs', import.meta.url), 'utf8')
+const historyOverlay = fs.readFileSync(new URL('../../../components/syllabus/LessonHistoryOverlay.js', import.meta.url), 'utf8')
 
 test('objective coverage cannot fabricate a writing note', () => {
   assert.match(route, /noteReadyIndices/)
@@ -28,10 +29,10 @@ test('composition needs source-verified notes while discussion uses demonstrated
 
 test('writing studio keeps objective context and learner-controlled commit gates', () => {
   assert.match(page, /<WebbWritingStudio/)
-  assert.match(page, /objective=\{objectives\[writingIndex\]\}/)
+  assert.match(page, /objective=\{activeWritingPlan \? '' : objectives\[writingIndex\]\}/)
   assert.match(studio, />\s*What you showed\s*</)
   assert.match(studio, /\{currentObjective\}/)
-  assert.match(studio, />\s*Your note\s*</)
+  assert.match(studio, /Your research note/)
   assert.match(studio, />\s*Previous attempt\s*</)
   assert.match(studio, /'Try again'/)
   assert.match(studio, />\s*Your essay so far\s*</)
@@ -45,18 +46,19 @@ test('writing studio keeps objective context and learner-controlled commit gates
 })
 
 test('writing evaluation is aware of ordered essay position without taking learner authorship', () => {
-  assert.match(route, /POSITION_FIT/)
+  assert.match(route, /SLOT_FIT/)
+  assert.match(route, /ADDS_NEW_INFORMATION/)
+  assert.match(route, /PARAGRAPH_FIT/)
   assert.match(route, /prior_accepted_learner_sentences/)
-  assert.match(page, /totalObjectives: objectives\.length/)
-  assert.match(page, /writingTotalObjectives: objectives\.length/)
+  assert.match(page, /writingTotalObjectives: totalSentences/)
   assert.match(page, /writingPriorSentences: priorSentences/)
-  assert.match(page, /positionFit: evaluation\.positionFit/)
-  assert.match(model, /accepted: accuracy === 'correct' && sentenceOk === true && fitsPosition/)
-  assert.match(model, /Do not require a particular transition word and do not supply one/)
+  assert.match(page, /positionFit: evaluation\.positionFit, slotFit: evaluation\.slotFit/)
+  assert.match(model, /accepted: accuracy === 'correct' && sentenceOk === true && fitsSlot && adds && fitsParagraph/)
+  assert.match(route, /Do not require a transition word/)
 })
 
 test('writing resume restores the durable composition stage instead of re-entering research', () => {
-  assert.match(model, /WEBB_SNAPSHOT_VERSION = 6/)
+  assert.match(model, /WEBB_SNAPSHOT_VERSION = 8/)
   assert.match(model, /restoreWebbCompositionState/)
   assert.match(page, /const composition = restoreWebbCompositionState/)
   assert.match(page, /composition\.webbStage === WEBB_SESSION_STAGES\.RESEARCH/)
@@ -71,11 +73,20 @@ test('writing resume restores the durable composition stage instead of re-enteri
 test('keyboard-visible writing keeps objective, note, retry context, and sentence input in the compact stack', () => {
   assert.match(studio, /keyboardCompact/)
   assert.match(studio, /What you showed/)
-  assert.match(studio, /Your note/)
+  assert.match(studio, /Your research note/)
   assert.match(studio, /Previous attempt/)
   assert.match(studio, /rows=\{keyboardCompact \? 2 : 4\}/)
   assert.match(studio, /minHeight: keyboardCompact \? 52 : 132/)
   assert.match(studio, /fontSize: keyboardCompact \? 16/)
+})
+
+test('writing storage state is explicit and Mrs. Webb source stays free of mojibake', () => {
+  assert.match(studio, /storageWarning = ''/)
+  assert.match(page, /storageWarning=\{storageError\}/)
+  const mojibake = /\uFFFD|Ã|Â|â€|â€™|â†|â”|ðŸ/u
+  for (const source of [page, studio, model, historyOverlay]) assert.doesNotMatch(source, mojibake)
+  assert.match(model, /\["“\]/)
+  assert.match(model, /\["”\]/)
 })
 
 test('normal Mrs. Webb chat input is hidden while the writing studio is active', () => {

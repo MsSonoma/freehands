@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 import { Suspense, useState, useEffect, useRef, useCallback } from 'react'
 import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
@@ -91,7 +91,7 @@ if (typeof document !== 'undefined' && !document.getElementById('webb-spin-style
   document.head.appendChild(s)
 }
 
-// â”€â”€ Color tokens â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Color tokens ──────────────────────────────────────────────────────────────
 const C = {
   accent:      '#0d9488',
   accentDark:  '#0f766e',
@@ -117,7 +117,7 @@ function makeWebbObjectiveItem(objective, index, sessionId = 'unknown-session') 
   }
 }
 
-// â”€â”€ UI FAQ: feature explanations in Mrs. Webb's voice â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── UI FAQ: feature explanations in Mrs. Webb's voice ─────────────────────────
 function detectSeekIntent(text) {
   return /\b(show me|play|jump to|skip to|go to|take me to|find|rewind to|fast forward to|seek to)\b.{0,60}\b(part|section|moment|clip|bit|where|when|about|with|that shows|that explains|on|of)\b/i.test(text)
     || /\b(show me|play)\s+the\s+(part|section|bit|moment|clip)\b/i.test(text)
@@ -136,7 +136,7 @@ function detectVideoTrouble(text) {
   return false
 }
 
-const VIDEO_TROUBLE_MSG = "Oh, I think I might know what's happening! ðŸ“º A black or empty space where the video should be usually means YouTube is blocked on your device. This can happen when Screen Time or parental controls are turned on \u2014 those settings block YouTube everywhere, including here. To fix it, a parent or guardian can go to Screen Time (on iPhone or iPad), find the content restrictions, and add \u2018youtube.com\u2019 and \u2018youtube-nocookie.com\u2019 to the allowed websites list. Once that's updated, close this page, come back, and the video should work! In the meantime we can keep going with our lesson. ðŸ˜Š"
+const VIDEO_TROUBLE_MSG = "Oh, I think I might know what's happening! 📺 A black or empty space where the video should be usually means YouTube is blocked on your device. This can happen when Screen Time or parental controls are turned on \u2014 those settings block YouTube everywhere, including here. To fix it, a parent or guardian can go to Screen Time (on iPhone or iPad), find the content restrictions, and add \u2018youtube.com\u2019 and \u2018youtube-nocookie.com\u2019 to the allowed websites list. Once that's updated, close this page, come back, and the video should work! In the meantime we can keep going with our lesson. 😊"
 
 function WebbPageInner() {
   const router = useRouter()
@@ -145,7 +145,7 @@ function WebbPageInner() {
   const routeLearnerId = searchParams?.get('learnerId') || ''
   const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
 
-  // â”€â”€ Lesson browser state â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Lesson browser state ─────────────────────────────────────────────
   const [phase, setPhase]                       = useState(PHASE.LIST)
   const [availableLessons, setAvailableLessons] = useState([])
   const [listLoading,       setListLoading]       = useState(true)  // true until first loadLessons resolves
@@ -158,7 +158,7 @@ function WebbPageInner() {
   const [learnerId, setLearnerId]               = useState(null)
   const [pageError, setPageError]               = useState('')
 
-  // â”€â”€ Active lesson â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Active lesson ────────────────────────────────────────────────────
   const [selectedLesson, setSelectedLesson] = useState(null)
   const [chatMessages, setChatMessages]     = useState([]) // [{role,content}] for API
   const [transcript, setTranscript]         = useState([]) // [{text,role}] for CaptionPanel
@@ -166,7 +166,7 @@ function WebbPageInner() {
   const [chatLoading, setChatLoading]       = useState(false)
   const transcriptRef                       = useRef(null)
 
-  // â”€â”€ Research objectives â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Research objectives ──────────────────────────────────────────────
   const [objectives,         setObjectives]        = useState([])  // string[]
   const [learningState, setLearningState] = useState(emptyWebbObjectiveState)
   const { coveredObj, understoodObj, objectiveEvidence, learnerNotes } = learningState
@@ -195,8 +195,8 @@ function WebbPageInner() {
   const [acceptedSentences,   setAcceptedSentences]  = useState({}) // Record<slot idx, accepted verbatim attempt>
   const [compositionPlan,     setCompositionPlan]    = useState(null) // topic/body/conclusion plan, separate from mastery objectives
   const [compositionSaveError, setCompositionSaveError] = useState('')
-  const [newlySavedNote,  setNewlySavedNote] = useState(null) // {idx, text} â€” drives tablet toast
-  const [expandedObj,        setExpandedObj]       = useState(null) // number|null â€” accordion open index
+  const [newlySavedNote,  setNewlySavedNote] = useState(null) // {idx, text} — drives tablet toast
+  const [expandedObj,        setExpandedObj]       = useState(null) // number|null — accordion open index
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
@@ -251,9 +251,9 @@ function WebbPageInner() {
     return ALL
   })
 
-  // â”€â”€ Media resources â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Media resources ──────────────────────────────────────────────────
   const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
-  const [articleResource, setArticleResource]   = useState(null) // {html, source, title} â€” HTML fetched server-side
+  const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
   const [articleKey,      setArticleKey]        = useState(0)   // increments to force iframe remount on new article
   const [videoLoading, setVideoLoading]         = useState(false)
   const [articleLoading, setArticleLoading]     = useState(false)
@@ -288,7 +288,7 @@ function WebbPageInner() {
   const [videoVolumeMuted, setVideoVolumeMuted] = useState(false)
   const videoIframeRef     = useRef(null)
   const videoPlayingRef    = useRef(false) // mirrors videoPlaying; used for optimistic toggle on mobile
-  // Passage citation â€” highlight els + scroll-override tracking
+  // Passage citation — highlight els + scroll-override tracking
   const passageEls             = useRef([])     // highlight <span>s created by interpretArticle
   const userScrolledArticleRef = useRef(false)  // true after a manual scroll in the article
   const programmaticScrollRef  = useRef(false)  // true during our own scrollIntoView calls
@@ -331,7 +331,7 @@ function WebbPageInner() {
             setVideoPlaying(msg.info.playerState === 1)
           }
         }
-      } catch { /* non-JSON messages â€” ignore */ }
+      } catch { /* non-JSON messages — ignore */ }
     }
     window.addEventListener('message', handleYTMessage)
     return () => window.removeEventListener('message', handleYTMessage)
@@ -345,7 +345,7 @@ function WebbPageInner() {
     }
   }, [videoCurrentTime]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // â”€â”€ Video / TTS â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Video / TTS ──────────────────────────────────────────────────────
   const videoRef      = useRef(null)
   const ttsQueueRef   = useRef([])
   const ttsBusyRef    = useRef(false)
@@ -406,7 +406,7 @@ function WebbPageInner() {
     handleWebbSessionEnded,
   )
 
-  // â”€â”€ YouTube player commands (via IFrame API postMessage) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── YouTube player commands (via IFrame API postMessage) ──────────────
   function ytCmd(func, args = []) {
     videoIframeRef.current?.contentWindow?.postMessage(
       JSON.stringify({ event: 'command', func, args }), '*'
@@ -417,7 +417,7 @@ function WebbPageInner() {
     return `${Math.floor(s / 60)}:${Math.floor(s % 60).toString().padStart(2, '0')}`
   }
 
-  // â”€â”€ Chat scroll â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Chat scroll ─────────────────────────────────────────────────────
   const chatEndRef = useRef(null)
 
   // Auto-scroll to newest message
@@ -425,7 +425,7 @@ function WebbPageInner() {
     chatEndRef.current?.scrollIntoView({ behavior: 'smooth', block: 'end' })
   }, [transcript.length, chatLoading])
 
-  // â”€â”€ Layout â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Layout ───────────────────────────────────────────────────────────
   const videoColRef                         = useRef(null)
   const [isMobileLandscape, setIsLandscape] = useState(false)
   const [videoMaxHeight, setVideoMaxHeight] = useState(null)
@@ -474,7 +474,7 @@ function WebbPageInner() {
     }
   }, [learnerId])
 
-  // â”€â”€ Per-lesson snapshot helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Per-lesson snapshot helpers ────────────────────────────────────────
   function snapKey(lesson) {
     const k = lesson?.lessonKey || lesson?.lesson_id || lesson?.id
     return k ? `webb_session_${k}` : null
@@ -670,7 +670,7 @@ function WebbPageInner() {
     }
   }, [phase, listLoading, offerResume, router])
 
-  // â”€â”€ Supabase transcript auto-save (Mrs. Webb) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Supabase transcript auto-save (Mrs. Webb) ─────────────────────────
   // Debounced: fires 3 s after the last transcript change while chatting.
   useEffect(() => {
     if (webbExecutionFencedRef.current) return
@@ -703,7 +703,7 @@ function WebbPageInner() {
 
   useEffect(() => { isMutedRef.current = isMuted }, [isMuted])
 
-  // â”€â”€ Orientation detection â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Orientation detection ─────────────────────────────────────────────
   useEffect(() => {
     const calc = () => {
       const w = window.innerWidth
@@ -756,7 +756,7 @@ function WebbPageInner() {
     }
   }, [isMobileLandscape, videoMaxHeight])
 
-  // â”€â”€ TTS queue â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── TTS queue ─────────────────────────────────────────────────────────
   async function drainTTSQueue() {
     if (ttsBusyRef.current) return
     const text = ttsQueueRef.current.shift()
@@ -812,7 +812,7 @@ function WebbPageInner() {
   }
 
   function skipTTS() {
-    ttsGenRef.current++  // invalidate any in-flight fetch â€” it will discard its audio on resolution
+    ttsGenRef.current++  // invalidate any in-flight fetch — it will discard its audio on resolution
     ttsQueueRef.current = []
     if (ttsCurrentRef.current) {
       ttsCurrentRef.current.pause()
@@ -833,7 +833,7 @@ function WebbPageInner() {
     })
   }
 
-  // â”€â”€ Transcript helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Transcript helpers ────────────────────────────────────────────────
   function addMsg(text, meta = {}) {
     const t = String(text || '').trim()
     if (!t) return
@@ -1243,11 +1243,11 @@ function WebbPageInner() {
       setTimeout(() => { programmaticScrollRef.current = false }, 800)
     }
     if (!isProgrammatic) {
-      // Pin click â€” make sure article overlay is visible
+      // Pin click — make sure article overlay is visible
       setMediaOverlay('article')
     }
     // Use getElementById so we are never relying on stale DOM refs from before
-    // a potential iframe remount. Retry up to 8 times Ã— 250 ms to allow the
+    // a potential iframe remount. Retry up to 8 times × 250 ms to allow the
     // re-apply-highlights effect enough time to re-inject the spans after remount.
     const tryScroll = (left) => {
       const doc = articleIframeRef.current?.contentDocument
@@ -1277,7 +1277,7 @@ function WebbPageInner() {
     setTimeout(() => doCmd(10), 60)
   }
 
-  // Add a transcript bubble tagged with momentIdx so it shows a â–¶ replay button
+  // Add a transcript bubble tagged with momentIdx so it shows a ▶ replay button
   function addMomentMsg(text, momentIdx) {
     const t = String(text || '').trim()
     if (!t) return
@@ -1307,13 +1307,13 @@ function WebbPageInner() {
   // Open/close the video overlay with tier-aware Mrs. Webb messages.
   function handleVideoButtonClick() {
     if (mediaOverlay === 'video') { setMediaOverlay(null); return }
-    // Still loading or resource not yet resolved â€” open overlay to show spinner
+    // Still loading or resource not yet resolved — open overlay to show spinner
     if (videoLoading || !videoResource) { setMediaOverlay('video'); return }
-    // No relevant video was found â€” say something once, then don't open
+    // No relevant video was found — say something once, then don't open
     if (videoResource.unavailable) {
       if (!noVideoMsgSentRef.current) {
         noVideoMsgSentRef.current = true
-        addMsg("I searched for a video to go with this lesson but the results just weren't helpful â€” nothing came up that would actually teach the material. Let's keep talking â€” there's plenty we can dig into together!")
+        addMsg("I searched for a video to go with this lesson but the results just weren't helpful — nothing came up that would actually teach the material. Let's keep talking — there's plenty we can dig into together!")
       }
       return
     }
@@ -1324,15 +1324,15 @@ function WebbPageInner() {
       const objsNeeded = videosWatchedRef.current * 2 - understoodObj.length
       addMsg(
         objsNeeded === 1
-          ? `I love that you want to keep watching! Here's our deal â€” I open the video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll open it right back up!`
-          : `I love that you want to keep watching! Here's our deal â€” I open the video once for every two objectives we work through together. Show me you understand ${objsNeeded} more objectives and I'll open it right back up!`
+          ? `I love that you want to keep watching! Here's our deal — I open the video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll open it right back up!`
+          : `I love that you want to keep watching! Here's our deal — I open the video once for every two objectives we work through together. Show me you understand ${objsNeeded} more objectives and I'll open it right back up!`
       )
       return
     }
-    // Low-relevance video â€” say something once, then open
+    // Low-relevance video — say something once, then open
     if (videoResource.relevanceTier === 'low' && !lowTierMsgSentRef.current) {
       lowTierMsgSentRef.current = true
-      addMsg("I searched hard but couldn't find a perfect video for this lesson. I found one that covers some related ideas â€” it might still be worth watching!")
+      addMsg("I searched hard but couldn't find a perfect video for this lesson. I found one that covers some related ideas — it might still be worth watching!")
     }
     videosWatchedRef.current += 1
     setMediaOverlay('video')
@@ -1347,7 +1347,7 @@ function WebbPageInner() {
     if (videoResource.hasCaptions === false && videoResource.hasChapters === false) {
       const isHigh = videoResource.relevanceTier !== 'low'
       addMsg(isHigh
-        ? "This video is a great match, but it doesn't have chapters so I can't jump to specific moments. Go ahead and watch it â€” ask me about anything that pops up!"
+        ? "This video is a great match, but it doesn't have chapters so I can't jump to specific moments. Go ahead and watch it — ask me about anything that pops up!"
         : "I found this video because it covers some related ideas, but without chapters I can't take you to specific parts. Give it a watch and bring any questions my way!"
       )
       return
@@ -1375,8 +1375,8 @@ function WebbPageInner() {
       if (data.error === 'transcript_unavailable') {
         const isHigh = videoResource?.relevanceTier !== 'low'
         addMsg(isHigh
-          ? "This video looks like a great match, but it doesn't have chapters so I can't take you to specific moments. Go ahead and watch â€” ask me anything that comes up!"
-          : "I found this video because it relates to some of our ideas, but it doesn't have chapters so I can't jump to key parts. Feel free to watch what's here â€” bring any questions my way!"
+          ? "This video looks like a great match, but it doesn't have chapters so I can't take you to specific moments. Go ahead and watch — ask me anything that comes up!"
+          : "I found this video because it relates to some of our ideas, but it doesn't have chapters so I can't jump to key parts. Feel free to watch what's here — bring any questions my way!"
         )
         setInterpretingVideo(false)
         return
@@ -1405,7 +1405,7 @@ function WebbPageInner() {
         await new Promise(r => setTimeout(r, 600))
       }
 
-      // â”€â”€ Assessment push: ask the student to demonstrate objective comprehension â”€â”€
+      // ── Assessment push: ask the student to demonstrate objective comprehension ──
       // Build snapshot of remaining objectives at the moment the tour ends
       const remaining = objectives.filter((_, i) => !learningStateRef.current.understoodObj.includes(i))
       try {
@@ -1441,7 +1441,7 @@ function WebbPageInner() {
     setInterpretingVideo(false)
   }
 
-  // â”€â”€ Lesson list â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Lesson list ───────────────────────────────────────────────────────
   async function loadLessons(id) {
     const lid = id ?? learnerId
     setPageError('')
@@ -1482,7 +1482,7 @@ function WebbPageInner() {
         }).catch(() => {})
       }
 
-      // Check for a mid-session lesson key first â€” set when a session starts and
+      // Check for a mid-session lesson key first — set when a session starts and
       // survives page refresh so users return to resume/restart instead of /learn.
       const activeKey = (() => { try { return sessionStorage.getItem('webb_active_lesson_key') } catch { return null } })()
       if (activeKey) {
@@ -1491,13 +1491,13 @@ function WebbPageInner() {
           selectLesson(match)
           return
         }
-        // Lesson not in available list â€” restore directly from snapshot (has selectedLesson stored)
+        // Lesson not in available list — restore directly from snapshot (has selectedLesson stored)
         const snapData = (() => { try { return JSON.parse(localStorage.getItem(`webb_session_${activeKey}`) || 'null') } catch { return null } })()
         if (snapData?.chatMessages?.length && snapData.selectedLesson) {
           selectLesson(snapData.selectedLesson)
           return
         }
-        // Snapshot gone â€” clear stale key and fall through to redirect
+        // Snapshot gone — clear stale key and fall through to redirect
         try { sessionStorage.removeItem('webb_active_lesson_key') } catch {}
       }
 
@@ -1519,7 +1519,7 @@ function WebbPageInner() {
     }
   }
 
-  // â”€â”€ Preload resources for lesson â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Preload resources for lesson ──────────────────────────────────────
   // Video and article are fetched in parallel but independently so each
   // resolves as soon as it's ready (video ~3s, article ~4s).
   // `objContext` is a hint string of remaining objectives used to shape the search.
@@ -1569,7 +1569,7 @@ function WebbPageInner() {
       .finally(() => setArticleLoading(false))
   }, [])
 
-  // â”€â”€ Objectives: generate when lesson starts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Objectives: generate when lesson starts ──────────────────────────
   // Generate objectives from the lesson question bank (fired once per lesson).
   // This is a startup barrier: Webb chat must not open without a usable objective map.
   const generateObjectives = useCallback(async (lesson) => {
@@ -1854,7 +1854,7 @@ function WebbPageInner() {
     return () => clearTimeout(t)
   }, [newlySavedNote])
 
-  // â”€â”€ Select lesson â†’ start AI chat â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Select lesson → start AI chat ─────────────────────────────────────
   // forceNew: skip snapshot check (used by handleRestartFromPrompt)
   const selectLesson = useCallback(async (lesson, forceNew = false) => {
     if (!forceNew) {
@@ -2247,7 +2247,7 @@ function WebbPageInner() {
     if (pendingFeatureHelp?.message && pendingFeatureHelp.message !== text) setPendingFeatureHelp(null)
     if (!replay?.studentLineAdded) addStudentLine(text)
 
-    // â”€â”€ Video trouble intercept â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── Video trouble intercept ───────────────────────────────────────────
     // Catches "black screen", "video not working", etc. and gives a canned
     // explanation about YouTube being blocked by Screen Time / parental controls.
     if (detectVideoTrouble(text)) {
@@ -2257,12 +2257,12 @@ function WebbPageInner() {
 
 
 
-    // â”€â”€ UI FAQ intercept â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+    // ── UI FAQ intercept ──────────────────────────────────────────────────
     // Existing seek behavior gets first chance when a resource is already open.
     if (detectSeekIntent(text) && mediaOverlay === 'video') {
       if (!videoMoments.length) {
-        // Moments not loaded yet â€” suggest Key Part
-        addMsg("I'd love to show you a specific part! First, tap the \"Key part\" button above the video so I can learn the chapters â€” then just tell me which part you want!")
+        // Moments not loaded yet — suggest Key Part
+        addMsg("I'd love to show you a specific part! First, tap the \"Key part\" button above the video so I can learn the chapters — then just tell me which part you want!")
         return
       }
       // Match the request against loaded moment titles using GPT
@@ -2293,7 +2293,7 @@ function WebbPageInner() {
           addMomentMsg(`\uD83C\uDFA5 ${m.title} \u00B7 ${formatVideoTime(m.startSeconds)}`, idx)
           playSegment(m.startSeconds, m.endSeconds)
         } else if (!reply) {
-          // GPT couldn't find a match â€” fall through to normal chat
+          // GPT couldn't find a match — fall through to normal chat
           setChatLoading(false)
           // eslint-disable-next-line no-use-before-define
           const userMsg = { role: 'user', content: text }
@@ -2327,7 +2327,7 @@ function WebbPageInner() {
     await completeResearchTurn(nextHistory)
   }
 
-  // â”€â”€ Refresh a media resource (context-aware) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Refresh a media resource (context-aware) ──────────────────────────
   function dismissFeatureHelp() {
     const pending = pendingFeatureHelp
     if (!pending?.message) return
@@ -2352,15 +2352,15 @@ function WebbPageInner() {
   }
 
   async function refreshMedia(type) {
-    // Video refreshes count the same as opens â€” one per two objectives completed.
+    // Video refreshes count the same as opens — one per two objectives completed.
     if (type === 'video') {
       const maxVideos = 1 + Math.floor(understoodObj.length / 2)
       if (videosWatchedRef.current >= maxVideos) {
         const objsNeeded = videosWatchedRef.current * 2 - understoodObj.length
         addMsg(
           objsNeeded === 1
-            ? `I love that you want to explore more! Here's our deal â€” I show a new video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll find a fresh one!`
-            : `I love that you want to explore more! Here's our deal â€” I show a new video once for every two objectives we work through together. Show me you understand ${objsNeeded} more objectives and I'll find a fresh one!`
+            ? `I love that you want to explore more! Here's our deal — I show a new video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll find a fresh one!`
+            : `I love that you want to explore more! Here's our deal — I show a new video once for every two objectives we work through together. Show me you understand ${objsNeeded} more objectives and I'll find a fresh one!`
         )
         return
       }
@@ -2371,7 +2371,7 @@ function WebbPageInner() {
     if (type === 'video') { lowTierMsgSentRef.current = false; noVideoMsgSentRef.current = false }
     // Save current article so we can restore it if the refresh fails/returns nothing
     const savedArticle = articleResource
-    // Clear immediately so the "Finding an articleâ€¦" spinner appears while loading
+    // Clear immediately so the "Finding an article…" spinner appears while loading
     if (type === 'article') setArticleResource(null)
     const recentContext = chatMessages.slice(-6)
       .filter(m => m.role === 'user')
@@ -2407,7 +2407,7 @@ function WebbPageInner() {
           setArticleKey(k => k + 1)
           setArticleResource(data.article)
         } else {
-          // Nothing usable came back â€” restore the old article so it doesn't disappear
+          // Nothing usable came back — restore the old article so it doesn't disappear
           setArticleResource(savedArticle)
         }
       }
@@ -2417,15 +2417,15 @@ function WebbPageInner() {
     setRefreshingMedia(false)
   }
 
-  // â”€â”€ Close objectives panel â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Close objectives panel ─────────────────────────────────────────────
   function closeObjectivesPanel() {
     setShowObjectives(false)
   }
 
-  // â”€â”€ Research mode: close overlay, Webb navigates to the best media or teaches directly â”€â”€
-  // Priority: (A) video with chapters â†’ seek to best chapter â†’ play â†’ Socratic
-  //           (B) article available   â†’ targeted highlight+scroll â†’ Socratic
-  //           (C) no navigable media  â†’ conversational teach â†’ Socratic
+  // ── Research mode: close overlay, Webb navigates to the best media or teaches directly ──
+  // Priority: (A) video with chapters → seek to best chapter → play → Socratic
+  //           (B) article available   → targeted highlight+scroll → Socratic
+  //           (C) no navigable media  → conversational teach → Socratic
   async function startResearch(objIdx) {
     if (webbExecutionFencedRef.current || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || chatLoading || learningStateRef.current.understoodObj.includes(objIdx)) return
     closeObjectivesPanel()
@@ -2435,7 +2435,7 @@ function WebbPageInner() {
     markObjectiveAssistance(objIdx, WEBB_ASSISTANCE_TYPES.DIRECT_TEACHING)
     setChatLoading(true)
     try {
-      // â”€â”€ Try to get navigable video chapters â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+      // ── Try to get navigable video chapters ──────────────────────────
       let researchMoments = null
       if (videoResource && !videoResource.unavailable && videoResource.hasChapters) {
         if (videoMoments.length) {
@@ -2464,7 +2464,7 @@ function WebbPageInner() {
         }
       }
 
-      // â•â•â• Path A: Video + chapters â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      // ═══ Path A: Video + chapters ═══════════════════════════════════
       if (researchMoments?.length) {
         // Ask GPT to pick the chapter that best covers this objective
         const momentList = researchMoments.map((m, i) => `${i}: [${formatVideoTime(m.startSeconds)}] ${m.title}`).join('\n')
@@ -2520,7 +2520,7 @@ function WebbPageInner() {
           addMsg(`Great! Now, can you explain in your own words: ${obj}?`)
         }
 
-      // â•â•â• Path B: Article highlight + scroll â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
+      // ═══ Path B: Article highlight + scroll ═════════════════════════
       } else if (articleResource?.html) {
         setMediaOverlay('article')
         setInterpretingArticle(true)
@@ -2593,7 +2593,7 @@ function WebbPageInner() {
         } catch (e) { console.error('[webb] research-article error:', e) }
         setInterpretingArticle(false)
 
-        // Socratic follow-up â€” researchHistory carries the full research context
+        // Socratic follow-up — researchHistory carries the full research context
         try {
           const fRes = await fetch('/api/webb-chat', {
             method: 'POST',
@@ -2614,7 +2614,7 @@ function WebbPageInner() {
           addMsg(`Now, can you explain in your own words: ${obj}?`)
         }
 
-      // â•â•â• Path C: No navigable media â€” teach directly in conversation â•
+      // ═══ Path C: No navigable media — teach directly in conversation ═
       } else {
         try {
           const res = await fetch('/api/webb-chat', {
@@ -2643,7 +2643,7 @@ function WebbPageInner() {
     setChatLoading(false)
   }
 
-  // â”€â”€ Begin the distinct composition stage from verbatim learner notes â”€â”€
+  // ── Begin the distinct composition stage from verbatim learner notes ──
   function writingPromptForSlot(slot) {
     if (slot?.role === 'topic') return "Start with a topic sentence in your own words. Tell the reader what this whole paragraph is going to explain."
     if (slot?.role === 'conclusion') return "Now close the paragraph in your own words. Look back at what you explained and finish that same big thought."
@@ -2823,7 +2823,7 @@ function WebbPageInner() {
     addMsg(reply)
   }
 
-  // Complete lesson via Mrs. Webb â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // Complete lesson via Mrs. Webb ─────────────────────────────────────
   async function handleCompleteLesson() {
     if (webbExecutionFencedRef.current) return
     if (!learnerId || !selectedLesson || completionState === 'saving') return
@@ -2885,7 +2885,7 @@ function WebbPageInner() {
     setEssayMode(false)
     // Speak the farewell and then return to lesson selection
     const lessonTitle = selectedLesson.title || 'this lesson'
-    const farewell = `Fantastic work! You've completed ${lessonTitle} â€” your essay is something to be really proud of. I'll see you next time!`
+    const farewell = `Fantastic work! You've completed ${lessonTitle} — your essay is something to be really proud of. I'll see you next time!`
     addMsg(farewell)
     await waitForTTSIdle()
     setJustCompletedLesson(lessonTitle)
@@ -2893,7 +2893,7 @@ function WebbPageInner() {
     handleBack()
   }
 
-  // â”€â”€ Article passage scroll detector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Article passage scroll detector ─────────────────────────────────
   // Attaches a scroll listener so we know when the user has scrolled manually.
   useEffect(() => {
     if (mediaOverlay !== 'article') return
@@ -2921,7 +2921,7 @@ function WebbPageInner() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [mediaOverlay, articleResource])
 
-  // â”€â”€ Re-apply passage highlights every time the article overlay opens â”€â”€
+  // ── Re-apply passage highlights every time the article overlay opens ──
   // The iframe unmounts when the overlay closes, destroying injected <span>s.
   // Stored excerpts let us re-highlight as soon as the iframe is ready again.
   useEffect(() => {
@@ -2946,7 +2946,7 @@ function WebbPageInner() {
     passageEls.current = []
   }, [articleResource])
 
-  // â”€â”€ Article interpret: highlight all passages and read each one in order â”€â”€
+  // ── Article interpret: highlight all passages and read each one in order ──
   async function interpretArticle() {
     if (!articleResource?.html || interpretingArticle) return
     setInterpretingArticle(true)
@@ -2979,7 +2979,7 @@ function WebbPageInner() {
 
       // Wait for (a) React to flush setMediaOverlay and mount the iframe,
       // and (b) the iframe to finish loading its srcdoc content.
-      // We poll for the ref because setState is async â€” the ref won't be set
+      // We poll for the ref because setState is async — the ref won't be set
       // until after the next React render cycle commits.
       await new Promise(resolve => {
         let tries = 0
@@ -3010,7 +3010,7 @@ function WebbPageInner() {
       const els = highlightPassages(excerpts)
       passageEls.current = els
 
-      // Speak intro, then for each passage: wait for TTS â†’ activate + scroll â†’ speak
+      // Speak intro, then for each passage: wait for TTS → activate + scroll → speak
       if (data.intro) addMsg(data.intro)
       for (let i = 0; i < excerpts.length; i++) {
         await waitForTTSIdle()
@@ -3038,7 +3038,7 @@ function WebbPageInner() {
   }
 
   // Highlights an array of text excerpts in the article iframe by searching
-  // element textContent (not window.find â€” which is broken in sandboxed iframes).
+  // element textContent (not window.find — which is broken in sandboxed iframes).
   // Assigns id="webb-passage-{i}" to each matched element so scrollToPassage
   // can use getElementById, which survives iframe remounts.
   function highlightPassages(excerpts) {
@@ -3056,7 +3056,7 @@ function WebbPageInner() {
       try { doc.head?.appendChild(s) } catch { /* ignore */ }
     }
 
-    // Clear previous highlights (class + id only â€” never alter inline styles)
+    // Clear previous highlights (class + id only — never alter inline styles)
     doc.querySelectorAll('.webb-hl,.webb-hl-active').forEach(el => {
       el.classList.remove('webb-hl', 'webb-hl-active')
       el.removeAttribute('id')
@@ -3065,9 +3065,9 @@ function WebbPageInner() {
     // Wikipedia textContent includes inline citation markers like [1], [2].
     // GPT excerpts don't include them, so we strip them before matching.
     const normText = s => (s || '')
-      .replace(/\[\d+\]/g, '')           // [1], [23] â€¦
-      .replace(/\[[a-zA-Z]\]/g, '')      // [a], [B] â€¦
-      .replace(/\[note\s*\d*\]/gi, '')   // [note 1] â€¦
+      .replace(/\[\d+\]/g, '')           // [1], [23] …
+      .replace(/\[[a-zA-Z]\]/g, '')      // [a], [B] …
+      .replace(/\[note\s*\d*\]/gi, '')   // [note 1] …
       .replace(/[\u2018\u2019]/g, "'")
       .replace(/[\u201c\u201d]/g, '"')
       .replace(/^["'\u201c\u201d\u2018\u2019]+/, '') // strip GPT leading quotes
@@ -3114,7 +3114,7 @@ function WebbPageInner() {
     if (el) el.classList.add('webb-hl-active')
   }
 
-  // â”€â”€ Exit â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Exit ──────────────────────────────────────────────────────────────
   async function handleExit() {
     const { ensurePinAllowed } = await import('@/app/lib/pinGate')
     if (!await ensurePinAllowed('session-exit')) return
@@ -3138,7 +3138,7 @@ function WebbPageInner() {
     router.push('/learn')
   }
 
-  // â”€â”€ Layout styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Layout styles ─────────────────────────────────────────────────────
   const videoEffH = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
   const msSBSH    = videoEffH ? `${videoEffH}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')
 
@@ -3175,7 +3175,7 @@ function WebbPageInner() {
       ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)', paddingLeft: 8, boxSizing: 'border-box' }
       : { flex: '0 0 50%', display: 'flex', flexDirection: 'column', overflow: 'hidden', background: '#fff', minHeight: 0 })
 
-  // â”€â”€ Media overlay effects â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Media overlay effects ─────────────────────────────────────────────
 
   // 1. Reset position + fullscreen state when overlay is closed
   useEffect(() => {
@@ -3188,7 +3188,7 @@ function WebbPageInner() {
   }, [mediaOverlay])
 
   // 2. Sync mediaIsFullscreen when native fullscreen exits (e.g. Escape key on desktop).
-  //    We do NOT set true from here â€” toggleMediaFullscreen does that directly via setMediaIsFullscreen.
+  //    We do NOT set true from here — toggleMediaFullscreen does that directly via setMediaIsFullscreen.
   useEffect(() => {
     const onFSChange = () => {
       if (!document.fullscreenElement && !document.webkitFullscreenElement) {
@@ -3230,10 +3230,10 @@ function WebbPageInner() {
     }
   }, [mediaPos, mediaOverlay])
 
-  // â”€â”€ Media overlay helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Media overlay helpers ─────────────────────────────────────────────
   function toggleMediaFullscreen() {
     const goingFullscreen = !mediaIsFullscreen
-    // Primary: directly toggle CSS fullscreen â€” works on all devices including iOS Safari.
+    // Primary: directly toggle CSS fullscreen — works on all devices including iOS Safari.
     // requestFullscreen is attempted as a bonus on desktop Chrome/Firefox but is not relied upon.
     setMediaIsFullscreen(goingFullscreen)
     if (goingFullscreen) {
@@ -3245,10 +3245,10 @@ function WebbPageInner() {
   }
   const mediaMoveToChat = mediaPos === 'video'
   const arrowGlyph = isMobileLandscape
-    ? (mediaMoveToChat ? '\u2192' : '\u2190')  // â†’ or â†
-    : (mediaMoveToChat ? '\u2193' : '\u2191')  // â†“ or â†‘
+    ? (mediaMoveToChat ? '\u2192' : '\u2190')  // → or ←
+    : (mediaMoveToChat ? '\u2193' : '\u2191')  // ↓ or ↑
   const overlayPanelStyle = mediaIsFullscreen
-    // CSS fullscreen: cover the entire viewport â€” works on all devices including iOS Safari.
+    // CSS fullscreen: cover the entire viewport — works on all devices including iOS Safari.
     ? { position: 'fixed', inset: 0, background: '#000', display: 'flex', flexDirection: 'column', overflow: 'hidden', zIndex: 20 }
     : overlayRect
       ? {
@@ -3294,7 +3294,7 @@ function WebbPageInner() {
     ? (latestWritingGuidance || writingFallbackGuidance)
     : ([...transcript].reverse().find(message => message?.role === 'assistant')?.text || '')
 
-  // â”€â”€ Guard: never show the retired lesson-selection shell while loading â”€
+  // ── Guard: never show the retired lesson-selection shell while loading ─
   // During initial load (listLoading=true) the page is still in PHASE.LIST.
   // Show a neutral loading screen so the old lesson browser never flashes.
   // offerResume is handled separately via its own full-screen portal overlay.
@@ -3308,7 +3308,7 @@ function WebbPageInner() {
     )
   }
 
-  // â”€â”€ Render â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+  // ── Render ────────────────────────────────────────────────────────────
   return (
     <div data-ms-webb-chat-compact={keyboardCompact ? 'true' : 'false'} style={{ height: typingViewport.keyboardVisible && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
       <FeatureHelpToast
@@ -3408,7 +3408,7 @@ function WebbPageInner() {
         </div>
       )}
 
-      {/* Main two-panel layout â€” always visible */}
+      {/* Main two-panel layout — always visible */}
       <div style={mainLayoutStyle}>
 
         {/* Video column */}
@@ -3423,9 +3423,9 @@ function WebbPageInner() {
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
             />
 
-            {/* Media overlay: rendered as portal â€” see createPortal block near end of return */}
+            {/* Media overlay: rendered as portal — see createPortal block near end of return */}
 
-            {/* Overlay buttons â€” bottom right: Skip + Mute (always) */}
+            {/* Overlay buttons — bottom right: Skip + Mute (always) */}
             <div style={{ position: 'absolute', bottom: keyboardCompact ? 4 : 14, right: keyboardCompact ? 4 : 14, display: 'flex', gap: keyboardCompact ? 4 : 10, zIndex: 10 }}>
               {engineState === 'playing' && (
                 <button type="button" onClick={skipTTS} aria-label="Skip" style={keyboardCompact ? { ...overlayBtnStyle, width: 28, height: 28 } : overlayBtnStyle}>
@@ -3442,12 +3442,12 @@ function WebbPageInner() {
               </button>
             </div>
 
-            {/* Overlay buttons â€” bottom left: Video + Article (chatting phase) */}
+            {/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
             {isChatting && (
               <div style={{ position: 'absolute', bottom: keyboardCompact ? 4 : 14, left: keyboardCompact ? 4 : 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: keyboardCompact ? 3 : 6, zIndex: 10 }}>
                 {(videoLoading || articleLoading) && (
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', background: 'rgba(0,0,0,0.45)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.02em' }}>
-                    Searching the webâ€¦
+                    Searching the web…
                   </span>
                 )}
                 <div style={{ display: 'flex', gap: 10 }}>
@@ -3455,7 +3455,7 @@ function WebbPageInner() {
                   type="button"
                   onClick={handleVideoButtonClick}
                   aria-label="Watch a video"
-                  title={videoLoading ? 'Loading videoâ€¦' : videoResource ? 'Watch a video' : 'Loading videoâ€¦'}
+                  title={videoLoading ? 'Loading video…' : videoResource ? 'Watch a video' : 'Loading video…'}
                   style={{ ...overlayBtnStyle, ...(keyboardCompact ? { width: 28, height: 28 } : {}), background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
                 >
                   {videoLoading
@@ -3467,7 +3467,7 @@ function WebbPageInner() {
                   type="button"
                   onClick={() => { setMediaOverlay(v => v === 'article' ? null : 'article') }}
                   aria-label="Read Wikipedia article"
-                  title={articleLoading ? 'Finding Wikipedia articleâ€¦' : articleResource ? `Wikipedia: ${articleResource.wikiTitle}` : 'Finding Wikipedia articleâ€¦'}
+                  title={articleLoading ? 'Finding Wikipedia article…' : articleResource ? `Wikipedia: ${articleResource.wikiTitle}` : 'Finding Wikipedia article…'}
                   style={{ ...overlayBtnStyle, ...(keyboardCompact ? { width: 28, height: 28 } : {}), background: mediaOverlay === 'article' ? C.accent : '#1f2937', opacity: articleLoading ? 0.55 : 1 }}
                 >
                   {articleLoading
@@ -3484,7 +3484,7 @@ function WebbPageInner() {
         {/* Transcript / browser column */}
         <div ref={chatColRef} style={transcriptWrapperStyle}>
 
-          {/* Completion toast â€” shown briefly after returning from a completed lesson */}
+          {/* Completion toast — shown briefly after returning from a completed lesson */}
           {phase === PHASE.LIST && justCompletedLesson && (() => {
             // auto-dismiss after 4 s
             if (typeof window !== 'undefined') {
@@ -3500,7 +3500,7 @@ function WebbPageInner() {
                 display: 'flex', alignItems: 'center', gap: 12,
                 animation: 'fadeInDown 0.3s ease',
               }}>
-                <span style={{ fontSize: 24, lineHeight: 1 }}>ðŸŽ‰</span>
+                <span style={{ fontSize: 24, lineHeight: 1 }}>🎉</span>
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={{ color: '#fff', fontWeight: 800, fontSize: 13, marginBottom: 2 }}>
                     Lesson completed!
@@ -3514,12 +3514,12 @@ function WebbPageInner() {
                   onClick={() => setJustCompletedLesson(null)}
                   style={{ background: 'none', border: 'none', color: '#99f6e4', fontSize: 18, cursor: 'pointer', padding: 0, lineHeight: 1 }}
                   aria-label="Dismiss"
-                >Ã—</button>
+                >×</button>
               </div>
             )
           })()}
 
-          {/* Lesson browser (LIST phase only â€” STARTING phase handled separately below) */}
+          {/* Lesson browser (LIST phase only — STARTING phase handled separately below) */}
           {phase === PHASE.LIST && !offerResume && !listLoading && (
             <WebbLessonBrowser
               availableLessons={availableLessons}
@@ -3556,7 +3556,7 @@ function WebbPageInner() {
             </div>
           )}
 
-          {/* Chat thread â€” iMessage-style bubbles */}
+          {/* Chat thread — iMessage-style bubbles */}
           {isChatting && (
             <div
               ref={transcriptRef}
@@ -3694,7 +3694,7 @@ function WebbPageInner() {
         </div>
       )}
 
-      {/* â”€â”€ Portaled media overlay â€” position:fixed, moves between video/chat cols â”€â”€ */}
+      {/* ── Portaled media overlay — position:fixed, moves between video/chat cols ── */}
       {isChatting && mediaOverlay && overlayPanelStyle && createPortal(
         <div ref={mediaOverlayRef} style={overlayPanelStyle}>
 
@@ -3712,9 +3712,9 @@ function WebbPageInner() {
                 style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 10px', fontSize: 16, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {refreshingMedia ? '\u2026' : '\u21BB'}
               </button>
-              {/* Interpret: play key moments (video only) â€” magnifying glass icon only */}
+              {/* Interpret: play key moments (video only) — magnifying glass icon only */}
               {mediaOverlay === 'video' && videoResource?.videoId && !videoResource?.unavailable && (
-                <button type="button" onClick={interpretVideo} disabled={interpretingVideo} title="Key part â€” play key moments"
+                <button type="button" onClick={interpretVideo} disabled={interpretingVideo} title="Key part — play key moments"
                   style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 8px', cursor: interpretingVideo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {interpretingVideo
                     ? <svg style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
@@ -3722,9 +3722,9 @@ function WebbPageInner() {
                   }
                 </button>
               )}
-              {/* Interpret: find + highlight + read key passage (article only) â€” magnifying glass + plus icon only */}
+              {/* Interpret: find + highlight + read key passage (article only) — magnifying glass + plus icon only */}
               {mediaOverlay === 'article' && articleResource?.html && (
-                <button type="button" onClick={interpretArticle} disabled={interpretingArticle} title="Key part â€” highlights key sentences"
+                <button type="button" onClick={interpretArticle} disabled={interpretingArticle} title="Key part — highlights key sentences"
                   style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 8px', cursor: interpretingArticle ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                   {interpretingArticle
                     ? <svg style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
@@ -3732,7 +3732,7 @@ function WebbPageInner() {
                   }
                 </button>
               )}
-              {/* Move arrow â€” hidden in fullscreen */}
+              {/* Move arrow — hidden in fullscreen */}
               {!mediaIsFullscreen && (
                 <button type="button"
                   onClick={() => setMediaPos(p => p === 'video' ? 'chat' : 'video')}
@@ -3760,7 +3760,7 @@ function WebbPageInner() {
           {/* Content */}
           <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', position: 'relative' }}>
 
-            {/* â”€â”€ VIDEO â”€â”€ */}
+            {/* ── VIDEO ── */}
             {mediaOverlay === 'video' && videoResource?.embedUrl && (
               <div style={{ display: 'flex', flexDirection: 'column', width: '100%', height: '100%', background: '#000' }}>
                 <div style={{ flex: 1, minHeight: 0, position: 'relative' }}>
@@ -3772,7 +3772,7 @@ function WebbPageInner() {
                     allowFullScreen
                     style={{ width: '100%', height: '100%', border: 'none' }}
                   />
-                  {/* Intercept overlay â€” always blocks YouTube's native UI (links, recommendations).
+                  {/* Intercept overlay — always blocks YouTube's native UI (links, recommendations).
                       Tapping anywhere on the video toggles play/pause. Uses a ref so the toggle
                       works even when iOS doesn't deliver IFrame API state-change messages. */}
                   {!videoEnded && (
@@ -3809,7 +3809,7 @@ function WebbPageInner() {
                   )}
                 </div>
 
-                {/* Custom controls â€” replaces YouTube's native bar so children only see our UI */}
+                {/* Custom controls — replaces YouTube's native bar so children only see our UI */}
                 {!videoEnded && (
                   <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '6px 12px', background: '#111', flexShrink: 0, userSelect: 'none' }}>
                     <button type="button" onClick={() => {
@@ -3844,7 +3844,7 @@ function WebbPageInner() {
               </div>
             )}
 
-            {/* â”€â”€ ARTICLE â”€â”€ */}
+            {/* ── ARTICLE ── */}
             {mediaOverlay === 'article' && articleResource?.html && (
               <iframe key={articleKey} ref={articleIframeRef} srcDoc={articleResource.html} title={articleResource.title || 'Educational article'}
                 sandbox="allow-same-origin allow-scripts" style={{ width: '100%', height: '100%', border: 'none', background: '#fff' }} />
@@ -3875,7 +3875,7 @@ function WebbPageInner() {
         document.body
       )}
 
-      {/* â”€â”€ Settings overlay (tabbed: Settings | Article) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Settings overlay (tabbed: Settings | Article) ───────────── */}
       {showSourceSettings && createPortal(
         <div
           style={{
@@ -3942,7 +3942,7 @@ function WebbPageInner() {
                         borderRadius: 8, padding: '8px 18px', cursor: 'pointer',
                         fontWeight: 700, fontSize: 13, fontFamily: 'inherit',
                       }}
-                    >â†º Restart Lesson</button>
+                    >↺ Restart Lesson</button>
                   </div>
                 </div>
               )}
@@ -3950,7 +3950,7 @@ function WebbPageInner() {
                 <div>
                   {/* Source list */}
                   {[
-                    { id: 'simple-wikipedia', label: 'Simple Wikipedia', note: 'Simple English â€” always works' },
+                    { id: 'simple-wikipedia', label: 'Simple Wikipedia', note: 'Simple English — always works' },
                     { id: 'wikipedia',        label: 'Wikipedia',        note: 'Full English encyclopedia' },
                     { id: 'kiddle',          label: 'Kiddle',           note: 'Kid-safe encyclopedia' },
                     { id: 'ducksters',       label: 'Ducksters',        note: 'Kid-focused history & science' },
@@ -3990,7 +3990,7 @@ function WebbPageInner() {
                     )
                   })}
                   <div style={{ padding: '12px 20px', color: '#475569', fontSize: 11, lineHeight: 1.5 }}>
-                    Selected sources are tried in random order when you tap â†» refresh on the article.
+                    Selected sources are tried in random order when you tap ↻ refresh on the article.
                   </div>
                 </div>
               )}
@@ -4000,7 +4000,7 @@ function WebbPageInner() {
         document.body
       )}
 
-      {/* â”€â”€ Resume / Restart overlay â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Resume / Restart overlay ─────────────────────────────────── */}
       {offerResume && createPortal(
         <div style={{
           position: 'fixed', inset: 0, zIndex: 1200,
@@ -4016,7 +4016,7 @@ function WebbPageInner() {
             padding: '28px 24px',
             textAlign: 'center',
           }}>
-            <div style={{ fontSize: 36, marginBottom: 12 }}>ðŸ‘‹</div>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>👋</div>
             <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
             <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
               You were in the middle of{selectedLesson?.title ? <> <span style={{ color: '#e2e8f0', fontWeight: 600 }}>&ldquo;{selectedLesson.title}&rdquo;</span></> : ' a lesson'} with Mrs. Webb.<br/>
@@ -4029,7 +4029,7 @@ function WebbPageInner() {
                   borderRadius: 10, padding: '11px 0', cursor: 'pointer',
                   fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
                 }}
-              >â–¶ Resume</button>
+              >▶ Resume</button>
               <button type="button" onClick={handleRestartFromPrompt}
                 style={{
                   flex: 1, background: 'rgba(255,255,255,0.07)', color: '#94a3b8',
@@ -4037,14 +4037,14 @@ function WebbPageInner() {
                   borderRadius: 10, padding: '11px 0', cursor: 'pointer',
                   fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
                 }}
-              >â†º Restart</button>
+              >↺ Restart</button>
             </div>
           </div>
         </div>,
         document.body
       )}
 
-      {/* â”€â”€ Objective tablet toast â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */}
+      {/* ── Objective tablet toast ──────────────────────────────────── */}
       {showObjectives && createPortal(
         <div
           style={{
@@ -4078,7 +4078,7 @@ function WebbPageInner() {
                 <div style={{ color: '#94a3b8', fontSize: 12 }}>{understoodCount} of {objectives.length} understood; {writingReadyCount} notes saved</div>
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
-                {/* Gear button â€” settings */}
+                {/* Gear button — settings */}
                 <button
                   type="button"
                   onClick={e => { e.stopPropagation(); setSettingsTab('settings'); setShowSourceSettings(true) }}
@@ -4117,7 +4117,7 @@ function WebbPageInner() {
                 borderRadius: '0 2px 2px 0',
               }} />
             </div>
-            {/* Objectives list â€” accordion */}
+            {/* Objectives list — accordion */}
             <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
               {objectives.map((obj, i) => {
                 const noteReady = isWritingReadyNote(learnerNotes[i])
@@ -4136,13 +4136,13 @@ function WebbPageInner() {
                         textAlign: 'left',
                       }}
                     >
-                      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{done ? 'âœ…' : 'â¬œ'}</span>
+                      <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{done ? '✅' : '⬜'}</span>
                       <span style={{
                         color: done ? '#e2e8f0' : '#64748b',
                         fontSize: 13, lineHeight: 1.5, flex: 1,
                         transition: 'color 0.3s',
                       }}>{obj}</span>
-                      <span style={{ color: '#475569', fontSize: 11, flexShrink: 0, marginTop: 2 }}>{open ? 'â–²' : 'â–¼'}</span>
+                      <span style={{ color: '#475569', fontSize: 11, flexShrink: 0, marginTop: 2 }}>{open ? '▲' : '▼'}</span>
                     </button>
                     {/* Expanded content */}
                     {open && (
@@ -4171,7 +4171,7 @@ function WebbPageInner() {
                               fontWeight: 700, fontSize: 13, fontFamily: 'inherit',
                             }}
                           >
-                            ðŸ“š Research
+                            📚 Research
                           </button>
                         )}
                       </div>
@@ -4225,6 +4225,7 @@ function WebbPageInner() {
             compact={keyboardCompact}
           />
         ) : null}
+        storageWarning={storageError}
         onLearnerActivity={noteWebbLearnerActivity}
         onDraftChange={setWritingDraft}
         onSubmit={submitWritingAttempt}
@@ -4253,7 +4254,7 @@ function WebbPageInner() {
                   borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
                   fontSize: 13, fontFamily: 'inherit',
                 }}
-              >â† Back</button>
+              >← Back</button>
               <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase' }}>
                 Your Essay
               </div>
@@ -4261,7 +4262,7 @@ function WebbPageInner() {
             </div>
             {/* Headline */}
             <h2 style={{ color: '#e2e8f0', fontSize: 22, fontWeight: 800, margin: '0 0 6px' }}>
-              ðŸŽ‰ You did it!
+              🎉 You did it!
             </h2>
             <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, margin: '0 0 24px' }}>
               These are <em>your</em> words, put together into an essay.
@@ -4291,8 +4292,8 @@ function WebbPageInner() {
               fontSize: 13,
               lineHeight: 1.7,
             }}>
-              âœï¸ <strong style={{ color: '#e2e8f0' }}>Copy It Down!</strong><br />
-              Write every word on lined paper â€” this helps your brain remember it!
+              ✏️ <strong style={{ color: '#e2e8f0' }}>Copy It Down!</strong><br />
+              Write every word on lined paper — this helps your brain remember it!
               You can decorate the margins and add a title when you&apos;re done.
             </div>
             {/* Complete lesson button */}
@@ -4323,8 +4324,8 @@ function WebbPageInner() {
                     gap: 8,
                   }}
                 >
-                  <span style={{ fontSize: 20 }}>ðŸ‘©ðŸ»â€ðŸ«</span>
-                  {alreadyDone ? 'Lesson Completed âœ“' : completionState === 'saving' ? 'Recording completionâ€¦' : completionState === 'failed' ? 'Retry completion' : 'Complete Lesson'}
+                  <span style={{ fontSize: 20 }}>👩🏻‍🏫</span>
+                  {alreadyDone ? 'Lesson Completed ✓' : completionState === 'saving' ? 'Recording completion…' : completionState === 'failed' ? 'Retry completion' : 'Complete Lesson'}
                 </button>
                 {completionState === 'failed' && (
                   <p role="alert" style={{ color: C.danger, fontWeight: 700, margin: '10px 0 0' }}>{completionError}</p>
@@ -4366,13 +4367,13 @@ function WebbPageInner() {
               border: '1px solid #1e40af',
             }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 10 }}>
-                <span style={{ fontSize: 22 }}>âœ…</span>
+                <span style={{ fontSize: 22 }}>✅</span>
                 <span style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Goal achieved &middot; Note saved</span>
               </div>
               <p style={{
                 color: '#e2e8f0', fontSize: 13, lineHeight: 1.6,
                 margin: 0, fontStyle: 'italic',
-              }}>â€œ{(newlySavedNote.notes || [newlySavedNote]).map(note => note.text).join(' / ')}â€</p>
+              }}>“{(newlySavedNote.notes || [newlySavedNote]).map(note => note.text).join(' / ')}”</p>
               {/* completed tally */}
               <div style={{ marginTop: 12, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                 {objectives.map((_, i) => (
@@ -4396,7 +4397,7 @@ function WebbPageInner() {
   )
 }
 
-// â”€â”€ Shared styles â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── Shared styles ─────────────────────────────────────────────────────────────
 const overlayBtnStyle = {
   background: '#1f2937', color: '#fff', border: 'none',
   width: 'clamp(34px, 6.2vw, 52px)', height: 'clamp(34px, 6.2vw, 52px)',
@@ -4426,7 +4427,7 @@ const footerStyle = {
   paddingBottom: 'calc(10px + env(safe-area-inset-bottom, 0px))',
 }
 
-// â”€â”€ WebbLessonBrowser â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── WebbLessonBrowser ─────────────────────────────────────────────────────────
 export default function WebbPage() {
   return (
     <Suspense fallback={<div style={{ minHeight: '100vh', background: '#f8fafc' }} />}>
@@ -4490,7 +4491,7 @@ function WebbLessonBrowser({
       >
         <div style={{ minWidth: 0 }}>
           <div style={{ color: C.text, fontWeight: 700, fontSize: 15, marginBottom: 4 }}>
-            {webbDone && <span style={{ marginRight: 6 }}>ðŸ‘©ðŸ»â€ðŸ«</span>}
+            {webbDone && <span style={{ marginRight: 6 }}>👩🏻‍🏫</span>}
             {!webbDone && done && <span style={{ color: C.success, marginRight: 6 }}>&#10003;</span>}
             {lesson.title || lk}
           </div>
@@ -4620,7 +4621,7 @@ function WebbLessonBrowser({
   )
 }
 
-// â”€â”€ StudentInput â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+// ── StudentInput ──────────────────────────────────────────────────────────────
 function StudentInput({ onSend, onActivity, loading, compact = false }) {
   const [value, setValue] = useState('')
   const ref = useRef(null)

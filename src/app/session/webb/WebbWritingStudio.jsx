@@ -69,6 +69,7 @@ export default function WebbWritingStudio({
   isLastSentence,
   recentEntries = [],
   responseTimer = null,
+  storageWarning = '',
   onLearnerActivity,
 }) {
   const inputRef = useRef(null)
