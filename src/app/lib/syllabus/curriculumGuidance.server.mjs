@@ -1,5 +1,9 @@
 import { deriveConceptId } from '../masteryEvidence/identity.js'
 import { curriculumGuidanceCounts } from './curriculumGuidance.mjs'
+import {
+  buildCurriculumStarterRecommendations,
+  mergeFrameworkAndStarterRecommendations,
+} from './curriculumStarterPacks.mjs'
 import { addSyllabusDays } from './timeline.mjs'
 
 function clean(value) { return String(value ?? '').trim() }
@@ -671,8 +675,18 @@ export async function loadCurriculumGuidanceBundle({
       ])
     }
   }
-  const recommendations = includeRecommendations && typeof repository.listCurriculumFrameworkItems === 'function'
+  const frameworkRecommendations = includeRecommendations && typeof repository.listCurriculumFrameworkItems === 'function'
     ? await repository.listCurriculumFrameworkItems({ facilitatorId, subjects, grade: learnerGrade })
+    : []
+  const starterRecommendations = includeRecommendations
+    ? buildCurriculumStarterRecommendations({ grade: learnerGrade, subjects })
+    : []
+  const recommendations = includeRecommendations
+    ? mergeFrameworkAndStarterRecommendations({
+        frameworkItems: frameworkRecommendations,
+        starterItems: starterRecommendations,
+        subjects,
+      })
     : []
   const decisions = typeof repository.listCurriculumPlanningDecisions === 'function'
     ? await repository.listCurriculumPlanningDecisions(facilitatorId, learnerId, decisionLimit)

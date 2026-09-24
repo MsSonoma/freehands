@@ -19,6 +19,83 @@ function addDays(value, amount) {
   return date.toISOString().slice(0, 10)
 }
 
+function defaultPlanningPeriod(today) {
+  const value = dateOnly(today)
+  const parsed = new Date(`${value}T12:00:00.000Z`)
+  const fallback = value || new Date().toISOString().slice(0, 10)
+  if (Number.isNaN(parsed.getTime())) {
+    return { id: null, label: 'Current semester', period_type: 'semester', starts_on: fallback, ends_on: addDays(fallback, 120) }
+  }
+  const year = parsed.getUTCFullYear()
+  const month = parsed.getUTCMonth() + 1
+  if (month >= 7) {
+    return {
+      id: null,
+      label: `Fall ${year}`,
+      period_type: 'semester',
+      starts_on: `${year}-08-01`,
+      ends_on: `${year}-12-31`,
+    }
+  }
+  return {
+    id: null,
+    label: `Spring ${year}`,
+    period_type: 'semester',
+    starts_on: `${year}-01-01`,
+    ends_on: `${year}-06-30`,
+  }
+}
+
+function nextPlanningPeriod(current) {
+  const end = dateOnly(current?.ends_on)
+  const parsed = new Date(`${end}T12:00:00.000Z`)
+  const type = clean(current?.period_type) || 'semester'
+  if (Number.isNaN(parsed.getTime())) return defaultPlanningPeriod(addDays(end, 1))
+
+  const year = parsed.getUTCFullYear()
+  const month = parsed.getUTCMonth() + 1
+
+  if (type === 'semester') {
+    if (month >= 7) {
+      return {
+        id: null,
+        label: `Spring ${year + 1}`,
+        period_type: 'semester',
+        starts_on: `${year + 1}-01-01`,
+        ends_on: `${year + 1}-06-30`,
+      }
+    }
+    return {
+      id: null,
+      label: `Fall ${year}`,
+      period_type: 'semester',
+      starts_on: `${year}-08-01`,
+      ends_on: `${year}-12-31`,
+    }
+  }
+
+  if (type === 'school_year') {
+    const nextYear = month >= 7 ? year + 1 : year
+    return {
+      id: null,
+      label: `${nextYear}-${String(nextYear + 1).slice(-2)} school year`,
+      period_type: 'school_year',
+      starts_on: `${nextYear}-08-01`,
+      ends_on: `${nextYear + 1}-06-30`,
+    }
+  }
+
+  const startsOn = addDays(end, 1)
+  const spanDays = type === 'quarter' ? 90 : 120
+  return {
+    id: null,
+    label: type === 'quarter' ? 'Next quarter' : 'Next planning period',
+    period_type: type,
+    starts_on: startsOn,
+    ends_on: addDays(startsOn, spanDays),
+  }
+}
+
 function subjectName(value) {
   return clean(typeof value === 'string' ? value : value?.name)
 }
@@ -28,30 +105,59 @@ function newKey(prefix) {
   return `${prefix}:${Date.now()}:${Math.random().toString(36).slice(2)}`
 }
 
+function recommendationIdentity(item) {
+  return clean(item?.recommendation_key)
+    || (item?.framework_id && item?.id ? `framework:${item.id}` : clean(item?.id))
+}
+
 function requirementFromRecommendation(item, index = 0) {
+  const frameworkBacked = Boolean(item?.framework_id && item?.id && item?.recommendation_kind !== 'ms_sonoma')
+  const recommendationKey = recommendationIdentity(item)
+  const requirementKey = frameworkBacked ? `framework:${item.id}` : newKey('facilitator')
   return {
-    requirement_key: `framework:${item.id}`,
-    framework_item_id: item.id,
+    requirement_key: requirementKey,
+    framework_item_id: frameworkBacked ? item.id : null,
     subject: item.subject,
     statement: item.statement,
     must_learn: true,
     attention: 'normal',
     target_date: null,
-    planning_group_key: item.planning_group_key || `framework:${item.id}`,
-    source_kind: 'framework',
+    planning_group_key: item.planning_group_key || requirementKey,
+    source_kind: frameworkBacked ? 'framework' : 'facilitator',
     sort_order: index,
     metadata: {
-      framework_id: item.framework_id,
+      recommendation_key: recommendationKey || null,
+      recommendation_kind: item.recommendation_kind || (frameworkBacked ? 'framework' : 'ms_sonoma'),
+      framework_id: item.framework_id || null,
+      framework_item_id: frameworkBacked ? item.id : null,
       framework_name: item.framework?.name || null,
       source_code: item.code || item.external_id || null,
       source_uri: item.framework?.source_uri || null,
       source_version: item.framework?.version_label || null,
+      starter_pack_version: item.metadata?.starter_pack_version || null,
     },
   }
 }
 
 function draftFromBundle(bundle, today) {
   const period = bundle?.period
+  const storedRequirements = (bundle?.requirements || []).map((item, index) => ({
+    requirement_key: item.requirement_key,
+    framework_item_id: item.framework_item_id || null,
+    subject: item.subject,
+    statement: item.statement,
+    must_learn: item.must_learn !== false,
+    attention: item.attention || 'normal',
+    target_date: dateOnly(item.target_date) || null,
+    planning_group_key: item.planning_group_key || item.requirement_key,
+    source_kind: item.source_kind || 'facilitator',
+    sort_order: Number.isInteger(item.sort_order) ? item.sort_order : index,
+    metadata: item.metadata || {},
+  }))
+  const shouldSeedRecommendations = !bundle?.contract_version && storedRequirements.length === 0
+  const seededRequirements = shouldSeedRecommendations
+    ? (bundle?.recommendations || []).map(requirementFromRecommendation)
+    : []
   return {
     period: period ? {
       id: period.id,
@@ -59,27 +165,9 @@ function draftFromBundle(bundle, today) {
       period_type: period.period_type || 'custom',
       starts_on: dateOnly(period.starts_on),
       ends_on: dateOnly(period.ends_on),
-    } : {
-      id: null,
-      label: '',
-      period_type: 'semester',
-      starts_on: dateOnly(today),
-      ends_on: '',
-    },
+    } : defaultPlanningPeriod(today),
     expected_active_version_id: bundle?.contract_version?.id || null,
-    requirements: (bundle?.requirements || []).map((item, index) => ({
-      requirement_key: item.requirement_key,
-      framework_item_id: item.framework_item_id || null,
-      subject: item.subject,
-      statement: item.statement,
-      must_learn: item.must_learn !== false,
-      attention: item.attention || 'normal',
-      target_date: dateOnly(item.target_date) || null,
-      planning_group_key: item.planning_group_key || item.requirement_key,
-      source_kind: item.source_kind || 'facilitator',
-      sort_order: Number.isInteger(item.sort_order) ? item.sort_order : index,
-      metadata: item.metadata || {},
-    })),
+    requirements: storedRequirements.length ? storedRequirements : seededRequirements,
     goals: (bundle?.goals || []).map((goal, index) => ({
       goal_key: goal.goal_key,
       title: goal.title,
@@ -180,13 +268,16 @@ export default function CurriculumGuidanceEditor({
     return [...values.values()]
   }, [revision?.subjects, draft?.requirements, bundle?.recommendations])
 
-  const selectedRequirementKeys = useMemo(
-    () => new Set((draft?.requirements || []).map((item) => item.requirement_key)),
+  const selectedRecommendationKeys = useMemo(
+    () => new Set((draft?.requirements || []).map((item) => (
+      clean(item?.metadata?.recommendation_key)
+      || (item?.framework_item_id ? `framework:${item.framework_item_id}` : '')
+    )).filter(Boolean)),
     [draft?.requirements],
   )
   const availableRecommendations = useMemo(
-    () => (bundle?.recommendations || []).filter((item) => !selectedRequirementKeys.has(`framework:${item.id}`)),
-    [bundle?.recommendations, selectedRequirementKeys],
+    () => (bundle?.recommendations || []).filter((item) => !selectedRecommendationKeys.has(recommendationIdentity(item))),
+    [bundle?.recommendations, selectedRecommendationKeys],
   )
 
   function updatePeriod(key, value) {
@@ -217,6 +308,7 @@ export default function CurriculumGuidanceEditor({
           planning_group_key: replacedRequirementKey,
           source_kind: 'facilitator',
           metadata: {
+            ...(currentItem.metadata || {}),
             derived_from_framework_item_id: currentItem.framework_item_id,
             derived_from_framework_name: currentItem.metadata?.framework_name || null,
           },
@@ -306,18 +398,25 @@ export default function CurriculumGuidanceEditor({
 
   function startNextPeriod() {
     if (!draft?.period?.ends_on) return
-    const unmet = (draft.requirements || []).filter((item) => stateByKey.get(item.requirement_key)?.mastery_state !== 'demonstrated')
+    const currentRequirements = draft.requirements || []
+    const unmet = currentRequirements.filter((item) => stateByKey.get(item.requirement_key)?.mastery_state !== 'demonstrated')
+    const priorRecommendationKeys = new Set(currentRequirements.map((item) => (
+      clean(item?.metadata?.recommendation_key)
+      || (item?.framework_item_id ? `framework:${item.framework_item_id}` : '')
+    )).filter(Boolean))
+    const newRecommendations = (bundle?.recommendations || [])
+      .filter((item) => !priorRecommendationKeys.has(recommendationIdentity(item)))
+      .map((item, index) => requirementFromRecommendation(item, unmet.length + index))
+    const nextRequirements = [
+      ...unmet.map((item, index) => ({ ...item, target_date: null, sort_order: index })),
+      ...newRecommendations,
+    ]
+
     setDraft((current) => ({
       ...current,
-      period: {
-        id: null,
-        label: '',
-        period_type: current.period.period_type,
-        starts_on: addDays(current.period.ends_on, 1),
-        ends_on: '',
-      },
+      period: nextPlanningPeriod(current.period),
       expected_active_version_id: null,
-      requirements: unmet.map((item, index) => ({ ...item, target_date: null, sort_order: index })),
+      requirements: nextRequirements,
       goals: current.goals.map((goal, index) => ({ ...goal, sort_order: index })),
       change_reason: 'Prepared the next curriculum planning period',
     }))
@@ -336,8 +435,12 @@ export default function CurriculumGuidanceEditor({
           learnerId,
           guidance: {
             ...draft,
-            requirements: draft.requirements.map((item, index) => ({ ...item, sort_order: index })),
-            goals: draft.goals.map((item, index) => ({ ...item, sort_order: index })),
+            requirements: draft.requirements
+              .filter((item) => clean(item.statement) && clean(item.subject))
+              .map((item, index) => ({ ...item, sort_order: index })),
+            goals: draft.goals
+              .filter((item) => clean(item.title))
+              .map((item, index) => ({ ...item, sort_order: index })),
           },
         }),
       })
@@ -402,15 +505,16 @@ export default function CurriculumGuidanceEditor({
 
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <div><h3>Requirements</h3><span>What this learner needs to learn during the planning period.</span></div>
+            <div><h3>Requirements</h3><span>Ms. Sonoma starts new periods with editable recommendations. Change, remove, or add anything the facilitator wants.</span></div>
             <button type="button" className={styles.secondary} onClick={addRequirement}>Add requirement</button>
           </div>
 
           {(draft.requirements || []).length === 0
-            ? <div className={styles.empty}>No requirements yet. Add your own or choose from recommendations when a curriculum framework is available.</div>
+            ? <div className={styles.empty}>No requirements are selected for this period. You can save it this way or add a requirement.</div>
             : <div className={styles.list}>{draft.requirements.map((item, index) => {
               const state = stateByKey.get(item.requirement_key)
-              const frameworkBacked = item.source_kind === 'framework' && Boolean(item.framework_item_id)
+              const sourceLabel = item.metadata?.framework_name
+                || (item.metadata?.recommendation_kind === 'ms_sonoma' ? 'Ms. Sonoma suggested' : null)
               return <div className={styles.requirement} key={item.requirement_key}>
                 <div className={styles.requirementTop}>
                   <input
@@ -418,15 +522,11 @@ export default function CurriculumGuidanceEditor({
                     value={item.statement}
                     onChange={(event) => updateRequirement(index, { statement: event.target.value })}
                     placeholder="What should the learner be able to do?"
-                    readOnly={frameworkBacked}
-                    title={frameworkBacked ? 'This wording comes from the selected curriculum source. Remove it and add a custom requirement to change the wording.' : undefined}
                   />
                   <select
                     className={styles.compact}
                     value={item.subject}
                     onChange={(event) => updateRequirement(index, { subject: event.target.value })}
-                    disabled={frameworkBacked}
-                    title={frameworkBacked ? 'The subject comes from the selected curriculum source.' : undefined}
                   >
                     <option value="">Choose subject</option>
                     {subjectOptions.map((subject) => <option key={subject} value={subject}>{subject}</option>)}
@@ -442,14 +542,14 @@ export default function CurriculumGuidanceEditor({
                   </select></label>
                   <label className={styles.field}>Target date<input className={styles.compact} type="date" value={dateOnly(item.target_date)} onChange={(event) => updateRequirement(index, { target_date: event.target.value || null })} /></label>
                   <span className={styles.pill}>{stateLabel(state)}</span>
-                  {item.source_kind === 'framework' && <span className={styles.source}>{item.metadata?.framework_name || 'Curriculum source'}{item.metadata?.source_code ? ` - ${item.metadata.source_code}` : ''}</span>}
+                  {sourceLabel && <span className={styles.source}>{sourceLabel}{item.metadata?.source_code ? ` - ${item.metadata.source_code}` : ''}</span>}
                 </div>
               </div>
             })}</div>}
 
           {availableRecommendations.length > 0 && <div className={styles.recommendations}>
             <strong>Recommended requirements</strong>
-            <span className={styles.muted}>These come from the curriculum frameworks available to this learner. Adding one makes it part of the facilitator-authored contract.</span>
+            <span className={styles.muted}>Suggestions not currently in this period. Imported curriculum sources are used when available; otherwise Ms. Sonoma provides a clearly labeled starter recommendation.</span>
             {availableRecommendations.slice(0, 80).map((item) => <div className={styles.recommendation} key={item.id}>
               <div><strong>{item.subject}</strong> <span className={styles.source}>{item.framework?.name || ''}{item.code ? ` - ${item.code}` : ''}</span></div>
               <span>{item.statement}</span>

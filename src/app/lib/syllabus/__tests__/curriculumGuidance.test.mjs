@@ -452,6 +452,31 @@ test('materialization generation requests preserve curriculum target identity', 
   )
 })
 
+test('Curriculum Guidance supplies editable starter recommendations when no imported framework is available', async () => {
+  const repository = {
+    async findActiveCurriculumPeriod() { return null },
+    async findNextCurriculumPeriod() { return null },
+    async findLatestCurriculumPeriod() { return null },
+    async listCurriculumFrameworkItems() { return [] },
+    async listCurriculumPlanningDecisions() { return [] },
+  }
+
+  const bundle = await loadCurriculumGuidanceBundle({
+    repository,
+    facilitatorId: 'facilitator',
+    learnerId: 'learner',
+    learnerGrade: '4',
+    subjects: ['Math', 'Science'],
+    today: '2026-09-24',
+  })
+
+  assert.equal(bundle.period, null)
+  assert.ok(bundle.recommendations.length >= 10)
+  assert.ok(bundle.recommendations.some((item) => item.subject === 'Math' && item.recommendation_kind === 'ms_sonoma'))
+  assert.ok(bundle.recommendations.some((item) => item.subject === 'Science' && item.recommendation_kind === 'ms_sonoma'))
+  assert.ok(bundle.recommendations.every((item) => item.framework_id === null))
+})
+
 test('Curriculum Guidance can reopen an approved upcoming period before it becomes current', async () => {
   const currentPeriod = {
     ...PERIOD,

@@ -1,3 +1,26 @@
+function normalizeFrameworkGrade(value) {
+  const raw = String(value || '').trim().toUpperCase().replace(/^GRADE\s*/i, '').replace(/(?:ST|ND|RD|TH)$/i, '')
+  if (!raw) return ''
+  if (['K', 'KG', 'KINDERGARTEN'].includes(raw)) return 'K'
+  const number = Number.parseInt(raw, 10)
+  return Number.isInteger(number) && number >= 1 && number <= 12 ? String(number) : raw.toLocaleLowerCase()
+}
+
+function frameworkGradeMatches(itemGrade, learnerGrade) {
+  const learner = normalizeFrameworkGrade(learnerGrade)
+  if (!learner) return true
+  const raw = String(itemGrade || '').trim()
+  if (!raw) return true
+  const normalized = normalizeFrameworkGrade(raw)
+  if (normalized === learner) return true
+  const band = raw.toLocaleLowerCase().replace(/[–—]/g, '-').replace(/\s/g, '')
+  const range = /^(k|\d+)-(\d+)$/.exec(band)
+  if (!range) return false
+  const learnerNumber = learner === 'K' ? 0 : Number(learner)
+  const start = range[1] === 'k' ? 0 : Number(range[1])
+  const end = Number(range[2])
+  return Number.isFinite(learnerNumber) && learnerNumber >= start && learnerNumber <= end
+}
 function throwOn(error, fallback) {
   if (error) {
     const wrapped = new Error(error.message || fallback)
@@ -517,11 +540,9 @@ export function createSyllabusRepository(admin) {
         .order('created_at')
       throwOn(error, 'Failed to load curriculum framework items')
       const subjectKeys = new Set((subjects || []).map((value) => String(value || '').trim().toLocaleLowerCase()).filter(Boolean))
-      const gradeKey = String(grade || '').trim().toLocaleLowerCase()
       return (data || []).filter((item) => {
         const subjectMatches = !subjectKeys.size || subjectKeys.has(String(item.subject || '').trim().toLocaleLowerCase())
-        const itemGrade = String(item.grade_band || '').trim().toLocaleLowerCase()
-        const gradeMatches = !gradeKey || !itemGrade || itemGrade === gradeKey
+        const gradeMatches = frameworkGradeMatches(item.grade_band, grade)
         return subjectMatches && gradeMatches
       }).map((item) => ({
         ...item,
