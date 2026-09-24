@@ -83,6 +83,9 @@ export function createWritingAttempt({ objectiveIndex = null, slotIndex = object
   const fitsSlot = slotFit !== false && positionFit !== false
   const adds = addsNewInformation !== false
   const fitsParagraph = paragraphFit !== false
+  const normalizedRole = String(slotRole || '').trim().toLowerCase()
+  const requiresDistinctInformation = !['topic', 'conclusion'].includes(normalizedRole)
+  const addsForAcceptance = requiresDistinctInformation ? adds : true
   return {
     objectiveIndex,
     slotIndex,
@@ -93,11 +96,11 @@ export function createWritingAttempt({ objectiveIndex = null, slotIndex = object
     sourceMessageCreatedAt: message?.createdAt || null,
     accuracy,
     sentenceOk: sentenceOk === true,
-    positionFit: fitsSlot && adds && fitsParagraph,
+    positionFit: fitsSlot && addsForAcceptance && fitsParagraph,
     slotFit: fitsSlot,
     addsNewInformation: adds,
     paragraphFit: fitsParagraph,
-    accepted: accuracy === 'correct' && sentenceOk === true && fitsSlot && adds && fitsParagraph,
+    accepted: accuracy === 'correct' && sentenceOk === true && fitsSlot && addsForAcceptance && fitsParagraph,
     attemptedAt: attemptedAt || new Date().toISOString(),
     assistance: 'mrs-webb-guidance',
     provenance: 'learner-message',

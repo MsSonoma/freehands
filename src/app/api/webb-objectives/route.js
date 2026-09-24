@@ -244,6 +244,7 @@ async function checkWriting(apiKey, input, callModel = null) {
   const slotFit = slotFitRaw === 'yes' && !hasIncompatibleEssayPositionCue(input?.text, role)
   const addsNewInformation = addsRawValue === 'yes' && !duplicate
   const paragraphFit = paragraphRawValue === 'yes'
+  const positionFit = slotFit && (role === 'body' ? addsNewInformation : true) && paragraphFit
   return {
     accuracy,
     conceptFit: accuracy,
@@ -251,7 +252,7 @@ async function checkWriting(apiKey, input, callModel = null) {
     slotFit,
     addsNewInformation,
     paragraphFit,
-    positionFit: slotFit && addsNewInformation && paragraphFit,
+    positionFit,
     duplicateOfIndex: duplicate?.index ?? null,
   }
 }

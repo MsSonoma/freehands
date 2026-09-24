@@ -136,6 +136,24 @@ test('writing evaluation deterministically rejects today-style repetition even i
   assert.equal(result.duplicateOfIndex, 1)
 })
 
+test('conclusion position fit does not require new factual information', async () => {
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'check-writing',
+      slot: PLAN.slots.at(-1),
+      controllingIdea: PLAN.controllingIdea,
+      text: 'That is why comparing evidence helps historians understand the past.',
+      lesson: { title: 'Questioning Historical Evidence', subject: 'social studies', grade: 5 },
+      priorSentences: ['Historians examine evidence.', 'They compare sources to check what happened.'],
+    }),
+  }), { apiKey: 'offline-test', callModel: async () => 'correct|yes|yes|no|yes' })
+  assert.equal(response.status, 200)
+  const result = await response.json()
+  assert.equal(result.addsNewInformation, false)
+  assert.equal(result.positionFit, true)
+})
+
 test('final paragraph coherence check never asks the model to rewrite learner prose', async () => {
   const acceptedSentences = Object.fromEntries(PLAN.slots.map((slot, index) => [index, { text: `Learner sentence ${index + 1}.`, provenance: 'learner-message', slotId: slot.id }]))
   const response = await POST(new Request('http://localhost/api/webb-objectives', {

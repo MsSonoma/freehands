@@ -4210,6 +4210,8 @@ function WebbPageInner() {
         objective={activeWritingPlan ? '' : objectives[writingIndex]}
         slot={currentWritingSlot}
         sourceNotes={currentWritingSource.notes || []}
+        lessonTitle={selectedLesson?.title || ''}
+        lessonBlurb={selectedLesson?.blurb || selectedLesson?.description || ''}
         draft={writingDraft}
         previousAttempt={latestWritingAttempt(writingAttempts, writingIndex)}
         acceptedSentences={acceptedSentences}

@@ -55,6 +55,8 @@ export default function WebbWritingStudio({
   objective,
   slot = null,
   sourceNotes = [],
+  lessonTitle = '',
+  lessonBlurb = '',
   draft,
   previousAttempt,
   acceptedSentences,
@@ -100,6 +102,9 @@ export default function WebbWritingStudio({
   const currentNote = String(note?.text || '').trim()
   const currentObjective = String(objective || '').trim()
   const currentRole = String(slot?.role || '').trim().toLowerCase()
+  const visibleLessonTitle = String(lessonTitle || '').trim()
+  const visibleLessonBlurb = String(lessonBlurb || '').trim()
+  const showLessonContext = currentRole === 'topic' || currentRole === 'conclusion'
   const researchNotes = (Array.isArray(sourceNotes) ? sourceNotes : []).map(value => String(value?.text || value || '').trim()).filter(Boolean)
   const visibleResearchNotes = researchNotes.length ? researchNotes : (currentNote ? [currentNote] : [])
   const slotLabel = currentRole === 'topic' ? 'Topic sentence' : currentRole === 'conclusion' ? 'Conclusion' : currentRole === 'body' ? 'Body sentence' : ''
@@ -188,6 +193,13 @@ export default function WebbWritingStudio({
               {slotLabel && (
                 <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 3 : 12 }}>
                   {slotLabel}
+                </div>
+              )}
+              {showLessonContext && (visibleLessonTitle || visibleLessonBlurb) && (
+                <div style={{ marginBottom: keyboardCompact ? 4 : 22, paddingBottom: keyboardCompact ? 4 : 18, borderBottom: '1px solid #e7e0d2' }}>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 10, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 6 }}>Lesson</div>
+                  {visibleLessonTitle && <div style={{ color: '#172033', fontSize: keyboardCompact ? 13 : 18, lineHeight: 1.35, fontWeight: 800 }}>{visibleLessonTitle}</div>}
+                  {visibleLessonBlurb && <div style={{ color: '#475569', fontSize: keyboardCompact ? 11 : 15, lineHeight: keyboardCompact ? 1.25 : 1.5, marginTop: keyboardCompact ? 2 : 6 }}>{visibleLessonBlurb}</div>}
                 </div>
               )}
               {!slot && currentObjective && (
