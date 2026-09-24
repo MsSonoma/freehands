@@ -14,6 +14,7 @@
     "dev:lan": "cross-env PORT=3001 next dev -p 3001 -H 0.0.0.0",
     "grant:pro": "node scripts/grantPlan.mjs outreach.mssonoma@gmail.com pro",
     "lessons:balance-mc": "node scripts/balance-mc-answers.mjs",
+    "curriculum:import": "node scripts/import-curriculum-framework.mjs",
     "clean": "node -e \"try{require('fs').rmSync('.next',{recursive:true,force:true});require('fs').rmSync('.next-dev',{recursive:true,force:true});require('fs').rmSync('.turbo',{recursive:true,force:true});console.log('Cleaned build dirs')}catch(e){process.exit(0)}\"",
     "clean:dev": "npm run clean && npm run dev",
     "clean:dev:3001": "npm run clean && powershell -NoProfile -ExecutionPolicy Bypass -File scripts\\kill-port-3001.ps1 && set PORT=3001&& npm run dev",

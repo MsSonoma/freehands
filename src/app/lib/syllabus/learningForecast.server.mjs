@@ -6,6 +6,7 @@ import { buildInstructionalForecastPlan, buildLearningForecastSnapshot, instruct
 import { instructionalForecastMode } from './forecastWindow.mjs'
 import { addSyllabusDays, startOfSyllabusWeek } from './timeline.mjs'
 import { SyllabusError, validateSnapshot } from './schema.mjs'
+import { loadActiveCurriculumPlanningContext } from './curriculumGuidance.server.mjs'
 
 function conflict() {
   return new SyllabusError('The active Syllabus changed while the instructional forecast was being prepared.', 409, 'LEARNING_FORECAST_CONFLICT')
@@ -67,7 +68,7 @@ export async function createLearningForecastProposal({
     }
   }
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
-  const plan = buildInstructionalForecastPlan({
+  let plan = buildInstructionalForecastPlan({
     activeRevision,
     forecastItems: inputs.forecastItems,
     proposedForecastItems: existingProposalItems,
@@ -78,6 +79,42 @@ export async function createLearningForecastProposal({
     today: calendar.today,
     targetWeekStart: requestedWeek,
   })
+  const curriculumGuidance = await loadActiveCurriculumPlanningContext({
+    repository,
+    facilitatorId,
+    learnerId,
+    activeRevision,
+    learnerGrade: learner.grade || null,
+    reports: authorizedReports,
+    timelineItems,
+    proposedForecastItems: existingProposalItems,
+    noSchoolDates: inputs.noSchoolDates || [],
+    requestedSubjects: plan.unfilled_slots.map((slot) => slot.subject),
+    requestedSlots: plan.unfilled_slots,
+    today: calendar.today,
+    targetWeekStart: plan.target_week_start,
+  })
+  if (curriculumGuidance?.blocked) {
+    throw new SyllabusError(
+      `Curriculum Guidance for ${curriculumGuidance.period?.label || 'the current planning period'} does not cover ${curriculumGuidance.blocked_date || 'this forecast date'}. Review the next planning period before forecasting beyond the current curriculum contract.`,
+      409,
+      'CURRICULUM_PERIOD_REVIEW_REQUIRED',
+    )
+  }
+  if (curriculumGuidance) {
+    plan = buildInstructionalForecastPlan({
+      activeRevision,
+      forecastItems: inputs.forecastItems,
+      proposedForecastItems: existingProposalItems,
+      timelineItems,
+      reports: authorizedReports,
+      learnerGrade: learner.grade || null,
+      noSchoolDates: inputs.noSchoolDates || [],
+      curriculumGuidance,
+      today: calendar.today,
+      targetWeekStart: requestedWeek,
+    })
+  }
   if (existing?.proposal_key === plan.proposal_key && String(existing.effective_from).slice(0, 10) === calendar.today) {
     return {
       kind: 'proposal', reused: true, active_revision_id: activeRevision.id,
@@ -105,6 +142,7 @@ export async function createLearningForecastProposal({
           },
           evidence_summaries: plan.evidence_context,
           subject_breadth: plan.subject_breadth,
+          curriculum_guidance: plan.curriculum_guidance,
         },
       })
     } catch {

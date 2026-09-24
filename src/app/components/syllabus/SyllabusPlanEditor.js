@@ -9,6 +9,7 @@ import {
   updateTeachingGuidanceList,
 } from '@/app/lib/syllabus/teachingGuidance.mjs'
 import styles from './SyllabusPlanEditor.module.css'
+import CurriculumGuidanceEditor from './CurriculumGuidanceEditor.js'
 
 const DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
 const DAY_LABELS = Object.fromEntries(DAYS.map((day) => [day, day[0].toUpperCase() + day.slice(1, 3)]))
@@ -26,7 +27,7 @@ function sectionLabel(value) {
     goals: 'Goals',
     subjects: 'Subjects',
     weekly_pattern: 'Weekly Pattern',
-    teaching_guidance: 'Teaching Guidance',
+    teaching_guidance: 'Curriculum Guidance',
   })[value] || 'Plan details'
 }
 
@@ -227,6 +228,8 @@ export default function SyllabusPlanEditor({
       setWorking(false)
     }
   }
+
+  if (section === 'teaching_guidance') return <CurriculumGuidanceEditor revision={revision} learnerId={learnerId} accessToken={accessToken} today={today} onClose={onClose} onSaved={onSaved} />
 
   return <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget && !working) onClose?.() }}>
     <section className={styles.editor} role="dialog" aria-modal="true" aria-label={`Edit ${sectionLabel(section)}`}>

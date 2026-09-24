@@ -26,6 +26,68 @@ function stableUuid(value) {
   return `${hex.slice(0, 8).join('')}-${hex.slice(8, 12).join('')}-${hex.slice(12, 16).join('')}-${hex.slice(16, 20).join('')}-${hex.slice(20).join('')}`
 }
 
+function curriculumSelectionMetadata(plan, slot, generated) {
+  const guidance = plan?.curriculum_guidance
+  if (!guidance?.subjects) return null
+  const subject = guidance.subjects[subjectKey(slot?.subject)]
+  if (!subject) return null
+
+  const requirementKey = clean(generated?.requirement_key)
+  if (!requirementKey) {
+    if (!(subject.eligible_requirement_keys || []).length && Number(subject.required_remaining || 0) === 0) return null
+    throw new Error('Forecast model omitted the server-authorized curriculum requirement')
+  }
+
+  const candidate = (subject.candidates || []).find((item) => item.requirement_key === requirementKey && item.eligible === true)
+  if (!candidate) throw new Error('Forecast model selected a curriculum requirement outside the server-authorized candidate set')
+
+  const alternatives = (subject.candidates || [])
+    .filter((item) => item.eligible === true && item.requirement_key !== requirementKey)
+    .slice(0, 3)
+    .map((item) => ({
+      requirement_key: item.requirement_key,
+      statement: item.statement,
+      reasons: item.reasons,
+    }))
+
+  const exposureNumber = Number(generated?.exposure_number || 0)
+    || Math.min(3, Number(candidate?.state?.consecutive_exposures || 0) + 1)
+  const nextPolicy = candidate?.state?.mastery === 'unresolved'
+    ? (exposureNumber >= 3
+        ? 'Branch after this lesson even if mastery remains unresolved; preserve the requirement for a later return.'
+        : 'If mastery is demonstrated, branch. If mastery remains unresolved, one progressively different follow-up may be considered.')
+    : 'If mastery is demonstrated, suppress immediate repetition and branch to another eligible requirement.'
+
+  return {
+    version: 1,
+    period_id: guidance.period.id,
+    period_label: guidance.period.label,
+    period_ends_on: guidance.period.ends_on,
+    contract_version_id: guidance.contract_version_id,
+    requirement_key: candidate.requirement_key,
+    supporting_requirement_keys: [],
+    requirement_statement: candidate.statement,
+    planning_group_key: candidate.planning_group_key,
+    decision_kind: candidate.decision_kind,
+    must_learn: candidate.must_learn,
+    attention: candidate.attention,
+    mastery_state_before: candidate.state.mastery,
+    coverage_state_before: candidate.state.coverage,
+    retention_state_before: candidate.state.retention,
+    consecutive_exposures_before: candidate.state.consecutive_exposures,
+    exposure_number: exposureNumber,
+    instructional_change: clean(generated?.instructional_change) || null,
+    coverage_pressure: subject.coverage_pressure,
+    required_remaining: subject.required_remaining,
+    remaining_instructional_capacity: subject.remaining_instructional_capacity,
+    reasons: candidate.reasons,
+    goal_reasons: candidate.goal_reasons,
+    unmet_prerequisite_keys: candidate.unmet_prerequisite_keys,
+    unlocks_requirement_keys: candidate.unlocks_requirement_keys,
+    alternatives,
+    next_policy: nextPolicy,
+  }
+}
 export function nextInstructionalForecastWeek(today) {
   return addSyllabusDays(startOfSyllabusWeek(today), 7)
 }
@@ -76,12 +138,13 @@ export function unfinishedLessonCarrySuggestions({ activeRevision, timelineItems
       source_occurrence_id: clean(item.carry_source_occurrence_id),
       source_date: clean(item.carry_source_date || item.planned_date).slice(0, 10),
       actual_at: item.actual_at || null,
+      curriculum_guidance: item?.metadata?.learning_forecast?.curriculum_guidance || null,
     })
   }
   return { suggestions, remaining_slots: remaining }
 }
 
-function inputIdentity({ activeRevision, forecastItems, proposedForecastItems, timelineItems, targetWeekStart, targetWeekEnd, learnerGrade, evidenceContext, subjectBreadth, blockedDates, carrySuggestions = [] }) {
+function inputIdentity({ activeRevision, forecastItems, proposedForecastItems, timelineItems, targetWeekStart, targetWeekEnd, learnerGrade, evidenceContext, subjectBreadth, curriculumGuidance = null, blockedDates, carrySuggestions = [] }) {
   return createHash('sha256').update(JSON.stringify({
     active_revision_id: activeRevision.id,
     target_week: [targetWeekStart, targetWeekEnd],
@@ -121,6 +184,7 @@ function inputIdentity({ activeRevision, forecastItems, proposedForecastItems, t
     })),
     evidence: evidenceContext,
     subject_breadth: subjectBreadth,
+    curriculum_guidance: curriculumGuidance,
     carry_suggestions: carrySuggestions.map((entry) => ({
       planned_date: entry.slot.planned_date, sort_order: entry.slot.sort_order, subject: entry.slot.subject,
       lesson_key: entry.lesson_key, source_occurrence_id: entry.source_occurrence_id, source_date: entry.source_date,
@@ -143,7 +207,7 @@ export function instructionalWeekIsFilled({ activeRevision, timelineItems = [], 
   return slots.every((slot) => occupied.has(`${slot.planned_date}:${slot.sort_order}`))
 }
 
-export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], proposedForecastItems = [], timelineItems = [], reports = [], learnerGrade = null, noSchoolDates = [], today, targetWeekStart: requestedTargetWeekStart = '' }) {
+export function buildInstructionalForecastPlan({ activeRevision, forecastItems = [], proposedForecastItems = [], timelineItems = [], reports = [], learnerGrade = null, noSchoolDates = [], curriculumGuidance = null, today, targetWeekStart: requestedTargetWeekStart = '' }) {
   if (!activeRevision?.id) throw new Error('An active Syllabus revision is required')
   const { start: targetWeekStart, end: targetWeekEnd } = instructionalForecastWindow(today, requestedTargetWeekStart)
   if (!targetWeekStart) throw new Error('A valid local date is required for forecasting')
@@ -173,7 +237,7 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
   })
   const proposalKey = inputIdentity({
     activeRevision, forecastItems, proposedForecastItems, timelineItems, targetWeekStart, targetWeekEnd,
-    learnerGrade, evidenceContext, subjectBreadth, blockedDates, carrySuggestions: carryPlan.suggestions,
+    learnerGrade, evidenceContext, subjectBreadth, curriculumGuidance, blockedDates, carrySuggestions: carryPlan.suggestions,
   })
   return {
     proposal_key: proposalKey,
@@ -184,12 +248,13 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
     carry_suggestions: carryPlan.suggestions,
     evidence_context: evidenceContext,
     subject_breadth: subjectBreadth,
+    curriculum_guidance: curriculumGuidance,
   }
 }
 
 export function buildLearningForecastSnapshot({ activeRevision, forecastItems = [], existingProposalItems = null, plan, generatedItems = [], today }) {
   if (generatedItems.length !== plan.unfilled_slots.length) throw new Error('Forecast model returned an unexpected number of items')
-  const carryAdditions = (plan.carry_suggestions || []).map(({ slot, lesson_key: lessonKey, title, subject, source_occurrence_id: sourceOccurrenceId, source_date: sourceDate }) => ({
+  const carryAdditions = (plan.carry_suggestions || []).map(({ slot, lesson_key: lessonKey, title, subject, source_occurrence_id: sourceOccurrenceId, source_date: sourceDate, curriculum_guidance: curriculumGuidance }) => ({
     lineage_id: stableUuid(`${plan.proposal_key}:carry:${slot.planned_date}:${slot.sort_order}:${lessonKey}:${sourceOccurrenceId}`),
     planned_date: slot.planned_date,
     subject: subject || slot.subject,
@@ -206,6 +271,7 @@ export function buildLearningForecastSnapshot({ activeRevision, forecastItems = 
         target_week_start: plan.target_week_start,
         planning_move: 'continue',
         planning_reason: 'An incomplete Syllabus lesson is available to carry forward only with facilitator approval.',
+        ...(curriculumGuidance ? { curriculum_guidance: curriculumGuidance } : {}),
         carry_existing_lesson_key: lessonKey,
         carry_source_occurrence_id: sourceOccurrenceId,
         carry_source_date: sourceDate,
@@ -219,6 +285,7 @@ export function buildLearningForecastSnapshot({ activeRevision, forecastItems = 
     if (!title || !description) throw new Error('Forecast model returned an incomplete instructional forecast')
     if (duplicatesSlateAuthority(`${title} ${description}`)) throw new Error('Forecast model crossed the instructional authority boundary')
     const planningMetadata = forecastPlanningMetadata(generated)
+    const curriculumGuidance = curriculumSelectionMetadata(plan, slot, generated)
     return {
       lineage_id: stableUuid(`${plan.proposal_key}:${slot.planned_date}:${slot.sort_order}:${slot.subject.toLocaleLowerCase()}`),
       planned_date: slot.planned_date,
@@ -235,6 +302,7 @@ export function buildLearningForecastSnapshot({ activeRevision, forecastItems = 
           base_revision_id: activeRevision.id,
           target_week_start: plan.target_week_start,
           ...planningMetadata,
+          ...(curriculumGuidance ? { curriculum_guidance: curriculumGuidance } : {}),
         },
       },
     }
@@ -255,7 +323,13 @@ export function buildLearningForecastSnapshot({ activeRevision, forecastItems = 
       subjects: structuredClone(activeRevision.subjects),
       weekly_pattern: structuredClone(activeRevision.weekly_pattern),
       teaching_guidance: structuredClone(activeRevision.teaching_guidance),
-      planning_policy: structuredClone(activeRevision.planning_policy),
+      planning_policy: {
+        ...structuredClone(activeRevision.planning_policy),
+        ...(plan?.curriculum_guidance?.contract_version_id ? {
+          curriculum_guidance_version: 1,
+          curriculum_contract_version_id: plan.curriculum_guidance.contract_version_id,
+        } : {}),
+      },
       legacy_provenance: structuredClone(activeRevision.legacy_provenance),
       forecast_items: allItems,
       change_reason: `Instructional learning forecast proposal: week of ${plan.target_week_start}`,

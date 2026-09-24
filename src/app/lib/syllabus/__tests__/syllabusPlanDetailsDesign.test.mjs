@@ -18,7 +18,7 @@ test('plan configuration is collapsed behind one Plan details disclosure and rev
   const detailsStart = documentSource.indexOf('<details className={styles.planDetails}>')
   const navStart = documentSource.indexOf('<nav className={styles.timelineNav}', detailsStart)
   const details = documentSource.slice(detailsStart, navStart)
-  for (const label of ['Goals', 'Subjects', 'Weekly pattern', 'Teaching guidance']) assert.ok(details.includes(label))
+  for (const label of ['Goals', 'Subjects', 'Weekly pattern', 'Curriculum guidance']) assert.ok(details.includes(label))
 })
 
 test('weekly pattern is a Monday-through-Sunday calendar strip that keeps empty days visible', () => {
@@ -37,8 +37,8 @@ test('all four plan sections remain editable through the shared facilitator edit
   }
   assert.match(facilitatorHome, /import SyllabusPlanEditor from '@\/app\/components\/syllabus\/SyllabusPlanEditor'/)
   assert.match(facilitatorHome, /onEditSection=\{planningAccess\.can_change_intent && syllabusHydrated \? openSectionEditor : null\}/)
-  assert.match(facilitatorHome, /editingSection && syllabus\?\.has_active_syllabus && <SyllabusPlanEditor/)
-  assert.match(facilitatorSyllabus, /editingSection && syllabus\?\.has_active_syllabus && <SyllabusPlanEditor/)
+  assert.match(facilitatorHome, /editingSection && \(syllabus\?\.has_active_syllabus \|\| editingSection === 'teaching_guidance'\) && <SyllabusPlanEditor/)
+  assert.match(facilitatorSyllabus, /editingSection && \(syllabus\?\.has_active_syllabus \|\| editingSection === 'teaching_guidance'\) && <SyllabusPlanEditor/)
 })
 
 test('shared editor preserves revision safety while plan configuration stays independent of lesson-capacity PINs', () => {

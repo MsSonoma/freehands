@@ -25,8 +25,6 @@ import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
 import {
   normalizedTeachingGuidance,
   teachingGuidanceOverrideFrom,
-  TEACHING_GUIDANCE_FIELDS,
-  updateTeachingGuidanceList,
 } from '@/app/lib/syllabus/teachingGuidance.mjs'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { CORE_SUBJECTS } from '@/app/lib/subjects'
@@ -99,72 +97,6 @@ function activeToDraft(active, items, resolvedToday) {
     forecast_items: structuredClone((items || []).filter((item) => dateOnly(item.planned_date) >= today)),
     change_reason: '',
   }
-}
-
-function subjectLabel(value) {
-  return String(value || '').split(' ').map((word) => word ? word[0].toUpperCase() + word.slice(1) : '').join(' ')
-}
-
-function sectionLabel(value) {
-  return ({ goals: 'Goals', subjects: 'Subjects', weekly_pattern: 'Weekly Pattern', teaching_guidance: 'Teaching Guidance' })[value]
-    || subjectLabel(String(value || '').replaceAll('_', ' '))
-}
-
-function guidanceSubjectNames(guidance, subjects = []) {
-  const names = new Map()
-  for (const item of subjects || []) {
-    const name = String(typeof item === 'string' ? item : item?.name || '').trim()
-    if (name) names.set(name.toLocaleLowerCase(), name)
-  }
-  for (const name of Object.keys(guidance?.curriculum_preferences?.subject_preferences || {})) {
-    if (name.trim() && !names.has(name.toLocaleLowerCase())) names.set(name.toLocaleLowerCase(), name)
-  }
-  return [...names.values()]
-}
-
-function guidanceValues(guidance, field, subject = null) {
-  const preferences = guidance?.curriculum_preferences
-  const values = subject === null
-    ? preferences?.[field.globalKey]
-    : preferences?.subject_preferences?.[subject]?.[field.subjectKey]
-  return Array.isArray(values) ? values : []
-}
-
-function GuidanceListEditor({ field, values, subject, onChange }) {
-  return (
-    <div className={styles.guidanceField}>
-      <strong>{field.label}</strong>
-      {values.length === 0 && <span className={styles.muted}>None</span>}
-      {values.map((value, index) => (
-        <div className={styles.guidanceItem} key={`${field.subjectKey}-${index}`}>
-          <input
-            aria-label={`${subject ? `${subjectLabel(subject)} ` : ''}${field.label} item ${index + 1}`}
-            value={value}
-            onChange={(event) => onChange(values.map((item, itemIndex) => itemIndex === index ? event.target.value : item))}
-          />
-          <button type="button" onClick={() => onChange(values.filter((_, itemIndex) => itemIndex !== index))}>Remove</button>
-        </div>
-      ))}
-      <button type="button" className={styles.guidanceAdd} onClick={() => onChange([...values, ''])}>Add {field.label.toLocaleLowerCase()}</button>
-    </div>
-  )
-}
-
-function GuidanceReadOnly({ guidance }) {
-  const globalRows = TEACHING_GUIDANCE_FIELDS.map((field) => ({ field, values: guidanceValues(guidance, field) }))
-    .filter(({ values }) => values.length)
-  const subjectGroups = guidanceSubjectNames(guidance).map((subject) => ({
-    subject,
-    rows: TEACHING_GUIDANCE_FIELDS.map((field) => ({ field, values: guidanceValues(guidance, field, subject) }))
-      .filter(({ values }) => values.length),
-  })).filter(({ rows }) => rows.length)
-  if (!globalRows.length && !subjectGroups.length) return <p className={styles.muted}>No curriculum preferences are currently saved.</p>
-  return (
-    <div className={styles.guidanceReadOnly}>
-      {globalRows.length > 0 && <section><h3>All subjects</h3><dl>{globalRows.map(({ field, values }) => <div key={field.globalKey}><dt>{field.label}</dt><dd>{values.join(', ')}</dd></div>)}</dl></section>}
-      {subjectGroups.map(({ subject, rows }) => <section key={subject}><h3>{subjectLabel(subject)}</h3><dl>{rows.map(({ field, values }) => <div key={field.subjectKey}><dt>{field.label}</dt><dd>{values.join(', ')}</dd></div>)}</dl></section>)}
-    </div>
-  )
 }
 
 export default function FacilitatorPage() {
@@ -605,7 +537,7 @@ export default function FacilitatorPage() {
   const displayRevision = editingActiveSyllabus ? syllabus?.active_revision : (draft || syllabus?.active_revision)
   const displayForecast = useMemo(() => editingActiveSyllabus ? (syllabus?.timeline_items || syllabus?.forecast_items || []) : (draft?.forecast_items || syllabus?.timeline_items || syllabus?.forecast_items || []), [editingActiveSyllabus, draft?.forecast_items, syllabus?.timeline_items, syllabus?.forecast_items])
   const forecastGroups = useMemo(() => groupForecast(displayForecast), [displayForecast])
-  const guidanceSubjects = guidanceSubjectNames(displayRevision?.teaching_guidance, displayRevision?.subjects)
+
   const referencedSubjects = useMemo(() => referencedSubjectKeys(draft?.weekly_pattern, draft?.forecast_items), [draft?.weekly_pattern, draft?.forecast_items])
 
 
@@ -620,13 +552,6 @@ export default function FacilitatorPage() {
   function removeDraftSubject(name) {
     if (!draft || referencedSubjects.has(name.toLocaleLowerCase())) return
     setDraft({ ...draft, subjects: draft.subjects.filter((subject) => subject.name.toLocaleLowerCase() !== name.toLocaleLowerCase()) })
-  }
-
-  function updateDraftGuidance(field, values, subject = null) {
-    setDraft((current) => current ? {
-      ...current,
-      teaching_guidance: updateTeachingGuidanceList(current.teaching_guidance, { field, subject, values }),
-    } : current)
   }
 
   function beginPatternSlot(day) {
@@ -1030,12 +955,9 @@ export default function FacilitatorPage() {
               </section>
 
               <details className={styles.guidance} open>
-                <summary>Teaching Guidance</summary>
-                <p className={styles.sectionIntro}>Facilitator-facing curriculum and source guidance, kept separate from learner goals.</p>
-                {draft ? <div className={styles.guidanceEditor}>
-                  <section><h3>All subjects</h3>{TEACHING_GUIDANCE_FIELDS.map((field) => <GuidanceListEditor key={field.globalKey} field={field} values={guidanceValues(draft.teaching_guidance, field)} onChange={(values) => updateDraftGuidance(field, values)} />)}</section>
-                  {guidanceSubjects.map((subject) => <section key={subject}><h3>{subjectLabel(subject)}</h3>{TEACHING_GUIDANCE_FIELDS.map((field) => <GuidanceListEditor key={field.subjectKey} field={field} subject={subject} values={guidanceValues(draft.teaching_guidance, field, subject)} onChange={(values) => updateDraftGuidance(field, values, subject)} />)}</section>)}
-                </div> : <GuidanceReadOnly guidance={displayRevision.teaching_guidance} />}
+                <summary>Curriculum Guidance</summary>
+                <p className={styles.sectionIntro}>Define the planning period, required learning, and personal goals. Ms. Sonoma uses that contract with learner evidence to decide what should come next.</p>
+                <button type="button" className={styles.secondaryButton} onClick={() => setEditingSection('teaching_guidance')}>Open Curriculum Guidance</button>
               </details>
             </div>
 
@@ -1116,13 +1038,13 @@ export default function FacilitatorPage() {
             legacyWebbCompletion={legacyWebbCompletions[selectedSyllabusLesson.item?.lesson_key]}
           />}
 
-          {editingSection && syllabus?.has_active_syllabus && <SyllabusPlanEditor
+          {editingSection && (syllabus?.has_active_syllabus || editingSection === 'teaching_guidance') && <SyllabusPlanEditor
             section={editingSection}
-            revision={syllabus.active_revision}
-            forecastItems={syllabus.forecast_items || []}
+            revision={syllabus?.active_revision || draft || displayRevision}
+            forecastItems={syllabus?.forecast_items || draft?.forecast_items || []}
             learnerId={learnerId}
             accessToken={token}
-            today={syllabus.resolved_today || ''}
+            today={syllabus?.resolved_today || draft?.effective_from || ''}
             onClose={() => setEditingSection('')}
             onSaved={() => loadCurrent()}
           />}

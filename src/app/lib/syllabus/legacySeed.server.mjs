@@ -6,6 +6,9 @@ export async function buildLegacySeed({ repository, facilitatorId, learnerId, no
   if (!learner) return null
   const today = suppliedToday || todayDate(now)
   const source = await repository.readLegacyPlanning({ facilitatorId, learnerId, today })
+  const curriculumPeriod = typeof repository.findActiveCurriculumPeriod === 'function'
+    ? await repository.findActiveCurriculumPeriod(facilitatorId, learnerId, today)
+    : null
   const activeTemplate = (source.scheduleTemplates || []).find((item) => item.active) || source.scheduleTemplates?.[0] || null
   const weeklyPattern = normalizeWeeklyPattern(activeTemplate?.pattern)
   const forecastItems = legacyForecastItems(source.plannedLessons, { today })
@@ -17,7 +20,14 @@ export async function buildLegacySeed({ repository, facilitatorId, learnerId, no
     subjects: subjectsFromLegacy({ weeklyPattern, plannedLessons: source.plannedLessons }),
     weekly_pattern: weeklyPattern,
     teaching_guidance: { curriculum_preferences: source.curriculumPreferences || null },
-    planning_policy: { source: 'legacy_planner', automatic_reforecasting: false },
+    planning_policy: {
+      source: 'legacy_planner',
+      automatic_reforecasting: false,
+      ...(curriculumPeriod?.active_contract_version_id ? {
+        curriculum_guidance_version: 1,
+        curriculum_contract_version_id: curriculumPeriod.active_contract_version_id,
+      } : {}),
+    },
     legacy_provenance: {
       seeded_at: now.toISOString(),
       sources: {

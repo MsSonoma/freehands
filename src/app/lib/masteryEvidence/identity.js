@@ -86,6 +86,8 @@ const LESSON_CONTENT_FIELDS = Object.freeze([
   'weeklyReviewPool',
   'weekly_review_pool',
   'discussion',
+  'curriculumTargets',
+  'curriculum_targets',
 ]);
 
 const ITEM_CONTENT_FIELDS = Object.freeze([
@@ -108,6 +110,12 @@ const ITEM_CONTENT_FIELDS = Object.freeze([
   'minKeywords',
   'hint',
   'opportunityId',
+  'conceptId',
+  'concept_id',
+  'objectiveId',
+  'objective_id',
+  'standardId',
+  'standard_id',
 ]);
 
 const EXPLICIT_ITEM_ID_FIELDS = Object.freeze([

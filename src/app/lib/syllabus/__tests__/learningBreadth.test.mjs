@@ -4,8 +4,9 @@ import assert from 'node:assert/strict'
 import { subjectBalancedInstructionalEvidenceContext } from '../evidenceProjection.mjs'
 import { broadInstructionalStrands, buildSubjectBreadthContext } from '../learningBreadth.mjs'
 import { generateInstructionalForecastItems, validateInstructionalForecastItems } from '../learningForecastModel.server.mjs'
+import { FACILITATOR_EVIDENCE_REPORT_VERSION } from '../../masteryEvidence/reporting.js'
 
-const VERSION = 'facilitator-evidence-v1'
+const VERSION = FACILITATOR_EVIDENCE_REPORT_VERSION
 
 function report(subject, title, { completeness = 'complete', unresolved = 'None', independent = 'independent_success' } = {}) {
   return {

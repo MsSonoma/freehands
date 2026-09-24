@@ -272,7 +272,13 @@ export async function updateSyllabusPlanDetails({
       subjects: has('subjects') ? planDetails.subjects : activeRevision.subjects,
       weekly_pattern: has('weekly_pattern') ? planDetails.weekly_pattern : activeRevision.weekly_pattern,
       teaching_guidance: has('teaching_guidance') ? planDetails.teaching_guidance : activeRevision.teaching_guidance,
-      planning_policy: activeRevision.planning_policy,
+      planning_policy: has('curriculum_contract_version_id')
+        ? {
+            ...(activeRevision.planning_policy || {}),
+            curriculum_guidance_version: 1,
+            curriculum_contract_version_id: String(planDetails.curriculum_contract_version_id || '').trim() || null,
+          }
+        : activeRevision.planning_policy,
       legacy_provenance: {
         ...(activeRevision.legacy_provenance || {}),
         plan_details_update: { version: 1, source_active_revision_id: activeRevision.id },

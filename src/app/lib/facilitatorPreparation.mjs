@@ -50,6 +50,31 @@ function sanitizeSourceReferences(value) {
   return refs.length ? refs : undefined
 }
 
+
+function normalizeCurriculumTargets(value) {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return undefined
+  const primary = value.primaryRequirement
+  if (!primary || typeof primary !== 'object' || Array.isArray(primary)) return undefined
+  const key = cleanString(primary.key, 240)
+  if (!key) return undefined
+  const supportingRequirementKeys = Array.isArray(value.supportingRequirementKeys)
+    ? [...new Set(value.supportingRequirementKeys.map((item) => cleanString(item, 240)).filter(Boolean))].slice(0, 50)
+    : []
+  return {
+    version: 1,
+    periodId: optionalString(value.periodId, 120) || null,
+    contractVersionId: optionalString(value.contractVersionId, 120) || null,
+    primaryRequirement: {
+      key,
+      statement: optionalString(primary.statement, 2000) || null,
+      planningGroupKey: optionalString(primary.planningGroupKey, 240) || key,
+    },
+    supportingRequirementKeys,
+    decisionKind: optionalString(value.decisionKind, 80) || null,
+    instructionalChange: optionalString(value.instructionalChange, 1000) || null,
+  }
+}
+
 export function validateLessonIntent(input = {}) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) {
     return { ok: false, error: 'Lesson intent must be an object' }
@@ -187,6 +212,7 @@ export function normalizeGenerationRequest(body = {}) {
   const description = cleanString(body.description, 2000)
   const notes = cleanString(body.notes, 2000)
   const vocab = cleanString(body.vocab, 1000)
+  const curriculumTargets = normalizeCurriculumTargets(body.curriculumTargets || body.curriculum_targets)
 
   if (!title || !subject || !difficulty || !grade) {
     return { ok: false, error: 'Missing fields' }
@@ -194,7 +220,7 @@ export function normalizeGenerationRequest(body = {}) {
 
   return {
     ok: true,
-    request: { title, subject, difficulty, grade, description, notes, vocab },
+    request: { title, subject, difficulty, grade, description, notes, vocab, curriculumTargets },
   }
 }
 

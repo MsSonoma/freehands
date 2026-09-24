@@ -45,21 +45,22 @@ function weeklyPatternSubjects(pattern, day) {
   return entries.map((entry) => String(typeof entry === 'string' ? entry : entry?.subject || '').trim()).filter(Boolean)
 }
 
-function teachingGuidanceSummary(guidance) {
-  const preferences = guidance?.curriculum_preferences || {}
-  const values = []
-  for (const [key, value] of Object.entries(preferences)) {
-    if (key === 'subject_preferences' || !Array.isArray(value)) continue
-    if (value.length) values.push(`${key.replaceAll('_', ' ')}: ${value.join(', ')}`)
-  }
-  for (const [subject, fields] of Object.entries(preferences.subject_preferences || {})) {
-    for (const [key, value] of Object.entries(fields || {})) if (Array.isArray(value) && value.length) values.push(`${subject} ${key.replaceAll('_', ' ')}: ${value.join(', ')}`)
-  }
-  return values
+function curriculumForecastLabel(item) {
+  const guidance = item?.metadata?.learning_forecast?.curriculum_guidance
+  if (!guidance) return ''
+  const exposure = Number(guidance.exposure_number || 0)
+  if (guidance.decision_kind === 'recovery') return exposure ? `Recovery follow-up ${exposure} of 3` : 'Recovery follow-up'
+  if (guidance.decision_kind === 'return') return 'Intentional return'
+  if (guidance.decision_kind === 'new_required') return 'Required curriculum'
+  if (guidance.decision_kind === 'goal') return 'Personal goal'
+  if (guidance.decision_kind === 'enrichment') return 'Enrichment'
+  if (guidance.decision_kind === 'carry') return 'Unfinished lesson'
+  return ''
 }
 
 function ForecastSuggestion({ item, generating, recoveryRequired, suggested = true, onSelect }) {
   const generation = lessonGenerationPresentation(item, { busy: generating, recoveryRequired })
+  const curriculumLabel = curriculumForecastLabel(item)
   return <div
     className={`${styles.suggestedEntry} ${onSelect ? styles.selectableEntry : ''}`}
     data-forecast-lineage={item.lineage_id}
@@ -72,7 +73,7 @@ function ForecastSuggestion({ item, generating, recoveryRequired, suggested = tr
     <div className={styles.entryBody}>
       <p className={styles.subject}>{item.subject}</p>
       <h4>{item.title}</h4>
-      <span className={styles.suggestedLabel}>{generation.label}</span>
+      <span className={styles.suggestedLabel}>{curriculumLabel ? `${curriculumLabel} - ${generation.label}` : generation.label}</span>
     </div>
     {onSelect && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
   </div>
@@ -175,7 +176,6 @@ export default function SyllabusDocument({
   useEffect(() => { onWeekChange?.(week.week_start, week.state) }, [onWeekChange, week.week_start, week.state])
   const copy = STATE_COPY[week.state]
   const selectedForecastMode = instructionalForecastMode(today, week.week_start)
-  const guidanceSummary = teachingGuidanceSummary(revision?.teaching_guidance)
   const weekRangeLabel = `${prettyDate(week.days[0]?.date || week.week_start, { month: 'short', day: 'numeric' })} - ${prettyDate(week.days.at(-1)?.date || week.week_start, { month: 'short', day: 'numeric', year: 'numeric' })}`
   const move = (action) => setSelectedWeekStart((weekStart) => moveSyllabusWeek(weekStart, action, today))
   return (
@@ -207,8 +207,8 @@ export default function SyllabusDocument({
             </div></div>
           </section>
           <section className={styles.planSection}>
-            <div className={styles.planSectionHeading}><h3>Teaching guidance</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('teaching_guidance')}>Edit</button>}</div>
-            <div className={styles.guidanceSummary}>{guidanceSummary.length ? guidanceSummary.map((value) => <p key={value}>{value}</p>) : <p>No curriculum preferences are currently saved.</p>}</div>
+            <div className={styles.planSectionHeading}><h3>Curriculum guidance</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('teaching_guidance')}>Edit</button>}</div>
+            <div className={styles.guidanceSummary}>{revision?.planning_policy?.curriculum_contract_version_id ? <p>Requirements, personal goals, and adaptive curriculum planning are active for this Syllabus.</p> : <p>No Curriculum Guidance contract is linked yet.</p>}</div>
           </section>
         </div>
       </details>

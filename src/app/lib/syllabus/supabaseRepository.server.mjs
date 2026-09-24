@@ -387,6 +387,212 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load learner review events')
       return data || []
     },
+    async findActiveCurriculumPeriod(facilitatorId, learnerId, today) {
+      const date = String(today || '').slice(0, 10)
+      const { data, error } = await admin.from('curriculum_periods').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .lte('starts_on', date)
+        .gte('ends_on', date)
+        .eq('status', 'active')
+        .order('starts_on', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (error?.code === '42P01') return null
+      throwOn(error, 'Failed to load active curriculum period')
+      return data || null
+    },
+    async findLatestCurriculumPeriod(facilitatorId, learnerId) {
+      const { data, error } = await admin.from('curriculum_periods').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .order('ends_on', { ascending: false })
+        .order('created_at', { ascending: false })
+        .limit(1)
+        .maybeSingle()
+      if (error?.code === '42P01') return null
+      throwOn(error, 'Failed to load curriculum period')
+      return data || null
+    },
+    async findNextCurriculumPeriod(facilitatorId, learnerId, afterDate) {
+      const date = String(afterDate || '').slice(0, 10)
+      const { data, error } = await admin.from('curriculum_periods').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .gt('starts_on', date)
+        .in('status', ['active', 'draft'])
+        .order('starts_on', { ascending: true })
+        .order('created_at', { ascending: true })
+        .limit(1)
+        .maybeSingle()
+      if (error?.code === '42P01') return null
+      throwOn(error, 'Failed to load upcoming curriculum period')
+      return data || null
+    },
+    async findCurriculumPeriod(periodId, facilitatorId, learnerId) {
+      const { data, error } = await admin.from('curriculum_periods').select('*')
+        .eq('id', periodId)
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .maybeSingle()
+      throwOn(error, 'Failed to load curriculum period')
+      return data || null
+    },
+    async createCurriculumPeriod(row) {
+      const { data, error } = await admin.from('curriculum_periods').insert(row).select('*').single()
+      throwOn(error, 'Failed to create curriculum period')
+      return data
+    },
+    async deleteEmptyCurriculumPeriod(periodId, facilitatorId, learnerId) {
+      const { data: versions, error: versionError } = await admin.from('curriculum_contract_versions')
+        .select('id').eq('period_id', periodId).limit(1)
+      if (versionError?.code !== '42P01') throwOn(versionError, 'Failed to inspect curriculum period cleanup')
+      if (versions?.length) return false
+      const { error } = await admin.from('curriculum_periods').delete()
+        .eq('id', periodId).eq('facilitator_id', facilitatorId).eq('learner_id', learnerId)
+      throwOn(error, 'Failed to clean up curriculum period')
+      return true
+    },
+    async findCurriculumContractVersion(versionId, periodId = null) {
+      let query = admin.from('curriculum_contract_versions').select('*').eq('id', versionId)
+      if (periodId) query = query.eq('period_id', periodId)
+      const { data, error } = await query.maybeSingle()
+      throwOn(error, 'Failed to load curriculum contract version')
+      return data || null
+    },
+    async listCurriculumContractItems(versionId) {
+      const { data, error } = await admin.from('curriculum_contract_items').select('*')
+        .eq('contract_version_id', versionId).order('sort_order').order('created_at')
+      throwOn(error, 'Failed to load curriculum requirements')
+      return data || []
+    },
+    async listCurriculumContractGoals(versionId) {
+      const { data, error } = await admin.from('curriculum_contract_goals').select('*')
+        .eq('contract_version_id', versionId).order('sort_order').order('created_at')
+      throwOn(error, 'Failed to load curriculum goals')
+      return data || []
+    },
+    async commitCurriculumContractSnapshot({
+      periodId,
+      facilitatorId,
+      learnerId,
+      expectedActiveVersionId,
+      label,
+      periodType,
+      startsOn,
+      endsOn,
+      changeReason,
+      migrationProvenance = {},
+      items = [],
+      goals = [],
+    }) {
+      const { data, error } = await admin.rpc('commit_curriculum_contract_snapshot', {
+        p_period_id: periodId,
+        p_facilitator_id: facilitatorId,
+        p_learner_id: learnerId,
+        p_expected_active_version_id: expectedActiveVersionId || null,
+        p_label: label,
+        p_period_type: periodType,
+        p_starts_on: startsOn,
+        p_ends_on: endsOn,
+        p_change_reason: changeReason || null,
+        p_migration_provenance: migrationProvenance || {},
+        p_items: items || [],
+        p_goals: goals || [],
+      })
+      throwOn(error, 'Failed to save curriculum guidance')
+      return data
+    },
+    async listCurriculumFrameworkItems({ facilitatorId, subjects = [], grade = null } = {}) {
+      const { data: frameworks, error: frameworkError } = await admin.from('curriculum_frameworks').select('*')
+        .or(`facilitator_id.is.null,facilitator_id.eq.${facilitatorId}`)
+        .order('name')
+      if (frameworkError?.code === '42P01') return []
+      throwOn(frameworkError, 'Failed to load curriculum frameworks')
+      const frameworkIds = (frameworks || []).map((row) => row.id)
+      if (!frameworkIds.length) return []
+      const { data, error } = await admin.from('curriculum_framework_items').select('*')
+        .in('framework_id', frameworkIds)
+        .order('sort_order')
+        .order('created_at')
+      throwOn(error, 'Failed to load curriculum framework items')
+      const subjectKeys = new Set((subjects || []).map((value) => String(value || '').trim().toLocaleLowerCase()).filter(Boolean))
+      const gradeKey = String(grade || '').trim().toLocaleLowerCase()
+      return (data || []).filter((item) => {
+        const subjectMatches = !subjectKeys.size || subjectKeys.has(String(item.subject || '').trim().toLocaleLowerCase())
+        const itemGrade = String(item.grade_band || '').trim().toLocaleLowerCase()
+        const gradeMatches = !gradeKey || !itemGrade || itemGrade === gradeKey
+        return subjectMatches && gradeMatches
+      }).map((item) => ({
+        ...item,
+        framework: (frameworks || []).find((framework) => framework.id === item.framework_id) || null,
+      }))
+    },
+    async listCurriculumFrameworkAssociations(frameworkIds = []) {
+      if (!frameworkIds.length) return []
+      const { data, error } = await admin.from('curriculum_framework_associations').select('*')
+        .in('framework_id', frameworkIds)
+        .order('created_at')
+      throwOn(error, 'Failed to load curriculum framework associations')
+      return data || []
+    },
+    async listLearnerCurriculumState(periodId) {
+      const { data, error } = await admin.from('learner_curriculum_state').select('*')
+        .eq('period_id', periodId)
+      if (error?.code === '42P01') return []
+      throwOn(error, 'Failed to load learner curriculum state')
+      return data || []
+    },
+    async upsertLearnerCurriculumState(rows = []) {
+      if (!rows.length) return []
+      const { data, error } = await admin.from('learner_curriculum_state')
+        .upsert(rows, { onConflict: 'period_id,requirement_key' })
+        .select('*')
+      throwOn(error, 'Failed to update learner curriculum state')
+      return data || []
+    },
+    async listLessonCurriculumTargets(facilitatorId, learnerId, lessonKeys = []) {
+      let query = admin.from('lesson_curriculum_targets').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+      if (lessonKeys.length) query = query.in('lesson_key', [...new Set(lessonKeys.filter(Boolean))])
+      const { data, error } = await query.order('created_at')
+      if (error?.code === '42P01') return []
+      throwOn(error, 'Failed to load lesson curriculum targets')
+      return data || []
+    },
+    async listCurriculumPlanningDecisions(facilitatorId, learnerId, limit = 100) {
+      const { data, error } = await admin.from('curriculum_planning_decisions').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .order('created_at', { ascending: false })
+        .limit(limit)
+      if (error?.code === '42P01') return []
+      throwOn(error, 'Failed to load curriculum planning decisions')
+      return data || []
+    },
+    async ensureCurriculumReviewNotification({ facilitatorId, learnerId, periodId, title, body, metadata = {} }) {
+      const { data: existing, error: readError } = await admin.from('facilitator_notifications').select('id')
+        .eq('facilitator_id', facilitatorId)
+        .eq('category', 'curriculum-guidance')
+        .eq('type', 'curriculum_period_review_due')
+        .contains('metadata', { period_id: periodId, learner_id: learnerId })
+        .limit(1)
+        .maybeSingle()
+      if (readError?.code === '42P01') return null
+      throwOn(readError, 'Failed to inspect curriculum review notification')
+      if (existing?.id) return existing
+      const { data, error } = await admin.from('facilitator_notifications').insert({
+        facilitator_id: facilitatorId,
+        category: 'curriculum-guidance',
+        type: 'curriculum_period_review_due',
+        title,
+        body,
+        metadata: { ...metadata, period_id: periodId, learner_id: learnerId },
+      }).select('*').single()
+      throwOn(error, 'Failed to create curriculum review notification')
+      return data
+    },
     async readLegacyPlanning({ facilitatorId, learnerId, today }) {
       const [templates, preferences, lessons, subjects] = await Promise.all([
         admin.from('schedule_templates').select('*').eq('facilitator_id', facilitatorId).eq('learner_id', learnerId).order('active', { ascending: false }).order('updated_at', { ascending: false }),

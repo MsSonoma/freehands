@@ -60,7 +60,51 @@ function safeFileName(s){
   return base.slice(0, 80) || 'lesson'
 }
 
-function buildPrompt({ title, subject, difficulty, grade, description, notes, vocab }){
+
+const CURRICULUM_ITEM_POOLS = Object.freeze([
+  'baseline',
+  'retention',
+  'dailyFollowup',
+  'dailyFollowups',
+  'daily_followup',
+  'daily_followups',
+  'dailyFollowupPool',
+  'daily_followup_pool',
+  'weeklyReview',
+  'weeklyReviews',
+  'weekly_review',
+  'weekly_reviews',
+  'weeklyReviewPool',
+  'weekly_review_pool',
+  'truefalse',
+  'multiplechoice',
+  'fillintheblank',
+  'shortanswer',
+  'comprehension',
+  'exercise',
+  'worksheet',
+  'test',
+])
+
+function applyCurriculumTargetsToLesson(lesson, curriculumTargets) {
+  const key = curriculumTargets?.primaryRequirement?.key
+  if (!key) return lesson
+  const tagged = {
+    ...lesson,
+    curriculumTargets,
+  }
+  for (const pool of CURRICULUM_ITEM_POOLS) {
+    if (!Array.isArray(tagged[pool])) continue
+    tagged[pool] = tagged[pool].map((item) => (
+      item && typeof item === 'object' && !Array.isArray(item)
+        ? { ...item, conceptId: key }
+        : item
+    ))
+  }
+  return tagged
+}
+
+function buildPrompt({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets }){
   let vocabText = ''
   if (vocab && vocab.trim()) {
     vocabText = ` Use these vocabulary terms in the lesson: ${vocab.trim()}.`
@@ -68,6 +112,12 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   let notesGuidance = ''
   if (notes && notes.trim()) {
     notesGuidance = ` Additional guidance for lesson creation: ${notes.trim()}.`
+  }
+  let curriculumGuidance = ''
+  if (curriculumTargets?.primaryRequirement?.key) {
+    const statement = String(curriculumTargets.primaryRequirement.statement || '').trim()
+    const instructionalChange = String(curriculumTargets.instructionalChange || '').trim()
+    curriculumGuidance = ` Curriculum target identity: ${curriculumTargets.primaryRequirement.key}. ${statement ? `Required learning: ${statement}. ` : ''}${instructionalChange ? `Instructional progression requirement: ${instructionalChange}. ` : ''}Keep the lesson and every assessment item centered on this target; do not silently substitute a neighboring topic.`
   }
   return `You are an education content generator. Create a complete JSON lesson following this exact structure:
 
@@ -132,7 +182,7 @@ Title: ${title}
 Blurb: ${description}
 Grade: ${grade}
 Difficulty: ${difficulty}
-Subject: ${subject}${vocabText}
+Subject: ${subject}${vocabText}${curriculumGuidance}
 
 Return ONLY valid JSON. No markdown, no code blocks, no commentary.`
 }
@@ -214,7 +264,7 @@ async function callModel(prompt){
   }
 }
 
-function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, description }, userId, rng = Math.random) {
+function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, description, curriculumTargets }, userId, rng = Math.random) {
   const normalizedLesson = {
     ...lesson,
     id: lesson.id || `${grade}_${title}_${difficulty}`.replace(/\s+/g, '_'),
@@ -226,7 +276,7 @@ function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, 
     userId,
     approved: false,
   }
-  return canonicalizeAiGeneratedLessonChoices(normalizedLesson, { rng })
+  return canonicalizeAiGeneratedLessonChoices(applyCurriculumTargetsToLesson(normalizedLesson, curriculumTargets), { rng })
 }
 
 async function verifiedMaterializationOperation(admin, raw, { facilitatorId, learnerId }) {
@@ -304,7 +354,7 @@ export async function POST(request, deps = {}){
   const proposalMode = body?.mode === 'proposal'
   const normalized = normalizeGenerationRequest(body || {})
   if (!normalized.ok) return NextResponse.json({ error: normalized.error }, { status: 400 })
-  const { title, subject, difficulty, grade, description, notes, vocab } = normalized.request
+  const { title, subject, difficulty, grade, description, notes, vocab, curriculumTargets } = normalized.request
 
   let operation
   try {
@@ -332,8 +382,8 @@ export async function POST(request, deps = {}){
           if (Number.isFinite(lifetimeLimit) && lifetimeUsed >= lifetimeLimit) {
             throw new MaterializationGenerationError(`You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.`, 'LESSON_GENERATION_QUOTA_EXHAUSTED', 429)
           }
-          const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
-          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade, description }, user.id, deps.choiceOrderRng)
+          const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets })
+          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade, description, curriculumTargets }, user.id, deps.choiceOrderRng)
         },
         createArtifact: async (identity, lesson) => {
           const { error } = await storage.upload(identity.storagePath, JSON.stringify(lesson, null, 2), {
@@ -400,10 +450,10 @@ export async function POST(request, deps = {}){
     if (Number.isFinite(lifetimeLimit) && lifetimeUsed >= lifetimeLimit) {
       return NextResponse.json({ error: `You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.` }, { status: 429 })
     }
-    const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab })
+    const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets })
     const lesson = normalizedGeneratedLesson(
       await (deps.callModel || callModel)(prompt),
-      { title, subject, difficulty, grade, description },
+      { title, subject, difficulty, grade, description, curriculumTargets },
       user.id,
       deps.choiceOrderRng,
     )

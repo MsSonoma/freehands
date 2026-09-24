@@ -702,15 +702,18 @@ test('the conservative subject editor keeps activation effective today while Sla
   assert.match(source, /referencedSubjects\.has/)
 })
 
-test('Syllabus Teaching Guidance uses connected human-readable controls instead of raw subject JSON', () => {
+test('Syllabus Curriculum Guidance replaces legacy preference controls with the dedicated contract editor', () => {
   const source = fs.readFileSync(path.resolve('src', 'app', 'facilitator', 'page.js'), 'utf8')
-  assert.doesNotMatch(source, /JSON\.stringify\(preferences\.subject_preferences/)
-  assert.match(source, /teaching_guidance: updateTeachingGuidanceList\(current\.teaching_guidance/)
+  const editor = fs.readFileSync(path.resolve('src', 'app', 'components', 'syllabus', 'CurriculumGuidanceEditor.js'), 'utf8')
+  assert.match(source, /<summary>Curriculum Guidance<\/summary>/)
+  assert.match(source, /Open Curriculum Guidance/)
+  assert.doesNotMatch(source, /<GuidanceListEditor/)
   assert.match(source, /teachingGuidanceOverride: teachingGuidanceOverrideFrom\(normalizedGuidance\)/)
-  assert.match(source, /<GuidanceListEditor/)
-  assert.deepEqual(TEACHING_GUIDANCE_FIELDS.map((field) => field.label), [
-    'Focus topics', 'Focus concepts', 'Focus keywords', 'Avoid topics', 'Avoid concepts', 'Avoid words',
-  ])
+  assert.match(editor, /<h3>Planning period<\/h3>/)
+  assert.match(editor, /<h3>Requirements<\/h3>/)
+  assert.match(editor, /<h3>Personal goals<\/h3>/)
+  assert.match(editor, /Inspect reasoning/)
+  assert.match(editor, /Open next period/)
 })
 
 test('future Syllabus mutations enforce the canonical entitlement on the server routes', () => {

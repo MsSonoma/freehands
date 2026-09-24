@@ -5,6 +5,25 @@ import { adoptLearningForecastLineage, bindMaterializedForecast, carryForwardLea
 import { SyllabusError } from './schema.mjs'
 
 function clean(value) { return String(value || '').trim() }
+function curriculumTargetsFromForecastItem(item) {
+  const guidance = item?.metadata?.learning_forecast?.curriculum_guidance
+  if (!guidance?.requirement_key) return null
+  return {
+    version: 1,
+    periodId: guidance.period_id || null,
+    contractVersionId: guidance.contract_version_id || null,
+    primaryRequirement: {
+      key: guidance.requirement_key,
+      statement: guidance.requirement_statement || null,
+      planningGroupKey: guidance.planning_group_key || null,
+    },
+    supportingRequirementKeys: Array.isArray(guidance.supporting_requirement_keys)
+      ? guidance.supporting_requirement_keys
+      : [],
+    decisionKind: guidance.decision_kind || null,
+    instructionalChange: guidance.instructional_change || null,
+  }
+}
 async function clearMaterializedLessonInferenceSuppression({
   admin,
   facilitatorId,
@@ -42,6 +61,7 @@ function generationHash({ learnerId, activeRevision, item, learner }) {
     teaching_guidance: activeRevision.teaching_guidance,
     planning_policy: activeRevision.planning_policy,
     facilitator_generation_spec: item?.metadata?.facilitator_planning?.generation_spec || null,
+    curriculum_targets: curriculumTargetsFromForecastItem(item),
   })).digest('hex')
 }
 
@@ -274,6 +294,7 @@ export async function materializeForecastOccurrence({
         difficulty: clean(facilitatorSpec.difficulty) || clean(activeRevision.planning_policy?.difficulty) || 'intermediate',
         notes: [facilitatorNotes, syllabusNotes].filter(Boolean).join(' '),
         vocab: clean(facilitatorSpec.vocab),
+        curriculumTargets: curriculumTargetsFromForecastItem(item),
         materializationOperation: {
           id: receipt.id,
           syllabusId: syllabus.id,
