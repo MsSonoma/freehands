@@ -44,8 +44,8 @@ export async function createLearningForecastProposal({
     today: calendar.today,
     timeZone: calendar.timeZone,
   })
-  const requestedWeek = startOfSyllabusWeek(targetWeekStart || calendar.today)
-  const forecastMode = instructionalForecastMode(calendar.today, requestedWeek)
+  let requestedWeek = startOfSyllabusWeek(targetWeekStart || calendar.today)
+  let forecastMode = instructionalForecastMode(calendar.today, requestedWeek)
   if (!requestedWeek || forecastMode === 'past' || forecastMode === 'none') {
     throw new SyllabusError('Forecasting is only available for the current or a future Syllabus week.', 422, 'FORECAST_WEEK_INVALID')
   }
@@ -54,6 +54,21 @@ export async function createLearningForecastProposal({
   }
   const existing = await repository.findLatestLearningForecastProposal(syllabus.id, activeRevision.id)
   const existingProposalItems = existing ? await repository.listForecastItems(existing.id) : []
+  const currentWeekStart = startOfSyllabusWeek(calendar.today)
+  if (automatic && requestedWeek === currentWeekStart) {
+    const currentWeekFilled = instructionalWeekIsFilled({
+      activeRevision,
+      timelineItems,
+      proposedForecastItems: existingProposalItems,
+      noSchoolDates: inputs.noSchoolDates || [],
+      weekStart: currentWeekStart,
+      today: calendar.today,
+    })
+    if (currentWeekFilled) {
+      requestedWeek = addSyllabusDays(currentWeekStart, 7)
+      forecastMode = instructionalForecastMode(calendar.today, requestedWeek)
+    }
+  }
   if (automatic && requestedWeek === addSyllabusDays(startOfSyllabusWeek(calendar.today), 7)) {
     const priorWeekFilled = instructionalWeekIsFilled({
       activeRevision,

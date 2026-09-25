@@ -522,6 +522,53 @@ test('an existing week stays stable and forecasting the next week extends the sa
   assert.equal(repository.state.revisions.filter((row) => row.proposal_kind === 'learning_forecast' && !row.activated_at).length, 1)
 })
 
+test('automatic current-week refresh rolls forward when the current week is already filled', async () => {
+  const repository = forecastRepository({
+    forecast: [
+      item({
+        id: 'current-math',
+        lineage_id: LINEAGE_A,
+        planned_date: '2026-08-31',
+        subject: 'math',
+        lesson_key: 'math/current.json',
+      }),
+      item({
+        id: 'current-science',
+        lineage_id: LINEAGE_B,
+        planned_date: '2026-09-01',
+        subject: 'science',
+        lesson_key: 'science/current.json',
+      }),
+    ],
+  })
+  let calls = 0
+  const generateItems = async ({ slots }) => {
+    calls++
+    return slots.map((slot) => ({
+      title: `${slot.subject} next direction`,
+      description: `Teach the next ${slot.subject} lesson.`,
+    }))
+  }
+
+  const result = await createLearningForecastProposal({
+    repository,
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    expectedActiveRevisionId: ACTIVE,
+    reports: [],
+    generateItems,
+    now: NOW,
+    targetWeekStart: '2026-08-31',
+    automatic: true,
+  })
+
+  assert.equal(result.kind, 'proposal')
+  assert.equal(result.target_week_start, '2026-09-07')
+  assert.equal(result.reused, false)
+  assert.equal(calls, 1)
+  assert.ok(result.forecast_items.some((row) => String(row.planned_date).startsWith('2026-09-07')))
+})
+
 test('automatic next-week forecasting waits for prior-week coverage and farther weeks require confirmation', async () => {
   const openRepository = forecastRepository({ forecast: [item({ planned_date: '2026-08-31', subject: 'math', lesson_key: 'math/current.json' })] })
   let calls = 0

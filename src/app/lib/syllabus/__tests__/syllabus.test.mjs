@@ -720,6 +720,8 @@ test('Syllabus Curriculum Guidance replaces legacy preference controls with the 
   assert.doesNotMatch(editor, /readOnly=\{frameworkBacked\}/)
   assert.doesNotMatch(editor, /disabled=\{frameworkBacked\}/)
   assert.match(editor, /filter\(\(item\) => clean\(item\.statement\) && clean\(item\.subject\)\)/)
+  assert.match(source, /proposalForecastTargetWeek = startOfSyllabusWeek\(learningProposal\?\.target_week_start \|\| currentTargetForecastWeek\)/)
+  assert.match(source, /proposedForecastTargetWeek=\{proposalForecastTargetWeek\}/)
 })
 
 test('future Syllabus mutations enforce the canonical entitlement on the server routes', () => {

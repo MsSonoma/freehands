@@ -153,7 +153,8 @@ export default function FacilitatorPage() {
   const currentPageIdentity = `${learnerId}:${syllabus?.active_revision?.id || ''}`
   pageIdentity.current = currentPageIdentity
   const currentTargetForecastWeek = startOfSyllabusWeek(selectedWeekStart || syllabus?.resolved_today)
-  const forecastWindow = instructionalForecastWindow(syllabus?.resolved_today, currentTargetForecastWeek)
+  const proposalForecastTargetWeek = startOfSyllabusWeek(learningProposal?.target_week_start || currentTargetForecastWeek)
+  const forecastWindow = instructionalForecastWindow(syllabus?.resolved_today, proposalForecastTargetWeek)
   const forecastMode = instructionalForecastMode(syllabus?.resolved_today, currentTargetForecastWeek)
   forecastViewIdentity.current = buildForecastViewIdentity({
     learnerId,
@@ -979,7 +980,7 @@ export default function FacilitatorPage() {
               onDayAction={syllabusHydrated ? openDayAction : null}
               onEditSection={planningAccess.can_change_intent && syllabusHydrated ? openSectionEditor : null}
               proposedForecastItems={learningProposal?.proposal_revision?.base_revision_id === syllabus.active_revision.id ? (learningProposal.forecast_items || []) : []}
-              proposedForecastTargetWeek={currentTargetForecastWeek}
+              proposedForecastTargetWeek={proposalForecastTargetWeek}
               forecastWindowEnd={forecastWindow.end}
               forecastBusy={forecastBusy}
               forecastError={forecastError}
