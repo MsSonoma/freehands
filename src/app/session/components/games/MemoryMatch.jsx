@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback } from 'react';
+import { playGameSfx } from './gameSfx';
 
 const CARD_SETS = {
   easy: [
@@ -64,6 +65,7 @@ export default function MemoryMatch({ onExit }) {
   const [gameWon, setGameWon] = useState(false);
 
   const startGame = useCallback((level) => {
+    playGameSfx('memory', 'start');
     const cardSet = CARD_SETS[level];
     setCards(shuffleArray(cardSet));
     setFlippedCards([]);
@@ -78,6 +80,7 @@ export default function MemoryMatch({ onExit }) {
     if (flippedCards.includes(cardId)) return;
     if (matchedPairs.includes(cards.find(c => c.id === cardId)?.pair)) return;
 
+    playGameSfx('memory', 'flip');
     const newFlipped = [...flippedCards, cardId];
     setFlippedCards(newFlipped);
 
@@ -86,12 +89,14 @@ export default function MemoryMatch({ onExit }) {
       const [first, second] = newFlipped.map(id => cards.find(c => c.id === id));
       
       if (first.pair === second.pair) {
+        playGameSfx('memory', 'match');
         // Match found
         setTimeout(() => {
           setMatchedPairs(prev => [...prev, first.pair]);
           setFlippedCards([]);
         }, 500);
       } else {
+        playGameSfx('memory', 'miss');
         // No match
         setTimeout(() => {
           setFlippedCards([]);
@@ -102,6 +107,7 @@ export default function MemoryMatch({ onExit }) {
 
   useEffect(() => {
     if (difficulty && matchedPairs.length === CARD_SETS[difficulty].length / 2) {
+      playGameSfx('memory', 'win');
       setGameWon(true);
     }
   }, [matchedPairs, difficulty]);

@@ -1,5 +1,5 @@
 'use client';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import MemoryMatch from './MemoryMatch';
 import Snake from './Snake';
 import CatchCollect from './CatchCollect';
@@ -8,9 +8,26 @@ import WhackAMole from './WhackAMole';
 import PlatformJumper from './PlatformJumper';
 import FloodClimbSpelling from './FloodClimbSpelling';
 import FlashCards from './FlashCards';
+import { preloadGameSfx } from './gameSfx';
+
+const SFX_GAME_BY_ID = {
+  'memory-match': 'memory',
+  snake: 'snake',
+  'catch-collect': 'catch',
+  'maze-runner': 'maze',
+  'whack-a-mole': 'whack',
+  'platform-jumper': 'platform',
+  'flood-climb': 'flood',
+  'flash-cards': 'flash',
+};
 
 export default function GamesOverlay({ onClose, playTimer }) {
   const [selectedGame, setSelectedGame] = useState(null);
+
+  useEffect(() => {
+    const gameId = SFX_GAME_BY_ID[selectedGame];
+    if (gameId) preloadGameSfx(gameId);
+  }, [selectedGame]);
 
   const gamesList = [
     {

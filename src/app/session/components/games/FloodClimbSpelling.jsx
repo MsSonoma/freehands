@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { playGameSfx } from './gameSfx';
 
 const MAX_LEVEL = 20;
 
@@ -260,6 +261,7 @@ export default function FloodClimbSpelling({ onBack }) {
       return;
     }
 
+    playGameSfx('flood', 'start');
     setGameStarted(true);
     setGameWon(false);
     setGameLost(false);
@@ -347,6 +349,7 @@ export default function FloodClimbSpelling({ onBack }) {
     const waterIsAtOrAboveHead = waterY <= (climberY - CLIMBER_HEAD_OFFSET);
 
     if (waterIsAtOrAboveHead) {
+      playGameSfx('flood', 'lose');
       setGameLost(true);
       setStatusText('Oh no! The water caught you.');
       return;
@@ -354,6 +357,7 @@ export default function FloodClimbSpelling({ onBack }) {
 
     // Win if climber reaches the top zone
     if (climberY <= config.topGoal) {
+      playGameSfx('flood', 'win');
       setGameWon(true);
       setStatusText('You made it! Great spelling.');
     }
@@ -372,6 +376,7 @@ export default function FloodClimbSpelling({ onBack }) {
     }
 
     if (typed === correct) {
+      playGameSfx('flood', 'correct');
       setAttempts(0);
       setScore((s) => s + 1);
       setStreak((prevStreak) => {
@@ -389,6 +394,7 @@ export default function FloodClimbSpelling({ onBack }) {
     }
 
     // Wrong
+    playGameSfx('flood', 'wrong');
     setAttempts((a) => a + 1);
     setStreak(0);
 

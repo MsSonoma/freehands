@@ -15,6 +15,7 @@ import {
   saveFlashcardsProgressLocal,
   saveFlashcardsProgressRemote,
 } from './flashcardsProgressStore';
+import { playGameSfx } from './gameSfx';
 
 const STAGES_TOTAL = 10;
 const DECK_SIZE = 50;
@@ -306,7 +307,12 @@ export default function FlashCards({ onBack }) {
     } catch {}
   }, [screen, topicId, stage, cardIndex]);
 
+  useEffect(() => {
+    if (screen === 'topic-complete') playGameSfx('flash', 'topic');
+  }, [screen]);
+
   const startStage = () => {
+    playGameSfx('flash', 'start');
     const stageSafe = clampStage(stage);
     const seedValue = makeSeed(learnerId, subjectId, topicId, stageSafe);
     setSeed(seedValue);
@@ -326,6 +332,8 @@ export default function FlashCards({ onBack }) {
 
     const before = Number(meterRef.current) || 0;
     const after = ok ? Math.min(goal, before + 1) : Math.max(0, before - 1);
+    const completedStage = after >= goal - 1e-6;
+    playGameSfx('flash', completedStage ? 'stage' : (ok ? 'correct' : 'wrong'));
     setMeter(after);
 
     if (ok) {
@@ -352,7 +360,7 @@ export default function FlashCards({ onBack }) {
     }, OUT_MS));
 
     // Stage completion triggers when meter hits goal.
-    if (after >= goal - 1e-6) {
+    if (completedStage) {
       const isLastStage = clampStage(stage) >= STAGES_TOTAL;
       setPendingTopicComplete(isLastStage);
       setScreen('stage-complete');

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ensurePinAllowed } from '@/app/lib/pinGate';
+import { playGameSfx } from './gameSfx';
 
 /**
  * PlatformJumper - Jump across platforms to reach the goal
@@ -931,6 +932,14 @@ export default function PlatformJumper({ onBack }) {
   const maxLevel = Object.keys(levels).length;
   const currentLevel = levels[level];
 
+  useEffect(() => {
+    if (gameWon) playGameSfx('platform', 'goal');
+  }, [gameWon]);
+
+  useEffect(() => {
+    if (gameLost) playGameSfx('platform', 'fall');
+  }, [gameLost]);
+
   // When the player completes the final level, briefly celebrate then return to Games.
   useEffect(() => {
     if (!gameWon) return;
@@ -954,6 +963,7 @@ export default function PlatformJumper({ onBack }) {
   }, [level, gameStarted, gameWon]);
 
   const startGame = () => {
+    playGameSfx('platform', 'start');
     keysPressed.current = {}; // Clear all pressed keys
     setPlayerPos(currentLevel.startPos);
     setPlayerVelocity({ x: 0, y: 0 });
@@ -1041,9 +1051,9 @@ export default function PlatformJumper({ onBack }) {
     // Simple check: only jump if on ground
     if (onGroundRef.current) {
       // Check if jumping from a trampoline
-      const jumpStrength = (currentPlatformRef.current && currentPlatformRef.current.trampoline) 
-        ? TRAMPOLINE_BOUNCE 
-        : JUMP_STRENGTH;
+      const isTrampoline = Boolean(currentPlatformRef.current?.trampoline);
+      const jumpStrength = isTrampoline ? TRAMPOLINE_BOUNCE : JUMP_STRENGTH;
+      playGameSfx('platform', isTrampoline ? 'trampoline' : 'jump');
       setPlayerVelocity(v => ({ ...v, y: jumpStrength }));
       setIsJumping(true);
       isJumpingRef.current = true;
@@ -1158,6 +1168,7 @@ export default function PlatformJumper({ onBack }) {
               newY = platform.y - PLAYER_SIZE;
               newVelY = 0; // Stop vertical movement
               landed = true;
+              if (!onGroundRef.current) playGameSfx('platform', 'land');
               
               // Update refs IMMEDIATELY for instant jump availability
               onGroundRef.current = true;

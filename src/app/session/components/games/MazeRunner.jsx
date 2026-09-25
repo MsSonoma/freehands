@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { playGameSfx } from './gameSfx';
 
 /**
  * MazeRunner - Navigate through a maze to reach the goal
@@ -498,6 +499,7 @@ export default function MazeRunner({ onBack }) {
   }, [gameWon, moves, level, bestMoves]);
 
   const startGame = () => {
+    playGameSfx('maze', 'start');
     setPlayerPos(currentMaze.start);
     setMoves(0);
     setGameWon(false);
@@ -544,9 +546,11 @@ export default function MazeRunner({ onBack }) {
 
     // Check if move is valid (not a wall)
     if (newY < 0 || newY >= currentMaze.grid.length || newX < 0 || newX >= currentMaze.grid[0].length) {
+      playGameSfx('maze', 'blocked');
       return;
     }
     if (currentMaze.grid[newY][newX] === 1) {
+      playGameSfx('maze', 'blocked');
       return;
     }
 
@@ -555,7 +559,10 @@ export default function MazeRunner({ onBack }) {
 
     // Check if reached goal
     if (newX === currentMaze.goal.x && newY === currentMaze.goal.y) {
+      playGameSfx('maze', 'goal');
       setGameWon(true);
+    } else {
+      playGameSfx('maze', 'step');
     }
   }, [gameStarted, gameWon, playerPos, currentMaze]);
 
@@ -586,9 +593,11 @@ export default function MazeRunner({ onBack }) {
     // Check if move is valid (not a wall)
     // Grid is [row][col] which is [y][x]
     if (newY < 0 || newY >= currentMaze.grid.length || newX < 0 || newX >= currentMaze.grid[0].length) {
+      playGameSfx('maze', 'blocked');
       return;
     }
     if (currentMaze.grid[newY][newX] === 1) {
+      playGameSfx('maze', 'blocked');
       return;
     }
 
@@ -597,7 +606,10 @@ export default function MazeRunner({ onBack }) {
 
     // Check if reached goal
     if (newX === currentMaze.goal.x && newY === currentMaze.goal.y) {
+      playGameSfx('maze', 'goal');
       setGameWon(true);
+    } else {
+      playGameSfx('maze', 'step');
     }
   }, [gameStarted, gameWon, playerPos, currentMaze]);
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { playGameSfx } from './gameSfx';
 
 /**
  * CatchCollect - Catch falling items with a basket
@@ -110,7 +111,10 @@ export default function CatchCollect({ onBack }) {
             setLives(l => {
               const newLives = l - 1;
               if (newLives <= 0) {
+                playGameSfx('catch', 'gameOver');
                 setGameOver(true);
+              } else {
+                playGameSfx('catch', 'miss');
               }
               return newLives;
             });
@@ -122,6 +126,7 @@ export default function CatchCollect({ onBack }) {
 
         // Add score for caught items
         if (caught.length > 0) {
+          playGameSfx('catch', 'collect');
           setScore(s => s + (caught.length * 10));
         }
 
@@ -155,6 +160,7 @@ export default function CatchCollect({ onBack }) {
   }, [handleKeyDown]);
 
   const startGame = () => {
+    playGameSfx('catch', 'start');
     setScore(0);
     setLives(3);
     setGameOver(false);

@@ -1,5 +1,6 @@
 'use client';
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { playGameSfx } from './gameSfx';
 
 const GRID_SIZE = 25;
 const CELL_SIZE = 24;
@@ -51,6 +52,7 @@ export default function Snake({ onExit }) {
   }, [direction]);
 
   const resetGame = useCallback(() => {
+    playGameSfx('snake', 'start');
     setSnake([{ x: 10, y: 10 }]);
     setDirection(DIRECTION.RIGHT);
     directionRef.current = DIRECTION.RIGHT;
@@ -76,12 +78,14 @@ export default function Snake({ onExit }) {
         newHead.y < 0 ||
         newHead.y >= GRID_SIZE
       ) {
+        playGameSfx('snake', 'crash');
         setGameOver(true);
         return prevSnake;
       }
 
       // Check self collision
       if (prevSnake.some((segment) => segment.x === newHead.x && segment.y === newHead.y)) {
+        playGameSfx('snake', 'crash');
         setGameOver(true);
         return prevSnake;
       }
@@ -90,6 +94,7 @@ export default function Snake({ onExit }) {
 
       // Check food collision
       if (newHead.x === food.x && newHead.y === food.y) {
+        playGameSfx('snake', 'eat');
         setScore((prev) => {
           const newScore = prev + 10;
           setHighScore((high) => Math.max(high, newScore));

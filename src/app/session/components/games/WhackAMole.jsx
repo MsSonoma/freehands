@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
+import { playGameSfx } from './gameSfx';
 
 /**
  * WhackAMole - Click the moles as they pop up!
@@ -42,6 +43,7 @@ export default function WhackAMole({ onBack }) {
     const timer = setInterval(() => {
       setTimeLeft(t => {
         if (t <= 1) {
+          playGameSfx('whack', 'end');
           setGameOver(true);
           return 0;
         }
@@ -103,6 +105,7 @@ export default function WhackAMole({ onBack }) {
   }, [gameStarted, gameOver, moles]);
 
   const startGame = () => {
+    playGameSfx('whack', 'start');
     setScore(0);
     setTimeLeft(GAME_DURATION);
     setGameOver(false);
@@ -122,6 +125,7 @@ export default function WhackAMole({ onBack }) {
     });
 
     // Increase score
+    playGameSfx('whack', 'hit');
     setScore(s => s + 10);
   };
 
