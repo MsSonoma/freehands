@@ -96,7 +96,7 @@ export default function LessonCalendar({
                       title={forecastSuggestion ? `${lessonGenerationPresentation(item).label}: ${item.title || item.subject || 'lesson'}` : `Open ${item.title || 'lesson'}`}
                       style={{ border: forecastSuggestion ? '1px dashed #c9c5bf' : '1px solid #e5e7eb', borderRadius: 5, padding: '3px 5px', background: forecastSuggestion ? '#f1f0ed' : syllabusCalendarItemCompleted(item) ? '#f3f4f6' : item.readiness_state === 'draft' ? '#fff7ed' : '#f9fafb', color: forecastSuggestion ? '#6b665f' : '#1f2937', cursor: 'pointer', textAlign: 'left', fontSize: 9, lineHeight: 1.25, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}
                     >
-                      {forecastSuggestion ? (item.generation_status === 'generation_failed' ? 'Retry: ' : 'Forecast: ') : item.item_type === 'slate_assignment' ? 'Mr. Slate: ' : ''}{item.title || item.subject || 'Planned lesson'}
+                      {forecastSuggestion ? (item.generation_status === 'generation_failed' ? 'Retry: ' : 'Forecast: ') : ''}{item.title || item.subject || 'Planned lesson'}
                     </button>
                   })}
                   {items.length > 3 && <button type="button" onClick={() => onDateSelect?.(date)} style={{ border: 0, padding: 0, background: 'transparent', textAlign: 'left', fontSize: 9, color: '#6b7280', cursor: 'pointer' }}>+{items.length - 3} more</button>}

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import test from 'node:test'
 
-import { DELETE as removeSlate, POST as scheduleSlate } from '../../../api/syllabus/slate-assignments/route.js'
+import { DELETE as removeSlate, PATCH as updateSlateTeacher, POST as scheduleSlate } from '../../../api/syllabus/slate-assignments/route.js'
 import { createSyllabusRepository } from '../supabaseRepository.server.mjs'
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
@@ -19,9 +19,11 @@ function request(body, method = 'POST') {
 function repository() {
   const writes = []
   const deletes = []
+  const teacherUpdates = []
   return {
     writes,
     deletes,
+    teacherUpdates,
     async findOwnedLearner(learnerId, facilitatorId) {
       return learnerId === LEARNER && facilitatorId === FACILITATOR
         ? { id: LEARNER, approved_lessons: { 'math/fractions.json': true } }
@@ -41,6 +43,12 @@ function repository() {
     async listAllTrackedSessions() { return [] },
     async listAllLessonSessionEvents() { return [] },
     async createSlateAssignment(row) { writes.push(row); return { id: '22222222-2222-4222-8222-222222222222', ...row } },
+    async updateSlateAssignmentTeacher(facilitatorId, learnerId, assignmentId, reviewTeacher) {
+      teacherUpdates.push({ facilitatorId, learnerId, assignmentId, reviewTeacher })
+      return facilitatorId === FACILITATOR && learnerId === LEARNER && assignmentId === '22222222-2222-4222-8222-222222222222'
+        ? { id: assignmentId, review_teacher: reviewTeacher }
+        : null
+    },
     async deleteSlateAssignment(facilitatorId, learnerId, assignmentId) {
       deletes.push({ facilitatorId, learnerId, assignmentId })
       return facilitatorId === FACILITATOR && learnerId === LEARNER && assignmentId === '22222222-2222-4222-8222-222222222222'
@@ -63,6 +71,7 @@ test('facilitator schedules Slate on a separate date for one exact occurrence wi
   assert.equal(store.writes[0].lesson_key, 'math/fractions.json')
   assert.equal(store.writes[0].scheduled_date, '2026-09-09')
   assert.equal(store.writes[0].run_purpose, 'practice')
+  assert.equal(store.writes[0].review_teacher, 'slate')
   assert.equal('instructional_teacher' in store.writes[0], false)
 })
 
@@ -223,6 +232,24 @@ test('Slate scheduling requires a canonical purpose and a non-past date on or af
   assert.equal(store.writes.length, 0)
 })
 
+test('scheduled Daily Review teacher can be changed without recreating the assignment', async () => {
+  const store = repository()
+  const assignmentId = '22222222-2222-4222-8222-222222222222'
+  const response = await updateSlateTeacher(request({ learnerId: LEARNER, assignmentId, reviewTeacher: 'webb' }, 'PATCH'), {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: store,
+  })
+  assert.equal(response.status, 200)
+  assert.deepEqual(store.teacherUpdates, [{ facilitatorId: FACILITATOR, learnerId: LEARNER, assignmentId, reviewTeacher: 'webb' }])
+  assert.equal((await response.json()).assignment.review_teacher, 'webb')
+
+  const invalid = await updateSlateTeacher(request({ learnerId: LEARNER, assignmentId, reviewTeacher: 'bogus' }, 'PATCH'), {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: store,
+  })
+  assert.equal(invalid.status, 400)
+})
+
 test('removing a scheduled Slate session remains facilitator and learner scoped', async () => {
   const store = repository()
   const assignmentId = '22222222-2222-4222-8222-222222222222'
@@ -245,6 +272,7 @@ test('removing a scheduled Slate session remains facilitator and learner scoped'
 test('Slate assignment migration is RLS-protected and keeps writes service-role-only', () => {
   const sql = fs.readFileSync('supabase/migrations/20260902180608_add_syllabus_slate_assignments.sql', 'utf8')
   const scheduling = fs.readFileSync('supabase/migrations/20260903005713_schedule_syllabus_slate_sessions.sql', 'utf8')
+  const reviewTeacher = fs.readFileSync('supabase/migrations/20260926194425_add_daily_review_teacher.sql', 'utf8')
   assert.match(sql, /enable row level security/i)
   assert.match(sql, /unique \(\s*facilitator_id,\s*learner_id,\s*syllabus_occurrence_id\s*\)/i)
   assert.match(sql, /revoke all on table public\.syllabus_slate_assignments from public, anon, authenticated/i)
@@ -256,4 +284,7 @@ test('Slate assignment migration is RLS-protected and keeps writes service-role-
   assert.match(scheduling, /create unique index syllabus_slate_assignments_scheduled_session_unique[\s\S]*facilitator_id,[\s\S]*learner_id,[\s\S]*syllabus_occurrence_id,[\s\S]*scheduled_date,[\s\S]*run_purpose[\s\S]*where scheduled_date is not null/i)
   assert.match(scheduling, /'practice'[\s\S]*'independent_mastery'[\s\S]*'recovery'[\s\S]*'daily_followup'[\s\S]*'weekly_review'[\s\S]*'retention'/i)
   assert.doesNotMatch(scheduling, /lesson_schedule|instructional_teacher/i)
+  assert.match(reviewTeacher, /syllabus_slate_assignments[\s\S]*review_teacher text not null default 'slate'/i)
+  assert.match(reviewTeacher, /slate_session_completions[\s\S]*review_teacher text not null default 'slate'/i)
+  assert.match(reviewTeacher, /review_teacher in \('sonoma', 'webb', 'slate'\)/i)
 })

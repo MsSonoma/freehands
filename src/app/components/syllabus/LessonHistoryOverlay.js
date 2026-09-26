@@ -200,7 +200,7 @@ export default function LessonHistoryOverlay({ learnerId, occurrenceId, accessTo
               <ReviewSection title="Daily Follow-Up" reports={detail.reviews?.daily} />
               <ReviewSection title="Weekly Review" reports={detail.reviews?.weekly} />
               {(detail.evidence?.slate || []).length > 0 && <section className={styles.section}>
-                <h3>Mr. Slate activity</h3>
+                <h3>Daily Review activity</h3>
                 {detail.evidence.slate.map((slate) => <div className={styles.slateCard} key={slate.session?.id}>
                   <div>
                     <strong>{slate.learning_summary?.headline || 'Structured learning evidence unavailable'}</strong>

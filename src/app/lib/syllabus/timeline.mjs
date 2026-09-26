@@ -155,6 +155,14 @@ export function syllabusDayPresentation(activeItems = [], suggestedItems = []) {
   const legacySlateCompletions = active.filter((item) => item?.item_type === 'slate_history')
   const historySources = [...completedReviews, ...legacySlateCompletions]
   const remainingActive = active.filter((item) => !historySources.includes(item))
+  const completedReviewTypes = new Set(completedReviews.map((item) => item?.review_type).filter(Boolean))
+  const completedReviewTitle = completedReviewTypes.size === 1 && completedReviewTypes.has('weekly_review')
+    ? 'Weekly Review'
+    : completedReviewTypes.size === 1 && completedReviewTypes.has('daily_review')
+      ? 'Daily Review'
+      : completedReviewTypes.size === 1 && completedReviewTypes.has('daily_followup')
+        ? 'Daily Follow-Up'
+        : 'Reviews'
   const groupedCompletedReviews = completedReviews.length
     ? [{
         kind: 'active',
@@ -164,7 +172,7 @@ export function syllabusDayPresentation(activeItems = [], suggestedItems = []) {
           item_type: 'review_history',
           planned_date: completedReviews[0]?.planned_date || '',
           sort_order: Math.min(...completedReviews.map((item) => Number(item?.sort_order || 0))),
-          title: completedReviews.length === 1 ? 'Review' : 'Reviews',
+          title: completedReviewTitle,
           review_status: 'completed',
           reviews: completedReviews,
           slate_completions: [],
@@ -180,7 +188,7 @@ export function syllabusDayPresentation(activeItems = [], suggestedItems = []) {
           item_type: 'slate_review_history',
           planned_date: legacySlateCompletions[0]?.planned_date || '',
           sort_order: Math.min(...legacySlateCompletions.map((item) => Number(item?.sort_order || 0))),
-          title: legacySlateCompletions.length === 1 ? 'Mr. Slate' : 'Mr. Slate',
+          title: 'Daily Review',
           review_status: 'completed',
           reviews: [],
           slate_completions: legacySlateCompletions,
@@ -290,7 +298,7 @@ export function syllabusItemActionsFor({ item, ...actionContext }) {
   if (item?.historical_activity_only === true) return []
   if (item?.item_type === 'slate_assignment') {
     return actionContext.role === 'learner'
-      ? [{ id: 'practice_slate', label: 'Start Mr. Slate' }]
+      ? [{ id: 'practice_slate', label: 'Start Daily Review' }]
       : (actionContext.role === 'facilitator' ? [{ id: 'remove_slate_schedule', label: 'Remove scheduled session' }] : [])
   }
   if (
@@ -303,9 +311,9 @@ export function syllabusItemActionsFor({ item, ...actionContext }) {
     : [{ id: 'use_existing', label: 'Use existing lesson' }, { id: 'materialize', label: 'Generate lesson' }]
   const actions = syllabusItemActions(actionContext)
   if ((item?.item_type || 'lesson') !== 'lesson') return actions
-  if (actionContext.role === 'learner' && actionContext.hasLessonArtifact) return [...actions, { id: 'practice_slate', label: 'Practice with Mr. Slate' }]
+  if (actionContext.role === 'learner' && actionContext.hasLessonArtifact) return [...actions, { id: 'practice_slate', label: 'Start Daily Review' }]
   if (actionContext.role === 'facilitator' && item?.lesson_key && item?.historical_record !== true) {
-    return [...actions, { id: 'schedule_slate', label: 'Schedule Mr. Slate' }]
+    return [...actions, { id: 'schedule_slate', label: 'Schedule Daily Review' }]
   }
   return actions
 }

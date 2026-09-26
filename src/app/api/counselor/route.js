@@ -694,17 +694,17 @@ async function executeManageSlatePractice(args, request, toolLog, toolContext) {
     let response
     if (action === 'schedule') {
       const lessonKey = normalizeLessonKey(args?.lessonKey)
-      if (!lessonKey || !args?.occurrenceId || !args?.scheduledDate) return toolError('lessonKey, occurrenceId, and scheduledDate are required to schedule Mr. Slate')
+      if (!lessonKey || !args?.occurrenceId || !args?.scheduledDate) return toolError('lessonKey, occurrenceId, and scheduledDate are required to schedule Daily Review')
       response = await internalApiJson(request, '/api/syllabus/slate-assignments', { method: 'POST', body: { learnerId: learner.id, lessonKey, occurrenceId: args.occurrenceId, scheduledDate: args.scheduledDate, runPurpose: args?.runPurpose || 'practice' } })
     } else if (action === 'remove') {
-      if (!args?.assignmentId) return toolError('assignmentId is required to remove a Mr. Slate assignment')
+      if (!args?.assignmentId) return toolError('assignmentId is required to remove a Daily Review assignment')
       response = await internalApiJson(request, '/api/syllabus/slate-assignments', { method: 'DELETE', body: { learnerId: learner.id, assignmentId: args.assignmentId } })
     } else {
-      return toolError('Unsupported Mr. Slate action')
+      return toolError('Unsupported Daily Review action')
     }
-    if (!response.ok) return toolError(response.data?.error || 'Could not update Mr. Slate practice', response.data)
+    if (!response.ok) return toolError(response.data?.error || 'Could not update Daily Review', response.data)
     pushToolLog(toolLog, { name: 'manage_slate_practice', phase: 'success', context: { learnerId: learner.id, action } })
-    return toolSuccess('manage_slate_practice', action === 'schedule' ? `Scheduled Mr. Slate work for ${learner.name}.` : `Removed the Mr. Slate assignment for ${learner.name}.`, { learner: { id: learner.id, name: learner.name }, result: response.data })
+    return toolSuccess('manage_slate_practice', action === 'schedule' ? `Scheduled Daily Review for ${learner.name}.` : `Removed the Daily Review assignment for ${learner.name}.`, { learner: { id: learner.id, name: learner.name }, result: response.data })
   } catch (error) {
     pushToolLog(toolLog, { name: 'manage_slate_practice', phase: 'error', context: { message: error.message } })
     return toolError(error.message)

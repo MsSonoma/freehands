@@ -11,6 +11,7 @@ import { ensureFacilitatorPinException, requestFacilitatorPinException } from '@
 import { featuresForTier } from '@/app/lib/entitlements'
 import { buildLessonSchedulePayload, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, normalizeReviewTeacher, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
 import { buildLessonGeneratorReviewHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import { getLearner } from '@/app/facilitator/learners/clientApi'
 import { getStoredAssessments, saveAssessments } from '@/app/session/assessment/assessmentStore'
@@ -80,7 +81,7 @@ function HistoricalActivityControl({ item, legacyWebbCompletion, busy, onRecord 
     {validLegacyWebb && <button type="button" disabled={busy} onClick={() => onRecord(item, {
       activityType: 'instructional_completion', instructionalTeacher: 'webb', occurredAt: new Date(legacyWebbCompletion.completedAt).toISOString(), provenance: 'facilitator_attested_webb_completion_v1_import', legacyCompletion: legacyWebbCompletion,
     })}>Import legacy Webb completion from {prettyDate(legacyWebbCompletion.completedAt)}</button>}
-    {instructionalCompletionAllowed ? <label>Activity<select value={activityType} onChange={(event) => setActivityType(event.target.value)}><option value="instructional_completion">Instructional lesson completed</option><option value="slate_drill_completion">Mr. Slate drill completed</option></select></label> : <p>Activity: Mr. Slate drill completed</p>}
+    {instructionalCompletionAllowed ? <label>Activity<select value={activityType} onChange={(event) => setActivityType(event.target.value)}><option value="instructional_completion">Instructional lesson completed</option><option value="slate_drill_completion">Daily Review completed</option></select></label> : <p>Activity: Daily Review completed</p>}
     {instructionalCompletionAllowed && selectedActivityType === 'instructional_completion' && <label>Teacher<select value={instructionalTeacher} onChange={(event) => setInstructionalTeacher(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
     <label>Completed at<input type="datetime-local" value={occurredAt} onChange={(event) => setOccurredAt(event.target.value)} /></label>
     <button type="button" disabled={busy || !occurredAt} onClick={submit}>{busy ? 'Recording...' : 'Add historical record'}</button>
@@ -136,6 +137,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [historyOpen, setHistoryOpen] = useState(false)
   const [slateEditorOpen, setSlateEditorOpen] = useState(false)
   const [slateDate, setSlateDate] = useState('')
+  const [slateTeacher, setSlateTeacher] = useState('slate')
   const [revisionOpen, setRevisionOpen] = useState(false)
   const [repeatMode, setRepeatMode] = useState(false)
   const [learnerLessonBound, setLearnerLessonBound] = useState(false)
@@ -165,6 +167,7 @@ export default function FacilitatorSyllabusLessonOverlay({
     setHistoryOpen(false)
     setSlateEditorOpen(false)
     setSlateDate('')
+    setSlateTeacher(normalizeReviewTeacher(item.review_teacher))
     setRevisionOpen(false)
     setRepeatMode(false)
     setLearnerLessonBound(false)
@@ -409,15 +412,38 @@ export default function FacilitatorSyllabusLessonOverlay({
       const response = await fetch('/api/syllabus/slate-assignments', {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ learnerId, lessonKey: item.lesson_key, occurrenceId: sourceOccurrenceId, scheduledDate: slateDate, runPurpose: 'practice' }),
+        body: JSON.stringify({ learnerId, lessonKey: item.lesson_key, occurrenceId: sourceOccurrenceId, scheduledDate: slateDate, runPurpose: 'practice', reviewTeacher: slateTeacher }),
       })
       const json = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(json.error || 'Could not schedule Mr. Slate')
+      if (!response.ok) throw new Error(json.error || 'Could not schedule Daily Review')
       setSlateEditorOpen(false)
-      setMessage('Mr. Slate supplemental practice was scheduled.')
+      setMessage(`Daily Review was scheduled with ${reviewTeacherLabel(slateTeacher)}.`)
       await refreshAfterChange()
     } catch (cause) {
-      setCoreError(cause.message || 'Could not schedule Mr. Slate')
+      setCoreError(cause.message || 'Could not schedule Daily Review')
+    } finally {
+      setCoreBusy('')
+    }
+  }
+
+  async function updateScheduledReviewTeacher(nextTeacher) {
+    if (!coreAuthority || !item.assignment_id) return
+    const reviewTeacher = normalizeReviewTeacher(nextTeacher)
+    setCoreBusy('slate')
+    setCoreError('')
+    try {
+      const response = await fetch('/api/syllabus/slate-assignments', {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, assignmentId: item.assignment_id, reviewTeacher }),
+      })
+      const json = await response.json().catch(() => ({}))
+      if (!response.ok) throw new Error(json.error || 'Could not update the Daily Review teacher')
+      setSlateTeacher(reviewTeacher)
+      setMessage(`Daily Review teacher changed to ${reviewTeacherLabel(reviewTeacher)}.`)
+      await refreshAfterChange()
+    } catch (cause) {
+      setCoreError(cause.message || 'Could not update the Daily Review teacher')
     } finally {
       setCoreBusy('')
     }
@@ -438,11 +464,11 @@ export default function FacilitatorSyllabusLessonOverlay({
         body: JSON.stringify({ learnerId, assignmentId: item.assignment_id }),
       })
       const json = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(json.error || 'Could not remove the scheduled Mr. Slate session')
+      if (!response.ok) throw new Error(json.error || 'Could not remove the scheduled Daily Review')
       onClose?.()
       await refreshAfterChange()
     } catch (cause) {
-      setCoreError(cause.message || 'Could not remove the scheduled Mr. Slate session')
+      setCoreError(cause.message || 'Could not remove the scheduled Daily Review')
     } finally {
       setCoreBusy('')
     }
@@ -671,8 +697,9 @@ export default function FacilitatorSyllabusLessonOverlay({
             {actualKind === 'incomplete' && attemptedAt && <div><dt>Attempted</dt><dd>{prettyDateTime(attemptedAt)}</dd></div>}
             {canDeliver && <div><dt>Availability</dt><dd>{availableToLearner ? 'Available to learner' : 'Not yet available'}</dd></div>}
             {actualKind !== 'completed' && selection.currentLesson?.hasProgress && <div><dt>Progress</dt><dd>In progress</dd></div>}
-            {isSlateAssignment && <div><dt>Type</dt><dd>Scheduled Mr. Slate supplemental session</dd></div>}
+            {isSlateAssignment && <><div><dt>Type</dt><dd>Daily Review</dd></div><div><dt>Review teacher</dt><dd>{reviewTeacherIcon(slateTeacher)} {reviewTeacherLabel(slateTeacher)}</dd></div></>}
           </dl>
+          {isSlateAssignment && <label className={styles.field}>Review teacher<select value={slateTeacher} disabled={coreBusy === 'slate'} onChange={(event) => void updateScheduledReviewTeacher(event.target.value)}>{REVIEW_TEACHER_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label>}
           {teacherEditable && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy || coreBusy === 'teacher'} onChange={(event) => void handleTeacherChange(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
           {isConcept && <section className={styles.detailSection}>
             <h3>{generation.label}</h3>
@@ -698,7 +725,13 @@ export default function FacilitatorSyllabusLessonOverlay({
               <div className={styles.secondaryActions}><button type="button" disabled={coreBusy === 'concept-edit'} onClick={() => setConceptEditMode('')}>Cancel</button><button type="button" className={styles.primary} disabled={!conceptTitle.trim() || !conceptDescription.trim() || coreBusy === 'concept-edit' || Boolean(actionBlockReason) || !generation.canEdit} onClick={() => void saveConceptEdit()}>{coreBusy === 'concept-edit' ? 'Saving...' : conceptEditMode === 'forecast-own' ? 'Generate my lesson' : 'Save educator intent'}</button></div>
             </div>
           </section>}
-          {slateEditorOpen && <section className={styles.detailSection}><h3>Schedule Mr. Slate</h3><p>Schedule a separate supplemental practice session. This does not change the instructional teacher or complete the lesson.</p><label className={styles.field}>Mr. Slate session date<input type="date" min={[dateOnly(displayedDate), dateOnly(resolvedToday)].filter(Boolean).sort().at(-1) || ''} value={slateDate} onChange={(event) => setSlateDate(event.target.value)} /></label><div className={styles.secondaryActions}><button type="button" onClick={() => setSlateEditorOpen(false)}>Cancel</button><button type="button" disabled={!slateDate || coreBusy === 'slate'} onClick={() => void saveSlateSchedule()}>{coreBusy === 'slate' ? 'Scheduling...' : 'Schedule supplemental session'}</button></div></section>}
+          {slateEditorOpen && <section className={styles.detailSection}>
+            <h3>Schedule Daily Review</h3>
+            <p>Choose who will present this review. The review teacher does not replace the instructional teacher or complete the lesson.</p>
+            <label className={styles.field}>Review teacher<select value={slateTeacher} onChange={(event) => setSlateTeacher(normalizeReviewTeacher(event.target.value))}>{REVIEW_TEACHER_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label>
+            <label className={styles.field}>Daily Review date<input type="date" min={[dateOnly(displayedDate), dateOnly(resolvedToday)].filter(Boolean).sort().at(-1) || ''} value={slateDate} onChange={(event) => setSlateDate(event.target.value)} /></label>
+            <div className={styles.secondaryActions}><button type="button" onClick={() => setSlateEditorOpen(false)}>Cancel</button><button type="button" disabled={!slateDate || coreBusy === 'slate'} onClick={() => void saveSlateSchedule()}>{coreBusy === 'slate' ? 'Scheduling...' : 'Schedule Daily Review'}</button></div>
+          </section>}
           {isLesson && item.lesson_key && isHistorical && !repeatDeliveryActive && <RecordedLessonActivity
             item={item}
             teacherName={instructionalTeacherLabel(displayTeacher)}
@@ -717,7 +750,7 @@ export default function FacilitatorSyllabusLessonOverlay({
             {canDeliver && !availableToLearner && <button type="button" disabled={coreBusy === 'availability'} onClick={() => void handleMakeAvailable()}>{coreBusy === 'availability' ? 'Making available...' : 'Make available'}</button>}
             {canRegenerateOwnedLesson && <button type="button" onClick={() => setRevisionOpen(true)}>Regenerate with changes</button>}
             {canEditOwnedLesson && <button type="button" onClick={editLesson}>{isDraft ? 'Edit draft' : 'Edit lesson'}</button>}
-            {isLesson && item.lesson_key && !isDraft && item.historical_record !== true && (typeof onScheduleSlate === 'function' || canScheduleSlateCore) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={openSlateScheduler}>Schedule Mr. Slate</button>}
+            {isLesson && item.lesson_key && !isDraft && item.historical_record !== true && (typeof onScheduleSlate === 'function' || canScheduleSlateCore) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={openSlateScheduler}>Schedule Daily Review</button>}
             {isSlateAssignment && (typeof onRemoveSlateSchedule === 'function' || coreAuthority) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={() => void removeSlateSchedule()}>Remove scheduled session</button>}
             {canRepeat && <button type="button" onClick={() => void handleRepeat()}>Retry lesson</button>}
             {canRemoveExactOccurrence && <button type="button" disabled={Boolean(removalBusy)} onClick={() => void removeExactSyllabusOccurrence()}>{removalBusy === 'occurrence' ? 'Removing...' : 'Remove this occurrence'}</button>}

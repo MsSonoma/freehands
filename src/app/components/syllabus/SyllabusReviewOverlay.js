@@ -1,17 +1,10 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
 import styles from './FacilitatorSyllabusLessonOverlay.module.css'
 
-const REVIEW_TEACHERS = [
-  { id: 'sonoma', label: 'Ms. Sonoma' },
-  { id: 'webb', label: 'Mrs. Webb' },
-  { id: 'slate', label: 'Mr. Slate' },
-]
-
-function teacherLabel(value) {
-  return REVIEW_TEACHERS.find((teacher) => teacher.id === value)?.label || 'Mr. Slate'
-}
+const REVIEW_TEACHER_OPTIONS = REVIEW_TEACHER_IDS.map((id) => REVIEW_TEACHERS[id])
 
 function prettyDate(value) {
   const day = String(value || '').slice(0, 10)
@@ -92,6 +85,7 @@ export default function SyllabusReviewOverlay({
   const totalHistoryCount = historyReviews.length + historySlateCompletions.length
   const isHistory = totalHistoryCount > 0
   const isSlateHistory = item.item_type === 'slate_review_history'
+  const historyLabel = isHistory ? (item.title || (isSlateHistory ? 'Daily Review' : 'Review')) : ''
   const progress = item.review_progress || {}
   const lessons = Array.isArray(progress.lessons) ? progress.lessons : []
   const canStart = !isHistory && item.review_ready === true && item.review_status !== 'completed'
@@ -103,7 +97,7 @@ export default function SyllabusReviewOverlay({
       <section className={styles.overlay} role="dialog" aria-modal="true" aria-label={`${item.title || 'Review'} details`}>
         <header>
           <div>
-            <p className={styles.subject}>{isHistory ? (isSlateHistory ? 'Mr. Slate' : 'Review') : 'Review'}</p>
+            <p className={styles.subject}>{isHistory ? historyLabel : 'Review'}</p>
             <h2>{isHistory ? (totalHistoryCount === 1 ? 'Completed review' : 'Completed reviews') : (item.title || 'Review')}</h2>
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Close">Close</button>
@@ -124,15 +118,15 @@ export default function SyllabusReviewOverlay({
                   <section className={styles.detailSection} key={review.id || review.cycle_key || index}>
                     <h3>{reviewTypeLabel(review)}</h3>
                     {review.description && <p>{review.description}</p>}
-                    {review.review_teacher && <p>Completed with <strong>{teacherLabel(review.review_teacher)}</strong>.</p>}
+                    <p>{reviewTeacherIcon(review.review_teacher)} Completed with <strong>{reviewTeacherLabel(review.review_teacher)}</strong>.</p>
                     <LessonChecklist lessons={reviewLessons} />
                   </section>
                 )
               })}
               {historySlateCompletions.map((completion, index) => (
-                <section className={styles.detailSection} key={completion.historical_activity_id || completion.id || 'slate-' + index}>
-                  <h3>{completion.title || 'Mr. Slate review'}</h3>
-                  <p>{completion.subject ? completion.subject + '. Completed with Mr. Slate.' : 'Completed with Mr. Slate.'}</p>
+                <section className={styles.detailSection} key={completion.historical_activity_id || completion.id || 'daily-review-' + index}>
+                  <h3>{completion.title || 'Daily Review'}</h3>
+                  <p>{reviewTeacherIcon(completion.review_teacher)} {completion.subject ? completion.subject + '. ' : ''}Completed with <strong>{reviewTeacherLabel(completion.review_teacher)}</strong>.</p>
                 </section>
               ))}
             </>
@@ -148,12 +142,12 @@ export default function SyllabusReviewOverlay({
               <section className={styles.detailSection}>
                 <h3>Teacher for this quiz</h3>
                 {item.review_status === 'in_progress' ? (
-                  <p>This review will continue with <strong>{teacherLabel(teacher)}</strong>.</p>
+                  <p>{reviewTeacherIcon(teacher)} This review will continue with <strong>{reviewTeacherLabel(teacher)}</strong>.</p>
                 ) : (
                   <label style={{ display: 'grid', gap: 6, maxWidth: 280 }}>
                     <span>Choose who will give the quiz</span>
                     <select value={teacher} onChange={(event) => setTeacher(event.target.value)} disabled={!canStart || busy}>
-                      {REVIEW_TEACHERS.map((option) => <option key={option.id} value={option.id}>{option.label}</option>)}
+                      {REVIEW_TEACHER_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.icon} {option.label}</option>)}
                     </select>
                   </label>
                 )}

@@ -198,7 +198,7 @@ test('recovered instructional history receives completed actions while standalon
   assert.deepEqual(syllabusItemActionsFor({ item: recoveredWebb, role: 'learner', state: recoveredState, hasLessonArtifact: true }), [
     { id: 'review', label: 'View / Review' },
     { id: 'repeat', label: 'Try again', requires_pin: true },
-    { id: 'practice_slate', label: 'Practice with Mr. Slate' },
+    { id: 'practice_slate', label: 'Start Daily Review' },
   ])
   assert.equal(recoveredWebb.historical_provenance, 'server_verified_legacy_transcript_v1')
   assert.equal(recoveredWebb.actual_instructional_teacher, 'webb')
@@ -237,9 +237,9 @@ test('canonical actions are preserved while eligible lessons gain supplemental S
     assert.deepEqual(actions.slice(0, syllabusItemActions(context).length), syllabusItemActions(context))
     const supplemental = actions.slice(syllabusItemActions(context).length)
     if (context.hasLessonArtifact && context.role === 'learner') {
-      assert.deepEqual(supplemental, [{ id: 'practice_slate', label: 'Practice with Mr. Slate' }])
+      assert.deepEqual(supplemental, [{ id: 'practice_slate', label: 'Start Daily Review' }])
     } else if (item.lesson_key && context.role === 'facilitator' && item.historical_record !== true) {
-      assert.deepEqual(supplemental, [{ id: 'schedule_slate', label: 'Schedule Mr. Slate' }])
+      assert.deepEqual(supplemental, [{ id: 'schedule_slate', label: 'Schedule Daily Review' }])
     } else {
       assert.deepEqual(supplemental, [])
     }

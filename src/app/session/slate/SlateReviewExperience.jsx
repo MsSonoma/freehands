@@ -9,6 +9,7 @@ const TEACHERS = Object.freeze({
   sonoma: {
     id: 'sonoma',
     name: 'MS. SONOMA',
+    icon: '👩🏻‍🦰',
     video: '/media/ms-sonoma-3.mp4',
     tts: '/api/tts',
     accent: '#6b4f3a',
@@ -22,6 +23,7 @@ const TEACHERS = Object.freeze({
   webb: {
     id: 'webb',
     name: 'MRS. WEBB',
+    icon: '👩🏻‍🏫',
     video: '/media/webb-teacher.mp4',
     tts: '/api/webb-tts',
     accent: '#7b3f66',
@@ -35,6 +37,7 @@ const TEACHERS = Object.freeze({
   slate: {
     id: 'slate',
     name: 'MR. SLATE',
+    icon: '🤖',
     video: '/media/Mr.%20Slate%20Suit.mp4',
     tts: '/api/slate-tts',
     accent: '#58a6ff',
@@ -251,7 +254,7 @@ export default function SlateReviewExperience({ runId }) {
           style={{ width: 62, height: 62, objectFit: 'contain', borderRadius: 10 }}
         />
         <div>
-          <div style={styles.name}>{teacherConfig.name}</div>
+          <div style={styles.name}>{teacherConfig.icon} {teacherConfig.name}</div>
           <div style={styles.label}>{label}</div>
         </div>
       </div>

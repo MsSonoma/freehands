@@ -76,7 +76,8 @@ test('occurrence-bound Mr. Slate schedule renders on its own later date as a sep
   assert.equal(lesson.assigned_instructional_teacher, 'webb')
   assert.equal(lesson.has_slate_sessions, true)
   assert.equal(lesson.slate_session_count, 1)
-  assert.equal(slate.title, 'Mr. Slate: Fractions')
+  assert.equal(slate.title, 'Daily Review: Fractions')
+  assert.equal(slate.review_teacher, 'slate')
   assert.equal(slate.parent_occurrence_id, lesson.occurrence_id)
   assert.equal(slate.practice_occurrence_id, lesson.occurrence_id)
   assert.equal(slate.planned_date, '2026-09-10')
@@ -214,7 +215,7 @@ test('Mr. Slate stays supplemental in learner and facilitator Syllabus actions',
   assert.equal(learnerActions.at(-1).requires_pin, undefined)
   const facilitatorActions = syllabusItemActionsFor({ item, role: 'facilitator', state: 'today_unfinished', hasLessonArtifact: true })
   assert.ok(facilitatorActions.some((action) => action.id === 'schedule_slate'))
-  assert.deepEqual(syllabusItemActionsFor({ item: { item_type: 'slate_assignment' }, role: 'learner' }), [{ id: 'practice_slate', label: 'Start Mr. Slate' }])
+  assert.deepEqual(syllabusItemActionsFor({ item: { item_type: 'slate_assignment' }, role: 'learner' }), [{ id: 'practice_slate', label: 'Start Daily Review' }])
 })
 
 test('approved-only generated and public lessons do not become active Syllabus members', () => {
@@ -1477,7 +1478,7 @@ test('SyllabusDocument keeps rows readable while facilitator controls live in th
   assert.match(overlay, /<option value="sonoma">Ms\. Sonoma<\/option>/)
   assert.match(overlay, /<option value="webb">Mrs\. Webb<\/option>/)
   assert.doesNotMatch(overlay, /<option value="slate">/i)
-  assert.match(document, /Scheduled Mr\. Slate supplemental session/)
+  assert.match(document, /Daily Review/)
   assert.match(document, /startedOccurrenceIds\.has\(String\(occurrenceKey\)\)/)
   assert.match(overlay, /instructionalCompletionAllowed = item\?\.placement_kind !== 'actual'/)
   assert.match(overlay, /selectedActivityType = instructionalCompletionAllowed \? activityType : 'slate_drill_completion'/)

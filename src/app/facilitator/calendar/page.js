@@ -43,7 +43,7 @@ function statusLabel(item) {
   if (item?.actual_kind === 'incomplete') return 'Incomplete'
   if (item?.needs_placement) return 'Needs placement'
   if (!item?.lesson_key) return 'Ready to generate'
-  if (item?.item_type === 'slate_assignment') return 'Mr. Slate practice'
+  if (item?.item_type === 'slate_assignment') return 'Daily Review'
   if (item?.readiness_state) return String(item.readiness_state).replaceAll('_', ' ')
   return 'Planned'
 }

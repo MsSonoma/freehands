@@ -23,7 +23,7 @@ function statusLabel(item) {
   if (item?.actual_kind === 'incomplete') return 'Incomplete'
   if (item?.planning_state === 'forecast' || item?.presentation_kind === 'suggested_inactive') return 'AI forecast suggestion'
   if (!item?.lesson_key) return 'Planned concept'
-  if (item?.item_type === 'slate_assignment') return 'Mr. Slate practice'
+  if (item?.item_type === 'slate_assignment') return 'Daily Review'
   return String(item?.readiness_state || 'Planned').replaceAll('_', ' ')
 }
 

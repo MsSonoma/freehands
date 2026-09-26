@@ -27,6 +27,7 @@ import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { recordSlateCompletion } from '@/app/lib/slateCompletionClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { authorizeProtectedOccurrence } from '@/app/lib/syllabus/executionClient'
+import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
 import SlateReviewExperience from './SlateReviewExperience'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { STAGE_6_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js'
@@ -70,7 +71,6 @@ const SETTINGS_CONFIG = [
   { label: 'TIMEOUT OFFSET',    key: 'timeoutOffset',  min: 0,  max: 5,   fmt: v => v === 0 ? 'none' : `${v} free` },
   { label: 'TIME PER QUESTION', key: 'questionSecs',   min: 5,  max: 120, fmt: v => `${v}s` },
 ]
-const SLATE_VIDEO_SRC = '/media/Mr.%20Slate%20Suit.mp4'
 
 // --- Color palette (dark robot theme) ----------------------------------------
 
@@ -246,12 +246,13 @@ const TIMEOUT_MSGS = [
 ]
 // --- Sub-components ----------------------------------------------------------
 
-const SlateVideo = forwardRef(function SlateVideo({ size = 180, style: extraStyle }, ref) {
+const SlateVideo = forwardRef(function SlateVideo({ size = 180, style: extraStyle, teacher = 'slate' }, ref) {
   const sizeStyle = extraStyle ? {} : { width: size, height: size }
+  const config = reviewTeacherConfig(teacher)
   return (
     <video
       ref={ref}
-      src={SLATE_VIDEO_SRC}
+      src={config.video}
       loop
       muted
       playsInline
@@ -385,11 +386,12 @@ const tfBtnBase = {
 
 // --- TTS helper ---------------------------------------------------------------
 
-async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef, muted = false) {
+async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef, muted = false, teacher = 'slate') {
   if (!text || !audioEl) { onDone?.(); return }
   if (isSpeakingRef) isSpeakingRef.current = true
+  const config = reviewTeacherConfig(teacher)
   try {
-    const res = await fetch('/api/slate-tts', {
+    const res = await fetch(config.tts, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ text }),
@@ -423,6 +425,9 @@ function SlateDrillInner() {
   const routeLessonKey = searchParams?.get('lessonKey') || ''
   const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
   const routeRunPurpose = slateRunPurpose(searchParams?.get('purpose'))
+  const routeReviewTeacher = normalizeReviewTeacher(searchParams?.get('reviewTeacher'))
+  const [reviewTeacherId, setReviewTeacherId] = useState(routeReviewTeacher)
+  const reviewTeacher = reviewTeacherConfig(reviewTeacherId)
 
   // Page state
   // Phases: loading | list | ready | asking | feedback | won | error
@@ -456,7 +461,7 @@ function SlateDrillInner() {
   const slateSessionStartRef = useRef(null) // ISO timestamp set when drill starts
   const [txStatus, setTxStatus] = useState(null) // null | 'saving' | 'ok' | 'failed'
   const [, setEvidenceStatus] = useState('unavailable')
-  const [completionMessage, setCompletionMessage] = useState('Drill complete.')
+  const [completionMessage, setCompletionMessage] = useState('Daily Review complete.')
   const [offerResume, setOfferResume] = useState(() => {
     if (typeof window === 'undefined') return false
     try {
@@ -530,7 +535,7 @@ function SlateDrillInner() {
       lessonTitle,
       startedAt: slateSessionStartRef.current || new Date().toISOString(),
       lines,
-      teacher: 'slate',
+      teacher: reviewTeacherId,
     }).then(r => {
       if (r?.ok) {
         setTxStatus('ok')
@@ -708,11 +713,11 @@ function SlateDrillInner() {
     clearTimeout(feedbackTimeout.current)
     const p = buildSlatePool(lesson, routeRunPurpose)
     if (!p.length) {
-      setListError('This lesson has no drill questions. Ask your facilitator to add quiz questions to it.')
+      setListError('This lesson has no review questions. Ask your facilitator to add quiz questions to it.')
       return
     }
     if (!p.length) {
-      setErrorMsg('This lesson has no drill questions. Try a different lesson, or ask your facilitator to add quiz questions to it.')
+      setErrorMsg('This lesson has no review questions. Try a different lesson, or ask your facilitator to add quiz questions to it.')
       phaseRef.current = 'error'
       setPagePhase('error')
       return
@@ -800,11 +805,11 @@ function SlateDrillInner() {
       setTimeout(() => {
         const m = !soundRef.current
         playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
-          playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current)
-        }, slateIsSpeakingRef, m)
+          playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
+        }, slateIsSpeakingRef, m, reviewTeacherId)
       }, 120)
     }
-  }, [recordQuestionPresented, routeLearnerId, routeOccurrenceId, routeRunPurpose])
+  }, [recordQuestionPresented, reviewTeacherId, routeLearnerId, routeOccurrenceId, routeRunPurpose])
 
   // Advance the deck, reshuffling when 80%+ has been used
   const advanceDeck = useCallback(() => {
@@ -846,8 +851,8 @@ function SlateDrillInner() {
     phaseRef.current = 'asking'
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
-    if (!skipAudio) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current), 120)
-  }, [recordQuestionPresented])
+    if (!skipAudio) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId), 120)
+  }, [recordQuestionPresented, reviewTeacherId])
 
   // Start / restart the drill
   const startDrill = useCallback(() => {
@@ -869,11 +874,11 @@ function SlateDrillInner() {
       setTimeout(() => {
         const m = !soundRef.current
         playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
-          playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current)
-        }, slateIsSpeakingRef, m)
+          playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
+        }, slateIsSpeakingRef, m, reviewTeacherId)
       }, 120)
     }
-  }, [advanceDeck, showQuestion])
+  }, [advanceDeck, reviewTeacherId, showQuestion])
 
   const recordSlateResponse = useCallback(async ({ q, correct, timeout, rawAnswer, correctAnswer }) => {
     const client = evidenceClientRef.current
@@ -1046,6 +1051,7 @@ function SlateDrillInner() {
             lessonKey: lessonKeyRef.current,
             occurrenceId: authorizedOccurrenceRef.current,
             runPurpose: runStateRef.current.runPurpose,
+            reviewTeacher: reviewTeacherId,
             startedAt: slateSessionStartRef.current || completedAt,
             completedAt,
             lessonTitle: lessonDataRef.current?.title || null,
@@ -1064,7 +1070,7 @@ function SlateDrillInner() {
         const lid = learnerIdRef.current
         if (lid) getCanonicalMasteryForLearner(lid).then(setMasteryMap).catch(() => {})
         const doWon = () => { phaseRef.current = 'won'; setPagePhase('won') }
-        playSlateAudio(pick(completionAudioOptions), audioEl.current, slateVideoRef.current, doWon, slateIsSpeakingRef, !soundRef.current)
+        playSlateAudio(pick(completionAudioOptions), audioEl.current, slateVideoRef.current, doWon, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
       }, FEEDBACK_DELAY_MS)
     } else if (correctAnswer) {
       // Wrong answer: chain feedback → correct answer → advance (muted if sound off)
@@ -1083,16 +1089,16 @@ function SlateDrillInner() {
               void completeSlateRecovery(evidence.recoveryContext).finally(() => {
                 feedbackTimeout.current = setTimeout(doAdvance, 600)
               })
-            }, slateIsSpeakingRef, !soundRef.current)
+            }, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
           })
-        }, slateIsSpeakingRef, !soundRef.current)
-      }, slateIsSpeakingRef, m)
+        }, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
+      }, slateIsSpeakingRef, m, reviewTeacherId)
     } else {
       // Correct / timeout: play feedback (muted if sound off), then advance after delay
-      playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current)
+      playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
       feedbackTimeout.current = setTimeout(doAdvance, FEEDBACK_DELAY_MS)
     }
-  }, [advanceDeck, completeSlateRecovery, recordSlateResponse, showQuestion])
+  }, [advanceDeck, completeSlateRecovery, recordSlateResponse, reviewTeacherId, showQuestion])
 
   // Countdown timer
   useEffect(() => {
@@ -1193,6 +1199,7 @@ function SlateDrillInner() {
       // Legacy snapshots did not carry a durable evidence-session identity.
       // Restart the drill through the canonical initializer instead of letting
       // a resumed local-only score manufacture an educational claim.
+      setReviewTeacherId(normalizeReviewTeacher(saved.reviewTeacher))
       try { localStorage.removeItem('slate_session') } catch {}
       setOfferResume(false)
       await selectLesson(saved.lessonData)
@@ -1233,13 +1240,14 @@ function SlateDrillInner() {
           lessonData,
           lessonKey: lessonKeyRef.current,
           authorizedOccurrenceId: authorizedOccurrenceRef.current,
+          reviewTeacher: reviewTeacherId,
           score,
           qCount,
           drillTranscript: drillTranscriptRef.current,
         }))
       } catch { /* ignore quota errors */ }
     }
-  }, [pagePhase, lessonData, score, qCount, drillTranscript, offerResume])
+  }, [pagePhase, lessonData, score, qCount, drillTranscript, offerResume, reviewTeacherId])
 
   const lessonTitle = lessonData?.title || ''
 
@@ -1251,9 +1259,9 @@ function SlateDrillInner() {
       <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ marginBottom: 16 }}>
-            <SlateVideo size={100} />
+            <SlateVideo teacher={reviewTeacherId} size={100} />
           </div>
-          <div style={{ fontSize: 13, letterSpacing: 2, marginBottom: 20 }}>INITIALIZING DRILL SYSTEM...</div>
+          <div style={{ fontSize: 13, letterSpacing: 2, marginBottom: 20 }}>INITIALIZING DAILY REVIEW...</div>
           <LoadingDots />
         </div>
       </div>
@@ -1300,10 +1308,10 @@ function SlateDrillInner() {
               padding: '28px 24px',
               textAlign: 'center',
             }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>{reviewTeacher.icon}</div>
               <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
               <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
-                You were in the middle of a drill with Mr. Slate.<br/>
+                You were in the middle of a Daily Review with {reviewTeacher.label}.<br/>
                 Would you like to pick up where you left off?
               </div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
@@ -1347,10 +1355,10 @@ function SlateDrillInner() {
               padding: '28px 24px',
               textAlign: 'center',
             }}>
-              <div style={{ fontSize: 36, marginBottom: 12 }}>🤖</div>
+              <div style={{ fontSize: 36, marginBottom: 12 }}>{reviewTeacher.icon}</div>
               <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
               <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
-                You were in the middle of a drill with Mr. Slate.<br/>
+                You were in the middle of a Daily Review with {reviewTeacher.label}.<br/>
                 Would you like to pick up where you left off?
               </div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
@@ -1384,10 +1392,10 @@ function SlateDrillInner() {
           gap: 12,
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
+            <video src={reviewTeacher.video} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
             <div>
-              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>MR. SLATE V1</div>
-              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>SKILLS &amp; PRACTICE COACH</div>
+              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>{reviewTeacher.icon} DAILY REVIEW</div>
+              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>{reviewTeacher.label.toUpperCase()} · REVIEW TEACHER</div>
             </div>
           </div>
           <button onClick={exitToLessons} style={ghostBtn}>← BACK</button>
@@ -1398,9 +1406,9 @@ function SlateDrillInner() {
           {availableLessons.length === 0 && allOwnedLessons.length === 0 ? (
             <div style={{ textAlign: 'center', marginTop: 60 }}>
               <div style={{ marginBottom: 16 }}>
-                <SlateVideo size={120} />
+                <SlateVideo teacher={reviewTeacherId} size={120} />
               </div>
-              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO DRILL LESSONS AVAILABLE</div>
+              <div style={{ color: C.muted, fontSize: 14, letterSpacing: 1 }}>NO REVIEW QUESTIONS AVAILABLE</div>
               <div style={{ color: C.muted, fontSize: 12, marginTop: 8 }}>Complete a lesson with Ms. Sonoma first, then come back to practice.</div>
             </div>
           ) : (() => {
@@ -1479,7 +1487,7 @@ function SlateDrillInner() {
                       {[subjectLabel, gradeLabel, diffLabel].filter(Boolean).join(' · ')}
                       {poolSize > 0
                         ? <>{' · '}<span style={{ color: mastered ? C.green : C.accent }}>{poolSize} QUESTIONS</span></>
-                        : <span style={{ color: C.muted, marginLeft: 4, opacity: 0.6 }}>· no drill questions</span>
+                        : <span style={{ color: C.muted, marginLeft: 4, opacity: 0.6 }}>· no review questions</span>
                       }
                       {mastered && <span style={{ color: C.green, marginLeft: 8 }}>✓ MASTERED</span>}
                       {dateLabel && <span style={{ color: C.muted, marginLeft: 8 }}>{dateLabel}</span>}
@@ -1579,7 +1587,7 @@ function SlateDrillInner() {
                 {listTab === 'active' && (
                   activeList.length === 0 ? (
                     <div style={{ color: C.muted, fontSize: 13, textAlign: 'center', marginTop: 32, letterSpacing: 1 }}>
-                      ALL LESSONS MASTERED — CHECK RECENT TAB 🤖
+                      ALL LESSONS MASTERED — CHECK RECENT TAB ✓
                     </div>
                   ) : (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -1633,7 +1641,7 @@ function SlateDrillInner() {
   // ===========================================================================
   if (pagePhase === 'won') {
     const openTranscript = () => {
-      const title = lessonTitle || 'Mr. Slate Drill'
+      const title = lessonTitle || 'Daily Review'
       const date = new Date().toLocaleDateString(undefined, { year: 'numeric', month: 'long', day: 'numeric' })
       const correctCount = drillTranscript.filter(e => e.correct).length
       const wrongCount = drillTranscript.filter(e => !e.correct && !e.timeout).length
@@ -1663,7 +1671,7 @@ function SlateDrillInner() {
 <html>
 <head>
 <meta charset="utf-8"/>
-<title>${esc(title)} — Drill Transcript</title>
+<title>${esc(title)} — Daily Review Transcript</title>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#111;padding:24px 32px;max-width:900px;margin:0 auto;font-size:13px;line-height:1.4}
@@ -1695,8 +1703,8 @@ h2{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;
   <button onclick="window.print()">🖨 Print Transcript</button>
   <span>Tip: Set margins to &ldquo;Minimum&rdquo; in print settings to save paper.</span>
 </div>
-<h1>🤖 ${esc(title)}</h1>
-<div class="sub">Mr. Slate Drill Transcript &mdash; ${esc(date)}</div>
+<h1>${esc(reviewTeacher.icon)} ${esc(title)}</h1>
+<div class="sub">Daily Review with ${esc(reviewTeacher.label)} &mdash; ${esc(date)}</div>
 <div class="summary">
   <div class="summary-item"><div class="val green">${correctCount}</div><div class="lbl">Correct</div></div>
   <div class="summary-item"><div class="val red">${wrongCount}</div><div class="lbl">Wrong</div></div>
@@ -1736,12 +1744,12 @@ ${rows}
       <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
         <div style={{ maxWidth: 540, width: '100%', textAlign: 'center' }}>
           <div style={{ marginBottom: 12 }}>
-            <SlateVideo size={120} />
+            <SlateVideo teacher={reviewTeacherId} size={120} />
           </div>
           <div style={{ color: C.green, fontWeight: 900, fontSize: 26, letterSpacing: 4, marginBottom: 4 }}>
-            DRILL COMPLETE
+            DAILY REVIEW COMPLETE
           </div>
-          <div style={{ color: C.muted, fontSize: 12, letterSpacing: 2, marginBottom: 28 }}>DRILL SEQUENCE COMPLETE</div>
+          <div style={{ color: C.muted, fontSize: 12, letterSpacing: 2, marginBottom: 28 }}>REVIEW COMPLETE</div>
 
           <div style={{ background: C.surface, border: `1px solid ${C.green}`, borderRadius: 12, padding: 28, marginBottom: 24 }}>
             <ScorePips score={settings.scoreGoal} goal={settings.scoreGoal} />
@@ -1761,7 +1769,7 @@ ${rows}
           )}
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => selectLesson(lessonData)} style={ghostBtn}>DRILL AGAIN</button>
+            <button onClick={() => selectLesson(lessonData)} style={ghostBtn}>REVIEW AGAIN</button>
             <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
             {drillTranscript.length > 0 && (
               <button onClick={openTranscript} style={ghostBtn}>TRANSCRIPT</button>
@@ -1799,10 +1807,10 @@ ${rows}
         flexWrap: 'wrap',
       }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
-          <video src={SLATE_VIDEO_SRC} muted playsInline style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
+          <video src={reviewTeacher.video} muted playsInline style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ color: C.accent, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>MR. SLATE</div>
-            <div style={{ color: C.muted, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '22ch' }}>{lessonTitle}</div>
+            <div style={{ color: C.accent, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>{reviewTeacher.icon} DAILY REVIEW</div>
+            <div style={{ color: C.muted, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '32ch' }}>{reviewTeacher.label} · {lessonTitle}</div>
           </div>
         </div>
 
@@ -1830,7 +1838,7 @@ ${rows}
 
         {/* Mr. Slate video — expands to fill all space above the card */}
         <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 16px 0' }}>
-          <SlateVideo ref={slateVideoRef} style={{ width: '100%', height: '100%', objectFit: 'contain', margin: 0 }} />
+          <SlateVideo teacher={reviewTeacherId} ref={slateVideoRef} style={{ width: '100%', height: '100%', objectFit: 'contain', margin: 0 }} />
         </div>
 
         {/* Question card — anchored to bottom, scrolls internally if very tall */}

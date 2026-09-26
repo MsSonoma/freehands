@@ -7,6 +7,7 @@ import { createSyllabusRepository } from '../../../lib/syllabus/supabaseReposito
 import { validateLearnerId } from '../../../lib/syllabus/schema.mjs'
 import { requireSlateAssignableSyllabusOccurrence } from '../../../lib/syllabus/syllabusMembership.server.mjs'
 import { SLATE_RUN_PURPOSES, slateRunPurpose } from '../../../lib/slateLearningModel.mjs'
+import { isReviewTeacher, normalizeReviewTeacher } from '../../../lib/reviewTeacher.js'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -46,12 +47,16 @@ export async function POST(request, deps = {}) {
     if (!occurrenceId) return NextResponse.json({ error: 'A Syllabus occurrenceId is required', code: 'SYLLABUS_OCCURRENCE_REQUIRED' }, { status: 400 })
 
     const runPurpose = slateRunPurpose(body?.runPurpose)
-    if (!RUN_PURPOSES.has(runPurpose)) return NextResponse.json({ error: 'Invalid Mr. Slate run purpose', code: 'INVALID_SLATE_RUN_PURPOSE' }, { status: 400 })
+    if (!RUN_PURPOSES.has(runPurpose)) return NextResponse.json({ error: 'Invalid Daily Review run purpose', code: 'INVALID_SLATE_RUN_PURPOSE' }, { status: 400 })
+    if (body?.reviewTeacher != null && !isReviewTeacher(body.reviewTeacher)) {
+      return NextResponse.json({ error: 'Invalid Daily Review teacher', code: 'INVALID_REVIEW_TEACHER' }, { status: 400 })
+    }
+    const reviewTeacher = normalizeReviewTeacher(body?.reviewTeacher)
 
     const now = deps.now || new Date()
-    const completedAt = timestamp(body?.completedAt, 'A valid Mr. Slate completion time is required', now)
-    const startedAt = timestamp(body?.startedAt || completedAt, 'A valid Mr. Slate start time is required', now)
-    if (Date.parse(startedAt) > Date.parse(completedAt)) return NextResponse.json({ error: 'Mr. Slate completion cannot precede its start time', code: 'INVALID_SLATE_COMPLETION_TIME' }, { status: 400 })
+    const completedAt = timestamp(body?.completedAt, 'A valid Daily Review completion time is required', now)
+    const startedAt = timestamp(body?.startedAt || completedAt, 'A valid Daily Review start time is required', now)
+    if (Date.parse(startedAt) > Date.parse(completedAt)) return NextResponse.json({ error: 'Daily Review completion cannot precede its start time', code: 'INVALID_SLATE_COMPLETION_TIME' }, { status: 400 })
 
     const repository = deps.repository || createSyllabusRepository(context.admin)
     const learner = await repository.findOwnedLearner(learnerId, context.user.id)
@@ -75,6 +80,7 @@ export async function POST(request, deps = {}) {
       lesson_key: membership.lessonKey,
       syllabus_occurrence_id: membership.occurrenceId,
       run_purpose: runPurpose,
+      review_teacher: reviewTeacher,
       lesson_title: optionalText(body?.lessonTitle),
       subject: optionalText(body?.subject, 120),
       started_at: startedAt,
@@ -85,6 +91,6 @@ export async function POST(request, deps = {}) {
 
     return NextResponse.json({ ok: true, completion: row })
   } catch (error) {
-    return NextResponse.json({ error: error?.message || 'Could not record Mr. Slate completion', ...(error?.code ? { code: error.code } : {}) }, { status: Number.isInteger(error?.status) ? error.status : 500 })
+    return NextResponse.json({ error: error?.message || 'Could not record Daily Review completion', ...(error?.code ? { code: error.code } : {}) }, { status: Number.isInteger(error?.status) ? error.status : 500 })
   }
 }

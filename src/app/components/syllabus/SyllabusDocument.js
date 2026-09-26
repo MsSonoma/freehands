@@ -16,6 +16,7 @@ import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/
 import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
 import { buildFuturePlanningProjection } from '@/app/lib/syllabus/futurePlanningProjection.mjs'
 import { instructionalForecastMode } from '@/app/lib/syllabus/forecastWindow.mjs'
+import { reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
 import { isUngeneratedSyllabusLesson, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import styles from './SyllabusDocument.module.css'
 
@@ -255,10 +256,21 @@ export default function SyllabusDocument({
             if (item.item_type === 'review_history' || item.item_type === 'slate_review_history') {
               const reviews = Array.isArray(item.reviews) ? item.reviews : []
               const slateCompletions = Array.isArray(item.slate_completions) ? item.slate_completions : []
-              const isSlateHistory = item.item_type === 'slate_review_history'
+              const isDailyReviewHistory = item.item_type === 'slate_review_history'
               const selectableReview = Boolean(onSelectReview)
-              const count = isSlateHistory ? slateCompletions.length : reviews.length
-              const historyLabel = isSlateHistory ? 'Mr. Slate' : 'Review'
+              const entries = isDailyReviewHistory ? slateCompletions : reviews
+              const count = entries.length
+              const reviewTypes = new Set(reviews.map((review) => review?.review_type).filter(Boolean))
+              const historyLabel = isDailyReviewHistory
+                ? 'Daily Review'
+                : reviewTypes.size === 1 && reviewTypes.has('weekly_review')
+                  ? 'Weekly Review'
+                  : reviewTypes.size === 1 && reviewTypes.has('daily_review')
+                    ? 'Daily Review'
+                    : reviewTypes.size === 1 && reviewTypes.has('daily_followup')
+                      ? 'Daily Follow-Up'
+                      : 'Reviews'
+              const icons = [...new Set(entries.map((entry) => reviewTeacherIcon(entry?.review_teacher)))]
               return (
                 <div
                   className={`${styles.entryRow} ${selectableReview ? styles.selectableEntry : ''} ${styles.reviewHistoryCard}`}
@@ -275,7 +287,7 @@ export default function SyllabusDocument({
                   } : undefined}
                 >
                   <div className={styles.reviewHistoryContent}>
-                    <span className={styles.reviewHistoryIcon} aria-hidden="true">{isSlateHistory ? String.fromCodePoint(0x1F916) : String.fromCodePoint(0x1F4DD)}</span>
+                    <span className={styles.reviewHistoryIcon} aria-hidden="true">{icons.join(' ')}</span>
                     <span className={styles.reviewHistoryLabel}>{historyLabel}{count > 1 ? ` (${count})` : ''}</span>
                   </div>
                 </div>
@@ -310,7 +322,7 @@ export default function SyllabusDocument({
                   } : undefined}
                 >
                   <div className={styles.entryBody}>
-                    <p className={styles.subject}>Review</p>
+                    <p className={styles.subject}>{reviewTeacherIcon(item.review_teacher)} {item.review_type === 'weekly_review' ? 'Weekly Review' : item.review_type === 'daily_review' ? 'Daily Review' : 'Daily Follow-Up'}</p>
                     <h4>{item.title}</h4>
                     <span className={styles.statusLabel}>{reviewStatus}</span>
                   </div>
@@ -353,9 +365,9 @@ export default function SyllabusDocument({
                 onKeyDown={onSelectLesson ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelectLesson(item, { syllabus_state: state, currentLesson, teacherEditable, historicalActivityAllowed, occurrenceKey, assignedTeacher }) } } : undefined}
               >
                 <div className={styles.entryBody}>
-                  <p className={styles.subject}>{item.subject}</p>
+                  <p className={styles.subject}>{item.item_type === 'slate_assignment' ? `${reviewTeacherIcon(item.review_teacher)} Daily Review` : item.subject}</p>
                   <h4>{item.title}</h4>
-                  {item.item_type === 'slate_assignment' && <span className={styles.statusLabel}>Scheduled Mr. Slate supplemental session</span>}
+                  {item.item_type === 'slate_assignment' && <span className={styles.statusLabel}>Teacher: {reviewTeacherLabel(item.review_teacher)}</span>}
                   {(item.item_type || 'lesson') === 'lesson' && item.historical_record
                     ? (item.actual_instructional_teacher
                         ? <span className={styles.placementLabel}>Completed with {instructionalTeacherLabel(item.actual_instructional_teacher)} historical record</span>

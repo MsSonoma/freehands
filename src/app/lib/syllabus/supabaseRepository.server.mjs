@@ -279,26 +279,26 @@ export function createSyllabusRepository(admin) {
         .order('completed_at', { ascending: true })
         .order('id', { ascending: true })
       if (error?.code === '42P01') return []
-      throwOn(error, 'Failed to load completed Mr. Slate sessions')
+      throwOn(error, 'Failed to load completed Daily Reviews')
       return data || []
     },
     async insertSlateCompletion(row) {
       const result = await admin.from('slate_session_completions').insert(row).select('*').single()
       if (!result.error) return result.data
-      if (result.error.code !== '23505') throwOn(result.error, 'Failed to record Mr. Slate completion')
+      if (result.error.code !== '23505') throwOn(result.error, 'Failed to record Daily Review completion')
       const { data, error } = await admin.from('slate_session_completions').select('*')
         .eq('facilitator_id', row.facilitator_id)
         .eq('learner_id', row.learner_id)
         .eq('source_identity', row.source_identity)
         .maybeSingle()
-      throwOn(error, 'Failed to read existing Mr. Slate completion')
-      if (!data) throwOn(result.error, 'Failed to resolve duplicate Mr. Slate completion')
+      throwOn(error, 'Failed to read existing Daily Review completion')
+      if (!data) throwOn(result.error, 'Failed to resolve duplicate Daily Review completion')
       return data
     },
     async createSlateAssignment(row) {
       const result = await admin.from('syllabus_slate_assignments').insert(row).select('*').single()
       if (!result.error) return result.data
-      if (result.error.code !== '23505') throwOn(result.error, 'Failed to schedule Mr. Slate')
+      if (result.error.code !== '23505') throwOn(result.error, 'Failed to schedule Daily Review')
       const { data, error } = await admin.from('syllabus_slate_assignments').select('*')
         .eq('facilitator_id', row.facilitator_id)
         .eq('learner_id', row.learner_id)
@@ -306,8 +306,18 @@ export function createSyllabusRepository(admin) {
         .eq('scheduled_date', row.scheduled_date)
         .eq('run_purpose', row.run_purpose)
         .maybeSingle()
-      throwOn(error, 'Failed to read scheduled Mr. Slate session')
-      if (!data) throwOn(result.error, 'Failed to resolve the conflicting scheduled Mr. Slate session')
+      throwOn(error, 'Failed to read scheduled Daily Review')
+      if (!data) throwOn(result.error, 'Failed to resolve the conflicting scheduled Daily Review')
+      return data
+    },
+    async updateSlateAssignmentTeacher(facilitatorId, learnerId, assignmentId, reviewTeacher) {
+      const { data, error } = await admin.from('syllabus_slate_assignments').update({ review_teacher: reviewTeacher })
+        .eq('id', assignmentId)
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .select('*')
+        .maybeSingle()
+      throwOn(error, 'Failed to update Daily Review teacher')
       return data
     },
     async deleteSlateAssignment(facilitatorId, learnerId, assignmentId) {
@@ -317,7 +327,7 @@ export function createSyllabusRepository(admin) {
         .eq('learner_id', learnerId)
         .select('id')
         .maybeSingle()
-      throwOn(error, 'Failed to remove scheduled Mr. Slate session')
+      throwOn(error, 'Failed to remove scheduled Daily Review')
       return data
     },
     async listLegacyActivityRecords(facilitatorId, learnerId) {

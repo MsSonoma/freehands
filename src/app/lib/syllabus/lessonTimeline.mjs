@@ -2,6 +2,7 @@ import { lessonKeyBasename, normalizeLessonKey, resolveLessonKeyAgainst } from '
 import { dateOnly } from './timeline.mjs'
 import { calendarDateInTimeZone } from '../calendarDate.mjs'
 import { slateRunPurpose } from '../slateLearningModel.mjs'
+import { normalizeReviewTeacher } from '../reviewTeacher.js'
 import { latestExplicitLessonSessionEvent, lifecycleEventActualKind, resolveLessonSessionLifecycle } from '../lessonSessionLifecycle.mjs'
 import { normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotations.mjs'
@@ -494,8 +495,9 @@ export function composeSyllabusLessonTimeline({
       practice_occurrence_id: parentOccurrenceId,
       lesson_key: lessonKey,
       subject: parent.subject,
-      title: `Mr. Slate: ${parent.title}`,
-      description: 'Separately scheduled supplemental practice with Mr. Slate.',
+      title: `Daily Review: ${parent.title}`,
+      description: 'Separately scheduled Daily Review for this lesson.',
+      review_teacher: normalizeReviewTeacher(assignment?.review_teacher),
       planned_date: hasAuthoritativeSchedule ? scheduledDate : parent.planned_date,
       sort_order: hasAuthoritativeSchedule ? SUPPLEMENTAL_SLATE_SORT_ORDER : Number(parent.sort_order || 0) + 0.5,
       run_purpose: slateRunPurpose(assignment?.run_purpose),
@@ -621,6 +623,7 @@ export function composeSyllabusLessonTimeline({
       occurred_at: row.completed_at,
       started_at: row.started_at || null,
       run_purpose: slateRunPurpose(row?.run_purpose),
+      review_teacher: normalizeReviewTeacher(row?.review_teacher),
       slate_completion_id: clean(row?.id) || null,
       syllabus_occurrence_id: clean(row?.syllabus_occurrence_id) || null,
       source: clean(row?.source) || 'slate_session_v1',

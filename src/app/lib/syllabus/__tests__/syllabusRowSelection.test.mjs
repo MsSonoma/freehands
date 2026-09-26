@@ -34,13 +34,13 @@ test('learner Syllabus selection opens detail first and applies PIN only when st
   assert.match(learnerSource, /Lesson details are available, but this lesson is still being prepared\./)
   assert.match(learnerSource, /const requiresSyllabusPin = syllabusState === 'completed_historical'/)
   assert.match(learnerSource, /if \(syllabusItem && requiresSyllabusPin && !syllabusExceptionApproved\)/)
-  assert.match(learnerSource, /Practice with Mr\. Slate/)
+  assert.match(learnerSource, /Start Daily Review/)
 })
 
 test('facilitator lesson overlay is the operational control center after row selection', () => {
   assert.match(facilitatorSource, /onSelectLesson=\{\(item, context\) => setSelectedSyllabusLesson\(\{ item, \.\.\.context \}\)\}/)
   assert.match(facilitatorSource, /<FacilitatorSyllabusLessonOverlay/)
-  for (const control of ['Assigned teacher', 'Start now', 'Make available', 'Edit lesson', 'Schedule Mr. Slate', 'Review history', 'Review & approve draft']) {
+  for (const control of ['Assigned teacher', 'Start now', 'Make available', 'Edit lesson', 'Schedule Daily Review', 'Review history', 'Review & approve draft']) {
     assert.match(overlaySource, new RegExp(control.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
   assert.match(overlaySource, /fetch\('\/api\/facilitator\/learners\/lesson-availability'/)

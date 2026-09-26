@@ -26,6 +26,7 @@ import {
   shouldAutoShowLearnerTutorial,
 } from '@/app/learn/demoLearner.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { normalizeReviewTeacher, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
 import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '@/app/learn/snapshotProgress.mjs'
 import { resolveLearnerSyllabusPresentation } from '@/app/lib/syllabus/learnerPresentation.mjs'
 
@@ -38,7 +39,7 @@ const LESSONS_TUTORIAL_STEPS = [
   {
     icon: '🎓',
     title: 'Your Instructional Teacher',
-    body: 'Your facilitator assigns Ms. Sonoma or Mrs. Webb for each lesson. Mr. Slate helps with mastery and review.',
+    body: 'Your facilitator assigns Ms. Sonoma or Mrs. Webb for each lesson and can choose Ms. Sonoma, Mrs. Webb, or Mr. Slate for reviews. Mr. Slate is the default review teacher.',
   },
   {
     icon: '📋',
@@ -1694,6 +1695,7 @@ function LessonsPageInner(){
             const cap = ent.lessonsPerDay
             const capped = !isDemo && Number.isFinite(cap) && todaysCount >= cap
             const assignedInstructionalTeacher = isDemo ? 'sonoma' : (syllabusItem?.assigned_instructional_teacher || syllabusItem?.instructional_teacher || l.instructional_teacher || 'sonoma')
+            const assignedReviewTeacher = normalizeReviewTeacher(syllabusItem?.review_teacher)
             const isSlateSyllabusAssignment = syllabusItem?.item_type === 'slate_assignment'
             const hasSnapshot = (() => {
               if (isDemo) return false
@@ -1723,7 +1725,8 @@ function LessonsPageInner(){
               if (syllabusItem?.item_type === 'slate_assignment') {
                 const occurrenceId = syllabusItem?.practice_occurrence_id || syllabusItem?.occurrence_id || ''
                 const runPurpose = syllabusItem?.run_purpose || 'practice'
-                router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=${encodeURIComponent(runPurpose)}`)
+                const reviewTeacher = normalizeReviewTeacher(syllabusItem?.review_teacher)
+                router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=${encodeURIComponent(runPurpose)}&reviewTeacher=${encodeURIComponent(reviewTeacher)}`)
                 return
               }
               if (syllabusItem?.has_lesson_artifact === false) {
@@ -1808,7 +1811,7 @@ function LessonsPageInner(){
                           }
                           {isScheduled && <span style={{ fontSize: 11, background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>📅 Scheduled</span>}
                         </div>
-                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{isSlateSyllabusAssignment ? 'Practice teacher: Mr. Slate' : <>Instructional teacher: {instructionalTeacherLabel(assignedInstructionalTeacher)}</>}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{isSlateSyllabusAssignment ? <>{reviewTeacherIcon(assignedReviewTeacher)} Review teacher: {reviewTeacherLabel(assignedReviewTeacher)}</> : <>Instructional teacher: {instructionalTeacherLabel(assignedInstructionalTeacher)}</>}</div>
                         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111', lineHeight: 1.25 }}>
                           {l.title}
                         </h2>
@@ -1829,7 +1832,7 @@ function LessonsPageInner(){
                             )}
                             {masteryMap[lessonKey] && (
                               <span style={{ fontSize: 13, background: '#ede9fe', color: '#5b21b6', padding: '2px 9px', borderRadius: 20, fontWeight: 600 }}>
-                                {masteryMap[lessonKey]?.medalTier ? slateEmojiForTier(masteryMap[lessonKey].medalTier) : '✓'} 🤖 Mr. Slate
+                                {masteryMap[lessonKey]?.medalTier ? slateEmojiForTier(masteryMap[lessonKey].medalTier) : '✓'} Daily Review
                               </span>
                             )}
                             {webbMap[lessonKey]?.completed && (
@@ -1884,11 +1887,11 @@ function LessonsPageInner(){
                       <button
                         onClick={() => {
                           const occurrenceId = syllabusItem?.practice_occurrence_id || syllabusItem?.occurrence_id || ''
-                          router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=practice`)
+                          router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=practice&reviewTeacher=slate`)
                         }}
                         style={{ fontSize: 13, color: '#5b21b6', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginBottom: 16 }}
                       >
-                        Practice with Mr. Slate
+                        🤖 Start Daily Review
                       </button>
                     )}
                     {/* History */}
@@ -1960,7 +1963,7 @@ function LessonsPageInner(){
                       disabled={capped || syllabusItem?.has_lesson_artifact === false}
                       onClick={handleStartLesson}
                     >
-                      {syllabusItem?.item_type === 'slate_assignment' ? 'Start Mr. Slate' : (hasSnapshot ? `Continue with ${instructionalTeacherLabel(assignedInstructionalTeacher)}` : `Start with ${instructionalTeacherLabel(assignedInstructionalTeacher)}`)}
+                      {syllabusItem?.item_type === 'slate_assignment' ? `${reviewTeacherIcon(assignedReviewTeacher)} Start Daily Review with ${reviewTeacherLabel(assignedReviewTeacher)}` : (hasSnapshot ? `Continue with ${instructionalTeacherLabel(assignedInstructionalTeacher)}` : `Start with ${instructionalTeacherLabel(assignedInstructionalTeacher)}`)}
                     </button>
                     {syllabusItem?.has_lesson_artifact === false && (
                       <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 13, marginTop: 8, marginBottom: 0 }}>
@@ -2039,10 +2042,10 @@ function LessonsPageInner(){
                       {sonomaInProgress && <div style={{ fontSize: 13, color: '#374151' }}>⏳ In progress since {formatDateTime(sonomaInProgress)}</div>}
                     </div>
                   )}
-                  {/* Mr. Slate */}
+                  {/* Daily Review mastery evidence */}
                   {slateEntry && (
                     <div style={{ background: '#ede9fe', borderRadius: 10, padding: '12px 14px' }}>
-                      <div style={{ fontWeight: 700, fontSize: 14, color: '#5b21b6', marginBottom: 6 }}>🤖 Mr. Slate</div>
+                      <div style={{ fontWeight: 700, fontSize: 14, color: '#5b21b6', marginBottom: 6 }}>Daily Review</div>
                       {slateEntry.bestPercent != null
                         ? <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>Best grade: {slateEmojiForTier(slateEntry.medalTier)} {slateEntry.bestPercent}%</div>
                             : <div style={{ fontSize: 13, color: '#374151', marginBottom: 3 }}>✓ Mastered</div>
