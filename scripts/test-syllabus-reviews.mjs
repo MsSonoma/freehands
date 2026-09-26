@@ -16,6 +16,7 @@ import {
   buildWeeklyReviewCycles,
 } from '../src/app/lib/syllabus/reviewProjection.mjs'
 import { selectSyllabusWeek, syllabusDayPresentation } from '../src/app/lib/syllabus/timeline.mjs'
+import { POST as postSlateCompletion } from '../src/app/api/slate/completions/route.js'
 
 const lesson = {
   id: 'fractions-review',
@@ -284,4 +285,50 @@ test('server-verified legacy Slate completions backfill the compact marker on th
   assert.equal(presentations[0].item.item_type, 'review_history')
   assert.equal(presentations[0].item.slate_completions.length, 2)
   assert.deepEqual(presentations[0].item.slate_completions.map((item) => item.title).sort(), ['Grammar', 'The Water Cycle'])
+})
+test('Mr. Slate completion endpoint records a durable supplemental completion', async () => {
+  const learnerId = '11111111-1111-4111-8111-111111111111'
+  const facilitatorId = '22222222-2222-4222-8222-222222222222'
+  const inserted = []
+  const repository = {
+    async findOwnedLearner(id, ownerId) {
+      return id === learnerId && ownerId === facilitatorId ? { id: learnerId } : null
+    },
+    async insertSlateCompletion(row) {
+      inserted.push(row)
+      return { id: '33333333-3333-4333-8333-333333333333', ...row }
+    },
+  }
+  const request = new Request('http://localhost/api/slate/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      learnerId,
+      lessonKey: 'generated/fractions.json',
+      occurrenceId: 'syllabus:fractions-1',
+      runPurpose: 'practice',
+      startedAt: '2026-09-26T13:40:00.000Z',
+      completedAt: '2026-09-26T13:55:00.000Z',
+      lessonTitle: 'Fractions',
+      subject: 'Math',
+    }),
+  })
+  const response = await postSlateCompletion(request, {
+    requestContext: { user: { id: facilitatorId, user_metadata: { timezone: 'America/New_York' } }, admin: {} },
+    repository,
+    now: new Date('2026-09-26T14:00:00.000Z'),
+    requireSlateAssignableSyllabusOccurrence: async () => ({
+      lessonKey: 'generated/fractions.json',
+      occurrenceId: 'syllabus:fractions-1',
+    }),
+  })
+  const body = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(body.ok, true)
+  assert.equal(inserted.length, 1)
+  assert.equal(inserted[0].source, 'slate_session_v1')
+  assert.equal(inserted[0].lesson_key, 'generated/fractions.json')
+  assert.equal(inserted[0].syllabus_occurrence_id, 'syllabus:fractions-1')
+  assert.equal(inserted[0].completed_at, '2026-09-26T13:55:00.000Z')
+  assert.match(inserted[0].source_identity, /^[0-9a-f]{64}$/)
 })

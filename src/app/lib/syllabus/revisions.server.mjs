@@ -82,7 +82,7 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
       resolved_timezone: calendar.timeZone,
     }
   }
-  const { forecastItems, associations, slateAssignments, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, lessonMetadata, slateEvidenceReports, slateReviewReports } = await loadSyllabusTimelineInputs({
+  const { forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, lessonMetadata, slateEvidenceReports, slateReviewReports } = await loadSyllabusTimelineInputs({
     repository, admin, facilitatorId, learner, activeRevision, verifyLessonAccess, includeSlateEvidence: true,
   })
   const timelineItems = composeSyllabusLessonTimeline({
@@ -90,6 +90,7 @@ export async function getActiveSyllabus({ repository, admin, facilitatorId, lear
     forecastItems,
     associations,
     slateAssignments,
+    slateCompletions,
     approvedLessons: learner.approved_lessons || {},
     schedules,
     sessions,

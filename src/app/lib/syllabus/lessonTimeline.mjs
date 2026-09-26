@@ -91,7 +91,7 @@ function intentOccurrenceId(intent) {
 
 export function composeSyllabusLessonTimeline({
   activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
-  legacyActivities = [], noSchoolDates = [], lessonMetadata = [], slateAssignments = [], slateEvidenceReports = [], slateReviewReports = [],
+  legacyActivities = [], noSchoolDates = [], lessonMetadata = [], slateAssignments = [], slateCompletions = [], slateEvidenceReports = [], slateReviewReports = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
 } = {}) {
@@ -101,6 +101,7 @@ export function composeSyllabusLessonTimeline({
     ...schedules.map((row) => row?.lesson_key), ...sessions.map((row) => row?.lesson_id || row?.lesson_key),
     ...sessionEvents.map((row) => row?.lesson_id || row?.lesson_key),
     ...legacyActivities.map((row) => row?.lesson_key),
+    ...slateCompletions.map((row) => row?.lesson_key),
   ].map(normalizeLessonKey).filter((key) => key?.includes('/'))
   const resolveKey = (value) => resolveLessonKeyAgainst(value, concreteKeys)
   const availableLessonKeys = new Set(Object.entries(approvedLessons || {})
@@ -584,10 +585,36 @@ export function composeSyllabusLessonTimeline({
       historical_activity_annotations: [annotation],
     })
   }
+  const currentSlateHistory = (slateCompletions || []).map((row) => {
+    const lessonKey = resolveKey(row?.lesson_key) || normalizeLessonKey(row?.lesson_key)
+    const supplied = metadata.get(lessonKey) || defaultMetadata(lessonKey, row)
+    const completedAt = new Date(row?.completed_at || '')
+    const plannedDate = Number.isNaN(completedAt.getTime()) ? '' : calendarDateInTimeZone(completedAt, timeZone)
+    if (!lessonKey || !plannedDate || !row?.completed_at) return null
+    const identity = clean(row?.id || row?.source_identity)
+    if (!identity) return null
+    return {
+      id: 'slate-completion:' + identity,
+      occurrence_id: 'slate-completion:' + identity,
+      item_type: 'slate_history',
+      lesson_key: lessonKey,
+      planned_date: plannedDate,
+      sort_order: SUPPLEMENTAL_SLATE_SORT_ORDER,
+      title: clean(row?.lesson_title) || clean(supplied.title) || 'Lesson',
+      subject: clean(row?.subject) || clean(supplied.subject) || 'General',
+      occurred_at: row.completed_at,
+      started_at: row.started_at || null,
+      run_purpose: slateRunPurpose(row?.run_purpose),
+      slate_completion_id: clean(row?.id) || null,
+      syllabus_occurrence_id: clean(row?.syllabus_occurrence_id) || null,
+      source: clean(row?.source) || 'slate_session_v1',
+    }
+  }).filter(Boolean)
+
   return [...canonical.map((item) => ({
     ...item,
     historical_activity_annotations: historicalSlateByOccurrence.get(clean(item.occurrence_id || item.id)) || [],
-  })), ...standaloneHistoricalSlate].sort((left, right) => left.planned_date.localeCompare(right.planned_date)
+  })), ...standaloneHistoricalSlate, ...currentSlateHistory].sort((left, right) => left.planned_date.localeCompare(right.planned_date)
     || Number(left.sort_order || 0) - Number(right.sort_order || 0)
     || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
 }

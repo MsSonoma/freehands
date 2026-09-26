@@ -1746,3 +1746,40 @@ test('the Aug 24–30 recovery preserves canonical instruction state while rende
   assert.equal(items.filter((item) => item.actual_kind === 'completed').length, 3)
   assert.ok(items.every((item) => item.slate_annotations.length === 0))
 })
+test('durable Mr. Slate completions project as supplemental history on the local completion date', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    lessonMetadata: [{ lesson_key: 'generated/fractions.json', title: 'Fractions', subject: 'math' }],
+    slateCompletions: [
+      {
+        id: '11111111-1111-4111-8111-111111111111',
+        lesson_key: 'generated/fractions.json',
+        lesson_title: 'Fractions',
+        subject: 'math',
+        syllabus_occurrence_id: 'syllabus:forecast-1',
+        run_purpose: 'practice',
+        started_at: '2026-09-27T01:45:00.000Z',
+        completed_at: '2026-09-27T02:15:00.000Z',
+        source: 'slate_session_v1',
+      },
+      {
+        id: '22222222-2222-4222-8222-222222222222',
+        lesson_key: 'generated/fractions.json',
+        lesson_title: 'Fractions',
+        subject: 'math',
+        syllabus_occurrence_id: 'syllabus:forecast-1',
+        run_purpose: 'practice',
+        started_at: '2026-09-27T02:20:00.000Z',
+        completed_at: '2026-09-27T02:40:00.000Z',
+        source: 'slate_session_v1',
+      },
+    ],
+    today: '2026-09-26',
+    timeZone: 'America/New_York',
+  })
+  const slate = items.filter((item) => item.item_type === 'slate_history')
+  assert.equal(slate.length, 2)
+  assert.deepEqual(slate.map((item) => item.planned_date), ['2026-09-26', '2026-09-26'])
+  assert.deepEqual(slate.map((item) => item.title), ['Fractions', 'Fractions'])
+  assert.equal(slate.every((item) => item.actual_kind == null), true)
+})

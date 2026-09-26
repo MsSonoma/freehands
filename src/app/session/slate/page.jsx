@@ -24,6 +24,7 @@ import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from '
 import { useRouter, useSearchParams } from 'next/navigation'
 import { getCanonicalMasteryForLearner } from '@/app/lib/masteryClient'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
+import { recordSlateCompletion } from '@/app/lib/slateCompletionClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { authorizeProtectedOccurrence } from '@/app/lib/syllabus/executionClient'
 import SlateReviewExperience from './SlateReviewExperience'
@@ -474,6 +475,7 @@ function SlateDrillInner() {
   const soundRef = useRef(true)
   const learnerIdRef = useRef(null)
   const lessonKeyRef = useRef('')
+  const lessonDataRef = useRef(null)
   const authorizedOccurrenceRef = useRef('')
   const evidenceClientRef = useRef(null)
   const isolationRef = useRef(null)
@@ -771,9 +773,11 @@ function SlateDrillInner() {
         priorExposedKeysRef.current = new Set(prior?.exposedKeys || [])
       }
     }
+    slateSessionStartRef.current = new Date().toISOString()
     poolRef.current = p
     setPool(p)
     lessonKeyRef.current = lk
+    lessonDataRef.current = lesson
     setLessonData(lesson)
     setScore(0)
     scoreRef.current = 0
@@ -1035,6 +1039,21 @@ function SlateDrillInner() {
       feedbackTimeout.current = setTimeout(async () => {
         await evidenceWrite
         const finalized = await evidenceClientRef.current?.recordSessionEnded({ reason: 'drill_goal_reached' })
+        const completedAt = new Date().toISOString()
+        try {
+          await recordSlateCompletion({
+            learnerId: learnerIdRef.current,
+            lessonKey: lessonKeyRef.current,
+            occurrenceId: authorizedOccurrenceRef.current,
+            runPurpose: runStateRef.current.runPurpose,
+            startedAt: slateSessionStartRef.current || completedAt,
+            completedAt,
+            lessonTitle: lessonDataRef.current?.title || null,
+            subject: lessonDataRef.current?.subject || null,
+          })
+        } catch (completionError) {
+          console.error('[Slate] Completion record failed:', completionError?.message || completionError)
+        }
         const finalEvidenceStatus = finalized?.status || 'unavailable'
         setEvidenceStatus(finalEvidenceStatus)
         setCompletionMessage(pointGoalMessage({ evidenceStatus: finalEvidenceStatus, masteryOutcome: latestMasteryOutcomeRef.current }))

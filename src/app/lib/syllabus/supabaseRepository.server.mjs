@@ -234,6 +234,29 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load scheduled Mr. Slate sessions')
       return data || []
     },
+    async listSlateCompletions(facilitatorId, learnerId) {
+      const { data, error } = await admin.from('slate_session_completions').select('*')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .order('completed_at', { ascending: true })
+        .order('id', { ascending: true })
+      if (error?.code === '42P01') return []
+      throwOn(error, 'Failed to load completed Mr. Slate sessions')
+      return data || []
+    },
+    async insertSlateCompletion(row) {
+      const result = await admin.from('slate_session_completions').insert(row).select('*').single()
+      if (!result.error) return result.data
+      if (result.error.code !== '23505') throwOn(result.error, 'Failed to record Mr. Slate completion')
+      const { data, error } = await admin.from('slate_session_completions').select('*')
+        .eq('facilitator_id', row.facilitator_id)
+        .eq('learner_id', row.learner_id)
+        .eq('source_identity', row.source_identity)
+        .maybeSingle()
+      throwOn(error, 'Failed to read existing Mr. Slate completion')
+      if (!data) throwOn(result.error, 'Failed to resolve duplicate Mr. Slate completion')
+      return data
+    },
     async createSlateAssignment(row) {
       const result = await admin.from('syllabus_slate_assignments').insert(row).select('*').single()
       if (!result.error) return result.data

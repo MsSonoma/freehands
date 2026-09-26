@@ -190,10 +190,11 @@ export async function loadSyllabusTimelineInputs({
   includeSlateEvidence = false,
 } = {}) {
   const optionalList = async (name, ...args) => typeof repository[name] === 'function' ? repository[name](...args) : []
-  const [forecastItems, associations, slateAssignments, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, slateEvidence] = await Promise.all([
+  const [forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, slateEvidence] = await Promise.all([
     repository.listForecastItems(activeRevision.id),
     optionalList('listLessonAssociations', facilitatorId, learner.id),
     optionalList('listSlateAssignments', facilitatorId, learner.id),
+    optionalList('listSlateCompletions', facilitatorId, learner.id),
     optionalList('listLessonSchedule', facilitatorId, learner.id, activeRevision.effective_from),
     optionalList('listAllTrackedSessions', learner.id),
     optionalList('listAllLessonSessionEvents', learner.id),
@@ -214,5 +215,5 @@ export async function loadSyllabusTimelineInputs({
     sessionEvents,
     verifyLessonAccess,
   })
-  return { forecastItems, associations, slateAssignments, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, lessonMetadata, ...slateEvidence }
+  return { forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, lessonMetadata, ...slateEvidence }
 }
