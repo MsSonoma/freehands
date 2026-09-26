@@ -269,7 +269,7 @@ The Syllabus instructional forecast may consume a bounded projection of authoriz
 
 Daily Reviews, historical Daily Follow-Ups, and Weekly Reviews extend the evidence system without changing the lesson lifecycle.
 
-For learners with an active Syllabus, enabled Daily and Weekly review policy is projected into the Syllabus as `item_type: review` rows. These rows are not lessons, assignments, notifications, or curriculum objects. They do not increment lesson quotas, reopen a completed lesson, create lesson snapshots, change scores/medals, or mutate the Stage 1-8 session evidence rows. Review Settings remain facilitator-controlled per learner under the existing mastery-evidence feature flag.
+For learners with an active Syllabus, enabled Daily and Weekly review policy is projected into the Syllabus as `item_type: review` rows. These rows are not lessons, assignments, notifications, or curriculum objects. They do not increment lesson quotas, reopen a completed lesson, create lesson snapshots, change scores/medals, or mutate the Stage 1-8 session evidence rows. Review Settings remain facilitator-controlled per learner under the existing mastery-evidence feature flag. After a review is completed, the full review row is not kept as a large Syllabus card: completed reviews project onto their actual local completion date as one compact Mr. Slate history marker per day. Multiple completed reviews on the same day share that marker, and opening it shows the grouped review types and the lesson checklist each review covered.
 
 The protocols and pools remain explicit:
 

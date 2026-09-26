@@ -108,8 +108,30 @@ export function projectLearningForecastForWeek(items = [], { selectedWeekStart, 
 }
 
 export function syllabusDayPresentation(activeItems = [], suggestedItems = []) {
+  const active = Array.isArray(activeItems) ? activeItems : []
+  const completedReviews = active.filter((item) => (
+    item?.item_type === 'review' && item?.review_status === 'completed'
+  ))
+  const remainingActive = active.filter((item) => !completedReviews.includes(item))
+  const groupedCompletedReview = completedReviews.length
+    ? [{
+        kind: 'active',
+        item: {
+          id: `review-history:${completedReviews[0]?.planned_date || 'day'}`,
+          occurrence_id: `review-history:${completedReviews[0]?.planned_date || 'day'}`,
+          item_type: 'review_history',
+          planned_date: completedReviews[0]?.planned_date || '',
+          sort_order: Math.min(...completedReviews.map((item) => Number(item?.sort_order || 0))),
+          title: completedReviews.length === 1 ? 'Mr. Slate review' : 'Mr. Slate reviews',
+          review_status: 'completed',
+          reviews: completedReviews,
+        },
+      }]
+    : []
+
   return [
-    ...(activeItems || []).map((item) => ({ kind: 'active', item })),
+    ...remainingActive.map((item) => ({ kind: 'active', item })),
+    ...groupedCompletedReview,
     ...(suggestedItems || []).map((item) => ({ kind: 'suggested', item })),
   ].sort((left, right) => Number(left.item?.sort_order || 0) - Number(right.item?.sort_order || 0)
     || left.kind.localeCompare(right.kind)

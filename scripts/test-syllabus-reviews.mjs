@@ -15,6 +15,7 @@ import {
   buildSyllabusReviewProjection,
   buildWeeklyReviewCycles,
 } from '../src/app/lib/syllabus/reviewProjection.mjs'
+import { syllabusDayPresentation } from '../src/app/lib/syllabus/timeline.mjs'
 
 const lesson = {
   id: 'fractions-review',
@@ -188,4 +189,51 @@ test('Same-day Daily Review starts under its own protocol without changing delay
   })
   assert.equal(run.review_type, REVIEW_TYPES.DAILY_REVIEW)
   assert.equal(run.protocol_version, DAILY_REVIEW_PROTOCOL_VERSION)
+})
+test('Completed Mr. Slate reviews collapse to one daily history marker', () => {
+  const presentations = syllabusDayPresentation([
+    {
+      id: 'review:daily',
+      item_type: 'review',
+      review_type: REVIEW_TYPES.DAILY_REVIEW,
+      review_status: 'completed',
+      planned_date: '2026-09-26',
+      sort_order: 100,
+      review_progress: { lessons: [{ title: 'Fractions', completed: true }] },
+    },
+    {
+      id: 'review:weekly',
+      item_type: 'review',
+      review_type: REVIEW_TYPES.WEEKLY_REVIEW,
+      review_status: 'completed',
+      planned_date: '2026-09-26',
+      sort_order: 101,
+      review_progress: { lessons: [{ title: 'Science', completed: true }] },
+    },
+  ], [])
+
+  assert.equal(presentations.length, 1)
+  assert.equal(presentations[0].item.item_type, 'review_history')
+  assert.equal(presentations[0].item.reviews.length, 2)
+})
+
+test('Completed reviews are projected onto their actual local completion date', () => {
+  const projection = buildSyllabusReviewProjection({
+    timelineItems: [completedLesson({ planned_date: '2026-09-25' })],
+    settings: { daily_followups_enabled: true, weekly_reviews_enabled: false, weekly_review_day: 'friday' },
+    today: '2026-09-26',
+    timeZone: 'America/New_York',
+    availability: {
+      cards: [],
+      completed_cycles: [{
+        review_type: REVIEW_TYPES.DAILY_REVIEW,
+        cycle_key: 'America/New_York:2026-09-25',
+        completed_at: '2026-09-27T02:15:00.000Z',
+      }],
+    },
+  })
+
+  assert.equal(projection.items.length, 1)
+  assert.equal(projection.items[0].review_status, 'completed')
+  assert.equal(projection.items[0].planned_date, '2026-09-26')
 })

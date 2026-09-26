@@ -249,6 +249,25 @@ export default function SyllabusDocument({
             {isNoSchool && <div className={styles.dayOffNotice}><strong>{noSchoolByDate[day.date] || 'Day off'}</strong><span>{presentations.length ? `${presentations.length} existing ${presentations.length === 1 ? 'item remains' : 'items remain'}` : 'No lessons planned'}</span></div>}
             {!isNoSchool && presentations.length === 0 && <p className={styles.emptyDay}>{forecastBusy && day.date >= forecastStart && day.date <= forecastEnd ? 'Preparing suggestions...' : 'No lessons'}</p>}
             {presentations.map(({ kind, item }) => {
+            if (item.item_type === 'review_history') {
+              const reviews = Array.isArray(item.reviews) ? item.reviews : []
+              const selectableReview = Boolean(onSelectReview)
+              const count = reviews.length
+              return (
+                <button
+                  type="button"
+                  className={styles.reviewHistoryMarker}
+                  key={item.occurrence_id || item.id}
+                  aria-label={count > 1 ? `Open ${count} completed Mr. Slate reviews` : 'Open completed Mr. Slate review'}
+                  title={count > 1 ? `${count} Mr. Slate reviews completed` : 'Mr. Slate review completed'}
+                  onClick={selectableReview ? () => onSelectReview(item) : undefined}
+                  disabled={!selectableReview}
+                >
+                  <span className={styles.reviewHistoryIcon} aria-hidden="true">S</span>
+                  {count > 1 && <span className={styles.reviewHistoryCount} aria-hidden="true">{count}</span>}
+                </button>
+              )
+            }
             if (item.item_type === 'review') {
               const selectableReview = Boolean(onSelectReview)
               const reviewStatus = item.review_status === 'completed'

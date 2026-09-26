@@ -5,6 +5,23 @@ const WEEKDAYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thu
 
 function clean(value) { return String(value || '').trim() }
 
+function dateInTimeZone(value, timeZone = 'UTC') {
+  const parsed = new Date(value || '')
+  if (Number.isNaN(parsed.getTime())) return ''
+  try {
+    const parts = new Intl.DateTimeFormat('en-US', {
+      timeZone,
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).formatToParts(parsed)
+    const values = Object.fromEntries(parts.map((part) => [part.type, part.value]))
+    return `${values.year}-${values.month}-${values.day}`
+  } catch {
+    return parsed.toISOString().slice(0, 10)
+  }
+}
+
 function utcDate(value) {
   const day = dateOnly(value)
   const parsed = new Date(`${day}T12:00:00.000Z`)
@@ -193,7 +210,7 @@ export function buildSyllabusReviewProjection({
       item_type: 'review',
       review_type: cycle.review_type,
       cycle_key: cycle.cycleKey,
-      planned_date: cycle.reviewDate,
+      planned_date: completedRun?.completed_at ? (dateInTimeZone(completedRun.completed_at, cycle.timeZone || timeZone) || cycle.reviewDate) : cycle.reviewDate,
       sort_order: 1000000,
       subject: 'Review',
       title: label,
