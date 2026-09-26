@@ -7,6 +7,7 @@ import { MASTERY_OUTCOMES } from '../src/app/lib/masteryEvidence/mastery.js'
 import { RETENTION_OUTCOMES } from '../src/app/lib/masteryEvidence/retention.js'
 import {
   DAILY_FOLLOWUP_PROTOCOL_VERSION,
+  REVIEW_QUESTIONS_PER_LESSON,
   REVIEW_REASONS,
   REVIEW_TYPES,
   WEEKLY_REVIEW_MAX_ITEMS,
@@ -216,6 +217,42 @@ test('availability can show Daily and Weekly together without making either a le
   assert.ok(result.cards.every((card) => card.item_count <= WEEKLY_REVIEW_MAX_ITEMS))
 })
 
+test('review quiz length scales with contributing lessons instead of a fixed total', async () => {
+  const lessonFor = (name) => ({
+    ...lesson,
+    id: name,
+    title: name,
+    weeklyReview: Array.from({ length: 5 }, (_, index) => ({
+      id: `${name}-weekly-${index + 1}`,
+      question: `${name} review question ${index + 1}?`,
+      choices: ['A', 'B', 'C', 'D'],
+      correct: index % 4,
+      expectedAny: [['A', 'B', 'C', 'D'][index % 4]],
+    })),
+  })
+  const evidenceEvents = [
+    anchor({ event_id: 'lesson-a-event', lesson_key: 'generated/lesson-a.json', lesson_id: 'lesson-a', mastery_cycle_id: 'lesson-a-cycle', mastery_check_id: 'lesson-a-check', concept_id: 'lesson-a:concept' }),
+    anchor({ event_id: 'lesson-b-event', lesson_key: 'generated/lesson-b.json', lesson_id: 'lesson-b', mastery_cycle_id: 'lesson-b-cycle', mastery_check_id: 'lesson-b-check', concept_id: 'lesson-b:concept' }),
+  ]
+  const repository = createRepository({ settings: { daily_followups_enabled: false }, evidenceEvents })
+  const lessons = {
+    'generated/lesson-a.json': lessonFor('lesson-a'),
+    'generated/lesson-b.json': lessonFor('lesson-b'),
+  }
+  const availability = await buildFollowUpAvailability({
+    repository,
+    userId,
+    learnerId,
+    loadLesson: async (lessonKey) => lessons[lessonKey] || null,
+    now,
+    includePrivate: true,
+  })
+  const weeklyCard = availability.cards.find((card) => card.review_type === REVIEW_TYPES.WEEKLY_REVIEW)
+  assert.ok(weeklyCard)
+  assert.equal(weeklyCard.item_count, REVIEW_QUESTIONS_PER_LESSON * 2)
+  assert.equal(weeklyCard._selections.filter((selection) => selection.anchor.lesson_key === 'generated/lesson-a.json').length, REVIEW_QUESTIONS_PER_LESSON)
+  assert.equal(weeklyCard._selections.filter((selection) => selection.anchor.lesson_key === 'generated/lesson-b.json').length, REVIEW_QUESTIONS_PER_LESSON)
+})
 test('public availability never exposes reserved review selections or item payloads', async () => {
   const repository = createRepository()
   const availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
@@ -255,6 +292,15 @@ test('completing Daily does not consume Weekly and Weekly records prior Daily re
   assert.equal(weeklyResult.result.prior_daily_retrieval_observed, true)
 })
 
+test('review teacher persists on the run and is exposed without leaking held-out answers', async () => {
+  const repository = createRepository({ settings: { daily_followups_enabled: false } })
+  const availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
+  const weeklyCard = availability.cards.find((card) => card.review_type === REVIEW_TYPES.WEEKLY_REVIEW)
+  const run = await startFollowUpRun({ repository, userId, learnerId, card: weeklyCard, instructionalTeacher: 'webb', now })
+  assert.equal(run.metadata.instructional_teacher, 'webb')
+  const state = await loadFollowUpRunState({ repository, userId, runId: run.id })
+  assert.equal(publicRunState(state).run.instructional_teacher, 'webb')
+})
 test('public run state exposes only the current sanitized item and hides future held-out payloads', async () => {
   const repository = createRepository({
     settings: { daily_followups_enabled: false },
@@ -419,6 +465,14 @@ test('generation, learner cards, focused flow, and reporting are wired without l
   assert.doesNotMatch(reviewPageSource, /getFollowUpRun|actOnFollowUp|useEffect/)
   assert.match(slateReviewSource, /REPEAT/)
   assert.match(slateReviewSource, /SHOW ANSWER/)
+  assert.match(slateReviewSource, /BEGIN QUIZ/)
+  assert.match(slateReviewSource, /!item\.presented/)
+  assert.match(slateReviewSource, /ms-sonoma-3\.mp4/)
+  assert.match(slateReviewSource, /webb-teacher\.mp4/)
+  assert.match(slateReviewSource, /Mr\.%20Slate%20Suit\.mp4/)
+  assert.match(slateReviewSource, /\/api\/tts/)
+  assert.match(slateReviewSource, /\/api\/webb-tts/)
+  assert.match(slateReviewSource, /\/api\/slate-tts/)
   assert.doesNotMatch(slateReviewSource, /Start Over/i)
   assert.match(reportUiSource, /Daily Follow-Up/)
   assert.match(reportUiSource, /Weekly Review/)

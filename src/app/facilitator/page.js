@@ -877,7 +877,7 @@ export default function FacilitatorPage() {
     setHistoryOccurrenceId(occurrenceId)
   }
 
-  async function startSyllabusReview(item) {
+  async function startSyllabusReview(item, instructionalTeacher = 'slate') {
     if (!item?.review_ready || reviewStarting) return
     setReviewStarting(true)
     try {
@@ -886,7 +886,7 @@ export default function FacilitatorPage() {
         return
       }
       if (!item.review_card_id) throw new Error('This review is not ready yet.')
-      const result = await startFollowUp(learnerId, item.review_card_id)
+      const result = await startFollowUp(learnerId, item.review_card_id, instructionalTeacher)
       if (!result?.run?.id) throw new Error('Review could not start')
       router.push(`/session/slate?reviewRunId=${encodeURIComponent(result.run.id)}`)
     } catch (error) {
@@ -1028,7 +1028,7 @@ export default function FacilitatorPage() {
             item={selectedSyllabusReview}
             busy={reviewStarting}
             onClose={() => setSelectedSyllabusReview(null)}
-            onStart={(item) => void startSyllabusReview(item)}
+            onStart={(item, instructionalTeacher) => void startSyllabusReview(item, instructionalTeacher)}
           />}
 
           {resolvedSyllabusLesson && <FacilitatorSyllabusLessonOverlay

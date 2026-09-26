@@ -21,6 +21,13 @@ import { loadDailyReviewCyclesForLearner } from '@/app/lib/syllabus/reviewProjec
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
+const REVIEW_TEACHERS = new Set(['sonoma', 'webb', 'slate']);
+
+function reviewTeacher(value) {
+  const teacher = String(value || 'slate').trim().toLowerCase();
+  return REVIEW_TEACHERS.has(teacher) ? teacher : null;
+}
+
 function responseForKind(result) {
   if (result?.kind === 'forbidden') {
     return NextResponse.json({ ok: false, error: 'Learner not found or unauthorized' }, { status: 403 });
@@ -110,6 +117,10 @@ export async function POST(request, deps = {}) {
     if (!isUuid(learnerId) || typeof body?.card_id !== 'string') {
       return NextResponse.json({ ok: false, error: 'learner_id and card_id are required' }, { status: 400 });
     }
+    const instructionalTeacher = reviewTeacher(body?.instructional_teacher);
+    if (!instructionalTeacher) {
+      return NextResponse.json({ ok: false, error: 'instructional_teacher must be sonoma, webb, or slate' }, { status: 400 });
+    }
     const now = deps.now?.() || new Date().toISOString();
     const dailyReviewCycles = await dailyReviewCyclesFor(ctx, learnerId, now, deps);
     const availability = await buildFollowUpAvailability({
@@ -132,6 +143,7 @@ export async function POST(request, deps = {}) {
       userId: ctx.auth.user.id,
       learnerId,
       card,
+      instructionalTeacher,
       now,
     });
     const state = await loadFollowUpRunState({

@@ -191,7 +191,7 @@ test('Same-day Daily Review starts under its own protocol without changing delay
   assert.equal(run.review_type, REVIEW_TYPES.DAILY_REVIEW)
   assert.equal(run.protocol_version, DAILY_REVIEW_PROTOCOL_VERSION)
 })
-test('Completed Mr. Slate reviews collapse to one daily history marker', () => {
+test('Completed reviews collapse to one daily review history marker', () => {
   const presentations = syllabusDayPresentation([
     {
       id: 'review:daily',
@@ -218,6 +218,31 @@ test('Completed Mr. Slate reviews collapse to one daily history marker', () => {
   assert.equal(presentations[0].item.reviews.length, 2)
 })
 
+test('generic review history stays separate from Slate history on the same day', () => {
+  const presentations = syllabusDayPresentation([
+    {
+      id: 'review:weekly',
+      item_type: 'review',
+      review_type: REVIEW_TYPES.WEEKLY_REVIEW,
+      review_status: 'completed',
+      planned_date: '2026-09-26',
+      sort_order: 100,
+      review_teacher: 'webb',
+      review_progress: { lessons: [{ title: 'Science', completed: true }] },
+    },
+    {
+      id: 'slate-completion:1',
+      item_type: 'slate_history',
+      planned_date: '2026-09-26',
+      sort_order: 101,
+      title: 'Fractions',
+      subject: 'Math',
+    },
+  ], [])
+  assert.equal(presentations.length, 2)
+  assert.deepEqual(presentations.map(({ item }) => item.item_type).sort(), ['review_history', 'slate_review_history'])
+  assert.equal(presentations.find(({ item }) => item.item_type === 'review_history').item.reviews[0].review_teacher, 'webb')
+})
 test('Completed reviews are projected onto their actual local completion date', () => {
   const projection = buildSyllabusReviewProjection({
     timelineItems: [completedLesson({ planned_date: '2026-09-25' })],
@@ -282,7 +307,7 @@ test('server-verified legacy Slate completions backfill the compact marker on th
 
   const presentations = syllabusDayPresentation(day.items, [])
   assert.equal(presentations.length, 1)
-  assert.equal(presentations[0].item.item_type, 'review_history')
+  assert.equal(presentations[0].item.item_type, 'slate_review_history')
   assert.equal(presentations[0].item.slate_completions.length, 2)
   assert.deepEqual(presentations[0].item.slate_completions.map((item) => item.title).sort(), ['Grammar', 'The Water Cycle'])
 })

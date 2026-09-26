@@ -223,6 +223,8 @@ export function buildSyllabusReviewProjection({
       review_ready: Boolean(card) && !completed,
       review_card_id: card?.id || null,
       review_run_id: card?.run_id || null,
+      review_teacher: card?.instructional_teacher || completedRun?.instructional_teacher || null,
+      review_question_count: card?.item_count ?? completedRun?.item_count ?? null,
       review_remaining_count: card?.remaining_count ?? null,
       review_progress: {
         completed_count: cycle.completedCount,

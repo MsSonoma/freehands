@@ -26,8 +26,9 @@ export const WEEKLY_REVIEW_PROTOCOL_VERSION = 'weekly-review-v1';
 export const DAILY_FOLLOWUP_EVIDENCE_PURPOSE = 'daily_followup';
 export const DAILY_REVIEW_EVIDENCE_PURPOSE = 'daily_review';
 export const WEEKLY_REVIEW_EVIDENCE_PURPOSE = 'weekly_review';
-export const DAILY_REVIEW_MAX_ITEMS = 8;
-export const WEEKLY_REVIEW_MAX_ITEMS = 5;
+export const REVIEW_QUESTIONS_PER_LESSON = 4;
+export const DAILY_REVIEW_MAX_ITEMS = 32;
+export const WEEKLY_REVIEW_MAX_ITEMS = 32;
 export const WEEKLY_REVIEW_WINDOW_DAYS = 7;
 
 export const REVIEW_TYPES = Object.freeze({

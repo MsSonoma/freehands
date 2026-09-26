@@ -41,10 +41,10 @@ export async function getFollowUps(learnerId) {
   return followUpRequest(`/api/learner/follow-ups?learner_id=${encodeURIComponent(learnerId)}`);
 }
 
-export async function startFollowUp(learnerId, cardId) {
+export async function startFollowUp(learnerId, cardId, instructionalTeacher = 'slate') {
   return followUpRequest('/api/learner/follow-ups', {
     method: 'POST',
-    body: JSON.stringify({ action: 'start', learner_id: learnerId, card_id: cardId }),
+    body: JSON.stringify({ action: 'start', learner_id: learnerId, card_id: cardId, instructional_teacher: instructionalTeacher }),
   });
 }
 

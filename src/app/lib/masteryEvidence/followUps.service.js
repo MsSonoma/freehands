@@ -1,6 +1,7 @@
 import {
   DAILY_FOLLOWUP_PROTOCOL_VERSION,
   DAILY_REVIEW_MAX_ITEMS,
+  REVIEW_QUESTIONS_PER_LESSON,
   DAILY_REVIEW_PROTOCOL_VERSION,
   REVIEW_REASONS,
   REVIEW_TYPES,
@@ -136,6 +137,9 @@ function pendingRunCard(run, items, events) {
         : 'See what you remember from recent lessons',
     item_count: items.length,
     remaining_count: pendingItems.length,
+    instructional_teacher: ['sonoma', 'webb', 'slate'].includes(String(run.metadata?.instructional_teacher || '').toLowerCase())
+      ? String(run.metadata.instructional_teacher).toLowerCase()
+      : 'slate',
     resume: presentedEvents(events).length > 0,
   };
 }
@@ -208,23 +212,31 @@ export async function buildFollowUpAvailability({
         );
         const selections = [];
         const selectionKeys = new Set(exposedKeys);
+        const coveredLessons = new Set();
         for (const entry of ordered) {
           if (selections.length >= DAILY_REVIEW_MAX_ITEMS) break;
           const anchor = entry.anchor;
-          const lesson = await loadLesson(anchor.lesson_key);
+          const lessonKey = String(anchor?.lesson_key || '').trim();
+          if (!lessonKey || coveredLessons.has(lessonKey)) continue;
+          coveredLessons.add(lessonKey);
+          const lesson = await loadLesson(lessonKey);
           if (!lesson) continue;
           const plan = await buildDailyReviewPlan({
-            lessonKey: anchor.lesson_key,
+            lessonKey,
             lessonId: anchor.lesson_id,
             lessonData: lesson,
             priorExposedKeys: selectionKeys,
           });
           if (!plan.eligible) continue;
-          const item = plan.selectedItems[0];
-          const identity = plan.selectedIdentities[0];
-          selections.push({ anchor, lesson, item, identity });
-          selectionKeys.add(`stable:${identity.stableItemId}`);
-          selectionKeys.add(`content:${identity.itemContentHash}`);
+          const count = Math.min(REVIEW_QUESTIONS_PER_LESSON, plan.selectedItems.length, plan.selectedIdentities.length);
+          for (let index = 0; index < count && selections.length < DAILY_REVIEW_MAX_ITEMS; index += 1) {
+            const item = plan.selectedItems[index];
+            const identity = plan.selectedIdentities[index];
+            if (!item || !identity) continue;
+            selections.push({ anchor, lesson, item, identity });
+            selectionKeys.add(`stable:${identity.stableItemId}`);
+            selectionKeys.add(`content:${identity.itemContentHash}`);
+          }
         }
         if (!selections.length) continue;
         const card = {
@@ -304,22 +316,30 @@ export async function buildFollowUpAvailability({
       );
       const selections = [];
       const selectionKeys = new Set(exposedKeys);
+      const coveredLessons = new Set();
       for (const anchor of anchors) {
         if (selections.length >= WEEKLY_REVIEW_MAX_ITEMS) break;
-        const lesson = await loadLesson(anchor.lesson_key);
+        const lessonKey = String(anchor?.lesson_key || '').trim();
+        if (!lessonKey || coveredLessons.has(lessonKey)) continue;
+        coveredLessons.add(lessonKey);
+        const lesson = await loadLesson(lessonKey);
         if (!lesson) continue;
         const plan = await buildWeeklyReviewPlan({
-          lessonKey: anchor.lesson_key,
+          lessonKey,
           lessonId: anchor.lesson_id,
           lessonData: lesson,
           priorExposedKeys: selectionKeys,
         });
         if (!plan.eligible) continue;
-        const item = plan.selectedItems[0];
-        const identity = plan.selectedIdentities[0];
-        selections.push({ anchor, lesson, item, identity });
-        selectionKeys.add(`stable:${identity.stableItemId}`);
-        selectionKeys.add(`content:${identity.itemContentHash}`);
+        const count = Math.min(REVIEW_QUESTIONS_PER_LESSON, plan.selectedItems.length, plan.selectedIdentities.length);
+        for (let index = 0; index < count && selections.length < WEEKLY_REVIEW_MAX_ITEMS; index += 1) {
+          const item = plan.selectedItems[index];
+          const identity = plan.selectedIdentities[index];
+          if (!item || !identity) continue;
+          selections.push({ anchor, lesson, item, identity });
+          selectionKeys.add(`stable:${identity.stableItemId}`);
+          selectionKeys.add(`content:${identity.itemContentHash}`);
+        }
       }
       if (selections.length) {
         const card = {
@@ -354,6 +374,10 @@ export async function buildFollowUpAvailability({
         review_type: run.review_type,
         cycle_key: run.cycle_key,
         completed_at: run.completed_at || null,
+        instructional_teacher: ['sonoma', 'webb', 'slate'].includes(String(run.metadata?.instructional_teacher || '').toLowerCase())
+          ? String(run.metadata.instructional_teacher).toLowerCase()
+          : null,
+        item_count: Number(run.metadata?.item_count || 0) || null,
       })),
   };
 }
@@ -371,6 +395,7 @@ export async function startFollowUpRun({
   userId,
   learnerId,
   card,
+  instructionalTeacher = 'slate',
   now = new Date().toISOString(),
 } = {}) {
   if (card.run_id) return repository.getRun({ userId, runId: card.run_id });
@@ -405,6 +430,9 @@ export async function startFollowUpRun({
           ? 'Daily Review'
           : 'Weekly Review',
       item_count: selections.length,
+      instructional_teacher: ['sonoma', 'webb', 'slate'].includes(String(instructionalTeacher || '').toLowerCase())
+        ? String(instructionalTeacher).toLowerCase()
+        : 'slate',
     },
     started_at: now,
     updated_at: now,
@@ -496,6 +524,9 @@ export function publicRunState(state) {
       review_type: state.run.review_type,
       protocol_version: state.run.protocol_version,
       status: state.run.status,
+      instructional_teacher: ['sonoma', 'webb', 'slate'].includes(String(state.run.metadata?.instructional_teacher || '').toLowerCase())
+        ? String(state.run.metadata.instructional_teacher).toLowerCase()
+        : 'slate',
     },
     progress: {
       completed: resultCount,

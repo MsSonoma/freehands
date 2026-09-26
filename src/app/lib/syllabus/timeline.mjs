@@ -155,18 +155,34 @@ export function syllabusDayPresentation(activeItems = [], suggestedItems = []) {
   const legacySlateCompletions = active.filter((item) => item?.item_type === 'slate_history')
   const historySources = [...completedReviews, ...legacySlateCompletions]
   const remainingActive = active.filter((item) => !historySources.includes(item))
-  const groupedCompletedReview = historySources.length
+  const groupedCompletedReviews = completedReviews.length
     ? [{
         kind: 'active',
         item: {
-          id: 'review-history:' + (historySources[0]?.planned_date || 'day'),
-          occurrence_id: 'review-history:' + (historySources[0]?.planned_date || 'day'),
+          id: 'review-history:' + (completedReviews[0]?.planned_date || 'day'),
+          occurrence_id: 'review-history:' + (completedReviews[0]?.planned_date || 'day'),
           item_type: 'review_history',
-          planned_date: historySources[0]?.planned_date || '',
-          sort_order: Math.min(...historySources.map((item) => Number(item?.sort_order || 0))),
-          title: historySources.length === 1 ? 'Mr. Slate review' : 'Mr. Slate reviews',
+          planned_date: completedReviews[0]?.planned_date || '',
+          sort_order: Math.min(...completedReviews.map((item) => Number(item?.sort_order || 0))),
+          title: completedReviews.length === 1 ? 'Review' : 'Reviews',
           review_status: 'completed',
           reviews: completedReviews,
+          slate_completions: [],
+        },
+      }]
+    : []
+  const groupedSlateHistory = legacySlateCompletions.length
+    ? [{
+        kind: 'active',
+        item: {
+          id: 'slate-history:' + (legacySlateCompletions[0]?.planned_date || 'day'),
+          occurrence_id: 'slate-history:' + (legacySlateCompletions[0]?.planned_date || 'day'),
+          item_type: 'slate_review_history',
+          planned_date: legacySlateCompletions[0]?.planned_date || '',
+          sort_order: Math.min(...legacySlateCompletions.map((item) => Number(item?.sort_order || 0))),
+          title: legacySlateCompletions.length === 1 ? 'Mr. Slate' : 'Mr. Slate',
+          review_status: 'completed',
+          reviews: [],
           slate_completions: legacySlateCompletions,
         },
       }]
@@ -174,7 +190,8 @@ export function syllabusDayPresentation(activeItems = [], suggestedItems = []) {
 
   return [
     ...remainingActive.map((item) => ({ kind: 'active', item })),
-    ...groupedCompletedReview,
+    ...groupedCompletedReviews,
+    ...groupedSlateHistory,
     ...(suggestedItems || []).map((item) => ({ kind: 'suggested', item })),
   ].sort((left, right) => Number(left.item?.sort_order || 0) - Number(right.item?.sort_order || 0)
     || left.kind.localeCompare(right.kind)

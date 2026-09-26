@@ -252,18 +252,20 @@ export default function SyllabusDocument({
             {isNoSchool && <div className={styles.dayOffNotice}><strong>{noSchoolByDate[day.date] || 'Day off'}</strong><span>{presentations.length ? `${presentations.length} existing ${presentations.length === 1 ? 'item remains' : 'items remain'}` : 'No lessons planned'}</span></div>}
             {!isNoSchool && presentations.length === 0 && <p className={styles.emptyDay}>{forecastBusy && day.date >= forecastStart && day.date <= forecastEnd ? 'Preparing suggestions...' : 'No lessons'}</p>}
             {presentations.map(({ kind, item }) => {
-            if (item.item_type === 'review_history') {
+            if (item.item_type === 'review_history' || item.item_type === 'slate_review_history') {
               const reviews = Array.isArray(item.reviews) ? item.reviews : []
               const slateCompletions = Array.isArray(item.slate_completions) ? item.slate_completions : []
+              const isSlateHistory = item.item_type === 'slate_review_history'
               const selectableReview = Boolean(onSelectReview)
-              const count = reviews.length + slateCompletions.length
+              const count = isSlateHistory ? slateCompletions.length : reviews.length
+              const historyLabel = isSlateHistory ? 'Mr. Slate' : 'Review'
               return (
                 <div
                   className={`${styles.entryRow} ${selectableReview ? styles.selectableEntry : ''} ${styles.reviewHistoryCard}`}
                   key={item.occurrence_id || item.id}
                   role={selectableReview ? 'button' : undefined}
                   tabIndex={selectableReview ? 0 : undefined}
-                  aria-label={count > 1 ? `Open ${count} completed Mr. Slate reviews` : 'Open completed Mr. Slate review'}
+                  aria-label={count > 1 ? `Open ${count} completed ${historyLabel} entries` : `Open completed ${historyLabel} entry`}
                   onClick={selectableReview ? () => onSelectReview(item) : undefined}
                   onKeyDown={selectableReview ? (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -273,8 +275,8 @@ export default function SyllabusDocument({
                   } : undefined}
                 >
                   <div className={styles.reviewHistoryContent}>
-                    <span className={styles.reviewHistoryIcon} aria-hidden="true">&#129302;</span>
-                    <span className={styles.reviewHistoryLabel}>Mr. Slate{count > 1 ? ` (${count})` : ''}</span>
+                    <span className={styles.reviewHistoryIcon} aria-hidden="true">{isSlateHistory ? String.fromCodePoint(0x1F916) : String.fromCodePoint(0x1F4DD)}</span>
+                    <span className={styles.reviewHistoryLabel}>{historyLabel}{count > 1 ? ` (${count})` : ''}</span>
                   </div>
                 </div>
               )
