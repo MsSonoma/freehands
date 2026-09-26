@@ -251,8 +251,9 @@ export default function SyllabusDocument({
             {presentations.map(({ kind, item }) => {
             if (item.item_type === 'review_history') {
               const reviews = Array.isArray(item.reviews) ? item.reviews : []
+              const slateCompletions = Array.isArray(item.slate_completions) ? item.slate_completions : []
               const selectableReview = Boolean(onSelectReview)
-              const count = reviews.length
+              const count = reviews.length + slateCompletions.length
               return (
                 <button
                   type="button"
@@ -346,7 +347,7 @@ export default function SyllabusDocument({
                         : null)
                     : (item.item_type || 'lesson') === 'lesson' && <span className={styles.placementLabel}>{role === 'learner' && item.placement_kind !== 'actual' ? `Your teacher: ${instructionalTeacherLabel(assignedTeacher)}` : syllabusTeacherLabel(item)}</span>}
                   {(item.slate_annotations || []).map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
-                  {(item.historical_activity_annotations || []).map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
+                  {(item.historical_activity_annotations || []).filter((annotation) => annotation?.kind !== 'slate_drill_history').map((annotation) => <span className={styles.placementLabel} key={annotation.kind + ':' + annotation.label}>{annotation.label}</span>)}
                   {item.readiness_state && <span className={styles.statusLabel}>{String(item.readiness_state).replace('_', ' ')}</span>}
                   {item.placement_kind === 'scheduled' && <span className={styles.placementLabel}>Calendar date</span>}
                   {item.placement_kind === 'inferred' && <span className={styles.placementLabel}>Provisional weekly-pattern placement</span>}

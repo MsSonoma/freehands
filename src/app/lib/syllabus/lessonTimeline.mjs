@@ -541,11 +541,17 @@ export function composeSyllabusLessonTimeline({
       const matches = [...canonicalActualMatches, ...nonActualMatches]
       if (matches.length === 1) match = matches[0]
     }
+    const details = metadata.get(lessonKey) || defaultMetadata(lessonKey)
     const annotation = {
       kind: 'slate_drill_history',
       label: 'Mr. Slate drill completed · historical record',
       provenance: clean(record.provenance),
       historical_activity_id: clean(record.id) || null,
+      occurred_at: record.occurred_at || null,
+      planned_date: evidenceDate || null,
+      lesson_key: lessonKey,
+      title: clean(details.title) || 'Lesson',
+      subject: clean(details.subject) || 'General',
     }
     if (match) {
       const identity = clean(match.occurrence_id || match.id)
@@ -553,7 +559,6 @@ export function composeSyllabusLessonTimeline({
       continue
     }
     if (!serverVerified || !record?.occurred_at) continue
-    const details = metadata.get(lessonKey) || defaultMetadata(lessonKey)
     standaloneHistoricalSlate.push({
       ...details,
       id: `historical:${clean(record.id) || clean(record.source_identity)}`,

@@ -72,7 +72,9 @@ export default function SyllabusReviewOverlay({
   if (!item) return null
 
   const historyReviews = item.item_type === 'review_history' && Array.isArray(item.reviews) ? item.reviews : []
-  const isHistory = historyReviews.length > 0
+  const historySlateCompletions = item.item_type === 'review_history' && Array.isArray(item.slate_completions) ? item.slate_completions : []
+  const totalHistoryCount = historyReviews.length + historySlateCompletions.length
+  const isHistory = totalHistoryCount > 0
   const progress = item.review_progress || {}
   const lessons = Array.isArray(progress.lessons) ? progress.lessons : []
   const canStart = !isHistory && item.review_ready === true && item.review_status !== 'completed'
@@ -85,7 +87,7 @@ export default function SyllabusReviewOverlay({
         <header>
           <div>
             <p className={styles.subject}>{isHistory ? 'Mr. Slate' : 'Review'}</p>
-            <h2>{isHistory ? (historyReviews.length === 1 ? 'Completed review' : 'Completed reviews') : (item.title || 'Review')}</h2>
+            <h2>{isHistory ? (totalHistoryCount === 1 ? 'Completed review' : 'Completed reviews') : (item.title || 'Review')}</h2>
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Close">Close</button>
         </header>
@@ -96,7 +98,7 @@ export default function SyllabusReviewOverlay({
               <dl className={styles.meta}>
                 <div><dt>Status</dt><dd>Completed</dd></div>
                 {item.planned_date && <div><dt>Date</dt><dd>{prettyDate(item.planned_date)}</dd></div>}
-                <div><dt>Reviews</dt><dd>{historyReviews.length}</dd></div>
+                <div><dt>Reviews</dt><dd>{totalHistoryCount}</dd></div>
               </dl>
               {historyReviews.map((review, index) => {
                 const reviewProgress = review.review_progress || {}
@@ -109,6 +111,12 @@ export default function SyllabusReviewOverlay({
                   </section>
                 )
               })}
+              {historySlateCompletions.map((completion, index) => (
+                <section className={styles.detailSection} key={completion.historical_activity_id || completion.id || 'slate-' + index}>
+                  <h3>{completion.title || 'Mr. Slate review'}</h3>
+                  <p>{completion.subject ? completion.subject + '. Completed with Mr. Slate.' : 'Completed with Mr. Slate.'}</p>
+                </section>
+              ))}
             </>
           ) : (
             <>

@@ -15,7 +15,7 @@ import {
   buildSyllabusReviewProjection,
   buildWeeklyReviewCycles,
 } from '../src/app/lib/syllabus/reviewProjection.mjs'
-import { syllabusDayPresentation } from '../src/app/lib/syllabus/timeline.mjs'
+import { selectSyllabusWeek, syllabusDayPresentation } from '../src/app/lib/syllabus/timeline.mjs'
 
 const lesson = {
   id: 'fractions-review',
@@ -236,4 +236,52 @@ test('Completed reviews are projected onto their actual local completion date', 
   assert.equal(projection.items.length, 1)
   assert.equal(projection.items[0].review_status, 'completed')
   assert.equal(projection.items[0].planned_date, '2026-09-26')
+})
+test('server-verified legacy Slate completions backfill the compact marker on their completion day', () => {
+  const week = selectSyllabusWeek([
+    {
+      id: 'lesson-water',
+      item_type: 'lesson',
+      planned_date: '2026-08-20',
+      title: 'The Water Cycle',
+      subject: 'Science',
+      historical_activity_annotations: [{
+        kind: 'slate_drill_history',
+        historical_activity_id: 'water-slate',
+        planned_date: '2026-08-27',
+        occurred_at: '2026-08-27T13:53:53.558Z',
+        lesson_key: 'generated/water.json',
+        title: 'The Water Cycle',
+        subject: 'Science',
+      }],
+    },
+    {
+      id: 'historical:grammar-slate',
+      item_type: 'lesson',
+      planned_date: '2026-08-27',
+      title: 'Grammar',
+      subject: 'Language Arts',
+      historical_activity_only: true,
+      historical_activity_annotations: [{
+        kind: 'slate_drill_history',
+        historical_activity_id: 'grammar-slate',
+        planned_date: '2026-08-27',
+        occurred_at: '2026-08-27T16:02:59.369Z',
+        lesson_key: 'generated/grammar.json',
+        title: 'Grammar',
+        subject: 'Language Arts',
+      }],
+    },
+  ], { weekStart: '2026-08-24', today: '2026-09-26' })
+
+  const day = week.days.find((entry) => entry.date === '2026-08-27')
+  assert.ok(day)
+  assert.equal(day.items.filter((item) => item.item_type === 'slate_history').length, 2)
+  assert.equal(day.items.some((item) => item.historical_activity_only === true), false)
+
+  const presentations = syllabusDayPresentation(day.items, [])
+  assert.equal(presentations.length, 1)
+  assert.equal(presentations[0].item.item_type, 'review_history')
+  assert.equal(presentations[0].item.slate_completions.length, 2)
+  assert.deepEqual(presentations[0].item.slate_completions.map((item) => item.title).sort(), ['Grammar', 'The Water Cycle'])
 })

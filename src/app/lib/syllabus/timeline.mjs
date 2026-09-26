@@ -74,13 +74,53 @@ export function moveSyllabusWeek(weekStart, action, today = new Date().toISOStri
   return weekStart || current
 }
 
+function hasLegacySlateHistory(item) {
+  return Array.isArray(item?.historical_activity_annotations)
+    && item.historical_activity_annotations.some((row) => row?.kind === 'slate_drill_history')
+}
+
+function legacySlateHistoryItems(items = []) {
+  const seen = new Set()
+  const rows = []
+  for (const item of items || []) {
+    for (const annotation of item?.historical_activity_annotations || []) {
+      if (annotation?.kind !== 'slate_drill_history') continue
+      const fallbackIdentity = [annotation?.lesson_key || item?.lesson_key || '', annotation?.occurred_at || annotation?.planned_date || item?.planned_date || ''].join(':')
+      const identity = String(annotation?.historical_activity_id || fallbackIdentity).trim()
+      if (!identity || seen.has(identity)) continue
+      seen.add(identity)
+      const plannedDate = dateOnly(annotation?.planned_date || annotation?.occurred_at || item?.planned_date)
+      if (!plannedDate) continue
+      rows.push({
+        id: 'slate-history:' + identity,
+        occurrence_id: 'slate-history:' + identity,
+        item_type: 'slate_history',
+        planned_date: plannedDate,
+        sort_order: 999999,
+        title: String(annotation?.title || item?.title || 'Lesson').trim() || 'Lesson',
+        subject: String(annotation?.subject || item?.subject || 'General').trim() || 'General',
+        lesson_key: annotation?.lesson_key || item?.lesson_key || null,
+        occurred_at: annotation?.occurred_at || null,
+        historical_activity_id: annotation?.historical_activity_id || null,
+        provenance: annotation?.provenance || null,
+      })
+    }
+  }
+  return rows
+}
+
 export function selectSyllabusWeek(items = [], { weekStart, today = new Date().toISOString().slice(0, 10) } = {}) {
   const selectedStart = startOfSyllabusWeek(weekStart || today)
+  const sourceItems = Array.isArray(items) ? items : []
+  const presentationItems = [
+    ...sourceItems.filter((item) => !(item?.historical_activity_only === true && hasLegacySlateHistory(item))),
+    ...legacySlateHistoryItems(sourceItems),
+  ]
   const days = Array.from({ length: 7 }, (_, index) => {
     const date = addSyllabusDays(selectedStart, index)
     return {
       date,
-      items: (items || []).filter((item) => dateOnly(item?.planned_date) === date)
+      items: presentationItems.filter((item) => dateOnly(item?.planned_date) === date)
         .sort((left, right) => Number(left.sort_order || 0) - Number(right.sort_order || 0)
           || String(left.occurrence_id || left.id || left.title || '').localeCompare(String(right.occurrence_id || right.id || right.title || ''))),
     }
@@ -112,19 +152,22 @@ export function syllabusDayPresentation(activeItems = [], suggestedItems = []) {
   const completedReviews = active.filter((item) => (
     item?.item_type === 'review' && item?.review_status === 'completed'
   ))
-  const remainingActive = active.filter((item) => !completedReviews.includes(item))
-  const groupedCompletedReview = completedReviews.length
+  const legacySlateCompletions = active.filter((item) => item?.item_type === 'slate_history')
+  const historySources = [...completedReviews, ...legacySlateCompletions]
+  const remainingActive = active.filter((item) => !historySources.includes(item))
+  const groupedCompletedReview = historySources.length
     ? [{
         kind: 'active',
         item: {
-          id: `review-history:${completedReviews[0]?.planned_date || 'day'}`,
-          occurrence_id: `review-history:${completedReviews[0]?.planned_date || 'day'}`,
+          id: 'review-history:' + (historySources[0]?.planned_date || 'day'),
+          occurrence_id: 'review-history:' + (historySources[0]?.planned_date || 'day'),
           item_type: 'review_history',
-          planned_date: completedReviews[0]?.planned_date || '',
-          sort_order: Math.min(...completedReviews.map((item) => Number(item?.sort_order || 0))),
-          title: completedReviews.length === 1 ? 'Mr. Slate review' : 'Mr. Slate reviews',
+          planned_date: historySources[0]?.planned_date || '',
+          sort_order: Math.min(...historySources.map((item) => Number(item?.sort_order || 0))),
+          title: historySources.length === 1 ? 'Mr. Slate review' : 'Mr. Slate reviews',
           review_status: 'completed',
           reviews: completedReviews,
+          slate_completions: legacySlateCompletions,
         },
       }]
     : []
