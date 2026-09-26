@@ -255,19 +255,25 @@ export default function SyllabusDocument({
               const selectableReview = Boolean(onSelectReview)
               const count = reviews.length + slateCompletions.length
               return (
-                <button
-                  type="button"
-                  className={styles.reviewHistoryMarker}
+                <div
+                  className={`${styles.entryRow} ${selectableReview ? styles.selectableEntry : ''} ${styles.reviewHistoryCard}`}
                   key={item.occurrence_id || item.id}
+                  role={selectableReview ? 'button' : undefined}
+                  tabIndex={selectableReview ? 0 : undefined}
                   aria-label={count > 1 ? `Open ${count} completed Mr. Slate reviews` : 'Open completed Mr. Slate review'}
-                  title={count > 1 ? `${count} Mr. Slate reviews completed` : 'Mr. Slate review completed'}
                   onClick={selectableReview ? () => onSelectReview(item) : undefined}
-                  disabled={!selectableReview}
+                  onKeyDown={selectableReview ? (event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      onSelectReview(item)
+                    }
+                  } : undefined}
                 >
-                  <span className={styles.reviewHistoryIcon} aria-hidden="true">🤖</span>
-                  <span className={styles.reviewHistoryLabel}>Mr. Slate</span>
-                  {count > 1 && <span className={styles.reviewHistoryCount} aria-hidden="true">{count}</span>}
-                </button>
+                  <div className={styles.reviewHistoryContent}>
+                    <span className={styles.reviewHistoryIcon} aria-hidden="true">&#129302;</span>
+                    <span className={styles.reviewHistoryLabel}>Mr. Slate{count > 1 ? ` (${count})` : ''}</span>
+                  </div>
+                </div>
               )
             }
             if (item.item_type === 'review') {
