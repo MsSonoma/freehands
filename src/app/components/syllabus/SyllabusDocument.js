@@ -16,7 +16,6 @@ import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/
 import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
 import { buildFuturePlanningProjection } from '@/app/lib/syllabus/futurePlanningProjection.mjs'
 import { instructionalForecastMode } from '@/app/lib/syllabus/forecastWindow.mjs'
-import { reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
 import { isUngeneratedSyllabusLesson, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
 import styles from './SyllabusDocument.module.css'
 
@@ -270,10 +269,11 @@ export default function SyllabusDocument({
                     : reviewTypes.size === 1 && reviewTypes.has('daily_followup')
                       ? 'Daily Follow-Up'
                       : 'Reviews'
-              const icons = [...new Set(entries.map((entry) => reviewTeacherIcon(entry?.review_teacher)))]
+              const historySubjects = [...new Set(entries.map((entry) => String(entry?.subject || '').trim()).filter(Boolean))]
+              const historySubject = historySubjects.join(' · ') || 'Review'
               return (
                 <div
-                  className={`${styles.entryRow} ${selectableReview ? styles.selectableEntry : ''} ${styles.reviewHistoryCard}`}
+                  className={`${styles.entryRow} ${selectableReview ? styles.selectableEntry : ''}`}
                   key={item.occurrence_id || item.id}
                   role={selectableReview ? 'button' : undefined}
                   tabIndex={selectableReview ? 0 : undefined}
@@ -286,10 +286,11 @@ export default function SyllabusDocument({
                     }
                   } : undefined}
                 >
-                  <div className={styles.reviewHistoryContent}>
-                    <span className={styles.reviewHistoryIcon} aria-hidden="true">{icons.join(' ')}</span>
-                    <span className={styles.reviewHistoryLabel}>{historyLabel}{count > 1 ? ` (${count})` : ''}</span>
+                  <div className={styles.entryBody}>
+                    <p className={styles.subject}>{historySubject}</p>
+                    <h4>{historyLabel}</h4>
                   </div>
+                  {selectableReview && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
                 </div>
               )
             }

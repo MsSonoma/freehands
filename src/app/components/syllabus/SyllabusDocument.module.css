@@ -80,10 +80,6 @@
 .selectableEntry:focus-visible { outline:2px solid #9a4634; outline-offset:2px; }
 .entryChevron { align-self:center; color:#9a9187; font:22px/1 Georgia,serif; }
 .selectableEntry .preparing { grid-column:1 / -1; }
-.reviewHistoryCard { grid-template-columns:1fr; padding-top:9px; padding-bottom:8px; }
-.reviewHistoryContent { display:inline-flex; align-items:center; gap:6px; min-width:0; }
-.reviewHistoryIcon { display:grid; place-items:center; width:22px; height:22px; font-size:17px; line-height:1; }
-.reviewHistoryLabel { color:#4b433c; font:700 12px/1.2 Montserrat,sans-serif; white-space:nowrap; }
 .reviewChecklist { display:grid; gap:4px; margin-top:8px; font:11px/1.35 Roboto,sans-serif; color:#5f574f; }
 .reviewChecklist > span { display:grid; grid-template-columns:16px minmax(0,1fr); gap:4px; align-items:start; }
 .reviewChecklist b { font-weight:800; color:#4f6b4f; }
