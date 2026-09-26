@@ -175,7 +175,10 @@ export default function LessonHistoryOverlay({ learnerId, occurrenceId, accessTo
                 <p className={styles.kicker}>Review history</p>
                 <h2 id="lesson-history-title">{occurrence.lessonTitle}</h2>
                 <div className={styles.meta}>
-                  <span>{formatDate(occurrence.occurrenceDate)}</span>
+                  {occurrence.scheduledDate && <span>Scheduled {formatDate(occurrence.scheduledDate)}</span>}
+                  {occurrence.completedAt && <span>Completed {formatDate(occurrence.completedAt, true)}</span>}
+                  {!occurrence.completedAt && occurrence.startedAt && <span>Started {formatDate(occurrence.startedAt, true)}</span>}
+                  {!occurrence.scheduledDate && !occurrence.completedAt && !occurrence.startedAt && occurrence.occurrenceDate && <span>{formatDate(occurrence.occurrenceDate)}</span>}
                   {occurrence.subject && <span>{occurrence.subject}</span>}
                   {occurrence.actualInstructionalTeacher?.label && <span>Taught by {occurrence.actualInstructionalTeacher.label}</span>}
                   <span>{occurrence.completionState === 'completed' ? 'Completed' : occurrence.completionState}</span>
@@ -209,10 +212,10 @@ export default function LessonHistoryOverlay({ learnerId, occurrenceId, accessTo
               </section>}
 
               <section className={styles.section}>
-                <h3>Session records</h3>
+                <h3>Transcripts</h3>
                 {(detail.sessionRecords || []).length
                   ? <div className={styles.records}>{detail.sessionRecords.map((record, index) => <button type="button" key={`${record.kind}-${record.startedAt || index}`} onClick={() => setTranscriptRecord(record)}>
-                    <span><strong>{record.teacherName} session transcript</strong><small>{formatDate(record.startedAt || record.endedAt, true)}</small></span><b>View</b>
+                    <span><strong>{record.teacherName} session transcript</strong><small>{formatDate(record.endedAt || record.startedAt, true)}</small></span><b>View</b>
                   </button>)}</div>
                   : <p>No transcript is available for this session.</p>}
               </section>

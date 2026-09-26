@@ -120,3 +120,21 @@ test('Mentor calendar and reporting use the canonical Syllabus instead of planne
   assert.equal(fs.existsSync(path.join(appRoot, 'facilitator/calendar/LessonPlanner.jsx')), false)
   assert.equal(fs.existsSync(path.join(appRoot, 'facilitator/calendar/DayViewOverlay.jsx')), false)
 })
+test('completed calendar selection uses actual teacher and disables manual historical recording', () => {
+  const selection = syllabusCalendarSelection({
+    occurrence_id: 'actual:session-1',
+    source_occurrence_id: 'syllabus:planned-1',
+    lesson_key: 'generated/fractions.json',
+    planned_date: '2026-09-14',
+    placement_kind: 'actual',
+    actual_kind: 'completed',
+    readiness_state: 'completed',
+    assigned_instructional_teacher: 'sonoma',
+    actual_instructional_teacher: 'webb',
+  }, { today: '2026-09-14' })
+  assert.equal(selection.syllabus_state, 'completed_historical')
+  assert.equal(selection.assignedTeacher, 'webb')
+  assert.equal(selection.currentLesson.hasProgress, false)
+  assert.equal(selection.historicalActivityAllowed, false)
+  assert.equal(selection.teacherEditable, false)
+})

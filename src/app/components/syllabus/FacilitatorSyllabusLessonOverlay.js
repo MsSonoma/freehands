@@ -28,6 +28,32 @@ function prettyDate(value) {
   return new Date(`${text}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric', year: 'numeric' })
 }
 
+function prettyDateTime(value) {
+  if (!value) return ''
+  const date = new Date(value)
+  if (Number.isNaN(date.getTime())) return prettyDate(value)
+  return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
+function RecordedLessonActivity({ item, teacherName, historyAvailable, onOpenHistory }) {
+  const actualKind = String(item?.actual_kind || '')
+  const completedAt = item?.completed_at || (actualKind === 'completed' ? item?.actual_at : null)
+  const startedAt = item?.started_at || (actualKind === 'in_progress' ? item?.actual_at : null)
+  const attemptedAt = actualKind === 'incomplete' ? item?.actual_at : null
+  return <details className={styles.historicalControl}>
+    <summary>Lesson record</summary>
+    {actualKind === 'completed' && completedAt && <p><strong>Completed:</strong> {prettyDateTime(completedAt)}</p>}
+    {actualKind === 'in_progress' && startedAt && <p><strong>Started:</strong> {prettyDateTime(startedAt)}</p>}
+    {actualKind === 'incomplete' && attemptedAt && <p><strong>Attempted:</strong> {prettyDateTime(attemptedAt)}</p>}
+    {teacherName && <p><strong>Teacher:</strong> {teacherName}</p>}
+    {actualKind === 'completed'
+      ? (historyAvailable
+          ? <button type="button" onClick={onOpenHistory}>View transcript &amp; lesson history</button>
+          : <small>Transcript access is not available for this completed record.</small>)
+      : <small>Transcript access becomes available when the lesson is completed.</small>}
+  </details>
+}
+
 function splitLessonKey(lessonKey) {
   const [subject, ...rest] = String(lessonKey || '').split('/')
   return { subject: subject || 'generated', fileName: rest.join('/') }
@@ -191,7 +217,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const sourceOccurrenceId = String(item.source_occurrence_id || occurrenceId).trim()
   const historyOccurrenceId = occurrenceId.startsWith('actual:') || occurrenceId.startsWith('historical:') ? occurrenceId : ''
   const exactOccurrenceIsProtected = sourceOccurrenceId.startsWith('actual:') || sourceOccurrenceId.startsWith('historical:')
-  const canRemoveExactOccurrence = coreAuthority && canChangeIntent && Boolean(sourceOccurrenceId) && !exactOccurrenceIsProtected
+  const canRemoveExactOccurrence = coreAuthority && canChangeIntent && !isHistorical && Boolean(sourceOccurrenceId) && !exactOccurrenceIsProtected
   const canRemoveFromLearner = coreAuthority && learnerLessonBound === true && !isHistorical
   const historyAvailable = Boolean(historyOccurrenceId) && (typeof onReviewHistory === 'function' || coreAuthority)
   const repeatDeliveryActive = repeatMode && selection.syllabus_state === 'completed_historical'
@@ -205,6 +231,13 @@ export default function FacilitatorSyllabusLessonOverlay({
   const canPrintMaterials = coreAuthority && isLesson && Boolean(item.lesson_key) && !isDraft
   const availableToLearner = localAvailable || item.readiness_state === 'available'
   const displayedDate = localPlannedDate || dateOnly(item.planned_date)
+  const actualKind = String(item.actual_kind || '')
+  const completedAt = item.completed_at || (actualKind === 'completed' ? item.actual_at : null)
+  const startedAt = item.started_at || (actualKind === 'in_progress' ? item.actual_at : null)
+  const attemptedAt = actualKind === 'incomplete' ? item.actual_at : null
+  const scheduledDate = dateOnly(item.scheduled_date || (!isHistorical ? displayedDate : ''))
+  const displayTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || (isHistorical ? item.instructional_teacher : null) || assignedTeacher) || 'sonoma'
+  const displayStatus = repeatDeliveryActive ? 'Repeat ready' : actualKind === 'completed' ? 'Completed' : actualKind === 'in_progress' ? 'In progress' : actualKind === 'incomplete' ? 'Incomplete' : (readiness || selection.syllabus_state?.replaceAll('_', ' ') || 'Ready')
 
   async function refreshAfterChange() {
     if (typeof onChanged === 'function') await onChanged()
@@ -630,10 +663,14 @@ export default function FacilitatorSyllabusLessonOverlay({
           {message && <div className={styles.statusMessage} role="status">{message}</div>}
           {coreError && <div className={styles.errorMessage} role="alert">{coreError}</div>}
           <dl className={styles.meta}>
-            {isLesson && item.lesson_key && <><div><dt>Teacher</dt><dd>{instructionalTeacherLabel(assignedTeacher)}</dd></div><div><dt>Status</dt><dd>{readiness || selection.syllabus_state?.replaceAll('_', ' ') || 'Ready'}</dd></div></>}
-            {displayedDate && <div><dt>Date</dt><dd>{prettyDate(displayedDate)}</dd></div>}
+            {isLesson && item.lesson_key && <><div><dt>Teacher</dt><dd>{instructionalTeacherLabel(displayTeacher)}</dd></div><div><dt>Status</dt><dd>{displayStatus}</dd></div></>}
+            {!isHistorical && displayedDate && <div><dt>Scheduled</dt><dd>{prettyDate(displayedDate)}</dd></div>}
+            {isHistorical && scheduledDate && <div><dt>Scheduled</dt><dd>{prettyDate(scheduledDate)}</dd></div>}
+            {actualKind === 'completed' && completedAt && <div><dt>Completed</dt><dd>{prettyDateTime(completedAt)}</dd></div>}
+            {actualKind === 'in_progress' && startedAt && <div><dt>Started</dt><dd>{prettyDateTime(startedAt)}</dd></div>}
+            {actualKind === 'incomplete' && attemptedAt && <div><dt>Attempted</dt><dd>{prettyDateTime(attemptedAt)}</dd></div>}
             {canDeliver && <div><dt>Availability</dt><dd>{availableToLearner ? 'Available to learner' : 'Not yet available'}</dd></div>}
-            {selection.currentLesson?.hasProgress && <div><dt>Progress</dt><dd>In progress</dd></div>}
+            {actualKind !== 'completed' && selection.currentLesson?.hasProgress && <div><dt>Progress</dt><dd>In progress</dd></div>}
             {isSlateAssignment && <div><dt>Type</dt><dd>Scheduled Mr. Slate supplemental session</dd></div>}
           </dl>
           {teacherEditable && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy || coreBusy === 'teacher'} onChange={(event) => void handleTeacherChange(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
@@ -662,7 +699,13 @@ export default function FacilitatorSyllabusLessonOverlay({
             </div>
           </section>}
           {slateEditorOpen && <section className={styles.detailSection}><h3>Schedule Mr. Slate</h3><p>Schedule a separate supplemental practice session. This does not change the instructional teacher or complete the lesson.</p><label className={styles.field}>Mr. Slate session date<input type="date" min={[dateOnly(displayedDate), dateOnly(resolvedToday)].filter(Boolean).sort().at(-1) || ''} value={slateDate} onChange={(event) => setSlateDate(event.target.value)} /></label><div className={styles.secondaryActions}><button type="button" onClick={() => setSlateEditorOpen(false)}>Cancel</button><button type="button" disabled={!slateDate || coreBusy === 'slate'} onClick={() => void saveSlateSchedule()}>{coreBusy === 'slate' ? 'Scheduling...' : 'Schedule supplemental session'}</button></div></section>}
-          {isLesson && item.lesson_key && selection.historicalActivityAllowed && typeof onRecordHistoricalActivity === 'function' && <HistoricalActivityControl item={item} legacyWebbCompletion={legacyWebbCompletion} busy={historicalActivityBusy} onRecord={onRecordHistoricalActivity} />}
+          {isLesson && item.lesson_key && isHistorical && !repeatDeliveryActive && <RecordedLessonActivity
+            item={item}
+            teacherName={instructionalTeacherLabel(displayTeacher)}
+            historyAvailable={historyAvailable}
+            onOpenHistory={openHistory}
+          />}
+          {isLesson && item.lesson_key && !isHistorical && selection.historicalActivityAllowed && typeof onRecordHistoricalActivity === 'function' && <HistoricalActivityControl item={item} legacyWebbCompletion={legacyWebbCompletion} busy={historicalActivityBusy} onRecord={onRecordHistoricalActivity} />}
           </>}
         </div>
         <footer>

@@ -51,6 +51,11 @@ test('facilitator lesson overlay is the operational control center after row sel
   assert.match(overlaySource, /occurrenceId,/)
   assert.match(overlaySource, /item\.readiness_state === 'draft'/)
   assert.doesNotMatch(overlaySource, /'Prepare lesson' : 'Review lesson'/)
+  assert.match(overlaySource, /<summary>Lesson record<\/summary>/)
+  assert.match(overlaySource, /View transcript &amp; lesson history/)
+  assert.match(overlaySource, /actual_instructional_teacher/)
+  assert.match(overlaySource, /actualKind === 'completed'[\s\S]*<dt>Completed<\/dt>/)
+  assert.match(overlaySource, /canRemoveExactOccurrence = coreAuthority && canChangeIntent && !isHistorical/)
 })
 test('every production facilitator Syllabus surface supplies the same operational overlay authority context', () => {
   assert.match(facilitatorHomeSource, /onSelectLesson=\{\(item, context\) => setSelectedSyllabusLesson\(\{ item, \.\.\.context \}\)\}/)

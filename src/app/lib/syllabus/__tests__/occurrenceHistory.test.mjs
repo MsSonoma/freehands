@@ -85,7 +85,7 @@ function repository(overrides = {}) {
 
 async function load(occurrenceId, options = {}) {
   return loadSyllabusOccurrenceHistory({
-    repository: options.repository || repository(), admin: {}, facilitatorId: options.facilitatorId || FACILITATOR,
+    repository: options.repository || repository(), admin: options.admin || {}, facilitatorId: options.facilitatorId || FACILITATOR,
     learnerId: options.learnerId || LEARNER, occurrenceId,
     now: new Date('2026-08-31T12:00:00Z'), evidenceEnabled: options.evidenceEnabled ?? true,
     signTranscript: options.signTranscript || (async (_admin, _base, browserSessionId) => ({ kind: 'txt', url: `https://example.test/${browserSessionId || 'legacy'}` })),
@@ -103,6 +103,20 @@ test('exact repeated occurrence resolves only its own canonical session, evidenc
   assert.doesNotMatch(JSON.stringify(result), /session-b|browser-b|check-b|never-send-this-answer|answer_key/)
 })
 
+test('completed occurrence history separates scheduled and completed timestamps', async () => {
+  const result = await load('actual:session-a', { repository: repository({
+    forecastItems: [{
+      id: 'repeat-a', lineage_id: 'lineage-a', lesson_key: LESSON, subject: 'math', title: 'Multiplying Fractions',
+      planned_date: '2026-08-09', sort_order: 0, created_at: '2026-08-01T10:00:00Z',
+    }],
+  }) })
+  assert.equal(result.kind, 'ok')
+  assert.equal(result.detail.occurrence.scheduledDate, '2026-08-09')
+  assert.equal(result.detail.occurrence.startedAt, '2026-08-10T14:00:00Z')
+  assert.equal(result.detail.occurrence.completedAt, '2026-08-10T15:00:00Z')
+  assert.equal(result.detail.occurrence.completionState, 'completed')
+  assert.equal(result.detail.transcriptStatus, 'available')
+})
 test('Mrs. Webb history returns the persisted learner essay as a separate composition artifact', async () => {
   const result = await load('actual:session-a', { repository: repository({ composition: {
     id: 'composition-a', status: 'final', essay: 'Emma wrote this paragraph herself.',
@@ -160,6 +174,32 @@ test('missing evidence preserves legitimate session and transcript history', asy
   assert.equal(result.detail.transcriptStatus, 'available')
 })
 
+test('single matching consolidated transcript is an exact fallback for legacy Webb storage', async () => {
+  const ledger = [{ startedAt: '2026-08-10T14:00:20Z', completedAt: '2026-08-10T14:59:40Z', lines: [{ role: 'assistant', text: 'Saved history' }] }]
+  const admin = { storage: { from: () => ({ download: async () => ({ data: new Blob([JSON.stringify(ledger)]), error: null }) }) } }
+  const result = await load('actual:session-a', {
+    admin,
+    signTranscript: async (_admin, _base, sessionId) => sessionId ? null : ({ kind: 'txt', url: 'https://example.test/consolidated' }),
+  })
+  assert.equal(result.kind, 'ok')
+  assert.equal(result.detail.transcriptStatus, 'available')
+  assert.equal(result.detail.sessionRecords[0].transcript.url, 'https://example.test/consolidated')
+})
+
+test('consolidated transcript fallback fails closed when more than one session is present', async () => {
+  const ledger = [
+    { startedAt: '2026-08-10T14:00:20Z', completedAt: '2026-08-10T14:59:40Z', lines: [] },
+    { startedAt: '2026-08-17T14:00:20Z', completedAt: '2026-08-17T14:59:40Z', lines: [] },
+  ]
+  const admin = { storage: { from: () => ({ download: async () => ({ data: new Blob([JSON.stringify(ledger)]), error: null }) }) } }
+  const result = await load('actual:session-a', {
+    admin,
+    signTranscript: async (_admin, _base, sessionId) => sessionId ? null : ({ kind: 'txt', url: 'https://example.test/consolidated' }),
+  })
+  assert.equal(result.kind, 'ok')
+  assert.equal(result.detail.transcriptStatus, 'unavailable')
+  assert.equal(result.detail.sessionRecords.length, 0)
+})
 test('missing transcript preserves deterministic evidence', async () => {
   const result = await load('actual:session-a', { signTranscript: async () => null })
   assert.equal(result.kind, 'ok')
@@ -334,4 +374,8 @@ test('Review History presents authoritative learning summaries before supporting
   }
   assert.match(overlaySource, /<ReviewSection title="Daily Follow-Up"/)
   assert.match(overlaySource, /<ReviewSection title="Weekly Review"/)
+})
+test('Mrs. Webb transcript autosave writes an exact execution-session transcript path', () => {
+  const source = fs.readFileSync(path.resolve('src/app/session/webb/page.jsx'), 'utf8')
+  assert.match(source, /sessionId: canonicalSessionRef\.current\?\.id \|\| undefined/)
 })

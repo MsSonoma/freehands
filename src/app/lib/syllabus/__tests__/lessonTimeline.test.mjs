@@ -413,6 +413,29 @@ test('completed evidence outranks prior schedule and immutable forecast placemen
   assert.equal(items[0].actual_at, '2026-08-20T10:50:00Z')
 })
 
+test('retired source intent date enriches completed history without resurrecting the old plan', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    associations: [association({ readiness_state: 'approved' })],
+    sessions: [{
+      id: 'completed-from-retired-intent', lesson_id: 'generated/fractions.json',
+      started_at: '2026-09-21T14:00:00Z', ended_at: '2026-09-21T15:00:00Z',
+    }],
+    sessionEvents: [{
+      session_id: 'completed-from-retired-intent', lesson_id: 'generated/fractions.json', event_type: 'completed',
+      occurred_at: '2026-09-21T15:00:00Z', metadata: { syllabus_occurrence_id: 'syllabus:retired-forecast' },
+    }],
+    intentSourceDates: [{
+      occurrence_id: 'syllabus:retired-forecast', lesson_key: 'generated/fractions.json', planned_date: '2026-09-18',
+    }],
+    today: '2026-09-26',
+  })
+  assert.equal(items.length, 1)
+  assert.equal(items[0].placement_kind, 'actual')
+  assert.equal(items[0].scheduled_date, '2026-09-18')
+  assert.equal(items[0].completed_at, '2026-09-21T15:00:00Z')
+  assert.equal(items.some((item) => item.occurrence_id === 'syllabus:retired-forecast'), false)
+})
 test('open session remains on its actual start date', () => {
   const current = composeSyllabusLessonTimeline({
     activeRevision: REVISION,
@@ -1396,6 +1419,9 @@ test('legacy Slate history prefers the exact canonical actual source occurrence 
   assert.deepEqual(actual.slate_annotations, [])
   assert.equal(actual.actual_kind, 'completed')
   assert.equal(actual.actual_instructional_teacher, 'webb')
+  assert.equal(actual.scheduled_date, '2026-09-07')
+  assert.equal(actual.started_at, '2026-08-27T13:00:00Z')
+  assert.equal(actual.completed_at, '2026-08-27T14:00:00Z')
   assert.deepEqual(repeat.historical_activity_annotations, [])
   assert.equal(repeat.assigned_instructional_teacher, 'webb')
 })

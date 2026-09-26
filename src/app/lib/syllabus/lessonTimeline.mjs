@@ -91,7 +91,7 @@ function intentOccurrenceId(intent) {
 
 export function composeSyllabusLessonTimeline({
   activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
-  legacyActivities = [], noSchoolDates = [], lessonMetadata = [], slateAssignments = [], slateCompletions = [], slateEvidenceReports = [], slateReviewReports = [],
+  legacyActivities = [], noSchoolDates = [], intentSourceDates = [], lessonMetadata = [], slateAssignments = [], slateCompletions = [], slateEvidenceReports = [], slateReviewReports = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
 } = {}) {
@@ -271,6 +271,17 @@ export function composeSyllabusLessonTimeline({
     }
   }
   const intents = [...scheduleIntents, ...forecastIntents.filter((intent) => !consumedForecasts.has(intent))]
+  const externalIntentDates = new Map((intentSourceDates || []).map((row) => [clean(row?.occurrence_id), row]))
+  for (const actual of instructionalActuals) {
+    if (!actual.occurrenceId) continue
+    const sourceMatches = intents.filter((intent) => intent.key === actual.key && intentOccurrenceId(intent) === actual.occurrenceId)
+    if (sourceMatches.length === 1) actual.sourceIntentPlannedDate = sourceMatches[0].planned_date
+    if (!actual.sourceIntentPlannedDate) {
+      const external = externalIntentDates.get(clean(actual.occurrenceId))
+      const externalKey = resolveKey(external?.lesson_key)
+      if (externalKey === actual.key && validDate(external?.planned_date)) actual.sourceIntentPlannedDate = isoDate(external.planned_date)
+    }
+  }
   const activeIntents = intents.filter((intent) => intentWasCreatedAfterCompletion(intent, activeRevision, latestCompletionByKey.get(intent.key)))
     .sort((left, right) => (left.kind === right.kind ? 0 : left.kind === 'scheduled' ? -1 : 1)
       || left.planned_date.localeCompare(right.planned_date) || left.sort_order - right.sort_order
@@ -363,6 +374,9 @@ export function composeSyllabusLessonTimeline({
     return {
       ...details, id: `actual:${actual.id}`, occurrence_id: `actual:${actual.id}`, planned_date: actualDate(actual.occurred_at), sort_order: capacity?.slot?.index ?? 0,
       item_type: 'lesson', placement_kind: 'actual', actual_kind: actual.kind, actual_at: actual.occurred_at,
+      scheduled_date: actual.sourceIntentPlannedDate || actual.consumedIntentPlannedDate || null,
+      started_at: actual.started_at || null,
+      completed_at: actual.kind === 'completed' ? actual.occurred_at : null,
       source_occurrence_id: actual.occurrenceId || null,
       actual_browser_session_id: actual.browserSessionId || null,
       actual_instructional_teacher: actual.instructionalTeacher || null,
@@ -392,6 +406,8 @@ export function composeSyllabusLessonTimeline({
       placement_kind: 'historical',
       actual_kind: 'completed',
       actual_at: historical.occurred_at,
+      completed_at: historical.occurred_at,
+      scheduled_date: null,
       source_occurrence_id: historical.occurrenceId,
       actual_instructional_teacher: historical.instructionalTeacher,
       historical_record: true,

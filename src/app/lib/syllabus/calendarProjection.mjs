@@ -43,10 +43,9 @@ export function syllabusCalendarSelection(item, { today = new Date().toISOString
   const hasProgress = item?.actual_kind === 'in_progress'
   const key = occurrenceKey(item)
   const assignedTeacher = normalizeInstructionalTeacher(
-    item?.assigned_instructional_teacher || item?.instructional_teacher,
+    item?.actual_instructional_teacher || item?.assigned_instructional_teacher || item?.instructional_teacher,
   ) || 'sonoma'
-  const historicalActivityAllowed = item?.historical_record !== true
-    && (item?.placement_kind !== 'actual' || Boolean(item?.source_occurrence_id))
+  const historicalActivityAllowed = item?.historical_record !== true && item?.placement_kind !== 'actual'
   const teacherEditable = Boolean(
     item?.lesson_key
     && item?.placement_kind !== 'actual'

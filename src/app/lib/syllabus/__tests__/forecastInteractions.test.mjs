@@ -84,3 +84,35 @@ test('completed approval returns exact context without automatically reopening r
   assert.equal(url.searchParams.get('date'), lesson.planned_date)
   assert.equal(url.searchParams.get('occurrenceId'), 'slot')
 })
+test('open details promote a completed planned occurrence to its canonical actual record', () => {
+  const planned = {
+    ...lesson,
+    occurrence_id: 'syllabus:planned-1',
+    lesson_key: 'generated/fractions.json',
+    readiness_state: 'approved',
+    assigned_instructional_teacher: 'sonoma',
+  }
+  const actual = {
+    ...planned,
+    occurrence_id: 'actual:session-1',
+    source_occurrence_id: 'syllabus:planned-1',
+    placement_kind: 'actual',
+    actual_kind: 'completed',
+    readiness_state: 'completed',
+    actual_instructional_teacher: 'webb',
+    actual_at: '2026-09-14T16:00:00Z',
+  }
+  const selected = resolveSyllabusSelection({
+    item: planned,
+    suggested: false,
+    currentLesson: { hasProgress: true, hasLessonArtifact: true },
+    historicalActivityAllowed: true,
+    assignedTeacher: 'sonoma',
+  }, snapshot([actual]))
+  assert.equal(selected.item.occurrence_id, 'actual:session-1')
+  assert.equal(selected.syllabus_state, 'completed_historical')
+  assert.equal(selected.assignedTeacher, 'webb')
+  assert.equal(selected.currentLesson.hasProgress, false)
+  assert.equal(selected.historicalActivityAllowed, false)
+  assert.equal(selected.teacherEditable, false)
+})

@@ -162,12 +162,15 @@ export default function SyllabusDocument({
     const signature = `${learnerId}:${week.week_start}:${focusPlannedDate}:${focusOccurrenceId}:${focusLessonKey}`
     if (resolvedFocusRef.current === signature) return
     resolvedFocusRef.current = signature
-    const currentLesson = lessonState(match) || {}
+    const lessonSnapshot = lessonState(match) || {}
+    const currentLesson = {
+      ...lessonSnapshot,
+      hasProgress: match.actual_kind === 'in_progress' ? true : match.actual_kind === 'completed' ? false : Boolean(lessonSnapshot.hasProgress),
+    }
     const state = syllabusItemState({ item: match, today, hasProgress: currentLesson.hasProgress })
     const occurrenceKey = match.occurrence_id || match.id || `${match.lineage_id}-${match.planned_date}`
-    const assignedTeacher = normalizeInstructionalTeacher(match.assigned_instructional_teacher || match.instructional_teacher) || 'sonoma'
-    const historicalActivityAllowed = match.historical_record !== true
-      && (match.placement_kind !== 'actual' || Boolean(match.source_occurrence_id))
+    const assignedTeacher = normalizeInstructionalTeacher(match.actual_instructional_teacher || match.assigned_instructional_teacher || match.instructional_teacher) || 'sonoma'
+    const historicalActivityAllowed = match.historical_record !== true && match.placement_kind !== 'actual'
     const teacherEditable = Boolean(match.lesson_key)
       && match.placement_kind !== 'actual'
       && match.historical_record !== true
@@ -321,12 +324,15 @@ export default function SyllabusDocument({
               recoveryRequired={isForecastRecoveryRequired(item)}
               onSelect={role === 'facilitator' && onSelectLesson ? onSelectLesson : null}
             />
-            const currentLesson = lessonState(item) || {}
+            const lessonSnapshot = lessonState(item) || {}
+            const currentLesson = {
+              ...lessonSnapshot,
+              hasProgress: item.actual_kind === 'in_progress' ? true : item.actual_kind === 'completed' ? false : Boolean(lessonSnapshot.hasProgress),
+            }
             const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
             const occurrenceKey = item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`
-            const assignedTeacher = normalizeInstructionalTeacher(item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'
-            const historicalActivityAllowed = item.historical_record !== true
-              && (item.placement_kind !== 'actual' || Boolean(item.source_occurrence_id))
+            const assignedTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'
+            const historicalActivityAllowed = item.historical_record !== true && item.placement_kind !== 'actual'
             const teacherEditable = role === 'facilitator'
               && item.lesson_key
               && item.placement_kind !== 'actual'

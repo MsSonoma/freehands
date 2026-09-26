@@ -738,6 +738,7 @@ function WebbPageInner() {
           lessonTitle: selectedLesson.title || lessonId,
           startedAt: webbSessionStartRef.current || new Date().toISOString(),
           lines,
+          sessionId: canonicalSessionRef.current?.id || undefined,
           teacher: 'webb',
         })
         if (!txResult?.ok) {

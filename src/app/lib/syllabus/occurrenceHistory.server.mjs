@@ -37,6 +37,42 @@ async function signedTranscript(admin, base, browserSessionId = null) {
   return null
 }
 
+const TRANSCRIPT_MATCH_TOLERANCE_MS = 5 * 60 * 1000
+
+function timestampsClose(left, right) {
+  const a = Date.parse(left || '')
+  const b = Date.parse(right || '')
+  return Number.isFinite(a) && Number.isFinite(b) && Math.abs(a - b) <= TRANSCRIPT_MATCH_TOLERANCE_MS
+}
+
+async function consolidatedTranscriptMatchesSession(admin, base, canonicalSession) {
+  if (!admin?.storage?.from || !base || !canonicalSession) return false
+  try {
+    const { data, error } = await admin.storage.from(TRANSCRIPT_BUCKET).download(`${base}/ledger.json`)
+    if (error || !data) return false
+    const raw = await data.text()
+    const ledger = JSON.parse(raw)
+    if (!Array.isArray(ledger) || ledger.length !== 1) return false
+    const [segment] = ledger
+    if (!timestampsClose(segment?.startedAt, canonicalSession.started_at)) return false
+    if (canonicalSession.ended_at && !timestampsClose(segment?.completedAt, canonicalSession.ended_at)) return false
+    return true
+  } catch {
+    return false
+  }
+}
+
+async function signedCanonicalTranscript({ admin, base, canonicalSession, signTranscript }) {
+  const identities = [...new Set([clean(canonicalSession?.session_id), clean(canonicalSession?.id)].filter(Boolean))]
+  for (const identity of identities) {
+    const exact = await signTranscript(admin, base, identity).catch(() => null)
+    if (exact) return exact
+  }
+  if (!await consolidatedTranscriptMatchesSession(admin, base, canonicalSession)) return null
+  return signTranscript(admin, base, null).catch(() => null)
+}
+
+
 function reportAnchorIds(events = []) {
   return new Set(events.map((event) => clean(event?.mastery_check_id)).filter(Boolean))
 }
@@ -207,7 +243,7 @@ export async function loadSyllabusOccurrenceHistory({
   const sessionRecords = []
   if (canonicalSession) {
     const base = transcriptBase({ facilitatorId, learnerId, lessonKey: item.lesson_key, teacher })
-    const transcript = await signTranscript(admin, base, canonicalSession.session_id).catch(() => null)
+    const transcript = await signedCanonicalTranscript({ admin, base, canonicalSession, signTranscript })
     if (transcript) sessionRecords.push({
       kind: 'instructional_transcript',
       teacher: teacher || null,
@@ -248,7 +284,9 @@ export async function loadSyllabusOccurrenceHistory({
         lessonKey: item.lesson_key || null,
         subject: item.subject || null,
         occurrenceDate: item.planned_date || null,
-        completedAt: item.actual_at || legacyRecord?.occurred_at || canonicalSession?.ended_at || null,
+        scheduledDate: item.scheduled_date || null,
+        startedAt: item.started_at || canonicalSession?.started_at || null,
+        completedAt: item.completed_at || item.actual_at || legacyRecord?.occurred_at || canonicalSession?.ended_at || null,
         completionState: item.actual_kind || 'completed',
         actualInstructionalTeacher: teacher ? { id: teacher, label: instructionalTeacherLabel(teacher) } : null,
       },

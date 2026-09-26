@@ -16,6 +16,11 @@ export function resolveSyllabusSelection(selection, snapshot, proposedItems = []
   const historical = previous.historical_record || previous.placement_kind === 'actual'
   const active = snapshot.timeline_items
   let matches = occurrence ? active.filter(item => String(item.occurrence_id || item.id || '') === occurrence) : []
+  if (!matches.length && !historical && occurrence) {
+    const completedActuals = active.filter(item => item.placement_kind === 'actual'
+      && String(item.source_occurrence_id || '') === occurrence)
+    if (completedActuals.length === 1) matches = completedActuals
+  }
   if (!matches.length && !historical && previous.lineage_id) {
     matches = active.filter(item => item.lineage_id === previous.lineage_id && !item.historical_record && item.placement_kind !== 'actual')
   }
@@ -27,12 +32,16 @@ export function resolveSyllabusSelection(selection, snapshot, proposedItems = []
   if (matches.length !== 1) return null
   const item = matches[0]
   if (JSON.stringify(item) === JSON.stringify(previous) && Boolean(selection.suggested) === suggested) return selection
+  const actualKind = String(item.actual_kind || '')
+  const hasProgress = actualKind === 'in_progress' ? true : actualKind === 'completed' ? false : Boolean(selection.currentLesson?.hasProgress)
   return {
     ...selection, item, suggested,
     recoveryRequired: item.generation_status === 'recovery_required',
     occurrenceKey: item.occurrence_id || item.id || item.lineage_id,
-    syllabus_state: syllabusItemState({ item, today: snapshot.resolved_today, hasProgress: selection.currentLesson?.hasProgress }),
-    assignedTeacher: normalizeInstructionalTeacher(item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma',
+    syllabus_state: syllabusItemState({ item, today: snapshot.resolved_today, hasProgress }),
+    currentLesson: { ...(selection.currentLesson || {}), hasProgress },
+    assignedTeacher: normalizeInstructionalTeacher(item.actual_instructional_teacher || item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma',
+    historicalActivityAllowed: item.historical_record !== true && item.placement_kind !== 'actual',
     teacherEditable: Boolean(item.lesson_key) && !item.historical_record && item.placement_kind !== 'actual'
       && !active.some(row => row.placement_kind === 'actual' && row.source_occurrence_id === (item.occurrence_id || item.id)),
   }

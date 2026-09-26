@@ -190,6 +190,44 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load Syllabus forecast')
       return data || []
     },
+    async listSyllabusIntentSourceDates(facilitatorId, learnerId, syllabusId, occurrenceIds = []) {
+      const ids = [...new Set((occurrenceIds || []).map((value) => String(value || '').trim()).filter(Boolean))]
+      const forecastIds = ids.filter((id) => id.startsWith('syllabus:')).map((id) => id.slice('syllabus:'.length)).filter(Boolean)
+      const scheduleIds = ids.filter((id) => id.startsWith('scheduled:')).map((id) => id.slice('scheduled:'.length)).filter(Boolean)
+      const rows = []
+
+      if (forecastIds.length && syllabusId) {
+        const { data: forecasts, error: forecastError } = await admin.from('syllabus_forecast_items')
+          .select('id,revision_id,lesson_key,planned_date')
+          .in('id', forecastIds)
+        throwOn(forecastError, 'Failed to load historical Syllabus intent dates')
+        const revisionIds = [...new Set((forecasts || []).map((row) => row.revision_id).filter(Boolean))]
+        let allowedRevisionIds = new Set()
+        if (revisionIds.length) {
+          const { data: revisions, error: revisionError } = await admin.from('syllabus_revisions')
+            .select('id')
+            .eq('syllabus_id', syllabusId)
+            .in('id', revisionIds)
+          throwOn(revisionError, 'Failed to verify historical Syllabus intent dates')
+          allowedRevisionIds = new Set((revisions || []).map((row) => String(row.id)))
+        }
+        for (const row of forecasts || []) {
+          if (!allowedRevisionIds.has(String(row.revision_id))) continue
+          rows.push({ occurrence_id: `syllabus:${row.id}`, lesson_key: row.lesson_key, planned_date: row.planned_date })
+        }
+      }
+
+      if (scheduleIds.length) {
+        const { data: schedules, error: scheduleError } = await admin.from('lesson_schedule').select('id,lesson_key,scheduled_date,learner_id,facilitator_id')
+          .eq('learner_id', learnerId)
+          .in('id', scheduleIds)
+          .or(`facilitator_id.eq.${facilitatorId},facilitator_id.is.null`)
+        throwOn(scheduleError, 'Failed to load historical lesson schedule dates')
+        for (const row of schedules || []) rows.push({ occurrence_id: `scheduled:${row.id}`, lesson_key: row.lesson_key, planned_date: row.scheduled_date })
+      }
+
+      return rows
+    },
     async listNoSchoolDates(facilitatorId, learnerId, fromDate = null, toDate = null) {
       let query = admin.from('no_school_dates').select('*')
         .eq('facilitator_id', facilitatorId)

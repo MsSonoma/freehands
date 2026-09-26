@@ -204,6 +204,18 @@ export async function loadSyllabusTimelineInputs({
       ? loadSlateEvidenceInputs({ repository, facilitatorId, learnerId: learner.id })
       : { slateEvidenceReports: [], slateReviewReports: [] },
   ])
+  const sourceOccurrenceIds = [...new Set([
+    ...(sessions || []).map((row) => clean(row?.syllabus_occurrence_id)),
+    ...(sessionEvents || []).map((row) => clean(row?.metadata?.syllabus_occurrence_id)),
+  ].filter(Boolean))]
+  const intentSourceDates = await optionalList(
+    'listSyllabusIntentSourceDates',
+    facilitatorId,
+    learner.id,
+    activeRevision.syllabus_id,
+    sourceOccurrenceIds,
+  )
+
   const lessonMetadata = await resolveSyllabusLessonMetadata({
     admin,
     facilitatorId,
@@ -215,5 +227,5 @@ export async function loadSyllabusTimelineInputs({
     sessionEvents,
     verifyLessonAccess,
   })
-  return { forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, lessonMetadata, ...slateEvidence }
+  return { forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, intentSourceDates, lessonMetadata, ...slateEvidence }
 }
