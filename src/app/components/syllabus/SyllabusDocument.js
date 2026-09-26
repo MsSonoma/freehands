@@ -264,7 +264,8 @@ export default function SyllabusDocument({
                   onClick={selectableReview ? () => onSelectReview(item) : undefined}
                   disabled={!selectableReview}
                 >
-                  <span className={styles.reviewHistoryIcon} aria-hidden="true">S</span>
+                  <span className={styles.reviewHistoryIcon} aria-hidden="true">🤖</span>
+                  <span className={styles.reviewHistoryLabel}>Mr. Slate</span>
                   {count > 1 && <span className={styles.reviewHistoryCount} aria-hidden="true">{count}</span>}
                 </button>
               )
