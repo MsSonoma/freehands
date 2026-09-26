@@ -13,6 +13,10 @@ export function instructionalTeacherLabel(value) {
   return normalizeInstructionalTeacher(value) === 'webb' ? 'Mrs. Webb' : 'Ms. Sonoma'
 }
 
+export function instructionalTeacherIcon(value) {
+  return normalizeInstructionalTeacher(value) === 'webb' ? '👩🏻‍🏫' : '👩🏻‍🦰'
+}
+
 export function syllabusTeacherLabel(item = {}) {
   if (item?.placement_kind === 'actual') {
     const actual = normalizeInstructionalTeacher(item.actual_instructional_teacher)

@@ -155,7 +155,24 @@ test('Syllabus projection creates review items, not lesson items, with per-lesso
   assert.equal(projection.items[0].item_type, 'review')
   assert.equal(projection.items[0].lesson_key, undefined)
   assert.equal(projection.items[0].review_ready, true)
+  assert.equal(projection.items[0].subject, 'Math')
   assert.equal(projection.items[0].review_progress.lessons[0].completed, true)
+})
+
+test('review projection uses contributing lesson subjects as the review header', () => {
+  const projection = buildSyllabusReviewProjection({
+    timelineItems: [
+      completedLesson({ planned_date: '2026-09-21', subject: 'Math' }),
+      completedLesson({ occurrence_id: 'syllabus:science', lesson_key: 'generated/science.json', planned_date: '2026-09-24', subject: 'Science', title: 'Water Cycle' }),
+    ],
+    settings: { daily_followups_enabled: false, weekly_reviews_enabled: true, weekly_review_day: 'friday' },
+    today: '2026-09-25',
+    timeZone: 'America/New_York',
+    availability: { cards: [], completed_cycles: [] },
+  })
+  assert.equal(projection.items.length, 1)
+  assert.equal(projection.items[0].subject, 'Math · Science')
+  assert.equal(projection.items[0].title, 'Weekly Review')
 })
 
 test('Same-day Daily Review starts under its own protocol without changing delayed Daily Follow-Up semantics', async () => {

@@ -86,6 +86,10 @@ export default function SyllabusReviewOverlay({
   const isHistory = totalHistoryCount > 0
   const isSlateHistory = item.item_type === 'slate_review_history'
   const historyLabel = isHistory ? (item.title || (isSlateHistory ? 'Daily Review' : 'Review')) : ''
+  const historySubjects = [...new Set([...historyReviews, ...historySlateCompletions].map((entry) => String(entry?.subject || '').trim()).filter(Boolean))]
+  const headerSubject = isHistory ? (historySubjects.join(' · ') || 'Review') : (item.subject || 'Review')
+  const headerTitle = isHistory ? historyLabel : (item.title || 'Review')
+  const headerIcon = isHistory ? [...new Set([...historyReviews, ...historySlateCompletions].map((entry) => reviewTeacherIcon(entry?.review_teacher)))].join(' ') : reviewTeacherIcon(teacher)
   const progress = item.review_progress || {}
   const lessons = Array.isArray(progress.lessons) ? progress.lessons : []
   const canStart = !isHistory && item.review_ready === true && item.review_status !== 'completed'
@@ -97,8 +101,8 @@ export default function SyllabusReviewOverlay({
       <section className={styles.overlay} role="dialog" aria-modal="true" aria-label={`${item.title || 'Review'} details`}>
         <header>
           <div>
-            <p className={styles.subject}>{isHistory ? historyLabel : 'Review'}</p>
-            <h2>{isHistory ? (totalHistoryCount === 1 ? 'Completed review' : 'Completed reviews') : (item.title || 'Review')}</h2>
+            <p className={styles.subject}>{headerSubject}</p>
+            <h2>{headerIcon} {headerTitle}</h2>
           </div>
           <button type="button" className={styles.close} onClick={onClose} aria-label="Close">Close</button>
         </header>

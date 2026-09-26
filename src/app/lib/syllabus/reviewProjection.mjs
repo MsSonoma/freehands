@@ -91,6 +91,11 @@ function lessonProgress(item = {}) {
   }
 }
 
+function reviewSubject(lessons = []) {
+  const subjects = [...new Set((lessons || []).map((lesson) => clean(lesson?.subject)).filter(Boolean))]
+  return subjects.length ? subjects.join(' · ') : 'Review'
+}
+
 export function buildDailyReviewCycles({
   timelineItems = [],
   enabled = false,
@@ -212,7 +217,7 @@ export function buildSyllabusReviewProjection({
       cycle_key: cycle.cycleKey,
       planned_date: completedRun?.completed_at ? (dateInTimeZone(completedRun.completed_at, cycle.timeZone || timeZone) || cycle.reviewDate) : cycle.reviewDate,
       sort_order: 1000000,
-      subject: 'Review',
+      subject: reviewSubject(cycle.lessons),
       title: label,
       description: cycle.review_type === 'daily_review'
         ? 'Review the learning completed on this day.'

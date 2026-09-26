@@ -10,7 +10,7 @@ import {
   syllabusDayPresentation,
   syllabusItemState,
 } from '@/app/lib/syllabus/timeline.mjs'
-import { instructionalTeacherLabel, normalizeInstructionalTeacher, syllabusTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { instructionalTeacherIcon, instructionalTeacherLabel, normalizeInstructionalTeacher, syllabusTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/lib/syllabus/learnerPresentation.mjs'
 import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
@@ -322,8 +322,8 @@ export default function SyllabusDocument({
                   } : undefined}
                 >
                   <div className={styles.entryBody}>
-                    <p className={styles.subject}>{reviewTeacherIcon(item.review_teacher)} {item.review_type === 'weekly_review' ? 'Weekly Review' : item.review_type === 'daily_review' ? 'Daily Review' : 'Daily Follow-Up'}</p>
-                    <h4>{item.title}</h4>
+                    <p className={styles.subject}>{item.subject || 'Review'}</p>
+                    <h4>{reviewTeacherIcon(item.review_teacher)} {item.review_type === 'weekly_review' ? 'Weekly Review' : item.review_type === 'daily_review' ? 'Daily Review' : 'Daily Follow-Up'}</h4>
                     <span className={styles.statusLabel}>{reviewStatus}</span>
                   </div>
                   {selectableReview && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
@@ -345,7 +345,8 @@ export default function SyllabusDocument({
             }
             const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
             const occurrenceKey = item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`
-            const assignedTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'
+            const resolvedTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.assigned_instructional_teacher || item.instructional_teacher)
+            const assignedTeacher = resolvedTeacher || 'sonoma'
             const historicalActivityAllowed = item.historical_record !== true && item.placement_kind !== 'actual'
             const teacherEditable = role === 'facilitator'
               && item.lesson_key
@@ -365,8 +366,8 @@ export default function SyllabusDocument({
                 onKeyDown={onSelectLesson ? (event) => { if (event.key === 'Enter' || event.key === ' ') { event.preventDefault(); onSelectLesson(item, { syllabus_state: state, currentLesson, teacherEditable, historicalActivityAllowed, occurrenceKey, assignedTeacher }) } } : undefined}
               >
                 <div className={styles.entryBody}>
-                  <p className={styles.subject}>{item.item_type === 'slate_assignment' ? `${reviewTeacherIcon(item.review_teacher)} Daily Review` : item.subject}</p>
-                  <h4>{item.title}</h4>
+                  <p className={styles.subject}>{item.subject}</p>
+                  <h4>{item.item_type === 'slate_assignment' ? `${reviewTeacherIcon(item.review_teacher)} Daily Review` : resolvedTeacher ? `${instructionalTeacherIcon(resolvedTeacher)} ${item.title}` : item.title}</h4>
                   {item.item_type === 'slate_assignment' && <span className={styles.statusLabel}>Teacher: {reviewTeacherLabel(item.review_teacher)}</span>}
                   {(item.item_type || 'lesson') === 'lesson' && item.historical_record
                     ? (item.actual_instructional_teacher

@@ -10,7 +10,7 @@ import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDi
 import { ensureFacilitatorPinException, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { featuresForTier } from '@/app/lib/entitlements'
 import { buildLessonSchedulePayload, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
-import { buildInstructionalSessionRoute, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { buildInstructionalSessionRoute, instructionalTeacherIcon, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, normalizeReviewTeacher, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
 import { buildLessonGeneratorReviewHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import { getLearner } from '@/app/facilitator/learners/clientApi'
@@ -240,6 +240,8 @@ export default function FacilitatorSyllabusLessonOverlay({
   const attemptedAt = actualKind === 'incomplete' ? item.actual_at : null
   const scheduledDate = dateOnly(item.scheduled_date || (!isHistorical ? displayedDate : ''))
   const displayTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || (isHistorical ? item.instructional_teacher : null) || assignedTeacher) || 'sonoma'
+  const historicalInstructionalTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.instructional_teacher || item.assigned_instructional_teacher)
+  const headerInstructionalTeacher = isLesson && item.lesson_key ? (isHistorical ? historicalInstructionalTeacher : assignedTeacher) : null
   const displayStatus = repeatDeliveryActive ? 'Retry ready' : actualKind === 'completed' ? 'Completed' : actualKind === 'in_progress' ? 'In progress' : actualKind === 'incomplete' ? 'Incomplete' : (readiness || selection.syllabus_state?.replaceAll('_', ' ') || 'Ready')
 
   async function refreshAfterChange() {
@@ -674,7 +676,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   return <>
     <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.() }}>
       <section className={styles.overlay} role="dialog" aria-modal="true" aria-label={`Lesson details for ${item.title || 'lesson'}`}>
-        <header><div><p className={styles.subject}>{item.subject || 'Lesson'}</p><h2>{item.title || 'Untitled lesson'}</h2></div><button type="button" className={styles.close} onClick={onClose} aria-label="Close">Close</button></header>
+        <header><div><p className={styles.subject}>{item.subject || 'Lesson'}</p><h2>{isSlateAssignment ? `${reviewTeacherIcon(slateTeacher)} Daily Review` : `${headerInstructionalTeacher ? `${instructionalTeacherIcon(headerInstructionalTeacher)} ` : ''}${item.title || 'Untitled lesson'}`}</h2></div><button type="button" className={styles.close} onClick={onClose} aria-label="Close">Close</button></header>
         <div className={styles.body}>
           {printOpen ? <section className={styles.detailSection}>
             <h3>Print lesson materials</h3>
