@@ -134,15 +134,15 @@ Log truncation is controlled via environment variable `SONOMA_LOG_PREVIEW_MAX`:
 - **Mutation**: Read-only; it does not change Syllabus revisions, proposals, planning, sessions, evidence, transcripts, readiness, or scheduling
 
 ### `/api/learner/follow-ups`
-**Purpose**: Read/start learner Daily Follow-Up and Weekly Review cards and update facilitator-controlled per-learner settings
+**Purpose**: Read/start learner review runs (same-day Daily Review, historical Daily Follow-Up, and Weekly Review) and update facilitator-controlled per-learner settings
 **Status**: Operational only when the existing mastery-evidence flag is enabled and the Follow-Up migration is installed
 
 - **Location**: `src/app/api/learner/follow-ups/route.js`
 - **Methods**: `GET` availability, `POST` with `action=start`, `PATCH` settings
 - **Auth**: Bearer token required; learner ownership is verified before reads or writes
-- **Selection**: Server time, profile timezone, source-backed evidence, deterministic identity, and durable run state are authoritative
+- **Selection**: Server time, profile timezone, source-backed evidence, Syllabus daily-completion gates where applicable, deterministic identity, and durable run state are authoritative
 - **Privacy**: Responses omit answer keys, raw responses, private item payloads, service credentials, and unselected held-out items; availability cards never include reserved selections
-- **Settings**: Accepts only `daily_followups_enabled`, `weekly_reviews_enabled`, and a validated weekday
+- **Settings**: Accepts only `daily_followups_enabled`, `weekly_reviews_enabled`, and a validated weekday. The compatibility field `daily_followups_enabled` controls same-day Daily Reviews when an active Syllabus supplies day grouping.
 
 ### `/api/learner/follow-ups/[runId]`
 **Purpose**: Resume and append interactions to one authorized review run

@@ -21,14 +21,18 @@ import {
 } from './retention.js';
 
 export const DAILY_FOLLOWUP_PROTOCOL_VERSION = 'daily-followup-v1';
+export const DAILY_REVIEW_PROTOCOL_VERSION = 'daily-review-v1';
 export const WEEKLY_REVIEW_PROTOCOL_VERSION = 'weekly-review-v1';
 export const DAILY_FOLLOWUP_EVIDENCE_PURPOSE = 'daily_followup';
+export const DAILY_REVIEW_EVIDENCE_PURPOSE = 'daily_review';
 export const WEEKLY_REVIEW_EVIDENCE_PURPOSE = 'weekly_review';
+export const DAILY_REVIEW_MAX_ITEMS = 8;
 export const WEEKLY_REVIEW_MAX_ITEMS = 5;
 export const WEEKLY_REVIEW_WINDOW_DAYS = 7;
 
 export const REVIEW_TYPES = Object.freeze({
   DAILY_FOLLOWUP: 'daily_followup',
+  DAILY_REVIEW: 'daily_review',
   WEEKLY_REVIEW: 'weekly_review',
 });
 
@@ -52,6 +56,7 @@ export const WEEKLY_REVIEW_OUTCOMES = Object.freeze({
 export const REVIEW_REASONS = Object.freeze({
   ELIGIBLE: 'eligible',
   NO_DAILY_POOL: 'no_daily_followup_pool',
+  NO_DAILY_REVIEW_POOL: 'no_daily_review_pool',
   NO_WEEKLY_POOL: 'no_weekly_review_pool',
   NO_VALID_ANCHOR: 'no_valid_anchor',
   PRIOR_EXPOSURE: 'prior_exposure',
@@ -70,6 +75,15 @@ const DAILY_FIELDS = Object.freeze([
   'daily_followups',
   'dailyFollowupPool',
   'daily_followup_pool',
+]);
+
+const DAILY_REVIEW_FIELDS = Object.freeze([
+  'dailyReview',
+  'dailyReviews',
+  'daily_review',
+  'daily_reviews',
+  'dailyReviewPool',
+  'daily_review_pool',
 ]);
 
 const WEEKLY_FIELDS = Object.freeze([
@@ -146,6 +160,22 @@ export function getDailyFollowUpItems(lesson = null) {
   );
 }
 
+export function getDailyReviewItems(lesson = null) {
+  const dedicated = getRoleItems(
+    lesson,
+    DAILY_REVIEW_FIELDS,
+    DAILY_REVIEW_EVIDENCE_PURPOSE,
+    DAILY_REVIEW_EVIDENCE_PURPOSE,
+  );
+  if (dedicated.length) return dedicated;
+  return getRoleItems(
+    lesson,
+    DAILY_FIELDS,
+    DAILY_REVIEW_EVIDENCE_PURPOSE,
+    DAILY_REVIEW_EVIDENCE_PURPOSE,
+  );
+}
+
 export function getWeeklyReviewItems(lesson = null) {
   return getRoleItems(
     lesson,
@@ -195,18 +225,33 @@ async function buildRolePlan({
 } = {}) {
   const roleItems = role === REVIEW_TYPES.DAILY_FOLLOWUP
     ? getDailyFollowUpItems(lessonData)
-    : getWeeklyReviewItems(lessonData);
+    : role === REVIEW_TYPES.DAILY_REVIEW
+      ? getDailyReviewItems(lessonData)
+      : getWeeklyReviewItems(lessonData);
   if (!roleItems.length) {
     return unavailablePlan(
       role === REVIEW_TYPES.DAILY_FOLLOWUP
         ? REVIEW_REASONS.NO_DAILY_POOL
-        : REVIEW_REASONS.NO_WEEKLY_POOL,
+        : role === REVIEW_TYPES.DAILY_REVIEW
+          ? REVIEW_REASONS.NO_DAILY_REVIEW_POOL
+          : REVIEW_REASONS.NO_WEEKLY_POOL,
     );
   }
 
+  const dedicatedDailyReviewItems = getRoleItems(
+    lessonData,
+    DAILY_REVIEW_FIELDS,
+    DAILY_REVIEW_EVIDENCE_PURPOSE,
+    DAILY_REVIEW_EVIDENCE_PURPOSE,
+  );
   const otherRoleItems = role === REVIEW_TYPES.DAILY_FOLLOWUP
-    ? getWeeklyReviewItems(lessonData)
-    : getDailyFollowUpItems(lessonData);
+    ? [...dedicatedDailyReviewItems, ...getWeeklyReviewItems(lessonData)]
+    : role === REVIEW_TYPES.DAILY_REVIEW
+      ? [
+          ...getWeeklyReviewItems(lessonData),
+          ...(dedicatedDailyReviewItems.length ? getDailyFollowUpItems(lessonData) : []),
+        ]
+      : [...getDailyFollowUpItems(lessonData), ...dedicatedDailyReviewItems];
   const [roleRecords, protectedRecords] = await Promise.all([
     identityRecords({ lessonKey, lessonId, lessonData, items: roleItems }),
     identityRecords({
@@ -263,6 +308,10 @@ async function buildRolePlan({
 
 export function buildDailyFollowUpPlan(options = {}) {
   return buildRolePlan({ ...options, role: REVIEW_TYPES.DAILY_FOLLOWUP });
+}
+
+export function buildDailyReviewPlan(options = {}) {
+  return buildRolePlan({ ...options, role: REVIEW_TYPES.DAILY_REVIEW });
 }
 
 export function buildWeeklyReviewPlan(options = {}) {
@@ -446,6 +495,29 @@ export function selectDailyFollowUpAnchors({
   });
 }
 
+export function selectDailyReviewAnchors({
+  evidenceEvents = [],
+  cycle = null,
+} = {}) {
+  if (!cycle?.reviewDate) return [];
+  const lessonKeys = new Set((cycle.lessonKeys || []).map((value) => String(value || '').trim()).filter(Boolean));
+  const zone = validTimeZone(cycle.timeZone || 'UTC');
+  const eligible = groupLatestEligibleAnchors(evidenceEvents).filter((anchor) => {
+    if (lessonKeys.size && !lessonKeys.has(String(anchor.lesson_key || '').trim())) return false;
+    const occurred = new Date(anchor.occurred_at || '');
+    if (Number.isNaN(occurred.getTime())) return false;
+    const local = zonedParts(occurred, zone);
+    return dateKey({ year: local.year, month: local.month, day: local.day }) === cycle.reviewDate;
+  });
+  const seenLessons = new Set();
+  return eligible.filter((anchor) => {
+    const key = String(anchor.lesson_key || anchor.session_id || anchor.mastery_check_id || '').trim();
+    if (!key || seenLessons.has(key)) return false;
+    seenLessons.add(key);
+    return true;
+  });
+}
+
 export function selectWeeklyReviewAnchors({ evidenceEvents = [], cycle } = {}) {
   if (!cycle) return [];
   const start = Date.parse(cycle.windowStart || '');
@@ -610,6 +682,13 @@ export function weeklyOutcomeLabel(outcome, delaySeconds) {
   return 'Weekly Review evidence unavailable';
 }
 
+export function dailyReviewOutcomeLabel(outcome) {
+  if (outcome === WEEKLY_REVIEW_OUTCOMES.DEMONSTRATED) return 'Demonstrated in daily review';
+  if (outcome === WEEKLY_REVIEW_OUTCOMES.NEEDS_REVIEW) return 'Review recommended from daily review';
+  if (outcome === WEEKLY_REVIEW_OUTCOMES.ASSISTED_DEMONSTRATION) return 'Demonstrated with assistance in daily review';
+  return 'Daily Review evidence unavailable';
+}
+
 export function formatReviewDelay(value) {
   const seconds = Number(value);
   if (!Number.isFinite(seconds) || seconds < 0) return 'an unrecorded interval';
@@ -629,6 +708,7 @@ export function buildReviewRunSummary({ run, items = [], events = [] } = {}) {
   const itemSummaries = items.map((item) => {
     const result = resultByItem.get(String(item.id)) || null;
     const isDaily = run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP;
+    const isDailyReview = run.review_type === REVIEW_TYPES.DAILY_REVIEW;
     return {
       lesson_key: item.lesson_key,
       lesson_id: item.lesson_id,
@@ -638,7 +718,9 @@ export function buildReviewRunSummary({ run, items = [], events = [] } = {}) {
       label: result
         ? (isDaily
           ? dailyOutcomeLabel(result.review_outcome, result.delay_seconds)
-          : weeklyOutcomeLabel(result.review_outcome, result.delay_seconds))
+          : isDailyReview
+            ? dailyReviewOutcomeLabel(result.review_outcome)
+            : weeklyOutcomeLabel(result.review_outcome, result.delay_seconds))
         : 'Not measured',
       delay_seconds: result?.delay_seconds ?? null,
       qualification_status: result?.qualification_status || null,
@@ -663,7 +745,11 @@ export function buildReviewRunSummary({ run, items = [], events = [] } = {}) {
       window_start: run.window_start,
       window_end: run.window_end,
     },
-    label: run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP ? 'Daily Follow-Up' : 'Weekly Review',
+    label: run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP
+      ? 'Daily Follow-Up'
+      : run.review_type === REVIEW_TYPES.DAILY_REVIEW
+        ? 'Daily Review'
+        : 'Weekly Review',
     items: itemSummaries,
   };
 }

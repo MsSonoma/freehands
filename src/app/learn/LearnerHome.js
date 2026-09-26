@@ -186,6 +186,11 @@ function LessonsPageInner(){
     }
   }
 
+  const openSyllabusReview = (item) => openFollowUp({
+    id: item?.review_card_id || item?.id,
+    run_id: item?.review_run_id || null,
+  })
+
   const lessonTitleLookup = useMemo(() => {
     const map = {}
     Object.entries(allLessons || {}).forEach(([subject, lessons]) => {
@@ -1187,6 +1192,7 @@ function LessonsPageInner(){
             learnerName={learnerName || ''}
             lessonState={syllabusLessonState}
             onSelectLesson={(item, context) => openSyllabusLesson(item, context)}
+            onSelectReview={(item) => void openSyllabusReview(item)}
             today={syllabusModel.resolved_today}
           />
         )}

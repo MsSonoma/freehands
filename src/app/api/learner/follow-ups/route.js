@@ -16,6 +16,7 @@ import {
   loadLessonForFollowUp,
 } from '@/app/lib/masteryEvidence/followUps.server.js';
 import { isUuid } from '@/app/lib/masteryEvidence/schema.js';
+import { loadDailyReviewCyclesForLearner } from '@/app/lib/syllabus/reviewProjection.server.mjs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -54,6 +55,21 @@ function enabled() {
   return isMasteryEvidenceEnabled(process.env);
 }
 
+async function dailyReviewCyclesFor(ctx, learnerId, now, deps = {}) {
+  if (Array.isArray(deps.dailyReviewCycles)) return deps.dailyReviewCycles;
+  try {
+    return await loadDailyReviewCyclesForLearner({
+      admin: ctx.auth.admin,
+      facilitatorId: ctx.auth.user.id,
+      learnerId,
+      now: new Date(now),
+      fallbackTimeZone: ctx.auth.user?.user_metadata?.timezone,
+    });
+  } catch {
+    return [];
+  }
+}
+
 export async function GET(request, deps = {}) {
   try {
     if (!enabled()) return NextResponse.json({ ok: true, enabled: false, cards: [] });
@@ -63,12 +79,15 @@ export async function GET(request, deps = {}) {
     if (!isUuid(learnerId)) {
       return NextResponse.json({ ok: false, error: 'learner_id must be a UUID' }, { status: 400 });
     }
+    const now = deps.now?.() || new Date().toISOString();
+    const dailyReviewCycles = await dailyReviewCyclesFor(ctx, learnerId, now, deps);
     const availability = await buildFollowUpAvailability({
       repository: ctx.repository,
       userId: ctx.auth.user.id,
       learnerId,
       loadLesson: ctx.loadLesson,
-      now: deps.now?.() || new Date().toISOString(),
+      now,
+      dailyReviewCycles,
     });
     const failure = responseForKind(availability);
     if (failure) return failure;
@@ -92,6 +111,7 @@ export async function POST(request, deps = {}) {
       return NextResponse.json({ ok: false, error: 'learner_id and card_id are required' }, { status: 400 });
     }
     const now = deps.now?.() || new Date().toISOString();
+    const dailyReviewCycles = await dailyReviewCyclesFor(ctx, learnerId, now, deps);
     const availability = await buildFollowUpAvailability({
       repository: ctx.repository,
       userId: ctx.auth.user.id,
@@ -99,6 +119,7 @@ export async function POST(request, deps = {}) {
       loadLesson: ctx.loadLesson,
       now,
       includePrivate: true,
+      dailyReviewCycles,
     });
     const failure = responseForKind(availability);
     if (failure) return failure;

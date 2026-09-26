@@ -80,5 +80,9 @@
 .selectableEntry:focus-visible { outline:2px solid #9a4634; outline-offset:2px; }
 .entryChevron { align-self:center; color:#9a9187; font:22px/1 Georgia,serif; }
 .selectableEntry .preparing { grid-column:1 / -1; }
+.reviewEntry { border-top-color:#cfc6b8; background:rgba(107,56,44,.035); padding-bottom:8px; }
+.reviewChecklist { display:grid; gap:4px; margin-top:8px; font:11px/1.35 Roboto,sans-serif; color:#5f574f; }
+.reviewChecklist > span { display:grid; grid-template-columns:16px minmax(0,1fr); gap:4px; align-items:start; }
+.reviewChecklist b { font-weight:800; color:#4f6b4f; }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }
 @media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader { align-items:stretch; flex-direction:column; gap:7px; }.weekHeaderActions { justify-content:space-between; } .planDetailsBody { grid-template-columns:1fr; } .planPatternSection { grid-column:auto; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; } .weekHeader time { white-space:normal; } }

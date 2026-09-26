@@ -29,6 +29,7 @@ import {
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { CORE_SUBJECTS } from '@/app/lib/subjects'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
+import { startFollowUp } from '@/app/lib/followUpsClient'
 import { buildLessonGeneratorReviewHref, buildLessonWorkflowReturnHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import styles from './syllabus/syllabus.module.css'
 import { instructionalForecastMode, instructionalForecastWindow } from '@/app/lib/syllabus/forecastWindow.mjs'
@@ -872,6 +873,22 @@ export default function FacilitatorPage() {
     setHistoryOccurrenceId(occurrenceId)
   }
 
+  async function openSyllabusReview(item) {
+    if (!item?.review_ready) return
+    try {
+      if (item.review_run_id) {
+        router.push(`/session/slate?reviewRunId=${encodeURIComponent(item.review_run_id)}`)
+        return
+      }
+      if (!item.review_card_id) throw new Error('This review is not ready yet.')
+      const result = await startFollowUp(learnerId, item.review_card_id)
+      if (!result?.run?.id) throw new Error('Review could not start')
+      router.push(`/session/slate?reviewRunId=${encodeURIComponent(result.run.id)}`)
+    } catch (error) {
+      alert(error?.message || 'Review could not start')
+    }
+  }
+
   const resolvedSyllabusLesson = resolveSyllabusSelection(selectedSyllabusLesson, syllabus, learningProposal?.forecast_items || [])
 
   if (authLoading) return <main className={styles.page}><p>Loading…</p></main>
@@ -975,6 +992,7 @@ export default function FacilitatorPage() {
               planTier={planTier}
               learnerName={selectedLearner?.name || ''}
               onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
+              onSelectReview={(item) => void openSyllabusReview(item)}
               canScheduleLessons={canScheduleLessons && syllabusHydrated}
               noSchoolDates={syllabus.no_school_dates || []}
               onDayAction={syllabusHydrated ? openDayAction : null}

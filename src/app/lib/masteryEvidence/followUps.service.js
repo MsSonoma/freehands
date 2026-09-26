@@ -1,10 +1,13 @@
 import {
   DAILY_FOLLOWUP_PROTOCOL_VERSION,
+  DAILY_REVIEW_MAX_ITEMS,
+  DAILY_REVIEW_PROTOCOL_VERSION,
   REVIEW_REASONS,
   REVIEW_TYPES,
   WEEKLY_REVIEW_MAX_ITEMS,
   WEEKLY_REVIEW_PROTOCOL_VERSION,
   buildDailyFollowUpPlan,
+  buildDailyReviewPlan,
   buildReviewRunSummary,
   buildWeeklyReviewCycle,
   buildWeeklyReviewPlan,
@@ -18,6 +21,7 @@ import {
   reviewHelpText,
   sanitizeReviewItem,
   selectDailyFollowUpAnchors,
+  selectDailyReviewAnchors,
   selectWeeklyReviewAnchors,
 } from './followUps.js';
 import { ITEM_IDENTITY_VERSION } from './identity.js';
@@ -41,7 +45,7 @@ export function normalizeFollowUpSettings(learner = {}) {
 }
 
 function runEnabled(run, settings) {
-  return run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP
+  return [REVIEW_TYPES.DAILY_FOLLOWUP, REVIEW_TYPES.DAILY_REVIEW].includes(run.review_type)
     ? settings.daily_followups_enabled
     : settings.weekly_reviews_enabled;
 }
@@ -120,10 +124,16 @@ function pendingRunCard(run, items, events) {
     review_type: run.review_type,
     run_id: run.id,
     cycle_key: run.cycle_key,
-    title: run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP ? `Remember ${title}?` : 'A quick weekly review',
+    title: run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP
+      ? `Remember ${title}?`
+      : run.review_type === REVIEW_TYPES.DAILY_REVIEW
+        ? 'Daily Review'
+        : 'A quick weekly review',
     subtitle: run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP
       ? 'A quick check from your last lesson'
-      : 'See what you remember from recent lessons',
+      : run.review_type === REVIEW_TYPES.DAILY_REVIEW
+        ? 'Review today\'s completed lessons'
+        : 'See what you remember from recent lessons',
     item_count: items.length,
     remaining_count: pendingItems.length,
     resume: presentedEvents(events).length > 0,
@@ -137,6 +147,7 @@ export async function buildFollowUpAvailability({
   loadLesson,
   now = new Date().toISOString(),
   includePrivate = false,
+  dailyReviewCycles = [],
 } = {}) {
   const learner = await repository.findOwnedLearner({ userId, learnerId });
   if (!learner?.id) return { kind: 'forbidden' };
@@ -148,7 +159,7 @@ export async function buildFollowUpAvailability({
     timeZone: timezone,
   });
   if (!settings.daily_followups_enabled && !settings.weekly_reviews_enabled) {
-    return { kind: 'ok', settings, timezone: cycle.timeZone, cycle, cards: [] };
+    return { kind: 'ok', settings, timezone: cycle.timeZone, cycle, cards: [], completed_cycles: [] };
   }
 
   const [evidenceEvents, history] = await Promise.all([
@@ -167,7 +178,8 @@ export async function buildFollowUpAvailability({
 
   if (settings.daily_followups_enabled) {
     const activeDailyRuns = history.runs.filter((run) => (
-      run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP && run.status === 'active'
+      [REVIEW_TYPES.DAILY_FOLLOWUP, REVIEW_TYPES.DAILY_REVIEW].includes(run.review_type)
+      && run.status === 'active'
     ));
     const activeCycles = new Set();
     for (const run of activeDailyRuns) {
@@ -177,46 +189,98 @@ export async function buildFollowUpAvailability({
         eventsByRun.get(String(run.id)) || [],
       );
       if (card) {
-        activeCycles.add(run.cycle_key);
+        activeCycles.add(`${run.review_type}:${run.cycle_key}`);
         cards.push(card);
       }
     }
 
-    const anchors = selectDailyFollowUpAnchors({ evidenceEvents, reviewResultEvents: reviewResults, now });
-    for (const anchor of anchors) {
-      const cycleKey = `daily:${anchor.mastery_check_id}`;
-      if (activeCycles.has(cycleKey)) continue;
-      const lesson = await loadLesson(anchor.lesson_key);
-      if (!lesson) continue;
-      const plan = await buildDailyFollowUpPlan({
-        lessonKey: anchor.lesson_key,
-        lessonId: anchor.lesson_id,
-        lessonData: lesson,
-        priorExposedKeys: exposedKeys,
-      });
-      if (!plan.eligible) continue;
-      const selection = {
-        anchor,
-        lesson,
-        item: plan.selectedItems[0],
-        identity: plan.selectedIdentities[0],
-      };
-      const card = {
-        id: cycleKey,
-        review_type: REVIEW_TYPES.DAILY_FOLLOWUP,
-        run_id: null,
-        cycle_key: cycleKey,
-        title: `Remember ${lesson.title || anchor.lesson_id || 'this lesson'}?`,
-        subtitle: 'A quick check from your last lesson',
-        item_count: 1,
-        remaining_count: 1,
-        resume: false,
-      };
-      if (includePrivate) {
-        card._selections = [selection];
-        card._cycle = cycle;
+    const syllabusCycles = (dailyReviewCycles || []).filter((entry) => entry?.ready && entry?.cycleKey);
+    if (syllabusCycles.length) {
+      const completedDailyCycles = new Set(history.runs
+        .filter((run) => run.review_type === REVIEW_TYPES.DAILY_REVIEW && run.status === 'completed')
+        .map((run) => run.cycle_key));
+      for (const dailyCycle of syllabusCycles) {
+        if (completedDailyCycles.has(dailyCycle.cycleKey)) continue;
+        if (activeCycles.has(`${REVIEW_TYPES.DAILY_REVIEW}:${dailyCycle.cycleKey}`)) continue;
+        const ordered = await deterministicReviewOrder(
+          selectDailyReviewAnchors({ evidenceEvents, cycle: dailyCycle }).map((anchor) => ({ anchor })),
+          dailyCycle.cycleKey,
+        );
+        const selections = [];
+        const selectionKeys = new Set(exposedKeys);
+        for (const entry of ordered) {
+          if (selections.length >= DAILY_REVIEW_MAX_ITEMS) break;
+          const anchor = entry.anchor;
+          const lesson = await loadLesson(anchor.lesson_key);
+          if (!lesson) continue;
+          const plan = await buildDailyReviewPlan({
+            lessonKey: anchor.lesson_key,
+            lessonId: anchor.lesson_id,
+            lessonData: lesson,
+            priorExposedKeys: selectionKeys,
+          });
+          if (!plan.eligible) continue;
+          const item = plan.selectedItems[0];
+          const identity = plan.selectedIdentities[0];
+          selections.push({ anchor, lesson, item, identity });
+          selectionKeys.add(`stable:${identity.stableItemId}`);
+          selectionKeys.add(`content:${identity.itemContentHash}`);
+        }
+        if (!selections.length) continue;
+        const card = {
+          id: `daily-review:${dailyCycle.cycleKey}`,
+          review_type: REVIEW_TYPES.DAILY_REVIEW,
+          run_id: null,
+          cycle_key: dailyCycle.cycleKey,
+          title: 'Daily Review',
+          subtitle: 'Review today\'s completed lessons',
+          item_count: selections.length,
+          remaining_count: selections.length,
+          resume: false,
+        };
+        if (includePrivate) {
+          card._selections = selections;
+          card._cycle = dailyCycle;
+        }
+        cards.unshift(card);
       }
-      cards.push(card);
+    } else {
+      const anchors = selectDailyFollowUpAnchors({ evidenceEvents, reviewResultEvents: reviewResults, now });
+      for (const anchor of anchors) {
+        const cycleKey = `daily:${anchor.mastery_check_id}`;
+        if (activeCycles.has(`${REVIEW_TYPES.DAILY_FOLLOWUP}:${cycleKey}`)) continue;
+        const lesson = await loadLesson(anchor.lesson_key);
+        if (!lesson) continue;
+        const plan = await buildDailyFollowUpPlan({
+          lessonKey: anchor.lesson_key,
+          lessonId: anchor.lesson_id,
+          lessonData: lesson,
+          priorExposedKeys: exposedKeys,
+        });
+        if (!plan.eligible) continue;
+        const selection = {
+          anchor,
+          lesson,
+          item: plan.selectedItems[0],
+          identity: plan.selectedIdentities[0],
+        };
+        const card = {
+          id: cycleKey,
+          review_type: REVIEW_TYPES.DAILY_FOLLOWUP,
+          run_id: null,
+          cycle_key: cycleKey,
+          title: `Remember ${lesson.title || anchor.lesson_id || 'this lesson'}?`,
+          subtitle: 'A quick check from your last lesson',
+          item_count: 1,
+          remaining_count: 1,
+          resume: false,
+        };
+        if (includePrivate) {
+          card._selections = [selection];
+          card._cycle = cycle;
+        }
+        cards.push(card);
+      }
     }
   }
 
@@ -278,7 +342,20 @@ export async function buildFollowUpAvailability({
     }
   }
 
-  return { kind: 'ok', settings, timezone: cycle.timeZone, cycle, cards };
+  return {
+    kind: 'ok',
+    settings,
+    timezone: cycle.timeZone,
+    cycle,
+    cards,
+    completed_cycles: history.runs
+      .filter((run) => run.status === 'completed')
+      .map((run) => ({
+        review_type: run.review_type,
+        cycle_key: run.cycle_key,
+        completed_at: run.completed_at || null,
+      })),
+  };
 }
 
 export function publicAvailability(result) {
@@ -300,26 +377,33 @@ export async function startFollowUpRun({
   const selections = card._selections || [];
   if (!selections.length) throw new Error('Review selection is unavailable');
   const runId = randomId();
-  const isDaily = card.review_type === REVIEW_TYPES.DAILY_FOLLOWUP;
+  const isDelayedDaily = card.review_type === REVIEW_TYPES.DAILY_FOLLOWUP;
+  const isDailyReview = card.review_type === REVIEW_TYPES.DAILY_REVIEW;
   const firstSelection = selections[0];
   const runRow = {
     id: runId,
     facilitator_id: userId,
     learner_id: learnerId,
     review_type: card.review_type,
-    protocol_version: isDaily ? DAILY_FOLLOWUP_PROTOCOL_VERSION : WEEKLY_REVIEW_PROTOCOL_VERSION,
+    protocol_version: isDelayedDaily
+      ? DAILY_FOLLOWUP_PROTOCOL_VERSION
+      : isDailyReview
+        ? DAILY_REVIEW_PROTOCOL_VERSION
+        : WEEKLY_REVIEW_PROTOCOL_VERSION,
     cycle_key: card.cycle_key,
     status: 'active',
     timezone: card._cycle?.timeZone || 'UTC',
-    activation_at: isDaily
+    activation_at: isDelayedDaily
       ? new Date(Date.parse(firstSelection.anchor.occurred_at) + (24 * 60 * 60 * 1000)).toISOString()
       : card._cycle?.activationAt || now,
-    window_start: isDaily ? null : card._cycle?.windowStart || null,
-    window_end: isDaily ? null : card._cycle?.windowEnd || null,
+    window_start: isDelayedDaily ? null : card._cycle?.windowStart || null,
+    window_end: isDelayedDaily ? null : card._cycle?.windowEnd || null,
     metadata: {
-      title: isDaily
+      title: isDelayedDaily
         ? (firstSelection.lesson.title || firstSelection.anchor.lesson_id || 'this lesson')
-        : 'Weekly Review',
+        : isDailyReview
+          ? 'Daily Review'
+          : 'Weekly Review',
       item_count: selections.length,
     },
     started_at: now,
@@ -600,7 +684,9 @@ export async function respondToFollowUpItem({
   const earlierSameAnchorReviews = reviewContext.filter((event) => (
     event.anchor_mastery_check_id === state.currentItem.anchor_mastery_check_id
   ));
-  const priorDaily = earlierSameAnchorReviews.some((event) => event.review_type === REVIEW_TYPES.DAILY_FOLLOWUP);
+  const priorDaily = earlierSameAnchorReviews.some((event) => (
+    event.review_type === REVIEW_TYPES.DAILY_FOLLOWUP || event.review_type === REVIEW_TYPES.DAILY_REVIEW
+  ));
   const legacyRetention = evidenceEvents.some((event) => (
     event.event_type === 'retention_check_result'
     && event.retention_anchor_mastery_check_id === state.currentItem.anchor_mastery_check_id
@@ -686,7 +772,8 @@ export async function respondToFollowUpItem({
     });
   }
   state = await loadFollowUpRunState({ repository, userId, runId });
-  const isDaily = state.run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP;
+  const isDelayedDaily = state.run.review_type === REVIEW_TYPES.DAILY_FOLLOWUP;
+  const isDailyReview = state.run.review_type === REVIEW_TYPES.DAILY_REVIEW;
   const retained = outcome === RETENTION_OUTCOMES.RETAINED;
   const demonstrated = outcome === 'demonstrated';
   return {
@@ -695,9 +782,11 @@ export async function respondToFollowUpItem({
     result,
     state,
     acknowledgement: isCorrect
-      ? (isDaily && retained
+      ? (isDelayedDaily && retained
         ? `You remembered it after ${formatReviewDelay(delaySeconds)}.`
-        : (demonstrated ? 'Nice work bringing that idea back.' : 'Nice work checking what you remember.'))
+        : isDailyReview && demonstrated
+          ? 'Nice work checking today\'s learning.'
+          : (demonstrated ? 'Nice work bringing that idea back.' : 'Nice work checking what you remember.'))
       : 'Thanks for giving it a try. This one is ready for a quick review.',
     review_recommended: !isCorrect || outcome === RETENTION_OUTCOMES.NEEDS_REVIEW,
   };

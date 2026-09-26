@@ -881,10 +881,10 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 											/>
 											<span>
 												<span style={{ display: 'block', fontSize: 14, fontWeight: 700, color: '#1f2937' }}>
-													Daily Follow-Ups
+													Daily Reviews
 												</span>
 												<span style={{ display: 'block', fontSize: 13, color: '#64748b', lineHeight: 1.35 }}>
-													Show short follow-ups after a learner has had time to remember a lesson.
+													After all lessons for a learning day are complete, combine them into one short Daily Review.
 												</span>
 											</span>
 										</label>
