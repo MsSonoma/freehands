@@ -10,7 +10,8 @@ import {
   syllabusDayPresentation,
   syllabusItemState,
 } from '@/app/lib/syllabus/timeline.mjs'
-import { instructionalTeacherIcon, instructionalTeacherLabel, normalizeInstructionalTeacher, syllabusTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { instructionalTeacherIcon, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { normalizeReviewTeacher, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
 import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/lib/syllabus/learnerPresentation.mjs'
 import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
@@ -34,6 +35,23 @@ function prettyDate(value, options) {
 
 function localCalendarDate(now = new Date()) {
   return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+}
+
+function reviewCardStatus(item = {}) {
+  if (item.item_type === 'review_history' || item.item_type === 'slate_review_history') return 'completed'
+  if (item.item_type === 'slate_assignment') return item.readiness_state === 'completed' || item.actual_kind === 'completed' ? 'ready' : 'planned'
+  if (item.review_status === 'completed') return 'completed'
+  return item.review_status === 'pending_lessons' ? 'planned' : 'ready'
+}
+
+function reviewTeacherText(entries = []) {
+  const teachers = [...new Set((entries || []).map((entry) => normalizeReviewTeacher(entry?.review_teacher)))]
+  return teachers.map((teacher) => `${reviewTeacherIcon(teacher)} ${reviewTeacherLabel(teacher)}`).join(' / ')
+}
+
+function reviewTeacherTextForItem(item = {}) {
+  const teacher = normalizeReviewTeacher(item.review_teacher)
+  return `${reviewTeacherIcon(teacher)} ${reviewTeacherLabel(teacher)}`
 }
 
 function subjectName(subject) {
@@ -289,6 +307,8 @@ export default function SyllabusDocument({
                   <div className={styles.entryBody}>
                     <p className={styles.subject}>{historySubject}</p>
                     <h4>{historyLabel}</h4>
+                    <span className={styles.placementLabel}>{reviewTeacherText(entries)}</span>
+                    <span className={styles.statusLabel}>{reviewCardStatus(item)}</span>
                   </div>
                   {selectableReview && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
                 </div>
@@ -316,6 +336,8 @@ export default function SyllabusDocument({
                   <div className={styles.entryBody}>
                     <p className={styles.subject}>{item.subject || 'Review'}</p>
                     <h4>{item.review_type === 'weekly_review' ? 'Weekly Review' : item.review_type === 'daily_review' ? 'Daily Review' : 'Daily Follow-Up'}</h4>
+                    <span className={styles.placementLabel}>{reviewTeacherTextForItem(item)}</span>
+                    <span className={styles.statusLabel}>{reviewCardStatus(item)}</span>
                   </div>
                   {selectableReview && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
                 </div>
@@ -358,12 +380,10 @@ export default function SyllabusDocument({
               >
                 <div className={styles.entryBody}>
                   <p className={styles.subject}>{item.subject}</p>
-                  <h4>{item.item_type === 'slate_assignment' ? 'Daily Review' : resolvedTeacher ? `${instructionalTeacherIcon(resolvedTeacher)} ${item.title}` : item.title}</h4>
-                  {(item.item_type || 'lesson') === 'lesson' && item.historical_record
-                    ? (item.actual_instructional_teacher
-                        ? <span className={styles.placementLabel}>Completed with {instructionalTeacherLabel(item.actual_instructional_teacher)} historical record</span>
-                        : null)
-                    : (item.item_type || 'lesson') === 'lesson' && <span className={styles.placementLabel}>{role === 'learner' && item.placement_kind !== 'actual' ? `Your teacher: ${instructionalTeacherLabel(assignedTeacher)}` : syllabusTeacherLabel(item)}</span>}
+                  <h4>{item.item_type === 'slate_assignment' ? 'Daily Review' : item.title}</h4>
+                  {item.item_type === 'slate_assignment'
+                    ? <><span className={styles.placementLabel}>{reviewTeacherTextForItem(item)}</span><span className={styles.statusLabel}>{reviewCardStatus(item)}</span></>
+                    : <span className={styles.placementLabel}>{instructionalTeacherIcon(assignedTeacher)} {instructionalTeacherLabel(assignedTeacher)}</span>}
                   {item.item_type !== 'slate_assignment' && <>
                   {(item.slate_annotations || []).map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
                   {(item.historical_activity_annotations || []).filter((annotation) => annotation?.kind !== 'slate_drill_history').map((annotation) => <span className={styles.placementLabel} key={annotation.kind + ':' + annotation.label}>{annotation.label}</span>)}
