@@ -10,7 +10,11 @@ import {
   reminderStageForElapsed,
   responseElapsedSeconds,
   resumeWebbResponseTurn,
+  setWebbPlayGoldenKeyBonus,
+  setWebbPlayPaused,
+  setWebbPlayRemainingSeconds,
   webbPlayDurationSeconds,
+  webbPlayRemainingSeconds,
 } from '../webbPacing.mjs'
 
 test('normalizes Webb pacing settings with learner defaults and overrides', () => {
@@ -75,4 +79,58 @@ test('response and help heuristics recognize learner-facing prompts without trea
   assert.equal(expectsLearnerResponse("Let's save that to our notes."), false)
   assert.equal(learnerRequestedHelp("I don't know. Can you help me?"), true)
   assert.equal(learnerRequestedHelp('I think it means heat moves faster.'), false)
+})
+
+test('Webb play timer pause and resume preserve the same remaining time', () => {
+  const playBreak = {
+    id: 'play-1',
+    durationSeconds: 300,
+    endsAt: new Date(301_000).toISOString(),
+    isPaused: false,
+    goldenKeyBonusMin: 0,
+  }
+  const paused = setWebbPlayPaused(playBreak, true, 61_000)
+  assert.equal(webbPlayRemainingSeconds(paused, 181_000), 240)
+  assert.equal(paused.endsAt, null)
+
+  const resumed = setWebbPlayPaused(paused, false, 181_000)
+  assert.equal(webbPlayRemainingSeconds(resumed, 181_000), 240)
+  assert.equal(webbPlayRemainingSeconds(resumed, 241_000), 180)
+})
+
+test('Webb play timer Golden Key changes the active break immediately without double-applying', () => {
+  const playBreak = {
+    id: 'play-2',
+    durationSeconds: 300,
+    endsAt: new Date(301_000).toISOString(),
+    isPaused: false,
+    goldenKeyBonusMin: 0,
+  }
+  const withKey = setWebbPlayGoldenKeyBonus(playBreak, 3, 61_000)
+  assert.equal(withKey.durationSeconds, 480)
+  assert.equal(withKey.goldenKeyBonusMin, 3)
+  assert.equal(webbPlayRemainingSeconds(withKey, 61_000), 420)
+
+  const sameKey = setWebbPlayGoldenKeyBonus(withKey, 3, 61_000)
+  assert.equal(sameKey.durationSeconds, 480)
+  assert.equal(webbPlayRemainingSeconds(sameKey, 61_000), 420)
+
+  const suspended = setWebbPlayGoldenKeyBonus(sameKey, 0, 61_000)
+  assert.equal(suspended.durationSeconds, 300)
+  assert.equal(webbPlayRemainingSeconds(suspended, 61_000), 240)
+})
+
+test('Webb play timer remaining time can be adjusted while paused', () => {
+  const playBreak = {
+    id: 'play-3',
+    durationSeconds: 300,
+    endsAt: null,
+    isPaused: true,
+    pausedRemainingSeconds: 120,
+    goldenKeyBonusMin: 0,
+  }
+  const adjusted = setWebbPlayRemainingSeconds(playBreak, 180, 10_000)
+  assert.equal(adjusted.pausedRemainingSeconds, 180)
+  assert.equal(adjusted.endsAt, null)
+  assert.equal(webbPlayRemainingSeconds(adjusted, 99_000), 180)
 })

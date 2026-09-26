@@ -17,8 +17,10 @@ import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
 import { saveWebbComposition } from '@/app/lib/webbCompositionClient'
 import { getLearner } from '@/app/facilitator/learners/clientApi'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
-import { finalizeGoldenKeyForSession } from '@/app/lib/goldenKeyClient'
+import { applyGoldenKeyToLesson, finalizeGoldenKeyForSession } from '@/app/lib/goldenKeyClient'
+import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { createWebbAttentionNotification, recordWebbPacingEvent } from '@/app/lib/webbPacingClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { endLessonSession } from '@/app/lib/sessionTracking'
@@ -71,7 +73,11 @@ import {
   reminderStageForElapsed,
   responseElapsedSeconds as getResponseElapsedSeconds,
   resumeWebbResponseTurn,
+  setWebbPlayGoldenKeyBonus,
+  setWebbPlayPaused,
+  setWebbPlayRemainingSeconds,
   webbPlayDurationSeconds,
+  webbPlayRemainingSeconds,
 } from './webbPacing.mjs'
 
 // CSS animations
@@ -212,6 +218,8 @@ function WebbPageInner() {
   // Mrs. Webb response pacing is deliberately separate from mastery evidence.
   const [learnerProfile, setLearnerProfile] = useState(null)
   const [learnerProfileLoaded, setLearnerProfileLoaded] = useState(false)
+  const [webbPlanTier, setWebbPlanTier] = useState('free')
+  const webbPlanEnt = featuresForTier(webbPlanTier)
   const [responseTurn, setResponseTurn] = useState(null)
   const responseTurnRef = useRef(null)
   const [responseElapsedSeconds, setResponseElapsedSeconds] = useState(0)
@@ -224,6 +232,9 @@ function WebbPageInner() {
   const [activePlayBreak, setActivePlayBreak] = useState(null)
   const activePlayBreakRef = useRef(null)
   const pendingPlayMilestoneRef = useRef(null)
+  const [webbGoldenKeySuspended, setWebbGoldenKeySuspended] = useState(false)
+  const [webbPlayActivity, setWebbPlayActivity] = useState('')
+  const [webbPlayActivityBusy, setWebbPlayActivityBusy] = useState(false)
   const webbPacingSettings = normalizeWebbPacingSettings(learnerProfile || {})
 
   function commitLearningState(next) {
@@ -357,12 +368,16 @@ function WebbPageInner() {
   const [webbOwnershipEndedReason, setWebbOwnershipEndedReason] = useState(null)
   const webbExecutionFencedRef = useRef(false)
   const currentWebbLessonKey = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id || null
-  const webbGoldenKeyActive = learnerProfile?.golden_keys_enabled !== false
+  const webbGoldenKeysEntitled = !!webbPlanEnt?.goldenKeyFeatures
+  const webbGoldenKeysEnabled = webbGoldenKeysEntitled && learnerProfile?.golden_keys_enabled !== false
+  const webbGoldenKeyApplied = webbGoldenKeysEnabled
     && !!currentWebbLessonKey
     && !!learnerProfile?.active_golden_keys?.[currentWebbLessonKey]
-  const webbGoldenKeyBonusMin = webbGoldenKeyActive
+  const webbGoldenKeyConfiguredBonusMin = webbGoldenKeyApplied
     ? Math.max(0, Number(learnerProfile?.golden_key_bonus_min || 0))
     : 0
+  const webbGoldenKeyActive = webbGoldenKeyApplied && !webbGoldenKeySuspended
+  const webbGoldenKeyBonusMin = webbGoldenKeyActive ? webbGoldenKeyConfiguredBonusMin : 0
 
   const freezeWebbExecution = useCallback((reason) => {
     webbExecutionFencedRef.current = true
@@ -474,6 +489,30 @@ function WebbPageInner() {
     }
   }, [learnerId])
 
+  useEffect(() => {
+    let cancelled = false
+    void (async () => {
+      try {
+        const supabase = getSupabaseClient()
+        const { data: { session } } = await supabase.auth.getSession()
+        const uid = session?.user?.id
+        if (!uid) {
+          if (!cancelled) setWebbPlanTier('free')
+          return
+        }
+        const { data } = await supabase
+          .from('profiles')
+          .select('subscription_tier, plan_tier')
+          .eq('id', uid)
+          .maybeSingle()
+        if (!cancelled) setWebbPlanTier(resolveEffectiveTier(data?.subscription_tier, data?.plan_tier))
+      } catch {
+        if (!cancelled) setWebbPlanTier('free')
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
   // ── Per-lesson snapshot helpers ────────────────────────────────────────
   function snapKey(lesson) {
     const k = lesson?.lessonKey || lesson?.lesson_id || lesson?.id
@@ -573,6 +612,8 @@ function WebbPageInner() {
       setEssayMode(!!composition.essayMode)
       const restoredPacing = saved.webbPacing && typeof saved.webbPacing === 'object' ? saved.webbPacing : {}
       const restoredTurn = restoredPacing.responseTurn?.id ? restoredPacing.responseTurn : null
+      const restoredGoldenKeySuspended = restoredPacing.goldenKeySuspended === true
+      setWebbGoldenKeySuspended(restoredGoldenKeySuspended)
       responseTurnRef.current = restoredTurn
       escalationNotificationInFlightRef.current = false
       escalationNotificationLastAttemptRef.current = 0
@@ -581,13 +622,18 @@ function WebbPageInner() {
       const restoredMilestones = restoredPacing.playMilestones && typeof restoredPacing.playMilestones === 'object' ? restoredPacing.playMilestones : {}
       playMilestonesRef.current = restoredMilestones
       setPlayMilestones(restoredMilestones)
-      const restoredBreak = restoredPacing.activePlayBreak?.endsAt && Date.parse(restoredPacing.activePlayBreak.endsAt) > Date.now()
-        ? restoredPacing.activePlayBreak
+      const restoredBreakCandidate = restoredPacing.activePlayBreak || null
+      const restoredBreak = restoredBreakCandidate
+        && (
+          (restoredBreakCandidate.isPaused && Number(restoredBreakCandidate.pausedRemainingSeconds || 0) > 0)
+          || (restoredBreakCandidate.endsAt && Date.parse(restoredBreakCandidate.endsAt) > Date.now())
+        )
+        ? restoredBreakCandidate
         : null
       activePlayBreakRef.current = restoredBreak
       setActivePlayBreak(restoredBreak)
       pendingPlayMilestoneRef.current = null
-      snapshotRef.current = { ...saved, ...restored, ...composition, selectedLesson, webbPacing: { responseTurn: restoredTurn, playMilestones: restoredMilestones, activePlayBreak: restoredBreak } }
+      snapshotRef.current = { ...saved, ...restored, ...composition, selectedLesson, webbPacing: { responseTurn: restoredTurn, playMilestones: restoredMilestones, activePlayBreak: restoredBreak, goldenKeySuspended: restoredGoldenKeySuspended } }
       setPhase(PHASE.CHATTING)
       setOfferResume(false)
       const resumeLk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
@@ -644,12 +690,13 @@ function WebbPageInner() {
       responseTurn: responseTurnRef.current,
       playMilestones: playMilestonesRef.current,
       activePlayBreak: activePlayBreakRef.current,
+      goldenKeySuspended: webbGoldenKeySuspended,
     },
   }
   useEffect(() => {
     if (webbExecutionFencedRef.current || offerResume || phase !== PHASE.CHATTING || !selectedLesson) return
     snapshotSaveRef.current()
-  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, compositionPlan, essay, essayMode, responseTurn, playMilestones, activePlayBreak])
+  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, compositionPlan, essay, essayMode, responseTurn, playMilestones, activePlayBreak, webbGoldenKeySuspended])
 
   submitWritingAttemptRef.current = submitWritingAttempt
   useEffect(() => {
@@ -897,6 +944,7 @@ function WebbPageInner() {
       responseTurn: Object.prototype.hasOwnProperty.call(overrides, 'responseTurn') ? overrides.responseTurn : responseTurnRef.current,
       playMilestones: Object.prototype.hasOwnProperty.call(overrides, 'playMilestones') ? overrides.playMilestones : playMilestonesRef.current,
       activePlayBreak: Object.prototype.hasOwnProperty.call(overrides, 'activePlayBreak') ? overrides.activePlayBreak : activePlayBreakRef.current,
+      goldenKeySuspended: Object.prototype.hasOwnProperty.call(overrides, 'goldenKeySuspended') ? overrides.goldenKeySuspended : webbGoldenKeySuspended,
     }
     saveLearningSnapshot({ webbPacing: pacing })
   }
@@ -1048,6 +1096,10 @@ function WebbPageInner() {
         pendingPlayMilestoneRef.current = null
         return
       }
+      const baseDurationSeconds = webbPlayDurationSeconds(webbPacingSettings, {
+        goldenKeyActive: false,
+        goldenKeyBonusMin: 0,
+      })
       const durationSeconds = webbPlayDurationSeconds(webbPacingSettings, {
         goldenKeyActive: webbGoldenKeyActive,
         goldenKeyBonusMin: webbGoldenKeyBonusMin,
@@ -1060,10 +1112,18 @@ function WebbPageInner() {
         startedAt: new Date(now).toISOString(),
         endsAt: new Date(now + durationSeconds * 1000).toISOString(),
         durationSeconds,
+        baseDurationSeconds,
+        goldenKeyConfiguredBonusMin: webbGoldenKeyConfiguredBonusMin,
         goldenKeyBonusMin: webbGoldenKeyActive ? webbGoldenKeyBonusMin : 0,
+        goldenKeySuspended: webbGoldenKeySuspended,
+        isPaused: false,
+        pausedAt: null,
+        pausedRemainingSeconds: null,
       }
       pendingPlayMilestoneRef.current = null
       cancelWebbResponseTurn('play-break')
+      setWebbPlayActivity('')
+      setWebbPlayActivityBusy(false)
       commitActivePlayBreak(breakState)
       emitWebbPacingEvent('play_break_started', `play:${milestone}:started`, {
         metadata: {
@@ -1080,6 +1140,9 @@ function WebbPageInner() {
   function finishWebbPlayBreak(reason = 'expired') {
     const current = activePlayBreakRef.current
     if (!current) return
+    skipTTS()
+    setWebbPlayActivity('')
+    setWebbPlayActivityBusy(false)
     emitWebbPacingEvent('play_break_completed', `play:${current.milestone}:completed`, {
       metadata: {
         milestone: current.milestone,
@@ -1089,6 +1152,147 @@ function WebbPageInner() {
     })
     commitActivePlayBreak(null)
     persistWebbPacing({ activePlayBreak: null })
+  }
+
+  function persistActiveWebbPlayBreak(nextBreak, extra = {}) {
+    if (!nextBreak) return
+    commitActivePlayBreak(nextBreak)
+    persistWebbPacing({ activePlayBreak: nextBreak, ...extra })
+  }
+
+  function handleWebbPlayPauseToggle() {
+    const current = activePlayBreakRef.current
+    if (!current) return
+    const next = setWebbPlayPaused(current, !current.isPaused, Date.now())
+    persistActiveWebbPlayBreak(next)
+  }
+
+  function handleWebbPlayElapsedUpdate(newElapsed) {
+    const current = activePlayBreakRef.current
+    if (!current) return
+    const requestedElapsed = Number(newElapsed)
+    if (!Number.isFinite(requestedElapsed)) return
+    const now = Date.now()
+    const currentDuration = Math.max(0, Number(current.durationSeconds || 0))
+    const currentRemaining = webbPlayRemainingSeconds(current, now)
+    const currentElapsed = Math.max(0, currentDuration - currentRemaining)
+    const deltaSeconds = currentElapsed - requestedElapsed
+    const nextDuration = Math.max(0, currentDuration + deltaSeconds)
+    const nextRemaining = Math.max(0, currentRemaining + deltaSeconds)
+    const next = setWebbPlayRemainingSeconds({ ...current, durationSeconds: nextDuration }, nextRemaining, now)
+    persistActiveWebbPlayBreak(next)
+  }
+
+  async function handleWebbApplyGoldenKey() {
+    if (!webbGoldenKeysEntitled || !webbGoldenKeysEnabled || webbGoldenKeyApplied) return
+    const activeLearnerId = canonicalSessionRef.current?.learnerId || routeLearnerId || learnerId
+    if (!activeLearnerId || activeLearnerId === 'demo' || !currentWebbLessonKey) return
+    try {
+      const applied = await applyGoldenKeyToLesson({ learnerId: activeLearnerId, lessonKey: currentWebbLessonKey })
+      if (applied?.ok !== true) return
+      const bonusMin = Math.max(0, Number(applied.goldenKeyBonusMin ?? learnerProfile?.golden_key_bonus_min ?? 0))
+      setLearnerProfile(current => ({
+        ...(current || {}),
+        ...(Number.isFinite(Number(applied.goldenKeys)) ? { golden_keys: Number(applied.goldenKeys) } : {}),
+        golden_key_bonus_min: bonusMin,
+        active_golden_keys: applied.activeGoldenKeys || { ...((current || {}).active_golden_keys || {}), [currentWebbLessonKey]: true },
+      }))
+      setWebbGoldenKeySuspended(false)
+      const currentBreak = activePlayBreakRef.current
+      if (currentBreak) {
+        const next = {
+          ...setWebbPlayGoldenKeyBonus(currentBreak, bonusMin, Date.now()),
+          goldenKeyConfiguredBonusMin: bonusMin,
+          goldenKeySuspended: false,
+        }
+        persistActiveWebbPlayBreak(next, { goldenKeySuspended: false })
+      } else {
+        persistWebbPacing({ goldenKeySuspended: false })
+      }
+    } catch (error) {
+      console.warn('[Webb pacing] Failed to apply Golden Key:', error?.message || error)
+    }
+  }
+
+  function handleWebbSuspendGoldenKey() {
+    if (!webbGoldenKeyApplied || webbGoldenKeySuspended) return
+    setWebbGoldenKeySuspended(true)
+    const currentBreak = activePlayBreakRef.current
+    if (currentBreak) {
+      const next = {
+        ...setWebbPlayGoldenKeyBonus(currentBreak, 0, Date.now()),
+        goldenKeyConfiguredBonusMin: webbGoldenKeyConfiguredBonusMin,
+        goldenKeySuspended: true,
+      }
+      persistActiveWebbPlayBreak(next, { goldenKeySuspended: true })
+    } else {
+      persistWebbPacing({ goldenKeySuspended: true })
+    }
+  }
+
+  function handleWebbUnsuspendGoldenKey() {
+    if (!webbGoldenKeyApplied || !webbGoldenKeySuspended) return
+    const bonusMin = Math.max(0, Number(learnerProfile?.golden_key_bonus_min || webbGoldenKeyConfiguredBonusMin || 0))
+    setWebbGoldenKeySuspended(false)
+    const currentBreak = activePlayBreakRef.current
+    if (currentBreak) {
+      const next = {
+        ...setWebbPlayGoldenKeyBonus(currentBreak, bonusMin, Date.now()),
+        goldenKeyConfiguredBonusMin: bonusMin,
+        goldenKeySuspended: false,
+      }
+      persistActiveWebbPlayBreak(next, { goldenKeySuspended: false })
+    } else {
+      persistWebbPacing({ goldenKeySuspended: false })
+    }
+  }
+
+  async function handlePlayWithWebb(activity = 'Joke') {
+    if (!activePlayBreakRef.current || webbPlayActivityBusy) return
+    setWebbPlayActivityBusy(true)
+    try {
+      const lessonTitle = String(selectedLesson?.title || 'this lesson').trim()
+      const requestedActivity = ['Joke', 'Riddle', 'Poem', 'Story', 'Fill-in-Fun'].includes(activity) ? activity : 'Joke'
+      const activityInstruction = {
+        Joke: 'Tell one quick joke with its punchline.',
+        Riddle: 'Give one tiny riddle, then include the answer after a short pause marker like "Answer:".',
+        Poem: 'Make a four-line silly poem.',
+        Story: 'Make a three-sentence silly mini-story.',
+        'Fill-in-Fun': 'Make one silly fill-in-the-blank sentence and then show one funny possible answer after "Example:".',
+      }[requestedActivity]
+      const instruction = [
+        'You are Mrs. Webb during a short learner play break.',
+        `The lesson is "${lessonTitle}".`,
+        `The learner chose ${requestedActivity}. ${activityInstruction}`,
+        'Keep it age-appropriate and under 80 words.',
+        'This is play time, not instruction: do not quiz the learner, test mastery, mention objectives, or ask them to do schoolwork.',
+        'Speak as Mrs. Webb. Return only the requested playful item.',
+      ].join(' ')
+      const response = await fetch('/api/sonoma', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ instruction, innertext: '', skipAudio: true, lessonTopic: lessonTitle }),
+      })
+      if (!response.ok) throw new Error(`Play request failed (${response.status})`)
+      const data = await response.json()
+      const reply = String(data?.reply || '').trim() || 'Why did the pencil take a break? It needed a little point of rest!'
+      if (!activePlayBreakRef.current) return
+      setWebbPlayActivity(reply)
+      speakText(reply)
+      const current = activePlayBreakRef.current
+      emitWebbPacingEvent('play_with_webb', `play:${current.id}:with-webb:${Date.now()}`, {
+        metadata: { milestone: current.milestone, source: 'play-with-webb' },
+      })
+      await waitForTTSIdle()
+    } catch (error) {
+      const fallback = 'Why did the pencil take a break? It needed a little point of rest!'
+      if (activePlayBreakRef.current) {
+        setWebbPlayActivity(fallback)
+        speakText(fallback)
+      }
+    } finally {
+      setWebbPlayActivityBusy(false)
+    }
   }
 
   useEffect(() => {
@@ -1915,6 +2119,9 @@ function WebbPageInner() {
     activePlayBreakRef.current = null
     setActivePlayBreak(null)
     pendingPlayMilestoneRef.current = null
+    setWebbGoldenKeySuspended(false)
+    setWebbPlayActivity('')
+    setWebbPlayActivityBusy(false)
     webbSessionStartRef.current = new Date().toISOString()
 
     let startupObjectives
@@ -3316,7 +3523,24 @@ function WebbPageInner() {
         onConfirm={confirmFeatureHelp}
         onDismiss={dismissFeatureHelp}
       />
-      <WebbPlayBreakOverlay playBreak={activePlayBreak} onComplete={finishWebbPlayBreak} />
+      <WebbPlayBreakOverlay
+        playBreak={activePlayBreak}
+        onComplete={finishWebbPlayBreak}
+        lessonKey={currentWebbLessonKey}
+        gamesEnabled={!!webbPlanEnt?.games}
+        goldenKeysEntitled={webbGoldenKeysEntitled}
+        goldenKeysEnabled={webbGoldenKeysEnabled}
+        hasGoldenKey={webbGoldenKeyApplied}
+        isGoldenKeySuspended={webbGoldenKeySuspended}
+        onUpdateElapsed={handleWebbPlayElapsedUpdate}
+        onTogglePause={handleWebbPlayPauseToggle}
+        onApplyGoldenKey={handleWebbApplyGoldenKey}
+        onSuspendGoldenKey={handleWebbSuspendGoldenKey}
+        onUnsuspendGoldenKey={handleWebbUnsuspendGoldenKey}
+        onPlayWithWebb={handlePlayWithWebb}
+        playActivity={webbPlayActivity}
+        playActivityBusy={webbPlayActivityBusy}
+      />
 
       {/* Header */}
       <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>

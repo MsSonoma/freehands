@@ -111,6 +111,71 @@ export function webbPlayDurationSeconds(settings, { goldenKeyActive = false, gol
   return Math.round((base + bonus) * 60)
 }
 
+export function webbPlayRemainingSeconds(playBreak, nowMs = Date.now()) {
+  if (!playBreak) return 0
+  if (playBreak.isPaused) {
+    return Math.max(0, Math.ceil(Number(playBreak.pausedRemainingSeconds || 0)))
+  }
+  const endMs = playBreak?.endsAt ? Date.parse(playBreak.endsAt) : NaN
+  if (!Number.isFinite(endMs)) return 0
+  return Math.max(0, Math.ceil((endMs - nowMs) / 1000))
+}
+
+export function setWebbPlayRemainingSeconds(playBreak, remainingSeconds, nowMs = Date.now()) {
+  if (!playBreak) return null
+  const remaining = Math.max(0, Math.ceil(Number(remainingSeconds || 0)))
+  if (playBreak.isPaused) {
+    return {
+      ...playBreak,
+      endsAt: null,
+      pausedRemainingSeconds: remaining,
+    }
+  }
+  return {
+    ...playBreak,
+    endsAt: new Date(nowMs + remaining * 1000).toISOString(),
+    pausedRemainingSeconds: null,
+  }
+}
+
+export function setWebbPlayPaused(playBreak, paused, nowMs = Date.now()) {
+  if (!playBreak) return null
+  const remaining = webbPlayRemainingSeconds(playBreak, nowMs)
+  if (paused) {
+    if (playBreak.isPaused) return playBreak
+    return {
+      ...playBreak,
+      isPaused: true,
+      pausedAt: new Date(nowMs).toISOString(),
+      pausedRemainingSeconds: remaining,
+      endsAt: null,
+    }
+  }
+  if (!playBreak.isPaused) return playBreak
+  return {
+    ...playBreak,
+    isPaused: false,
+    pausedAt: null,
+    pausedRemainingSeconds: null,
+    endsAt: new Date(nowMs + remaining * 1000).toISOString(),
+  }
+}
+
+export function setWebbPlayGoldenKeyBonus(playBreak, bonusMinutes, nowMs = Date.now()) {
+  if (!playBreak) return null
+  const currentBonus = Math.max(0, Number(playBreak.goldenKeyBonusMin || 0))
+  const nextBonus = Math.max(0, Number(bonusMinutes || 0))
+  const deltaSeconds = Math.round((nextBonus - currentBonus) * 60)
+  const currentRemaining = webbPlayRemainingSeconds(playBreak, nowMs)
+  const currentDuration = Math.max(0, Number(playBreak.durationSeconds || 0))
+  const withRemaining = setWebbPlayRemainingSeconds(playBreak, currentRemaining + deltaSeconds, nowMs)
+  return {
+    ...withRemaining,
+    durationSeconds: Math.max(0, currentDuration + deltaSeconds),
+    goldenKeyBonusMin: nextBonus,
+  }
+}
+
 export function expectsLearnerResponse(text) {
   const value = String(text || '').trim()
   if (!value) return false
