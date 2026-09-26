@@ -250,18 +250,16 @@ export default function SyllabusDocument({
             {!isNoSchool && presentations.length === 0 && <p className={styles.emptyDay}>{forecastBusy && day.date >= forecastStart && day.date <= forecastEnd ? 'Preparing suggestions...' : 'No lessons'}</p>}
             {presentations.map(({ kind, item }) => {
             if (item.item_type === 'review') {
-              const progress = item.review_progress || {}
-              const reviewLessons = Array.isArray(progress.lessons) ? progress.lessons : []
-              const selectableReview = Boolean(onSelectReview && item.review_ready)
+              const selectableReview = Boolean(onSelectReview)
               const reviewStatus = item.review_status === 'completed'
-                ? 'Review completed'
+                ? 'Completed'
                 : item.review_status === 'in_progress'
-                  ? 'Resume review'
+                  ? 'In progress'
                   : item.review_status === 'available'
-                    ? 'Ready to start'
+                    ? 'Ready'
                     : item.review_status === 'waiting_review_material'
-                      ? 'Review material is being prepared'
-                      : 'Available after the listed lessons are complete'
+                      ? 'Preparing'
+                      : 'Planned'
               return (
                 <div
                   className={`${styles.entryRow} ${styles.reviewEntry} ${selectableReview ? styles.selectableEntry : ''}`}
@@ -270,7 +268,7 @@ export default function SyllabusDocument({
                   data-review-status={item.review_status}
                   role={selectableReview ? 'button' : undefined}
                   tabIndex={selectableReview ? 0 : undefined}
-                  aria-label={selectableReview ? `Open ${item.title}` : undefined}
+                  aria-label={selectableReview ? `Open ${item.title} details` : undefined}
                   onClick={selectableReview ? () => onSelectReview(item) : undefined}
                   onKeyDown={selectableReview ? (event) => {
                     if (event.key === 'Enter' || event.key === ' ') {
@@ -283,15 +281,6 @@ export default function SyllabusDocument({
                     <p className={styles.subject}>Review</p>
                     <h4>{item.title}</h4>
                     <span className={styles.statusLabel}>{reviewStatus}</span>
-                    <span className={styles.placementLabel}>
-                      {Number(progress.completed_count || 0)} of {Number(progress.total_count || 0)} lessons complete
-                    </span>
-                    {reviewLessons.length > 0 && <div className={styles.reviewChecklist}>
-                      {reviewLessons.map((lesson) => <span key={lesson.id || `${lesson.lesson_key}:${lesson.title}`} data-complete={lesson.completed ? 'true' : 'false'}>
-                        <b aria-hidden="true">{lesson.completed ? '\u2713' : '\u25cb'}</b>
-                        <span>{lesson.title}</span>
-                      </span>)}
-                    </div>}
                   </div>
                   {selectableReview && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
                 </div>

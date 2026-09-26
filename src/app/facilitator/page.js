@@ -10,6 +10,7 @@ import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
 import FacilitatorSyllabusLessonOverlay from '@/app/components/syllabus/FacilitatorSyllabusLessonOverlay'
+import SyllabusReviewOverlay from '@/app/components/syllabus/SyllabusReviewOverlay'
 import SyllabusPlanEditor from '@/app/components/syllabus/SyllabusPlanEditor'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
@@ -134,6 +135,8 @@ export default function FacilitatorPage() {
   const [replacingLineage, setReplacingLineage] = useState('')
   const [historyOccurrenceId, setHistoryOccurrenceId] = useState('')
   const [selectedSyllabusLesson, setSelectedSyllabusLesson] = useState(null)
+  const [selectedSyllabusReview, setSelectedSyllabusReview] = useState(null)
+  const [reviewStarting, setReviewStarting] = useState(false)
   const [scheduleDialog, setScheduleDialog] = useState(null)
   const [scheduleLessons, setScheduleLessons] = useState([])
   const [scheduleCatalogLoading, setScheduleCatalogLoading] = useState(false)
@@ -838,6 +841,7 @@ export default function FacilitatorPage() {
     setEditingSection('')
     setHistoryOccurrenceId('')
     setSelectedSyllabusLesson(null)
+    setSelectedSyllabusReview(null)
     setScheduleDialog(null)
     setScheduleError('')
     setRecoveryRequiredLineages(new Set())
@@ -873,8 +877,9 @@ export default function FacilitatorPage() {
     setHistoryOccurrenceId(occurrenceId)
   }
 
-  async function openSyllabusReview(item) {
-    if (!item?.review_ready) return
+  async function startSyllabusReview(item) {
+    if (!item?.review_ready || reviewStarting) return
+    setReviewStarting(true)
     try {
       if (item.review_run_id) {
         router.push(`/session/slate?reviewRunId=${encodeURIComponent(item.review_run_id)}`)
@@ -886,6 +891,7 @@ export default function FacilitatorPage() {
       router.push(`/session/slate?reviewRunId=${encodeURIComponent(result.run.id)}`)
     } catch (error) {
       alert(error?.message || 'Review could not start')
+      setReviewStarting(false)
     }
   }
 
@@ -992,7 +998,7 @@ export default function FacilitatorPage() {
               planTier={planTier}
               learnerName={selectedLearner?.name || ''}
               onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
-              onSelectReview={(item) => void openSyllabusReview(item)}
+              onSelectReview={(item) => setSelectedSyllabusReview(item)}
               canScheduleLessons={canScheduleLessons && syllabusHydrated}
               noSchoolDates={syllabus.no_school_dates || []}
               onDayAction={syllabusHydrated ? openDayAction : null}
@@ -1017,6 +1023,13 @@ export default function FacilitatorPage() {
               today={syllabus.resolved_today}
               contentLoading={contentLoading && !Array.isArray(syllabus.timeline_items)}
             />}
+
+          {selectedSyllabusReview && <SyllabusReviewOverlay
+            item={selectedSyllabusReview}
+            busy={reviewStarting}
+            onClose={() => setSelectedSyllabusReview(null)}
+            onStart={(item) => void startSyllabusReview(item)}
+          />}
 
           {resolvedSyllabusLesson && <FacilitatorSyllabusLessonOverlay
             selection={resolvedSyllabusLesson}

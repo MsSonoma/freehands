@@ -17,6 +17,7 @@ import { getCanonicalMasteryForLearner, slateEmojiForTier } from '@/app/lib/mast
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
+import SyllabusReviewOverlay from '@/app/components/syllabus/SyllabusReviewOverlay'
 import { resolveSyllabusReadModel } from '@/app/lib/syllabus/timeline.mjs'
 import {
   getLessonListRequest,
@@ -121,6 +122,8 @@ function LessonsPageInner(){
   const [sidebarOpen, setSidebarOpen] = useState(true)
   // Lesson detail overlay: { l, subject, lessonKey, isDemo } | null
   const [selectedLesson, setSelectedLesson] = useState(null)
+  const [selectedSyllabusReview, setSelectedSyllabusReview] = useState(null)
+  useEffect(() => { setSelectedSyllabusReview(null) }, [learnerId])
   const [overlayNoteEditing, setOverlayNoteEditing] = useState(false)
   const [listTab, setListTab] = useState('active') // 'active' | 'recent' | 'owned'
   const [allGeneratedLessons, setAllGeneratedLessons] = useState([])
@@ -186,7 +189,7 @@ function LessonsPageInner(){
     }
   }
 
-  const openSyllabusReview = (item) => openFollowUp({
+  const startSyllabusReview = (item) => openFollowUp({
     id: item?.review_card_id || item?.id,
     run_id: item?.review_run_id || null,
   })
@@ -1192,10 +1195,16 @@ function LessonsPageInner(){
             learnerName={learnerName || ''}
             lessonState={syllabusLessonState}
             onSelectLesson={(item, context) => openSyllabusLesson(item, context)}
-            onSelectReview={(item) => void openSyllabusReview(item)}
+            onSelectReview={(item) => setSelectedSyllabusReview(item)}
             today={syllabusModel.resolved_today}
           />
         )}
+        {selectedSyllabusReview && <SyllabusReviewOverlay
+          item={selectedSyllabusReview}
+          busy={Boolean(followUpStarting)}
+          onClose={() => setSelectedSyllabusReview(null)}
+          onStart={(item) => void startSyllabusReview(item)}
+        />}
         {syllabusPresentation.showFallbackMessage && (
           <div style={{ padding: '28px 30px', border: '1px solid #ded8cb', background: '#fffdf8', boxShadow: '0 12px 36px rgba(65,52,36,.08)' }}>
             <p style={{ margin: 0, color: '#9a4634', fontSize: 11, fontWeight: 800, letterSpacing: '.09em' }}>MY SYLLABUS</p>
