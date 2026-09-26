@@ -80,7 +80,6 @@
 .selectableEntry:focus-visible { outline:2px solid #9a4634; outline-offset:2px; }
 .entryChevron { align-self:center; color:#9a9187; font:22px/1 Georgia,serif; }
 .selectableEntry .preparing { grid-column:1 / -1; }
-.reviewEntry { border-top-color:#cfc6b8; background:rgba(107,56,44,.035); padding-bottom:8px; }
 .reviewHistoryCard { grid-template-columns:1fr; padding-top:9px; padding-bottom:8px; }
 .reviewHistoryContent { display:inline-flex; align-items:center; gap:6px; min-width:0; }
 .reviewHistoryIcon { display:grid; place-items:center; width:22px; height:22px; font-size:17px; line-height:1; }

@@ -295,18 +295,9 @@ export default function SyllabusDocument({
             }
             if (item.item_type === 'review') {
               const selectableReview = Boolean(onSelectReview)
-              const reviewStatus = item.review_status === 'completed'
-                ? 'Completed'
-                : item.review_status === 'in_progress'
-                  ? 'In progress'
-                  : item.review_status === 'available'
-                    ? 'Ready'
-                    : item.review_status === 'waiting_review_material'
-                      ? 'Preparing'
-                      : 'Planned'
               return (
                 <div
-                  className={`${styles.entryRow} ${styles.reviewEntry} ${selectableReview ? styles.selectableEntry : ''}`}
+                  className={`${styles.entryRow} ${selectableReview ? styles.selectableEntry : ''}`}
                   key={item.occurrence_id || item.id}
                   data-review-type={item.review_type}
                   data-review-status={item.review_status}
@@ -323,8 +314,7 @@ export default function SyllabusDocument({
                 >
                   <div className={styles.entryBody}>
                     <p className={styles.subject}>{item.subject || 'Review'}</p>
-                    <h4>{reviewTeacherIcon(item.review_teacher)} {item.review_type === 'weekly_review' ? 'Weekly Review' : item.review_type === 'daily_review' ? 'Daily Review' : 'Daily Follow-Up'}</h4>
-                    <span className={styles.statusLabel}>{reviewStatus}</span>
+                    <h4>{item.review_type === 'weekly_review' ? 'Weekly Review' : item.review_type === 'daily_review' ? 'Daily Review' : 'Daily Follow-Up'}</h4>
                   </div>
                   {selectableReview && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
                 </div>
@@ -367,13 +357,13 @@ export default function SyllabusDocument({
               >
                 <div className={styles.entryBody}>
                   <p className={styles.subject}>{item.subject}</p>
-                  <h4>{item.item_type === 'slate_assignment' ? `${reviewTeacherIcon(item.review_teacher)} Daily Review` : resolvedTeacher ? `${instructionalTeacherIcon(resolvedTeacher)} ${item.title}` : item.title}</h4>
-                  {item.item_type === 'slate_assignment' && <span className={styles.statusLabel}>Teacher: {reviewTeacherLabel(item.review_teacher)}</span>}
+                  <h4>{item.item_type === 'slate_assignment' ? 'Daily Review' : resolvedTeacher ? `${instructionalTeacherIcon(resolvedTeacher)} ${item.title}` : item.title}</h4>
                   {(item.item_type || 'lesson') === 'lesson' && item.historical_record
                     ? (item.actual_instructional_teacher
                         ? <span className={styles.placementLabel}>Completed with {instructionalTeacherLabel(item.actual_instructional_teacher)} historical record</span>
                         : null)
                     : (item.item_type || 'lesson') === 'lesson' && <span className={styles.placementLabel}>{role === 'learner' && item.placement_kind !== 'actual' ? `Your teacher: ${instructionalTeacherLabel(assignedTeacher)}` : syllabusTeacherLabel(item)}</span>}
+                  {item.item_type !== 'slate_assignment' && <>
                   {(item.slate_annotations || []).map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
                   {(item.historical_activity_annotations || []).filter((annotation) => annotation?.kind !== 'slate_drill_history').map((annotation) => <span className={styles.placementLabel} key={annotation.kind + ':' + annotation.label}>{annotation.label}</span>)}
                   {item.readiness_state && <span className={styles.statusLabel}>{String(item.readiness_state).replace('_', ' ')}</span>}
@@ -384,9 +374,10 @@ export default function SyllabusDocument({
                   {item.capacity_conflict && <span className={styles.placementLabel}>Manual capacity exception</span>}
                   {item.requires_facilitator_carry && item.is_overdue_intent && <span className={styles.placementLabel}>Needs facilitator carry from {prettyDate(item.original_placement_date, { month: 'short', day: 'numeric' })}</span>}
                   {item.origin === 'mastery_reforecast' && <span className={styles.statusLabel}>Mastery follow-up</span>}
+                  </>}
                 </div>
                 {onSelectLesson && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
-                {role === 'learner' && week.state === 'now' && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}
+                {item.item_type !== 'slate_assignment' && role === 'learner' && week.state === 'now' && item.lesson_key && ['draft', 'approved', 'saved'].includes(item.readiness_state) && !currentLesson.hasLessonArtifact && <span className={styles.preparing}>Preparing</span>}
               </div>
             )
           })}
