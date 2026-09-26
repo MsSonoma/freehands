@@ -248,7 +248,7 @@ export function syllabusItemState({ item, today = new Date().toISOString().slice
 
 export function syllabusItemActions({ role, state, hasLessonArtifact = false, readinessState = 'saved', isScheduled = false, isToday = false }) {
   if (role === 'learner') {
-    if (state === 'completed_historical') return [{ id: 'review', label: 'View / Review' }, { id: 'repeat', label: 'Do again', requires_pin: true }]
+    if (state === 'completed_historical') return [{ id: 'review', label: 'View / Review' }, { id: 'repeat', label: 'Try again', requires_pin: true }]
     if (state === 'needs_placement') return [{ id: 'view', label: 'View' }]
     if (!hasLessonArtifact) return [{ id: 'view', label: 'View' }]
     if (state === 'today_unfinished') return [{ id: 'execute', label: 'Start', requires_pin: false }]
@@ -257,7 +257,7 @@ export function syllabusItemActions({ role, state, hasLessonArtifact = false, re
   }
   if (role !== 'facilitator') return []
   if (state === 'completed_historical') return [
-    { id: 'view', label: 'View' }, { id: 'history', label: 'Review history' }, { id: 'repeat', label: 'Repeat', requires_pin: true },
+    { id: 'view', label: 'View' }, { id: 'history', label: 'Review history' }, { id: 'repeat', label: 'Retry lesson', requires_pin: true },
   ]
   if (state === 'incomplete_historical' || state === 'in_progress') return [
     { id: 'view', label: 'Open' }, { id: 'history', label: 'Review history' }, { id: 'execute', label: state === 'in_progress' ? 'Continue' : 'Retry' },

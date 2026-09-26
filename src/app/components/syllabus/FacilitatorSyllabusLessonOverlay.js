@@ -237,7 +237,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const attemptedAt = actualKind === 'incomplete' ? item.actual_at : null
   const scheduledDate = dateOnly(item.scheduled_date || (!isHistorical ? displayedDate : ''))
   const displayTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || (isHistorical ? item.instructional_teacher : null) || assignedTeacher) || 'sonoma'
-  const displayStatus = repeatDeliveryActive ? 'Repeat ready' : actualKind === 'completed' ? 'Completed' : actualKind === 'in_progress' ? 'In progress' : actualKind === 'incomplete' ? 'Incomplete' : (readiness || selection.syllabus_state?.replaceAll('_', ' ') || 'Ready')
+  const displayStatus = repeatDeliveryActive ? 'Retry ready' : actualKind === 'completed' ? 'Completed' : actualKind === 'in_progress' ? 'In progress' : actualKind === 'incomplete' ? 'Incomplete' : (readiness || selection.syllabus_state?.replaceAll('_', ' ') || 'Ready')
 
   async function refreshAfterChange() {
     if (typeof onChanged === 'function') await onChanged()
@@ -382,12 +382,12 @@ export default function FacilitatorSyllabusLessonOverlay({
       return
     }
     const allowed = await ensureFacilitatorPinException({
-      message: `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to prepare it as a deliberate repeat.`,
+      message: `You already completed ${item.title || 'this lesson'}. Enter the Facilitator PIN to retry this completed lesson.`,
     })
     if (!allowed) return
     setRepeatMode(true)
     setLocalAvailable(false)
-    setMessage('Repeat ready. Choose Start now, Make available, or Schedule.')
+    setMessage('Retry ready. Choose Start now, Make available, or Schedule.')
   }
 
   function openSlateScheduler() {
@@ -719,7 +719,7 @@ export default function FacilitatorSyllabusLessonOverlay({
             {canEditOwnedLesson && <button type="button" onClick={editLesson}>{isDraft ? 'Edit draft' : 'Edit lesson'}</button>}
             {isLesson && item.lesson_key && !isDraft && item.historical_record !== true && (typeof onScheduleSlate === 'function' || canScheduleSlateCore) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={openSlateScheduler}>Schedule Mr. Slate</button>}
             {isSlateAssignment && (typeof onRemoveSlateSchedule === 'function' || coreAuthority) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={() => void removeSlateSchedule()}>Remove scheduled session</button>}
-            {canRepeat && <button type="button" onClick={() => void handleRepeat()}>Prepare repeat</button>}
+            {canRepeat && <button type="button" onClick={() => void handleRepeat()}>Retry lesson</button>}
             {canRemoveExactOccurrence && <button type="button" disabled={Boolean(removalBusy)} onClick={() => void removeExactSyllabusOccurrence()}>{removalBusy === 'occurrence' ? 'Removing...' : 'Remove this occurrence'}</button>}
             {canRemoveFromLearner && <button type="button" disabled={Boolean(removalBusy)} onClick={() => void removeLessonFromLearner()}>{removalBusy === 'learner' ? 'Removing...' : 'Remove lesson from learner'}</button>}
           </div>

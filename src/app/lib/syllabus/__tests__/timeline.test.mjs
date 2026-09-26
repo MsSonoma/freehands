@@ -166,7 +166,7 @@ test('role action matrix keeps learner exceptions PIN-gated and facilitator cont
   const completed = syllabusItemState({ item: { actual_kind: 'completed', planned_date: '2026-08-20' }, today: '2026-08-26' })
   assert.equal(completed, 'completed_historical')
   assert.deepEqual(syllabusItemActions({ role: 'learner', state: completed, hasLessonArtifact: true }), [
-    { id: 'review', label: 'View / Review' }, { id: 'repeat', label: 'Do again', requires_pin: true },
+    { id: 'review', label: 'View / Review' }, { id: 'repeat', label: 'Try again', requires_pin: true },
   ])
   assert.equal(syllabusItemActions({ role: 'facilitator', state: completed }).find((action) => action.id === 'repeat').requires_pin, true)
   assert.equal(syllabusItemActions({ role: 'learner', state: 'today_unfinished', hasLessonArtifact: true, isToday: true })[0].requires_pin, false)
@@ -193,11 +193,11 @@ test('recovered instructional history receives completed actions while standalon
   assert.deepEqual(syllabusItemActionsFor({ item: recoveredWebb, role: 'facilitator', state: recoveredState }), [
     { id: 'view', label: 'View' },
     { id: 'history', label: 'Review history' },
-    { id: 'repeat', label: 'Repeat', requires_pin: true },
+    { id: 'repeat', label: 'Retry lesson', requires_pin: true },
   ])
   assert.deepEqual(syllabusItemActionsFor({ item: recoveredWebb, role: 'learner', state: recoveredState, hasLessonArtifact: true }), [
     { id: 'review', label: 'View / Review' },
-    { id: 'repeat', label: 'Do again', requires_pin: true },
+    { id: 'repeat', label: 'Try again', requires_pin: true },
     { id: 'practice_slate', label: 'Practice with Mr. Slate' },
   ])
   assert.equal(recoveredWebb.historical_provenance, 'server_verified_legacy_transcript_v1')
@@ -470,7 +470,7 @@ test('historical instructional actions preserve non-editable provenance and exis
   assert.match(overlay, /HistoricalActivityControl/)
   assert.match(overlay, /ensureFacilitatorPinException/)
   assert.match(overlay, /setRepeatMode\(true\)/)
-  assert.match(overlay, /Repeat ready\. Choose Start now, Make available, or Schedule\./)
+  assert.match(overlay, /Retry ready\. Choose Start now, Make available, or Schedule\./)
   assert.doesNotMatch(facilitatorPage, /\/facilitator\/prepare\?learnerId=.*repeat=1/)
   assert.match(learnerHome, /const requiresSyllabusPin = syllabusState === 'completed_historical'/)
   assert.match(learnerHome, /ensureFacilitatorPinException/)
