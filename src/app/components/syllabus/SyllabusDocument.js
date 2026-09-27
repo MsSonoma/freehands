@@ -307,8 +307,7 @@ export default function SyllabusDocument({
                   <div className={styles.entryBody}>
                     <p className={styles.subject}>{historySubject}</p>
                     <h4>{historyLabel}</h4>
-                    <span className={styles.placementLabel}>{reviewTeacherText(entries)}</span>
-                    <span className={styles.statusLabel}>{reviewCardStatus(item)}</span>
+                    <div className={styles.cardMetaRow}><span className={styles.teacherLabel}>{reviewTeacherText(entries)}</span><span className={styles.statusLabel}>{reviewCardStatus(item)}</span></div>
                   </div>
                   {selectableReview && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
                 </div>
@@ -336,8 +335,7 @@ export default function SyllabusDocument({
                   <div className={styles.entryBody}>
                     <p className={styles.subject}>{item.subject || 'Review'}</p>
                     <h4>{item.review_type === 'weekly_review' ? 'Weekly Review' : item.review_type === 'daily_review' ? 'Daily Review' : 'Daily Follow-Up'}</h4>
-                    <span className={styles.placementLabel}>{reviewTeacherTextForItem(item)}</span>
-                    <span className={styles.statusLabel}>{reviewCardStatus(item)}</span>
+                    <div className={styles.cardMetaRow}><span className={styles.teacherLabel}>{reviewTeacherTextForItem(item)}</span><span className={styles.statusLabel}>{reviewCardStatus(item)}</span></div>
                   </div>
                   {selectableReview && <span className={styles.entryChevron} aria-hidden="true">&rsaquo;</span>}
                 </div>
@@ -382,12 +380,11 @@ export default function SyllabusDocument({
                   <p className={styles.subject}>{item.subject}</p>
                   <h4>{item.item_type === 'slate_assignment' ? 'Daily Review' : item.title}</h4>
                   {item.item_type === 'slate_assignment'
-                    ? <><span className={styles.placementLabel}>{reviewTeacherTextForItem(item)}</span><span className={styles.statusLabel}>{reviewCardStatus(item)}</span></>
-                    : <span className={styles.placementLabel}>{instructionalTeacherIcon(assignedTeacher)} {instructionalTeacherLabel(assignedTeacher)}</span>}
+                    ? <div className={styles.cardMetaRow}><span className={styles.teacherLabel}>{reviewTeacherTextForItem(item)}</span><span className={styles.statusLabel}>{reviewCardStatus(item)}</span></div>
+                    : <div className={styles.cardMetaRow}><span className={styles.teacherLabel}>{instructionalTeacherIcon(assignedTeacher)} {instructionalTeacherLabel(assignedTeacher)}</span>{item.readiness_state && <span className={styles.statusLabel}>{String(item.readiness_state).replace('_', ' ')}</span>}</div>}
                   {item.item_type !== 'slate_assignment' && <>
                   {(item.slate_annotations || []).filter((annotation) => annotation?.kind !== 'retention').map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
                   {(item.historical_activity_annotations || []).filter((annotation) => annotation?.kind !== 'slate_drill_history').map((annotation) => <span className={styles.placementLabel} key={annotation.kind + ':' + annotation.label}>{annotation.label}</span>)}
-                  {item.readiness_state && <span className={styles.statusLabel}>{String(item.readiness_state).replace('_', ' ')}</span>}
                   {item.placement_kind === 'scheduled' && <span className={styles.placementLabel}>Calendar date</span>}
                   {item.placement_kind === 'inferred' && <span className={styles.placementLabel}>Provisional weekly-pattern placement</span>}
                   {item.needs_placement && <span className={styles.placementLabel}>{role === 'facilitator' ? 'Needs placement' : 'Timing to be confirmed'}</span>}

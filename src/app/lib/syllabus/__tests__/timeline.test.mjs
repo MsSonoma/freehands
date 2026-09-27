@@ -479,6 +479,7 @@ test('historical instructional actions preserve non-editable provenance and exis
 
 test('new Syllabus UI source contains required readable labels and no mojibake', () => {
   const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
+  const stylesheet = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.module.css'), 'utf8')
   const overlay = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js'), 'utf8')
   for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / SYLLABUS', 'Weekly learning plan', 'Previous week', 'This week', 'Next week', 'Grey lessons']) {
     assert.match(source, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
@@ -503,6 +504,9 @@ test('new Syllabus UI source contains required readable labels and no mojibake',
   assert.match(overlay, /<dt>Retention<\/dt>/)
   assert.match(overlay, /retentionAnnotation/)
   assert.match(source, /instructionalTeacherIcon\(assignedTeacher\).*instructionalTeacherLabel\(assignedTeacher\)/)
+  assert.match(source, /cardMetaRow}><span className=\{styles\.teacherLabel\}>\{instructionalTeacherIcon\(assignedTeacher\)\} \{instructionalTeacherLabel\(assignedTeacher\)\}<\/span>\{item\.readiness_state && <span className=\{styles\.statusLabel\}>/)
+  assert.match(stylesheet, /\.teacherLabel \{[^}]*font-style:normal/)
+  assert.match(stylesheet, /\.cardMetaRow \{[^}]*white-space:nowrap/)
   assert.match(source, /week\.days\.map/)
   assert.doesNotMatch(source, /timeline\.weeks\.map/)
 })
