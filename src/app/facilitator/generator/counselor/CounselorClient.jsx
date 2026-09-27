@@ -140,20 +140,21 @@ export default function CounselorClient() {
       return next
     })
   }, [])
-  const enterWorkspaceExpanded = useCallback(() => {
-    setWorkspaceExpanded(true)
-    setConversationDockOpen(false)
-  }, [])
+
   const openSyllabusWorkspace = useCallback((view = 'week', action = '') => {
     const nextView = view === 'month' ? 'month' : 'week'
     setSyllabusView(nextView)
-    setWorkspaceHref(nextView === 'month' ? '/facilitator?view=month' : '/facilitator')
+    const params = new URLSearchParams()
+    if (nextView === 'month') params.set('view', 'month')
+    if (action === 'curriculum_guidance') params.set('overlay', 'curriculum-guidance')
+    setWorkspaceHref(`/facilitator${params.size ? `?${params.toString()}` : ``}`)
     setActiveScreen('syllabus')
     setTimeout(() => {
       try {
         window.dispatchEvent(new CustomEvent('facilitator:set-syllabus-view', { detail: { view: nextView } }))
         if (action === 'learners') window.dispatchEvent(new CustomEvent('facilitator:open-learners'))
         if (action === 'plan_details') window.dispatchEvent(new CustomEvent('facilitator:open-plan-details'))
+        if (action === 'curriculum_guidance') window.dispatchEvent(new CustomEvent('facilitator:open-curriculum-guidance'))
       } catch {}
     }, 0)
   }, [])
@@ -163,7 +164,8 @@ export default function CounselorClient() {
     if (href === '/facilitator' || href.startsWith('/facilitator?')) {
       const target = new URL(href, window.location.origin)
       const view = target.searchParams.get('view') === 'month' ? 'month' : 'week'
-      const action = target.searchParams.get('overlay') === 'learners' ? 'learners' : ''
+      const overlay = target.searchParams.get('overlay') || ''
+      const action = overlay === 'learners' ? 'learners' : overlay === 'curriculum-guidance' ? 'curriculum_guidance' : ''
       const targetLearnerId = target.searchParams.get('learnerId') || ''
       setWorkspaceHref(href)
       openSyllabusWorkspace(view, action)
@@ -2139,12 +2141,9 @@ export default function CounselorClient() {
             <>
               {/* Curriculum Guidance shortcut (top-left) */}
               <button
-                onClick={() => {
-                  enterWorkspaceExpanded()
-                  openSyllabusWorkspace('week', 'plan_details')
-                }}
+                onClick={() => openSyllabusWorkspace('week', 'curriculum_guidance')}
                 aria-label="Guidance"
-                title="Open Plan details and Curriculum Guidance"
+                title="Open Curriculum Guidance"
                 style={{
                   position: 'absolute',
                   top: 16,
@@ -2311,7 +2310,7 @@ export default function CounselorClient() {
                 workspaceHref={workspaceHref}
                 onNavigate={handleWorkspaceNavigate}
                 onToggleExpanded={toggleWorkspaceExpanded}
-                onOpenGuidance={() => openSyllabusWorkspace(syllabusView, 'plan_details')}
+                onOpenGuidance={() => openSyllabusWorkspace(syllabusView, 'curriculum_guidance')}
                 conversationDockOpen={conversationDockOpen}
                 onToggleConversationDock={() => setConversationDockOpen(value => !value)}
               />

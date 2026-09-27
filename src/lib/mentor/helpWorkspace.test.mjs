@@ -20,12 +20,21 @@ test('Help uses the real Syllabus and Lesson Library as shared workspaces', () =
   assert.doesNotMatch(client, /LessonMakerOverlay/)
 })
 
+test('Guidance shortcut opens Curriculum Guidance directly inside the embedded Syllabus', () => {
+  assert.match(client, /openSyllabusWorkspace\('week', 'curriculum_guidance'\)/)
+  assert.doesNotMatch(client, /enterWorkspaceExpanded\(\)[\s\S]{0,120}openSyllabusWorkspace\('week', 'curriculum_guidance'\)/)
+  assert.match(client, /params\.set\('overlay', 'curriculum-guidance'\)/)
+  assert.match(client, /facilitator:open-curriculum-guidance/)
+  assert.match(syllabus, /params\.get\('overlay'\) === 'curriculum-guidance' \? 'teaching_guidance' : ''/)
+  assert.match(syllabus, /facilitator:open-curriculum-guidance/)
+})
+
 test('Help full workspace hides conversation by default but keeps it available on demand', () => {
   assert.match(client, /workspaceExpanded/)
   assert.match(client, /conversationDockOpen/)
   assert.match(client, /const toggleWorkspaceExpanded = useCallback/)
   assert.match(client, /const next = !current[\s\S]*setConversationDockOpen\(!next\)/)
-  assert.match(client, /const enterWorkspaceExpanded = useCallback\(\(\) => \{[\s\S]*setWorkspaceExpanded\(true\)[\s\S]*setConversationDockOpen\(false\)/)
+
   assert.match(client, /workspaceSideBySide/)
   assert.match(client, /zIndex: workspaceFocus \? 1500 : 0/)
   assert.match(frame, /Conversation\s*<\/button>/)

@@ -86,7 +86,7 @@ export default function HelpWorkspaceFrame({
         <button
           type="button"
           onClick={onOpenGuidance}
-          title="Open Plan details and Curriculum Guidance"
+          title="Open Curriculum Guidance"
           style={{
             border: '1px solid #d8cec1',
             borderRadius: 8,

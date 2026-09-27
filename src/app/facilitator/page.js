@@ -138,7 +138,10 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
   const [error, setError] = useState('')
   const [selectedWeekStart, setSelectedWeekStart] = useState('')
   const [returnFocus, setReturnFocus] = useState({ plannedDate: '', lessonKey: '', occurrenceId: '' })
-  const [editingSection, setEditingSection] = useState('')
+  const [editingSection, setEditingSection] = useState(() => {
+    const params = new URLSearchParams(String(embeddedHref || '').split('?')[1] || '')
+    return params.get('overlay') === 'curriculum-guidance' ? 'teaching_guidance' : ''
+  })
   const [showPortfolio, setShowPortfolio] = useState(false)
   const [initialSyllabusView, setInitialSyllabusView] = useState('week')
   const [replacingLineage, setReplacingLineage] = useState('')
@@ -442,6 +445,7 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
     const openLearners = () => setLearnersOverlayVisibility(true)
+    const openCurriculumGuidance = () => setEditingSection('teaching_guidance')
     const openPlanDetails = () => {
       if (planningAccess.can_change_intent) openSectionEditor('plan_details')
     }
@@ -455,11 +459,13 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
     }
     window.addEventListener('facilitator:open-learners', openLearners)
     window.addEventListener('facilitator:open-plan-details', openPlanDetails)
+    window.addEventListener('facilitator:open-curriculum-guidance', openCurriculumGuidance)
     window.addEventListener('facilitator:set-syllabus-view', setSyllabusView)
     window.addEventListener('facilitator:select-learner', selectLearner)
     return () => {
       window.removeEventListener('facilitator:open-learners', openLearners)
       window.removeEventListener('facilitator:open-plan-details', openPlanDetails)
+      window.removeEventListener('facilitator:open-curriculum-guidance', openCurriculumGuidance)
       window.removeEventListener('facilitator:set-syllabus-view', setSyllabusView)
       window.removeEventListener('facilitator:select-learner', selectLearner)
     }
