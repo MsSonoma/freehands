@@ -47,6 +47,17 @@ test('Expand hides header and conversation but keeps the compact footer', () => 
   assert.match(client, /position: 'fixed',[\s\S]*bottom: 0/)
 })
 
+test('Expanded Help uses the footer gap for a 46px compact conversation strip', () => {
+  assert.match(client, /aria-label="Compact conversation"/)
+  assert.match(client, /height: 46/)
+  assert.match(client, /maxHeight: 46/)
+  assert.match(client, /boxSizing: 'border-box'/)
+  assert.match(client, /conversationHistory\.slice\(-6\)/)
+  assert.match(client, /workspaceExpanded && !isNarrowScreen/)
+  assert.match(client, /compactConversationRef\.current\.scrollTop = compactConversationRef\.current\.scrollHeight/)
+})
+
+
 test('Help shell uses encoding-safe symbols', () => {
   assert.doesNotMatch(client, /[^\x00-\x7F]/)
   assert.doesNotMatch(bottomNav, /[^\x00-\x7F]/)

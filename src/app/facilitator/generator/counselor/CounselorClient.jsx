@@ -205,6 +205,7 @@ export default function CounselorClient() {
   const buttonVideoRef = useRef(null)
   const audioRef = useRef(null)
   const captionBoxRef = useRef(null)
+  const compactConversationRef = useRef(null)
   const lastAudioRef = useRef(null)
   
   // Mute state - persisted in localStorage
@@ -1986,6 +1987,12 @@ export default function CounselorClient() {
     }
   }, [captionText, captionIndex])
 
+  useEffect(() => {
+    if (workspaceExpanded && compactConversationRef.current) {
+      compactConversationRef.current.scrollTop = compactConversationRef.current.scrollHeight
+    }
+  }, [workspaceExpanded, conversationHistory, loading])
+
   if (!pinChecked) {
     return (
       <main style={{ padding: 24 }}>
@@ -2463,11 +2470,51 @@ export default function CounselorClient() {
           {learners.length > 0 && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#6b645c', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                <div style={{
+                  flex: workspaceExpanded && !isNarrowScreen ? '0 1 150px' : 1,
+                  minWidth: 0,
+                  fontSize: 13,
+                  color: '#6b645c',
+                  whiteSpace: 'nowrap',
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis'
+                }}>
                   {selectedLearnerId !== 'none'
                     ? `Working with ${learners.find(learner => learner.id === selectedLearnerId)?.name || 'selected learner'}`
                     : 'General discussion'}
                 </div>
+                {workspaceExpanded && !isNarrowScreen && (
+                  <div
+                    ref={compactConversationRef}
+                    aria-label="Compact conversation"
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      height: 46,
+                      maxHeight: 46,
+                      boxSizing: 'border-box',
+                      overflowY: 'auto',
+                      padding: '4px 8px',
+                      border: '1px solid #e5e7eb',
+                      borderRadius: 7,
+                      background: '#f9fafb',
+                      fontSize: 10,
+                      lineHeight: 1.25,
+                      color: '#4b5563',
+                      scrollbarWidth: 'thin'
+                    }}
+                  >
+                    {conversationHistory.length === 0
+                      ? <span style={{ color: '#9ca3af' }}>No conversation yet.</span>
+                      : conversationHistory.slice(-6).map((msg, index) => (
+                          <div key={`${msg.role}-${index}`} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                            <strong>{msg.role === 'user' ? 'You' : 'Ms. Sonoma'}:</strong>{' '}
+                            {String(msg.content || '').replace(/\s+/g, ' ')}
+                          </div>
+                        ))}
+                    {loading && <div style={{ color: '#9ca3af', fontStyle: 'italic' }}>Ms. Sonoma is thinking...</div>}
+                  </div>
+                )}
                 <HelpBottomNav
                   activeScreen={activeScreen}
                   expanded={workspaceExpanded}
