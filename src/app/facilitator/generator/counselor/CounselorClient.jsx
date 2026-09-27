@@ -15,6 +15,7 @@ import FeatureHelpToast from '@/app/session/components/FeatureHelpToast'
 import HelpWorkspaceFrame from './HelpWorkspaceFrame'
 import HelpBottomNav from './HelpBottomNav'
 import ConversationLibraryOverlay from './ConversationLibraryOverlay'
+import LearnersOverlay from '@/app/facilitator/learners/components/LearnersOverlay'
 import CurriculumGuidanceEditor from '@/app/components/syllabus/CurriculumGuidanceEditor'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
 
@@ -149,6 +150,7 @@ export default function CounselorClient() {
   const [workspaceHref, setWorkspaceHref] = useState('/facilitator')
   const [conversationDockOpen, setConversationDockOpen] = useState(true)
   const [guidanceOverlayOpen, setGuidanceOverlayOpen] = useState(false)
+  const [learnersOverlayOpen, setLearnersOverlayOpen] = useState(false)
   const toggleWorkspaceExpanded = useCallback(() => {
     setWorkspaceExpanded((current) => {
       const next = !current
@@ -2298,6 +2300,13 @@ export default function CounselorClient() {
     ? String(learners.find((learner) => String(learner.id) === String(selectedLearnerId))?.name || '').trim()
     : ''
 
+  const handleHelpLearnersChange = useCallback((nextLearners) => {
+    const safeLearners = Array.isArray(nextLearners) ? nextLearners : []
+    setLearners(safeLearners)
+    if (selectedLearnerId !== 'none' && safeLearners.some((learner) => String(learner.id) === String(selectedLearnerId))) return
+    setSelectedLearnerId(String(safeLearners[0]?.id || 'none'))
+  }, [selectedLearnerId])
+
   return (
     <div style={{
       display: 'flex',
@@ -2377,8 +2386,11 @@ export default function CounselorClient() {
           {activeScreen === 'mentor' && (
             <>
               {activeLearnerName && (
-                <div
-                  aria-label={`Active learner: ${activeLearnerName}`}
+                <button
+                  type="button"
+                  onClick={() => setLearnersOverlayOpen(true)}
+                  aria-label={`Open learners. Active learner: ${activeLearnerName}`}
+                  title="Learners"
                   style={{
                     position: 'absolute',
                     top: 16,
@@ -2388,6 +2400,7 @@ export default function CounselorClient() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
+                    border: 'none',
                     borderRadius: 999,
                     background: '#1f2937',
                     color: '#fff',
@@ -2398,11 +2411,12 @@ export default function CounselorClient() {
                     fontWeight: 800,
                     letterSpacing: '0.06em',
                     lineHeight: 1,
-                    whiteSpace: 'nowrap'
+                    whiteSpace: 'nowrap',
+                    cursor: 'pointer'
                   }}
                 >
                   {activeLearnerName}
-                </div>
+                </button>
               )}
 
               {/* Conversation Library button */}
@@ -2533,6 +2547,16 @@ export default function CounselorClient() {
               </button>
             </>
           )}
+
+          <LearnersOverlay
+            isOpen={learnersOverlayOpen}
+            learners={learners}
+            activeLearnerId={selectedLearnerId === 'none' ? '' : selectedLearnerId}
+            planTier={tier}
+            onClose={() => setLearnersOverlayOpen(false)}
+            onActivate={(learnerId) => setSelectedLearnerId(String(learnerId))}
+            onLearnersChange={handleHelpLearnersChange}
+          />
 
           <ConversationLibraryOverlay
             open={activeScreen === 'mentor' && conversationLibraryOpen}

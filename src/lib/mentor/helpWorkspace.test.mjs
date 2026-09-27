@@ -28,12 +28,15 @@ test('Help resolves the shared active learner before Syllabus is opened', () => 
   assert.match(client, /persistLearnerSelection\(window\.localStorage, selectedLearner\)/)
 })
 
-test('Active learner name lives on the video overlay instead of the footer', () => {
+test('Active learner pill opens the shared Learners overlay on Help Home', () => {
+  assert.match(client, /import LearnersOverlay from '@\/app\/facilitator\/learners\/components\/LearnersOverlay'/)
   assert.match(client, /const activeLearnerName = selectedLearnerId !== 'none'/)
-  assert.match(client, /aria-label=\{`Active learner: \$\{activeLearnerName\}`\}/)
+  assert.match(client, /aria-label=\{`Open learners\. Active learner: \$\{activeLearnerName\}`\}/)
+  assert.match(client, /onClick=\{\(\) => setLearnersOverlayOpen\(true\)\}/)
   assert.match(client, /top: 16,[\s\S]*left: 16,[\s\S]*background: '#1f2937',[\s\S]*color: '#fff'/)
-  assert.match(client, /fontWeight: 800/)
-  assert.match(client, /letterSpacing: '0\.06em'/)
+  assert.match(client, /<LearnersOverlay[\s\S]*isOpen=\{learnersOverlayOpen\}/)
+  assert.match(client, /onActivate=\{\(learnerId\) => setSelectedLearnerId\(String\(learnerId\)\)\}/)
+  assert.match(client, /onLearnersChange=\{handleHelpLearnersChange\}/)
   assert.doesNotMatch(client, /Working with \$\{/)
   assert.doesNotMatch(client, /General discussion/)
 })
