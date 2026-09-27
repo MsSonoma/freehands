@@ -5,8 +5,12 @@ import fs from 'node:fs'
 const client = fs.readFileSync(new URL('../../app/facilitator/generator/counselor/CounselorClient.jsx', import.meta.url), 'utf8')
 const frame = fs.readFileSync(new URL('../../app/facilitator/generator/counselor/HelpWorkspaceFrame.jsx', import.meta.url), 'utf8')
 const bottomNav = fs.readFileSync(new URL('../../app/facilitator/generator/counselor/HelpBottomNav.jsx', import.meta.url), 'utf8')
+const conversationLibrary = fs.readFileSync(new URL('../../app/facilitator/generator/counselor/ConversationLibraryOverlay.jsx', import.meta.url), 'utf8')
 const syllabus = fs.readFileSync(new URL('../../app/facilitator/page.js', import.meta.url), 'utf8')
 const counselorRoute = fs.readFileSync(new URL('../../app/api/counselor/route.js', import.meta.url), 'utf8')
+const conversationsRoute = fs.readFileSync(new URL('../../app/api/mentor-conversations/route.js', import.meta.url), 'utf8')
+const mentorSessionRoute = fs.readFileSync(new URL('../../app/api/mentor-session/route.js', import.meta.url), 'utf8')
+const conversationMigration = fs.readFileSync(new URL('../../../supabase/migrations/20260927231051_mentor_conversation_library.sql', import.meta.url), 'utf8')
 
 test('Help uses real workspaces without a redundant workspace toolbar', () => {
   assert.match(frame, /import FacilitatorPage from '..\/..\/page'/)
@@ -71,10 +75,39 @@ test('Expanded Help uses the footer gap for a 46px compact conversation strip', 
 test('Help shell uses encoding-safe symbols', () => {
   assert.doesNotMatch(client, /[^\x00-\x7F]/)
   assert.doesNotMatch(bottomNav, /[^\x00-\x7F]/)
-  assert.match(client, /aria-label="New Conversation"[\s\S]*<svg aria-hidden="true" width="26"/)
+  assert.match(client, /aria-label="Conversation Library"[\s\S]*<svg aria-hidden="true" width="26"/)
   assert.match(bottomNav, /&#128218;/)
   assert.match(bottomNav, /&#128203;/)
   assert.match(bottomNav, /&#129517;/)
+})
+
+test('Conversation Library replaces destructive single-thread restart behavior', () => {
+  assert.match(client, /import ConversationLibraryOverlay from '.\/ConversationLibraryOverlay'/)
+  assert.match(client, /aria-label="Conversation Library"/)
+  assert.match(client, /<ConversationLibraryOverlay/)
+  assert.match(conversationLibrary, /New conversation/)
+  assert.match(conversationLibrary, /Rename/)
+  assert.match(conversationLibrary, /Delete/)
+  assert.doesNotMatch(conversationLibrary, /Projects|Add-ons|Plugins/)
+  assert.match(client, /const subjectKey = activeConversationThreadKey/)
+  assert.match(client, /\/api\/mentor-conversations/)
+  assert.match(client, /conversationId: activeConversationId/)
+  assert.doesNotMatch(client, /clearConversationForRestart/)
+  assert.match(conversationsRoute, /thread_key: `conversation:\$\{id\}`/)
+  assert.match(conversationsRoute, /from\('mentor_conversations'\)/)
+  assert.match(mentorSessionRoute, /write_mentor_conversation_owned_transactional/)
+  assert.match(mentorSessionRoute, /p_conversation_id: conversationId/)
+})
+
+test('Conversation Library migration preserves ownership fencing', () => {
+  assert.match(conversationMigration, /create table if not exists public\.mentor_conversations/)
+  assert.match(conversationMigration, /constraint mentor_conversations_unique_thread unique \(facilitator_id, thread_key\)/)
+  assert.match(conversationMigration, /enable row level security/)
+  assert.match(conversationMigration, /Users can read their own mentor conversations/)
+  assert.match(conversationMigration, /write_mentor_conversation_owned_transactional/)
+  assert.match(conversationMigration, /grant execute[\s\S]*to service_role/)
+  assert.match(client, /persistActiveConversationNow/)
+  assert.match(client, /await persistActiveConversationNow\(\)/)
 })
 
 test('Help and Syllabus exchange learner, view, and embedded overlay context', () => {

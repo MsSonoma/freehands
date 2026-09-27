@@ -128,7 +128,16 @@ async function authenticate(request, deviceCookieHeader) {
   return { user, access }
 }
 
-async function loadThread(facilitatorId, subjectKey) {
+async function loadConversation(facilitatorId, conversationId, subjectKey) {
+  if (conversationId) {
+    const { data, error } = await supabase
+      .from('mentor_conversations')
+      .select('*')
+      .eq('facilitator_id', facilitatorId)
+      .eq('id', conversationId)
+      .maybeSingle()
+    return error ? null : data
+  }
   if (!subjectKey) return null
   const { data, error } = await supabase
     .from('mentor_conversation_threads')
@@ -139,14 +148,19 @@ async function loadThread(facilitatorId, subjectKey) {
   return error ? null : data
 }
 
-function withConversation(session, thread) {
+function withConversation(session, conversation) {
   if (!session) return null
   return {
     ...session,
-    conversation_history: Array.isArray(thread?.conversation_history) ? thread.conversation_history : [],
-    draft_summary: thread?.draft_summary || '',
-    token_count: thread?.token_count ?? 0,
-    last_local_update_at: thread?.last_local_update_at || session.last_local_update_at || null
+    conversation_id: conversation?.id || null,
+    conversation_title: conversation?.title || null,
+    conversation_thread_key: conversation?.thread_key || conversation?.subject_key || null,
+    conversation_learner_id: conversation?.learner_id || null,
+    conversation_context_key: conversation?.context_key || conversation?.subject_key || null,
+    conversation_history: Array.isArray(conversation?.conversation_history) ? conversation.conversation_history : [],
+    draft_summary: conversation?.draft_summary || '',
+    token_count: conversation?.token_count ?? 0,
+    last_local_update_at: conversation?.last_local_update_at || session.last_local_update_at || null
   }
 }
 
@@ -204,6 +218,7 @@ export async function GET(request) {
 
     const { searchParams } = new URL(request.url)
     const sessionId = String(searchParams.get('sessionId') || '').trim()
+    const conversationId = String(searchParams.get('conversationId') || '').trim()
     const subjectKey = String(searchParams.get('subjectKey') || 'facilitator').trim() || 'facilitator'
 
     const { data: sessions, error } = await supabase
@@ -232,10 +247,10 @@ export async function GET(request) {
       if (!heartbeat?.active) return ownershipFailureResponse(heartbeat, deviceCookieHeader)
       ownerSession = heartbeat.session || activeSession
     }
-    const thread = isOwner ? await loadThread(auth.user.id, subjectKey) : null
+    const conversation = isOwner ? await loadConversation(auth.user.id, conversationId, subjectKey) : null
     return jsonWithDeviceCookie({
       body: {
-        session: withConversation(ownerSession, thread),
+        session: withConversation(ownerSession, conversation),
         status: isOwner ? 'active' : 'taken',
         isOwner
       },
@@ -260,6 +275,7 @@ export async function POST(request) {
     const action = String(body?.action || 'initialize')
     const deviceName = String(body?.deviceName || 'Unknown device')
     const subjectKey = String(body?.subjectKey || 'facilitator').trim() || 'facilitator'
+    const conversationId = String(body?.conversationId || '').trim()
     const requestedSessionId = String(body?.sessionId || '').trim() || randomUUID()
 
     if (action === 'force_end') {
@@ -330,8 +346,8 @@ export async function POST(request) {
       })
     }
 
-    const thread = await loadThread(auth.user.id, subjectKey)
-    const session = withConversation(result.session, thread)
+    const conversation = await loadConversation(auth.user.id, conversationId, subjectKey)
+    const session = withConversation(result.session, conversation)
     return jsonWithDeviceCookie({
       body: {
         session,
@@ -347,7 +363,7 @@ export async function POST(request) {
   }
 }
 
-// PATCH: Atomically fence the durable thread write behind the exact active owner tab.
+// PATCH: Atomically fence the durable conversation write behind the exact active owner tab.
 export async function PATCH(request) {
   const existingDeviceId = getDeviceIdFromRequest(request)
   const deviceId = existingDeviceId || randomUUID()
@@ -358,28 +374,42 @@ export async function PATCH(request) {
 
     const body = await request.json()
     const sessionId = String(body?.sessionId || '').trim()
+    const conversationId = String(body?.conversationId || '').trim()
     const subjectKey = String(body?.subjectKey || '').trim()
     if (!sessionId) return jsonWithDeviceCookie({ body: { error: 'sessionId required' }, status: 400, deviceCookieHeader })
-    if (!subjectKey) return jsonWithDeviceCookie({ body: { error: 'subjectKey required' }, status: 400, deviceCookieHeader })
+    if (!conversationId && !subjectKey) return jsonWithDeviceCookie({ body: { error: 'conversationId or subjectKey required' }, status: 400, deviceCookieHeader })
 
-    const existingThread = await loadThread(auth.user.id, subjectKey)
+    const existingConversation = await loadConversation(auth.user.id, conversationId, subjectKey)
     const conversationHistory = body?.conversationHistory !== undefined
       ? (Array.isArray(body.conversationHistory) ? body.conversationHistory : [])
-      : (Array.isArray(existingThread?.conversation_history) ? existingThread.conversation_history : [])
-    const draftSummary = body?.draftSummary !== undefined ? String(body.draftSummary || '') : (existingThread?.draft_summary || '')
-    const tokenCount = body?.tokenCount !== undefined ? Number(body.tokenCount || 0) : Number(existingThread?.token_count || 0)
-    const lastLocalUpdateAt = body?.lastLocalUpdateAt || existingThread?.last_local_update_at || new Date().toISOString()
+      : (Array.isArray(existingConversation?.conversation_history) ? existingThread.conversation_history : [])
+    const draftSummary = body?.draftSummary !== undefined ? String(body.draftSummary || '') : (existingConversation?.draft_summary || '')
+    const tokenCount = body?.tokenCount !== undefined ? Number(body.tokenCount || 0) : Number(existingConversation?.token_count || 0)
+    const lastLocalUpdateAt = body?.lastLocalUpdateAt || existingConversation?.last_local_update_at || new Date().toISOString()
 
-    const { data, error } = await supabase.rpc('write_mentor_thread_owned_transactional', {
-      p_facilitator_id: auth.user.id,
-      p_session_id: sessionId,
-      p_device_id: deviceId,
-      p_subject_key: subjectKey,
-      p_conversation_history: conversationHistory,
-      p_draft_summary: draftSummary,
-      p_token_count: Number.isFinite(tokenCount) ? tokenCount : 0,
-      p_last_local_update_at: lastLocalUpdateAt
-    })
+    const writeRpc = conversationId ? 'write_mentor_conversation_owned_transactional' : 'write_mentor_thread_owned_transactional'
+    const writeArgs = conversationId
+      ? {
+          p_facilitator_id: auth.user.id,
+          p_session_id: sessionId,
+          p_device_id: deviceId,
+          p_conversation_id: conversationId,
+          p_conversation_history: conversationHistory,
+          p_draft_summary: draftSummary,
+          p_token_count: Number.isFinite(tokenCount) ? tokenCount : 0,
+          p_last_local_update_at: lastLocalUpdateAt
+        }
+      : {
+          p_facilitator_id: auth.user.id,
+          p_session_id: sessionId,
+          p_device_id: deviceId,
+          p_subject_key: subjectKey,
+          p_conversation_history: conversationHistory,
+          p_draft_summary: draftSummary,
+          p_token_count: Number.isFinite(tokenCount) ? tokenCount : 0,
+          p_last_local_update_at: lastLocalUpdateAt
+        }
+    const { data, error } = await supabase.rpc(writeRpc, writeArgs)
     if (error) throw error
     if (!data?.ok) return ownershipFailureResponse(data, deviceCookieHeader)
 

@@ -741,7 +741,7 @@ export default function HeaderBar() {
 									{pathname.startsWith('/facilitator/help') && (
 										<div style={{ display:'flex', flexDirection:'column', borderTop: '1px solid #f3f4f6' }}>
 											<button type="button" role="menuitem" style={MOBILE_MENU_ITEM_STYLE} onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:export')); } catch {}; setNavOpen(false); }}>Export Conversation</button>
-											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, color:'#c7442e', borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:new-session')); } catch {}; setNavOpen(false); }}>New Session</button>
+											<button type="button" role="menuitem" style={{ ...MOBILE_MENU_ITEM_STYLE, color:'#c7442e', borderTop:'1px solid #f3f4f6' }} onClick={() => { try { window.dispatchEvent(new Event('ms:mentor:new-session')); } catch {}; setNavOpen(false); }}>New Conversation</button>
 										</div>
 									)}
 								</div>

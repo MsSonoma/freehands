@@ -14,6 +14,7 @@ import MentorInterceptor from './MentorInterceptor'
 import FeatureHelpToast from '@/app/session/components/FeatureHelpToast'
 import HelpWorkspaceFrame from './HelpWorkspaceFrame'
 import HelpBottomNav from './HelpBottomNav'
+import ConversationLibraryOverlay from './ConversationLibraryOverlay'
 import CurriculumGuidanceEditor from '@/app/components/syllabus/CurriculumGuidanceEditor'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
 
@@ -86,18 +87,28 @@ export default function CounselorClient() {
   
   // Learner selection
   const [learners, setLearners] = useState([])
+  const [learnersLoaded, setLearnersLoaded] = useState(false)
   const [selectedLearnerId, setSelectedLearnerId] = useState('none')
   const learnerSelectionResolvedRef = useRef(false)
+  const [learnerSelectionReady, setLearnerSelectionReady] = useState(false)
   const [learnerTranscript, setLearnerTranscript] = useState('')
   const [curriculumGuidanceContext, setCurriculumGuidanceContext] = useState('')
 
-  const subjectKey = selectedLearnerId === 'none' ? 'facilitator' : `learner:${selectedLearnerId}`
+  const [conversationLibraryOpen, setConversationLibraryOpen] = useState(false)
+  const [conversationLibrary, setConversationLibrary] = useState([])
+  const [conversationLibraryLoading, setConversationLibraryLoading] = useState(false)
+  const [activeConversationId, setActiveConversationId] = useState(null)
+  const [activeConversationTitle, setActiveConversationTitle] = useState('')
+  const [activeConversationThreadKey, setActiveConversationThreadKey] = useState('')
+  const [activeConversationLearnerId, setActiveConversationLearnerId] = useState(null)
+  const conversationBootstrapRef = useRef(false)
+  const subjectKey = activeConversationThreadKey
 
-  // Switch Ms. Sonoma chat persistence/context to Supabase chronograph + deterministic packs.
-  // Legacy mentor_conversation_threads JSON persistence is disabled when this is true.
+  // ThoughtHub provides deterministic context for the active conversation thread.
+  // The named conversation library remains the canonical durable conversation record.
   const useCohereChronograph = true
 
-  // Only disable legacy persistence once we confirm the chronograph endpoint works.
+  // Probe ThoughtHub readiness independently from conversation-library persistence.
   const [chronographReady, setChronographReady] = useState(false)
 
   const cohereChronographEnabled = useCohereChronograph && chronographReady
@@ -305,6 +316,7 @@ export default function CounselorClient() {
   useEffect(() => {
     if (!tierChecked || !accessToken) return
     let cancelled = false
+    setLearnersLoaded(false)
     ;(async () => {
       try {
         const supabase = getSupabaseClient()
@@ -318,10 +330,12 @@ export default function CounselorClient() {
             .or(`facilitator_id.eq.${user.id},owner_id.eq.${user.id},user_id.eq.${user.id}`)
             .order('created_at', { ascending: false })
 
-          if (!cancelled && data) setLearners(data)
+          if (!cancelled) setLearners(Array.isArray(data) ? data : [])
         }
       } catch (err) {
-        // Silent error handling
+        if (!cancelled) setLearners([])
+      } finally {
+        if (!cancelled) setLearnersLoaded(true)
       }
     })()
     return () => { cancelled = true }
@@ -329,12 +343,21 @@ export default function CounselorClient() {
 
   // Resolve the shared active learner independently of whether the Syllabus has mounted.
   useEffect(() => {
-    if (!learners?.length) return
+    if (!learnersLoaded) return
+    if (!learners?.length) {
+      learnerSelectionResolvedRef.current = true
+      setSelectedLearnerId('none')
+      setLearnerSelectionReady(true)
+      return
+    }
     const selectedIsValid = learners.some((learner) => String(learner.id) === String(selectedLearnerId))
 
     if (!learnerSelectionResolvedRef.current) {
       learnerSelectionResolvedRef.current = true
-      if (selectedIsValid) return
+      if (selectedIsValid) {
+        setLearnerSelectionReady(true)
+        return
+      }
 
       let remembered = ''
       let legacy = ''
@@ -351,13 +374,15 @@ export default function CounselorClient() {
           ? legacy
           : learners[0]?.id || 'none'
       setSelectedLearnerId(String(preferredId || 'none'))
+      setLearnerSelectionReady(true)
       return
     }
 
     if (selectedLearnerId !== 'none' && !selectedIsValid) {
       setSelectedLearnerId(String(learners[0]?.id || 'none'))
     }
-  }, [learners, selectedLearnerId])
+    setLearnerSelectionReady(true)
+  }, [learnersLoaded, learners, selectedLearnerId])
 
   // Persist Help learner changes through the same canonical learner selection used by Syllabus and learner sessions.
   useEffect(() => {
@@ -372,6 +397,240 @@ export default function CounselorClient() {
       // Ignore persistence errors (privacy mode / blocked storage).
     }
   }, [learners, selectedLearnerId])
+
+  const applyConversationRecord = useCallback((conversation, { closeLibrary = true } = {}) => {
+    if (!conversation?.id || !conversation?.thread_key) return
+    setActiveConversationId(conversation.id)
+    setActiveConversationTitle(conversation.title || 'New conversation')
+    setActiveConversationThreadKey(conversation.thread_key)
+    setActiveConversationLearnerId(conversation.learner_id || null)
+    const nextLearnerId = conversation.learner_id ? String(conversation.learner_id) : 'none'
+    setSelectedLearnerId(nextLearnerId)
+    initializedSessionIdRef.current = null
+    initInFlightSubjectRef.current = null
+    setChronographReady(false)
+    setConversationHistory([])
+    setDraftSummary('')
+    setCurrentSessionTokens(0)
+    setCaptionText('')
+    setCaptionSentences([])
+    setCaptionIndex(0)
+    setSessionStarted(false)
+    setSessionLoading(true)
+    if (closeLibrary) setConversationLibraryOpen(false)
+  }, [])
+
+  const refreshConversationLibrary = useCallback(async () => {
+    if (!accessToken) return []
+    setConversationLibraryLoading(true)
+    try {
+      await persistActiveConversationNow()
+      const response = await fetch('/api/mentor-conversations', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: 'no-store'
+      })
+      if (!response.ok) throw new Error('Failed to load conversations')
+      const data = await response.json()
+      const items = Array.isArray(data?.conversations) ? data.conversations : []
+      setConversationLibrary(items)
+      return items
+    } finally {
+      setConversationLibraryLoading(false)
+    }
+  }, [accessToken])
+
+  const persistActiveConversationNow = useCallback(async () => {
+    if (!accessToken || !activeConversationId || !sessionId || !sessionStarted || conversationHistory.length === 0) return true
+    try {
+      lastLocalUpdateTimestamp.current = Date.now()
+      const response = await fetch('/api/mentor-session', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          subjectKey,
+          conversationId: activeConversationId,
+          sessionId,
+          conversationHistory,
+          draftSummary,
+          tokenCount: currentSessionTokens,
+          lastLocalUpdateAt: new Date(lastLocalUpdateTimestamp.current).toISOString()
+        })
+      })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload?.error || 'Could not save the current conversation')
+      }
+      return true
+    } catch (error) {
+      setError(error?.message || 'Could not save the current conversation')
+      return false
+    }
+  }, [accessToken, activeConversationId, sessionId, sessionStarted, conversationHistory, subjectKey, draftSummary, currentSessionTokens])
+
+  const openConversation = useCallback(async (conversationId) => {
+    if (!accessToken || !conversationId) return
+    if (String(conversationId) === String(activeConversationId)) {
+      setConversationLibraryOpen(false)
+      return
+    }
+    setConversationLibraryLoading(true)
+    try {
+      await persistActiveConversationNow()
+      const response = await fetch(`/api/mentor-conversations?id=${encodeURIComponent(conversationId)}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+        cache: 'no-store'
+      })
+      if (!response.ok) throw new Error('Failed to open conversation')
+      const data = await response.json()
+      applyConversationRecord(data?.conversation)
+    } catch (error) {
+      setError(error?.message || 'Failed to open conversation')
+    } finally {
+      setConversationLibraryLoading(false)
+    }
+  }, [accessToken, activeConversationId, applyConversationRecord, persistActiveConversationNow])
+
+  const createConversation = useCallback(async ({ closeLibrary = true } = {}) => {
+    if (!accessToken) return null
+    setConversationLibraryLoading(true)
+    try {
+      const response = await fetch('/api/mentor-conversations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({
+          learnerId: selectedLearnerId !== 'none' ? selectedLearnerId : null
+        })
+      })
+      if (!response.ok) throw new Error('Failed to create conversation')
+      const data = await response.json()
+      const conversation = data?.conversation
+      if (!conversation) throw new Error('Conversation was not created')
+      setConversationLibrary((current) => [
+        conversation,
+        ...current.filter((item) => String(item.id) !== String(conversation.id))
+      ])
+      applyConversationRecord(conversation, { closeLibrary })
+      return conversation
+    } catch (error) {
+      setError(error?.message || 'Failed to create conversation')
+      return null
+    } finally {
+      setConversationLibraryLoading(false)
+    }
+  }, [accessToken, selectedLearnerId, applyConversationRecord, persistActiveConversationNow])
+
+  const renameConversation = useCallback(async (conversationId, title) => {
+    if (!accessToken || !conversationId) return false
+    try {
+      const response = await fetch('/api/mentor-conversations', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`
+        },
+        body: JSON.stringify({ id: conversationId, title })
+      })
+      if (!response.ok) throw new Error('Failed to rename conversation')
+      const data = await response.json()
+      const updated = data?.conversation
+      if (!updated) return false
+      setConversationLibrary((current) => current.map((item) => String(item.id) === String(updated.id) ? { ...item, ...updated } : item))
+      if (String(updated.id) === String(activeConversationId)) setActiveConversationTitle(updated.title || 'New conversation')
+      return true
+    } catch (error) {
+      setError(error?.message || 'Failed to rename conversation')
+      return false
+    }
+  }, [accessToken, activeConversationId])
+
+  const deleteConversation = useCallback(async (conversation) => {
+    if (!accessToken || !conversation?.id) return
+    const confirmed = typeof window === 'undefined' || window.confirm(`Delete "${conversation.title || 'conversation'}"?`)
+    if (!confirmed) return
+    try {
+      const response = await fetch(`/api/mentor-conversations?id=${encodeURIComponent(conversation.id)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${accessToken}` }
+      })
+      if (!response.ok) throw new Error('Failed to delete conversation')
+
+      const remaining = conversationLibrary.filter((item) => String(item.id) !== String(conversation.id))
+    setConversationLibrary(remaining)
+
+    if (String(conversation.id) === String(activeConversationId)) {
+      setActiveConversationId(null)
+      setActiveConversationTitle('')
+      setActiveConversationThreadKey('')
+      setActiveConversationLearnerId(null)
+      initializedSessionIdRef.current = null
+      const sameLearner = remaining.find((item) => String(item.learner_id || 'none') === String(selectedLearnerId))
+      const next = sameLearner || remaining[0] || null
+      if (next) {
+        await openConversation(next.id)
+      } else {
+        await createConversation({ closeLibrary: false })
+      }
+    }
+    } catch (error) {
+      setError(error?.message || 'Failed to delete conversation')
+    }
+  }, [accessToken, activeConversationId, conversationLibrary, selectedLearnerId, openConversation, createConversation])
+
+  useEffect(() => {
+    if (!accessToken || !hasAccess || !learnerSelectionReady || activeConversationId || conversationBootstrapRef.current) return
+    conversationBootstrapRef.current = true
+    ;(async () => {
+      try {
+        const items = await refreshConversationLibrary()
+        const matching = items.find((item) => String(item.learner_id || 'none') === String(selectedLearnerId))
+        if (matching) {
+          await openConversation(matching.id)
+        } else {
+          await createConversation()
+        }
+      } catch (error) {
+        setError(error?.message || 'Failed to load conversations')
+        setSessionLoading(false)
+      } finally {
+        conversationBootstrapRef.current = false
+      }
+    })()
+  }, [accessToken, hasAccess, learnerSelectionReady, activeConversationId, selectedLearnerId, refreshConversationLibrary, openConversation, createConversation])
+
+  useEffect(() => {
+    if (!accessToken || !activeConversationId || !learnerSelectionReady) return
+    const currentLearner = activeConversationLearnerId ? String(activeConversationLearnerId) : 'none'
+    if (currentLearner === String(selectedLearnerId)) return
+    let cancelled = false
+    ;(async () => {
+      try {
+        const response = await fetch('/api/mentor-conversations', {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${accessToken}`
+          },
+          body: JSON.stringify({
+            id: activeConversationId,
+            learnerId: selectedLearnerId !== 'none' ? selectedLearnerId : null
+          })
+        })
+        if (!response.ok) return
+        const data = await response.json()
+        if (cancelled || !data?.conversation) return
+        const updated = data.conversation
+        setActiveConversationLearnerId(updated.learner_id || null)
+        setConversationLibrary((current) => current.map((item) => String(item.id) === String(updated.id) ? { ...item, ...updated } : item))
+      } catch {}
+    })()
+    return () => { cancelled = true }
+  }, [accessToken, activeConversationId, activeConversationLearnerId, learnerSelectionReady, selectedLearnerId])
 
   useEffect(() => {
     const syncFromSyllabus = (event) => {
@@ -390,7 +649,7 @@ export default function CounselorClient() {
     }
   }, [])
 
-  // Switching the Syllabus selection changes the active conversation thread.
+  // Switching the active conversation resets its rendered/session state.
   useEffect(() => {
     initializedSessionIdRef.current = null
     setConversationHistory([])
@@ -592,7 +851,7 @@ export default function CounselorClient() {
           // Fetch the active session to show in takeover dialog
           ;(async () => {
             try {
-              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(mySessionId)}`, {
+              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(mySessionId)}&conversationId=${encodeURIComponent(activeConversationId || '')}`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
               })
               if (checkRes.ok) {
@@ -620,7 +879,7 @@ export default function CounselorClient() {
       })
 
     realtimeChannelRef.current = channel
-  }, [sessionId, accessToken, hasAccess, subjectKey])
+  }, [sessionId, accessToken, hasAccess, subjectKey, activeConversationId])
 
   // Clean up realtime subscription on unmount
   useEffect(() => {
@@ -637,7 +896,7 @@ export default function CounselorClient() {
     const turnCount = conversationHistory.length
     if (turnCount === 30 && !turnWarningShown) {
       setTurnWarningShown(true)
-      alert('Your conversation is getting long. You can start a fresh conversation whenever you are ready; continuity is preserved automatically.')
+      alert('Your conversation is getting long. You can start a new saved conversation whenever you are ready.')
     }
   }, [conversationHistory.length, turnWarningShown])
 
@@ -646,7 +905,7 @@ export default function CounselorClient() {
   }, [conversationHistory.length])
 
   const initializeMentorSession = useCallback(async () => {
-    if (!accessToken || !hasAccess || !tierChecked) return
+    if (!accessToken || !hasAccess || !tierChecked || !activeConversationId || !subjectKey) return
 
     if (initInFlightSubjectRef.current === subjectKey) {
       return
@@ -666,7 +925,7 @@ export default function CounselorClient() {
     if (!sessionId) assignSessionIdentifier(localExecutionSessionId)
 
     try {
-      const checkRes = await fetchWithTimeout(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(localExecutionSessionId)}`, {
+      const checkRes = await fetchWithTimeout(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(localExecutionSessionId)}&conversationId=${encodeURIComponent(activeConversationId || '')}`, {
         headers: {
           'Authorization': `Bearer ${accessToken}`
         }
@@ -714,6 +973,7 @@ export default function CounselorClient() {
             deviceName,
             action: 'initialize',
             subjectKey,
+            conversationId: activeConversationId,
             sessionId: localExecutionSessionId
           })
         }, 15000)
@@ -766,7 +1026,7 @@ export default function CounselorClient() {
           } catch {}
         }
 
-        // Fallback to legacy stored JSON if chronograph isn't available yet
+        // Fallback to the durable conversation record if ThoughtHub is unavailable or empty
         if (convHistory.length === 0) {
           convHistory = Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : []
         }
@@ -831,7 +1091,7 @@ export default function CounselorClient() {
         } catch {}
       }
 
-      // Fallback to legacy stored JSON if chronograph isn't available yet
+      // Fallback to the durable conversation record if ThoughtHub is unavailable or empty
       if (convHistory.length === 0) {
         convHistory = Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : []
       }
@@ -871,12 +1131,12 @@ export default function CounselorClient() {
         initInFlightSubjectRef.current = null
       }
     }
-  }, [sessionId, accessToken, hasAccess, tierChecked, subjectKey, assignSessionIdentifier, generateSessionIdentifier, startRealtimeSubscription])
+  }, [sessionId, accessToken, hasAccess, tierChecked, subjectKey, activeConversationId, assignSessionIdentifier, generateSessionIdentifier, startRealtimeSubscription])
 
   // Initialize session when all dependencies are ready
   useEffect(() => {
     // Only attempt initialization when all required dependencies are ready
-    if (!accessToken || !hasAccess || !tierChecked) {
+    if (!accessToken || !hasAccess || !tierChecked || !activeConversationId || !subjectKey) {
       // If we're still waiting for dependencies, keep loading state true only if we haven't checked yet
       if (tierChecked && (!hasAccess || !accessToken)) {
         // Dependencies are checked but we don't have access - stop loading
@@ -899,11 +1159,10 @@ export default function CounselorClient() {
     initializeMentorSession()
     
   // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [accessToken, hasAccess, tierChecked, subjectKey, initializeMentorSession])
+  }, [accessToken, hasAccess, tierChecked, subjectKey, activeConversationId, initializeMentorSession])
 
   // Save conversation to database whenever it changes
   useEffect(() => {
-    if (cohereChronographEnabled) return
     console.log('[Ms. Sonoma] Save effect triggered:', {
       sessionId: !!sessionId, 
       accessToken: !!accessToken, 
@@ -911,10 +1170,10 @@ export default function CounselorClient() {
       sessionLoading, 
       conversationLength: conversationHistory.length,
       subjectKey,
-      willSave: accessToken && hasAccess && !sessionLoading && sessionStarted && conversationHistory.length > 0
+      willSave: accessToken && hasAccess && !sessionLoading && sessionStarted && !!activeConversationId && conversationHistory.length > 0
     })
     
-    if (!accessToken || !hasAccess || sessionLoading || !sessionStarted || conversationHistory.length === 0) return
+    if (!accessToken || !hasAccess || sessionLoading || !sessionStarted || !activeConversationId || conversationHistory.length === 0) return
     
     // Debounce database writes
     const saveTimer = setTimeout(async () => {
@@ -925,6 +1184,7 @@ export default function CounselorClient() {
         
         const payload = {
           subjectKey,
+          conversationId: activeConversationId,
           sessionId,
           conversationHistory,
           draftSummary,
@@ -968,7 +1228,7 @@ export default function CounselorClient() {
           // Fetch the active session to show in takeover dialog
           ;(async () => {
             try {
-              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(sessionId || '')}`, {
+              const checkRes = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(sessionId || '')}&conversationId=${encodeURIComponent(activeConversationId || '')}`, {
                 headers: { 'Authorization': `Bearer ${accessToken}` }
               })
               if (checkRes.ok) {
@@ -990,7 +1250,16 @@ export default function CounselorClient() {
     }, 1000) // Save 1 second after last change
     
     return () => clearTimeout(saveTimer)
-  }, [conversationHistory, draftSummary, currentSessionTokens, accessToken, hasAccess, sessionLoading, sessionStarted, subjectKey, sessionId, cohereChronographEnabled])
+  }, [conversationHistory, draftSummary, currentSessionTokens, accessToken, hasAccess, sessionLoading, sessionStarted, subjectKey, sessionId, activeConversationId])
+
+  useEffect(() => {
+    if (!activeConversationId || activeConversationTitle !== 'New conversation') return
+    const firstUserMessage = conversationHistory.find((message) => message?.role === 'user' && String(message?.content || '').trim())
+    if (!firstUserMessage) return
+    const title = String(firstUserMessage.content || '').replace(/\s+/g, ' ').trim().slice(0, 60)
+    if (!title) return
+    void renameConversation(activeConversationId, title)
+  }, [activeConversationId, activeConversationTitle, conversationHistory, renameConversation])
 
   // Periodic heartbeat to detect if session was taken over (backup to realtime)
   useEffect(() => {
@@ -998,7 +1267,7 @@ export default function CounselorClient() {
 
     const checkSessionStatus = async () => {
       try {
-        const res = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(sessionId || '')}`, {
+        const res = await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(sessionId || '')}&conversationId=${encodeURIComponent(activeConversationId || '')}`, {
           headers: { 'Authorization': `Bearer ${accessToken}` }
         })
         
@@ -1043,7 +1312,7 @@ export default function CounselorClient() {
     checkSessionStatus()
     
     return () => clearInterval(interval)
-  }, [sessionId, accessToken, hasAccess, sessionLoading, sessionStarted, subjectKey])
+  }, [sessionId, accessToken, hasAccess, sessionLoading, sessionStarted, subjectKey, activeConversationId])
 
   // Stop polling on unmount
   useEffect(() => {
@@ -1078,6 +1347,7 @@ export default function CounselorClient() {
           pinCode,
           action: 'takeover',
           subjectKey,
+          conversationId: activeConversationId,
           sessionId: nextExecutionSessionId,
           expectedConflictId: conflictingSession?.id || null
         })
@@ -1844,70 +2114,10 @@ export default function CounselorClient() {
     }
   }
 
-  // Start a fresh conversation. Chronograph preserves continuity; there is no manual save ceremony.
+  // Starting fresh creates a new durable conversation instead of clearing the current one.
   const startNewConversation = useCallback(async () => {
-    if (conversationHistory.length === 0) return
-    await clearConversationForRestart()
-  }, [conversationHistory]) // eslint-disable-line react-hooks/exhaustive-deps
-
-  // Clear the current Help conversation while preserving chronograph continuity.
-  const clearConversationForRestart = async () => {
-    // Clear current subject conversation in database
-    if (accessToken) {
-      try {
-        await fetch(`/api/mentor-session?subjectKey=${encodeURIComponent(subjectKey)}&sessionId=${encodeURIComponent(sessionId || '')}`, {
-          method: 'DELETE',
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        })
-      } catch (e) {
-        // Silent error handling
-      }
-    }
-    
-    // End current session usage tracking
-    if (sessionStarted) {
-      try {
-        const supabase = getSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-        
-        if (token) {
-          await fetch('/api/usage/mentor/increment', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
-            },
-            body: JSON.stringify({ action: 'end' })
-          })
-        }
-      } catch (e) {
-        // Silent error handling
-      }
-    }
-    
-    if (sessionPollInterval.current) {
-      clearInterval(sessionPollInterval.current)
-      sessionPollInterval.current = null
-    }
-
-    setConversationHistory([])
-    setCaptionText('')
-    setCaptionSentences([])
-    setCaptionIndex(0)
-    setUserInput('')
-    setError('')
-    setSessionStarted(false)
-    setCurrentSessionTokens(0)
-    setDraftSummary('')
-    setConflictingSession(null)
-    setShowTakeoverDialog(false)
-
-    // Conversation reset does not release or replace the temporary execution lease.
-    initializedSessionIdRef.current = null
-  }
+    await createConversation({ closeLibrary: true })
+  }, [createConversation])
 
   // Toggle mute
   const toggleMute = useCallback(() => {
@@ -2195,33 +2405,33 @@ export default function CounselorClient() {
                 </div>
               )}
 
-              {/* New Conversation button (top-right) - visible when conversation exists */}
-              {conversationHistory.length > 0 && (
-                <button
-                  onClick={startNewConversation}
-                  aria-label="New Conversation"
-                  title="New Conversation"
-                  style={{
-                    position: 'absolute',
-                    top: 16,
-                    right: 16,
-                    background: '#1f2937',
-                    color: '#fff',
-                    border: 'none',
-                    width: 'clamp(48px, 10vw, 64px)',
-                    height: 'clamp(48px, 10vw, 64px)',
-                    display: 'grid',
-                    placeItems: 'center',
-                    borderRadius: '50%',
-                    cursor: 'pointer',
-                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
-                    zIndex: 10,
-                    fontSize: 'clamp(22px, 5vw, 32px)'
-                  }}
-                >
-                  <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
-                </button>
-              )}
+              {/* Conversation Library button */}
+              <button
+                onClick={() => {
+                  setConversationLibraryOpen(true)
+                  void refreshConversationLibrary()
+                }}
+                aria-label="Conversation Library"
+                title="Conversations"
+                style={{
+                  position: 'absolute',
+                  top: 16,
+                  right: 16,
+                  background: '#1f2937',
+                  color: '#fff',
+                  border: 'none',
+                  width: 'clamp(48px, 10vw, 64px)',
+                  height: 'clamp(48px, 10vw, 64px)',
+                  display: 'grid',
+                  placeItems: 'center',
+                  borderRadius: '50%',
+                  cursor: 'pointer',
+                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                  zIndex: 10
+                }}
+              >
+                <svg aria-hidden="true" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round"><path d="M12 5v14"/><path d="M5 12h14"/></svg>
+              </button>
 
               {/* Skip button (bottom-left, visible when speaking) */}
               {isSpeaking && (
@@ -2323,6 +2533,19 @@ export default function CounselorClient() {
               </button>
             </>
           )}
+
+          <ConversationLibraryOverlay
+            open={activeScreen === 'mentor' && conversationLibraryOpen}
+            conversations={conversationLibrary}
+            activeConversationId={activeConversationId}
+            learners={learners}
+            loading={conversationLibraryLoading}
+            onClose={() => setConversationLibraryOpen(false)}
+            onCreate={() => createConversation({ closeLibrary: true })}
+            onOpen={openConversation}
+            onRename={renameConversation}
+            onDelete={deleteConversation}
+          />
 
           {/* Real facilitator workspaces replace the legacy compact overlays. */}
           {activeScreen !== 'mentor' && (
