@@ -21,6 +21,14 @@ test('Help uses the real Syllabus and Lesson Library as shared workspaces', () =
   assert.doesNotMatch(client, /LessonMakerOverlay/)
 })
 
+test('Help resolves the shared active learner before Syllabus is opened', () => {
+  assert.match(client, /import \{ persistLearnerSelection \} from '@\/app\/learn\/learnerSelection\.mjs'/)
+  assert.match(client, /learnerSelectionResolvedRef/)
+  assert.match(client, /getItem\?\.\('learner_id'\)/)
+  assert.match(client, /persistLearnerSelection\(window\.localStorage, selectedLearner\)/)
+  assert.match(client, /removeItem\?\.\(LEGACY_SELECTED_LEARNER_KEY\)/)
+})
+
 test('Guidance opens as a Help Home overlay without switching to Syllabus', () => {
   assert.match(client, /import CurriculumGuidanceEditor/)
   assert.match(client, /onClick=\{\(\) => setGuidanceOverlayOpen\(true\)\}/)

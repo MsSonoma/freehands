@@ -6,6 +6,7 @@ import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { fetchLearnerTranscript } from '@/app/lib/learnerTranscript'
+import { persistLearnerSelection } from '@/app/learn/learnerSelection.mjs'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 import MentorThoughtBubble from './MentorThoughtBubble'
 import SessionTakeoverDialog from './SessionTakeoverDialog'
@@ -24,7 +25,7 @@ function fetchWithTimeout(url, options, timeoutMs = 15000) {
 }
 
 export default function CounselorClient() {
-  const LAST_SELECTED_LEARNER_KEY = 'MrMentor.v1.selectedLearnerId'
+  const LEGACY_SELECTED_LEARNER_KEY = 'MrMentor.v1.selectedLearnerId'
   const router = useRouter()
   const [pinChecked, setPinChecked] = useState(false)
   const [tierChecked, setTierChecked] = useState(false)
@@ -85,6 +86,7 @@ export default function CounselorClient() {
   // Learner selection
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState('none')
+  const learnerSelectionResolvedRef = useRef(false)
   const [learnerTranscript, setLearnerTranscript] = useState('')
   const [curriculumGuidanceContext, setCurriculumGuidanceContext] = useState('')
 
@@ -324,36 +326,49 @@ export default function CounselorClient() {
     return () => { cancelled = true }
   }, [accessToken, tierChecked])
 
-  // Persist last selected learner (helps survive Fast Refresh/state resets)
-  useEffect(() => {
-    try {
-      if (typeof window === 'undefined') return
-      if (!selectedLearnerId || selectedLearnerId === 'none') return
-      window.localStorage?.setItem?.(LAST_SELECTED_LEARNER_KEY, selectedLearnerId)
-    } catch {
-      // Ignore persistence errors (privacy mode / blocked storage)
-    }
-  }, [selectedLearnerId])
-
-  // Default to the newest learner once the list loads.
-  // IMPORTANT: Allow explicitly selecting "none" (general discussion).
+  // Resolve the shared active learner independently of whether the Syllabus has mounted.
   useEffect(() => {
     if (!learners?.length) return
-    if (selectedLearnerId === 'none') return
+    const selectedIsValid = learners.some((learner) => String(learner.id) === String(selectedLearnerId))
 
-    const selectedIsValid = learners.some(l => l.id === selectedLearnerId)
-    if (!selectedIsValid) {
-      let nextLearnerId = null
+    if (!learnerSelectionResolvedRef.current) {
+      learnerSelectionResolvedRef.current = true
+      if (selectedIsValid) return
+
+      let remembered = ''
+      let legacy = ''
       try {
         if (typeof window !== 'undefined') {
-          const saved = window.localStorage?.getItem?.(LAST_SELECTED_LEARNER_KEY)
-          if (saved && learners.some(l => l.id === saved)) {
-            nextLearnerId = saved
-          }
+          remembered = window.localStorage?.getItem?.('learner_id') || ''
+          legacy = window.localStorage?.getItem?.(LEGACY_SELECTED_LEARNER_KEY) || ''
         }
       } catch {}
 
-      setSelectedLearnerId(nextLearnerId || learners[0].id)
+      const preferredId = learners.some((learner) => String(learner.id) === String(remembered))
+        ? remembered
+        : learners.some((learner) => String(learner.id) === String(legacy))
+          ? legacy
+          : learners[0]?.id || 'none'
+      setSelectedLearnerId(String(preferredId || 'none'))
+      return
+    }
+
+    if (selectedLearnerId !== 'none' && !selectedIsValid) {
+      setSelectedLearnerId(String(learners[0]?.id || 'none'))
+    }
+  }, [learners, selectedLearnerId])
+
+  // Persist Help learner changes through the same canonical learner selection used by Syllabus and learner sessions.
+  useEffect(() => {
+    if (!learners?.length || !selectedLearnerId || selectedLearnerId === 'none') return
+    const selectedLearner = learners.find((learner) => String(learner.id) === String(selectedLearnerId))
+    if (!selectedLearner) return
+    try {
+      if (typeof window === 'undefined') return
+      persistLearnerSelection(window.localStorage, selectedLearner)
+      window.localStorage?.removeItem?.(LEGACY_SELECTED_LEARNER_KEY)
+    } catch {
+      // Ignore persistence errors (privacy mode / blocked storage).
     }
   }, [learners, selectedLearnerId])
 
