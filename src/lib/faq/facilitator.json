@@ -1,35 +1,41 @@
 {
-  "category": "Mr. Mentor & Facilitator Tools",
+  "category": "Ms. Sonoma Facilitator Help",
   "features": [
     {
-      "id": "mr-mentor",
-      "title": "Mr. Mentor",
+      "id": "facilitator-help",
+      "title": "Ms. Sonoma Facilitator Help",
       "keywords": [
-        "mr mentor",
-        "mentor",
-        "counselor",
+        "ms sonoma",
+        "facilitator help",
+        "help",
+        "facilitator assistant",
         "facilitator chat",
-        "talk to mentor",
-        "ask mentor"
+        "ask ms sonoma"
       ],
-      "description": "Mr. Mentor is your AI teaching assistant. He helps you generate lessons, schedule activities, get teaching advice, and understand pedagogical best practices. He's knowledgeable about child development, learning strategies, and how to adapt lessons for different learners.",
-      "howToUse": "Just talk to me naturally! Say things like 'Generate a math lesson' or 'How should I teach fractions to a struggling learner?' I understand conversational language and can help with lesson planning, scheduling, editing, and teaching guidance.",
-      "relatedFeatures": ["lesson-generation", "teaching-advice"]
+      "description": "In facilitator Help, Ms. Sonoma is the adult-facing planning, evidence, and product helper. She can inspect supported learner and Syllabus state, explain product features, help with lessons and planning, and carry out authorized actions while the facilitator retains educational authorship and final authority.",
+      "howToUse": "Talk to Ms. Sonoma naturally about learner planning, lessons, Syllabus state, or how the product works. She can use current app evidence and supported tools when the answer depends on saved state.",
+      "relatedFeatures": [
+        "lesson-generation",
+        "teaching-advice"
+      ]
     },
     {
       "id": "calendar-view",
-      "title": "Calendar View",
+      "title": "Syllabus Month View",
       "keywords": [
-        "calendar",
+        "syllabus month view",
+        "month view",
         "calendar view",
-        "schedule view",
-        "lesson calendar",
         "monthly view",
-        "weekly view"
+        "schedule view",
+        "lesson calendar"
       ],
-      "description": "The Calendar View shows all scheduled lessons in a visual calendar format. You can see what's planned for each day, drag and drop to reschedule lessons, and get an overview of your learner's learning plan. Different lesson types are color-coded for easy identification.",
-      "howToUse": "Click the 'Calendar' button to open the calendar overlay. You'll see all scheduled lessons for the selected learner. Click on a lesson to view details, drag to reschedule, or click a date to schedule a new lesson.",
-      "relatedFeatures": ["lesson-scheduling", "learner-profiles"]
+      "description": "Month view is a second view of the active Syllabus, not a separate calendar. It shows the same lessons, reviews, forecast suggestions, historical records, and no-school dates across a month.",
+      "howToUse": "Open Syllabus and choose Month view beside the date range. Select a day cell to open that day's Syllabus items, then select a lesson or review to open its normal Syllabus details.",
+      "relatedFeatures": [
+        "lesson-scheduling",
+        "learner-profiles"
+      ]
     },
     {
       "id": "clipboard-summary",
@@ -42,9 +48,12 @@
         "save summary",
         "session notes"
       ],
-      "description": "The Clipboard Summary creates a concise record of your conversation with Mr. Mentor. It captures key decisions, lessons created, advice given, and action items. You can review and save these summaries to track your planning over time.",
+      "description": "The Clipboard Summary creates a concise record of your conversation with Ms. Sonoma. It captures key decisions, lessons created, advice given, and action items. You can review and save these summaries to track your planning over time.",
       "howToUse": "Click the 'Clipboard' button to see a draft summary of our conversation. Review it, make edits if needed, then save it. Summaries are stored with the learner's profile for future reference.",
-      "relatedFeatures": ["mr-mentor", "goals-notes"]
+      "relatedFeatures": [
+        "facilitator-help",
+        "goals-notes"
+      ]
     },
     {
       "id": "teaching-advice",
@@ -60,7 +69,10 @@
       ],
       "description": "Teaching Advice provides personalized guidance on how to approach topics, adapt lessons for different learning styles, handle challenges, and implement best practices. I draw on educational research and child development principles to give practical, actionable suggestions.",
       "howToUse": "Ask me questions like 'How should I teach multiplication to a visual learner?' or 'What's the best way to introduce fractions?' I'll provide strategies, tips, and approaches tailored to your learner's needs.",
-      "relatedFeatures": ["mr-mentor", "learner-transcript"]
+      "relatedFeatures": [
+        "facilitator-help",
+        "learner-transcript"
+      ]
     }
   ]
 }

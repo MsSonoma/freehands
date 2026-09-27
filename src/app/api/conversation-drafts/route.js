@@ -1,4 +1,4 @@
-// API for Mr. Mentor conversation drafts (unapproved summaries)
+// API for Ms. Sonoma conversation drafts (unapproved summaries)
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 

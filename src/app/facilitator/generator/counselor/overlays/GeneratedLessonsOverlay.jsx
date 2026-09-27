@@ -1,4 +1,4 @@
-// Compact generated lessons list for Mr. Mentor overlay
+// Compact generated lessons list for Ms. Sonoma overlay
 'use client'
 import { useEffect, useMemo, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'

@@ -10,13 +10,13 @@ import {
   mentorToolNeedsConfirmation,
 } from './toolRegistry.js'
 
-test('Mr. Mentor registry is unique and drives OpenAI tool definitions', () => {
+test('Ms. Sonoma facilitator Help registry is unique and drives OpenAI tool definitions', () => {
   const names = MENTOR_TOOL_REGISTRY.map((tool) => tool.name)
   assert.equal(new Set(names).size, names.length)
   assert.deepEqual(getMentorOpenAiTools().map((tool) => tool.function.name), names)
 })
 
-test('Mr. Mentor exposes current Syllabus and mastery capabilities', () => {
+test('Ms. Sonoma facilitator Help exposes current Syllabus and mastery capabilities', () => {
   const required = [
     'get_syllabus',
     'get_learning_evidence',

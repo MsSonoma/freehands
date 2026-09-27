@@ -1,4 +1,4 @@
-// Persistent goals clipboard for Mr. Mentor
+// Persistent goals clipboard for Ms. Sonoma
 // Stores long-term goals/notes per learner or for facilitator
 'use client'
 import { useState, useEffect, useCallback } from 'react'
@@ -169,7 +169,7 @@ export default function GoalsClipboardOverlay({
               📋 {contextText}
             </div>
             <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
-              Persistent notes that Mr. Mentor always sees
+              Persistent notes that Ms. Sonoma always sees
             </div>
           </div>
           <button
@@ -198,7 +198,7 @@ export default function GoalsClipboardOverlay({
           gap: 10
         }}>
           <div style={{ fontSize: 12, color: '#374151', lineHeight: 1.4 }}>
-            Set goals, preferences, or context that should guide all conversations with Mr. Mentor.
+            Set goals, preferences, or context that should guide all conversations with Ms. Sonoma.
           </div>
 
           <textarea

@@ -4,14 +4,13 @@ import fs from 'node:fs'
 
 const read = (path) => fs.readFileSync(path, 'utf8')
 
-test('Mr. Mentor feature FAQ no longer owns conversational confirmation', () => {
+test('Ms. Sonoma facilitator Help interceptor forwards product questions without conversational confirmation', () => {
   const source = read('src/app/facilitator/generator/counselor/MentorInterceptor.js')
-  const start = source.indexOf('async handleFaq(userMessage, context)')
-  const end = source.indexOf('async executeAction()', start)
-  assert.ok(start >= 0 && end > start)
-  const block = source.slice(start, end)
-  assert.doesNotMatch(block, /faq_feature_confirm|faq_feature_select|Is that correct\?/)
-  assert.match(block, /reportMatch/)
+  assert.match(source, /async process\(userMessage, context = \{\}\)/)
+  assert.match(source, /searchMentorFeatures\(message\)/)
+  assert.match(source, /handled: false/)
+  assert.match(source, /mentor_blindspot/)
+  assert.doesNotMatch(source, /faq_feature_confirm|faq_feature_select|Is that correct\?/)
 })
 
 test('Mrs. Webb product help is UI-owned and excluded from objective evidence', () => {
@@ -25,7 +24,7 @@ test('Mrs. Webb product help is UI-owned and excluded from objective evidence', 
 test('Ms. Sonoma discussion keeps synthetic help in continuity but outside mastery checks', () => {
   const source = read('src/app/session/v2/DiscussionPhase.jsx')
   assert.match(source, /recordSyntheticExchange/)
-  assert.match(source, /filter\(m => m\.kind !== 'product_help'\)/)
+  assert.match(source, /filter\(m => m\.kind !== 'product_help' && m\.kind !== 'attention_reminder'\)/)
   assert.match(source, /kind, featureId/)
 })
 

@@ -12,7 +12,7 @@ export default function Page() {
         <li>Free: limited usage; 1 learner; 1 device</li>
         <li>Free Trial: limited; includes up to 5 lifetime AI lesson generations</li>
         <li>Standard ($49/mo): up to 2 learners; lesson generation; advanced in-session features</li>
-        <li>Pro ($69/mo): up to 5 learners; includes Mr. Mentor and Lesson Planner features</li>
+        <li>Pro ($69/mo): up to 5 learners; includes Ms. Sonoma facilitator help and Lesson Planner features</li>
         <li>Lifetime (legacy): grandfathered plan for existing customers (if applicable)</li>
       </ul>
       <h2>Billing and Cancellation</h2>

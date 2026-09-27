@@ -1,5 +1,5 @@
-﻿// Next.js API route for Mr. Mentor (Counselor)
-// Therapeutic AI counselor for facilitators using GPT-4o
+﻿// Next.js API route for Ms. Sonoma (Counselor)
+// Facilitator-facing Ms. Sonoma Help API
 
 import { NextResponse } from 'next/server'
 import fs from 'node:fs'
@@ -55,17 +55,16 @@ export const maxDuration = 60 // Extended timeout for OpenAI + tool execution
 // Keep below maxDuration; leave room for local tool execution.
 const OPENAI_TIMEOUT_MS = 45000
 
-// Mr. Mentor's voice - warm, caring American male
+// Ms. Sonoma's established voice, shared with learner-facing sessions.
 const MENTOR_VOICE = {
-  languageCode: 'en-US',
-  name: 'en-US-Neural2-D',
-  ssmlGender: 'MALE'
+  languageCode: 'en-GB',
+  name: 'en-GB-Neural2-F',
+  ssmlGender: 'FEMALE'
 }
 
-// Slightly slower speaking rate for thoughtful, therapeutic delivery
 const MENTOR_AUDIO_CONFIG = {
   audioEncoding: 'MP3',
-  speakingRate: 0.88
+  speakingRate: 0.92
 }
 
 function resolveBaseUrl(request) {
@@ -92,11 +91,16 @@ function resolveBaseUrl(request) {
   throw new Error('Cannot resolve base URL: no environment variable, request URL, or host header available')
 }
 
-// Mr. Mentor is the facilitator-facing educational planning and evidence assistant.
+// Ms. Sonoma is the facilitator-facing educational planning and evidence assistant.
 // Tool descriptions are injected from the same registry used for actual dispatch.
-const MENTOR_SYSTEM_PROMPT = `You are Mr. Mentor, the adult-facing educational planning, evidence, and product assistant for Ms. Sonoma.
+const MENTOR_SYSTEM_PROMPT = `You are Ms. Sonoma in the facilitator-facing Help experience. You provide educational planning, evidence, and product assistance to the responsible adult guiding the learner.
 
 CURRENT DATE: ${new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric', weekday: 'long' })} (${new Date().toISOString().split('T')[0]})
+
+FACILITATOR CONTEXT:
+- You are speaking to the facilitator, not the learner.
+- This is the same Ms. Sonoma identity used in learner sessions, operating here as the facilitator-facing helper.
+- Keep learner mastery first while preserving facilitator authorship, judgment, boundaries, and final authority.
 
 MISSION AND AUTHORITY:
 - Learner mastery is the first priority.
@@ -122,7 +126,7 @@ HOW TO WORK:
 - Keep technical implementation details and function names out of normal user-facing prose.
 
 PRODUCT SURFACES:
-The facilitator experience includes Mr. Mentor, Syllabus (with week and month views), Lessons, Generated Lessons, Lesson Maker, Learners, Prepare, Account, and Notifications. Use open_surface when the facilitator asks you to take them to one of these surfaces.
+The facilitator experience includes Ms. Sonoma Help, Syllabus (with week and month views), Lessons, Generated Lessons, Lesson Maker, Learners, Prepare, Account, and Notifications. Use open_surface when the facilitator asks you to take them to one of these surfaces.
 
 STYLE:
 - Calm, direct, intelligent, concrete, and patient.
@@ -600,7 +604,7 @@ function mergePlanDetailsPatch(activeRevision, patch = {}) {
   if (has('subjects')) out.subjects = patch.subjects
   if (has('weekly_pattern')) out.weekly_pattern = patch.weekly_pattern
   if (has('teaching_guidance')) out.teaching_guidance = (patch.teaching_guidance && typeof patch.teaching_guidance === 'object' && !Array.isArray(patch.teaching_guidance)) ? { ...(activeRevision?.teaching_guidance || {}), ...patch.teaching_guidance } : patch.teaching_guidance
-  out.change_reason = 'Facilitator-directed Syllabus update through Mr. Mentor'
+  out.change_reason = 'Facilitator-directed Syllabus update through Ms. Sonoma'
   return out
 }
 
@@ -745,7 +749,7 @@ async function executeManageNoSchoolDate(args, request, toolLog, toolContext) {
 function executeOpenSurface(args) {
   const routes = {
     syllabus: '/facilitator',
-    calendar: '/facilitator?view=month',
+    month_view: '/facilitator?view=month',
     lessons: '/facilitator/lessons',
     generated_lessons: '/facilitator/generator/generated',
     lesson_maker: '/facilitator/generator/lesson-maker',
@@ -753,7 +757,7 @@ function executeOpenSurface(args) {
     prepare: '/facilitator/prepare',
     account: '/facilitator/account',
     notifications: '/facilitator/notifications',
-    mr_mentor: '/facilitator/generator/counselor',
+    help: '/facilitator/help',
   }
   const surface = String(args?.surface || '')
   const base = routes[surface]
@@ -1435,19 +1439,19 @@ const MENTOR_TOOL_EXECUTORS = Object.freeze({
 const MISSING_MENTOR_EXECUTORS = MENTOR_TOOL_REGISTRY.map((tool) => tool.name).filter((name) => !MENTOR_TOOL_EXECUTORS[name])
 const EXTRA_MENTOR_EXECUTORS = Object.keys(MENTOR_TOOL_EXECUTORS).filter((name) => !getMentorTool(name))
 if (MISSING_MENTOR_EXECUTORS.length || EXTRA_MENTOR_EXECUTORS.length) {
-  throw new Error(`Mr. Mentor tool registry/dispatcher mismatch. Missing: ${MISSING_MENTOR_EXECUTORS.join(', ') || 'none'}; extra: ${EXTRA_MENTOR_EXECUTORS.join(', ') || 'none'}`)
+  throw new Error(`Ms. Sonoma tool registry/dispatcher mismatch. Missing: ${MISSING_MENTOR_EXECUTORS.join(', ') || 'none'}; extra: ${EXTRA_MENTOR_EXECUTORS.join(', ') || 'none'}`)
 }
 
 async function executeMentorTool(name, args, context) {
   const registered = getMentorTool(name)
   const executor = MENTOR_TOOL_EXECUTORS[name]
-  if (!registered || !executor) return toolError(`Unknown Mr. Mentor tool: ${name}`)
+  if (!registered || !executor) return toolError(`Unknown Ms. Sonoma tool: ${name}`)
   return executor(args || {}, context)
 }
 
 export async function POST(req) {
   const callId = createCallId()
-  const logPrefix = `[Mr. Mentor][${callId}]`
+  const logPrefix = `[Ms. Sonoma][${callId}]`
   
   const baseUrl = resolveBaseUrl(req)
   
@@ -1517,7 +1521,7 @@ export async function POST(req) {
     // Check for OpenAI API key
     const apiKey = process.env.OPENAI_API_KEY
     if (!apiKey) {
-      return NextResponse.json({ error: 'Mr. Mentor is unavailable.' }, { status: 500 })
+      return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })
     }
 
     // Build system prompt with learner context and goals if available
@@ -1710,7 +1714,7 @@ export async function POST(req) {
       ? [...baseMessages, { role: 'user', content: userMessage }]
       : baseMessages
 
-    // Define available functions from the authoritative Mr. Mentor registry.
+    // Define available functions from the authoritative Ms. Sonoma registry.
     let tools = getMentorOpenAiTools()
 
     // Apply per-request tool disabling (e.g., block generate_lesson after user declines)
@@ -1786,21 +1790,21 @@ export async function POST(req) {
       } catch (err) {
         const isAbort = err?.name === 'AbortError'
         return NextResponse.json(
-          { error: isAbort ? 'Mr. Mentor timed out contacting OpenAI.' : 'Mr. Mentor failed contacting OpenAI.' },
+          { error: isAbort ? 'Ms. Sonoma timed out contacting OpenAI.' : 'Ms. Sonoma failed contacting OpenAI.' },
           { status: isAbort ? 504 : 502 }
         )
       }
 
       if (!followUpResponse.ok) {
         await followUpResponse.text().catch(() => '')
-        return NextResponse.json({ error: 'Failed to complete Mr. Mentor follow-up.' }, { status: followUpResponse.status })
+        return NextResponse.json({ error: 'Failed to complete Ms. Sonoma follow-up.' }, { status: followUpResponse.status })
       }
 
       const followUpBody = await followUpResponse.json()
       const mentorReply = followUpBody?.choices?.[0]?.message?.content?.trim() ?? ''
 
       if (!mentorReply) {
-        return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
+        return NextResponse.json({ error: 'Ms. Sonoma had no response.' }, { status: 500 })
       }
 
       if (useCohereChronograph && subjectKey && cohereMeta?.tenantId && cohereMeta?.threadId) {
@@ -1852,7 +1856,7 @@ export async function POST(req) {
     } catch (err) {
       const isAbort = err?.name === 'AbortError'
       return NextResponse.json(
-        { error: isAbort ? 'Mr. Mentor timed out contacting OpenAI.' : 'Mr. Mentor failed contacting OpenAI.' },
+        { error: isAbort ? 'Ms. Sonoma timed out contacting OpenAI.' : 'Ms. Sonoma failed contacting OpenAI.' },
         { status: isAbort ? 504 : 502 }
       )
     }
@@ -1866,7 +1870,7 @@ export async function POST(req) {
     }
 
     if (!response.ok) {
-      return NextResponse.json({ error: 'Failed to get response from Mr. Mentor.' }, { status: response.status })
+      return NextResponse.json({ error: 'Failed to get response from Ms. Sonoma.' }, { status: response.status })
     }
 
   const assistantMessage = parsedBody?.choices?.[0]?.message
@@ -1998,21 +2002,21 @@ export async function POST(req) {
       } catch (err) {
         const isAbort = err?.name === 'AbortError'
         return NextResponse.json(
-          { error: isAbort ? 'Mr. Mentor timed out contacting OpenAI.' : 'Mr. Mentor failed contacting OpenAI.' },
+          { error: isAbort ? 'Ms. Sonoma timed out contacting OpenAI.' : 'Ms. Sonoma failed contacting OpenAI.' },
           { status: isAbort ? 504 : 502 }
         )
       }
       
       if (!followUpResponse.ok) {
         const errorBody = await followUpResponse.text()
-        return NextResponse.json({ error: 'Failed to get follow-up response from Mr. Mentor.' }, { status: followUpResponse.status })
+        return NextResponse.json({ error: 'Failed to get follow-up response from Ms. Sonoma.' }, { status: followUpResponse.status })
       }
       
       const followUpBody = await followUpResponse.json()
       const mentorReply = followUpBody?.choices?.[0]?.message?.content?.trim() ?? ''
       
       if (!mentorReply) {
-        return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
+        return NextResponse.json({ error: 'Ms. Sonoma had no response.' }, { status: 500 })
       }
 
       if (useCohereChronograph && subjectKey && cohereMeta?.tenantId && cohereMeta?.threadId) {
@@ -2046,7 +2050,7 @@ export async function POST(req) {
     const mentorReply = assistantMessage?.content?.trim() ?? ''
     
     if (!mentorReply) {
-      return NextResponse.json({ error: 'Mr. Mentor had no response.' }, { status: 500 })
+      return NextResponse.json({ error: 'Ms. Sonoma had no response.' }, { status: 500 })
     }
 
     if (useCohereChronograph && subjectKey && cohereMeta?.tenantId && cohereMeta?.threadId) {
@@ -2075,7 +2079,7 @@ export async function POST(req) {
     })
 
   } catch (error) {
-    return NextResponse.json({ error: 'Mr. Mentor is unavailable.' }, { status: 500 })
+    return NextResponse.json({ error: 'Ms. Sonoma is unavailable.' }, { status: 500 })
   }
 }
 
@@ -2085,7 +2089,7 @@ export async function GET() {
     return NextResponse.json({ 
       ok: true, 
       route: 'counselor',
-      name: 'Mr. Mentor',
+      name: 'Ms. Sonoma',
       runtime 
     }, { status: 200 })
   } catch {

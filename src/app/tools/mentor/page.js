@@ -6,7 +6,7 @@ export default function MentorVoiceStudioPage() {
   const [text, setText] = useState('')
   const [status, setStatus] = useState('idle')
   const [audioUrl, setAudioUrl] = useState(null)
-  const [filename, setFilename] = useState('mentor-voice.mp3')
+  const [filename, setFilename] = useState('sonoma-voice.mp3')
   const [errorMsg, setErrorMsg] = useState('')
   const audioRef = useRef(null)
 
@@ -45,7 +45,7 @@ export default function MentorVoiceStudioPage() {
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = filename || 'mentor-voice.mp3'
+    a.download = filename || 'sonoma-voice.mp3'
     a.click()
     URL.revokeObjectURL(url)
   }
@@ -66,17 +66,17 @@ export default function MentorVoiceStudioPage() {
     }}>
       <div style={{ width: '100%', maxWidth: 720 }}>
         <h1 style={{ fontSize: 22, fontWeight: 700, marginBottom: 6, color: '#fff' }}>
-          Mr. Mentor — Voice Studio
+          Ms. Sonoma — Voice Studio
         </h1>
         <p style={{ fontSize: 13, color: '#888', marginBottom: 32 }}>
-          Internal tool · en-US-Neural2-D · {'\u00A0'}
+          Internal tool · en-GB-Neural2-F · {'\u00A0'}
           <span style={{ color: overLimit ? '#e55' : '#666' }}>{charCount}/4800 chars</span>
         </p>
 
         <textarea
           value={text}
           onChange={e => setText(e.target.value)}
-          placeholder="Enter the text you want Mr. Mentor to read…"
+          placeholder="Enter the text you want Ms. Sonoma to read…"
           rows={10}
           style={{
             width: '100%',

@@ -1,4 +1,4 @@
-// Mr. Mentor Session Management API
+// Ms. Sonoma Session Management API
 // Durable conversation threads are independent from the temporary execution-owner lease.
 
 import { createClient } from '@supabase/supabase-js'
@@ -181,7 +181,7 @@ function ownershipFailureResponse(result, deviceCookieHeader) {
   const inactive = state === 'ended' || state === 'missing'
   return jsonWithDeviceCookie({
     body: {
-      error: 'Mr. Mentor execution ownership was lost',
+      error: 'Ms. Sonoma execution ownership was lost',
       code: 'MENTOR_OWNERSHIP_LOST',
       state,
       endedReason
@@ -319,7 +319,7 @@ export async function POST(request) {
       const existingSession = result?.existingSession || null
       return jsonWithDeviceCookie({
         body: {
-          error: result?.state === 'stale_conflict' ? 'The conflicting Mentor session changed. Refresh and try again.' : 'Another tab or device has an active Mr. Mentor session',
+          error: result?.state === 'stale_conflict' ? 'The conflicting Ms. Sonoma session changed. Refresh and try again.' : 'Another tab or device has an active Ms. Sonoma session',
           code: result?.state === 'stale_conflict' ? 'MENTOR_STALE_CONFLICT' : 'MENTOR_CONFLICT',
           requiresPin: true,
           state: result?.state || 'conflict',

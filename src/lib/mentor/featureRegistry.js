@@ -84,7 +84,7 @@ function getReportableFeatures() {
         'goals clipboard'
       ],
       description:
-        'Goals and Notes are persistent observations you save about a learner (or yourself as facilitator). They help keep context across sessions and let Mr. Mentor tailor guidance.',
+        'Goals and Notes are persistent observations you save about a learner (or yourself as facilitator). They help keep context across sessions and let Ms. Sonoma tailor guidance.',
       howToUse:
         "To review what's saved, ask 'show my goals and notes'. To update them, open the Goals clipboard or tell me what you'd like to add/change.",
       relatedFeatures: ['learner-profiles', 'mr-mentor'],
@@ -190,7 +190,7 @@ function getReportableFeatures() {
         'upcoming lessons'
       ],
       description:
-        'Scheduled lessons are lessons assigned to specific dates on the learner calendar. They show up in the Calendar View and drive what the learner sees on their learning day.',
+        "Scheduled lessons are lessons assigned to specific dates in the learner's Syllabus. They appear in the Syllabus week and month views and help drive what the learner sees on their learning day.",
       howToUse:
         "Ask 'show upcoming scheduled lessons' to see the near-term schedule for the selected learner.",
       relatedFeatures: ['calendar-view', 'lesson-scheduling'],
@@ -248,7 +248,7 @@ function getReportableFeatures() {
       category: 'Account',
       keywords: ['timezone', 'time zone', 'account timezone', 'my timezone'],
       description:
-        'Your account timezone affects how dates/times are interpreted for scheduling and calendar-related experiences.',
+        'Your account timezone affects how dates and times are interpreted for scheduling and Syllabus-related experiences.',
       howToUse:
         "Ask 'what is my timezone' to see what the app has saved.",
       relatedFeatures: ['calendar-view'],
@@ -426,7 +426,8 @@ export function isLikelyAppFeatureQuery(userInput) {
     'billing',
     'quota',
     'timezone',
-    'mr mentor',
+    'ms sonoma',
+    'facilitator help',
     'thought hub',
     'thouthub'
   ]

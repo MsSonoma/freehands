@@ -52,7 +52,7 @@ export default function CounselorClient() {
 
   useEffect(() => {
     try {
-      console.log('[Mr. Mentor] Browser origin', { origin: window.location.origin })
+      console.log('[Ms. Sonoma] Browser origin', { origin: window.location.origin })
     } catch {}
   }, [])
 
@@ -92,7 +92,7 @@ export default function CounselorClient() {
 
   const subjectKey = selectedLearnerId === 'none' ? 'facilitator' : `learner:${selectedLearnerId}`
 
-  // Switch Mr. Mentor chat persistence/context to Supabase chronograph + deterministic packs.
+  // Switch Ms. Sonoma chat persistence/context to Supabase chronograph + deterministic packs.
   // Legacy mentor_conversation_threads JSON persistence is disabled when this is true.
   const useCohereChronograph = true
 
@@ -194,7 +194,7 @@ export default function CounselorClient() {
 
   // (startSessionPolling defined later, after session setup hooks)
 
-  // Check Mr. Mentor access (Pro-only) but allow window-shopping.
+  // Check Ms. Sonoma access (Pro-only) but allow window-shopping.
   useEffect(() => {
     if (!pinChecked) return
     let cancelled = false
@@ -438,7 +438,7 @@ export default function CounselorClient() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
-      window.dispatchEvent(new CustomEvent('ms:session:title', { detail: 'Mr. Mentor' }))
+      window.dispatchEvent(new CustomEvent('ms:session:title', { detail: 'Ms. Sonoma' }))
     } catch {}
     return () => {
       try {
@@ -613,7 +613,7 @@ export default function CounselorClient() {
     // Subject changed => re-probe ThoughtHub readiness for this subject.
     setChronographReady(false)
 
-    console.log('[Mr. Mentor] Initializing subject:', subjectKey)
+    console.log('[Ms. Sonoma] Initializing subject:', subjectKey)
     setSessionLoading(true)
 
     const localExecutionSessionId = sessionId || generateSessionIdentifier()
@@ -641,7 +641,7 @@ export default function CounselorClient() {
       }
 
       const payload = await checkRes.json()
-  console.log('[Mr. Mentor] GET response:', { status: payload.status, isOwner: payload.isOwner, subjectKey, hasConversation: !!payload.session?.conversation_history, conversationLength: payload.session?.conversation_history?.length, activeSessionId: payload.session?.session_id })
+  console.log('[Ms. Sonoma] GET response:', { status: payload.status, isOwner: payload.isOwner, subjectKey, hasConversation: !!payload.session?.conversation_history, conversationLength: payload.session?.conversation_history?.length, activeSessionId: payload.session?.session_id })
 
       if (!isMountedRef.current) {
         return
@@ -649,7 +649,7 @@ export default function CounselorClient() {
 
       const { session: activeSession, status, isOwner } = payload || {}
 
-      console.log('[Mr. Mentor] Session check:', {
+      console.log('[Ms. Sonoma] Session check:', {
         hasActiveSession: !!activeSession,
         status,
         isOwner,
@@ -681,7 +681,7 @@ export default function CounselorClient() {
             setSessionLoading(false)
             return
           }
-          throw new Error(createData?.error || 'Failed to initialize mentor session')
+          throw new Error(createData?.error || 'Failed to initialize Ms. Sonoma session')
         }
 
         const createdSession = createData.session || createData
@@ -725,7 +725,7 @@ export default function CounselorClient() {
           convHistory = Array.isArray(createdSession?.conversation_history) ? createdSession.conversation_history : []
         }
 
-        console.log('[Mr. Mentor] Loading conversation from NEW session:', convHistory.length, 'messages')
+        console.log('[Ms. Sonoma] Loading conversation from NEW session:', convHistory.length, 'messages')
         setConversationHistory(convHistory)
         setDraftSummary(createdSession?.draft_summary || '')
         setCurrentSessionTokens(createdSession?.token_count || 0)
@@ -742,7 +742,7 @@ export default function CounselorClient() {
         return
       }
 
-      console.log('[Mr. Mentor] Checking takeover condition:', {
+      console.log('[Ms. Sonoma] Checking takeover condition:', {
         isOwner,
         hasActiveSession: !!activeSession,
         activeSessionId: activeSession?.session_id,
@@ -750,7 +750,7 @@ export default function CounselorClient() {
       })
 
       if (!isOwner && activeSession) {
-        console.log('[Mr. Mentor] Showing takeover dialog - another device owns this conversation')
+        console.log('[Ms. Sonoma] Showing takeover dialog - another device owns this conversation')
         setSessionLoading(false)
         setConflictingSession(activeSession)
         setShowTakeoverDialog(true)
@@ -790,7 +790,7 @@ export default function CounselorClient() {
         convHistory = Array.isArray(activeSession?.conversation_history) ? activeSession.conversation_history : []
       }
 
-      console.log('[Mr. Mentor] Loading conversation from EXISTING session:', convHistory.length, 'messages')
+      console.log('[Ms. Sonoma] Loading conversation from EXISTING session:', convHistory.length, 'messages')
       setConversationHistory(convHistory)
       setDraftSummary(activeSession?.draft_summary || '')
       setCurrentSessionTokens(activeSession?.token_count || 0)
@@ -858,7 +858,7 @@ export default function CounselorClient() {
   // Save conversation to database whenever it changes
   useEffect(() => {
     if (cohereChronographEnabled) return
-    console.log('[Mr. Mentor] Save effect triggered:', { 
+    console.log('[Ms. Sonoma] Save effect triggered:', {
       sessionId: !!sessionId, 
       accessToken: !!accessToken, 
       hasAccess, 
@@ -875,7 +875,7 @@ export default function CounselorClient() {
       try {
         // Update local timestamp
         lastLocalUpdateTimestamp.current = Date.now()
-        console.log('[Mr. Mentor] Saving conversation to DB:', conversationHistory.length, 'messages')
+        console.log('[Ms. Sonoma] Saving conversation to DB:', conversationHistory.length, 'messages')
         
         const payload = {
           subjectKey,
@@ -886,7 +886,7 @@ export default function CounselorClient() {
           lastLocalUpdateAt: new Date(lastLocalUpdateTimestamp.current).toISOString()
         }
         
-        console.log('[Mr. Mentor] PATCH payload:', { 
+        console.log('[Ms. Sonoma] PATCH payload:', {
           subjectKey: payload.subjectKey,
           conversationLength: payload.conversationHistory?.length,
           hasDraft: !!payload.draftSummary,
@@ -904,11 +904,11 @@ export default function CounselorClient() {
         })
         
         const result = await response.json().catch(() => ({}))
-        console.log('[Mr. Mentor] PATCH response:', { ok: response.ok, status: response.status, result })
+        console.log('[Ms. Sonoma] PATCH response:', { ok: response.ok, status: response.status, result })
         
         // Handle lockout - session was taken over by another device
         if (response.status === 410 || response.status === 409) {
-          console.log('[Mr. Mentor] Session taken over (410) - showing PIN overlay')
+          console.log('[Ms. Sonoma] Session taken over (410) - showing PIN overlay')
           
           initializedSessionIdRef.current = null
           
@@ -939,7 +939,7 @@ export default function CounselorClient() {
           setShowTakeoverDialog(true)
         }
       } catch (err) {
-        console.error('[Mr. Mentor] Save error:', err)
+        console.error('[Ms. Sonoma] Save error:', err)
       }
     }, 1000) // Save 1 second after last change
     
@@ -1454,7 +1454,7 @@ export default function CounselorClient() {
     return response.json()
   }, [learnerTranscript, goalsNotes, subjectKey, cohereChronographEnabled, selectedLearnerId])
   
-  // Send message to Mr. Mentor
+  // Send message to Ms. Sonoma
   const sendMessage = useCallback(async () => {
     const featureReplay = featureHelpReplayRef.current
     featureHelpReplayRef.current = null
@@ -1600,7 +1600,7 @@ export default function CounselorClient() {
         })
       })
 
-      console.log('[Mr. Mentor] sendMessage: /api/counselor response', { ok: response.ok, status: response.status })
+      console.log('[Ms. Sonoma] sendMessage: /api/counselor response', { ok: response.ok, status: response.status })
 
       if (!response.ok) {
         let errorMessage = `Request failed with status ${response.status}`
@@ -1685,7 +1685,7 @@ export default function CounselorClient() {
       const mentorReply = responseData.reply || ''
 
       if (!mentorReply) {
-        throw new Error('Empty response from Mr. Mentor')
+        throw new Error('Empty response from Ms. Sonoma')
       }
 
       // Add mentor response to conversation
@@ -1751,7 +1751,7 @@ export default function CounselorClient() {
           message: 'I hit a connection snag reaching the server. Please try once more.'
         }
       ])
-      setError('Failed to reach Mr. Mentor. Please try again.')
+      setError('Failed to reach Ms. Sonoma. Please try again.')
     } finally {
       setLoading(false)
       setLoadingThought(null)
@@ -2025,10 +2025,10 @@ export default function CounselorClient() {
     }
 
     const timestamp = new Date().toISOString().split('T')[0]
-    let content = `Mr. Mentor Conversation - ${timestamp}\n\n`
+    let content = `Ms. Sonoma Conversation - ${timestamp}\n\n`
     
     conversationHistory.forEach((msg, idx) => {
-      const label = msg.role === 'user' ? 'You' : 'Mr. Mentor'
+      const label = msg.role === 'user' ? 'You' : 'Ms. Sonoma'
       content += `${label}:\n${msg.content}\n\n`
     })
 
@@ -2103,7 +2103,7 @@ export default function CounselorClient() {
       }}>
         <div style={{ fontSize: 48 }}>🧠</div>
         <div style={{ fontSize: 18, fontWeight: 600, color: '#374151' }}>
-          Initializing Mr. Mentor session...
+          Initializing Ms. Sonoma session...
         </div>
         <div style={{ fontSize: 14, color: '#6b7280' }}>
           Loading your conversation history
@@ -2126,7 +2126,7 @@ export default function CounselorClient() {
     }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div>
-          <strong>View-only:</strong> Mr. Mentor is available on the Pro plan.
+          <strong>View-only:</strong> Ms. Sonoma is available on the Pro plan.
           <div>Sending and saving are disabled on your current plan.</div>
         </div>
         <a
@@ -2208,7 +2208,7 @@ export default function CounselorClient() {
           {/* Video - direct child like Ms. Sonoma, hidden when showing overlays */}
           <video
             ref={videoRef}
-            src="/media/Mr Mentor.mp4"
+            src="/media/ms-sonoma-3.mp4"
             loop
             muted
             playsInline
@@ -2445,7 +2445,7 @@ export default function CounselorClient() {
           {conversationHistory.length === 0 ? (
             <div style={{ color: '#9ca3af', paddingTop: 8, maxWidth: 700, margin: '0 auto' }}>
               <p style={{ fontSize: 18, fontWeight: 500, marginBottom: 12, color: '#374151', textAlign: 'center' }}>
-                Welcome to Mr. Mentor
+                Welcome to Ms. Sonoma
               </p>
               <p style={{ fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
                 I'm here to support you in your teaching journey. 
@@ -2492,7 +2492,7 @@ export default function CounselorClient() {
                   marginBottom: 4,
                   color: msg.role === 'user' ? '#2563eb' : '#059669'
                 }}>
-                  {msg.role === 'user' ? 'You' : 'Mr. Mentor'}
+                  {msg.role === 'user' ? 'You' : 'Ms. Sonoma'}
                 </div>
                 <div style={{ whiteSpace: 'pre-wrap' }}>
                   {renderMarkdown(msg.content)}
@@ -2502,7 +2502,7 @@ export default function CounselorClient() {
           )}
           {loading && (
             <div style={{ color: '#9ca3af', fontStyle: 'italic' }}>
-              Mr. Mentor is thinking...
+              Ms. Sonoma is thinking...
             </div>
           )}
           {error && (
@@ -2658,7 +2658,7 @@ export default function CounselorClient() {
                               setActiveScreen('mentor')
                               setMenuOpen(false)
                             }}
-                            title="Mr. Mentor Video"
+                            title="Ms. Sonoma Video"
                             style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -2695,10 +2695,10 @@ export default function CounselorClient() {
                                   display: 'block'
                                 }}
                               >
-                                <source src="/media/Mr Mentor.mp4" type="video/mp4" />
+                                <source src="/media/ms-sonoma-3.mp4" type="video/mp4" />
                               </video>
                             </div>
-                            <span>Mr. Mentor</span>
+                            <span>Ms. Sonoma</span>
                           </button>
                           
                           <button
@@ -2787,7 +2787,7 @@ export default function CounselorClient() {
                   <div style={{ display: 'flex', gap: 4 }}>
                     <button
                       onClick={() => setActiveScreen('mentor')}
-                      title="Mr. Mentor Video"
+                      title="Ms. Sonoma Video"
                       style={{
                         width: 40,
                         height: 40,
@@ -2817,7 +2817,7 @@ export default function CounselorClient() {
                           display: 'block'
                         }}
                       >
-                        <source src="/media/Mr Mentor.mp4" type="video/mp4" />
+                        <source src="/media/ms-sonoma-3.mp4" type="video/mp4" />
                       </video>
                     </button>
                     <button
@@ -2900,7 +2900,7 @@ export default function CounselorClient() {
               value={userInput}
               onChange={(e) => setUserInput(e.target.value)}
               onKeyDown={handleKeyDown}
-              placeholder={!hasAccess ? "Pro required to use Mr. Mentor..." : "Type your message and press Enter to send..."}
+              placeholder={!hasAccess ? "Pro required to use Ms. Sonoma..." : "Type your message and press Enter to send..."}
               disabled={!hasAccess || loading || isSpeaking}
               style={{
                 flex: 1,

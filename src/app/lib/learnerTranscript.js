@@ -1,5 +1,5 @@
 /**
- * Generate a transcript of learner progress for Mr. Mentor counseling context
+ * Generate a transcript of learner progress for Ms. Sonoma facilitator-help context
  */
 
 import { getMedalsForLearner, tierForPercent } from '@/app/lib/medalsClient';

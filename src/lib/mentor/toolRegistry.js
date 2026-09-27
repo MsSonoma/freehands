@@ -5,18 +5,18 @@
 })
 
 const learnerSelector = {
-  learnerId: { type: 'string', description: 'Optional learner ID. Omit to use the learner currently selected in Mr. Mentor.' },
-  learnerName: { type: 'string', description: 'Optional learner name. Omit to use the learner currently selected in Mr. Mentor.' },
+  learnerId: { type: 'string', description: 'Optional learner ID. Omit to use the learner currently selected in Ms. Sonoma.' },
+  learnerName: { type: 'string', description: 'Optional learner name. Omit to use the learner currently selected in Ms. Sonoma.' },
 }
 
 export const MENTOR_TOOL_REGISTRY = Object.freeze([
   {
     name: 'get_capabilities',
     authority: 'read',
-    purpose: 'Inspect Mr. Mentor capabilities from the same registry that defines his live tools.',
+    purpose: 'Inspect Ms. Sonoma capabilities from the same registry that defines the live tools.',
     whenToUse: 'When you need to check what action is available or what authority/confirmation rules apply.',
     verification: 'registry',
-    description: 'Get current Mr. Mentor capabilities and tool requirements. This is generated from the live tool registry, so it does not drift from the tools actually available.',
+    description: 'Get current Ms. Sonoma capabilities and tool requirements. This is generated from the live tool registry, so it does not drift from the tools actually available.',
     parameters: objectSchema({ action: { type: 'string', description: 'Optional tool name to inspect. Omit or use "all" for the full registry.' } }),
   },
   {
@@ -227,12 +227,12 @@ export const MENTOR_TOOL_REGISTRY = Object.freeze([
     verification: 'server-approved navigation target',
     directResult: true,
     description: 'Navigate to a known facilitator surface. This does not change educational state.',
-    parameters: objectSchema({ surface: { type: 'string', enum: ['syllabus', 'calendar', 'lessons', 'generated_lessons', 'lesson_maker', 'learners', 'prepare', 'account', 'notifications', 'mr_mentor'] }, learnerId: { type: 'string', description: 'Optional learner ID when the destination supports learner context.' } }, ['surface']),
+    parameters: objectSchema({ surface: { type: 'string', enum: ['syllabus', 'month_view', 'lessons', 'generated_lessons', 'lesson_maker', 'learners', 'prepare', 'account', 'notifications', 'help'] }, learnerId: { type: 'string', description: 'Optional learner ID when the destination supports learner context.' } }, ['surface']),
   },
   {
     name: 'get_conversation_memory',
     authority: 'read',
-    purpose: 'Retrieve prior Mr. Mentor conversation memory.',
+    purpose: 'Retrieve prior Ms. Sonoma conversation memory.',
     whenToUse: 'When the facilitator refers to earlier conversations or continuity is materially useful.',
     verification: 'conversation memory read',
     description: 'Retrieve conversation memory. Uses the selected learner automatically when appropriate.',
@@ -241,7 +241,7 @@ export const MENTOR_TOOL_REGISTRY = Object.freeze([
   {
     name: 'search_conversation_history',
     authority: 'read',
-    purpose: 'Search prior Mr. Mentor conversations.',
+    purpose: 'Search prior Ms. Sonoma conversations.',
     whenToUse: 'When the facilitator asks what was previously discussed about a subject.',
     verification: 'conversation history read',
     description: 'Search prior conversation summaries using keywords.',

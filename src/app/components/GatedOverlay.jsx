@@ -12,7 +12,7 @@ import { useRouter } from 'next/navigation'
  * @param {boolean} props.show - Whether to show the overlay
  * @param {Function} props.onClose - Optional close handler (if not provided, uses router.back())
  * @param {string} props.gateType - 'auth' (requires login) or 'tier' (requires upgrade)
- * @param {string} props.feature - Feature name (e.g., "Mr. Mentor", "Lesson Calendar")
+ * @param {string} props.feature - Feature name (e.g., "Ms. Sonoma facilitator help", "Syllabus Month View")
  * @param {string} props.emoji - Emoji to display at top
  * @param {string} props.description - Feature description
  * @param {string[]} props.benefits - Array of benefit strings

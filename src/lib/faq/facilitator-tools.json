@@ -11,9 +11,13 @@
         "adult tools",
         "teacher tools"
       ],
-      "description": "The Facilitator Dashboard is where you manage learners, lessons, scheduling, and account-level facilitator tools.",
-      "howToUse": "Open the facilitator area and use the Learners and Lessons sections to manage your work. Mr. Mentor can also open key overlays for you.",
-      "relatedFeatures": ["learner-profiles", "lesson-library", "mr-mentor"]
+      "description": "The Facilitator area is where you manage the active Syllabus, learners, lessons, scheduling, and account-level tools.",
+      "howToUse": "Use Syllabus, Learners, Lesson Library, Account, and related facilitator tools to manage learning. Ms. Sonoma can also open supported surfaces and help you work with current app state.",
+      "relatedFeatures": [
+        "learner-profiles",
+        "lesson-library",
+        "facilitator-help"
+      ]
     },
     {
       "id": "goals-clipboard",
@@ -25,8 +29,10 @@
         "open goals"
       ],
       "description": "The Goals clipboard is the UI where you view and edit Goals and Notes for the selected learner (or facilitator).",
-      "howToUse": "Click the 'Goals' button to open it. Mr. Mentor can also help you review what’s saved (report) or suggest what to write (describe/advice).",
-      "relatedFeatures": ["goals-notes"]
+      "howToUse": "Click the 'Goals' button to open it. Ms. Sonoma can also help you review what's saved or suggest what to write.",
+      "relatedFeatures": [
+        "goals-notes"
+      ]
     },
     {
       "id": "lessons-overlay",
@@ -39,21 +45,30 @@
         "lesson list"
       ],
       "description": "The Lessons overlay is a quick way to browse, search, and act on lessons (schedule, assign/approve, edit, or review).",
-      "howToUse": "Click the 'Lessons' button, or ask Mr. Mentor to show lessons and help you find the one you want.",
-      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-editing"]
+      "howToUse": "Click the 'Lessons' button, or ask Ms. Sonoma to show lessons and help you find the one you want.",
+      "relatedFeatures": [
+        "lesson-library",
+        "lesson-scheduling",
+        "lesson-editing"
+      ]
     },
     {
-      "id": "calendar-overlay",
-      "title": "Calendar Overlay",
+      "id": "syllabus-month-view",
+      "title": "Syllabus Month View",
       "keywords": [
-        "calendar overlay",
-        "open calendar",
-        "calendar button",
-        "show calendar"
+        "syllabus month view",
+        "month view",
+        "open month view",
+        "show month view",
+        "calendar view"
       ],
-      "description": "The Calendar overlay shows scheduled items on a calendar and supports planning and review.",
-      "howToUse": "Click the 'Calendar' button. You can also ask Mr. Mentor to show upcoming scheduled lessons.",
-      "relatedFeatures": ["calendar-view", "lesson-schedule", "planned-lessons"]
+      "description": "Month view is the monthly presentation of the active Syllabus. It shows the same planned lessons, reviews, forecast suggestions, historical records, and no-school dates without creating a separate calendar workflow.",
+      "howToUse": "Open Syllabus and choose Month view beside the date range, or ask Ms. Sonoma to open the month view for the selected learner.",
+      "relatedFeatures": [
+        "calendar-view",
+        "lesson-scheduling",
+        "planned-lessons"
+      ]
     },
     {
       "id": "lesson-planner",
@@ -65,23 +80,32 @@
         "generate lesson plan",
         "long-term plan"
       ],
-      "description": "The Lesson Planner helps you generate a longer-term plan (often weeks or months) for a learner.",
-      "howToUse": "Ask Mr. Mentor to open the lesson planner and generate a plan starting on a given date for a duration.",
-      "relatedFeatures": ["planned-lessons", "weekly-pattern", "curriculum-preferences", "no-school-dates"]
+      "description": "Syllabus planning combines facilitator-authored plan details with dated instructional intent and learning forecasts. Forecasts remain proposals until they are accepted or materialized.",
+      "howToUse": "Ask Ms. Sonoma to review the selected learner's Syllabus, current plan details, or upcoming forecast and help prepare the next planning action.",
+      "relatedFeatures": [
+        "planned-lessons",
+        "weekly-pattern",
+        "curriculum-preferences",
+        "no-school-dates"
+      ]
     },
     {
       "id": "curriculum-preferences",
-      "title": "Curriculum Preferences",
+      "title": "Curriculum Guidance",
       "keywords": [
+        "curriculum guidance",
         "curriculum preferences",
         "focus topics",
         "avoid topics",
-        "banned topics",
-        "learning preferences"
+        "personal goals",
+        "requirements"
       ],
-      "description": "Curriculum preferences are learner-specific guardrails used during planning and lesson generation (topics to focus on and topics to avoid).",
-      "howToUse": "Ask 'show my curriculum preferences' to see what’s saved for the selected learner. Tell Mr. Mentor focus/avoid topics to update them.",
-      "relatedFeatures": ["lesson-generation", "lesson-planner"]
+      "description": "Curriculum Guidance is the facilitator-authored planning context stored with the learner's Syllabus, including requirements, personal goals, and guidance about what to emphasize or avoid.",
+      "howToUse": "Ask Ms. Sonoma to review the selected learner's Curriculum Guidance or tell her what needs to change. Changes to active Syllabus intent stay under facilitator control.",
+      "relatedFeatures": [
+        "lesson-generation",
+        "lesson-planner"
+      ]
     },
     {
       "id": "weekly-pattern",
@@ -92,9 +116,12 @@
         "schedule template",
         "schedule templates"
       ],
-      "description": "Weekly pattern is a reusable weekly subject template for a learner (e.g., Math on Mon/Wed/Fri).",
-      "howToUse": "Ask 'show my weekly pattern' to report what’s saved for the selected learner. Tell Mr. Mentor subjects by day to update it.",
-      "relatedFeatures": ["lesson-planner", "custom-subjects"]
+      "description": "Weekly Pattern is part of Plan Details in the active Syllabus. It expresses the facilitator-authored rhythm of subjects across the week.",
+      "howToUse": "Ask Ms. Sonoma to review the selected learner's weekly pattern or tell her the pattern you want to change.",
+      "relatedFeatures": [
+        "lesson-planner",
+        "custom-subjects"
+      ]
     },
     {
       "id": "custom-subjects",
@@ -107,7 +134,9 @@
       ],
       "description": "Custom subjects let you add your own subject names for planning and scheduling.",
       "howToUse": "Ask 'show my custom subjects' to list them, or say 'add custom subject <name>'.",
-      "relatedFeatures": ["weekly-pattern"]
+      "relatedFeatures": [
+        "weekly-pattern"
+      ]
     },
     {
       "id": "no-school-dates",
@@ -121,7 +150,10 @@
       ],
       "description": "No-school dates mark days the learner won’t do school so planning can avoid them.",
       "howToUse": "Ask 'show no-school dates' to report what’s saved for the selected learner.",
-      "relatedFeatures": ["lesson-planner", "calendar-view"]
+      "relatedFeatures": [
+        "lesson-planner",
+        "calendar-view"
+      ]
     },
     {
       "id": "medals",
@@ -136,7 +168,10 @@
       ],
       "description": "Medals summarize a learner’s best performance on lessons.",
       "howToUse": "Ask 'show medals' for the selected learner.",
-      "relatedFeatures": ["assessments", "learner-transcript"]
+      "relatedFeatures": [
+        "assessments",
+        "learner-transcript"
+      ]
     }
   ]
 }

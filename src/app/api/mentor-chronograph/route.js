@@ -1,4 +1,4 @@
-// ThoughtHub chronograph access for Mr. Mentor
+// ThoughtHub chronograph access for Ms. Sonoma
 // Provides deterministic recent event history for a given subjectKey.
 
 import { NextResponse } from 'next/server'

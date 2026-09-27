@@ -38,11 +38,11 @@ export async function GET(request) {
     const sessionLimit = entitlement.mentorSessions;
     const hasAddon = profile.mentor_addon_active || false;
 
-    // No Mr. Mentor access
+    // No facilitator Help access
     if (!sessionLimit || sessionLimit === 0) {
       return Response.json({ 
         allowed: false, 
-        reason: 'Upgrade to Pro for Mr. Mentor access',
+        reason: 'Upgrade to Pro for Ms. Sonoma facilitator help',
         tier 
       });
     }

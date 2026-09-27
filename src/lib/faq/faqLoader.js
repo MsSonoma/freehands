@@ -1,6 +1,6 @@
 /**
  * FAQ Knowledge Base Loader
- * Loads and indexes all FAQ content for Mr. Mentor feature explanations
+ * Loads and indexes all FAQ content for Ms. Sonoma facilitator Help feature explanations
  */
 
 import lessonsData from './lessons.json'

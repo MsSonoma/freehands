@@ -1,4 +1,4 @@
-// API for Mr. Mentor conversation memory
+// API for Ms. Sonoma conversation memory
 // Manages clipboard knowledge of facilitator and learner conversations
 // Auto-updated with each back-and-forth
 
@@ -56,7 +56,7 @@ ${existingSummary}
 
 And here are the new conversation turns to incorporate:
 
-${conversationTurns.map((turn, i) => `${turn.role === 'user' ? 'Facilitator' : 'Mr. Mentor'}: ${turn.content}`).join('\n\n')}
+${conversationTurns.map((turn, i) => `${turn.role === 'user' ? 'Facilitator' : 'Ms. Sonoma'}: ${turn.content}`).join('\n\n')}
 
 Update the summary to include the new information. Keep it concise but comprehensive (200-400 words). Focus on:
 - Main topics discussed
@@ -67,11 +67,11 @@ Update the summary to include the new information. Keep it concise but comprehen
 
 Updated summary:`
   } else {
-    prompt = `You are creating a conversation summary for a counseling session between a homeschool facilitator and Mr. Mentor (an AI counselor).
+    prompt = `You are creating a conversation summary for a facilitator Help session between a homeschool facilitator and Ms. Sonoma.
 
 Here is the conversation:
 
-${conversationTurns.map((turn, i) => `${turn.role === 'user' ? 'Facilitator' : 'Mr. Mentor'}: ${turn.content}`).join('\n\n')}
+${conversationTurns.map((turn, i) => `${turn.role === 'user' ? 'Facilitator' : 'Ms. Sonoma'}: ${turn.content}`).join('\n\n')}
 
 Create a concise but comprehensive summary (200-400 words) that captures:
 - Main topics discussed
@@ -92,7 +92,7 @@ Summary:`
     body: JSON.stringify({
       model: OPENAI_MODEL,
       messages: [
-        { role: 'system', content: 'You are a professional summarizer for counseling sessions. Create clear, empathetic summaries that preserve important context.' },
+        { role: 'system', content: 'You summarize facilitator Help sessions clearly and preserve important planning, learner, and decision context.' },
         { role: 'user', content: prompt }
       ],
       max_completion_tokens: 600,

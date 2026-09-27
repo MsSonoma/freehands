@@ -43,12 +43,12 @@ const TOOL_LABELS = {
 }
 
 function formatLabel(name) {
-  if (!name) return 'Mr. Mentor'
+  if (!name) return 'Ms. Sonoma'
   return TOOL_LABELS[name] || name.replace(/_/g, ' ').replace(/\b\w/g, (ch) => ch.toUpperCase())
 }
 
 /**
- * Floating thought bubble for Mr. Mentor status updates
+ * Floating thought bubble for Ms. Sonoma status updates
  * @param {{ thought?: { id: string, message: string, name?: string, phase?: string } }} props
  */
 export default function MentorThoughtBubble({ thought }) {

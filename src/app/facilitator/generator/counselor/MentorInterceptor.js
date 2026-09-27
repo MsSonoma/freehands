@@ -1,7 +1,7 @@
 ﻿/**
  * MentorInterceptor
  *
- * Lightweight client-side context helper for Mr. Mentor.
+ * Lightweight client-side context helper for Ms. Sonoma.
  * Operational actions are intentionally owned by the server-side Mentor Tool
  * Registry so there is only one mutation/confirmation/verification path.
  */

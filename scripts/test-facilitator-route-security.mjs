@@ -63,7 +63,7 @@ test('Advanced Tools links resolve to existing facilitator pages', () => {
     '/facilitator/calendar?tab=subjects',
     '/facilitator/calendar?portfolio=1',
     '/facilitator/account',
-    '/facilitator/mr-mentor',
+    '/facilitator/help',
   ]
 
   for (const href of expected) {

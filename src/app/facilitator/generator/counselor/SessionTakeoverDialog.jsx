@@ -1,4 +1,4 @@
-// Session Takeover Dialog - requires PIN to take over Mr. Mentor session from another device
+// Session Takeover Dialog - requires PIN to take over Ms. Sonoma session from another device
 'use client'
 
 import { useState } from 'react'
@@ -80,7 +80,7 @@ export default function SessionTakeoverDialog({
         </div>
         
         <div style={{ fontSize: 14, color: '#6b7280', marginBottom: 24, lineHeight: 1.5 }}>
-          Mr. Mentor is currently active on <strong>{existingSession?.device_name || 'another device'}</strong>.
+          Ms. Sonoma is currently active on <strong>{existingSession?.device_name || 'another device'}</strong>.
           {existingSession?.last_activity_at && (
             <div style={{ marginTop: 8 }}>
               Last activity: {formatLastActivity(existingSession.last_activity_at)}

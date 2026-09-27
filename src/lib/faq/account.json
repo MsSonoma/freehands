@@ -12,9 +12,11 @@
         "lock screen",
         "secure access"
       ],
-      "description": "PIN Security protects facilitator features from unauthorized access. You set a 4-digit PIN when you first access facilitator tools. The PIN is required to access Mr. Mentor, lesson management, learner profiles, and other adult features.",
-      "howToUse": "When you first access facilitator features, you'll be prompted to create a PIN. Remember this PIN - you'll need it to access the facilitator dashboard and Mr. Mentor. You can change your PIN in account settings.",
-      "relatedFeatures": ["account-settings"]
+      "description": "PIN Security protects facilitator features from unauthorized access. You set a 4-digit PIN when you first access facilitator tools. The PIN is required to access facilitator Help, lesson management, learner profiles, and other adult features.",
+      "howToUse": "When you first access facilitator features, you'll be prompted to create a PIN. Remember this PIN because you'll need it to access protected facilitator tools, including Ms. Sonoma's facilitator Help. You can change your PIN in account settings.",
+      "relatedFeatures": [
+        "account-settings"
+      ]
     },
     {
       "id": "subscription-tiers",
@@ -31,7 +33,9 @@
       ],
       "description": "Subscription tiers determine which features you can use. Free includes limited access. Free Trial includes up to 5 lifetime AI lesson generations. Standard and Pro unlock paid features (and higher learner limits). Beta users map to Pro entitlements.",
       "howToUse": "View your current plan in account settings. To upgrade, click 'Upgrade Plan' and choose Standard or Pro. If you are on Free Trial, you can still browse gated pages, but some actions are disabled until upgrade.",
-      "relatedFeatures": ["account-settings"]
+      "relatedFeatures": [
+        "account-settings"
+      ]
     },
     {
       "id": "mute-audio",
@@ -45,9 +49,12 @@
         "turn off sound",
         "silence"
       ],
-      "description": "Mute Audio lets you silence Ms. Sonoma's or Mr. Mentor's voice while keeping captions visible. This is useful when you need quiet or want to read along without audio. Your mute preference is saved across sessions.",
+      "description": "Mute Audio lets you silence Ms. Sonoma's voice while keeping captions visible. This is useful when you need quiet or want to read along without audio. Your mute preference is saved for the relevant experience.",
       "howToUse": "Look for the speaker icon button (usually bottom-right of the video). Click to mute or unmute. When muted, you'll see a muted speaker icon. Captions continue to display even when audio is muted.",
-      "relatedFeatures": ["session-flow", "mr-mentor"]
+      "relatedFeatures": [
+        "session-flow",
+        "facilitator-help"
+      ]
     },
     {
       "id": "session-takeover",
@@ -60,9 +67,12 @@
         "take over session",
         "active session"
       ],
-      "description": "Session Takeover allows you to continue a conversation on a different device. If you start talking to Mr. Mentor on your laptop and want to switch to your tablet, you can take over the session. The system prevents multiple devices from being active simultaneously.",
-      "howToUse": "If you try to access Mr. Mentor on a device while already active elsewhere, you'll see a takeover dialog. Click 'Take Over' to move the session to the current device. The other device will be disconnected automatically.",
-      "relatedFeatures": ["mr-mentor", "pin-security"]
+      "description": "Session Takeover allows you to continue a facilitator Help conversation on a different device. If you start talking with Ms. Sonoma on your laptop and want to switch to your tablet, you can take over the session. The system prevents multiple devices from actively owning the same conversation.",
+      "howToUse": "If you open facilitator Help on a device while the conversation is active elsewhere, you'll see a takeover dialog. Click 'Take Over' to move the session to the current device. The other device will lose active ownership.",
+      "relatedFeatures": [
+        "facilitator-help",
+        "pin-security"
+      ]
     }
   ]
 }

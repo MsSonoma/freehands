@@ -1,4 +1,4 @@
-// Compact lessons list view for Mr. Mentor overlay
+// Compact lessons list view for Ms. Sonoma overlay
 'use client'
 import { useEffect, useState, useCallback, useMemo, useRef } from 'react'
 import { createPortal } from 'react-dom'

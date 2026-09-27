@@ -23,7 +23,7 @@ export const ENTITLEMENTS = {
     allLessons: true,
     learnersMax: 1,
     devices: 1,
-    // Trial allows lesson generation, but blocks planner + Mr. Mentor.
+    // Trial allows lesson generation, but blocks planner + facilitator Help.
     // Quota enforcement uses lifetime/weekly generation limits.
     lessonGenerator: true,
     lessonScheduling: false, // Scheduling requires Standard+
@@ -83,7 +83,7 @@ export const ENTITLEMENTS = {
     games: true,
     lifetimeGenerations: Infinity,
     weeklyGenerations: Infinity,
-    mentorSessions: Infinity, // Mr. Mentor included
+    mentorSessions: Infinity, // facilitator Help included
   }
 };
 

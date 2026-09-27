@@ -15,9 +15,14 @@
         "guardrails",
         "how does this work"
       ],
-      "description": "Ms. Sonoma and Mr. Mentor are designed to be helpful while minimizing mistakes and surprises. When possible, Mr. Mentor uses deterministic app logic (not just free-form generation) to answer questions about your saved settings and learner data.",
+      "description": "Ms. Sonoma is designed to be helpful while minimizing mistakes and surprises. In facilitator Help, she uses deterministic app logic when possible instead of relying only on free-form generation for questions about saved settings and learner data.",
       "howToUse": "If you want a factual readout of saved settings, ask in a 'report' way (e.g., 'show my weekly pattern', 'what are my curriculum preferences'). If you want help understanding a feature, ask in a 'describe' way (e.g., 'what is weekly pattern?').",
-      "relatedFeatures": ["mr-mentor", "thought-hub", "feature-registry", "report-vs-describe"]
+      "relatedFeatures": [
+        "facilitator-help",
+        "thought-hub",
+        "feature-registry",
+        "report-vs-describe"
+      ]
     },
     {
       "id": "report-vs-describe",
@@ -30,9 +35,11 @@
         "current settings",
         "explain feature"
       ],
-      "description": "Some questions are asking for an explanation (describe) and some are asking for current saved state (report). Mr. Mentor tries to handle 'report' questions by calling existing app APIs so it can answer using authoritative data.",
+      "description": "Some questions ask for an explanation (describe) and some ask for current saved state (report). In facilitator Help, Ms. Sonoma handles supported report questions by calling existing app APIs so she can answer from authoritative data.",
       "howToUse": "Use phrasing like 'show my …' or 'what are my …' when you want a readout of saved state. Use 'what is …' or 'how do I …' when you want an explanation.",
-      "relatedFeatures": ["feature-registry"]
+      "relatedFeatures": [
+        "feature-registry"
+      ]
     },
     {
       "id": "feature-registry",
@@ -45,9 +52,11 @@
         "help",
         "faq"
       ],
-      "description": "Mr. Mentor uses a searchable feature registry (built from the app’s FAQ knowledge base plus a small layer of report-capable entries) to answer user-facing questions about Ms. Sonoma and facilitator tools.",
-      "howToUse": "Ask 'what is …' about any feature name (Calendar View, Lesson Planner, Goals and Notes, etc.). If you ask about something not covered, Mr. Mentor may treat it as a 'blindspot' and flag it for later review.",
-      "relatedFeatures": ["blindspots"]
+      "description": "Ms. Sonoma uses a searchable feature registry built from the app's FAQ knowledge base plus report-capable entries to answer facilitator-facing product questions deterministically when possible.",
+      "howToUse": "Ask 'what is …' about a feature such as Syllabus Month View, Lesson Generator, or Goals and Notes. If a product question is not covered, the system may tag it as a blindspot for later review.",
+      "relatedFeatures": [
+        "blindspots"
+      ]
     },
     {
       "id": "thought-hub",
@@ -60,9 +69,11 @@
         "packs",
         "memory"
       ],
-      "description": "Mr. Mentor conversations can be stored as events so your session can resume and stay consistent. This makes it easier to continue work over time, and supports deterministic summaries and retrieval.",
+      "description": "Facilitator Help conversations can be stored as events so the session can resume and stay consistent. This supports continuity, deterministic summaries, and retrieval.",
       "howToUse": "If you want to avoid storing something, don’t include sensitive details. Focus on learner learning needs and teaching context.",
-      "relatedFeatures": ["ai-safety"]
+      "relatedFeatures": [
+        "ai-safety"
+      ]
     },
     {
       "id": "blindspots",
@@ -75,8 +86,10 @@
         "add to registry"
       ],
       "description": "When you ask a question that looks like an app-feature question but doesn’t match any known feature entry, the system can tag it as a registry blindspot so it can be reviewed and added later. Personal advice questions should not be tagged as blindspots.",
-      "howToUse": "If Mr. Mentor can’t find a matching feature, try rephrasing with the UI name (e.g., 'Lesson Planner', 'Calendar', 'Goals and Notes').",
-      "relatedFeatures": ["feature-registry"]
+      "howToUse": "If Ms. Sonoma can't find a matching feature, try rephrasing with the current UI name, such as 'Syllabus Month View', 'Lesson Generator', or 'Goals and Notes'.",
+      "relatedFeatures": [
+        "feature-registry"
+      ]
     }
   ]
 }

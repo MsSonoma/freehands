@@ -9,12 +9,12 @@
         "facilitator home",
         "facilitator dashboard page",
         "/facilitator",
-        "account learners lessons calendar",
-        "talk to mr mentor"
+        "syllabus learners lessons help",
+        "talk to ms sonoma"
       ],
-      "description": "The Facilitator Hub is the entry point to adult tools. It shows quick links to Account, Learners, Lessons, Calendar, and Mr. Mentor.",
-      "howToUse": "Use the cards to open a section (Account/Learners/Lessons/Calendar). Use the Mr. Mentor button to open the facilitator chat experience.",
-      "relatedFeatures": ["facilitator-dashboard", "mr-mentor", "pin-security"]
+      "description": "The Facilitator Hub is the adult planning area centered on the learner's Syllabus, with access to Learners, Lesson Library, Ms. Sonoma facilitator Help, Account, and Notifications.",
+      "howToUse": "Use Syllabus as the primary planning surface. Open Learners or Lesson Library for those workflows, or open Ms. Sonoma for facilitator-facing help.",
+      "relatedFeatures": ["facilitator-dashboard", "facilitator-help", "pin-security"]
     },
     {
       "id": "facilitator-page-account",
@@ -192,12 +192,13 @@
       "title": "Counselor (Redirect) (/facilitator/generator/counselor)",
       "keywords": [
         "counselor page",
-        "mentor redirect",
+        "help redirect",
+        "facilitator help",
         "/facilitator/generator/counselor"
       ],
-      "description": "This route redirects to the Mr. Mentor page.",
-      "howToUse": "If you navigate here, you’ll be redirected to /facilitator/mr-mentor.",
-      "relatedFeatures": ["mr-mentor", "facilitator-page-mr-mentor"]
+      "description": "This legacy counselor route redirects to the Ms. Sonoma facilitator Help page.",
+      "howToUse": "If you navigate here, you’ll be redirected to /facilitator/help.",
+      "relatedFeatures": ["facilitator-help", "facilitator-page-help"]
     },
     {
       "id": "facilitator-page-generator-lesson-maker-redirect",
@@ -224,18 +225,19 @@
       "relatedFeatures": ["facilitator-page-lessons"]
     },
     {
-      "id": "facilitator-page-mr-mentor",
-      "title": "Mr. Mentor (/facilitator/mr-mentor)",
+      "id": "facilitator-page-help",
+      "title": "Ms. Sonoma Facilitator Help (/facilitator/help)",
       "keywords": [
-        "mr mentor page",
-        "mentor chat",
-        "counselor",
+        "ms sonoma",
+        "facilitator help",
+        "help page",
         "facilitator assistant",
-        "/facilitator/mr-mentor"
+        "counselor",
+        "/facilitator/help"
       ],
-      "description": "Mr. Mentor is the facilitator-facing assistant experience. It opens the counselor client UI used for chat, actions, and deterministic describe/report behaviors.",
-      "howToUse": "Ask questions about facilitator tools, learner planning, and lessons. Use ‘what is …’ for explanations and ‘show my …’ for report-style readouts when supported.",
-      "relatedFeatures": ["mr-mentor", "report-vs-describe"]
+      "description": "Facilitator Help is the adult-facing Ms. Sonoma experience for planning, evidence, product questions, supported actions, and deterministic describe/report behaviors.",
+      "howToUse": "Ask Ms. Sonoma about facilitator tools, learner planning, lessons, or current supported app state. She can inspect evidence and use authorized tools while the facilitator retains educational authority.",
+      "relatedFeatures": ["facilitator-help", "report-vs-describe"]
     },
     {
       "id": "facilitator-page-notifications",

@@ -1,5 +1,5 @@
-// Text-to-speech API for Mr. Mentor
-// Uses Google Cloud TTS with Mr. Mentor's voice (en-US-Neural2-D, Male, 0.88 speed)
+// Text-to-speech API for Ms. Sonoma
+// Uses the same Google Cloud TTS voice as learner-facing Ms. Sonoma.
 
 import { NextResponse } from 'next/server'
 import textToSpeech from '@google-cloud/text-to-speech'
@@ -15,17 +15,17 @@ const TTS_CACHE_MAX = 200
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
-// Mr. Mentor's voice - warm, caring American male
+// Ms. Sonoma's established voice.
 const MENTOR_VOICE = {
-  languageCode: 'en-US',
-  name: 'en-US-Neural2-D',
-  ssmlGender: 'MALE'
+  languageCode: 'en-GB',
+  name: 'en-GB-Neural2-F',
+  ssmlGender: 'FEMALE'
 }
 
 // Slightly slower speaking rate for thoughtful, therapeutic delivery
 const MENTOR_AUDIO_CONFIG = {
   audioEncoding: 'MP3',
-  speakingRate: 0.88
+  speakingRate: 0.92
 }
 
 function loadTtsCredentials() {

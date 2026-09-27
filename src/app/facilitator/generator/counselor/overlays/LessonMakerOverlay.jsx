@@ -1,4 +1,4 @@
-// Compact lesson generator form for Mr. Mentor overlay
+// Compact lesson generator form for Ms. Sonoma overlay
 'use client'
 import { useState, useEffect } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
