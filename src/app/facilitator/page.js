@@ -973,13 +973,15 @@ export default function FacilitatorPage() {
   }
 
   const resolvedSyllabusLesson = resolveSyllabusSelection(selectedSyllabusLesson, syllabus, learningProposal?.forecast_items || [])
+  const activeSyllabusFrame = !draft && (loading || contentLoading || Boolean(syllabus?.has_active_syllabus))
+  const showPlanningHeader = !loading && !contentLoading && (!syllabus?.has_active_syllabus || draft)
 
   if (authLoading) return <main className={styles.page}><p>Loading…</p></main>
   if (!isAuthenticated) return <main className={styles.page}><GatedOverlay show gateType={gateType || 'auth'} feature="Syllabus" emoji="🧭" description="Sign in to view and activate a learner's educational plan." /></main>
 
   return (
-    <main className={`${styles.page} ${syllabus?.has_active_syllabus && !draft ? styles.activeSyllabusPage : ''}`}>
-      {(!syllabus?.has_active_syllabus || draft) && <header className={styles.header}>
+    <main className={`${styles.page} ${activeSyllabusFrame ? styles.activeSyllabusPage : ''}`}>
+      {showPlanningHeader && <header className={styles.header}>
         {!syllabus?.has_active_syllabus && <div>
           <p className={styles.eyebrow}>Facilitator planning</p>
           <h1>Syllabus</h1>
@@ -1003,7 +1005,6 @@ export default function FacilitatorPage() {
       {error && <div className={styles.error} role="alert">{error}</div>}
       {!planningAccess.can_change_intent && <p className={styles.statusMessage}>{establishingFirstSyllabus ? 'Every plan can establish an initial Syllabus through explicit facilitator activation. Future replanning remains locked.' : 'The complete Syllabus remains visible. Future replanning is locked for this plan.'}</p>}
       {!loading && learners.length === 0 && <section className={styles.empty}><h2>No learners yet</h2><p>Add a learner before building a Syllabus.</p><a href="/facilitator/learners/add">Add a learner</a></section>}
-      {loading && <p className={styles.muted}>Loading {selectedLearner?.name || 'learner'}&apos;s Syllabus…</p>}
       {learnerId && !displayRevision && (loading || contentLoading) && <SyllabusDocument
         revision={null}
         forecastItems={[]}
@@ -1011,6 +1012,10 @@ export default function FacilitatorPage() {
         role="facilitator"
         learnerId={learnerId}
         learnerName={selectedLearner?.name || ''}
+        onOpenLearners={() => setLearnersOverlayVisibility(true)}
+        showPlanDetails={planningAccess.can_change_intent}
+        restoreWeekStart={selectedWeekStart}
+        initialView={initialSyllabusView}
         contentLoading
       />}
 
@@ -1083,6 +1088,7 @@ export default function FacilitatorPage() {
               noSchoolDates={syllabus.no_school_dates || []}
               onDayAction={syllabusHydrated ? openDayAction : null}
               onEditSection={planningAccess.can_change_intent && syllabusHydrated ? openSectionEditor : null}
+              showPlanDetails={planningAccess.can_change_intent}
               proposedForecastItems={learningProposal?.proposal_revision?.base_revision_id === syllabus.active_revision.id ? (learningProposal.forecast_items || []) : []}
               proposedForecastTargetWeek={proposalForecastTargetWeek}
               forecastWindowEnd={forecastWindow.end}

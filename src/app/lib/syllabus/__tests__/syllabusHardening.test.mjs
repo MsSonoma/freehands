@@ -130,6 +130,17 @@ test('facilitator Syllabus paints a shell, yields, hydrates full contents, then 
   assert.match(route, /searchParams\.get\('view'\) === 'shell' \? 'shell' : 'full'/)
 })
 
+test('facilitator Syllabus keeps final document chrome stable while contents hydrate', () => {
+  const page = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
+  const document = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
+  assert.match(page, /const activeSyllabusFrame = !draft && \(loading \|\| contentLoading \|\| Boolean\(syllabus\?\.has_active_syllabus\)\)/)
+  assert.match(page, /const showPlanningHeader = !loading && !contentLoading && \(!syllabus\?\.has_active_syllabus \|\| draft\)/)
+  assert.doesNotMatch(page, /\{loading && <p className=\{styles\.muted\}>Loading/)
+  assert.match(page, /showPlanDetails=\{planningAccess\.can_change_intent\}/)
+  assert.match(page, /restoreWeekStart=\{selectedWeekStart\}[\s\S]*initialView=\{initialSyllabusView\}[\s\S]*contentLoading/)
+  assert.match(document, /showPlanDetails && <button[^>]*disabled=\{!onEditSection\}/)
+})
+
 test('all Syllabus modal scroll owners use the shared lock instead of restoring body overflow themselves', () => {
   const files = [
     'src/app/facilitator/page.js',

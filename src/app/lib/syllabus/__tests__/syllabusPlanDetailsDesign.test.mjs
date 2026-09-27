@@ -14,7 +14,7 @@ const learningForecastSource = fs.readFileSync(path.resolve('src/app/lib/syllabu
 const learningForecastServerSource = fs.readFileSync(path.resolve('src/app/lib/syllabus/learningForecast.server.mjs'), 'utf8')
 
 test('active Syllabus exposes one Plan details button instead of the old disclosure', () => {
-  assert.match(documentSource, /onClick=\{\(\) => onEditSection\('plan_details'\)\}>Plan details<\/button>/)
+  assert.match(documentSource, /\{showPlanDetails && <button type="button" className=\{styles\.planDetailsButton\} disabled=\{!onEditSection\}/)
   assert.match(documentSource, /<header className=\{styles\.documentHeader\}>[\s\S]*className=\{styles\.planDetailsButton\}[\s\S]*onEditSection\('plan_details'\)/)
   assert.match(documentCss, /\.planDetailsButton/)
   assert.doesNotMatch(documentSource, /styles\.planDetailsAction/)
@@ -31,7 +31,7 @@ test('active Syllabus puts Learners beside Plan details and opens learner manage
   assert.match(facilitatorHome, /onOpenLearners=\{\(\) => setLearnersOverlayVisibility\(true\)\}/)
   assert.doesNotMatch(documentSource, /learnerMenuOpen|aria-label="Choose learner"/)
   assert.doesNotMatch(facilitatorHome, /<select value=\{learnerId\}/)
-  assert.match(facilitatorHome, /syllabus\?\.has_active_syllabus && !draft \? styles\.activeSyllabusPage/)
+  assert.match(facilitatorHome, /const activeSyllabusFrame = !draft && \(loading \|\| contentLoading \|\| Boolean\(syllabus\?\.has_active_syllabus\)\)/)
   assert.match(facilitatorCss, /\.activeSyllabusPage \{ padding-top: 10px; \}/)
   assert.match(documentCss, /\.changeLearnerButton,\.planDetailsButton/)
 })

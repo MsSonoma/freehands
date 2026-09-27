@@ -184,6 +184,7 @@ export default function SyllabusDocument({
   onAddLesson = null,
   noSchoolDates = [],
   onEditSection = null,
+  showPlanDetails = false,
   proposedForecastItems = [],
   proposedForecastTargetWeek = '',
   forecastWindowEnd = '',
@@ -356,7 +357,7 @@ export default function SyllabusDocument({
           {typeof onOpenLearners === 'function' && <div className={styles.changeLearnerControl}>
             <button type="button" className={styles.changeLearnerButton} aria-haspopup="dialog" onClick={onOpenLearners}>Learners</button>
           </div>}
-          {onEditSection && <button type="button" className={styles.planDetailsButton} onClick={() => onEditSection('plan_details')}>Plan details</button>}
+          {showPlanDetails && <button type="button" className={styles.planDetailsButton} disabled={!onEditSection} onClick={onEditSection ? () => onEditSection('plan_details') : undefined}>Plan details</button>}
         </div>}
       </header>
 
