@@ -11,7 +11,7 @@ import {
   syllabusItemState,
 } from '@/app/lib/syllabus/timeline.mjs'
 import { instructionalTeacherIcon, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
-import { normalizeReviewTeacher, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
+import { normalizeReviewTeacher, normalizeReviewTeacherSelection, reviewTeacherIcon, reviewTeacherLabel, reviewTeacherSelectionIcon, reviewTeacherSelectionLabel } from '@/app/lib/reviewTeacher.js'
 import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/lib/syllabus/learnerPresentation.mjs'
 import { noSchoolReasonMap } from '@/app/lib/syllabus/noSchoolDates.mjs'
@@ -50,8 +50,8 @@ function reviewTeacherText(entries = []) {
 }
 
 function reviewTeacherTextForItem(item = {}) {
-  const teacher = normalizeReviewTeacher(item.review_teacher)
-  return `${reviewTeacherIcon(teacher)} ${reviewTeacherLabel(teacher)}`
+  const teacher = normalizeReviewTeacherSelection(item.review_teacher)
+  return `${reviewTeacherSelectionIcon(teacher)} ${reviewTeacherSelectionLabel(teacher)}`
 }
 
 function subjectName(subject) {

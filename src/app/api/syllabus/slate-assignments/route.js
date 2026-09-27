@@ -4,7 +4,7 @@ import { createSyllabusRepository } from '../../../lib/syllabus/supabaseReposito
 import { requireSlateAssignableSyllabusOccurrence } from '../../../lib/syllabus/syllabusMembership.server.mjs'
 import { isCalendarDate, SyllabusError, validateLearnerId } from '../../../lib/syllabus/schema.mjs'
 import { SLATE_RUN_PURPOSES } from '../../../lib/slateLearningModel.mjs'
-import { isReviewTeacher, normalizeReviewTeacher } from '../../../lib/reviewTeacher.js'
+import { isReviewTeacherSelection, normalizeReviewTeacherSelection } from '../../../lib/reviewTeacher.js'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -25,10 +25,10 @@ export async function POST(request, deps = {}) {
     if (!Object.values(SLATE_RUN_PURPOSES).includes(runPurpose)) {
       throw new SyllabusError('The Daily Review session purpose is invalid', 400, 'INVALID_SLATE_RUN_PURPOSE')
     }
-    if (body?.reviewTeacher != null && !isReviewTeacher(body.reviewTeacher)) {
+    if (body?.reviewTeacher != null && !isReviewTeacherSelection(body.reviewTeacher)) {
       throw new SyllabusError('The Daily Review teacher is invalid', 400, 'INVALID_REVIEW_TEACHER')
     }
-    const reviewTeacher = normalizeReviewTeacher(body?.reviewTeacher)
+    const reviewTeacher = normalizeReviewTeacherSelection(body?.reviewTeacher)
     const repository = deps.repository || createSyllabusRepository(context.admin)
     const membership = await requireSlateAssignableSyllabusOccurrence({
       repository,
@@ -78,11 +78,11 @@ export async function PATCH(request, deps = {}) {
     if (!/^[0-9a-f-]{36}$/i.test(assignmentId)) {
       throw new SyllabusError('A valid Daily Review assignment is required', 400, 'INVALID_SLATE_ASSIGNMENT')
     }
-    if (!isReviewTeacher(body?.reviewTeacher)) {
+    if (!isReviewTeacherSelection(body?.reviewTeacher)) {
       throw new SyllabusError('The Daily Review teacher is invalid', 400, 'INVALID_REVIEW_TEACHER')
     }
     const repository = deps.repository || createSyllabusRepository(context.admin)
-    const assignment = await repository.updateSlateAssignmentTeacher(context.user.id, learnerId, assignmentId, normalizeReviewTeacher(body.reviewTeacher))
+    const assignment = await repository.updateSlateAssignmentTeacher(context.user.id, learnerId, assignmentId, normalizeReviewTeacherSelection(body.reviewTeacher))
     if (!assignment) throw new SyllabusError('Daily Review assignment not found', 404, 'SLATE_ASSIGNMENT_NOT_FOUND')
     return NextResponse.json({ ok: true, assignment })
   } catch (error) {

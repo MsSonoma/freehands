@@ -328,6 +328,25 @@ test('server-verified legacy Slate completions backfill the compact marker on th
   assert.equal(presentations[0].item.slate_completions.length, 2)
   assert.deepEqual(presentations[0].item.slate_completions.map((item) => item.title).sort(), ['Grammar', 'The Water Cycle'])
 })
+test('Daily Review completion rejects deferred learner choice as a presenter', async () => {
+  const response = await postSlateCompletion(new Request('http://localhost/api/slate/completions', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      learnerId: '11111111-1111-4111-8111-111111111111',
+      lessonKey: 'generated/fractions.json',
+      occurrenceId: 'syllabus:fractions-1',
+      runPurpose: 'practice',
+      reviewTeacher: 'learner',
+    }),
+  }), {
+    requestContext: { user: { id: '22222222-2222-4222-8222-222222222222' }, admin: {} },
+  })
+  const body = await response.json()
+  assert.equal(response.status, 400)
+  assert.equal(body.code, 'INVALID_REVIEW_TEACHER')
+})
+
 test('Mr. Slate completion endpoint records a durable supplemental completion', async () => {
   const learnerId = '11111111-1111-4111-8111-111111111111'
   const facilitatorId = '22222222-2222-4222-8222-222222222222'

@@ -26,7 +26,7 @@ import {
   shouldAutoShowLearnerTutorial,
 } from '@/app/learn/demoLearner.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
-import { normalizeReviewTeacher, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
+import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, isReviewTeacher, normalizeReviewTeacherSelection, reviewTeacherIcon, reviewTeacherLabel, reviewTeacherSelectionIcon, reviewTeacherSelectionLabel } from '@/app/lib/reviewTeacher.js'
 import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '@/app/learn/snapshotProgress.mjs'
 import { resolveLearnerSyllabusPresentation } from '@/app/lib/syllabus/learnerPresentation.mjs'
 
@@ -123,6 +123,7 @@ function LessonsPageInner(){
   const [sidebarOpen, setSidebarOpen] = useState(true)
   // Lesson detail overlay: { l, subject, lessonKey, isDemo } | null
   const [selectedLesson, setSelectedLesson] = useState(null)
+  const [learnerReviewTeacherChoice, setLearnerReviewTeacherChoice] = useState('')
   const [selectedSyllabusReview, setSelectedSyllabusReview] = useState(null)
   useEffect(() => { setSelectedSyllabusReview(null) }, [learnerId])
   const [overlayNoteEditing, setOverlayNoteEditing] = useState(false)
@@ -920,6 +921,7 @@ function LessonsPageInner(){
 
   async function openSyllabusLesson(item, context = {}) {
     setSyllabusLaunchError('')
+    setLearnerReviewTeacherChoice('')
     const lessonKey = item?.lesson_key || ''
     const preparedLesson = lessonKey ? recentMetaLookup[lessonKey] : null
     const lesson = preparedLesson || {
@@ -1695,8 +1697,13 @@ function LessonsPageInner(){
             const cap = ent.lessonsPerDay
             const capped = !isDemo && Number.isFinite(cap) && todaysCount >= cap
             const assignedInstructionalTeacher = isDemo ? 'sonoma' : (syllabusItem?.assigned_instructional_teacher || syllabusItem?.instructional_teacher || l.instructional_teacher || 'sonoma')
-            const assignedReviewTeacher = normalizeReviewTeacher(syllabusItem?.review_teacher)
+            const assignedReviewTeacher = normalizeReviewTeacherSelection(syllabusItem?.review_teacher)
             const isSlateSyllabusAssignment = syllabusItem?.item_type === 'slate_assignment'
+            const learnerChoosesReviewTeacher = isSlateSyllabusAssignment && assignedReviewTeacher === 'learner'
+            const resolvedReviewTeacher = learnerChoosesReviewTeacher && isReviewTeacher(learnerReviewTeacherChoice)
+              ? learnerReviewTeacherChoice
+              : assignedReviewTeacher
+            const reviewTeacherChoiceMissing = learnerChoosesReviewTeacher && !isReviewTeacher(learnerReviewTeacherChoice)
             const hasSnapshot = (() => {
               if (isDemo) return false
               if (assignedInstructionalTeacher === 'webb') {
@@ -1725,7 +1732,12 @@ function LessonsPageInner(){
               if (syllabusItem?.item_type === 'slate_assignment') {
                 const occurrenceId = syllabusItem?.practice_occurrence_id || syllabusItem?.occurrence_id || ''
                 const runPurpose = syllabusItem?.run_purpose || 'practice'
-                const reviewTeacher = normalizeReviewTeacher(syllabusItem?.review_teacher)
+                const scheduledReviewTeacher = normalizeReviewTeacherSelection(syllabusItem?.review_teacher)
+                const reviewTeacher = scheduledReviewTeacher === 'learner' ? learnerReviewTeacherChoice : scheduledReviewTeacher
+                if (!isReviewTeacher(reviewTeacher)) {
+                  setSyllabusLaunchError('Choose who you want for this Daily Review before starting.')
+                  return
+                }
                 router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=${encodeURIComponent(runPurpose)}&reviewTeacher=${encodeURIComponent(reviewTeacher)}`)
                 return
               }
@@ -1811,7 +1823,7 @@ function LessonsPageInner(){
                           }
                           {isScheduled && <span style={{ fontSize: 11, background: '#dbeafe', color: '#1e40af', padding: '2px 8px', borderRadius: 20, fontWeight: 600 }}>📅 Scheduled</span>}
                         </div>
-                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{isSlateSyllabusAssignment ? <>{reviewTeacherIcon(assignedReviewTeacher)} Review teacher: {reviewTeacherLabel(assignedReviewTeacher)}</> : <>Instructional teacher: {instructionalTeacherLabel(assignedInstructionalTeacher)}</>}</div>
+                        <div style={{ fontSize: 12, color: '#6b7280', marginBottom: 6 }}>{isSlateSyllabusAssignment ? <>{reviewTeacherSelectionIcon(assignedReviewTeacher)} Review teacher: {learnerChoosesReviewTeacher ? 'You choose' : reviewTeacherSelectionLabel(assignedReviewTeacher)}</> : <>Instructional teacher: {instructionalTeacherLabel(assignedInstructionalTeacher)}</>}</div>
                         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700, color: '#111', lineHeight: 1.25 }}>
                           {l.title}
                         </h2>
@@ -1958,12 +1970,29 @@ function LessonsPageInner(){
 
                   {/* Footer with action button */}
                   <div style={{ padding: '14px 20px', borderTop: '1px solid #f3f4f6' }}>
+                    {learnerChoosesReviewTeacher && (
+                      <label style={{ display: 'grid', gap: 6, marginBottom: 10, fontSize: 13, color: '#374151' }}>
+                        <span style={{ fontWeight: 700 }}>Choose your review teacher</span>
+                        <select
+                          value={learnerReviewTeacherChoice}
+                          onChange={(event) => { setLearnerReviewTeacherChoice(event.target.value); setSyllabusLaunchError('') }}
+                          style={{ minHeight: 40, border: '1px solid #d1d5db', borderRadius: 8, background: '#fff', padding: '8px 10px', fontSize: 14 }}
+                        >
+                          <option value="">Choose a teacher</option>
+                          {REVIEW_TEACHER_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}
+                        </select>
+                      </label>
+                    )}
                     <button
-                      style={(capped || syllabusItem?.has_lesson_artifact === false) ? btnDisabled : btn}
-                      disabled={capped || syllabusItem?.has_lesson_artifact === false}
+                      style={(capped || syllabusItem?.has_lesson_artifact === false || reviewTeacherChoiceMissing) ? btnDisabled : btn}
+                      disabled={capped || syllabusItem?.has_lesson_artifact === false || reviewTeacherChoiceMissing}
                       onClick={handleStartLesson}
                     >
-                      {syllabusItem?.item_type === 'slate_assignment' ? `${reviewTeacherIcon(assignedReviewTeacher)} Start Daily Review with ${reviewTeacherLabel(assignedReviewTeacher)}` : (hasSnapshot ? `Continue with ${instructionalTeacherLabel(assignedInstructionalTeacher)}` : `Start with ${instructionalTeacherLabel(assignedInstructionalTeacher)}`)}
+                      {syllabusItem?.item_type === 'slate_assignment'
+                        ? (reviewTeacherChoiceMissing
+                            ? 'Choose a teacher to start Daily Review'
+                            : `${reviewTeacherIcon(resolvedReviewTeacher)} Start Daily Review with ${reviewTeacherLabel(resolvedReviewTeacher)}`)
+                        : (hasSnapshot ? `Continue with ${instructionalTeacherLabel(assignedInstructionalTeacher)}` : `Start with ${instructionalTeacherLabel(assignedInstructionalTeacher)}`)}
                     </button>
                     {syllabusItem?.has_lesson_artifact === false && (
                       <p style={{ textAlign: 'center', color: '#6b7280', fontSize: 13, marginTop: 8, marginBottom: 0 }}>

@@ -4,6 +4,7 @@ import test from 'node:test'
 
 import { DELETE as removeSlate, PATCH as updateSlateTeacher, POST as scheduleSlate } from '../../../api/syllabus/slate-assignments/route.js'
 import { createSyllabusRepository } from '../supabaseRepository.server.mjs'
+import { isReviewTeacher, isReviewTeacherSelection, normalizeReviewTeacherSelection } from '../../reviewTeacher.js'
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
 const LEARNER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
@@ -58,6 +59,12 @@ function repository() {
   }
 }
 
+test('learner is a scheduling selection but never an actual review presenter', () => {
+  assert.equal(isReviewTeacherSelection('learner'), true)
+  assert.equal(normalizeReviewTeacherSelection('learner'), 'learner')
+  assert.equal(isReviewTeacher('learner'), false)
+})
+
 test('facilitator schedules Slate on a separate date for one exact occurrence without changing its instructional teacher', async () => {
   const store = repository()
   const response = await scheduleSlate(request({ learnerId: LEARNER, lessonKey: 'math/fractions.json', occurrenceId: 'syllabus:forecast-1', scheduledDate: '2026-09-09', runPurpose: 'practice' }), {
@@ -73,6 +80,25 @@ test('facilitator schedules Slate on a separate date for one exact occurrence wi
   assert.equal(store.writes[0].run_purpose, 'practice')
   assert.equal(store.writes[0].review_teacher, 'slate')
   assert.equal('instructional_teacher' in store.writes[0], false)
+})
+
+test('facilitator can defer the Daily Review presenter choice to the learner', async () => {
+  const store = repository()
+  const response = await scheduleSlate(request({
+    learnerId: LEARNER,
+    lessonKey: 'math/fractions.json',
+    occurrenceId: 'syllabus:forecast-1',
+    scheduledDate: '2026-09-09',
+    runPurpose: 'practice',
+    reviewTeacher: 'learner',
+  }), {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: store,
+    now: new Date('2026-09-02T12:00:00Z'),
+  })
+  assert.equal(response.status, 200)
+  assert.equal(store.writes.length, 1)
+  assert.equal(store.writes[0].review_teacher, 'learner')
 })
 
 test('one instructional occurrence accepts multiple scheduled dates and purposes', async () => {
@@ -243,6 +269,13 @@ test('scheduled Daily Review teacher can be changed without recreating the assig
   assert.deepEqual(store.teacherUpdates, [{ facilitatorId: FACILITATOR, learnerId: LEARNER, assignmentId, reviewTeacher: 'webb' }])
   assert.equal((await response.json()).assignment.review_teacher, 'webb')
 
+  const learnerChoice = await updateSlateTeacher(request({ learnerId: LEARNER, assignmentId, reviewTeacher: 'learner' }, 'PATCH'), {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: store,
+  })
+  assert.equal(learnerChoice.status, 200)
+  assert.equal(store.teacherUpdates.at(-1).reviewTeacher, 'learner')
+
   const invalid = await updateSlateTeacher(request({ learnerId: LEARNER, assignmentId, reviewTeacher: 'bogus' }, 'PATCH'), {
     requestContext: { user: { id: FACILITATOR }, admin: {} },
     repository: store,
@@ -269,10 +302,20 @@ test('removing a scheduled Slate session remains facilitator and learner scoped'
   assert.deepEqual(store.deletes.at(-1), { facilitatorId: FACILITATOR, learnerId: otherLearner, assignmentId })
 })
 
+test('learner-choice Daily Review requires an explicit real teacher before launch', () => {
+  const learnerHome = fs.readFileSync('src/app/learn/LearnerHome.js', 'utf8')
+  assert.match(learnerHome, /scheduledReviewTeacher === 'learner' \? learnerReviewTeacherChoice : scheduledReviewTeacher/)
+  assert.match(learnerHome, /Choose your review teacher/)
+  assert.match(learnerHome, /REVIEW_TEACHER_IDS\.map/)
+  assert.match(learnerHome, /if \(!isReviewTeacher\(reviewTeacher\)\)/)
+  assert.match(learnerHome, /reviewTeacherChoiceMissing/)
+})
+
 test('Slate assignment migration is RLS-protected and keeps writes service-role-only', () => {
   const sql = fs.readFileSync('supabase/migrations/20260902180608_add_syllabus_slate_assignments.sql', 'utf8')
   const scheduling = fs.readFileSync('supabase/migrations/20260903005713_schedule_syllabus_slate_sessions.sql', 'utf8')
   const reviewTeacher = fs.readFileSync('supabase/migrations/20260926194425_add_daily_review_teacher.sql', 'utf8')
+  const learnerChoice = fs.readFileSync('supabase/migrations/20260927010224_allow_learner_daily_review_teacher.sql', 'utf8')
   assert.match(sql, /enable row level security/i)
   assert.match(sql, /unique \(\s*facilitator_id,\s*learner_id,\s*syllabus_occurrence_id\s*\)/i)
   assert.match(sql, /revoke all on table public\.syllabus_slate_assignments from public, anon, authenticated/i)
@@ -287,4 +330,6 @@ test('Slate assignment migration is RLS-protected and keeps writes service-role-
   assert.match(reviewTeacher, /syllabus_slate_assignments[\s\S]*review_teacher text not null default 'slate'/i)
   assert.match(reviewTeacher, /slate_session_completions[\s\S]*review_teacher text not null default 'slate'/i)
   assert.match(reviewTeacher, /review_teacher in \('sonoma', 'webb', 'slate'\)/i)
+  assert.match(learnerChoice, /syllabus_slate_assignments[\s\S]*review_teacher in \('sonoma', 'webb', 'slate', 'learner'\)/i)
+  assert.doesNotMatch(learnerChoice, /slate_session_completions/i)
 })

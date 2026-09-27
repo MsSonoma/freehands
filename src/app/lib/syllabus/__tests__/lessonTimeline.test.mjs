@@ -86,6 +86,26 @@ test('occurrence-bound Mr. Slate schedule renders on its own later date as a sep
   assert.equal('instructional_teacher' in slate, false)
 })
 
+test('learner-choice Daily Review assignment preserves deferred presenter selection', () => {
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION,
+    forecastItems: [forecastLesson()],
+    associations: [association({ readiness_state: 'available' })],
+    slateAssignments: [{
+      id: '44444444-4444-4444-8444-444444444444',
+      lesson_key: 'generated/fractions.json',
+      syllabus_occurrence_id: 'syllabus:forecast-1',
+      scheduled_date: '2026-09-10',
+      run_purpose: 'practice',
+      review_teacher: 'learner',
+      assigned_at: '2026-09-01T12:00:00Z',
+    }],
+    today: '2026-09-07',
+  })
+  const review = items.find((item) => item.item_type === 'slate_assignment')
+  assert.equal(review.review_teacher, 'learner')
+})
+
 test('multiple supplemental Slate sessions remain independent for one instructional occurrence', () => {
   const slateAssignments = [
     {

@@ -11,7 +11,7 @@ import { ensureFacilitatorPinException, requestFacilitatorPinException } from '@
 import { featuresForTier } from '@/app/lib/entitlements'
 import { buildLessonSchedulePayload, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherIcon, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
-import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, normalizeReviewTeacher, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
+import { REVIEW_TEACHER_SELECTION_IDS, REVIEW_TEACHERS, normalizeReviewTeacherSelection, reviewTeacherSelectionIcon, reviewTeacherSelectionLabel } from '@/app/lib/reviewTeacher.js'
 import { buildLessonGeneratorReviewHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import { getLearner } from '@/app/facilitator/learners/clientApi'
 import { getStoredAssessments, saveAssessments } from '@/app/session/assessment/assessmentStore'
@@ -167,7 +167,7 @@ export default function FacilitatorSyllabusLessonOverlay({
     setHistoryOpen(false)
     setSlateEditorOpen(false)
     setSlateDate('')
-    setSlateTeacher(normalizeReviewTeacher(item.review_teacher))
+    setSlateTeacher(normalizeReviewTeacherSelection(item.review_teacher))
     setRevisionOpen(false)
     setRepeatMode(false)
     setLearnerLessonBound(false)
@@ -420,7 +420,7 @@ export default function FacilitatorSyllabusLessonOverlay({
       const json = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(json.error || 'Could not schedule Daily Review')
       setSlateEditorOpen(false)
-      setMessage(`Daily Review was scheduled with ${reviewTeacherLabel(slateTeacher)}.`)
+      setMessage(slateTeacher === 'learner' ? 'Daily Review was scheduled so the learner will choose the teacher.' : `Daily Review was scheduled with ${reviewTeacherSelectionLabel(slateTeacher)}.`)
       await refreshAfterChange()
     } catch (cause) {
       setCoreError(cause.message || 'Could not schedule Daily Review')
@@ -431,7 +431,7 @@ export default function FacilitatorSyllabusLessonOverlay({
 
   async function updateScheduledReviewTeacher(nextTeacher) {
     if (!coreAuthority || !item.assignment_id) return
-    const reviewTeacher = normalizeReviewTeacher(nextTeacher)
+    const reviewTeacher = normalizeReviewTeacherSelection(nextTeacher)
     setCoreBusy('slate')
     setCoreError('')
     try {
@@ -443,7 +443,7 @@ export default function FacilitatorSyllabusLessonOverlay({
       const json = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(json.error || 'Could not update the Daily Review teacher')
       setSlateTeacher(reviewTeacher)
-      setMessage(`Daily Review teacher changed to ${reviewTeacherLabel(reviewTeacher)}.`)
+      setMessage(reviewTeacher === 'learner' ? 'Daily Review teacher changed so the learner will choose.' : `Daily Review teacher changed to ${reviewTeacherSelectionLabel(reviewTeacher)}.`)
       await refreshAfterChange()
     } catch (cause) {
       setCoreError(cause.message || 'Could not update the Daily Review teacher')
@@ -677,7 +677,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   return <>
     <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.() }}>
       <section className={styles.overlay} role="dialog" aria-modal="true" aria-label={`Lesson details for ${item.title || 'lesson'}`}>
-        <header><div><p className={styles.subject}>{item.subject || 'Lesson'}</p><h2>{isSlateAssignment ? `${reviewTeacherIcon(slateTeacher)} Daily Review` : `${headerInstructionalTeacher ? `${instructionalTeacherIcon(headerInstructionalTeacher)} ` : ''}${item.title || 'Untitled lesson'}`}</h2></div><button type="button" className={styles.close} onClick={onClose} aria-label="Close">Close</button></header>
+        <header><div><p className={styles.subject}>{item.subject || 'Lesson'}</p><h2>{isSlateAssignment ? `${reviewTeacherSelectionIcon(slateTeacher)} Daily Review` : `${headerInstructionalTeacher ? `${instructionalTeacherIcon(headerInstructionalTeacher)} ` : ''}${item.title || 'Untitled lesson'}`}</h2></div><button type="button" className={styles.close} onClick={onClose} aria-label="Close">Close</button></header>
         <div className={styles.body}>
           {printOpen ? <section className={styles.detailSection}>
             <h3>Print lesson materials</h3>
@@ -701,9 +701,9 @@ export default function FacilitatorSyllabusLessonOverlay({
             {actualKind === 'incomplete' && attemptedAt && <div><dt>Attempted</dt><dd>{prettyDateTime(attemptedAt)}</dd></div>}
             {canDeliver && <div><dt>Availability</dt><dd>{availableToLearner ? 'Available to learner' : 'Not yet available'}</dd></div>}
             {actualKind !== 'completed' && selection.currentLesson?.hasProgress && <div><dt>Progress</dt><dd>In progress</dd></div>}
-            {isSlateAssignment && <><div><dt>Type</dt><dd>Daily Review</dd></div><div><dt>Review teacher</dt><dd>{reviewTeacherIcon(slateTeacher)} {reviewTeacherLabel(slateTeacher)}</dd></div></>}
+            {isSlateAssignment && <><div><dt>Type</dt><dd>Daily Review</dd></div><div><dt>Review teacher</dt><dd>{reviewTeacherSelectionIcon(slateTeacher)} {reviewTeacherSelectionLabel(slateTeacher)}</dd></div></>}
           </dl>
-          {isSlateAssignment && <label className={styles.field}>Review teacher<select value={slateTeacher} disabled={coreBusy === 'slate'} onChange={(event) => void updateScheduledReviewTeacher(event.target.value)}>{REVIEW_TEACHER_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label>}
+          {isSlateAssignment && <label className={styles.field}>Review teacher<select value={slateTeacher} disabled={coreBusy === 'slate'} onChange={(event) => void updateScheduledReviewTeacher(event.target.value)}>{REVIEW_TEACHER_SELECTION_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label>}
           {teacherEditable && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy || coreBusy === 'teacher'} onChange={(event) => void handleTeacherChange(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
           {isConcept && <section className={styles.detailSection}>
             <h3>{generation.label}</h3>
@@ -732,7 +732,7 @@ export default function FacilitatorSyllabusLessonOverlay({
           {slateEditorOpen && <section className={styles.detailSection}>
             <h3>Schedule Daily Review</h3>
             <p>Choose who will present this review. The review teacher does not replace the instructional teacher or complete the lesson.</p>
-            <label className={styles.field}>Review teacher<select value={slateTeacher} onChange={(event) => setSlateTeacher(normalizeReviewTeacher(event.target.value))}>{REVIEW_TEACHER_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label>
+            <label className={styles.field}>Review teacher<select value={slateTeacher} onChange={(event) => setSlateTeacher(normalizeReviewTeacherSelection(event.target.value))}>{REVIEW_TEACHER_SELECTION_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label>
             <label className={styles.field}>Daily Review date<input type="date" min={[dateOnly(displayedDate), dateOnly(resolvedToday)].filter(Boolean).sort().at(-1) || ''} value={slateDate} onChange={(event) => setSlateDate(event.target.value)} /></label>
             <div className={styles.secondaryActions}><button type="button" onClick={() => setSlateEditorOpen(false)}>Cancel</button><button type="button" disabled={!slateDate || coreBusy === 'slate'} onClick={() => void saveSlateSchedule()}>{coreBusy === 'slate' ? 'Scheduling...' : 'Schedule Daily Review'}</button></div>
           </section>}

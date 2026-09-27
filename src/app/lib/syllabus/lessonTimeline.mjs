@@ -2,7 +2,7 @@ import { lessonKeyBasename, normalizeLessonKey, resolveLessonKeyAgainst } from '
 import { dateOnly } from './timeline.mjs'
 import { calendarDateInTimeZone } from '../calendarDate.mjs'
 import { slateRunPurpose } from '../slateLearningModel.mjs'
-import { normalizeReviewTeacher } from '../reviewTeacher.js'
+import { normalizeReviewTeacher, normalizeReviewTeacherSelection } from '../reviewTeacher.js'
 import { latestExplicitLessonSessionEvent, lifecycleEventActualKind, resolveLessonSessionLifecycle } from '../lessonSessionLifecycle.mjs'
 import { normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotations.mjs'
@@ -497,7 +497,7 @@ export function composeSyllabusLessonTimeline({
       subject: parent.subject,
       title: `Daily Review: ${parent.title}`,
       description: 'Separately scheduled Daily Review for this lesson.',
-      review_teacher: normalizeReviewTeacher(assignment?.review_teacher),
+      review_teacher: normalizeReviewTeacherSelection(assignment?.review_teacher),
       planned_date: hasAuthoritativeSchedule ? scheduledDate : parent.planned_date,
       sort_order: hasAuthoritativeSchedule ? SUPPLEMENTAL_SLATE_SORT_ORDER : Number(parent.sort_order || 0) + 0.5,
       run_purpose: slateRunPurpose(assignment?.run_purpose),

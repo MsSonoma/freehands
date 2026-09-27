@@ -31,7 +31,7 @@ import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { CORE_SUBJECTS } from '@/app/lib/subjects'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import { startFollowUp } from '@/app/lib/followUpsClient'
-import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, normalizeReviewTeacher } from '@/app/lib/reviewTeacher.js'
+import { REVIEW_TEACHER_SELECTION_IDS, REVIEW_TEACHERS, normalizeReviewTeacherSelection } from '@/app/lib/reviewTeacher.js'
 import { buildLessonGeneratorReviewHref, buildLessonWorkflowReturnHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import styles from './syllabus/syllabus.module.css'
 import { instructionalForecastMode, instructionalForecastWindow } from '@/app/lib/syllabus/forecastWindow.mjs'
@@ -754,7 +754,7 @@ export default function FacilitatorPage() {
           occurrenceId: occurrenceKey,
           scheduledDate,
           runPurpose: 'practice',
-          reviewTeacher: normalizeReviewTeacher(slateScheduler?.reviewTeacher),
+          reviewTeacher: normalizeReviewTeacherSelection(slateScheduler?.reviewTeacher),
         }),
       })
       const json = await response.json()
@@ -1120,7 +1120,7 @@ export default function FacilitatorPage() {
           {slateScheduler && (() => {
             const earliestDate = [dateOnly(slateScheduler.item?.planned_date), dateOnly(slateScheduler.resolvedToday)].filter(Boolean).sort().at(-1) || ''
             const occurrenceKey = slateScheduler.item?.source_occurrence_id || slateScheduler.item?.occurrence_id || slateScheduler.item?.id || ''
-            return <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={`Schedule Daily Review for ${slateScheduler.item?.title || 'lesson'}`}><header><h2>Schedule Daily Review</h2><button type="button" onClick={() => setSlateScheduler(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<p>Schedule a separate Daily Review for <strong>{slateScheduler.item?.title}</strong>. This does not change the instructional teacher or complete the lesson.</p><label>Review teacher<select value={normalizeReviewTeacher(slateScheduler.reviewTeacher)} onChange={(event) => setSlateScheduler({ ...slateScheduler, reviewTeacher: normalizeReviewTeacher(event.target.value) })}>{REVIEW_TEACHER_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label><label>Daily Review date<input autoFocus type="date" min={earliestDate} value={slateScheduler.scheduledDate} onChange={(event) => setSlateScheduler({ ...slateScheduler, scheduledDate: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setSlateScheduler(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={!slateScheduler.scheduledDate || slateAssignmentBusy === occurrenceKey} onClick={scheduleSlateSession}>{slateAssignmentBusy === occurrenceKey ? 'Scheduling…' : 'Schedule Daily Review'}</button></footer></section></div>
+            return <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={`Schedule Daily Review for ${slateScheduler.item?.title || 'lesson'}`}><header><h2>Schedule Daily Review</h2><button type="button" onClick={() => setSlateScheduler(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<p>Schedule a separate Daily Review for <strong>{slateScheduler.item?.title}</strong>. This does not change the instructional teacher or complete the lesson.</p><label>Review teacher<select value={normalizeReviewTeacherSelection(slateScheduler.reviewTeacher)} onChange={(event) => setSlateScheduler({ ...slateScheduler, reviewTeacher: normalizeReviewTeacherSelection(event.target.value) })}>{REVIEW_TEACHER_SELECTION_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label><label>Daily Review date<input autoFocus type="date" min={earliestDate} value={slateScheduler.scheduledDate} onChange={(event) => setSlateScheduler({ ...slateScheduler, scheduledDate: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setSlateScheduler(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={!slateScheduler.scheduledDate || slateAssignmentBusy === occurrenceKey} onClick={scheduleSlateSession}>{slateAssignmentBusy === occurrenceKey ? 'Scheduling…' : 'Schedule Daily Review'}</button></footer></section></div>
           })()}
 
           {historyOccurrenceId && <LessonHistoryOverlay

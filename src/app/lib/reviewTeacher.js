@@ -1,4 +1,5 @@
 export const REVIEW_TEACHER_IDS = Object.freeze(['sonoma', 'webb', 'slate'])
+export const REVIEW_TEACHER_SELECTION_IDS = Object.freeze([...REVIEW_TEACHER_IDS, 'learner'])
 
 export const REVIEW_TEACHERS = Object.freeze({
   sonoma: Object.freeze({
@@ -25,10 +26,20 @@ export const REVIEW_TEACHERS = Object.freeze({
     video: '/media/Mr.%20Slate%20Suit.mp4',
     tts: '/api/slate-tts',
   }),
+  learner: Object.freeze({
+    id: 'learner',
+    label: 'Learner chooses',
+    displayName: 'LEARNER CHOOSES',
+    icon: '🎓',
+  }),
 })
 
 export function isReviewTeacher(value) {
   return REVIEW_TEACHER_IDS.includes(String(value || '').trim().toLowerCase())
+}
+
+export function isReviewTeacherSelection(value) {
+  return REVIEW_TEACHER_SELECTION_IDS.includes(String(value || '').trim().toLowerCase())
 }
 
 export function normalizeReviewTeacher(value, fallback = 'slate') {
@@ -37,8 +48,18 @@ export function normalizeReviewTeacher(value, fallback = 'slate') {
   return isReviewTeacher(fallback) ? String(fallback).trim().toLowerCase() : 'slate'
 }
 
+export function normalizeReviewTeacherSelection(value, fallback = 'slate') {
+  const teacher = String(value || '').trim().toLowerCase()
+  if (isReviewTeacherSelection(teacher)) return teacher
+  return isReviewTeacherSelection(fallback) ? String(fallback).trim().toLowerCase() : 'slate'
+}
+
 export function reviewTeacherConfig(value) {
   return REVIEW_TEACHERS[normalizeReviewTeacher(value)]
+}
+
+export function reviewTeacherSelectionConfig(value) {
+  return REVIEW_TEACHERS[normalizeReviewTeacherSelection(value)]
 }
 
 export function reviewTeacherLabel(value) {
@@ -47,4 +68,12 @@ export function reviewTeacherLabel(value) {
 
 export function reviewTeacherIcon(value) {
   return reviewTeacherConfig(value).icon
+}
+
+export function reviewTeacherSelectionLabel(value) {
+  return reviewTeacherSelectionConfig(value).label
+}
+
+export function reviewTeacherSelectionIcon(value) {
+  return reviewTeacherSelectionConfig(value).icon
 }
