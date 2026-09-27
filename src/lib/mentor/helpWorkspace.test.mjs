@@ -1,24 +1,27 @@
-import test from 'node:test'
+﻿import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
 const client = fs.readFileSync(new URL('../../app/facilitator/generator/counselor/CounselorClient.jsx', import.meta.url), 'utf8')
 const frame = fs.readFileSync(new URL('../../app/facilitator/generator/counselor/HelpWorkspaceFrame.jsx', import.meta.url), 'utf8')
+const bottomNav = fs.readFileSync(new URL('../../app/facilitator/generator/counselor/HelpBottomNav.jsx', import.meta.url), 'utf8')
 const syllabus = fs.readFileSync(new URL('../../app/facilitator/page.js', import.meta.url), 'utf8')
 const counselorRoute = fs.readFileSync(new URL('../../app/api/counselor/route.js', import.meta.url), 'utf8')
 
 test('Help uses the real Syllabus and Lesson Library as shared workspaces', () => {
   assert.match(frame, /import FacilitatorPage from '..\/..\/page'/)
   assert.match(frame, /import LessonLibraryPage from '..\/..\/lessons\/page'/)
-  assert.match(frame, /id: 'mentor', label: 'Home'/)
-  assert.match(frame, /id: 'syllabus', label: 'Syllabus'/)
-  assert.match(frame, /id: 'lessons', label: 'Lesson Library'/)
-  assert.doesNotMatch(frame, /id: 'learners'/)
   assert.match(client, /const \[activeScreen, setActiveScreen\] = useState\('mentor'\)/)
-  assert.match(client, /Help Home is Ms\. Sonoma/)
   assert.match(client, /<HelpWorkspaceFrame/)
+  assert.match(client, /<HelpBottomNav/)
+  assert.doesNotMatch(frame, /Help workspace/)
+  assert.doesNotMatch(frame, /Conversation/)
   assert.doesNotMatch(client, /LessonsOverlay/)
   assert.doesNotMatch(client, /LessonMakerOverlay/)
+  assert.match(bottomNav, /label="Home"/)
+  assert.match(bottomNav, /label="Lessons"/)
+  assert.match(bottomNav, /label="Syllabus"/)
+  assert.match(bottomNav, /label="Guidance"/)
 })
 
 test('Help resolves the shared active learner before Syllabus is opened', () => {
@@ -29,24 +32,23 @@ test('Help resolves the shared active learner before Syllabus is opened', () => 
   assert.match(client, /removeItem\?\.\(LEGACY_SELECTED_LEARNER_KEY\)/)
 })
 
-test('Guidance opens as a Help Home overlay without switching to Syllabus', () => {
+test('Guidance opens from bottom navigation without switching to Syllabus', () => {
   assert.match(client, /import CurriculumGuidanceEditor/)
-  assert.match(client, /onClick=\{\(\) => setGuidanceOverlayOpen\(true\)\}/)
+  assert.match(client, /onGuidance=\{\(\) => setGuidanceOverlayOpen\(true\)\}/)
+  assert.match(bottomNav, /label="Guidance"/)
   assert.match(client, /guidanceOverlayOpen && selectedLearnerId !== 'none' && accessToken && <CurriculumGuidanceEditor/)
-  assert.doesNotMatch(client, /onClick=\{\(\) => openSyllabusWorkspace\('week', 'curriculum_guidance'\)\}/)
-  assert.match(frame, /id: 'mentor', label: 'Home'/)
+  assert.doesNotMatch(client, /aria-label="Guidance"/)
 })
 
-test('Help full workspace hides conversation by default but keeps it available on demand', () => {
-  assert.match(client, /workspaceExpanded/)
-  assert.match(client, /conversationDockOpen/)
-  assert.match(client, /const toggleWorkspaceExpanded = useCallback/)
-  assert.match(client, /const next = !current[\s\S]*setConversationDockOpen\(!next\)/)
-
+test('Help fullscreen expands the whole Help shell without hiding conversation', () => {
+  assert.match(client, /const workspaceFocus = workspaceExpanded/)
+  assert.match(client, /setWorkspaceExpanded\(\(current\) => !current\)/)
+  assert.doesNotMatch(client, /conversationDockOpen/)
   assert.match(client, /workspaceSideBySide/)
   assert.match(client, /zIndex: workspaceFocus \? 1500 : 0/)
-  assert.match(frame, /Conversation\s*<\/button>/)
-  assert.match(frame, /aria-label=\{expanded \? 'Exit full workspace' : 'Expand workspace'\}/)
+  assert.match(client, /left: 0,[\s\S]*right: 0,/)
+  assert.match(bottomNav, /expanded\?'Restore':'Expand'/)
+  assert.doesNotMatch(frame, /Conversation/)
 })
 
 test('Help and Syllabus exchange learner, view, and embedded overlay context', () => {
