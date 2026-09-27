@@ -65,3 +65,16 @@ export async function updateFollowUpSettings(learnerId, patch) {
     body: JSON.stringify({ learner_id: learnerId, ...patch }),
   });
 }
+
+export async function updateReviewTeacherPreference(learnerId, reviewType, cycleKey, instructionalTeacher) {
+  return followUpRequest('/api/learner/follow-ups', {
+    method: 'PATCH',
+    body: JSON.stringify({
+      action: 'set_review_teacher',
+      learner_id: learnerId,
+      review_type: reviewType,
+      cycle_key: cycleKey,
+      instructional_teacher: instructionalTeacher,
+    }),
+  });
+}

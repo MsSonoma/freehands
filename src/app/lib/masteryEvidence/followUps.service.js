@@ -166,13 +166,22 @@ export async function buildFollowUpAvailability({
     return { kind: 'ok', settings, timezone: cycle.timeZone, cycle, cards: [], completed_cycles: [] };
   }
 
-  const [evidenceEvents, history] = await Promise.all([
+  const [evidenceEvents, history, teacherPreferences] = await Promise.all([
     repository.listEvidenceEvents({ userId, learnerId }),
     loadReviewHistory({ repository, userId, learnerId }),
+    repository.listReviewTeacherPreferences
+      ? repository.listReviewTeacherPreferences({ userId, learnerId })
+      : Promise.resolve([]),
   ]);
   const itemsByRun = groupBy(history.items, 'run_id');
   const eventsByRun = groupBy(history.events, 'run_id');
   const reviewResults = buildReviewResultContext(history);
+  const teacherPreferenceByCycle = new Map(
+    (teacherPreferences || []).map((preference) => [
+      `${preference.review_type}:${preference.cycle_key}`,
+      preference,
+    ]),
+  );
   const exposedKeys = exposedIdentityKeys({
     evidenceEvents,
     reviewItems: history.items,
@@ -351,6 +360,7 @@ export async function buildFollowUpAvailability({
           subtitle: 'See what you remember from recent lessons',
           item_count: selections.length,
           remaining_count: selections.length,
+          instructional_teacher: teacherPreferenceByCycle.get(`${REVIEW_TYPES.WEEKLY_REVIEW}:${cycle.cycleKey}`)?.instructional_teacher || 'slate',
           resume: false,
         };
         if (includePrivate) {
@@ -368,6 +378,11 @@ export async function buildFollowUpAvailability({
     timezone: cycle.timeZone,
     cycle,
     cards,
+    review_teacher_preferences: (teacherPreferences || []).map((preference) => ({
+      review_type: preference.review_type,
+      cycle_key: preference.cycle_key,
+      instructional_teacher: preference.instructional_teacher,
+    })),
     completed_cycles: history.runs
       .filter((run) => run.status === 'completed')
       .map((run) => ({
@@ -395,7 +410,7 @@ export async function startFollowUpRun({
   userId,
   learnerId,
   card,
-  instructionalTeacher = 'slate',
+  instructionalTeacher = null,
   now = new Date().toISOString(),
 } = {}) {
   if (card.run_id) return repository.getRun({ userId, runId: card.run_id });
@@ -405,6 +420,13 @@ export async function startFollowUpRun({
   const isDelayedDaily = card.review_type === REVIEW_TYPES.DAILY_FOLLOWUP;
   const isDailyReview = card.review_type === REVIEW_TYPES.DAILY_REVIEW;
   const firstSelection = selections[0];
+  const requestedTeacher = String(instructionalTeacher || '').toLowerCase();
+  const preferredTeacher = String(card?.instructional_teacher || '').toLowerCase();
+  const resolvedTeacher = ['sonoma', 'webb', 'slate'].includes(requestedTeacher)
+    ? requestedTeacher
+    : ['sonoma', 'webb', 'slate'].includes(preferredTeacher)
+      ? preferredTeacher
+      : 'slate';
   const runRow = {
     id: runId,
     facilitator_id: userId,
@@ -430,9 +452,7 @@ export async function startFollowUpRun({
           ? 'Daily Review'
           : 'Weekly Review',
       item_count: selections.length,
-      instructional_teacher: ['sonoma', 'webb', 'slate'].includes(String(instructionalTeacher || '').toLowerCase())
-        ? String(instructionalTeacher).toLowerCase()
-        : 'slate',
+      instructional_teacher: resolvedTeacher,
     },
     started_at: now,
     updated_at: now,
@@ -444,6 +464,7 @@ export async function startFollowUpRun({
   } catch (error) {
     if (error?.code !== '23505') throw error;
     run = await repository.findRunByCycle({
+      userId,
       learnerId,
       reviewType: card.review_type,
       cycleKey: card.cycle_key,

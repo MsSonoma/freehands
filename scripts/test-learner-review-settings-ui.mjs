@@ -62,9 +62,13 @@ function createSettingsRepository({ fail = false } = {}) {
     }],
   ])
   const calls = []
+  const preferences = []
+  const runs = []
   return {
     rows,
     calls,
+    preferences,
+    runs,
     async findOwnedLearner({ userId, learnerId }) {
       const row = rows.get(learnerId)
       return row?.facilitator_id === userId ? { ...row } : null
@@ -77,6 +81,19 @@ function createSettingsRepository({ fail = false } = {}) {
       const updated = { ...row, ...settings }
       rows.set(learnerId, updated)
       return { ...updated }
+    },
+    async findRunByCycle({ learnerId, reviewType, cycleKey }) {
+      return runs.find((run) => run.learner_id === learnerId && run.review_type === reviewType && run.cycle_key === cycleKey) || null
+    },
+    async upsertReviewTeacherPreference({ userId, learnerId, reviewType, cycleKey, instructionalTeacher }) {
+      const existing = preferences.find((entry) => entry.facilitator_id === userId && entry.learner_id === learnerId && entry.review_type === reviewType && entry.cycle_key === cycleKey)
+      if (existing) {
+        existing.instructional_teacher = instructionalTeacher
+        return { ...existing }
+      }
+      const preference = { facilitator_id: userId, learner_id: learnerId, review_type: reviewType, cycle_key: cycleKey, instructional_teacher: instructionalTeacher }
+      preferences.push(preference)
+      return { ...preference }
     },
   }
 }
@@ -214,6 +231,42 @@ test('settings API preserves weekly day while Weekly Reviews are toggled off and
   const json = await response.json()
   assert.equal(response.status, 200)
   assert.equal(json.settings.weekly_review_day, 'tuesday')
+})
+
+test('Weekly Review teacher can be saved before unlock and becomes fixed after the run starts', async () => {
+  const repository = createSettingsRepository()
+  const cycleKey = 'America/New_York:2026-09-28'
+
+  let response = await callSettingsPatch(repository, {
+    action: 'set_review_teacher',
+    learner_id: LEARNER_A,
+    review_type: 'weekly_review',
+    cycle_key: cycleKey,
+    instructional_teacher: 'webb',
+  })
+  let json = await response.json()
+  assert.equal(response.status, 200)
+  assert.equal(json.preference.instructional_teacher, 'webb')
+  assert.equal(repository.preferences.length, 1)
+
+  repository.runs.push({
+    id: '33333333-3333-4333-8333-333333333333',
+    learner_id: LEARNER_A,
+    review_type: 'weekly_review',
+    cycle_key: cycleKey,
+    status: 'active',
+  })
+  response = await callSettingsPatch(repository, {
+    action: 'set_review_teacher',
+    learner_id: LEARNER_A,
+    review_type: 'weekly_review',
+    cycle_key: cycleKey,
+    instructional_teacher: 'sonoma',
+  })
+  json = await response.json()
+  assert.equal(response.status, 409)
+  assert.match(json.error, /already started/i)
+  assert.equal(repository.preferences[0].instructional_teacher, 'webb')
 })
 
 test('settings API rejects cross-account learners and failed writes do not report success', async () => {

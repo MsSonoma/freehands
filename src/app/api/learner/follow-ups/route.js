@@ -117,8 +117,10 @@ export async function POST(request, deps = {}) {
     if (!isUuid(learnerId) || typeof body?.card_id !== 'string') {
       return NextResponse.json({ ok: false, error: 'learner_id and card_id are required' }, { status: 400 });
     }
-    const instructionalTeacher = reviewTeacher(body?.instructional_teacher);
-    if (!instructionalTeacher) {
+    const instructionalTeacher = body?.instructional_teacher == null
+      ? null
+      : reviewTeacher(body.instructional_teacher);
+    if (body?.instructional_teacher != null && !instructionalTeacher) {
       return NextResponse.json({ ok: false, error: 'instructional_teacher must be sonoma, webb, or slate' }, { status: 400 });
     }
     const now = deps.now?.() || new Date().toISOString();
@@ -167,6 +169,54 @@ export async function PATCH(request, deps = {}) {
     if (!isUuid(learnerId)) {
       return NextResponse.json({ ok: false, error: 'learner_id must be a UUID' }, { status: 400 });
     }
+
+    if (body?.action === 'set_review_teacher') {
+      if (body?.review_type !== 'weekly_review') {
+        return NextResponse.json({ ok: false, error: 'review_type must be weekly_review' }, { status: 400 });
+      }
+      const cycleKey = String(body?.cycle_key || '').trim();
+      if (!cycleKey || cycleKey.length > 255) {
+        return NextResponse.json({ ok: false, error: 'cycle_key is required' }, { status: 400 });
+      }
+      const instructionalTeacher = typeof body?.instructional_teacher === 'string'
+        ? reviewTeacher(body.instructional_teacher)
+        : null;
+      if (!instructionalTeacher) {
+        return NextResponse.json({ ok: false, error: 'instructional_teacher must be sonoma, webb, or slate' }, { status: 400 });
+      }
+      const learner = await ctx.repository.findOwnedLearner({
+        userId: ctx.auth.user.id,
+        learnerId,
+      });
+      if (!learner?.id) {
+        return NextResponse.json({ ok: false, error: 'Learner not found or unauthorized' }, { status: 403 });
+      }
+      const existingRun = await ctx.repository.findRunByCycle({
+        userId: ctx.auth.user.id,
+        learnerId,
+        reviewType: body.review_type,
+        cycleKey,
+      });
+      if (existingRun?.id) {
+        return NextResponse.json({ ok: false, error: 'This review has already started, so its teacher is fixed.' }, { status: 409 });
+      }
+      const preference = await ctx.repository.upsertReviewTeacherPreference({
+        userId: ctx.auth.user.id,
+        learnerId,
+        reviewType: body.review_type,
+        cycleKey,
+        instructionalTeacher,
+      });
+      return NextResponse.json({
+        ok: true,
+        preference: {
+          review_type: preference.review_type,
+          cycle_key: preference.cycle_key,
+          instructional_teacher: preference.instructional_teacher,
+        },
+      });
+    }
+
     const learner = await ctx.repository.findOwnedLearner({
       userId: ctx.auth.user.id,
       learnerId,

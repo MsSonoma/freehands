@@ -190,13 +190,16 @@ export function buildSyllabusReviewProjection({
   })
   const cards = Array.isArray(availability?.cards) ? availability.cards : []
   const completedCycles = Array.isArray(availability?.completed_cycles) ? availability.completed_cycles : []
+  const teacherPreferences = Array.isArray(availability?.review_teacher_preferences) ? availability.review_teacher_preferences : []
   const cardByCycle = new Map(cards.map((card) => [`${card.review_type}:${card.cycle_key}`, card]))
   const completedByCycle = new Map(completedCycles.map((run) => [`${run.review_type}:${run.cycle_key}`, run]))
+  const teacherPreferenceByCycle = new Map(teacherPreferences.map((preference) => [`${preference.review_type}:${preference.cycle_key}`, preference]))
 
   const items = [...daily, ...weekly].map((cycle) => {
     const key = `${cycle.review_type}:${cycle.cycleKey}`
     const card = cardByCycle.get(key) || null
     const completedRun = completedByCycle.get(key) || null
+    const teacherPreference = teacherPreferenceByCycle.get(key) || null
     const completed = Boolean(completedRun)
     if (today && cycle.reviewDate < dateOnly(today) && !card && !completed) return null
     const status = completed
@@ -228,7 +231,7 @@ export function buildSyllabusReviewProjection({
       review_ready: Boolean(card) && !completed,
       review_card_id: card?.id || null,
       review_run_id: card?.run_id || null,
-      review_teacher: card?.instructional_teacher || completedRun?.instructional_teacher || null,
+      review_teacher: completedRun?.instructional_teacher || card?.instructional_teacher || teacherPreference?.instructional_teacher || null,
       review_question_count: card?.item_count ?? completedRun?.item_count ?? null,
       review_remaining_count: card?.remaining_count ?? null,
       review_progress: {

@@ -30,7 +30,7 @@ import {
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { CORE_SUBJECTS } from '@/app/lib/subjects'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
-import { startFollowUp } from '@/app/lib/followUpsClient'
+import { startFollowUp, updateReviewTeacherPreference } from '@/app/lib/followUpsClient'
 import { REVIEW_TEACHER_SELECTION_IDS, REVIEW_TEACHERS, normalizeReviewTeacherSelection } from '@/app/lib/reviewTeacher.js'
 import { buildLessonGeneratorReviewHref, buildLessonWorkflowReturnHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import styles from './syllabus/syllabus.module.css'
@@ -879,6 +879,13 @@ export default function FacilitatorPage() {
     setHistoryOccurrenceId(occurrenceId)
   }
 
+  async function saveWeeklyReviewTeacher(item, instructionalTeacher) {
+    if (item?.review_type !== 'weekly_review' || !item?.cycle_key) return
+    await updateReviewTeacherPreference(learnerId, item.review_type, item.cycle_key, instructionalTeacher)
+    setSelectedSyllabusReview((current) => current?.cycle_key === item.cycle_key ? { ...current, review_teacher: instructionalTeacher } : current)
+    await loadCurrent()
+  }
+
   async function startSyllabusReview(item, instructionalTeacher = 'slate') {
     if (!item?.review_ready || reviewStarting) return
     setReviewStarting(true)
@@ -1031,6 +1038,7 @@ export default function FacilitatorPage() {
             busy={reviewStarting}
             onClose={() => setSelectedSyllabusReview(null)}
             onStart={(item, instructionalTeacher) => void startSyllabusReview(item, instructionalTeacher)}
+            onTeacherChange={(item, instructionalTeacher) => saveWeeklyReviewTeacher(item, instructionalTeacher)}
           />}
 
           {resolvedSyllabusLesson && <FacilitatorSyllabusLessonOverlay

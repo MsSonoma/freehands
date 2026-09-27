@@ -35,9 +35,13 @@ import {
 } from '../src/app/lib/masteryEvidence/followUps.service.js'
 
 const migrationSource = readFileSync(new URL('../supabase/migrations/20260812090000_add_daily_followups_weekly_reviews.sql', import.meta.url), 'utf8')
+const reviewTeacherPreferenceMigrationSource = readFileSync(new URL('../supabase/migrations/20260927013425_add_weekly_review_teacher_preferences.sql', import.meta.url), 'utf8')
 const generatorSource = readFileSync(new URL('../src/app/api/facilitator/lessons/generate/route.js', import.meta.url), 'utf8')
 const incrementalSource = readFileSync(new URL('../src/app/api/ai/lesson-generate/route.js', import.meta.url), 'utf8')
 const learnSource = readFileSync(new URL('../src/app/learn/LearnerHome.js', import.meta.url), 'utf8')
+const syllabusReviewOverlaySource = readFileSync(new URL('../src/app/components/syllabus/SyllabusReviewOverlay.js', import.meta.url), 'utf8')
+const facilitatorSyllabusSource = readFileSync(new URL('../src/app/facilitator/page.js', import.meta.url), 'utf8')
+const followUpsClientSource = readFileSync(new URL('../src/app/lib/followUpsClient.js', import.meta.url), 'utf8')
 const legacyLearnSource = readFileSync(new URL('../src/app/learn/lessons/page.js', import.meta.url), 'utf8')
 const reviewPageSource = readFileSync(new URL('../src/app/learn/follow-ups/[runId]/page.js', import.meta.url), 'utf8')
 const slateReviewSource = readFileSync(new URL('../src/app/session/slate/SlateReviewExperience.jsx', import.meta.url), 'utf8')
@@ -87,6 +91,7 @@ function createRepository({ settings = {}, evidenceEvents = [anchor()] } = {}) {
     runs: [],
     items: [],
     events: [],
+    preferences: [],
   }
   return {
     data,
@@ -94,6 +99,19 @@ function createRepository({ settings = {}, evidenceEvents = [anchor()] } = {}) {
       return userId === 'user-1' && learnerId === data.learner.id ? { ...data.learner } : null
     },
     async getProfileTimezone() { return 'America/New_York' },
+    async listReviewTeacherPreferences({ userId, learnerId }) {
+      return data.preferences.filter((entry) => entry.facilitator_id === userId && entry.learner_id === learnerId)
+    },
+    async upsertReviewTeacherPreference({ userId, learnerId, reviewType, cycleKey, instructionalTeacher }) {
+      const existing = data.preferences.find((entry) => entry.facilitator_id === userId && entry.learner_id === learnerId && entry.review_type === reviewType && entry.cycle_key === cycleKey)
+      if (existing) {
+        existing.instructional_teacher = instructionalTeacher
+        return { ...existing }
+      }
+      const preference = { facilitator_id: userId, learner_id: learnerId, review_type: reviewType, cycle_key: cycleKey, instructional_teacher: instructionalTeacher }
+      data.preferences.push(preference)
+      return { ...preference }
+    },
     async listEvidenceEvents() { return [...data.evidenceEvents] },
     async listReviewRuns({ userId, learnerId }) {
       return data.runs.filter((run) => run.facilitator_id === userId && run.learner_id === learnerId)
@@ -215,6 +233,29 @@ test('availability can show Daily and Weekly together without making either a le
   assert.equal(result.kind, 'ok')
   assert.deepEqual(new Set(result.cards.map((card) => card.review_type)), new Set([REVIEW_TYPES.DAILY_FOLLOWUP, REVIEW_TYPES.WEEKLY_REVIEW]))
   assert.ok(result.cards.every((card) => card.item_count <= WEEKLY_REVIEW_MAX_ITEMS))
+})
+
+test('weekly review teacher preference is available before the run and becomes the run teacher', async () => {
+  const repository = createRepository({ settings: { daily_followups_enabled: false } })
+  let availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
+  const initialCard = availability.cards.find((card) => card.review_type === REVIEW_TYPES.WEEKLY_REVIEW)
+  assert.ok(initialCard)
+
+  repository.data.preferences.push({
+    facilitator_id: userId,
+    learner_id: learnerId,
+    review_type: REVIEW_TYPES.WEEKLY_REVIEW,
+    cycle_key: initialCard.cycle_key,
+    instructional_teacher: 'webb',
+  })
+
+  availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
+  const weeklyCard = availability.cards.find((card) => card.review_type === REVIEW_TYPES.WEEKLY_REVIEW)
+  assert.equal(weeklyCard.instructional_teacher, 'webb')
+  assert.equal(availability.review_teacher_preferences[0].instructional_teacher, 'webb')
+
+  const run = await startFollowUpRun({ repository, userId, learnerId, card: weeklyCard, now })
+  assert.equal(run.metadata.instructional_teacher, 'webb')
 })
 
 test('review quiz length scales with contributing lessons instead of a fixed total', async () => {
@@ -439,6 +480,11 @@ test('instructional payload stripping removes every legacy, Daily, and Weekly re
 test('migration is additive, secure by default, and exposes no authenticated write policy', () => {
   assert.match(migrationSource, /daily_followups_enabled boolean not null default false/)
   assert.match(migrationSource, /weekly_reviews_enabled boolean not null default false/)
+  assert.match(reviewTeacherPreferenceMigrationSource, /create table if not exists public\.learning_review_teacher_preferences/i)
+  assert.match(reviewTeacherPreferenceMigrationSource, /unique \(facilitator_id, learner_id, review_type, cycle_key\)/i)
+  assert.match(reviewTeacherPreferenceMigrationSource, /review_type = 'weekly_review'/i)
+  assert.match(reviewTeacherPreferenceMigrationSource, /instructional_teacher in \('sonoma', 'webb', 'slate'\)/i)
+  assert.match(reviewTeacherPreferenceMigrationSource, /revoke all on table public\.learning_review_teacher_preferences from public, anon, authenticated/i)
   assert.match(migrationSource, /learning_review_runs_unique_cycle/)
   assert.match(migrationSource, /enable row level security/)
   assert.match(migrationSource, /grant select on table public\.learning_review_runs to authenticated/)
@@ -459,6 +505,12 @@ test('generation, learner cards, focused flow, and reporting are wired without l
   assert.match(incrementalSource, /'weeklyReview'/)
   assert.match(learnSource, /followUpCards\.map/)
   assert.match(learnSource, /\/session\/slate\?reviewRunId=/)
+  assert.match(learnSource, /startFollowUp\(learnerId, card\.id, instructionalTeacher \|\| card\?\.instructional_teacher \|\| 'slate'\)/)
+  assert.match(learnSource, /onStart=\{\(item, instructionalTeacher\) => void startSyllabusReview\(item, instructionalTeacher\)\}/)
+  assert.match(syllabusReviewOverlaySource, /item\.review_type === 'weekly_review' && typeof onTeacherChange === 'function'/)
+  assert.match(syllabusReviewOverlaySource, /disabled=\{!canChooseTeacher \|\| busy \|\| teacherSaving\}/)
+  assert.match(facilitatorSyllabusSource, /onTeacherChange=\{\(item, instructionalTeacher\) => saveWeeklyReviewTeacher\(item, instructionalTeacher\)\}/)
+  assert.match(followUpsClientSource, /action: 'set_review_teacher'/)
   assert.match(legacyLearnSource, /redirect\(['"]\/learn['"]\)/)
   assert.doesNotMatch(legacyLearnSource, /followUpCards\.map|reviewRunId|getFollowUpRun|actOnFollowUp|useEffect/)
   assert.match(reviewPageSource, /redirect\(`\/session\/slate\?reviewRunId=/)

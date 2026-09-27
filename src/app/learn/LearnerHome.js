@@ -12,7 +12,7 @@ import { applyGoldenKeyToLesson } from '@/app/lib/goldenKeyClient'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
-import { getFollowUps, startFollowUp } from '@/app/lib/followUpsClient'
+import { getFollowUps, startFollowUp, updateReviewTeacherPreference } from '@/app/lib/followUpsClient'
 import { getCanonicalMasteryForLearner, slateEmojiForTier } from '@/app/lib/masteryClient'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
@@ -174,7 +174,7 @@ function LessonsPageInner(){
     return () => { cancelled = true }
   }, [learnerId, refreshTrigger])
 
-  const openFollowUp = async (card) => {
+  const openFollowUp = async (card, instructionalTeacher = null) => {
     if (!card || followUpStarting) return
     setFollowUpStarting(card.id)
     try {
@@ -182,7 +182,7 @@ function LessonsPageInner(){
         router.push(`/session/slate?reviewRunId=${encodeURIComponent(card.run_id)}`)
         return
       }
-      const result = await startFollowUp(learnerId, card.id)
+      const result = await startFollowUp(learnerId, card.id, instructionalTeacher || card?.instructional_teacher || 'slate')
       if (!result?.run?.id) throw new Error('Follow-Up could not start')
       router.push(`/session/slate?reviewRunId=${encodeURIComponent(result.run.id)}`)
     } catch (error) {
@@ -191,10 +191,28 @@ function LessonsPageInner(){
     }
   }
 
-  const startSyllabusReview = (item) => openFollowUp({
+  const startSyllabusReview = (item, instructionalTeacher) => openFollowUp({
     id: item?.review_card_id || item?.id,
     run_id: item?.review_run_id || null,
-  })
+    instructional_teacher: item?.review_teacher || null,
+  }, instructionalTeacher)
+
+  const saveWeeklyReviewTeacher = async (item, instructionalTeacher) => {
+    if (item?.review_type !== 'weekly_review' || !item?.cycle_key) return
+    await updateReviewTeacherPreference(learnerId, item.review_type, item.cycle_key, instructionalTeacher)
+    setSelectedSyllabusReview((current) => current?.cycle_key === item.cycle_key ? { ...current, review_teacher: instructionalTeacher } : current)
+    setFollowUpCards((current) => current.map((card) => card?.cycle_key === item.cycle_key && card?.review_type === item.review_type
+      ? { ...card, instructional_teacher: instructionalTeacher }
+      : card))
+    setSyllabusPayload((current) => current && Array.isArray(current.timeline_items)
+      ? {
+          ...current,
+          timeline_items: current.timeline_items.map((entry) => entry?.cycle_key === item.cycle_key && entry?.review_type === item.review_type
+            ? { ...entry, review_teacher: instructionalTeacher }
+            : entry),
+        }
+      : current)
+  }
 
   const lessonTitleLookup = useMemo(() => {
     const map = {}
@@ -1206,7 +1224,8 @@ function LessonsPageInner(){
           item={selectedSyllabusReview}
           busy={Boolean(followUpStarting)}
           onClose={() => setSelectedSyllabusReview(null)}
-          onStart={(item) => void startSyllabusReview(item)}
+          onStart={(item, instructionalTeacher) => void startSyllabusReview(item, instructionalTeacher)}
+          onTeacherChange={(item, instructionalTeacher) => saveWeeklyReviewTeacher(item, instructionalTeacher)}
         />}
         {syllabusPresentation.showFallbackMessage && (
           <div style={{ padding: '28px 30px', border: '1px solid #ded8cb', background: '#fffdf8', boxShadow: '0 12px 36px rgba(65,52,36,.08)' }}>

@@ -99,6 +99,36 @@ export function createSupabaseFollowUpRepository(admin, { client = null } = {}) 
       return ownedLearnerSettingsQuery({ admin, client, userId, learnerId, settings });
     },
 
+    async listReviewTeacherPreferences({ userId, learnerId }) {
+      const { data, error } = await admin
+        .from('learning_review_teacher_preferences')
+        .select('*')
+        .eq('facilitator_id', userId)
+        .eq('learner_id', learnerId)
+        .order('updated_at', { ascending: false });
+      if (error?.code === '42P01') return [];
+      if (error) throw new Error(error.message || 'Review teacher preference query failed');
+      return Array.isArray(data) ? data : [];
+    },
+
+    async upsertReviewTeacherPreference({ userId, learnerId, reviewType, cycleKey, instructionalTeacher }) {
+      const row = {
+        facilitator_id: userId,
+        learner_id: learnerId,
+        review_type: reviewType,
+        cycle_key: cycleKey,
+        instructional_teacher: instructionalTeacher,
+        updated_at: new Date().toISOString(),
+      };
+      const { data, error } = await admin
+        .from('learning_review_teacher_preferences')
+        .upsert(row, { onConflict: 'facilitator_id,learner_id,review_type,cycle_key' })
+        .select('*')
+        .single();
+      if (error) throw new Error(error.message || 'Review teacher preference update failed');
+      return data;
+    },
+
     async getProfileTimezone({ userId }) {
       const { data, error } = await admin
         .from('profiles')
@@ -201,14 +231,15 @@ export function createSupabaseFollowUpRepository(admin, { client = null } = {}) 
       return data;
     },
 
-    async findRunByCycle({ learnerId, reviewType, cycleKey }) {
-      const { data, error } = await admin
+    async findRunByCycle({ userId = null, learnerId, reviewType, cycleKey }) {
+      let query = admin
         .from('learning_review_runs')
         .select('*')
         .eq('learner_id', learnerId)
         .eq('review_type', reviewType)
-        .eq('cycle_key', cycleKey)
-        .maybeSingle();
+        .eq('cycle_key', cycleKey);
+      if (userId) query = query.eq('facilitator_id', userId);
+      const { data, error } = await query.maybeSingle();
       if (error) throw new Error('Review cycle query failed');
       return data || null;
     },

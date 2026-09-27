@@ -175,6 +175,27 @@ test('review projection uses contributing lesson subjects as the review header',
   assert.equal(projection.items[0].title, 'Weekly Review')
 })
 
+test('pending Weekly Review projects its saved teacher before all lessons are complete', () => {
+  const projection = buildSyllabusReviewProjection({
+    timelineItems: [completedLesson({ planned_date: '2026-09-21', readiness_state: 'available' })],
+    settings: { daily_followups_enabled: false, weekly_reviews_enabled: true, weekly_review_day: 'friday' },
+    today: '2026-09-24',
+    timeZone: 'America/New_York',
+    availability: {
+      cards: [],
+      completed_cycles: [],
+      review_teacher_preferences: [{
+        review_type: REVIEW_TYPES.WEEKLY_REVIEW,
+        cycle_key: 'America/New_York:2026-09-25',
+        instructional_teacher: 'webb',
+      }],
+    },
+  })
+  assert.equal(projection.items.length, 1)
+  assert.equal(projection.items[0].review_status, 'pending_lessons')
+  assert.equal(projection.items[0].review_teacher, 'webb')
+})
+
 test('Same-day Daily Review starts under its own protocol without changing delayed Daily Follow-Up semantics', async () => {
   const repository = repositoryFor()
   const cycle = {

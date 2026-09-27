@@ -71,9 +71,11 @@ export default function SyllabusReviewOverlay({
   item,
   onClose,
   onStart,
+  onTeacherChange,
   busy = false,
 } = {}) {
   const [teacher, setTeacher] = useState('slate')
+  const [teacherSaving, setTeacherSaving] = useState(false)
   useEffect(() => {
     setTeacher(['sonoma', 'webb', 'slate'].includes(item?.review_teacher) ? item.review_teacher : 'slate')
   }, [item?.review_teacher, item?.review_run_id, item?.review_card_id])
@@ -93,8 +95,26 @@ export default function SyllabusReviewOverlay({
   const progress = item.review_progress || {}
   const lessons = Array.isArray(progress.lessons) ? progress.lessons : []
   const canStart = !isHistory && item.review_ready === true && item.review_status !== 'completed'
+  const canChooseTeacher = !isHistory
+    && !['in_progress', 'completed'].includes(item.review_status)
+    && (canStart || (item.review_type === 'weekly_review' && typeof onTeacherChange === 'function'))
   const completedCount = Number(progress.completed_count || 0)
   const totalCount = Number(progress.total_count || 0)
+
+  async function handleTeacherChange(nextTeacher) {
+    const previousTeacher = teacher
+    setTeacher(nextTeacher)
+    if (item.review_type !== 'weekly_review' || typeof onTeacherChange !== 'function') return
+    setTeacherSaving(true)
+    try {
+      await onTeacherChange(item, nextTeacher)
+    } catch (error) {
+      setTeacher(previousTeacher)
+      window.alert(error?.message || 'Could not save the review teacher')
+    } finally {
+      setTeacherSaving(false)
+    }
+  }
 
   return (
     <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget) onClose?.() }}>
@@ -150,7 +170,7 @@ export default function SyllabusReviewOverlay({
                 ) : (
                   <label style={{ display: 'grid', gap: 6, maxWidth: 280 }}>
                     <span>Choose who will give the quiz</span>
-                    <select value={teacher} onChange={(event) => setTeacher(event.target.value)} disabled={!canStart || busy}>
+                    <select value={teacher} onChange={(event) => void handleTeacherChange(event.target.value)} disabled={!canChooseTeacher || busy || teacherSaving}>
                       {REVIEW_TEACHER_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.icon} {option.label}</option>)}
                     </select>
                   </label>
@@ -178,7 +198,7 @@ export default function SyllabusReviewOverlay({
             <button
               type="button"
               className={styles.primary}
-              disabled={!canStart || busy}
+              disabled={!canStart || busy || teacherSaving}
               onClick={() => canStart && onStart?.(item, teacher)}
             >
               {actionLabel(item, busy)}
