@@ -12,6 +12,7 @@ import SessionTakeoverDialog from './SessionTakeoverDialog'
 import MentorInterceptor from './MentorInterceptor'
 import FeatureHelpToast from '@/app/session/components/FeatureHelpToast'
 import HelpWorkspaceFrame from './HelpWorkspaceFrame'
+import CurriculumGuidanceEditor from '@/app/components/syllabus/CurriculumGuidanceEditor'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
 
 function fetchWithTimeout(url, options, timeoutMs = 15000) {
@@ -127,12 +128,13 @@ export default function CounselorClient() {
   const [captionSentences, setCaptionSentences] = useState([])
   const [captionIndex, setCaptionIndex] = useState(0)
   
-  // Help workspace state. The Syllabus is the primary facilitator workspace.
-  const [activeScreen, setActiveScreen] = useState('syllabus') // 'mentor' | 'syllabus' | 'lessons' | 'generator'
+  // Help Home is Ms. Sonoma. Facilitator workspaces open from Home when needed.
+  const [activeScreen, setActiveScreen] = useState('mentor') // 'mentor' | 'syllabus' | 'lessons' | 'generator'
   const [workspaceExpanded, setWorkspaceExpanded] = useState(false)
   const [syllabusView, setSyllabusView] = useState('week')
   const [workspaceHref, setWorkspaceHref] = useState('/facilitator')
   const [conversationDockOpen, setConversationDockOpen] = useState(true)
+  const [guidanceOverlayOpen, setGuidanceOverlayOpen] = useState(false)
   const toggleWorkspaceExpanded = useCallback(() => {
     setWorkspaceExpanded((current) => {
       const next = !current
@@ -2141,7 +2143,7 @@ export default function CounselorClient() {
             <>
               {/* Curriculum Guidance shortcut (top-left) */}
               <button
-                onClick={() => openSyllabusWorkspace('week', 'curriculum_guidance')}
+                onClick={() => setGuidanceOverlayOpen(true)}
                 aria-label="Guidance"
                 title="Open Curriculum Guidance"
                 style={{
@@ -2310,13 +2312,38 @@ export default function CounselorClient() {
                 workspaceHref={workspaceHref}
                 onNavigate={handleWorkspaceNavigate}
                 onToggleExpanded={toggleWorkspaceExpanded}
-                onOpenGuidance={() => openSyllabusWorkspace(syllabusView, 'curriculum_guidance')}
+                onOpenGuidance={() => setGuidanceOverlayOpen(true)}
                 conversationDockOpen={conversationDockOpen}
                 onToggleConversationDock={() => setConversationDockOpen(value => !value)}
               />
             </div>
           )}
 
+          {guidanceOverlayOpen && selectedLearnerId !== 'none' && accessToken && <CurriculumGuidanceEditor
+            revision={null}
+            forecastItems={[]}
+            includePlanStructure={false}
+            learnerId={selectedLearnerId}
+            accessToken={accessToken}
+            today=''
+            onClose={() => setGuidanceOverlayOpen(false)}
+            onSaved={(data) => {
+              setCurriculumGuidanceContext(JSON.stringify({
+                period: data?.period || null,
+                requirements: Array.isArray(data?.requirements) ? data.requirements : [],
+                goals: Array.isArray(data?.goals) ? data.goals : [],
+                mastery_state: Array.isArray(data?.state) ? data.state : []
+              }))
+            }}
+          />}
+
+          {guidanceOverlayOpen && (selectedLearnerId === 'none' || !accessToken) && <div style={{ position:'fixed', inset:0, zIndex:90, display:'grid', placeItems:'center', padding:18, background:'rgba(13,18,24,.62)' }}>
+            <section role='dialog' aria-modal='true' aria-label='Curriculum Guidance' style={{ width:'min(520px,100%)', padding:22, borderRadius:16, background:'#fff', boxShadow:'0 24px 80px rgba(0,0,0,.28)' }}>
+              <h2 style={{ marginTop:0 }}>Curriculum Guidance</h2>
+              <p>Select a learner before opening Curriculum Guidance.</p>
+              <button type='button' onClick={() => setGuidanceOverlayOpen(false)}>Close</button>
+            </section>
+          </div>}
           <MentorThoughtBubble thought={
             loading && loadingThought 
               ? { message: loadingThought, phase: 'loading' }
@@ -2528,7 +2555,7 @@ export default function CounselorClient() {
                               setActiveScreen('mentor')
                               setMenuOpen(false)
                             }}
-                            title="Ms. Sonoma Video"
+                            title="Help Home"
                             style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -2568,7 +2595,7 @@ export default function CounselorClient() {
                                 <source src="/media/ms-sonoma-3.mp4" type="video/mp4" />
                               </video>
                             </div>
-                            <span>Ms. Sonoma</span>
+                            <span>Home</span>
                           </button>
                           
                           <button
@@ -2657,7 +2684,7 @@ export default function CounselorClient() {
                   <div style={{ display: 'flex', gap: 4 }}>
                     <button
                       onClick={() => setActiveScreen('mentor')}
-                      title="Ms. Sonoma Video"
+                      title="Help Home"
                       style={{
                         width: 40,
                         height: 40,

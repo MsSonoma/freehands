@@ -10,23 +10,23 @@ const counselorRoute = fs.readFileSync(new URL('../../app/api/counselor/route.js
 test('Help uses the real Syllabus and Lesson Library as shared workspaces', () => {
   assert.match(frame, /import FacilitatorPage from '..\/..\/page'/)
   assert.match(frame, /import LessonLibraryPage from '..\/..\/lessons\/page'/)
+  assert.match(frame, /id: 'mentor', label: 'Home'/)
   assert.match(frame, /id: 'syllabus', label: 'Syllabus'/)
   assert.match(frame, /id: 'lessons', label: 'Lesson Library'/)
   assert.doesNotMatch(frame, /id: 'learners'/)
-  assert.match(client, /const \[activeScreen, setActiveScreen\] = useState\('syllabus'\)/)
-  assert.match(client, /Syllabus is the primary facilitator workspace/)
+  assert.match(client, /const \[activeScreen, setActiveScreen\] = useState\('mentor'\)/)
+  assert.match(client, /Help Home is Ms\. Sonoma/)
   assert.match(client, /<HelpWorkspaceFrame/)
   assert.doesNotMatch(client, /LessonsOverlay/)
   assert.doesNotMatch(client, /LessonMakerOverlay/)
 })
 
-test('Guidance shortcut opens Curriculum Guidance directly inside the embedded Syllabus', () => {
-  assert.match(client, /openSyllabusWorkspace\('week', 'curriculum_guidance'\)/)
-  assert.doesNotMatch(client, /enterWorkspaceExpanded\(\)[\s\S]{0,120}openSyllabusWorkspace\('week', 'curriculum_guidance'\)/)
-  assert.match(client, /params\.set\('overlay', 'curriculum-guidance'\)/)
-  assert.match(client, /facilitator:open-curriculum-guidance/)
-  assert.match(syllabus, /params\.get\('overlay'\) === 'curriculum-guidance' \? 'teaching_guidance' : ''/)
-  assert.match(syllabus, /facilitator:open-curriculum-guidance/)
+test('Guidance opens as a Help Home overlay without switching to Syllabus', () => {
+  assert.match(client, /import CurriculumGuidanceEditor/)
+  assert.match(client, /onClick=\{\(\) => setGuidanceOverlayOpen\(true\)\}/)
+  assert.match(client, /guidanceOverlayOpen && selectedLearnerId !== 'none' && accessToken && <CurriculumGuidanceEditor/)
+  assert.doesNotMatch(client, /onClick=\{\(\) => openSyllabusWorkspace\('week', 'curriculum_guidance'\)\}/)
+  assert.match(frame, /id: 'mentor', label: 'Home'/)
 })
 
 test('Help full workspace hides conversation by default but keeps it available on demand', () => {

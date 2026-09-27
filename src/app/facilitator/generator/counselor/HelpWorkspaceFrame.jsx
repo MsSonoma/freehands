@@ -5,6 +5,7 @@ import LessonLibraryPage from '../../lessons/page'
 import LessonMakerPage from '../page'
 
 const TABS = [
+  { id: 'mentor', label: 'Home' },
   { id: 'syllabus', label: 'Syllabus' },
   { id: 'lessons', label: 'Lesson Library' },
 ]
