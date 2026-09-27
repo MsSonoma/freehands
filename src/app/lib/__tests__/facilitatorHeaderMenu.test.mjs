@@ -14,7 +14,7 @@ test('facilitator header menu reflects the Syllabus-first information architectu
     ['Syllabus', '/facilitator'],
     ['Learners', '/facilitator/learners'],
     ['Lesson Library', '/facilitator/lessons'],
-    ['Ms. Sonoma', '/facilitator/help'],
+    ['Help', '/facilitator/help'],
     ['Notifications', '/facilitator/notifications'],
     ['Account', '/facilitator/account'],
   ]

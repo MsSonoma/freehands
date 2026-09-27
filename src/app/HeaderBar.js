@@ -12,7 +12,7 @@ const FACILITATOR_MENU_ITEMS = Object.freeze([
   { label: 'Syllabus', href: '/facilitator', primary: true },
   { label: 'Learners', href: '/facilitator/learners' },
   { label: 'Lesson Library', href: '/facilitator/lessons' },
-  { label: 'Ms. Sonoma', href: '/facilitator/help' },
+  { label: 'Help', href: '/facilitator/help' },
   { label: 'Notifications', href: '/facilitator/notifications', dividerBefore: true },
   { label: 'Account', href: '/facilitator/account' },
 ]);
