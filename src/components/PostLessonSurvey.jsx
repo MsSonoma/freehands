@@ -124,7 +124,7 @@ export default function PostLessonSurvey() {
 
   const handleContinue = () => {
     // Return to facilitator page with golden key unlocked
-    router.push('/facilitator/learners');
+    router.push('/facilitator?overlay=learners');
   };
 
   // Step 1: Password re-authentication

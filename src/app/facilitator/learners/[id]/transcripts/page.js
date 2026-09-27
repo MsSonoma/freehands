@@ -408,7 +408,7 @@ export default function LearnerTranscriptsPage({ params }) {
           <h1 style={{ margin: 0, fontSize: 22, fontWeight: 700 }}>
             Learning History{learnerName ? ` — ${learnerName}` : ''}
           </h1>
-          <Link href="/facilitator/learners"
+          <Link href="/facilitator?overlay=learners"
             style={{ textDecoration: 'none', color: '#111', border: '1px solid #111',
               padding: '8px 12px', borderRadius: 8, fontSize: 14 }}>
             ← Back to Learners

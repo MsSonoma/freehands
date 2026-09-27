@@ -8294,7 +8294,7 @@ function SessionPageV2Inner() {
           <h2 style={{ fontWeight: 700, marginBottom: 8 }}>Learner Profile Required</h2>
           <p style={{ marginBottom: 16 }}>{learnerError}</p>
           <a 
-            href="/facilitator/learners" 
+            href="/facilitator?overlay=learners"
             style={{ 
               display: 'inline-block',
               background: '#1f2937', 

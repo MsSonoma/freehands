@@ -753,7 +753,7 @@ function executeOpenSurface(args) {
     lessons: '/facilitator/lessons',
     generated_lessons: '/facilitator/generator/generated',
     lesson_maker: '/facilitator/generator/lesson-maker',
-    learners: '/facilitator/learners',
+    learners: '/facilitator?overlay=learners',
     prepare: '/facilitator/prepare',
     account: '/facilitator/account',
     notifications: '/facilitator/notifications',

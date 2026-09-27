@@ -5,7 +5,10 @@ const nextConfig = {
   distDir: process.env.NODE_ENV === 'production' ? '.next' : '.next-dev',
   // Intentionally minimal config; rely on Next.js defaults for dev/prod.
   async redirects() {
-    return [{ source: '/facilitator/syllabus', destination: '/facilitator', permanent: false }]
+    return [
+      { source: '/facilitator/syllabus', destination: '/facilitator', permanent: false },
+      { source: '/facilitator/learners', destination: '/facilitator?overlay=learners', permanent: false },
+    ]
   },
   async headers() {
     // Relax CSP specifically for billing routes to support Stripe Elements/iframes/fonts.

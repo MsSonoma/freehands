@@ -14,7 +14,11 @@
       ],
       "description": "The Facilitator Hub is the adult planning area centered on the learner's Syllabus, with access to Learners, Lesson Library, Ms. Sonoma facilitator Help, Account, and Notifications.",
       "howToUse": "Use Syllabus as the primary planning surface. Open Learners or Lesson Library for those workflows, or open Ms. Sonoma for facilitator-facing help.",
-      "relatedFeatures": ["facilitator-dashboard", "facilitator-help", "pin-security"]
+      "relatedFeatures": [
+        "facilitator-dashboard",
+        "facilitator-help",
+        "pin-security"
+      ]
     },
     {
       "id": "facilitator-page-account",
@@ -34,7 +38,10 @@
       ],
       "description": "The Account page is the central place to manage facilitator profile and security settings, connections, hotkeys, timezone, and billing links.",
       "howToUse": "Open a card to edit: Your Name; Email and Password; Two-Factor Auth; Facilitator PIN; Connected Accounts; Hotkeys; Timezone; Marketing Emails; Policies; Plan; Danger Zone. Notifications is also linked from here.",
-      "relatedFeatures": ["pin-security", "subscription-tiers"]
+      "relatedFeatures": [
+        "pin-security",
+        "subscription-tiers"
+      ]
     },
     {
       "id": "facilitator-page-account-settings-redirect",
@@ -47,7 +54,9 @@
       ],
       "description": "This route redirects to the unified Account page.",
       "howToUse": "If you land here, you’ll be sent to /facilitator/account automatically.",
-      "relatedFeatures": ["facilitator-page-account"]
+      "relatedFeatures": [
+        "facilitator-page-account"
+      ]
     },
     {
       "id": "facilitator-page-account-plan",
@@ -65,7 +74,9 @@
       ],
       "description": "The Plan page compares tiers and lets you start a trial, start checkout for a paid tier, or open subscription management.",
       "howToUse": "Pick a column and select a plan. Use “Manage subscription” to open the in-app billing management flow.",
-      "relatedFeatures": ["subscription-tiers"]
+      "relatedFeatures": [
+        "subscription-tiers"
+      ]
     },
     {
       "id": "facilitator-page-syllabus-month-view",
@@ -82,25 +93,36 @@
       ],
       "description": "Month view is a second view of the active Syllabus, not a separate calendar. It shows the same lessons, reviews, forecast suggestions, historical records, and no-school dates across a month.",
       "howToUse": "Open Syllabus and choose Month view beside the date range. Select a day cell to open that day's Syllabus items, then select a lesson or review to open its normal Syllabus details. The retired /facilitator/calendar URL redirects here.",
-      "relatedFeatures": ["calendar-view", "lesson-scheduling", "lesson-planner", "no-school-dates"]
+      "relatedFeatures": [
+        "calendar-view",
+        "lesson-scheduling",
+        "lesson-planner",
+        "no-school-dates"
+      ]
     },
     {
       "id": "facilitator-page-learners",
-      "title": "Learners (/facilitator/learners)",
+      "title": "Learners overlay (/facilitator?overlay=learners)",
       "keywords": [
-        "learners page",
+        "learners overlay",
         "manage learners",
         "student list",
         "edit learner",
+        "activate learner",
+        "learner settings",
         "targets",
         "timers",
         "ai features",
+        "review settings",
         "learner limit",
-        "/facilitator/learners"
+        "/facilitator?overlay=learners"
       ],
-      "description": "The Learners page lists all learners under your account and lets you select the active learner and edit learner-specific settings.",
-      "howToUse": "Select a learner to set the current learner context (mirrors the Learn side). Use edit actions/overlays to update basic info (name/grade), learning targets, AI-related toggles, and timer settings. Use delete to remove a learner. Use Add Learner to create a new learner, and Transcripts to view a learner’s transcript PDFs.",
-      "relatedFeatures": ["learner-profiles", "learner-dropdown"]
+      "description": "Learner management now lives inside the facilitator Syllabus as an overlay. The old /facilitator/learners URL redirects into this overlay.",
+      "howToUse": "Open Learners from the Syllabus or facilitator menu. Click a learner card to activate that learner. Click the gear beside a learner to open the tabbed settings overlay for Basic, Questions per Phase, AI Features, Timers, and Review Settings. Add learner starts learner creation; View Transcripts remains available from learner settings.",
+      "relatedFeatures": [
+        "learner-profiles",
+        "learner-selection"
+      ]
     },
     {
       "id": "facilitator-page-learners-add",
@@ -114,9 +136,11 @@
         "targets",
         "/facilitator/learners/add"
       ],
-      "description": "This page creates a new learner profile with name, grade, humor level, and per-phase targets.",
-      "howToUse": "Fill out Name and choose Grade. Optionally adjust Humor Level and the Comprehension/Exercise/Worksheet/Test targets. Save to create the learner, or Cancel to return.",
-      "relatedFeatures": ["learner-profiles"]
+      "description": "This page creates a new learner profile with name, grade, humor level, and per-phase targets, then returns to the Syllabus Learners overlay.",
+      "howToUse": "Fill out Name and choose Grade. Optionally adjust Humor Level and the Comprehension/Exercise/Worksheet/Test targets. Save or Cancel to return to the Learners overlay.",
+      "relatedFeatures": [
+        "learner-profiles"
+      ]
     },
     {
       "id": "facilitator-page-learner-transcripts",
@@ -130,8 +154,10 @@
         "/facilitator/learners/[id]/transcripts"
       ],
       "description": "This page lists transcript PDFs for a specific learner and provides Open/Download actions.",
-      "howToUse": "Open a transcript to view it in a new tab, or Download to save it locally. Use Back to Learners to return.",
-      "relatedFeatures": ["learner-transcript"]
+      "howToUse": "Open a transcript to view it in a new tab, or Download to save it locally. Back to Learners returns to the Syllabus Learners overlay.",
+      "relatedFeatures": [
+        "learner-transcript"
+      ]
     },
     {
       "id": "facilitator-page-lessons",
@@ -149,7 +175,12 @@
       ],
       "description": "The Lesson Library is where facilitators browse lessons, make them available to a learner, and optionally schedule them for specific dates.",
       "howToUse": "Select a learner, then use Search + Subject/Grade filters and the Owned/Downloadable/All scope. Click Load Lessons to fetch the list. Mark lessons Available to show them to the learner, and use scheduling controls to assign lessons to a calendar date. Use New Lesson to create from scratch or Generate Lesson to open the Generator.",
-      "relatedFeatures": ["lesson-library", "lesson-scheduling", "lesson-generation", "lesson-editing"]
+      "relatedFeatures": [
+        "lesson-library",
+        "lesson-scheduling",
+        "lesson-generation",
+        "lesson-editing"
+      ]
     },
     {
       "id": "facilitator-page-lessons-edit",
@@ -168,7 +199,11 @@
       ],
       "description": "The Lesson Editor lets you create a new lesson or edit an existing one, including content, questions, and visual aids. It also includes facilitator actions like notes, assigning, scheduling, and delete.",
       "howToUse": "Open with `new=1` to create a blank lesson, or pass a `key` to edit an existing lesson. Use Save to persist and return to Lessons. Use the Visual Aids tools to load/generate and manage images. Use the Notes/Schedule/Assign flows to apply learner-specific actions.",
-      "relatedFeatures": ["lesson-editing", "visual-aids", "lesson-scheduling"]
+      "relatedFeatures": [
+        "lesson-editing",
+        "visual-aids",
+        "lesson-scheduling"
+      ]
     },
     {
       "id": "facilitator-page-generator",
@@ -185,7 +220,10 @@
       ],
       "description": "Lesson Generator creates a new lesson from a structured form (grade, difficulty, subject, title, description, notes, vocabulary) and then links you into the Lesson Editor.",
       "howToUse": "Fill in Grade/Subject/Difficulty and a Title, then optionally add Description/Teaching Notes/Vocabulary. Use AI Rewrite buttons to rewrite individual fields. Click Generate Lesson, then use Edit This Lesson to open the Lesson Editor, or go Back to Lessons.",
-      "relatedFeatures": ["lesson-generation", "lesson-editing"]
+      "relatedFeatures": [
+        "lesson-generation",
+        "lesson-editing"
+      ]
     },
     {
       "id": "facilitator-page-generator-counselor-redirect",
@@ -198,7 +236,10 @@
       ],
       "description": "This legacy counselor route redirects to the Ms. Sonoma facilitator Help page.",
       "howToUse": "If you navigate here, you’ll be redirected to /facilitator/help.",
-      "relatedFeatures": ["facilitator-help", "facilitator-page-help"]
+      "relatedFeatures": [
+        "facilitator-help",
+        "facilitator-page-help"
+      ]
     },
     {
       "id": "facilitator-page-generator-lesson-maker-redirect",
@@ -210,7 +251,9 @@
       ],
       "description": "This route redirects to the main Lesson Generator page.",
       "howToUse": "If you land here, you’ll be sent to /facilitator/generator.",
-      "relatedFeatures": ["facilitator-page-generator"]
+      "relatedFeatures": [
+        "facilitator-page-generator"
+      ]
     },
     {
       "id": "facilitator-page-generator-generated-redirect",
@@ -222,7 +265,9 @@
       ],
       "description": "This route redirects to the Lessons page (generated lessons are shown in the Lesson Library).",
       "howToUse": "If you land here, you’ll be sent to /facilitator/lessons.",
-      "relatedFeatures": ["facilitator-page-lessons"]
+      "relatedFeatures": [
+        "facilitator-page-lessons"
+      ]
     },
     {
       "id": "facilitator-page-help",
@@ -237,7 +282,10 @@
       ],
       "description": "Facilitator Help is the adult-facing Ms. Sonoma experience for planning, evidence, product questions, supported actions, and deterministic describe/report behaviors.",
       "howToUse": "Ask Ms. Sonoma about facilitator tools, learner planning, lessons, or current supported app state. She can inspect evidence and use authorized tools while the facilitator retains educational authority.",
-      "relatedFeatures": ["facilitator-help", "report-vs-describe"]
+      "relatedFeatures": [
+        "facilitator-help",
+        "report-vs-describe"
+      ]
     },
     {
       "id": "facilitator-page-notifications",
@@ -252,7 +300,9 @@
       ],
       "description": "Notifications shows facilitator alerts and lets you configure what types of notifications are enabled.",
       "howToUse": "Use Refresh to reload. Click the settings button to open Notification Settings and toggle global enable/disable plus specific types. Use the read/unread control on each item to mark it read or unread.",
-      "relatedFeatures": ["facilitator-page-account"]
+      "relatedFeatures": [
+        "facilitator-page-account"
+      ]
     },
     {
       "id": "facilitator-page-hotkeys",

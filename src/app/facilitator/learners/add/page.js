@@ -107,7 +107,7 @@ export default function AddLearnerPage() {
 					},
 					humor_level: humorLevel,
 				});
-					router.push('/facilitator');
+					router.push('/facilitator?overlay=learners');
 			} finally {
 			setSaving(false);
 		}
@@ -140,7 +140,7 @@ export default function AddLearnerPage() {
 		<main style={{ padding: 24, maxWidth: 560, margin: '0 auto' }}>
 			<h1 style={{ marginTop: 0 }}>Add Learner</h1>
 
-			<div style={{ marginBottom: 16, color: '#4b5563', lineHeight: 1.5 }}>Add the learner name and grade. You can adjust advanced settings now or later from the Learners page.</div>
+			<div style={{ marginBottom: 16, color: '#4b5563', lineHeight: 1.5 }}>Add the learner name and grade. You can adjust advanced settings now or later from the Learners overlay.</div>
 
 			{atLimit && (
 				<div style={{ marginBottom:16, padding:12, border:'1px solid #eee', borderRadius:8, background:'#fff' }}>
@@ -230,7 +230,7 @@ export default function AddLearnerPage() {
 					<button type="submit" disabled={saving || atLimit} style={{ padding: '10px 14px', border: '1px solid #111', borderRadius: 8, background: atLimit ? '#999' : '#111', color: '#fff', opacity: atLimit ? 0.6 : 1 }}>
 						{saving ? 'Saving…' : 'Save'}
 					</button>
-					<button type="button" onClick={() => router.push('/facilitator/learners')} style={{ padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, background: '#fff' }}>
+					<button type="button" onClick={() => router.push('/facilitator?overlay=learners')} style={{ padding: '10px 14px', border: '1px solid #ddd', borderRadius: 8, background: '#fff' }}>
 						Cancel
 					</button>
 				</div>

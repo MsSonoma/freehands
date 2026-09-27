@@ -12,7 +12,7 @@ test('facilitator header menu reflects the Syllabus-first information architectu
 
   const expected = [
     ['Syllabus', '/facilitator'],
-    ['Learners', '/facilitator/learners'],
+    ['Learners', '/facilitator?overlay=learners'],
     ['Lesson Library', '/facilitator/lessons'],
     ['Help', '/facilitator/help'],
     ['Notifications', '/facilitator/notifications'],
@@ -40,4 +40,6 @@ test('desktop and mobile render the same canonical facilitator menu without icon
   assert.doesNotMatch(source, /<span aria-hidden="true">/)
   assert.doesNotMatch(source, />Lessons<\/Link>/)
   assert.doesNotMatch(source, />Calendar<\/Link>/)
+  assert.match(source, /href === '\/facilitator\?overlay=learners' && pathname === '\/facilitator'/)
+  assert.match(source, /facilitator:open-learners/)
 })

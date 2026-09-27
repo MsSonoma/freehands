@@ -176,8 +176,7 @@ export default function SyllabusDocument({
   role,
   learnerId = '',
   learnerName = '',
-  learnerOptions = [],
-  onChangeLearner = null,
+  onOpenLearners = null,
   lessonState = () => ({ hasLessonArtifact: false, hasProgress: false }),
   onSelectLesson = null,
   onSelectReview = null,
@@ -216,7 +215,6 @@ export default function SyllabusDocument({
   const [viewMode, setViewMode] = useState(() => initialView === 'month' ? 'month' : 'week')
   const [selectedMonthStart, setSelectedMonthStart] = useState(() => monthStartFor(restoreWeekStart || today))
   const [selectedMonthDate, setSelectedMonthDate] = useState('')
-  const [learnerMenuOpen, setLearnerMenuOpen] = useState(false)
   const selectedWeekRef = useRef(null)
   const establishedNowViewportKeyRef = useRef('')
   const resolvedFocusRef = useRef('')
@@ -229,7 +227,7 @@ export default function SyllabusDocument({
     if (initialView === 'month') setSelectedMonthStart(monthStartFor(restoreWeekStart || today))
     setSelectedMonthDate('')
   }, [initialView, restoreWeekStart, today])
-  useEffect(() => { setLearnerMenuOpen(false); setSelectedMonthDate('') }, [learnerId])
+  useEffect(() => { setSelectedMonthDate('') }, [learnerId])
   useEffect(() => selectedMonthDate ? acquirePageScrollLock() : undefined, [selectedMonthDate])
   useEffect(() => {
     if (!selectedMonthDate) return undefined
@@ -355,11 +353,8 @@ export default function SyllabusDocument({
           <p>Weekly learning plan</p>
         </div>
         {role === 'facilitator' && <div className={styles.documentHeaderActions}>
-          {typeof onChangeLearner === 'function' && learnerOptions.length > 1 && <div className={styles.changeLearnerControl}>
-            <button type="button" className={styles.changeLearnerButton} aria-haspopup="menu" aria-expanded={learnerMenuOpen} onClick={() => setLearnerMenuOpen((open) => !open)}>Change learner</button>
-            {learnerMenuOpen && <div className={styles.learnerMenu} role="menu" aria-label="Choose learner">
-              {learnerOptions.filter((learner) => String(learner.id) !== String(learnerId)).map((learner) => <button type="button" role="menuitem" key={learner.id} onClick={() => { setLearnerMenuOpen(false); onChangeLearner(learner.id) }}>{learner.name}</button>)}
-            </div>}
+          {typeof onOpenLearners === 'function' && <div className={styles.changeLearnerControl}>
+            <button type="button" className={styles.changeLearnerButton} aria-haspopup="dialog" onClick={onOpenLearners}>Learners</button>
           </div>}
           {onEditSection && <button type="button" className={styles.planDetailsButton} onClick={() => onEditSection('plan_details')}>Plan details</button>}
         </div>}

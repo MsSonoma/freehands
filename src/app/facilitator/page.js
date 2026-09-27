@@ -20,6 +20,8 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
 import { listLearners } from '@/app/facilitator/learners/clientApi'
+import { persistLearnerSelection } from '@/app/learn/learnerSelection.mjs'
+import LearnersOverlay from '@/app/facilitator/learners/components/LearnersOverlay'
 import { addWeeklyPatternSlot, moveSyllabusWeek, removeWeeklyPatternSlot, startOfSyllabusWeek, syllabusEntitlementsFor, weeklyPatternCapacity } from '@/app/lib/syllabus/timeline.mjs'
 import { buildAutomaticForecastAttemptIdentity, buildForecastViewIdentity, isCurrentForecastResponse } from '@/app/lib/syllabus/forecastRequestIdentity.mjs'
 import { buildLessonSchedulePayload, buildSchedulableLessonOptions, postLessonScheduleWithCapacityPin } from '@/app/lib/syllabus/syllabusScheduling.mjs'
@@ -108,7 +110,7 @@ export default function FacilitatorPage() {
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
   const [learners, setLearners] = useState([])
   const [learnerId, setLearnerId] = useState('')
-  const [learnerPickerOpen, setLearnerPickerOpen] = useState(false)
+  const [learnersOverlayOpen, setLearnersOverlayOpen] = useState(false)
   const [token, setToken] = useState('')
   const [planTier, setPlanTier] = useState('free')
   const [syllabus, setSyllabus] = useState(null)
@@ -154,6 +156,17 @@ export default function FacilitatorPage() {
   const forecastController = useRef(null)
   const materializationRequest = useRef(null)
   useEffect(() => () => { forecastController.current?.abort() }, [])
+  useEffect(() => {
+    const openLearners = () => {
+      setLearnersOverlayOpen(true)
+      if (typeof window === 'undefined') return
+      const url = new URL(window.location.href)
+      url.searchParams.set('overlay', 'learners')
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+    }
+    window.addEventListener('facilitator:open-learners', openLearners)
+    return () => window.removeEventListener('facilitator:open-learners', openLearners)
+  }, [])
   const forecastRequestSequence = useRef(0)
   const forecastViewIdentity = useRef('')
   const loadSequence = useRef(0)
@@ -192,6 +205,7 @@ export default function FacilitatorPage() {
         const preferredLearner = safeItems.some((item) => String(item.id) === String(requestedLearner)) ? requestedLearner : remembered
         if (returnDate) setSelectedWeekStart(startOfSyllabusWeek(returnDate))
         setInitialSyllabusView(returnParams.get('view') === 'month' ? 'month' : 'week')
+        setLearnersOverlayOpen(returnParams.get('overlay') === 'learners')
         setShowPortfolio(returnParams.get('portfolio') === '1')
         setReturnFocus({ plannedDate: returnDate, lessonKey: returnParams.get('lessonKey') || '', occurrenceId: returnParams.get('occurrenceId') || '', open: returnParams.get('review') !== 'complete' })
         setToken(session?.access_token || '')
@@ -837,7 +851,6 @@ export default function FacilitatorPage() {
   }
 
   function switchLearner(nextLearnerId) {
-    setLearnerPickerOpen(false)
     loadSequence.current++
     forecastAttempt.current = ''
     planningRequest.current = ''
@@ -866,12 +879,50 @@ export default function FacilitatorPage() {
     setRecoveryRequiredLineages(new Set())
     setError('')
     setForecastError('')
-    localStorage.setItem('learner_id', nextLearnerId)
+    const selectedLearner = learners.find((learner) => String(learner.id) === String(nextLearnerId))
+    if (typeof window !== 'undefined') {
+      if (selectedLearner) persistLearnerSelection(localStorage, selectedLearner)
+      else localStorage.setItem('learner_id', nextLearnerId)
+    }
     // Consume the old review deep-link when the educator explicitly changes learner.
     const url = new URL(window.location.href)
     url.searchParams.set('learnerId', nextLearnerId)
     for (const key of ['date', 'lessonKey', 'occurrenceId', 'review']) url.searchParams.delete(key)
     window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
+  function setLearnersOverlayVisibility(open) {
+    setLearnersOverlayOpen(open)
+    if (typeof window === 'undefined') return
+    const url = new URL(window.location.href)
+    if (open) url.searchParams.set('overlay', 'learners')
+    else if (url.searchParams.get('overlay') === 'learners') url.searchParams.delete('overlay')
+    window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+  }
+
+  function handleLearnersChanged(nextLearners) {
+    const safe = Array.isArray(nextLearners) ? nextLearners : []
+    setLearners(safe)
+    if (safe.some((learner) => String(learner.id) === String(learnerId))) return
+    if (safe[0]?.id) {
+      switchLearner(String(safe[0].id))
+      return
+    }
+    setLearnerId('')
+    setSyllabus(null)
+    setLearningProposal(null)
+    setLoading(false)
+    setContentLoading(false)
+    setSyllabusHydrated(false)
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('learner_id')
+      localStorage.removeItem('learner_name')
+      localStorage.removeItem('learner_grade')
+      localStorage.removeItem('learner_humor_level')
+      const url = new URL(window.location.href)
+      url.searchParams.delete('learnerId')
+      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
+    }
   }
 
   function openFacilitatorLessonWorkflow(item) {
@@ -934,13 +985,20 @@ export default function FacilitatorPage() {
           <h1>Syllabus</h1>
           <p>Create this learner&apos;s weekly learning plan.</p>
         </div>}
-        {learners.length > 1 && <div className={styles.learnerPicker}>
-          <button type="button" className={styles.learnerPickerButton} aria-haspopup="menu" aria-expanded={learnerPickerOpen} onClick={() => setLearnerPickerOpen((open) => !open)}>Change learner</button>
-          {learnerPickerOpen && <div className={styles.learnerPickerMenu} role="menu" aria-label="Choose learner">
-            {learners.filter((learner) => String(learner.id) !== String(learnerId)).map((learner) => <button type="button" role="menuitem" key={learner.id} onClick={() => switchLearner(learner.id)}>{learner.name}</button>)}
-          </div>}
-        </div>}
+        <div className={styles.learnerPicker}>
+          <button type="button" className={styles.learnerPickerButton} aria-haspopup="dialog" aria-expanded={learnersOverlayOpen} onClick={() => setLearnersOverlayVisibility(true)}>Learners</button>
+        </div>
       </header>}
+
+      <LearnersOverlay
+        isOpen={learnersOverlayOpen}
+        learners={learners}
+        activeLearnerId={learnerId}
+        planTier={planTier}
+        onClose={() => setLearnersOverlayVisibility(false)}
+        onActivate={switchLearner}
+        onLearnersChange={handleLearnersChanged}
+      />
 
       {error && <div className={styles.error} role="alert">{error}</div>}
       {!planningAccess.can_change_intent && <p className={styles.statusMessage}>{establishingFirstSyllabus ? 'Every plan can establish an initial Syllabus through explicit facilitator activation. Future replanning remains locked.' : 'The complete Syllabus remains visible. Future replanning is locked for this plan.'}</p>}
@@ -1018,8 +1076,7 @@ export default function FacilitatorPage() {
               learnerId={learnerId}
               planTier={planTier}
               learnerName={selectedLearner?.name || ''}
-              learnerOptions={learners}
-              onChangeLearner={switchLearner}
+              onOpenLearners={() => setLearnersOverlayVisibility(true)}
               onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
               onSelectReview={(item) => setSelectedSyllabusReview(item)}
               canScheduleLessons={canScheduleLessons && syllabusHydrated}

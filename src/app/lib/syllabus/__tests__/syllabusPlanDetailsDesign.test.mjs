@@ -23,12 +23,13 @@ test('active Syllabus exposes one Plan details button instead of the old disclos
   assert.doesNotMatch(documentSource, /revision\?\.goals\?\.legacy_notes/)
 })
 
-test('active Syllabus puts Change learner beside Plan details and removes the old learner dropdown band', () => {
+test('active Syllabus puts Learners beside Plan details and opens learner management as an overlay', () => {
   assert.match(documentSource, /className=\{styles\.documentHeaderActions\}/)
-  assert.match(documentSource, />Change learner<\/button>/)
+  assert.match(documentSource, /aria-haspopup="dialog"[\s\S]*>Learners<\/button>/)
   assert.match(documentSource, /className=\{styles\.planDetailsButton\}/)
-  assert.match(facilitatorHome, /learnerOptions=\{learners\}/)
-  assert.match(facilitatorHome, /onChangeLearner=\{switchLearner\}/)
+  assert.match(facilitatorHome, /<LearnersOverlay/)
+  assert.match(facilitatorHome, /onOpenLearners=\{\(\) => setLearnersOverlayVisibility\(true\)\}/)
+  assert.doesNotMatch(documentSource, /learnerMenuOpen|aria-label="Choose learner"/)
   assert.doesNotMatch(facilitatorHome, /<select value=\{learnerId\}/)
   assert.match(facilitatorHome, /syllabus\?\.has_active_syllabus && !draft \? styles\.activeSyllabusPage/)
   assert.match(facilitatorCss, /\.activeSyllabusPage \{ padding-top: 10px; \}/)

@@ -96,8 +96,8 @@ export default function FacilitatorTutorial() {
       const success = await markFacilitatorTutorialCompleted(user.id);
 
       if (success) {
-        // Redirect to learners page
-        router.push('/facilitator/learners');
+        // Open the facilitator Syllabus Learners overlay
+        router.push('/facilitator?overlay=learners');
       } else {
         setError('Could not save progress. Please try again.');
         setCompleting(false);
