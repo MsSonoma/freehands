@@ -2205,6 +2205,13 @@ export default function CounselorClient() {
     }
   }, [workspaceExpanded, conversationHistory, loading])
 
+  const handleHelpLearnersChange = useCallback((nextLearners) => {
+    const safeLearners = Array.isArray(nextLearners) ? nextLearners : []
+    setLearners(safeLearners)
+    if (selectedLearnerId !== 'none' && safeLearners.some((learner) => String(learner.id) === String(selectedLearnerId))) return
+    setSelectedLearnerId(String(safeLearners[0]?.id || 'none'))
+  }, [selectedLearnerId])
+
   if (!pinChecked) {
     return (
       <main style={{ padding: 24 }}>
@@ -2299,13 +2306,6 @@ export default function CounselorClient() {
   const activeLearnerName = selectedLearnerId !== 'none'
     ? String(learners.find((learner) => String(learner.id) === String(selectedLearnerId))?.name || '').trim()
     : ''
-
-  const handleHelpLearnersChange = useCallback((nextLearners) => {
-    const safeLearners = Array.isArray(nextLearners) ? nextLearners : []
-    setLearners(safeLearners)
-    if (selectedLearnerId !== 'none' && safeLearners.some((learner) => String(learner.id) === String(selectedLearnerId))) return
-    setSelectedLearnerId(String(safeLearners[0]?.id || 'none'))
-  }, [selectedLearnerId])
 
   return (
     <div style={{

@@ -28,6 +28,14 @@ test('Help resolves the shared active learner before Syllabus is opened', () => 
   assert.match(client, /persistLearnerSelection\(window\.localStorage, selectedLearner\)/)
 })
 
+test('Learners overlay callback is declared before all conditional Help returns', () => {
+  const callbackIndex = client.indexOf('const handleHelpLearnersChange = useCallback')
+  const firstEarlyReturnIndex = client.indexOf('if (!pinChecked) {')
+  assert.ok(callbackIndex >= 0)
+  assert.ok(firstEarlyReturnIndex >= 0)
+  assert.ok(callbackIndex < firstEarlyReturnIndex)
+})
+
 test('Active learner pill opens the shared Learners overlay on Help Home', () => {
   assert.match(client, /import LearnersOverlay from '@\/app\/facilitator\/learners\/components\/LearnersOverlay'/)
   assert.match(client, /const activeLearnerName = selectedLearnerId !== 'none'/)
