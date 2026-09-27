@@ -5,68 +5,71 @@ import test from 'node:test'
 
 const documentSource = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
 const documentCss = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.module.css'), 'utf8')
-const editorSource = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusPlanEditor.js'), 'utf8')
-const editorCss = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusPlanEditor.module.css'), 'utf8')
+const planEditorSource = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusPlanEditor.js'), 'utf8')
+const curriculumEditorSource = fs.readFileSync(path.resolve('src/app/components/syllabus/CurriculumGuidanceEditor.js'), 'utf8')
+const curriculumEditorCss = fs.readFileSync(path.resolve('src/app/components/syllabus/CurriculumGuidanceEditor.module.css'), 'utf8')
 const facilitatorHome = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
-const facilitatorSyllabus = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
+const learningForecastSource = fs.readFileSync(path.resolve('src/app/lib/syllabus/learningForecast.mjs'), 'utf8')
+const learningForecastServerSource = fs.readFileSync(path.resolve('src/app/lib/syllabus/learningForecast.server.mjs'), 'utf8')
 
-test('plan configuration is collapsed behind one Plan details disclosure and revision bookkeeping is hidden', () => {
-  assert.match(documentSource, /<details className=\{styles\.planDetails\}>\s*<summary>Plan details<\/summary>/)
-  assert.doesNotMatch(documentSource, /<details className=\{styles\.planDetails\} open/)
-  assert.doesNotMatch(documentSource, /styles\.revisionMark|>Revision \{revision\?\.revision_number/)
-  assert.doesNotMatch(documentCss, /\.revisionMark|\.summaryRule/)
-  const detailsStart = documentSource.indexOf('<details className={styles.planDetails}>')
-  const navStart = documentSource.indexOf('<nav className={styles.timelineNav}', detailsStart)
-  const details = documentSource.slice(detailsStart, navStart)
-  for (const label of ['Goals', 'Subjects', 'Weekly pattern', 'Curriculum guidance']) assert.ok(details.includes(label))
+test('active Syllabus exposes one Plan details button instead of the old disclosure', () => {
+  assert.match(documentSource, /onClick=\{\(\) => onEditSection\('plan_details'\)\}>Plan details<\/button>/)
+  assert.match(documentCss, /\.planDetailsAction/)
+  assert.doesNotMatch(documentSource, /<details className=\{styles\.planDetails\}>/)
+  assert.doesNotMatch(documentSource, /onEditSection\('(goals|subjects|weekly_pattern|teaching_guidance)'\)/)
+  assert.doesNotMatch(documentSource, /revision\?\.goals\?\.legacy_notes/)
 })
 
-test('weekly pattern is a Monday-through-Sunday calendar strip that keeps empty days visible', () => {
-  assert.match(documentSource, /const PLAN_DAYS = \['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'\]/)
-  assert.match(documentSource, /PLAN_DAYS\.map\(\(day\) =>/)
-  assert.match(documentSource, /subjects\.length \? subjects\.join\(' \/ '\) : <>\&mdash;<\/>/)
-  assert.match(documentCss, /\.planPatternScroller \{ overflow-x:auto/)
-  assert.match(documentCss, /\.planPatternGrid \{ min-width:690px; display:grid; grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/)
-  assert.match(editorCss, /\.weekScroller \{ overflow-x:auto/)
-  assert.match(editorCss, /\.weekGrid \{ min-width:760px; display:grid; grid-template-columns:repeat\(7,minmax\(0,1fr\)\)/)
+test('Plan Details combines subjects, weekly pattern, and Curriculum Guidance in one overlay', () => {
+  assert.match(planEditorSource, /section === 'teaching_guidance' \|\| section === 'plan_details'/)
+  assert.match(planEditorSource, /includePlanStructure=\{section === 'plan_details'\}/)
+  assert.match(curriculumEditorSource, /includePlanStructure = false/)
+  assert.match(curriculumEditorSource, /<h3>Subjects<\/h3>/)
+  assert.match(curriculumEditorSource, /<h3>Weekly pattern<\/h3>/)
+  assert.match(curriculumEditorSource, /<h3>Curriculum Guidance<\/h3>/)
+  assert.match(curriculumEditorSource, /<h3>Personal goals<\/h3>/)
+  assert.match(curriculumEditorSource, /fetch\('\/api\/syllabus\/activate'/)
+  assert.match(curriculumEditorSource, /planDetails:\s*\{[\s\S]*subjects: planDraft\.subjects,[\s\S]*weekly_pattern: planDraft\.weekly_pattern/)
+  assert.match(curriculumEditorSource, /fetch\('\/api\/syllabus\/curriculum'/)
 })
 
-test('all four plan sections remain editable through the shared facilitator editor', () => {
-  for (const section of ['goals', 'subjects', 'weekly_pattern', 'teaching_guidance']) {
-    assert.ok(documentSource.includes(`onEditSection('${section}')`))
-  }
-  assert.match(facilitatorHome, /import SyllabusPlanEditor from '@\/app\/components\/syllabus\/SyllabusPlanEditor'/)
-  assert.match(facilitatorHome, /onEditSection=\{planningAccess\.can_change_intent && syllabusHydrated \? openSectionEditor : null\}/)
-  assert.match(facilitatorHome, /editingSection && \(syllabus\?\.has_active_syllabus \|\| editingSection === 'teaching_guidance'\) && <SyllabusPlanEditor/)
-  assert.match(facilitatorSyllabus, /editingSection && \(syllabus\?\.has_active_syllabus \|\| editingSection === 'teaching_guidance'\) && <SyllabusPlanEditor/)
+test('combined Weekly Pattern remains a Monday-through-Sunday editable calendar strip', () => {
+  assert.match(curriculumEditorSource, /const PLAN_DAYS = \['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'\]/)
+  assert.match(curriculumEditorSource, /PLAN_DAYS\.map\(\(day\) =>/)
+  assert.match(curriculumEditorSource, />No lessons<\/p>/)
+  assert.match(curriculumEditorSource, /<option value="">Choose subject<\/option>/)
+  assert.match(curriculumEditorSource, /Object\.prototype\.hasOwnProperty\.call\(slotSubjects, day\)/)
+  assert.match(curriculumEditorCss, /\.weekScroller \{[\s\S]*overflow-x: auto/)
+  assert.match(curriculumEditorCss, /\.weekGrid \{[\s\S]*grid-template-columns: repeat\(7, minmax\(0, 1fr\)\)/)
 })
 
-test('shared editor preserves revision safety while plan configuration stays independent of lesson-capacity PINs', () => {
-  assert.match(editorSource, /fetch\('\/api\/syllabus\/activate'/)
-  assert.match(editorSource, /expectedActiveRevisionId: revision\.id/)
-  assert.match(editorSource, /planDetails:/)
-  assert.doesNotMatch(editorSource, /SYLLABUS_CAPACITY_PIN_REQUIRED|requestFacilitatorPinException/)
-  assert.doesNotMatch(editorSource, /snapshot:\s*\{\s*\.\.\.draft/)
-  assert.match(editorSource, /normalizedTeachingGuidance/)
-  assert.match(editorSource, /addWeeklyPatternSlot/)
-  assert.match(editorSource, /removeWeeklyPatternSlot/)
-  assert.doesNotMatch(editorSource, /revision_number|Revision \d|Revision \{/)
-  assert.match(documentSource, /revisionId: revision\?\.id/)
+test('Curriculum Guidance Personal goals are the only Syllabus goal editing source', () => {
+  assert.match(curriculumEditorSource, /<h3>Personal goals<\/h3>/)
+  assert.match(curriculumEditorSource, /goals: draft\.goals/)
+  assert.doesNotMatch(planEditorSource, /section === 'goals'/)
+  assert.doesNotMatch(planEditorSource, /goals: draft\.goals/)
+  assert.doesNotMatch(facilitatorHome, /<h2>Goals<\/h2>/)
+  assert.doesNotMatch(facilitatorHome, /Current learner goals notes/)
+  assert.doesNotMatch(learningForecastSource, /goals: activeRevision\.goals/)
+  assert.doesNotMatch(learningForecastServerSource, /goals: activeRevision\.goals/)
 })
 
-test('weekly pattern editor makes empty days explicit and does not preselect a subject', () => {
-  assert.match(editorSource, />No lessons<\/p>/)
-  assert.match(editorSource, /'Add lesson'/)
-  assert.match(editorSource, /<option value="">Choose subject<\/option>/)
-  assert.match(editorSource, /Object\.prototype\.hasOwnProperty\.call\(slotSubjects, day\)/)
-  assert.doesNotMatch(editorSource, /slotSubjects\[day\] \|\| subjectName\(draft\.subjects\?\.\[0\]\)/)
-  assert.match(editorSource, /Days can be empty/)
+test('Plan Details preserves revision safety and does not use lesson-capacity PINs', () => {
+  assert.match(curriculumEditorSource, /expectedActiveRevisionId: activeRevisionId/)
+  assert.match(curriculumEditorSource, /const planChanged = includePlanStructure/)
+  assert.match(curriculumEditorSource, /setActiveRevisionId\(planJson\?\.active_revision\?\.id \|\| activeRevisionId\)/)
+  assert.doesNotMatch(curriculumEditorSource, /SYLLABUS_CAPACITY_PIN_REQUIRED|requestFacilitatorPinException/)
 })
 
-test('Syllabus document reduces fixed vertical chrome before the lesson week', () => {
+test('proposal-only Curriculum Guidance stays focused while active Plan Details gets plan structure', () => {
+  assert.match(planEditorSource, /includePlanStructure=\{section === 'plan_details'\}/)
+  assert.match(curriculumEditorSource, /\{includePlanStructure && <>/)
+  assert.match(curriculumEditorSource, /includePlanStructure \? 'Plan Details' : 'Curriculum Guidance'/)
+})
+
+test('Syllabus document still keeps fixed vertical chrome compact before the lesson week', () => {
   assert.match(documentCss, /padding:clamp\(14px,2\.5vw,28px\)/)
   assert.match(documentCss, /\.documentHeader[^}]*padding-bottom:12px/)
   assert.match(documentCss, /\.timelineNav[^}]*padding:12px 0 6px/)
   assert.match(documentCss, /\.weekHeader[^}]*padding:11px 0 9px/)
-  assert.doesNotMatch(documentSource, /copy\.note/)
 })

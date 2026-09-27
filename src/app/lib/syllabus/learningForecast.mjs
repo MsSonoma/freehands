@@ -149,7 +149,6 @@ function inputIdentity({ activeRevision, forecastItems, proposedForecastItems, t
     active_revision_id: activeRevision.id,
     target_week: [targetWeekStart, targetWeekEnd],
     learner_grade: clean(learnerGrade) || null,
-    goals: activeRevision.goals,
     subjects: activeRevision.subjects,
     weekly_pattern: activeRevision.weekly_pattern,
     no_school_dates: [...blockedDates].sort(),

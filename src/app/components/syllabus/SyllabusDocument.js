@@ -26,8 +26,6 @@ const STATE_COPY = {
   future: { eyebrow: 'FUTURE / SYLLABUS', title: 'Coming up' },
 }
 
-const PLAN_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
-const PLAN_DAY_LABELS = { monday: 'Mon', tuesday: 'Tue', wednesday: 'Wed', thursday: 'Thu', friday: 'Fri', saturday: 'Sat', sunday: 'Sun' }
 
 function prettyDate(value, options) {
   return new Date(`${dateOnly(value)}T12:00:00.000Z`).toLocaleDateString(undefined, { timeZone: 'UTC', ...options })
@@ -54,14 +52,6 @@ function reviewTeacherTextForItem(item = {}) {
   return `${reviewTeacherSelectionIcon(teacher)} ${reviewTeacherSelectionLabel(teacher)}`
 }
 
-function subjectName(subject) {
-  return String(typeof subject === 'string' ? subject : subject?.name || '').trim()
-}
-
-function weeklyPatternSubjects(pattern, day) {
-  const entries = Array.isArray(pattern?.[day]) ? pattern[day] : []
-  return entries.map((entry) => String(typeof entry === 'string' ? entry : entry?.subject || '').trim()).filter(Boolean)
-}
 
 function curriculumForecastLabel(item) {
   const guidance = item?.metadata?.learning_forecast?.curriculum_guidance
@@ -208,32 +198,9 @@ export default function SyllabusDocument({
           <p>Weekly learning plan</p>
         </div>
       </header>
-      <details className={styles.planDetails}>
-        <summary>Plan details</summary>
-        <div className={styles.planDetailsBody}>
-          <section className={styles.planSection}>
-            <div className={styles.planSectionHeading}><h3>Goals</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('goals')}>Edit</button>}</div>
-            <p>{revision?.goals?.legacy_notes || 'No goal notes are recorded yet.'}</p>
-          </section>
-          <section className={styles.planSection}>
-            <div className={styles.planSectionHeading}><h3>Subjects</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('subjects')}>Edit</button>}</div>
-            <p>{(revision?.subjects || []).map(subjectName).filter(Boolean).join(' / ') || 'No subjects declared.'}</p>
-          </section>
-          <section className={`${styles.planSection} ${styles.planPatternSection}`}>
-            <div className={styles.planSectionHeading}><h3>Weekly pattern</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('weekly_pattern')}>Edit</button>}</div>
-            <div className={styles.planPatternScroller}><div className={styles.planPatternGrid}>
-              {PLAN_DAYS.map((day) => {
-                const subjects = weeklyPatternSubjects(revision?.weekly_pattern, day)
-                return <div className={styles.planPatternDay} key={day}><strong>{PLAN_DAY_LABELS[day]}</strong><span>{subjects.length ? subjects.join(' / ') : <>&mdash;</>}</span></div>
-              })}
-            </div></div>
-          </section>
-          <section className={styles.planSection}>
-            <div className={styles.planSectionHeading}><h3>Curriculum guidance</h3>{role === 'facilitator' && onEditSection && <button type="button" onClick={() => onEditSection('teaching_guidance')}>Edit</button>}</div>
-            <div className={styles.guidanceSummary}>{revision?.planning_policy?.curriculum_contract_version_id ? <p>Requirements, personal goals, and adaptive curriculum planning are active for this Syllabus.</p> : <p>No Curriculum Guidance contract is linked yet.</p>}</div>
-          </section>
-        </div>
-      </details>
+      {role === 'facilitator' && onEditSection && <div className={styles.planDetailsAction}>
+        <button type="button" onClick={() => onEditSection('plan_details')}>Plan details</button>
+      </div>}
 
       <nav className={styles.timelineNav} aria-label="Syllabus timeline navigation">
         <button type="button" onClick={() => move('earlier')}>&larr; Previous week</button>

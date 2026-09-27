@@ -941,7 +941,7 @@ export default function FacilitatorPage() {
       {!loading && learnerId && !syllabus?.has_active_syllabus && !draft && (
         <section className={styles.empty}>
           <h2>This learner does not have an active Syllabus yet.</h2>
-          <p>Build a proposal from the current weekly pattern, planning guidance, goals notes, and future planned lessons. Nothing is changed until you activate it.</p>
+          <p>Build a proposal from the current weekly pattern, Curriculum Guidance, and future planned lessons. Nothing is changed until you activate it.</p>
           <button className={styles.primaryButton} onClick={buildSeed} disabled={working}>{working ? 'Building…' : 'Build from current plan'}</button>
         </section>
       )}
@@ -957,12 +957,6 @@ export default function FacilitatorPage() {
 
           {draft && !editingActiveSyllabus ? <div className={styles.contentGrid}>
             <div className={styles.sideColumn}>
-              <section className={styles.section}>
-                <h2>Goals</h2>
-                <p className={styles.sectionIntro}>Current learner goals notes, preserved as legacy seed material.</p>
-                {draft && planningAccess.can_change_intent ? <textarea rows={6} value={draft.goals?.legacy_notes || ''} onChange={(event) => setDraft({ ...draft, goals: { ...draft.goals, legacy_notes: event.target.value } })} placeholder="Goals and notes for this learner" /> : <p className={styles.prewrap}>{displayRevision.goals?.legacy_notes || 'No goals notes yet.'}</p>}
-              </section>
-
               <section className={styles.section}>
                 <h2>Subjects</h2>
                 {draft && planningAccess.can_change_intent ? <><ul className={styles.subjectEditor}>{draft.subjects.map((subject) => {

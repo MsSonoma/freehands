@@ -150,7 +150,6 @@ export async function createLearningForecastProposal({
         context: {
           learner: { grade: learner.grade || null },
           syllabus: {
-            goals: activeRevision.goals,
             subjects: activeRevision.subjects,
             teaching_guidance: activeRevision.teaching_guidance,
             planning_policy: activeRevision.planning_policy,

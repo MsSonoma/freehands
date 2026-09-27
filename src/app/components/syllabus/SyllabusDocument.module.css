@@ -3,22 +3,8 @@
 .documentHeader h2 { margin:2px 0 3px; font-size:clamp(24px,3.2vw,34px); font-weight:500; }
 .documentHeader p { margin:0; color:#6c6258; font-size:13px; }
 .kicker,.stateLabel,.subject { font-family:Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.09em; font-size:10px; font-weight:800; }
-.planDetails { border-bottom:1px solid #cfc6b8; font-family:Roboto,sans-serif; }
-.planDetails > summary { padding:10px 0; cursor:pointer; color:#3d3832; font:800 12px Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.06em; }
-.planDetailsBody { display:grid; grid-template-columns:1fr 1fr; gap:14px 24px; padding:4px 0 14px; }
-.planSection { min-width:0; }
-.planSectionHeading { display:flex; align-items:center; justify-content:space-between; gap:10px; margin-bottom:5px; }
-.planSectionHeading h3 { margin:0; font:800 11px Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.05em; }
-.planSectionHeading button { border:0; background:transparent; color:#6b382c; cursor:pointer; font:700 11px Montserrat,sans-serif; }
-.planSection > p,.guidanceSummary p { margin:0; color:#4f4942; font-size:13px; line-height:1.45; white-space:pre-wrap; }
-.planPatternSection { grid-column:1 / -1; }
-.planPatternScroller { overflow-x:auto; padding-bottom:3px; }
-.planPatternGrid { min-width:690px; display:grid; grid-template-columns:repeat(7,minmax(0,1fr)); border:1px solid #d8d0c5; border-radius:8px; overflow:hidden; }
-.planPatternDay { min-width:0; padding:8px 7px; border-right:1px solid #ded8cf; background:#fff; text-align:center; }
-.planPatternDay:last-child { border-right:0; }
-.planPatternDay strong { display:block; margin-bottom:5px; color:#6b382c; font:800 10px Montserrat,sans-serif; text-transform:uppercase; }
-.planPatternDay span { display:block; color:#4f4942; font:12px/1.35 Roboto,sans-serif; overflow-wrap:anywhere; }
-.guidanceSummary { display:grid; gap:4px; }
+.planDetailsAction { padding:8px 0 10px; border-bottom:1px solid #cfc6b8; font-family:Roboto,sans-serif; }
+.planDetailsAction button { min-height:34px; padding:7px 12px; border:1px solid #cfc6b8; border-radius:8px; background:#fffdf8; color:#6b382c; cursor:pointer; font:800 11px Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.05em; }
 .timelineNav { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; padding:12px 0 6px; }
 .timelineNav button,.returnNow { min-height:34px; border:0; background:transparent; color:#6b382c; cursor:pointer; font:700 12px Montserrat,sans-serif; }
 .timelineNav button:first-child { justify-self:start; }.timelineNav button:nth-child(3) { justify-self:end; }.timelineNav button:disabled { opacity:.3; cursor:default; }
@@ -87,4 +73,4 @@
 .reviewChecklist > span { display:grid; grid-template-columns:16px minmax(0,1fr); gap:4px; align-items:start; }
 .reviewChecklist b { font-weight:800; color:#4f6b4f; }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }
-@media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader { align-items:stretch; flex-direction:column; gap:7px; }.weekHeaderActions { justify-content:space-between; } .planDetailsBody { grid-template-columns:1fr; } .planPatternSection { grid-column:auto; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; } .weekHeader time { white-space:normal; } }
+@media (max-width:680px) { .document { padding:12px; } .documentHeader,.weekHeader { align-items:stretch; flex-direction:column; gap:7px; }.weekHeaderActions { justify-content:space-between; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; } .weekHeader time { white-space:normal; } }

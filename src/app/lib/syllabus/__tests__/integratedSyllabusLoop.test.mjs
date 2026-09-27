@@ -206,7 +206,7 @@ test('integrated educator intent, evidence, proposal identity, and exact existin
     ['2026-09-02', 'math'],
   ])
   assert.equal(first.forecast_items.find((row) => row.lineage_id === authoredIntent().lineage_id).title, authoredIntent().title)
-  assert.equal(contexts[0].syllabus.goals.learning, activeRevision().goals.learning)
+  assert.equal(Object.hasOwn(contexts[0].syllabus, 'goals'), false)
   assert.equal(contexts[0].evidence_summaries[0].independent, 'independent_success')
   assert.equal(JSON.stringify(contexts[0]).includes('RAW TRANSCRIPT'), false)
   assert.equal(JSON.stringify(contexts[0]).includes('events'), false)

@@ -537,7 +537,7 @@ test('active and suggested entries share deterministic exact-slot ordering insid
 
 test('Free initial Syllabus establishment is review-only in the retained editor', () => {
   const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../facilitator/page.js'), 'utf8')
-  assert.match(source, /draft && planningAccess\.can_change_intent \? <textarea/)
+  assert.doesNotMatch(source, /<h2>Goals<\/h2>|Current learner goals notes|Goals and notes for this learner/)
   assert.match(source, /draft && planningAccess\.can_change_intent \? <><ul/)
   assert.match(source, /disabled={!planningAccess\.can_change_intent}/)
   assert.match(source, /canActivateDraft = establishingFirstSyllabus \? planningAccess\.can_establish_syllabus : planningAccess\.can_change_intent/)

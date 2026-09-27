@@ -24,10 +24,11 @@ function subjectName(subject) {
 
 function sectionLabel(value) {
   return ({
-    goals: 'Goals',
+
     subjects: 'Subjects',
     weekly_pattern: 'Weekly Pattern',
     teaching_guidance: 'Curriculum Guidance',
+    plan_details: 'Plan Details',
   })[value] || 'Plan details'
 }
 
@@ -210,7 +211,7 @@ export default function SyllabusPlanEditor({
           learnerId,
           expectedActiveRevisionId: revision.id,
           planDetails: {
-            goals: draft.goals,
+
             subjects: draft.subjects,
             weekly_pattern: draft.weekly_pattern,
             teaching_guidance: normalizedTeachingGuidance(draft.teaching_guidance),
@@ -229,14 +230,14 @@ export default function SyllabusPlanEditor({
     }
   }
 
-  if (section === 'teaching_guidance') return <CurriculumGuidanceEditor revision={revision} learnerId={learnerId} accessToken={accessToken} today={today} onClose={onClose} onSaved={onSaved} />
+  if (section === 'teaching_guidance' || section === 'plan_details') return <CurriculumGuidanceEditor revision={revision} forecastItems={forecastItems} includePlanStructure={section === 'plan_details'} learnerId={learnerId} accessToken={accessToken} today={today} onClose={onClose} onSaved={onSaved} />
 
   return <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget && !working) onClose?.() }}>
     <section className={styles.editor} role="dialog" aria-modal="true" aria-label={`Edit ${sectionLabel(section)}`}>
       <header><div><p>Syllabus plan details</p><h2>{sectionLabel(section)}</h2></div><button type="button" onClick={onClose} disabled={working}>Close</button></header>
       {error && <div className={styles.error} role="alert">{error}</div>}
       <div className={styles.body}>
-        {section === 'goals' && <label className={styles.fullField}>Goals<textarea rows={7} value={draft.goals?.legacy_notes || ''} onChange={(event) => setDraft((current) => ({ ...current, goals: { ...current.goals, legacy_notes: event.target.value } }))} /></label>}
+
 
         {section === 'subjects' && <>
           <ul className={styles.subjectEditor}>{(draft.subjects || []).map((subject) => {

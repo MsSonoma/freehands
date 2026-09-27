@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
+import { addWeeklyPatternSlot, removeWeeklyPatternSlot } from '@/app/lib/syllabus/timeline.mjs'
 import styles from './CurriculumGuidanceEditor.module.css'
 
 function clean(value) {
@@ -98,6 +99,24 @@ function nextPlanningPeriod(current) {
 
 function subjectName(value) {
   return clean(typeof value === 'string' ? value : value?.name)
+}
+
+const PLAN_DAYS = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday']
+const PLAN_DAY_LABELS = Object.fromEntries(PLAN_DAYS.map((day) => [day, day[0].toUpperCase() + day.slice(1, 3)]))
+
+function referencedSubjectKeys(weeklyPattern, forecastItems) {
+  const keys = new Set()
+  for (const entries of Object.values(weeklyPattern || {})) {
+    for (const entry of Array.isArray(entries) ? entries : []) {
+      const subject = clean(typeof entry === 'string' ? entry : entry?.subject)
+      if (subject) keys.add(subject.toLocaleLowerCase())
+    }
+  }
+  for (const item of forecastItems || []) {
+    const subject = clean(item?.subject)
+    if (subject) keys.add(subject.toLocaleLowerCase())
+  }
+  return keys
 }
 
 function newKey(prefix) {
@@ -198,6 +217,8 @@ function decisionTitle(decision) {
 
 export default function CurriculumGuidanceEditor({
   revision,
+  forecastItems = [],
+  includePlanStructure = false,
   learnerId,
   accessToken,
   today = '',
@@ -210,8 +231,29 @@ export default function CurriculumGuidanceEditor({
   const [working, setWorking] = useState(false)
   const [error, setError] = useState('')
   const [showReasoning, setShowReasoning] = useState(false)
+  const initialPlan = () => ({
+    subjects: structuredClone(revision?.subjects || []),
+    weekly_pattern: structuredClone(revision?.weekly_pattern || {}),
+  })
+  const [planDraft, setPlanDraft] = useState(initialPlan)
+  const [planBaseline, setPlanBaseline] = useState(initialPlan)
+  const [activeRevisionId, setActiveRevisionId] = useState(revision?.id || '')
+  const [newSubject, setNewSubject] = useState('')
+  const [slotSubjects, setSlotSubjects] = useState({})
 
   useEffect(() => acquirePageScrollLock(), [])
+
+  useEffect(() => {
+    const nextPlan = {
+      subjects: structuredClone(revision?.subjects || []),
+      weekly_pattern: structuredClone(revision?.weekly_pattern || {}),
+    }
+    setPlanDraft(nextPlan)
+    setPlanBaseline(structuredClone(nextPlan))
+    setActiveRevisionId(revision?.id || '')
+    setNewSubject('')
+    setSlotSubjects({})
+  }, [revision?.id, revision?.subjects, revision?.weekly_pattern])
 
   const loadPeriod = useCallback(async (periodId = '', signal = null) => {
     if (!learnerId || !accessToken) return
@@ -253,9 +295,21 @@ export default function CurriculumGuidanceEditor({
   }, [onClose, working])
 
   const stateByKey = useMemo(() => new Map((bundle?.state || []).map((row) => [row.requirement_key, row])), [bundle?.state])
+  const referencedSubjects = useMemo(() => {
+    const keys = referencedSubjectKeys(planDraft.weekly_pattern, forecastItems)
+    for (const item of draft?.requirements || []) {
+      const subject = clean(item?.subject)
+      if (subject) keys.add(subject.toLocaleLowerCase())
+    }
+    for (const goal of draft?.goals || []) {
+      const subject = clean(goal?.subject)
+      if (subject) keys.add(subject.toLocaleLowerCase())
+    }
+    return keys
+  }, [planDraft.weekly_pattern, forecastItems, draft?.requirements, draft?.goals])
   const subjectOptions = useMemo(() => {
     const values = new Map()
-    for (const item of revision?.subjects || []) {
+    for (const item of planDraft.subjects || []) {
       const name = subjectName(item)
       if (name) values.set(name.toLocaleLowerCase(), name)
     }
@@ -266,7 +320,7 @@ export default function CurriculumGuidanceEditor({
       if (clean(item.subject)) values.set(clean(item.subject).toLocaleLowerCase(), clean(item.subject))
     }
     return [...values.values()]
-  }, [revision?.subjects, draft?.requirements, bundle?.recommendations])
+  }, [planDraft.subjects, draft?.requirements, bundle?.recommendations])
 
   const selectedRecommendationKeys = useMemo(
     () => new Set((draft?.requirements || []).map((item) => (
@@ -279,6 +333,56 @@ export default function CurriculumGuidanceEditor({
     () => (bundle?.recommendations || []).filter((item) => !selectedRecommendationKeys.has(recommendationIdentity(item))),
     [bundle?.recommendations, selectedRecommendationKeys],
   )
+
+  function addSubject() {
+    const name = newSubject.trim()
+    if (!name) return
+    setPlanDraft((current) => {
+      const exists = (current.subjects || []).some((subject) => subjectName(subject).toLocaleLowerCase() === name.toLocaleLowerCase())
+      return exists ? current : { ...current, subjects: [...(current.subjects || []), { name, source: 'facilitator' }] }
+    })
+    setNewSubject('')
+  }
+
+  function removeSubject(name) {
+    if (referencedSubjects.has(name.toLocaleLowerCase())) return
+    setPlanDraft((current) => ({
+      ...current,
+      subjects: (current.subjects || []).filter((subject) => subjectName(subject).toLocaleLowerCase() !== name.toLocaleLowerCase()),
+    }))
+  }
+
+  function updatePatternSlot(day, index, subject) {
+    setPlanDraft((current) => {
+      const weeklyPattern = structuredClone(current.weekly_pattern || {})
+      weeklyPattern[day] = Array.isArray(weeklyPattern[day]) ? weeklyPattern[day] : []
+      weeklyPattern[day][index] = { subject }
+      return { ...current, weekly_pattern: weeklyPattern }
+    })
+  }
+
+  function beginPatternSlot(day) {
+    setSlotSubjects((current) => ({ ...current, [day]: '' }))
+  }
+
+  function cancelPatternSlot(day) {
+    setSlotSubjects((current) => {
+      const next = { ...current }
+      delete next[day]
+      return next
+    })
+  }
+
+  function addPatternSlot(day) {
+    const subject = clean(slotSubjects[day])
+    if (!subject) return
+    setPlanDraft((current) => ({ ...current, weekly_pattern: addWeeklyPatternSlot(current.weekly_pattern, day, subject) }))
+    cancelPatternSlot(day)
+  }
+
+  function removePatternSlot(day, index) {
+    setPlanDraft((current) => ({ ...current, weekly_pattern: removeWeeklyPatternSlot(current.weekly_pattern, day, index) }))
+  }
 
   function updatePeriod(key, value) {
     setDraft((current) => ({ ...current, period: { ...current.period, [key]: value } }))
@@ -428,6 +532,28 @@ export default function CurriculumGuidanceEditor({
     setWorking(true)
     setError('')
     try {
+      const planChanged = includePlanStructure && JSON.stringify(planDraft) !== JSON.stringify(planBaseline)
+      if (planChanged) {
+        if (!activeRevisionId) throw new Error('The active Syllabus revision could not be found for Plan Details.')
+        const planResponse = await fetch('/api/syllabus/activate', {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            learnerId,
+            expectedActiveRevisionId: activeRevisionId,
+            planDetails: {
+              subjects: planDraft.subjects,
+              weekly_pattern: planDraft.weekly_pattern,
+              change_reason: draft.change_reason || 'Facilitator updated Plan Details',
+            },
+          }),
+        })
+        const planJson = await planResponse.json().catch(() => ({}))
+        if (!planResponse.ok) throw new Error(planJson.error || 'Could not save subjects and weekly pattern')
+        setPlanBaseline(structuredClone(planDraft))
+        setActiveRevisionId(planJson?.active_revision?.id || activeRevisionId)
+      }
+
       const response = await fetch('/api/syllabus/curriculum', {
         method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
@@ -451,7 +577,7 @@ export default function CurriculumGuidanceEditor({
       await onSaved?.(json)
       onClose?.()
     } catch (cause) {
-      setError(cause.message || 'Could not save Curriculum Guidance')
+      setError(cause.message || (includePlanStructure ? 'Could not save Plan Details' : 'Could not save Curriculum Guidance'))
     } finally {
       setWorking(false)
     }
@@ -459,8 +585,8 @@ export default function CurriculumGuidanceEditor({
 
   if (loading || !draft) {
     return <div className={styles.backdrop}>
-      <section className={styles.editor} role="dialog" aria-modal="true" aria-label="Curriculum Guidance">
-        <header className={styles.header}><div><p>Syllabus</p><h2>Curriculum Guidance</h2></div><button type="button" className={styles.secondary} onClick={onClose}>Close</button></header>
+      <section className={styles.editor} role="dialog" aria-modal="true" aria-label={includePlanStructure ? 'Plan Details' : 'Curriculum Guidance'}>
+        <header className={styles.header}><div><p>Syllabus</p><h2>{includePlanStructure ? 'Plan Details' : 'Curriculum Guidance'}</h2></div><button type="button" className={styles.secondary} onClick={onClose}>Close</button></header>
         <div className={styles.body}><div className={styles.empty}>Loading curriculum guidance...</div></div>
       </section>
     </div>
@@ -472,18 +598,85 @@ export default function CurriculumGuidanceEditor({
   const upcomingPeriodId = clean(bundle?.upcoming_period?.id)
 
   return <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget && !working) onClose?.() }}>
-    <section className={styles.editor} role="dialog" aria-modal="true" aria-label="Curriculum Guidance">
+    <section className={styles.editor} role="dialog" aria-modal="true" aria-label={includePlanStructure ? 'Plan Details' : 'Curriculum Guidance'}>
       <header className={styles.header}>
-        <div><p>Syllabus</p><h2>Curriculum Guidance</h2></div>
+        <div><p>Syllabus</p><h2>{includePlanStructure ? 'Plan Details' : 'Curriculum Guidance'}</h2></div>
         <button type="button" className={styles.secondary} onClick={onClose} disabled={working}>Close</button>
       </header>
 
       {error && <div className={styles.error} role="alert">{error}</div>}
 
       <div className={styles.body}>
+        {includePlanStructure && <>
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
-            <div><h3>Planning period</h3><span>Requirements and goals are reviewed at the end of this period.</span></div>
+            <div><h3>Subjects</h3><span>These subjects are available to the weekly pattern and Curriculum Guidance.</span></div>
+          </div>
+          <div className={styles.subjectList}>
+            {(planDraft.subjects || []).map((subject) => {
+              const name = subjectName(subject)
+              const referenced = referencedSubjects.has(name.toLocaleLowerCase())
+              return <div className={styles.subjectRow} key={name}>
+                <span><strong>{name}</strong>{referenced && <small>Used by the weekly pattern, Curriculum Guidance, or a prepared future lesson</small>}</span>
+                <button type="button" className={styles.danger} disabled={referenced} onClick={() => removeSubject(name)}>Remove</button>
+              </div>
+            })}
+          </div>
+          <div className={styles.addSubject}>
+            <input
+              value={newSubject}
+              onChange={(event) => setNewSubject(event.target.value)}
+              onKeyDown={(event) => { if (event.key === 'Enter') { event.preventDefault(); addSubject() } }}
+              placeholder="Add a subject"
+            />
+            <button type="button" className={styles.secondary} onClick={addSubject}>Add subject</button>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div><h3>Weekly pattern</h3><span>Your recurring lesson pattern. Days can be empty, and a subject can appear more than once.</span></div>
+          </div>
+          <div className={styles.weekScroller}>
+            <div className={styles.weekGrid}>
+              {PLAN_DAYS.map((day) => {
+                const entries = planDraft.weekly_pattern?.[day] || []
+                const adding = Object.prototype.hasOwnProperty.call(slotSubjects, day)
+                return <section className={styles.dayCell} key={day}>
+                  <strong>{PLAN_DAY_LABELS[day]}</strong>
+                  {entries.length === 0 && <p className={styles.emptyDay}>No lessons</p>}
+                  <ul>{entries.map((item, index) => <li key={`${day}-${index}`}>
+                    <select value={typeof item === 'string' ? item : item.subject} onChange={(event) => updatePatternSlot(day, index, event.target.value)}>
+                      {(planDraft.subjects || []).map((subject) => { const name = subjectName(subject); return <option key={name} value={name}>{name}</option> })}
+                    </select>
+                    <button type="button" className={styles.danger} onClick={() => removePatternSlot(day, index)} aria-label={`Remove ${PLAN_DAY_LABELS[day]} slot ${index + 1}`}>Remove</button>
+                  </li>)}</ul>
+                  {adding ? <div className={styles.patternAdd}>
+                    <select autoFocus value={slotSubjects[day]} onChange={(event) => setSlotSubjects((current) => ({ ...current, [day]: event.target.value }))}>
+                      <option value="">Choose subject</option>
+                      {(planDraft.subjects || []).map((subject) => { const name = subjectName(subject); return <option key={name} value={name}>{name}</option> })}
+                    </select>
+                    <div className={styles.patternActions}>
+                      <button type="button" className={styles.secondary} disabled={!slotSubjects[day]} onClick={() => addPatternSlot(day)}>Add</button>
+                      <button type="button" className={styles.secondary} onClick={() => cancelPatternSlot(day)}>Cancel</button>
+                    </div>
+                  </div> : <button type="button" className={styles.secondary} disabled={(planDraft.subjects || []).length === 0} onClick={() => beginPatternSlot(day)}>{entries.length ? 'Add another lesson' : 'Add lesson'}</button>}
+                </section>
+              })}
+            </div>
+          </div>
+        </section>
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div><h3>Curriculum Guidance</h3><span>Required learning and personal goals are the planning guidance Ms. Sonoma uses with learner evidence.</span></div>
+          </div>
+        </section>
+        </>}
+
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div><h3>Planning period</h3><span>Requirements and personal goals are reviewed at the end of this period.</span></div>
             <div className={styles.actions}>
               {currentPeriodId && selectedPeriodId !== currentPeriodId && <button type="button" className={styles.secondary} onClick={() => loadPeriod(currentPeriodId)}>Current period</button>}
               {upcomingPeriodId && selectedPeriodId !== upcomingPeriodId && <button type="button" className={styles.secondary} onClick={() => loadPeriod(upcomingPeriodId)}>Open next period</button>}
@@ -620,7 +813,7 @@ export default function CurriculumGuidanceEditor({
 
       <footer className={styles.footer}>
         <button type="button" className={styles.secondary} onClick={onClose} disabled={working}>Cancel</button>
-        <button type="button" className={styles.primary} onClick={save} disabled={working || !draft.period.label || !draft.period.starts_on || !draft.period.ends_on}>{working ? 'Saving...' : 'Save Curriculum Guidance'}</button>
+        <button type="button" className={styles.primary} onClick={save} disabled={working || !draft.period.label || !draft.period.starts_on || !draft.period.ends_on}>{working ? 'Saving...' : (includePlanStructure ? 'Save Plan Details' : 'Save Curriculum Guidance')}</button>
       </footer>
     </section>
   </div>
