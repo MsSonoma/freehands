@@ -479,6 +479,7 @@ test('historical instructional actions preserve non-editable provenance and exis
 
 test('new Syllabus UI source contains required readable labels and no mojibake', () => {
   const source = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/SyllabusDocument.js'), 'utf8')
+  const overlay = fs.readFileSync(path.resolve(TEST_DIR, '../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js'), 'utf8')
   for (const label of ['PAST / SYLLABUS RECORD', 'NOW / YOU ARE HERE', 'FUTURE / SYLLABUS', 'Weekly learning plan', 'Previous week', 'This week', 'Next week', 'Grey lessons']) {
     assert.match(source, new RegExp(label.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
@@ -498,6 +499,9 @@ test('new Syllabus UI source contains required readable labels and no mojibake',
   assert.match(source, /reviewCardStatus\(item\)/)
   assert.match(source, /review_status === 'pending_lessons' \? 'planned' : 'ready'/)
   assert.doesNotMatch(source, /Taught by|Your teacher:/)
+  assert.match(source, /annotation\?\.kind !== 'retention'/)
+  assert.match(overlay, /<dt>Retention<\/dt>/)
+  assert.match(overlay, /retentionAnnotation/)
   assert.match(source, /instructionalTeacherIcon\(assignedTeacher\).*instructionalTeacherLabel\(assignedTeacher\)/)
   assert.match(source, /week\.days\.map/)
   assert.doesNotMatch(source, /timeline\.weeks\.map/)

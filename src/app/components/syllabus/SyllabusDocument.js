@@ -385,7 +385,7 @@ export default function SyllabusDocument({
                     ? <><span className={styles.placementLabel}>{reviewTeacherTextForItem(item)}</span><span className={styles.statusLabel}>{reviewCardStatus(item)}</span></>
                     : <span className={styles.placementLabel}>{instructionalTeacherIcon(assignedTeacher)} {instructionalTeacherLabel(assignedTeacher)}</span>}
                   {item.item_type !== 'slate_assignment' && <>
-                  {(item.slate_annotations || []).map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
+                  {(item.slate_annotations || []).filter((annotation) => annotation?.kind !== 'retention').map((annotation) => <span className={styles.placementLabel} key={`${annotation.kind}:${annotation.label}`}>{annotation.label}</span>)}
                   {(item.historical_activity_annotations || []).filter((annotation) => annotation?.kind !== 'slate_drill_history').map((annotation) => <span className={styles.placementLabel} key={annotation.kind + ':' + annotation.label}>{annotation.label}</span>)}
                   {item.readiness_state && <span className={styles.statusLabel}>{String(item.readiness_state).replace('_', ' ')}</span>}
                   {item.placement_kind === 'scheduled' && <span className={styles.placementLabel}>Calendar date</span>}

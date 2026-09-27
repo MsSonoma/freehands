@@ -243,6 +243,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const historicalInstructionalTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.instructional_teacher || item.assigned_instructional_teacher)
   const headerInstructionalTeacher = isLesson && item.lesson_key ? (isHistorical ? historicalInstructionalTeacher : assignedTeacher) : null
   const displayStatus = repeatDeliveryActive ? 'Retry ready' : actualKind === 'completed' ? 'Completed' : actualKind === 'in_progress' ? 'In progress' : actualKind === 'incomplete' ? 'Incomplete' : (readiness || selection.syllabus_state?.replaceAll('_', ' ') || 'Ready')
+  const retentionAnnotation = (item.slate_annotations || []).find((annotation) => annotation?.kind === 'retention') || null
 
   async function refreshAfterChange() {
     if (typeof onChanged === 'function') await onChanged()
@@ -692,6 +693,7 @@ export default function FacilitatorSyllabusLessonOverlay({
           {coreError && <div className={styles.errorMessage} role="alert">{coreError}</div>}
           <dl className={styles.meta}>
             {isLesson && item.lesson_key && <><div><dt>Teacher</dt><dd>{instructionalTeacherLabel(displayTeacher)}</dd></div><div><dt>Status</dt><dd>{displayStatus}</dd></div></>}
+            {isLesson && item.lesson_key && retentionAnnotation && <div><dt>Retention</dt><dd>{['retained', 'demonstrated'].includes(String(retentionAnnotation.state || '')) ? 'Completed' : (retentionAnnotation.label || 'Recorded')}</dd></div>}
             {!isHistorical && displayedDate && <div><dt>Scheduled</dt><dd>{prettyDate(displayedDate)}</dd></div>}
             {isHistorical && scheduledDate && <div><dt>Scheduled</dt><dd>{prettyDate(scheduledDate)}</dd></div>}
             {actualKind === 'completed' && completedAt && <div><dt>Completed</dt><dd>{prettyDateTime(completedAt)}</dd></div>}

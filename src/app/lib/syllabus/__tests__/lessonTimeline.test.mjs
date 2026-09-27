@@ -1467,7 +1467,7 @@ test('SyllabusDocument keeps rows readable while facilitator controls live in th
   const document = fs.readFileSync(path.resolve('src/app/components/syllabus/SyllabusDocument.js'), 'utf8')
   const overlay = fs.readFileSync(path.resolve('src/app/components/syllabus/FacilitatorSyllabusLessonOverlay.js'), 'utf8')
   const facilitatorPage = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
-  assert.match(document, /syllabusTeacherLabel\(item\)/)
+  assert.match(document, /instructionalTeacherIcon\(assignedTeacher\).*instructionalTeacherLabel\(assignedTeacher\)/)
   assert.match(document, /item\.slate_annotations/)
   assert.match(document, /item\.historical_activity_annotations/)
   assert.match(document, /onSelectLesson/)
