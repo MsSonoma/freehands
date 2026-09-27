@@ -717,6 +717,8 @@ test('Syllabus Curriculum Guidance replaces legacy preference controls with the 
   assert.match(editor, /defaultPlanningPeriod\(today\)/)
   assert.match(editor, /map\(requirementFromRecommendation\)/)
   assert.match(editor, /editable recommendations/)
+  assert.doesNotMatch(editor, /Change note/)
+  assert.doesNotMatch(editor, /draft\.change_reason/)
   assert.doesNotMatch(editor, /readOnly=\{frameworkBacked\}/)
   assert.doesNotMatch(editor, /disabled=\{frameworkBacked\}/)
   assert.match(editor, /filter\(\(item\) => clean\(item\.statement\) && clean\(item\.subject\)\)/)

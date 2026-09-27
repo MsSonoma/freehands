@@ -196,7 +196,6 @@ function draftFromBundle(bundle, today) {
       notes: goal.notes || '',
       sort_order: Number.isInteger(goal.sort_order) ? goal.sort_order : index,
     })),
-    change_reason: '',
   }
 }
 
@@ -524,7 +523,6 @@ export default function CurriculumGuidanceEditor({
       expected_active_version_id: null,
       requirements: nextRequirements,
       goals: current.goals.map((goal, index) => ({ ...goal, sort_order: index })),
-      change_reason: 'Prepared the next curriculum planning period',
     }))
     setBundle((current) => current ? { ...current, state: [] } : current)
   }
@@ -546,7 +544,7 @@ export default function CurriculumGuidanceEditor({
             planDetails: {
               subjects: planDraft.subjects,
               weekly_pattern: planDraft.weekly_pattern,
-              change_reason: draft.change_reason || 'Facilitator updated Plan Details',
+              change_reason: 'Facilitator updated Plan Details',
             },
           }),
         })
@@ -816,7 +814,6 @@ export default function CurriculumGuidanceEditor({
           </div>}
         </section>
 
-        <label className={styles.field}>Change note<input value={draft.change_reason || ''} onChange={(event) => setDraft((current) => ({ ...current, change_reason: event.target.value }))} placeholder="Optional note about this curriculum update" /></label>
       </div>
 
       <footer className={styles.footer}>
