@@ -1,4 +1,4 @@
-.backdrop { position:fixed; inset:0; z-index:130; display:grid; place-items:center; padding:18px; background:rgba(39,34,29,.62); font-family:Roboto,sans-serif; }
+.backdrop { position:fixed; inset:0; z-index:1300; display:grid; place-items:center; padding:18px; background:rgba(39,34,29,.62); font-family:Roboto,sans-serif; }
 .dialog { position:relative; width:min(780px,100%); max-height:92vh; overflow:hidden; border:1px solid #cfc6b8; border-radius:16px; background:#fffdf8; box-shadow:0 28px 80px rgba(30,25,20,.3); color:#2d2924; }
 .scrollBody { max-height:92vh; overflow:auto; overscroll-behavior:contain; padding:clamp(24px,5vw,46px); overflow-wrap:anywhere; }
 .closeButton { position:absolute; top:14px; right:14px; z-index:2; width:40px; height:40px; border:1px solid #d8d0c5; border-radius:50%; background:#fff; color:#403830; cursor:pointer; font-size:24px; line-height:1; }
