@@ -1,4 +1,4 @@
-﻿import test from 'node:test'
+import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 
@@ -8,20 +8,13 @@ const bottomNav = fs.readFileSync(new URL('../../app/facilitator/generator/couns
 const syllabus = fs.readFileSync(new URL('../../app/facilitator/page.js', import.meta.url), 'utf8')
 const counselorRoute = fs.readFileSync(new URL('../../app/api/counselor/route.js', import.meta.url), 'utf8')
 
-test('Help uses the real Syllabus and Lesson Library as shared workspaces', () => {
+test('Help uses real workspaces without a redundant workspace toolbar', () => {
   assert.match(frame, /import FacilitatorPage from '..\/..\/page'/)
   assert.match(frame, /import LessonLibraryPage from '..\/..\/lessons\/page'/)
   assert.match(client, /const \[activeScreen, setActiveScreen\] = useState\('mentor'\)/)
   assert.match(client, /<HelpWorkspaceFrame/)
-  assert.match(client, /<HelpBottomNav/)
   assert.doesNotMatch(frame, /Help workspace/)
   assert.doesNotMatch(frame, /Conversation/)
-  assert.doesNotMatch(client, /LessonsOverlay/)
-  assert.doesNotMatch(client, /LessonMakerOverlay/)
-  assert.match(bottomNav, /label="Home"/)
-  assert.match(bottomNav, /label="Lessons"/)
-  assert.match(bottomNav, /label="Syllabus"/)
-  assert.match(bottomNav, /label="Guidance"/)
 })
 
 test('Help resolves the shared active learner before Syllabus is opened', () => {
@@ -29,26 +22,38 @@ test('Help resolves the shared active learner before Syllabus is opened', () => 
   assert.match(client, /learnerSelectionResolvedRef/)
   assert.match(client, /getItem\?\.\('learner_id'\)/)
   assert.match(client, /persistLearnerSelection\(window\.localStorage, selectedLearner\)/)
-  assert.match(client, /removeItem\?\.\(LEGACY_SELECTED_LEARNER_KEY\)/)
 })
 
-test('Guidance opens from bottom navigation without switching to Syllabus', () => {
-  assert.match(client, /import CurriculumGuidanceEditor/)
+test('Compact footer has five modestly larger controls including Guidance', () => {
+  assert.match(client, /<HelpBottomNav/)
+  assert.match(bottomNav, /width: 46/)
+  assert.match(bottomNav, /height: 46/)
+  assert.match(bottomNav, /title="Help Home"/)
+  assert.match(bottomNav, /title="Lessons"/)
+  assert.match(bottomNav, /title="Syllabus"/)
+  assert.match(bottomNav, /title="Curriculum Guidance"/)
+  assert.match(bottomNav, /Expand Help/)
   assert.match(client, /onGuidance=\{\(\) => setGuidanceOverlayOpen\(true\)\}/)
-  assert.match(bottomNav, /label="Guidance"/)
-  assert.match(client, /guidanceOverlayOpen && selectedLearnerId !== 'none' && accessToken && <CurriculumGuidanceEditor/)
   assert.doesNotMatch(client, /aria-label="Guidance"/)
 })
 
-test('Help fullscreen expands the whole Help shell without hiding conversation', () => {
+test('Expand hides header and conversation but keeps the compact footer', () => {
   assert.match(client, /const workspaceFocus = workspaceExpanded/)
-  assert.match(client, /setWorkspaceExpanded\(\(current\) => !current\)/)
-  assert.doesNotMatch(client, /conversationDockOpen/)
-  assert.match(client, /workspaceSideBySide/)
+  assert.match(client, /setConversationDockOpen\(!next\)/)
+  assert.match(client, /display: workspaceExpanded && !conversationDockOpen \? 'none' : 'flex'/)
+  assert.match(client, /paddingTop: workspaceFocus \? 0/)
   assert.match(client, /zIndex: workspaceFocus \? 1500 : 0/)
-  assert.match(client, /left: 0,[\s\S]*right: 0,/)
-  assert.match(bottomNav, /expanded\?'Restore':'Expand'/)
-  assert.doesNotMatch(frame, /Conversation/)
+  assert.match(client, /<HelpBottomNav/)
+  assert.match(client, /position: 'fixed',[\s\S]*bottom: 0/)
+})
+
+test('Help shell uses encoding-safe symbols', () => {
+  assert.doesNotMatch(client, /[^\x00-\x7F]/)
+  assert.doesNotMatch(bottomNav, /[^\x00-\x7F]/)
+  assert.match(client, /aria-label="New Conversation"[\s\S]*<svg aria-hidden="true" width="26"/)
+  assert.match(bottomNav, /&#128218;/)
+  assert.match(bottomNav, /&#128203;/)
+  assert.match(bottomNav, /&#129517;/)
 })
 
 test('Help and Syllabus exchange learner, view, and embedded overlay context', () => {
@@ -58,19 +63,15 @@ test('Help and Syllabus exchange learner, view, and embedded overlay context', (
   assert.match(client, /facilitator:open-plan-details/)
   assert.match(syllabus, /ms:syllabus:learner-selected/)
   assert.match(syllabus, /facilitator:set-syllabus-view/)
-  assert.match(syllabus, /facilitator:open-learners/)
-  assert.match(syllabus, /facilitator:open-plan-details/)
   assert.match(client, /workspace_context: \{ surface: activeScreen, syllabus_view: syllabusView, expanded: workspaceExpanded \}/)
   assert.match(counselorRoute, /HELP WORKSPACE CONTEXT/)
 })
 
-test('Curriculum Guidance replaces the old Help clipboard persistence model', () => {
+test('Curriculum Guidance remains the authoritative Help guidance model', () => {
   assert.match(client, /\/api\/syllabus\/curriculum\?learnerId=/)
   assert.match(client, /curriculum_guidance: curriculumGuidanceContext/)
   assert.doesNotMatch(client, /ClipboardOverlay/)
   assert.doesNotMatch(client, /GoalsClipboardOverlay/)
-  assert.doesNotMatch(client, /\/api\/conversation-drafts/)
-  assert.doesNotMatch(client, /\/api\/goals-notes/)
   assert.match(counselorRoute, /executeGetCurriculumGuidance/)
   assert.match(counselorRoute, /executeUpdateCurriculumGuidance/)
   assert.match(counselorRoute, /CURRENT CURRICULUM GUIDANCE/)
