@@ -3,7 +3,12 @@
 .documentHeader h2 { margin:2px 0 3px; font-size:clamp(24px,3.2vw,34px); font-weight:500; }
 .documentHeader p { margin:0; color:#6c6258; font-size:13px; }
 .kicker,.stateLabel,.subject { font-family:Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.09em; font-size:10px; font-weight:800; }
-.planDetailsButton { align-self:flex-start; min-height:34px; padding:7px 12px; border:1px solid #cfc6b8; border-radius:8px; background:#fffdf8; color:#6b382c; cursor:pointer; font:800 11px Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
+.documentHeaderActions { display:flex; align-items:flex-start; justify-content:flex-end; gap:8px; margin-left:auto; }
+.changeLearnerControl { position:relative; }
+.changeLearnerButton,.planDetailsButton { align-self:flex-start; min-height:34px; padding:7px 12px; border:1px solid #cfc6b8; border-radius:8px; background:#fffdf8; color:#6b382c; cursor:pointer; font:800 11px Montserrat,sans-serif; text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
+.learnerMenu { position:absolute; z-index:40; top:calc(100% + 6px); right:0; min-width:180px; display:grid; gap:3px; padding:6px; border:1px solid #cfc6b8; border-radius:9px; background:#fffdf8; box-shadow:0 12px 28px rgba(65,52,36,.14); font-family:Roboto,sans-serif; }
+.learnerMenu button { width:100%; padding:8px 10px; border:0; border-radius:6px; background:transparent; color:#3d3832; cursor:pointer; text-align:left; font:700 12px Roboto,sans-serif; }
+.learnerMenu button:hover,.learnerMenu button:focus-visible { background:#f5eee5; outline:none; }
 .timelineNav { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:8px; padding:12px 0 6px; }
 .timelineNav button,.returnNow { min-height:34px; border:0; background:transparent; color:#6b382c; cursor:pointer; font:700 12px Montserrat,sans-serif; }
 .timelineNav button:first-child { justify-self:start; }.timelineNav button:nth-child(3) { justify-self:end; }.timelineNav button:disabled { opacity:.3; cursor:default; }
@@ -72,4 +77,4 @@
 .reviewChecklist > span { display:grid; grid-template-columns:16px minmax(0,1fr); gap:4px; align-items:start; }
 .reviewChecklist b { font-weight:800; color:#4f6b4f; }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }
-@media (max-width:680px) { .document { padding:12px; } .documentHeader { align-items:flex-start; }.weekHeader { align-items:stretch; flex-direction:column; gap:7px; }.weekHeaderActions { justify-content:space-between; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; } .weekHeader time { white-space:normal; } }
+@media (max-width:680px) { .document { padding:12px; } .documentHeader { align-items:flex-start; gap:10px; }.documentHeaderActions { gap:6px; }.changeLearnerButton,.planDetailsButton { min-height:32px; padding:6px 8px; font-size:10px; }.weekHeader { align-items:stretch; flex-direction:column; gap:7px; }.weekHeaderActions { justify-content:space-between; } .entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; } .weekHeader time { white-space:normal; } }

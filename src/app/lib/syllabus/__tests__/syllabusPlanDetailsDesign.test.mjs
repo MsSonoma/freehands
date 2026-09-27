@@ -9,6 +9,7 @@ const planEditorSource = fs.readFileSync(path.resolve('src/app/components/syllab
 const curriculumEditorSource = fs.readFileSync(path.resolve('src/app/components/syllabus/CurriculumGuidanceEditor.js'), 'utf8')
 const curriculumEditorCss = fs.readFileSync(path.resolve('src/app/components/syllabus/CurriculumGuidanceEditor.module.css'), 'utf8')
 const facilitatorHome = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
+const facilitatorCss = fs.readFileSync(path.resolve('src/app/facilitator/syllabus/syllabus.module.css'), 'utf8')
 const learningForecastSource = fs.readFileSync(path.resolve('src/app/lib/syllabus/learningForecast.mjs'), 'utf8')
 const learningForecastServerSource = fs.readFileSync(path.resolve('src/app/lib/syllabus/learningForecast.server.mjs'), 'utf8')
 
@@ -20,6 +21,18 @@ test('active Syllabus exposes one Plan details button instead of the old disclos
   assert.doesNotMatch(documentSource, /<details className=\{styles\.planDetails\}>/)
   assert.doesNotMatch(documentSource, /onEditSection\('(goals|subjects|weekly_pattern|teaching_guidance)'\)/)
   assert.doesNotMatch(documentSource, /revision\?\.goals\?\.legacy_notes/)
+})
+
+test('active Syllabus puts Change learner beside Plan details and removes the old learner dropdown band', () => {
+  assert.match(documentSource, /className=\{styles\.documentHeaderActions\}/)
+  assert.match(documentSource, />Change learner<\/button>/)
+  assert.match(documentSource, /className=\{styles\.planDetailsButton\}/)
+  assert.match(facilitatorHome, /learnerOptions=\{learners\}/)
+  assert.match(facilitatorHome, /onChangeLearner=\{switchLearner\}/)
+  assert.doesNotMatch(facilitatorHome, /<select value=\{learnerId\}/)
+  assert.match(facilitatorHome, /syllabus\?\.has_active_syllabus && !draft \? styles\.activeSyllabusPage/)
+  assert.match(facilitatorCss, /\.activeSyllabusPage \{ padding-top: 10px; \}/)
+  assert.match(documentCss, /\.changeLearnerButton,\.planDetailsButton/)
 })
 
 test('Plan Details combines subjects, weekly pattern, and Curriculum Guidance in one overlay', () => {

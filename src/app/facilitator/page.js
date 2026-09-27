@@ -107,6 +107,7 @@ export default function FacilitatorPage() {
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
   const [learners, setLearners] = useState([])
   const [learnerId, setLearnerId] = useState('')
+  const [learnerPickerOpen, setLearnerPickerOpen] = useState(false)
   const [token, setToken] = useState('')
   const [planTier, setPlanTier] = useState('free')
   const [syllabus, setSyllabus] = useState(null)
@@ -821,6 +822,7 @@ export default function FacilitatorPage() {
   }
 
   function switchLearner(nextLearnerId) {
+    setLearnerPickerOpen(false)
     loadSequence.current++
     forecastAttempt.current = ''
     planningRequest.current = ''
@@ -910,19 +912,20 @@ export default function FacilitatorPage() {
   if (!isAuthenticated) return <main className={styles.page}><GatedOverlay show gateType={gateType || 'auth'} feature="Syllabus" emoji="🧭" description="Sign in to view and activate a learner's educational plan." /></main>
 
   return (
-    <main className={styles.page}>
-      <header className={styles.header}>
+    <main className={`${styles.page} ${syllabus?.has_active_syllabus && !draft ? styles.activeSyllabusPage : ''}`}>
+      {(!syllabus?.has_active_syllabus || draft) && <header className={styles.header}>
         {!syllabus?.has_active_syllabus && <div>
           <p className={styles.eyebrow}>Facilitator planning</p>
           <h1>Syllabus</h1>
           <p>Create this learner&apos;s weekly learning plan.</p>
         </div>}
-        <label className={styles.learnerPicker}>Learner
-          <select value={learnerId} onChange={(event) => switchLearner(event.target.value)}>
-            {learners.map((learner) => <option key={learner.id} value={learner.id}>{learner.name}</option>)}
-          </select>
-        </label>
-      </header>
+        {learners.length > 1 && <div className={styles.learnerPicker}>
+          <button type="button" className={styles.learnerPickerButton} aria-haspopup="menu" aria-expanded={learnerPickerOpen} onClick={() => setLearnerPickerOpen((open) => !open)}>Change learner</button>
+          {learnerPickerOpen && <div className={styles.learnerPickerMenu} role="menu" aria-label="Choose learner">
+            {learners.filter((learner) => String(learner.id) !== String(learnerId)).map((learner) => <button type="button" role="menuitem" key={learner.id} onClick={() => switchLearner(learner.id)}>{learner.name}</button>)}
+          </div>}
+        </div>}
+      </header>}
 
       {error && <div className={styles.error} role="alert">{error}</div>}
       {!planningAccess.can_change_intent && <p className={styles.statusMessage}>{establishingFirstSyllabus ? 'Every plan can establish an initial Syllabus through explicit facilitator activation. Future replanning remains locked.' : 'The complete Syllabus remains visible. Future replanning is locked for this plan.'}</p>}
@@ -1000,6 +1003,8 @@ export default function FacilitatorPage() {
               learnerId={learnerId}
               planTier={planTier}
               learnerName={selectedLearner?.name || ''}
+              learnerOptions={learners}
+              onChangeLearner={switchLearner}
               onSelectLesson={(item, context) => setSelectedSyllabusLesson({ item, ...context })}
               onSelectReview={(item) => setSelectedSyllabusReview(item)}
               canScheduleLessons={canScheduleLessons && syllabusHydrated}

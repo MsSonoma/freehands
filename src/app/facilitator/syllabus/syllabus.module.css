@@ -1,10 +1,15 @@
 .page { max-width: 1120px; margin: 0 auto; padding: 28px 20px 56px; color: #1f2937; font-family: Roboto, sans-serif; }
+.activeSyllabusPage { padding-top: 10px; }
 .header { display: flex; align-items: end; justify-content: space-between; gap: 24px; margin-bottom: 24px; }
 .header h1 { margin: 2px 0 5px; color: #111827; font: 700 32px/1.15 Montserrat, sans-serif; }
 .header p { margin: 0; color: #6b7280; }
 .eyebrow { color: rgb(199, 68, 46) !important; font-size: 12px; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; }
-.learnerPicker { display: grid; min-width: 240px; margin-left:auto; gap: 6px; color: #4b5563; font-size: 12px; font-weight: 700; }
-.learnerPicker select, .section input, .section textarea, .actions input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; color: #111827; font: inherit; }
+.learnerPicker { position: relative; margin-left: auto; }
+.learnerPickerButton { min-height: 38px; padding: 8px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; color: #374151; cursor: pointer; font: 700 12px Montserrat, sans-serif; text-transform: uppercase; letter-spacing: .04em; white-space: nowrap; }
+.learnerPickerMenu { position: absolute; z-index: 50; top: calc(100% + 6px); right: 0; min-width: 200px; display: grid; gap: 3px; padding: 6px; border: 1px solid #d1d5db; border-radius: 9px; background: white; box-shadow: 0 12px 28px rgba(17, 24, 39, .14); }
+.learnerPickerMenu button { width: 100%; padding: 8px 10px; border: 0; border-radius: 6px; background: transparent; color: #374151; cursor: pointer; text-align: left; font: 700 12px Roboto, sans-serif; }
+.learnerPickerMenu button:hover,.learnerPickerMenu button:focus-visible { background: #f3f4f6; outline: none; }
+.section input, .section textarea, .actions input { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 8px; background: white; color: #111827; font: inherit; }
 .section textarea { resize: vertical; line-height: 1.5; }
 .error { margin-bottom: 16px; padding: 12px 14px; border: 1px solid #fecaca; border-radius: 8px; background: #fef2f2; color: #991b1b; }
 .empty { padding: 36px; border: 1px solid #e5e7eb; border-radius: 14px; background: #fff; text-align: center; box-shadow: 0 8px 28px rgba(17, 24, 39, .05); }
@@ -107,4 +112,4 @@
 .sectionEditor input, .sectionEditor textarea, .sectionEditor select { box-sizing: border-box; width: 100%; padding: 9px; border: 1px solid #d1d5db; border-radius: 7px; color: #111827; font: inherit; }
 .sectionEditor > footer { justify-content: end; margin-top: 18px; padding-top: 14px; border-top: 1px solid #e5e7eb; }
 @media (max-width: 800px) { .header, .proposalBanner, .actions, .proposalHeading, .proposalDecision { align-items: stretch; flex-direction: column; } .learnerPicker { min-width: 0; } .contentGrid { grid-template-columns: 1fr; } .forecast { min-height: 0; } .statusBar { flex-wrap: wrap; } .statusBar button { margin-left: 0; } .statusActions { margin-left: 0; } }
-@media (max-width: 520px) { .page { padding: 18px 12px 40px; } .editorBackdrop { padding:8px; } .sectionEditor { max-height:calc(100vh - 16px); padding:16px; } .forecastWeek li { grid-template-columns: 1fr; gap: 2px; } .actions div { flex-direction: column; } }
+@media (max-width: 520px) { .page { padding: 18px 12px 40px; } .activeSyllabusPage { padding-top: 8px; } .editorBackdrop { padding:8px; } .sectionEditor { max-height:calc(100vh - 16px); padding:16px; } .forecastWeek li { grid-template-columns: 1fr; gap: 2px; } .actions div { flex-direction: column; } }
