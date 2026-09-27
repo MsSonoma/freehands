@@ -133,6 +133,17 @@ export default function CounselorClient() {
   const [syllabusView, setSyllabusView] = useState('week')
   const [workspaceHref, setWorkspaceHref] = useState('/facilitator')
   const [conversationDockOpen, setConversationDockOpen] = useState(true)
+  const toggleWorkspaceExpanded = useCallback(() => {
+    setWorkspaceExpanded((current) => {
+      const next = !current
+      setConversationDockOpen(!next)
+      return next
+    })
+  }, [])
+  const enterWorkspaceExpanded = useCallback(() => {
+    setWorkspaceExpanded(true)
+    setConversationDockOpen(false)
+  }, [])
   const openSyllabusWorkspace = useCallback((view = 'week', action = '') => {
     const nextView = view === 'month' ? 'month' : 'week'
     setSyllabusView(nextView)
@@ -2129,7 +2140,7 @@ export default function CounselorClient() {
               {/* Curriculum Guidance shortcut (top-left) */}
               <button
                 onClick={() => {
-                  setWorkspaceExpanded(true)
+                  enterWorkspaceExpanded()
                   openSyllabusWorkspace('week', 'plan_details')
                 }}
                 aria-label="Guidance"
@@ -2299,7 +2310,7 @@ export default function CounselorClient() {
                 onSurfaceChange={(surface) => handleWorkspaceNavigate(surface === 'syllabus' ? '/facilitator' : surface === 'lessons' ? '/facilitator/lessons' : '/facilitator/help')}
                 workspaceHref={workspaceHref}
                 onNavigate={handleWorkspaceNavigate}
-                onToggleExpanded={() => setWorkspaceExpanded(value => !value)}
+                onToggleExpanded={toggleWorkspaceExpanded}
                 onOpenGuidance={() => openSyllabusWorkspace(syllabusView, 'plan_details')}
                 conversationDockOpen={conversationDockOpen}
                 onToggleConversationDock={() => setConversationDockOpen(value => !value)}
@@ -2615,7 +2626,7 @@ export default function CounselorClient() {
                           
                           <button
                             onClick={() => {
-                              setWorkspaceExpanded(value => !value)
+                              toggleWorkspaceExpanded()
                               setMenuOpen(false)
                             }}
                             title="Expand workspace"
@@ -2722,7 +2733,7 @@ export default function CounselorClient() {
                       🧭
                     </button>
                     <button
-                      onClick={() => setWorkspaceExpanded(value => !value)}
+                      onClick={toggleWorkspaceExpanded}
                       title="Expand workspace"
                       style={{
                         width: 40,

@@ -20,9 +20,12 @@ test('Help uses the real Syllabus and Lesson Library as shared workspaces', () =
   assert.doesNotMatch(client, /LessonMakerOverlay/)
 })
 
-test('Help focus mode keeps conversation available without leaving the workspace', () => {
+test('Help full workspace hides conversation by default but keeps it available on demand', () => {
   assert.match(client, /workspaceExpanded/)
   assert.match(client, /conversationDockOpen/)
+  assert.match(client, /const toggleWorkspaceExpanded = useCallback/)
+  assert.match(client, /const next = !current[\s\S]*setConversationDockOpen\(!next\)/)
+  assert.match(client, /const enterWorkspaceExpanded = useCallback\(\(\) => \{[\s\S]*setWorkspaceExpanded\(true\)[\s\S]*setConversationDockOpen\(false\)/)
   assert.match(client, /workspaceSideBySide/)
   assert.match(client, /zIndex: workspaceFocus \? 1500 : 0/)
   assert.match(frame, /Conversation\s*<\/button>/)
