@@ -438,7 +438,7 @@ export default function CounselorClient() {
   useEffect(() => {
     if (typeof window === 'undefined') return
     try {
-      window.dispatchEvent(new CustomEvent('ms:session:title', { detail: 'Ms. Sonoma' }))
+      window.dispatchEvent(new CustomEvent('ms:session:title', { detail: 'Help' }))
     } catch {}
     return () => {
       try {
@@ -2445,7 +2445,7 @@ export default function CounselorClient() {
           {conversationHistory.length === 0 ? (
             <div style={{ color: '#9ca3af', paddingTop: 8, maxWidth: 700, margin: '0 auto' }}>
               <p style={{ fontSize: 18, fontWeight: 500, marginBottom: 12, color: '#374151', textAlign: 'center' }}>
-                Welcome to Ms. Sonoma
+                Help
               </p>
               <p style={{ fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
                 I'm here to support you in your teaching journey. 
