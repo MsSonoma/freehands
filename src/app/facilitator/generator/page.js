@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier } from '@/app/lib/entitlements'
@@ -19,8 +19,9 @@ import { buildLessonWorkflowReturnHref } from '@/app/lib/facilitatorLessonWorkfl
 const difficulties = ['beginner','intermediate','advanced']
 const grades = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
 
-export default function LessonMakerPage(){
+export default function LessonMakerPage({ embeddedHref = '', onNavigate = null } = {}){
   const router = useRouter()
+  const navigate = useCallback((href) => onNavigate ? onNavigate(href) : router.push(href), [onNavigate, router])
   const [generatorMode, setGeneratorMode] = useState('simple')
   const [simpleNeed, setSimpleNeed] = useState('')
   const [simpleProposal, setSimpleProposal] = useState(null)
@@ -29,7 +30,7 @@ export default function LessonMakerPage(){
   useEffect(() => {
     if (typeof window === 'undefined') return
     window.scrollTo(0, 0)
-    const params = new URLSearchParams(window.location.search)
+    const params = new URLSearchParams(embeddedHref ? new URL(embeddedHref, window.location.origin).search : window.location.search)
     const lessonKey = params.get('lessonKey') || ''
     const reviewRequested = params.get('mode') === 'review' || Boolean(lessonKey)
     const requestedMode = reviewRequested ? 'review' : (params.get('mode') === 'detailed' || params.get('advanced') === '1' ? 'detailed' : 'simple')
@@ -61,7 +62,7 @@ export default function LessonMakerPage(){
       ...(notesParam ? { notes: notesParam } : {}),
       ...(vocabParam ? { vocab: vocabParam } : {}),
     }))
-  }, [])
+  }, [embeddedHref])
   const { loading, hasAccess, gateType, tier, isAuthenticated } = useAccessControl({
     requiredAuth: 'required',
      requiredFeature: 'lessonGenerator'
@@ -134,7 +135,7 @@ export default function LessonMakerPage(){
       try {
         const allowed = await ensurePinAllowed('facilitator-page');
         if (!allowed) {
-          router.push('/');
+          navigate('/');
           return;
         }
         if (!cancelled) setPinChecked(true);
@@ -143,7 +144,7 @@ export default function LessonMakerPage(){
       }
     })();
     return () => { cancelled = true; };
-  }, [isAuthenticated, loading, router]);
+  }, [isAuthenticated, loading, navigate]);
 
   // Load quota only after account authentication and the facilitator PIN boundary.
   // Read the session directly here because the quota API needs the access token.
@@ -548,7 +549,7 @@ export default function LessonMakerPage(){
     setReviewError('')
     try {
       if (intendedLearnerId) await refreshGeneratedLessonAssociation(generatedLessonKey)
-      router.push(reviewReturnHref())
+      navigate(reviewReturnHref())
     } catch (error) {
       setReviewError(error?.message || 'Could not save this draft in the learner plan')
     }
@@ -846,7 +847,7 @@ export default function LessonMakerPage(){
           </p>
         </div>
         <button
-          onClick={() => router.push(reviewReturnHref())}
+          onClick={() => navigate(reviewReturnHref())}
           style={{
             padding: '9px 16px',
             borderRadius: 8,
@@ -905,12 +906,12 @@ export default function LessonMakerPage(){
           )}
           <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap', borderTop: '1px solid #e5e7eb', paddingTop: 14 }}>
             {generatedLessonDraft?.approved === true ? (
-              <button type="button" onClick={() => router.push(reviewReturnHref())} style={{ padding: '11px 18px', border: 'none', borderRadius: 9, background: '#c7442e', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>Return to learner plan</button>
+              <button type="button" onClick={() => navigate(reviewReturnHref())} style={{ padding: '11px 18px', border: 'none', borderRadius: 9, background: '#c7442e', color: '#fff', fontWeight: 800, cursor: 'pointer' }}>Return to learner plan</button>
             ) : (
               <button type="button" onClick={() => void approveGeneratedLesson()} disabled={approving || reviewLoading || !generatedLessonDraft || !intendedLearnerId} style={{ padding: '11px 18px', border: 'none', borderRadius: 9, background: '#c7442e', color: '#fff', fontWeight: 800, cursor: approving ? 'wait' : 'pointer', opacity: approving || reviewLoading || !generatedLessonDraft || !intendedLearnerId ? 0.55 : 1 }}>{approving ? 'Approving...' : 'Approve lesson'}</button>
             )}
             {generatedLessonDraft?.approved !== true && <button type="button" onClick={() => setRevisionOpen(true)} disabled={reviewLoading || !generatedLessonKey} style={{ padding: '10px 15px', border: '1px solid #d1d5db', borderRadius: 9, background: '#fff', color: '#374151', fontWeight: 700, cursor: 'pointer' }}>Regenerate with changes</button>}
-            {generatedLessonDraft?.approved !== true && generatedLessonKey && <button type="button" onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)} style={{ padding: '10px 15px', border: '1px solid #d1d5db', borderRadius: 9, background: '#fff', color: '#374151', fontWeight: 700, cursor: 'pointer' }}>Edit draft</button>}
+            {generatedLessonDraft?.approved !== true && generatedLessonKey && <button type="button" onClick={() => navigate(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`)} style={{ padding: '10px 15px', border: '1px solid #d1d5db', borderRadius: 9, background: '#fff', color: '#374151', fontWeight: 700, cursor: 'pointer' }}>Edit draft</button>}
             {generatedLessonDraft?.approved !== true && <button type="button" onClick={() => void leaveGeneratedLessonAsDraft()} disabled={reviewLoading || !generatedLessonKey} style={{ padding: '10px 15px', border: '1px solid #d1d5db', borderRadius: 9, background: '#fff', color: '#374151', fontWeight: 700, cursor: 'pointer' }}>Leave as draft</button>}
           </div>
         </section>
@@ -1201,7 +1202,7 @@ export default function LessonMakerPage(){
             <button
               type={generatedLessonKey ? 'button' : 'submit'}
               disabled={generatedLessonKey ? false : !canGenerate}
-              onClick={generatedLessonKey ? () => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`) : undefined}
+              onClick={generatedLessonKey ? () => navigate(`/facilitator/lessons/edit?key=${encodeURIComponent(generatedLessonKey)}`) : undefined}
               style={{
                 padding: '12px 28px',
                 borderRadius: 10,
@@ -1290,10 +1291,10 @@ export default function LessonMakerPage(){
 
       {/* ── Planner promo card ── */}
       {!isReviewMode && <div
-        onClick={() => router.push('/facilitator')}
+        onClick={() => navigate('/facilitator')}
         role="button"
         tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator')}
+        onKeyDown={e => e.key === 'Enter' && navigate('/facilitator')}
         style={{
           marginTop: 20,
           padding: '16px 22px',

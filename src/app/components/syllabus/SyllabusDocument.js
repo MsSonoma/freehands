@@ -214,6 +214,10 @@ export default function SyllabusDocument({
     .map((item) => String(item.source_occurrence_id))), [visibleItems])
   const [selectedWeekStart, setSelectedWeekStart] = useState(() => startOfSyllabusWeek(restoreWeekStart) || moveSyllabusWeek(null, 'now', today))
   const [viewMode, setViewMode] = useState(() => initialView === 'month' ? 'month' : 'week')
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try { window.dispatchEvent(new CustomEvent('ms:syllabus:view-changed', { detail: { view: viewMode } })) } catch {}
+  }, [viewMode])
   const [selectedMonthStart, setSelectedMonthStart] = useState(() => monthStartFor(restoreWeekStart || today))
   const [selectedMonthDate, setSelectedMonthDate] = useState('')
   const selectedWeekRef = useRef(null)

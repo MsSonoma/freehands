@@ -105,8 +105,10 @@ function activeToDraft(active, items, resolvedToday) {
   }
 }
 
-export default function FacilitatorPage() {
+export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' } = {}) {
   const router = useRouter()
+  const navigate = (href) => onNavigate ? onNavigate(href) : router.push(href)
+  const initialEmbeddedHrefRef = useRef(embeddedHref)
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: 'required' })
   const [learners, setLearners] = useState([])
   const [learnerId, setLearnerId] = useState('')
@@ -152,21 +154,14 @@ export default function FacilitatorPage() {
   const [dayActionDate, setDayActionDate] = useState('')
   const [dayActionError, setDayActionError] = useState('')
   const [forecastRefreshSequence, setForecastRefreshSequence] = useState(0)
+  useEffect(() => {
+    if (!learnerId || typeof window === 'undefined') return
+    window.dispatchEvent(new CustomEvent('ms:syllabus:learner-selected', { detail: { learnerId: String(learnerId) } }))
+  }, [learnerId])
   const forecastAttempt = useRef('')
   const forecastController = useRef(null)
   const materializationRequest = useRef(null)
   useEffect(() => () => { forecastController.current?.abort() }, [])
-  useEffect(() => {
-    const openLearners = () => {
-      setLearnersOverlayOpen(true)
-      if (typeof window === 'undefined') return
-      const url = new URL(window.location.href)
-      url.searchParams.set('overlay', 'learners')
-      window.history.replaceState(window.history.state, '', `${url.pathname}${url.search}${url.hash}`)
-    }
-    window.addEventListener('facilitator:open-learners', openLearners)
-    return () => window.removeEventListener('facilitator:open-learners', openLearners)
-  }, [])
   const forecastRequestSequence = useRef(0)
   const forecastViewIdentity = useRef('')
   const loadSequence = useRef(0)
@@ -199,7 +194,8 @@ export default function FacilitatorPage() {
         if (cancelled) return
         const safeItems = Array.isArray(items) ? items.filter((item) => /^[0-9a-f-]{36}$/i.test(String(item.id))) : []
         const remembered = typeof window !== 'undefined' ? localStorage.getItem('learner_id') : ''
-        const returnParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : new URLSearchParams()
+        const initialEmbeddedHref = initialEmbeddedHrefRef.current
+        const returnParams = typeof window !== 'undefined' ? new URLSearchParams(initialEmbeddedHref ? new URL(initialEmbeddedHref, window.location.origin).search : window.location.search) : new URLSearchParams()
         const requestedLearner = returnParams.get('learnerId') || ''
         const returnDate = returnParams.get('date') || ''
         const preferredLearner = safeItems.some((item) => String(item.id) === String(requestedLearner)) ? requestedLearner : remembered
@@ -443,10 +439,36 @@ export default function FacilitatorPage() {
     setEditingSection(section)
   }
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return undefined
+    const openLearners = () => setLearnersOverlayVisibility(true)
+    const openPlanDetails = () => {
+      if (planningAccess.can_change_intent) openSectionEditor('plan_details')
+    }
+    const setSyllabusView = (event) => {
+      const view = String(event?.detail?.view || event?.detail || '')
+      if (view === 'week' || view === 'month') setInitialSyllabusView(view)
+    }
+    const selectLearner = (event) => {
+      const nextLearnerId = String(event?.detail?.learnerId || '').trim()
+      if (nextLearnerId && learners.some((learner) => String(learner.id) === nextLearnerId)) switchLearner(nextLearnerId)
+    }
+    window.addEventListener('facilitator:open-learners', openLearners)
+    window.addEventListener('facilitator:open-plan-details', openPlanDetails)
+    window.addEventListener('facilitator:set-syllabus-view', setSyllabusView)
+    window.addEventListener('facilitator:select-learner', selectLearner)
+    return () => {
+      window.removeEventListener('facilitator:open-learners', openLearners)
+      window.removeEventListener('facilitator:open-plan-details', openPlanDetails)
+      window.removeEventListener('facilitator:set-syllabus-view', setSyllabusView)
+      window.removeEventListener('facilitator:select-learner', selectLearner)
+    }
+  }, [learners, planningAccess.can_change_intent]) // eslint-disable-line react-hooks/exhaustive-deps
+
   function openPortfolio() {
     setEditingSection('')
     if (!portfolioAllowed) {
-      router.push('/facilitator/account/plan')
+      navigate('/facilitator/account/plan')
       return
     }
     setShowPortfolio(true)
@@ -662,7 +684,7 @@ export default function FacilitatorPage() {
       plannedDate: date,
       expectedActiveRevisionId: syllabus.active_revision.id,
     })
-    router.push(`/facilitator/generator?${params.toString()}`)
+    navigate(`/facilitator/generator?${params.toString()}`)
   }
 
   async function openLessonPicker(scheduledDate, { mode = 'add', item = null, proposal = null } = {}) {
@@ -928,7 +950,7 @@ export default function FacilitatorPage() {
   function openFacilitatorLessonWorkflow(item) {
     if (!item?.lesson_key) return
     setSelectedSyllabusLesson(null)
-    router.push(buildLessonGeneratorReviewHref({
+    navigate(buildLessonGeneratorReviewHref({
       learnerId,
       lessonKey: item.lesson_key,
       source: 'syllabus',
@@ -959,13 +981,13 @@ export default function FacilitatorPage() {
     setReviewStarting(true)
     try {
       if (item.review_run_id) {
-        router.push(`/session/slate?reviewRunId=${encodeURIComponent(item.review_run_id)}`)
+        navigate(`/session/slate?reviewRunId=${encodeURIComponent(item.review_run_id)}`)
         return
       }
       if (!item.review_card_id) throw new Error('This review is not ready yet.')
       const result = await startFollowUp(learnerId, item.review_card_id, instructionalTeacher)
       if (!result?.run?.id) throw new Error('Review could not start')
-      router.push(`/session/slate?reviewRunId=${encodeURIComponent(result.run.id)}`)
+      navigate(`/session/slate?reviewRunId=${encodeURIComponent(result.run.id)}`)
     } catch (error) {
       alert(error?.message || 'Review could not start')
       setReviewStarting(false)

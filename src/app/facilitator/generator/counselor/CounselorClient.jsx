@@ -7,14 +7,11 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { fetchLearnerTranscript } from '@/app/lib/learnerTranscript'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
-import ClipboardOverlay from './ClipboardOverlay'
-import GoalsClipboardOverlay from './GoalsClipboardOverlay'
-import LessonsOverlay from './overlays/LessonsOverlay'
-import LessonMakerOverlay from './overlays/LessonMakerOverlay'
 import MentorThoughtBubble from './MentorThoughtBubble'
 import SessionTakeoverDialog from './SessionTakeoverDialog'
 import MentorInterceptor from './MentorInterceptor'
 import FeatureHelpToast from '@/app/session/components/FeatureHelpToast'
+import HelpWorkspaceFrame from './HelpWorkspaceFrame'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
 
 function fetchWithTimeout(url, options, timeoutMs = 15000) {
@@ -88,7 +85,7 @@ export default function CounselorClient() {
   const [learners, setLearners] = useState([])
   const [selectedLearnerId, setSelectedLearnerId] = useState('none')
   const [learnerTranscript, setLearnerTranscript] = useState('')
-  const [goalsNotes, setGoalsNotes] = useState('')
+  const [curriculumGuidanceContext, setCurriculumGuidanceContext] = useState('')
 
   const subjectKey = selectedLearnerId === 'none' ? 'facilitator' : `learner:${selectedLearnerId}`
 
@@ -119,28 +116,71 @@ export default function CounselorClient() {
   
   // Draft summary state
   const [draftSummary, setDraftSummary] = useState('')
-  const [showClipboard, setShowClipboard] = useState(false)
-  const [clipboardInstructions, setClipboardInstructions] = useState(false)
-  const [clipboardForced, setClipboardForced] = useState(false)
   const [turnWarningShown, setTurnWarningShown] = useState(false)
   const lastLocalUpdateTimestamp = useRef(Date.now())
   const realtimeChannelRef = useRef(null)
   
-  // Goals clipboard state
-  const [showGoalsClipboard, setShowGoalsClipboard] = useState(false)
+
   
   // Caption state (similar to session page)
   const [captionText, setCaptionText] = useState('')
   const [captionSentences, setCaptionSentences] = useState([])
   const [captionIndex, setCaptionIndex] = useState(0)
   
-  // Screen overlay state
-  const [activeScreen, setActiveScreen] = useState('mentor') // 'mentor' | 'lessons' | 'maker'
-  const openSyllabusMonthView = useCallback(() => {
-    const params = new URLSearchParams({ view: 'month' })
-    if (selectedLearnerId && selectedLearnerId !== 'none') params.set('learnerId', selectedLearnerId)
-    router.push(`/facilitator?${params.toString()}`)
-  }, [router, selectedLearnerId])
+  // Help workspace state. The Syllabus is the primary facilitator workspace.
+  const [activeScreen, setActiveScreen] = useState('syllabus') // 'mentor' | 'syllabus' | 'lessons' | 'generator'
+  const [workspaceExpanded, setWorkspaceExpanded] = useState(false)
+  const [syllabusView, setSyllabusView] = useState('week')
+  const [workspaceHref, setWorkspaceHref] = useState('/facilitator')
+  const [conversationDockOpen, setConversationDockOpen] = useState(true)
+  const openSyllabusWorkspace = useCallback((view = 'week', action = '') => {
+    const nextView = view === 'month' ? 'month' : 'week'
+    setSyllabusView(nextView)
+    setWorkspaceHref(nextView === 'month' ? '/facilitator?view=month' : '/facilitator')
+    setActiveScreen('syllabus')
+    setTimeout(() => {
+      try {
+        window.dispatchEvent(new CustomEvent('facilitator:set-syllabus-view', { detail: { view: nextView } }))
+        if (action === 'learners') window.dispatchEvent(new CustomEvent('facilitator:open-learners'))
+        if (action === 'plan_details') window.dispatchEvent(new CustomEvent('facilitator:open-plan-details'))
+      } catch {}
+    }, 0)
+  }, [])
+
+  const handleWorkspaceNavigate = useCallback((href) => {
+    if (!href || typeof href !== 'string') return
+    if (href === '/facilitator' || href.startsWith('/facilitator?')) {
+      const target = new URL(href, window.location.origin)
+      const view = target.searchParams.get('view') === 'month' ? 'month' : 'week'
+      const action = target.searchParams.get('overlay') === 'learners' ? 'learners' : ''
+      const targetLearnerId = target.searchParams.get('learnerId') || ''
+      setWorkspaceHref(href)
+      openSyllabusWorkspace(view, action)
+      if (targetLearnerId) {
+        setTimeout(() => {
+          try {
+            window.dispatchEvent(new CustomEvent('facilitator:select-learner', { detail: { learnerId: targetLearnerId } }))
+          } catch {}
+        }, 0)
+      }
+      return
+    }
+    if (href === '/facilitator/lessons' || href.startsWith('/facilitator/generator/generated')) {
+      setWorkspaceHref('/facilitator/lessons')
+      setActiveScreen('lessons')
+      return
+    }
+    if ((href === '/facilitator/generator' || href.startsWith('/facilitator/generator?') || href.startsWith('/facilitator/generator/lesson-maker')) && !href.includes('/counselor')) {
+      setWorkspaceHref(href)
+      setActiveScreen('generator')
+      return
+    }
+    if (href === '/facilitator/help') {
+      setActiveScreen('mentor')
+      return
+    }
+    router.push(href)
+  }, [openSyllabusWorkspace, router])
   
   // Audio/Video refs
   const videoRef = useRef(null)
@@ -302,7 +342,24 @@ export default function CounselorClient() {
     }
   }, [learners, selectedLearnerId])
 
-  // Switching the dropdown changes the active conversation thread.
+  useEffect(() => {
+    const syncFromSyllabus = (event) => {
+      const id = String(event?.detail?.learnerId || '').trim()
+      if (id) setSelectedLearnerId(id)
+    }
+    const syncSyllabusView = (event) => {
+      const view = String(event?.detail?.view || '')
+      if (view === 'week' || view === 'month') setSyllabusView(view)
+    }
+    window.addEventListener('ms:syllabus:learner-selected', syncFromSyllabus)
+    window.addEventListener('ms:syllabus:view-changed', syncSyllabusView)
+    return () => {
+      window.removeEventListener('ms:syllabus:learner-selected', syncFromSyllabus)
+      window.removeEventListener('ms:syllabus:view-changed', syncSyllabusView)
+    }
+  }, [])
+
+  // Switching the Syllabus selection changes the active conversation thread.
   useEffect(() => {
     initializedSessionIdRef.current = null
     setConversationHistory([])
@@ -323,7 +380,7 @@ export default function CounselorClient() {
   useEffect(() => {
     if (selectedLearnerId === 'none') {
       setLearnerTranscript('')
-      setGoalsNotes('')
+      setCurriculumGuidanceContext('')
       return
     }
     
@@ -345,65 +402,35 @@ export default function CounselorClient() {
     return () => { cancelled = true }
   }, [selectedLearnerId])
 
-  // Load goals notes when selection changes
+  // Load authoritative Curriculum Guidance when the Syllabus learner changes.
   useEffect(() => {
     if (!tierChecked || !accessToken) return
-    
+    if (!selectedLearnerId || selectedLearnerId === 'none') {
+      setCurriculumGuidanceContext('')
+      return
+    }
+
     let cancelled = false
     ;(async () => {
       try {
-        const params = new URLSearchParams()
-        if (selectedLearnerId && selectedLearnerId !== 'none') {
-          params.append('learner_id', selectedLearnerId)
-        }
-        
-        const response = await fetch(`/api/goals-notes?${params.toString()}`, {
+        const response = await fetch(`/api/syllabus/curriculum?learnerId=${encodeURIComponent(selectedLearnerId)}`, {
           credentials: 'include',
-          headers: {
-            Authorization: `Bearer ${accessToken}`
-          }
+          headers: { Authorization: `Bearer ${accessToken}` },
+          cache: 'no-store'
         })
         if (response.ok && !cancelled) {
           const data = await response.json()
-          setGoalsNotes(data.goals_notes || '')
+          setCurriculumGuidanceContext(JSON.stringify({
+            period: data.period || null,
+            requirements: Array.isArray(data.requirements) ? data.requirements : [],
+            goals: Array.isArray(data.goals) ? data.goals : [],
+            mastery_state: Array.isArray(data.state) ? data.state : []
+          }))
         }
       } catch (err) {
-        // Silent error handling
-        if (!cancelled) setGoalsNotes('')
+        if (!cancelled) setCurriculumGuidanceContext('')
       }
     })()
-    return () => { cancelled = true }
-  }, [accessToken, tierChecked, selectedLearnerId])
-
-  // Load existing draft summary on mount and when learner changes
-  useEffect(() => {
-    if (!tierChecked || !accessToken) return
-    
-    let cancelled = false
-    ;(async () => {
-      try {
-        const supabase = getSupabaseClient()
-        if (!supabase) return
-        
-        const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
-        
-        const response = await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
-          headers: {
-            'Authorization': `Bearer ${accessToken}`
-          }
-        })
-
-        if (response.ok && !cancelled) {
-          const data = await response.json()
-          if (data.draft?.draft_summary) {
-            setDraftSummary(data.draft.draft_summary)
-          }
-        }
-      } catch (err) {
-        // Silent error handling
-      }
-    })()
-    
     return () => { cancelled = true }
   }, [accessToken, tierChecked, selectedLearnerId])
 
@@ -574,29 +601,17 @@ export default function CounselorClient() {
     }
   }, [])
 
-  // Monitor conversation length and enforce turn limits
+  // Keep long conversations usable without forcing a save/discard overlay.
   useEffect(() => {
     const turnCount = conversationHistory.length
-
-    // Warning at 30 turns
     if (turnCount === 30 && !turnWarningShown) {
       setTurnWarningShown(true)
-      alert('Your conversation is getting long. Consider starting a new conversation soon for better performance.')
+      alert('Your conversation is getting long. You can start a fresh conversation whenever you are ready; continuity is preserved automatically.')
     }
+  }, [conversationHistory.length, turnWarningShown])
 
-    // Force overlay at 50 turns
-    if (turnCount >= 50 && !showClipboard) {
-      setShowClipboard(true)
-      setClipboardForced(true)
-    }
-  }, [conversationHistory.length, showClipboard, turnWarningShown])
-
-  // Reset warning flag when new conversation starts
   useEffect(() => {
-    if (conversationHistory.length === 0) {
-      setTurnWarningShown(false)
-      setClipboardForced(false)
-    }
+    if (conversationHistory.length === 0) setTurnWarningShown(false)
   }, [conversationHistory.length])
 
   const initializeMentorSession = useCallback(async () => {
@@ -1427,8 +1442,9 @@ export default function CounselorClient() {
         validationSummaries
       },
       learner_transcript: learnerTranscript || null,
-      goals_notes: goalsNotes || null,
-      selected_learner_id: selectedLearnerId !== 'none' ? selectedLearnerId : null
+      curriculum_guidance: curriculumGuidanceContext || null,
+      selected_learner_id: selectedLearnerId !== 'none' ? selectedLearnerId : null,
+      workspace_context: { surface: activeScreen, syllabus_view: syllabusView, expanded: workspaceExpanded }
     }
 
     const response = await fetch('/api/counselor', {
@@ -1452,7 +1468,7 @@ export default function CounselorClient() {
     }
 
     return response.json()
-  }, [learnerTranscript, goalsNotes, subjectKey, cohereChronographEnabled, selectedLearnerId])
+  }, [learnerTranscript, curriculumGuidanceContext, subjectKey, cohereChronographEnabled, selectedLearnerId, activeScreen, syllabusView, workspaceExpanded])
   
   // Send message to Ms. Sonoma
   const sendMessage = useCallback(async () => {
@@ -1588,14 +1604,15 @@ export default function CounselorClient() {
           thought_hub_mode: 'standard',
           // Include learner context if a learner is selected
           learner_transcript: learnerTranscript || null,
-          // Include persistent goals notes
-          goals_notes: goalsNotes || null,
+          // Include current Curriculum Guidance context
+          curriculum_guidance: curriculumGuidanceContext || null,
           // Include any context from interceptor
           interceptor_context: Object.keys(forwardContext).length > 0 ? forwardContext : undefined,
           generation_confirmed: generationConfirmed,
           confirmed_tools: confirmedTools,
           selected_learner_id: selectedLearnerId !== 'none' ? selectedLearnerId : null,
           selected_learner_name: learnerName || null,
+          workspace_context: { surface: activeScreen, syllabus_view: syllabusView, expanded: workspaceExpanded },
           disableTools
         })
       })
@@ -1630,7 +1647,7 @@ export default function CounselorClient() {
         setLoadingThought("Processing tool results...")
         for (const toolResult of initialToolResults) {
           if (toolResult?.uiAction?.type === 'navigate' && typeof toolResult.uiAction.href === 'string') {
-            router.push(toolResult.uiAction.href)
+            handleWorkspaceNavigate(toolResult.uiAction.href)
           }
 
           if (toolResult.lesson && toolResult.lessonFile && toolResult.userId) {
@@ -1736,11 +1753,6 @@ export default function CounselorClient() {
         }
       }
 
-      // Update draft summary in background (async, non-blocking)
-      updateDraftSummary(finalHistory, token).catch(err => {
-        // Silent error handling - don't block the UI
-      })
-
     } catch (err) {
       // Silent error handling
       enqueueToolThoughts([
@@ -1756,7 +1768,7 @@ export default function CounselorClient() {
       setLoading(false)
       setLoadingThought(null)
     }
-  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, goalsNotes, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp, learners, pendingConfirmationTool, pendingFeatureHelp, router])
+  }, [userInput, loading, conversationHistory, playAudio, learnerTranscript, curriculumGuidanceContext, selectedLearnerId, sessionStarted, currentSessionTokens, enqueueToolThoughts, handleLessonGeneration, continueLessonFollowUp, learners, pendingConfirmationTool, pendingFeatureHelp, router, activeScreen, syllabusView, workspaceExpanded])
 
   const dismissFeatureHelp = useCallback(() => {
     const pending = pendingFeatureHelp
@@ -1793,37 +1805,6 @@ export default function CounselorClient() {
     } catch {}
   }, [pendingFeatureHelp, conversationHistory, playAudio])
 
-  // Helper: Update draft summary after each exchange (not saved to memory until approved)
-  const updateDraftSummary = async (conversationHistory, token) => {
-    try {
-      // Only send the last 2 turns (user + assistant) to update incrementally
-      const recentTurns = conversationHistory.slice(-2)
-      
-      const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
-      
-      const response = await fetch('/api/conversation-drafts', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          learner_id: learnerId,
-          conversation_turns: recentTurns
-        })
-      })
-      
-      if (response.ok) {
-        const data = await response.json()
-        if (data.draft?.draft_summary) {
-          setDraftSummary(data.draft.draft_summary)
-        }
-      }
-    } catch (err) {
-      // Silent failure - don't interrupt user experience
-    }
-  }
-
   // Handle Enter key to send message
   const handleKeyDown = (e) => {
     if (e.key === 'Enter') {
@@ -1832,101 +1813,14 @@ export default function CounselorClient() {
     }
   }
 
-  // Trigger new conversation flow (show clipboard first)
+  // Start a fresh conversation. Chronograph preserves continuity; there is no manual save ceremony.
   const startNewConversation = useCallback(async () => {
-    if (conversationHistory.length === 0) {
-      // No conversation to save, just start fresh
-      return
-    }
+    if (conversationHistory.length === 0) return
+    await clearConversationForRestart()
+  }, [conversationHistory]) // eslint-disable-line react-hooks/exhaustive-deps
 
-    // Show clipboard overlay immediately (skip audio instructions to avoid playback errors)
-    // The overlay itself provides clear UI instructions
-    setShowClipboard(true)
-  }, [conversationHistory])
-
-  // Handle clipboard save (commit to permanent memory)
-  const handleClipboardSave = useCallback(async (editedSummary) => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      
-      if (!token) {
-        alert('Unable to save: not authenticated')
-        return
-      }
-
-      const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
-
-      // Save to conversation_updates (permanent memory)
-      await fetch('/api/conversation-memory', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          learner_id: learnerId,
-          conversation_turns: conversationHistory,
-          summary_override: editedSummary // Use the user-edited summary
-        })
-      })
-
-      // Delete the draft
-      await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      // Clear conversation and start fresh
-      await clearConversationAfterSave()
-      
-      setShowClipboard(false)
-      setClipboardInstructions(false)
-      
-      alert('Conversation saved to memory!')
-    } catch (err) {
-      // Silent error handling
-      alert('Failed to save conversation. Please try again.')
-    }
-  }, [conversationHistory, selectedLearnerId])
-
-  // Handle clipboard delete (discard conversation)
-  const handleClipboardDelete = useCallback(async () => {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      
-      if (!token) return
-
-      const learnerId = selectedLearnerId !== 'none' ? selectedLearnerId : null
-
-      // Delete the draft
-      await fetch(`/api/conversation-drafts?learner_id=${learnerId || ''}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`
-        }
-      })
-
-      // Clear conversation
-      await clearConversationAfterSave()
-      
-      setShowClipboard(false)
-      setClipboardInstructions(false)
-      
-      alert('Conversation deleted.')
-    } catch (err) {
-      // Silent error handling
-      alert('Failed to delete conversation.')
-    }
-  }, [selectedLearnerId])
-
-  // Helper: Actually clear conversation state after save/delete
-  const clearConversationAfterSave = async () => {
+  // Clear the current Help conversation while preserving chronograph continuity.
+  const clearConversationForRestart = async () => {
     // Clear current subject conversation in database
     if (accessToken) {
       try {
@@ -2127,7 +2021,7 @@ export default function CounselorClient() {
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <strong>View-only:</strong> Ms. Sonoma is available on the Pro plan.
-          <div>Sending and saving are disabled on your current plan.</div>
+          <div>Sending and facilitator actions are disabled on your current plan.</div>
         </div>
         <a
           href="/facilitator/account/plan"
@@ -2150,6 +2044,9 @@ export default function CounselorClient() {
   ) : null
 
   const videoEffectiveHeight = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
+  const workspaceActive = activeScreen !== 'mentor'
+  const workspaceFocus = workspaceExpanded && workspaceActive
+  const workspaceSideBySide = workspaceActive && !isMobilePortrait
 
   return (
     <div style={{
@@ -2161,7 +2058,8 @@ export default function CounselorClient() {
       position: 'fixed',
       top: 0,
       left: 0,
-      paddingTop: isMobileLandscape ? 'clamp(48px, 8svh, 60px)' : 'clamp(56px, 9svh, 72px)',
+      paddingTop: workspaceFocus ? 0 : (isMobileLandscape ? 'clamp(48px, 8svh, 60px)' : 'clamp(56px, 9svh, 72px)'),
+      zIndex: workspaceFocus ? 1500 : 0,
       background: '#f9fafb',
       overflow: 'hidden'
     }}>
@@ -2177,28 +2075,28 @@ export default function CounselorClient() {
       )}
       {/* Main content area */}
       <div style={{
-        flex: isMobileLandscape ? '0 0 70%' : 1,
+        flex: 1,
         display: 'flex',
-        flexDirection: isMobileLandscape ? 'row' : 'column',
+        flexDirection: workspaceSideBySide ? 'row' : (isMobileLandscape ? 'row' : 'column'),
         overflow: 'hidden',
-        gap: isMobileLandscape ? 16 : 0,
-        padding: isMobileLandscape ? 16 : 0,
-        ...(isMobileLandscape && videoEffectiveHeight ? {
+        gap: workspaceActive ? 0 : (isMobileLandscape ? 16 : 0),
+        padding: workspaceActive ? 0 : (isMobileLandscape ? 16 : 0),
+        ...(isMobileLandscape && !workspaceActive && videoEffectiveHeight ? {
           '--mrMentorSideBySideH': `${videoEffectiveHeight}px`
         } : {})
       }}>
         {/* Video/Overlay panel */}
         <div style={{
-          flex: isMobileLandscape ? '0 0 50%' : '0 0 50%',
+          flex: workspaceActive ? '1 1 auto' : (isMobileLandscape ? '0 0 50%' : '0 0 50%'),
           display: 'flex',
           justifyContent: 'center',
           alignItems: 'center',
           background: isMobileLandscape ? '#000' : '#f9fafb',
           position: 'relative',
           minHeight: 0,
-          padding: isMobileLandscape ? 0 : 16,
+          padding: workspaceActive ? 0 : (isMobileLandscape ? 0 : 16),
           overflow: 'hidden',
-          ...(isMobileLandscape ? {
+          ...(isMobileLandscape && !workspaceActive ? {
             aspectRatio: '16 / 9',
             width: '100%',
             // Use maxHeight to cap the container while letting aspectRatio determine natural size
@@ -2228,17 +2126,20 @@ export default function CounselorClient() {
           {/* Overlay buttons - positioned relative to video panel container */}
           {activeScreen === 'mentor' && (
             <>
-              {/* Goals clipboard button (top-left) */}
+              {/* Curriculum Guidance shortcut (top-left) */}
               <button
-                onClick={() => setShowGoalsClipboard(true)}
-                aria-label="Goals"
-                title="Set persistent goals"
+                onClick={() => {
+                  setWorkspaceExpanded(true)
+                  openSyllabusWorkspace('week', 'plan_details')
+                }}
+                aria-label="Guidance"
+                title="Open Plan details and Curriculum Guidance"
                 style={{
                   position: 'absolute',
                   top: 16,
                   left: 16,
-                  background: goalsNotes ? '#fef3c7' : '#1f2937',
-                  color: goalsNotes ? '#92400e' : '#fff',
+                  background: curriculumGuidanceContext ? '#fef3c7' : '#1f2937',
+                  color: curriculumGuidanceContext ? '#92400e' : '#fff',
                   border: 'none',
                   width: 'clamp(48px, 10vw, 64px)',
                   height: 'clamp(48px, 10vw, 64px)',
@@ -2251,7 +2152,7 @@ export default function CounselorClient() {
                   fontSize: 'clamp(22px, 5vw, 32px)'
                 }}
               >
-                📋
+                <span aria-hidden="true" style={{ fontSize: 18, fontWeight: 800 }}>G</span>
               </button>
 
               {/* New Conversation button (top-right) - visible when conversation exists */}
@@ -2278,7 +2179,7 @@ export default function CounselorClient() {
                     fontSize: 'clamp(22px, 5vw, 32px)'
                   }}
                 >
-                  💾
+                  ＋
                 </button>
               )}
 
@@ -2383,27 +2284,28 @@ export default function CounselorClient() {
             </>
           )}
 
-          {/* Overlays - always rendered but hidden when not active */}
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            background: '#fff',
-            zIndex: 5,
-            overflow: 'hidden',
-            display: activeScreen !== 'mentor' ? 'block' : 'none'
-          }}>
-            <div style={{ display: activeScreen === 'lessons' ? 'block' : 'none', height: '100%' }}>
-              <LessonsOverlay 
-                learnerId={selectedLearnerId}
+          {/* Real facilitator workspaces replace the legacy compact overlays. */}
+          {activeScreen !== 'mentor' && (
+            <div style={{
+              position: 'absolute',
+              inset: 0,
+              background: '#fff',
+              zIndex: 5,
+              overflow: 'hidden'
+            }}>
+              <HelpWorkspaceFrame
+                surface={activeScreen}
+                expanded={workspaceExpanded}
+                onSurfaceChange={(surface) => handleWorkspaceNavigate(surface === 'syllabus' ? '/facilitator' : surface === 'lessons' ? '/facilitator/lessons' : '/facilitator/help')}
+                workspaceHref={workspaceHref}
+                onNavigate={handleWorkspaceNavigate}
+                onToggleExpanded={() => setWorkspaceExpanded(value => !value)}
+                onOpenGuidance={() => openSyllabusWorkspace(syllabusView, 'plan_details')}
+                conversationDockOpen={conversationDockOpen}
+                onToggleConversationDock={() => setConversationDockOpen(value => !value)}
               />
             </div>
-            <div style={{ display: activeScreen === 'maker' ? 'block' : 'none', height: '100%' }}>
-              <LessonMakerOverlay tier={tier} />
-            </div>
-          </div>
+          )}
 
           <MentorThoughtBubble thought={
             loading && loadingThought 
@@ -2415,9 +2317,9 @@ export default function CounselorClient() {
         {/* Caption panel */}
         <div
           style={{
-            flex: isMobileLandscape ? 1 : captionPanelFlex,
+            flex: workspaceActive ? (isMobilePortrait ? '0 0 38%' : '0 0 min(420px, 36vw)') : (isMobileLandscape ? 1 : captionPanelFlex),
             position: 'relative',
-            display: 'flex',
+            display: workspaceActive && workspaceExpanded && !conversationDockOpen ? 'none' : 'flex',
             flexDirection: 'column',
             background: '#fff',
             borderRadius: isMobileLandscape ? 8 : 0,
@@ -2448,16 +2350,15 @@ export default function CounselorClient() {
                 Help
               </p>
               <p style={{ fontSize: 14, marginBottom: 16, textAlign: 'center' }}>
-                I'm here to support you in your teaching journey. 
-                Share your challenges, goals, or questions about curriculum planning.
+                Work with me while you use the Syllabus and Lesson Library. I can inspect the current plan and learning evidence, explain what you are seeing, and carry out facilitator-directed changes through the same authoritative systems used by the app.
               </p>
               <div style={{ fontSize: 14, marginBottom: 16, color: '#6b7280', textAlign: 'left' }}>
-                <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>I can help you:</p>
+                <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>You can ask me to:</p>
                 <ul style={{ paddingLeft: 24, marginBottom: 12, lineHeight: 1.6 }}>
-                  <li>Process feelings and challenges around teaching</li>
-                  <li>Plan curriculum and create learning schedules</li>
-                  <li>Develop strategies for specific learning situations</li>
-                  <li>Balance academic expectations with family dynamics</li>
+                  <li>Review the selected learner's Syllabus, recent evidence, and what should happen next</li>
+                  <li>Work through the Syllabus in Week or Month view without leaving this conversation</li>
+                  <li>Review requirements, personal goals, weekly pattern, and Curriculum Guidance</li>
+                  <li>Search the Lesson Library and create or revise lessons when you direct me to</li>
                 </ul>
                 <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>Background Actions (Just Ask!):</p>
                 <ul style={{ paddingLeft: 24, marginBottom: 12, lineHeight: 1.6 }}>
@@ -2466,14 +2367,14 @@ export default function CounselorClient() {
                   <li><strong>Generate Lessons:</strong> "Create a 5th grade math lesson on fractions"</li>
                   <li><strong>Schedule Lessons:</strong> "Add the photosynthesis lesson to Emma's Syllabus for Monday"</li>
                 </ul>
-                <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>Quick Access Screens:</p>
+                <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>Workspace:</p>
                 <ul style={{ paddingLeft: 24, marginBottom: 12, lineHeight: 1.6 }}>
-                  <li><strong>📚 Lessons:</strong> Browse and review all available lessons</li>
-                  <li><strong>✨ Generator:</strong> Create custom lessons for your learners</li>
-                  <li><strong>📅 Month view:</strong> Open the learner's Syllabus by month</li>
+                  <li><strong>Syllabus:</strong> The primary workspace, including learner selection, learner settings, Week view, and Month view</li>
+                  <li><strong>Lesson Library:</strong> Browse, review, edit, and plan with the current lesson collection</li>
+                  <li><strong>Expand:</strong> Give the workspace the screen while keeping this conversation available in its dock</li>
                 </ul>
                 <p style={{ fontSize: 13, fontStyle: 'italic', color: '#9ca3af', marginTop: 12 }}>
-                  Select a learner from the dropdown below to get personalized guidance based on their progress. Use the menu button to access different screens.
+                  Learner selection and learner settings live inside the Syllabus. The workspace and this conversation stay connected while you work.
                 </p>
               </div>
             </div>
@@ -2520,33 +2421,11 @@ export default function CounselorClient() {
         </div>
       </div>
 
-      {/* Clipboard Overlay */}
-      <ClipboardOverlay
-        summary={draftSummary}
-        onSave={handleClipboardSave}
-        onDelete={handleClipboardDelete}
-        onExport={exportConversation}
-        onClose={() => {
-          setShowClipboard(false)
-        }}
-        show={showClipboard}
-        forced={clipboardForced}
-      />
-
-      {/* Goals Clipboard Overlay */}
-      <GoalsClipboardOverlay
-        visible={showGoalsClipboard}
-        onClose={() => setShowGoalsClipboard(false)}
-        learnerId={selectedLearnerId}
-        learnerName={learners.find(l => l.id === selectedLearnerId)?.name}
-        onSave={(text) => setGoalsNotes(text)}
-      />
-
       {/* Input footer */}
       <div style={{
         position: 'fixed',
         bottom: 0,
-        left: 0,
+        left: workspaceActive && conversationDockOpen && !isMobilePortrait ? 'calc(100vw - min(420px, 36vw))' : 0,
         right: 0,
         padding: '8px 16px',
         background: '#fff',
@@ -2568,30 +2447,11 @@ export default function CounselorClient() {
                 gap: 8,
                 marginBottom: 4
               }}>
-                <select
-                  id="learner-select"
-                  value={selectedLearnerId}
-                  onChange={(e) => setSelectedLearnerId(e.target.value)}
-                  disabled={loading || isSpeaking}
-                  style={{
-                    flex: 1,
-                    minWidth: 0,
-                    padding: '8px 12px',
-                    border: '1px solid #d1d5db',
-                    borderRadius: 8,
-                    fontSize: 14,
-                    fontFamily: 'inherit',
-                    background: '#fff',
-                    cursor: (loading || isSpeaking) ? 'not-allowed' : 'pointer'
-                  }}
-                >
-                  <option value="none">No Learner Selected (general discussion)</option>
-                  {learners.map(learner => (
-                    <option key={learner.id} value={learner.id}>
-                      {learner.name} {learner.grade ? `(Grade ${learner.grade})` : ''}
-                    </option>
-                  ))}
-                </select>
+                <div style={{ flex: 1, minWidth: 0, fontSize: 13, color: '#6b645c' }}>
+                  {selectedLearnerId !== 'none'
+                    ? `Working with ${learners.find(learner => learner.id === selectedLearnerId)?.name || 'selected learner'}`
+                    : 'Select a learner from the Syllabus'}
+                </div>
                 
                 {/* Screen toggle buttons */}
                 {isMobilePortrait ? (
@@ -2729,19 +2589,19 @@ export default function CounselorClient() {
                           
                           <button
                             onClick={() => {
-                              setActiveScreen('maker')
+                              openSyllabusWorkspace('week')
                               setMenuOpen(false)
                             }}
-                            title="Lesson Generator"
+                            title="Syllabus"
                             style={{
                               display: 'flex',
                               alignItems: 'center',
                               gap: 8,
                               padding: '8px 12px',
                               border: '2px solid',
-                              borderColor: activeScreen === 'maker' ? '#3b82f6' : '#d1d5db',
+                              borderColor: activeScreen === 'syllabus' ? '#3b82f6' : '#d1d5db',
                               borderRadius: 6,
-                              background: activeScreen === 'maker' ? '#dbeafe' : '#fff',
+                              background: activeScreen === 'syllabus' ? '#dbeafe' : '#fff',
                               cursor: 'pointer',
                               fontSize: 14,
                               fontWeight: 500,
@@ -2749,16 +2609,16 @@ export default function CounselorClient() {
                               justifyContent: 'flex-start'
                             }}
                           >
-                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>✨</span>
-                            <span>Generator</span>
+                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>🧭</span>
+                            <span>Syllabus</span>
                           </button>
                           
                           <button
                             onClick={() => {
-                              openSyllabusMonthView()
+                              setWorkspaceExpanded(value => !value)
                               setMenuOpen(false)
                             }}
-                            title="Month view"
+                            title="Expand workspace"
                             style={{
                               display: 'flex',
                               alignItems: 'center',
@@ -2775,8 +2635,8 @@ export default function CounselorClient() {
                               justifyContent: 'flex-start'
                             }}
                           >
-                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>📅</span>
-                            <span>Month view</span>
+                            <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>↗</span>
+                            <span>Expand workspace</span>
                           </button>
                         </div>
                       </>
@@ -2842,17 +2702,16 @@ export default function CounselorClient() {
                       📚
                     </button>
                     <button
-                      onClick={() => setActiveScreen('maker')}
-                      title={!hasAccess ? 'Pro required to use Lesson Generator overlay' : 'Lesson Generator'}
-                      disabled={!hasAccess}
+                      onClick={() => openSyllabusWorkspace('week')}
+                      title="Syllabus"
                       style={{
                         width: 40,
                         height: 40,
                         border: '2px solid',
-                        borderColor: activeScreen === 'maker' ? '#3b82f6' : '#d1d5db',
+                        borderColor: activeScreen === 'syllabus' ? '#3b82f6' : '#d1d5db',
                         borderRadius: 6,
-                        background: activeScreen === 'maker' ? '#dbeafe' : '#fff',
-                        cursor: !hasAccess ? 'not-allowed' : 'pointer',
+                        background: activeScreen === 'syllabus' ? '#dbeafe' : '#fff',
+                        cursor: 'pointer',
                         fontSize: 20,
                         display: 'flex',
                         alignItems: 'center',
@@ -2860,11 +2719,11 @@ export default function CounselorClient() {
                         transition: 'all 0.2s'
                       }}
                     >
-                      ✨
+                      🧭
                     </button>
                     <button
-                      onClick={() => openSyllabusMonthView()}
-                      title="Month view"
+                      onClick={() => setWorkspaceExpanded(value => !value)}
+                      title="Expand workspace"
                       style={{
                         width: 40,
                         height: 40,
@@ -2880,7 +2739,7 @@ export default function CounselorClient() {
                         transition: 'all 0.2s'
                       }}
                     >
-                      📅
+                      ↗
                     </button>
                   </div>
                 )}

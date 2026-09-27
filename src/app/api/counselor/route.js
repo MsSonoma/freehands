@@ -126,7 +126,7 @@ HOW TO WORK:
 - Keep technical implementation details and function names out of normal user-facing prose.
 
 PRODUCT SURFACES:
-The facilitator experience includes Ms. Sonoma Help, Syllabus (with week and month views), Lessons, Generated Lessons, Lesson Maker, Learners, Prepare, Account, and Notifications. Use open_surface when the facilitator asks you to take them to one of these surfaces.
+The facilitator experience includes Ms. Sonoma Help, Syllabus (with week and month views plus learner selection and learner settings), Lessons, Generated Lessons, Lesson Maker, Prepare, Account, and Notifications. Learner management is part of the Syllabus experience rather than a separate primary destination. Use open_surface when the facilitator asks you to take them to one of these areas.
 
 STYLE:
 - Calm, direct, intelligent, concrete, and patient.
@@ -495,6 +495,182 @@ async function executeGetSyllabus(args, request, toolLog, toolContext) {
     return toolSuccess('get_syllabus', payload.has_active_syllabus ? `Loaded the active Syllabus for ${learner.name}.` : `No active Syllabus is established for ${learner.name}.`, { learner: { id: learner.id, name: learner.name, grade: learner.grade }, syllabus: payload })
   } catch (error) {
     pushToolLog(toolLog, { name: 'get_syllabus', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+function curriculumGuidanceKey(prefix) {
+  const id = globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`
+  return `${prefix}:${id}`
+}
+
+function defaultCurriculumPeriod(today) {
+  const value = String(today || new Date().toISOString().slice(0, 10)).slice(0, 10)
+  const parsed = new Date(`${value}T12:00:00.000Z`)
+  if (Number.isNaN(parsed.getTime())) {
+    return { id: null, label: 'Current semester', period_type: 'semester', starts_on: value, ends_on: value }
+  }
+  const year = parsed.getUTCFullYear()
+  const month = parsed.getUTCMonth() + 1
+  return month >= 7
+    ? { id: null, label: `Fall ${year}`, period_type: 'semester', starts_on: `${year}-08-01`, ends_on: `${year}-12-31` }
+    : { id: null, label: `Spring ${year}`, period_type: 'semester', starts_on: `${year}-01-01`, ends_on: `${year}-06-30` }
+}
+
+function compactCurriculumGuidance(data = {}) {
+  return {
+    resolved_today: data.resolved_today || null,
+    period: data.period || null,
+    contract_version: data.contract_version ? { id: data.contract_version.id, created_at: data.contract_version.created_at || null } : null,
+    requirements: Array.isArray(data.requirements) ? data.requirements.slice(0, 100) : [],
+    goals: Array.isArray(data.goals) ? data.goals.slice(0, 100) : [],
+    state: Array.isArray(data.state) ? data.state.slice(0, 100) : [],
+    recommendations: Array.isArray(data.recommendations) ? data.recommendations.slice(0, 50) : [],
+  }
+}
+
+async function executeGetCurriculumGuidance(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    pushToolLog(toolLog, { name: 'get_curriculum_guidance', phase: 'start', context: { learnerId: learner.id } })
+    const response = await internalApiJson(request, '/api/syllabus/curriculum', { searchParams: { learnerId: learner.id } })
+    if (!response.ok) return toolError(response.data?.error || 'Could not load Curriculum Guidance', response.data)
+    const guidance = compactCurriculumGuidance(response.data)
+    pushToolLog(toolLog, { name: 'get_curriculum_guidance', phase: 'success', context: { learnerId: learner.id } })
+    return toolSuccess('get_curriculum_guidance', `Loaded Curriculum Guidance for ${learner.name}.`, {
+      learner: { id: learner.id, name: learner.name, grade: learner.grade },
+      guidance,
+    })
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'get_curriculum_guidance', phase: 'error', context: { message: error.message } })
+    return toolError(error.message)
+  }
+}
+
+async function executeUpdateCurriculumGuidance(args, request, toolLog, toolContext) {
+  try {
+    const learner = await resolveOwnedLearner(args, request, toolContext)
+    const currentResponse = await internalApiJson(request, '/api/syllabus/curriculum', { searchParams: { learnerId: learner.id } })
+    if (!currentResponse.ok) return toolError(currentResponse.data?.error || 'Could not load current Curriculum Guidance', currentResponse.data)
+
+    const current = currentResponse.data || {}
+    const period = { ...(current.period || defaultCurriculumPeriod(current.resolved_today)) }
+    let requirements = (Array.isArray(current.requirements) ? current.requirements : []).map((item) => ({ ...item }))
+    let goals = (Array.isArray(current.goals) ? current.goals : []).map((item) => ({ ...item }))
+    const action = String(args?.action || '')
+    const key = String(args?.key || '').trim()
+
+    if (action === 'add_goal') {
+      const title = String(args?.title || '').trim()
+      if (!title) return toolError('A goal title is required')
+      goals.push({
+        goal_key: curriculumGuidanceKey('goal'),
+        title,
+        subject: String(args?.subject || '').trim(),
+        priority: args?.priority || 'normal',
+        linked_requirement_keys: [],
+        notes: String(args?.notes || '').trim(),
+        sort_order: goals.length,
+      })
+    } else if (action === 'update_goal') {
+      const index = goals.findIndex((goal) => String(goal?.goal_key || '') === key)
+      if (index < 0) return toolError('That personal goal could not be found in current Curriculum Guidance')
+      goals[index] = {
+        ...goals[index],
+        ...(args?.title != null ? { title: String(args.title).trim() } : {}),
+        ...(args?.subject != null ? { subject: String(args.subject).trim() } : {}),
+        ...(args?.priority != null ? { priority: args.priority } : {}),
+        ...(args?.notes != null ? { notes: String(args.notes).trim() } : {}),
+      }
+    } else if (action === 'remove_goal') {
+      if (!key) return toolError('A goal key is required')
+      goals = goals.filter((goal) => String(goal?.goal_key || '') !== key)
+    } else if (action === 'add_requirement') {
+      const statement = String(args?.statement || '').trim()
+      const subject = String(args?.subject || '').trim()
+      if (!statement || !subject) return toolError('Requirement subject and statement are required')
+      const requirementKey = curriculumGuidanceKey('facilitator')
+      requirements.push({
+        requirement_key: requirementKey,
+        framework_item_id: null,
+        subject,
+        statement,
+        must_learn: args?.mustLearn !== false,
+        attention: args?.attention || 'normal',
+        target_date: args?.targetDate || null,
+        planning_group_key: requirementKey,
+        source_kind: 'facilitator',
+        sort_order: requirements.length,
+        metadata: {},
+      })
+    } else if (action === 'update_requirement') {
+      const index = requirements.findIndex((item) => String(item?.requirement_key || '') === key)
+      if (index < 0) return toolError('That requirement could not be found in current Curriculum Guidance')
+      const existing = requirements[index]
+      const changesFrameworkIdentity = Boolean(existing.framework_item_id && (args?.statement != null || args?.subject != null))
+      const requirementKey = changesFrameworkIdentity ? curriculumGuidanceKey('facilitator') : existing.requirement_key
+      requirements[index] = {
+        ...existing,
+        requirement_key: requirementKey,
+        ...(changesFrameworkIdentity ? {
+          framework_item_id: null,
+          planning_group_key: requirementKey,
+          source_kind: 'facilitator',
+          metadata: { ...(existing.metadata || {}), derived_from_framework_item_id: existing.framework_item_id },
+        } : {}),
+        ...(args?.statement != null ? { statement: String(args.statement).trim() } : {}),
+        ...(args?.subject != null ? { subject: String(args.subject).trim() } : {}),
+        ...(args?.mustLearn != null ? { must_learn: Boolean(args.mustLearn) } : {}),
+        ...(args?.attention != null ? { attention: args.attention } : {}),
+        ...(args?.targetDate != null ? { target_date: args.targetDate || null } : {}),
+      }
+      if (changesFrameworkIdentity) {
+        goals = goals.map((goal) => ({
+          ...goal,
+          linked_requirement_keys: (goal.linked_requirement_keys || []).map((linked) => linked === existing.requirement_key ? requirementKey : linked),
+        }))
+      }
+    } else if (action === 'remove_requirement') {
+      if (!key) return toolError('A requirement key is required')
+      requirements = requirements.filter((item) => String(item?.requirement_key || '') !== key)
+      goals = goals.map((goal) => ({
+        ...goal,
+        linked_requirement_keys: (goal.linked_requirement_keys || []).filter((linked) => linked !== key),
+      }))
+    } else if (action === 'set_period') {
+      if (args?.periodLabel != null) period.label = String(args.periodLabel).trim()
+      if (args?.periodType != null) period.period_type = String(args.periodType).trim()
+      if (args?.startsOn != null) period.starts_on = String(args.startsOn).slice(0, 10)
+      if (args?.endsOn != null) period.ends_on = String(args.endsOn).slice(0, 10)
+    } else {
+      return toolError('Unsupported Curriculum Guidance action')
+    }
+
+    pushToolLog(toolLog, { name: 'update_curriculum_guidance', phase: 'start', context: { learnerId: learner.id, action } })
+    const response = await internalApiJson(request, '/api/syllabus/curriculum', {
+      method: 'POST',
+      body: {
+        learnerId: learner.id,
+        guidance: {
+          period,
+          expected_active_version_id: current.contract_version?.id || null,
+          requirements: requirements.map((item, index) => ({ ...item, sort_order: index })),
+          goals: goals.map((goal, index) => ({ ...goal, sort_order: index })),
+          change_reason: 'Facilitator-directed Curriculum Guidance update through Ms. Sonoma',
+        },
+      },
+    })
+    if (!response.ok) return toolError(response.data?.error || 'Could not update Curriculum Guidance', response.data)
+
+    const readback = await internalApiJson(request, '/api/syllabus/curriculum', { searchParams: { learnerId: learner.id } })
+    const verified = Boolean(readback.ok && (readback.data?.contract_version?.id || readback.data?.curriculum_contract_version_id))
+    pushToolLog(toolLog, { name: 'update_curriculum_guidance', phase: verified ? 'success' : 'error', context: { learnerId: learner.id, action } })
+    return toolSuccess('update_curriculum_guidance', verified ? `Updated and verified Curriculum Guidance for ${learner.name}.` : 'The Curriculum Guidance update returned successfully, but readback could not verify it.', {
+      learner: { id: learner.id, name: learner.name, grade: learner.grade },
+      guidance: compactCurriculumGuidance(readback.data || response.data),
+    }, verified)
+  } catch (error) {
+    pushToolLog(toolLog, { name: 'update_curriculum_guidance', phase: 'error', context: { message: error.message } })
     return toolError(error.message)
   }
 }
@@ -1419,6 +1595,8 @@ const MENTOR_TOOL_EXECUTORS = Object.freeze({
   search_lessons: (args, context) => executeSearchLessons(args, context.request, context.toolLog),
   get_lesson_details: (args, context) => executeGetLessonDetails(args, context.request, context.toolLog),
   get_syllabus: (args, context) => executeGetSyllabus(args, context.request, context.toolLog, context),
+  get_curriculum_guidance: (args, context) => executeGetCurriculumGuidance(args, context.request, context.toolLog, context),
+  update_curriculum_guidance: (args, context) => executeUpdateCurriculumGuidance(args, context.request, context.toolLog, context),
   get_learning_evidence: (args, context) => executeGetLearningEvidence(args, context.request, context.toolLog, context),
   get_schedule: (args, context) => executeGetSchedule(args, context.request, context.toolLog, context),
   propose_syllabus_plan: (args, context) => executeProposeSyllabusPlan(args, context.request, context.toolLog, context),
@@ -1474,6 +1652,7 @@ export async function POST(req) {
     const contentType = (req.headers?.get?.('content-type') || '').toLowerCase()
     let learnerTranscript = null
     let goalsNotes = null
+    let workspaceContext = null
     try {
       if (contentType.includes('application/json')) {
         const body = await req.json()
@@ -1481,7 +1660,8 @@ export async function POST(req) {
         userMessage = (body.message || '').trim()
         conversationHistory = Array.isArray(body.history) ? body.history : []
         learnerTranscript = body.learner_transcript || null
-        goalsNotes = body.goals_notes || null
+        goalsNotes = body.curriculum_guidance || body.goals_notes || null
+        workspaceContext = body.workspace_context && typeof body.workspace_context === 'object' ? body.workspace_context : null
         followup = body.followup || null
         generationConfirmed = !!body.generation_confirmed
         confirmedTools = Array.isArray(body.confirmed_tools) ? body.confirmed_tools.map((value) => String(value || '').trim()).filter(Boolean) : []
@@ -1530,9 +1710,13 @@ export async function POST(req) {
     systemPrompt += `\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: 'educational planning', audience: 'facilitator' })}`
     
     if (goalsNotes) {
-      systemPrompt += `\n\n=== PERSISTENT GOALS & PRIORITIES ===\nThe facilitator has set these persistent goals that should guide all conversations:\n\nPersistent Goals:\n${goalsNotes}\n\n=== END PERSISTENT GOALS ===\n\nIMPORTANT: These goals persist across all conversations. Reference them when relevant, and help the facilitator work toward them. The facilitator can update these goals anytime using the Goals clipboard button (ðŸ“‹) on screen.`
+      systemPrompt += `\n\n=== CURRENT CURRICULUM GUIDANCE ===\nThis is the selected learner's current authoritative Curriculum Guidance context. It may include the planning period, requirements, facilitator-authored personal goals, and current mastery state. Treat requirements and goals as educator-authored intent; treat mastery_state as recorded evidence state rather than a new goal.\n\n${goalsNotes}\n\n=== END CURRENT CURRICULUM GUIDANCE ===\n\nUse this context when it is relevant. Do not describe it as a separate Goals/Notes clipboard. Curriculum Guidance and Plan Details are the facilitator-facing place to review or change persistent educational intent.`
     }
     
+    if (workspaceContext) {
+      systemPrompt += `\n\n=== HELP WORKSPACE CONTEXT ===\nVisible surface: ${String(workspaceContext.surface || 'unknown')}\nSyllabus view: ${String(workspaceContext.syllabus_view || 'week')}\nExpanded workspace: ${workspaceContext.expanded === true ? 'yes' : 'no'}\n\nUse this only as UI context. It tells you what area the facilitator is looking at, not the underlying data. Read authoritative state with tools before making factual claims about what is on the Syllabus or in learner evidence.\n=== END HELP WORKSPACE CONTEXT ===`
+    }
+
     if (selectedLearnerId) {
       systemPrompt += `\n\n=== SELECTED LEARNER TARGET ===\nLearner ID: ${selectedLearnerId}\nLearner name: ${selectedLearnerName || 'selected learner'}\nUse this learner by default for learner-scoped tools unless the facilitator explicitly names another learner.\n=== END SELECTED LEARNER TARGET ===`
     }

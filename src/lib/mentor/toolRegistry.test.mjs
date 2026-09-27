@@ -19,6 +19,8 @@ test('Ms. Sonoma facilitator Help registry is unique and drives OpenAI tool defi
 test('Ms. Sonoma facilitator Help exposes current Syllabus and mastery capabilities', () => {
   const required = [
     'get_syllabus',
+    'get_curriculum_guidance',
+    'update_curriculum_guidance',
     'get_learning_evidence',
     'get_schedule',
     'propose_syllabus_plan',
@@ -34,6 +36,9 @@ test('Ms. Sonoma facilitator Help exposes current Syllabus and mastery capabilit
 
 test('educational authority boundaries are explicit', () => {
   assert.equal(getMentorTool('get_learning_evidence').authority, 'read')
+  assert.equal(getMentorTool('get_curriculum_guidance').authority, 'read')
+  assert.equal(getMentorTool('update_curriculum_guidance').authority, 'commit')
+  assert.equal(mentorToolNeedsConfirmation('update_curriculum_guidance'), true)
   assert.equal(getMentorTool('propose_syllabus_plan').authority, 'propose')
   assert.equal(getMentorTool('update_syllabus_plan').authority, 'commit')
   assert.equal(getMentorTool('open_surface').authority, 'navigate')

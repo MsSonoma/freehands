@@ -10,7 +10,6 @@ import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs';
 
 const FACILITATOR_MENU_ITEMS = Object.freeze([
   { label: 'Syllabus', href: '/facilitator', primary: true },
-  { label: 'Learners', href: '/facilitator?overlay=learners' },
   { label: 'Lesson Library', href: '/facilitator/lessons' },
   { label: 'Help', href: '/facilitator/help' },
   { label: 'Notifications', href: '/facilitator/notifications', dividerBefore: true },
@@ -439,10 +438,6 @@ export default function HeaderBar() {
 	}, [pathname, router]);
 
 	const handleFacilitatorMenuItemClick = useCallback(async (event, href, { mobile = false } = {}) => {
-		if (href === '/facilitator?overlay=learners' && pathname === '/facilitator') {
-			event.preventDefault();
-			window.dispatchEvent(new CustomEvent('facilitator:open-learners'));
-		}
 		if (pathname.startsWith('/session')) {
 			event.preventDefault();
 			const ok = await goWithPin(href);

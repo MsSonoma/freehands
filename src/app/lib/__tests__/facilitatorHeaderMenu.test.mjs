@@ -12,7 +12,6 @@ test('facilitator header menu reflects the Syllabus-first information architectu
 
   const expected = [
     ['Syllabus', '/facilitator'],
-    ['Learners', '/facilitator?overlay=learners'],
     ['Lesson Library', '/facilitator/lessons'],
     ['Help', '/facilitator/help'],
     ['Notifications', '/facilitator/notifications'],
@@ -28,6 +27,7 @@ test('facilitator header menu reflects the Syllabus-first information architectu
 
   assert.match(menu, /label: 'Syllabus'.*primary: true/)
   assert.match(menu, /label: 'Notifications'.*dividerBefore: true/)
+  assert.doesNotMatch(menu, /label: 'Learners'/)
   assert.doesNotMatch(menu, /label: 'Lessons'/)
   assert.doesNotMatch(menu, /label: 'Calendar'/)
   assert.doesNotMatch(menu, /label: 'Month View'/)
@@ -38,8 +38,9 @@ test('desktop and mobile render the same canonical facilitator menu without icon
   assert.match(source, /handleFacilitatorMenuItemClick = useCallback/)
   assert.equal((source.match(/handleFacilitatorMenuItemClick\(event/g) || []).length, 2)
   assert.doesNotMatch(source, /<span aria-hidden="true">/)
+  assert.doesNotMatch(source, />Learners<\/Link>/)
   assert.doesNotMatch(source, />Lessons<\/Link>/)
   assert.doesNotMatch(source, />Calendar<\/Link>/)
-  assert.match(source, /href === '\/facilitator\?overlay=learners' && pathname === '\/facilitator'/)
-  assert.match(source, /facilitator:open-learners/)
+  assert.doesNotMatch(source, /href === '\/facilitator\?overlay=learners' && pathname === '\/facilitator'/)
+  assert.doesNotMatch(source, /facilitator:open-learners/)
 })

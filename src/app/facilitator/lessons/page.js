@@ -1,5 +1,5 @@
 'use client'
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { resolveLibraryLessonState, resolveInitialLibraryLearner, LIBRARY_PRIMARY_ACTIONS } from '@/app/lib/facilitatorLessonLibraryState.mjs'
@@ -31,8 +31,9 @@ function normalizeApprovedLessonKeys(map = {}) {
   return { normalized, changed }
 }
 
-export default function FacilitatorLessonsPage() {
+export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
   const router = useRouter()
+  const navigate = useCallback((href) => onNavigate ? onNavigate(href) : router.push(href), [onNavigate, router])
   const { loading: authLoading, isAuthenticated, gateType } = useAccessControl({ requiredAuth: true })
   const { coreSubjects, subjectsWithoutGenerated: subjectDropdownOptions } = useFacilitatorSubjects({ includeGenerated: true })
   const [pinChecked, setPinChecked] = useState(false)
@@ -147,7 +148,7 @@ export default function FacilitatorLessonsPage() {
       try {
         const allowed = await ensurePinAllowed('facilitator-page')
         if (!allowed) {
-          router.push('/')
+          navigate('/')
           return
         }
         if (!cancelled) setPinChecked(true)
@@ -156,7 +157,7 @@ export default function FacilitatorLessonsPage() {
       }
     })()
     return () => { cancelled = true }
-  }, [router])
+  }, [navigate])
 
   useEffect(() => {
     if (!pinChecked) return
@@ -567,7 +568,7 @@ export default function FacilitatorLessonsPage() {
       })
       const json = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(json?.error || 'Could not add this lesson to the learner Syllabus')
-      router.push(href)
+      navigate(href)
     } catch (error) {
       alert(error?.message || 'Could not add this lesson to the learner Syllabus')
     } finally {
@@ -637,10 +638,10 @@ export default function FacilitatorLessonsPage() {
                 Advanced library tools
               </summary>
               <div style={{ position: 'absolute', right: 0, top: 'calc(100% + 6px)', zIndex: 5, display: 'grid', gap: 6, minWidth: 210, padding: 8, border: '1px solid #e5e7eb', borderRadius: 8, background: '#fff', boxShadow: '0 8px 24px rgba(15,23,42,0.12)' }}>
-                <button type="button" onClick={() => router.push('/facilitator/lessons/edit?new=1')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontWeight: 600, cursor: 'pointer' }}>
+                <button type="button" onClick={() => navigate('/facilitator/lessons/edit?new=1')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontWeight: 600, cursor: 'pointer' }}>
                   New lesson from scratch
                 </button>
-                <button type="button" onClick={() => router.push('/facilitator/generator')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #dbeafe', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer' }}>
+                <button type="button" onClick={() => navigate('/facilitator/generator')} style={{ textAlign: 'left', padding: '9px 10px', border: '1px solid #dbeafe', borderRadius: 6, background: '#eff6ff', color: '#1d4ed8', fontWeight: 600, cursor: 'pointer' }}>
                   Lesson Generator
                 </button>
               </div>
@@ -972,7 +973,7 @@ export default function FacilitatorLessonsPage() {
                                 void addApprovedLessonToSyllabus(libraryState.lessonKey, libraryState.href)
                                 return
                               }
-                              router.push(libraryState.href)
+                              navigate(libraryState.href)
                             }}
                             data-primary-action={libraryState.primaryActionType}
                             disabled={libraryState.primaryActionType === LIBRARY_PRIMARY_ACTIONS.PLAN && planningLessonKey === libraryState.lessonKey}
@@ -1000,7 +1001,7 @@ export default function FacilitatorLessonsPage() {
                               {isOwned && <button type="button" onClick={() => setRevisionTarget({ lessonKey, title: lesson.title || 'lesson' })} style={{ textAlign: 'left', padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#c7442e', fontSize: 12, fontWeight: 700, cursor: 'pointer' }}>
                                 Regenerate with changes
                               </button>}
-                              <button type="button" onClick={() => router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)} style={{ textAlign: 'left', padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' }}>
+                              <button type="button" onClick={() => navigate(`/facilitator/lessons/edit?key=${encodeURIComponent(lessonKey)}`)} style={{ textAlign: 'left', padding: '7px 9px', border: '1px solid #e5e7eb', borderRadius: 6, background: '#fff', color: '#374151', fontSize: 12, cursor: 'pointer' }}>
                                 Edit
                               </button>
                               {learnerSelected && (
@@ -1112,10 +1113,10 @@ export default function FacilitatorLessonsPage() {
 
       <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
       <div
-        onClick={() => router.push('/facilitator?view=month')}
+        onClick={() => navigate('/facilitator?view=month')}
         role="button"
         tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator?view=month')}
+        onKeyDown={e => e.key === 'Enter' && navigate('/facilitator?view=month')}
         style={{
           marginTop: 32,
           padding: '16px 20px',
