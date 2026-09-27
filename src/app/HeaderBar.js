@@ -10,7 +10,6 @@ import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs';
 
 const FACILITATOR_MENU_ITEMS = Object.freeze([
   { label: 'Syllabus', href: '/facilitator', primary: true },
-  { label: 'Month View', href: '/facilitator/calendar' },
   { label: 'Learners', href: '/facilitator/learners' },
   { label: 'Lesson Library', href: '/facilitator/lessons' },
   { label: 'Mr. Mentor', href: '/facilitator/mr-mentor' },
@@ -157,7 +156,7 @@ export default function HeaderBar() {
 
 	// Receive the session page title from the session page, counselor page, or calendar page
 	useEffect(() => {
-		if (!pathname.startsWith('/session') && !pathname.startsWith('/facilitator/mr-mentor') && !pathname.startsWith('/facilitator/calendar')) { setSessionTitle(''); return; }
+		if (!pathname.startsWith('/session') && !pathname.startsWith('/facilitator/mr-mentor')) { setSessionTitle(''); return; }
 		const onTitle = (e) => {
 			try { setSessionTitle((e && e.detail) || ''); } catch { setSessionTitle(''); }
 		};
@@ -409,8 +408,7 @@ export default function HeaderBar() {
 			pathname.startsWith('/facilitator/learners') ||
 			pathname.startsWith('/facilitator/lessons') ||
 			pathname.startsWith('/facilitator/generator') ||
-			pathname.startsWith('/facilitator/account') ||
-			pathname.startsWith('/facilitator/calendar')
+			pathname.startsWith('/facilitator/account')
 		) {
 			return '/facilitator';
 		}
@@ -552,7 +550,7 @@ export default function HeaderBar() {
 
 				{/* Center area: show lesson title on Session/Counselor/Calendar; else show Back */}
 				<div style={{ flex:1, display:'flex', justifyContent:'center', alignItems:'center', minWidth:0 }}>
-					{((pathname.startsWith('/session') || pathname.startsWith('/facilitator/mr-mentor') || pathname.startsWith('/facilitator/calendar')) && sessionTitle) ? (
+					{((pathname.startsWith('/session') || pathname.startsWith('/facilitator/mr-mentor')) && sessionTitle) ? (
 						isSmallWidth ? (
 							<div style={{ position:'relative', width:'100%', maxWidth:'min(98vw, 1300px)', height:'100%' }}>
 								<div style={{ position:'absolute', left:0, right:0, top:'50%', transform:'translateY(-50%)', display:'flex', justifyContent:'center', alignItems:'center', padding:'0 4px' }}>

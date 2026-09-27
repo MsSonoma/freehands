@@ -1112,10 +1112,10 @@ export default function FacilitatorLessonsPage() {
 
       <div style={{ width: '100%', maxWidth: 800, margin: '0 auto' }}>
       <div
-        onClick={() => router.push('/facilitator/calendar')}
+        onClick={() => router.push('/facilitator?view=month')}
         role="button"
         tabIndex={0}
-        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator/calendar')}
+        onKeyDown={e => e.key === 'Enter' && router.push('/facilitator?view=month')}
         style={{
           marginTop: 32,
           padding: '16px 20px',
@@ -1131,14 +1131,14 @@ export default function FacilitatorLessonsPage() {
       >
         <div>
           <div style={{ fontWeight: 700, fontSize: 15, color: '#1e40af', marginBottom: 4 }}>
-            📅 Want to generate whole weeks of lessons at once?
+            📅 Want to see the Syllabus by month?
           </div>
           <div style={{ fontSize: 13, color: '#4b5563' }}>
-            The Lesson Planner builds a full curriculum calendar for you — automatically.
+            Month view shows the same Syllabus lessons and reviews across the whole month — automatically.
           </div>
         </div>
         <div style={{ fontSize: 13, fontWeight: 600, color: '#2563eb', whiteSpace: 'nowrap' }}>
-          Open Planner →
+          Open month view →
         </div>
       </div>
       </div>

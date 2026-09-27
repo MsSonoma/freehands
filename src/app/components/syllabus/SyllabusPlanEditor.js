@@ -110,6 +110,8 @@ export default function SyllabusPlanEditor({
   learnerId,
   accessToken,
   today = '',
+  portfolioAllowed = false,
+  onOpenPortfolio = null,
   onClose,
   onSaved,
 }) {
@@ -230,7 +232,7 @@ export default function SyllabusPlanEditor({
     }
   }
 
-  if (section === 'teaching_guidance' || section === 'plan_details') return <CurriculumGuidanceEditor revision={revision} forecastItems={forecastItems} includePlanStructure={section === 'plan_details'} learnerId={learnerId} accessToken={accessToken} today={today} onClose={onClose} onSaved={onSaved} />
+  if (section === 'teaching_guidance' || section === 'plan_details') return <CurriculumGuidanceEditor revision={revision} forecastItems={forecastItems} includePlanStructure={section === 'plan_details'} learnerId={learnerId} accessToken={accessToken} today={today} portfolioAllowed={portfolioAllowed} onOpenPortfolio={onOpenPortfolio} onClose={onClose} onSaved={onSaved} />
 
   return <div className={styles.backdrop} onMouseDown={(event) => { if (event.target === event.currentTarget && !working) onClose?.() }}>
     <section className={styles.editor} role="dialog" aria-modal="true" aria-label={`Edit ${sectionLabel(section)}`}>

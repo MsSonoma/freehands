@@ -4,7 +4,6 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { groupSyllabusCalendarItems, syllabusCalendarSelection } from '../calendarProjection.mjs'
-import { resolveCalendarLandingParams } from '../../facilitatorCalendarLanding.mjs'
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url))
 const appRoot = path.resolve(__dirname, '../../..')
@@ -73,31 +72,29 @@ test('calendar selection marks forecast proposal lineage as suggested for the sh
   assert.equal(selection.occurrenceKey, 'forecast:lineage-1')
 })
 
-test('calendar is a second view of the same Syllabus future plan and can refresh and act on provisional forecast lineage', () => {
-  const calendar = source('facilitator/calendar/page.js')
-  const month = source('facilitator/calendar/LessonCalendar.js')
-  assert.match(calendar, /\/api\/syllabus\?learnerId=/)
-  assert.match(calendar, /timeline_items/)
-  assert.match(calendar, /proposed_learning_forecast/)
-  assert.match(calendar, /fetchForecastJson\('\/api\/syllabus\/forecast'/)
-  assert.match(calendar, /buildAutomaticForecastAttemptIdentity/)
-  assert.match(calendar, /\/api\/syllabus\/planning/)
-  assert.match(calendar, /\/api\/syllabus\/materialize/)
-  assert.match(calendar, /canChangeIntent=\{planningAccess\.can_change_intent\}/)
-  assert.match(calendar, /onGenerateWithChanges=\{generateForecastWithChanges\}/)
-  assert.match(month, /Forecast:/)
-  assert.doesNotMatch(calendar, /Curriculum planning stays in Syllabus|Open in Syllabus to prepare this concept/)
-  assert.doesNotMatch(calendar, /\/api\/planned-lessons/)
-  assert.doesNotMatch(calendar, /LessonPlanner/)
-  assert.doesNotMatch(calendar, /savePlannedLessons|loadPlannedLessons/)
-  assert.doesNotMatch(calendar, /ensurePinAllowed/)
+test('month view is a second view of the same Syllabus future plan and keeps forecast actions on the Syllabus surface', () => {
+  const home = source('facilitator/page.js')
+  const document = source('components/syllabus/SyllabusDocument.js')
+  const legacyCalendar = source('facilitator/calendar/page.js')
+  assert.match(home, /timelineItems={syllabus\.timeline_items}/)
+  assert.match(home, /proposedForecastItems=/)
+  assert.match(home, /\/api\/syllabus\/planning/)
+  assert.match(home, /\/api\/syllabus\/materialize/)
+  assert.match(home, /onGenerateWithChanges=\{\(item, changeRequest\) => generateForecastWithChanges\(item, changeRequest\)\}/)
+  assert.match(document, /groupSyllabusCalendarItems/)
+  assert.match(document, /data-syllabus-selected-month={monthStart}/)
+  assert.match(document, /selectMonthItem/)
+  assert.doesNotMatch(document, /\/api\/planned-lessons|LessonPlanner|savePlannedLessons|loadPlannedLessons/)
+  assert.match(legacyCalendar, /params\.set\('view', 'month'\)/)
+  assert.match(legacyCalendar, /router\.replace/)
 })
 
-test('legacy Calendar authoring URLs resolve to Syllabus', () => {
-  assert.equal(resolveCalendarLandingParams('tab=planner').redirectToSyllabus, true)
-  assert.equal(resolveCalendarLandingParams('tab=subjects').redirectToSyllabus, true)
-  assert.equal(resolveCalendarLandingParams('portfolio=1').openPortfolio, true)
-  assert.equal(resolveCalendarLandingParams('').redirectToSyllabus, false)
+test('legacy Calendar URLs always enter the unified Syllabus month view', () => {
+  const legacyCalendar = source('facilitator/calendar/page.js')
+  assert.match(legacyCalendar, /params\.delete\('tab'\)/)
+  assert.match(legacyCalendar, /params\.set\('view', 'month'\)/)
+  assert.match(legacyCalendar, /router\.replace/)
+  assert.doesNotMatch(legacyCalendar, /LessonCalendar|LessonPlanner|\/api\/planned-lessons/)
 })
 
 test('production navigation no longer links to Calendar Planner or Calendar Custom Subjects', () => {
@@ -107,16 +104,14 @@ test('production navigation no longer links to Calendar Planner or Calendar Cust
   assert.doesNotMatch(generator, /calendar\?tab=planner/)
   assert.match(generator, /\/facilitator/)
 })
-test('Mentor calendar and reporting use the canonical Syllabus instead of planned_lessons', () => {
-  const mentorCalendar = source('facilitator/generator/counselor/overlays/CalendarOverlay.jsx')
+test('facilitator helper opens the canonical Syllabus month view instead of owning a calendar surface', () => {
   const counselor = source('facilitator/generator/counselor/CounselorClient.jsx')
-  assert.match(mentorCalendar, /\/api\/syllabus\?learnerId=/)
-  assert.match(mentorCalendar, /proposed_learning_forecast/)
-  assert.match(mentorCalendar, /AI forecast suggestion/)
-  assert.doesNotMatch(mentorCalendar, /planned-lessons|LessonPlanner|Planning changes belong in Syllabus/)
-  assert.match(counselor, /Loading the Syllabus plan/)
-  assert.match(counselor, /\/api\/syllabus\?learnerId=/)
-  assert.doesNotMatch(counselor, /\/api\/planned-lessons/)
+  assert.match(counselor, /const openSyllabusMonthView = useCallback/)
+  assert.match(counselor, /new URLSearchParams\(\{ view: 'month' \}\)/)
+  assert.match(counselor, /<span>Month view<\/span>/)
+  assert.doesNotMatch(counselor, /CalendarOverlay|activeScreen === 'calendar'|setActiveScreen\('calendar'\)|\/api\/planned-lessons/)
+  assert.equal(fs.existsSync(path.join(appRoot, 'facilitator/generator/counselor/overlays/CalendarOverlay.jsx')), false)
+  assert.equal(fs.existsSync(path.join(appRoot, 'facilitator/calendar/LessonCalendar.js')), false)
   assert.equal(fs.existsSync(path.join(appRoot, 'facilitator/calendar/LessonPlanner.jsx')), false)
   assert.equal(fs.existsSync(path.join(appRoot, 'facilitator/calendar/DayViewOverlay.jsx')), false)
 })

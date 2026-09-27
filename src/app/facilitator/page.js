@@ -15,6 +15,7 @@ import SyllabusPlanEditor from '@/app/components/syllabus/SyllabusPlanEditor'
 import SyllabusDocument from '@/app/components/syllabus/SyllabusDocument'
 import SyllabusScheduleDialog from '@/app/components/syllabus/SyllabusScheduleDialog'
 import SyllabusDayActionDialog from '@/app/components/syllabus/SyllabusDayActionDialog'
+import GeneratePortfolioModal from '@/app/components/syllabus/GeneratePortfolioModal'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
@@ -134,6 +135,8 @@ export default function FacilitatorPage() {
   const [selectedWeekStart, setSelectedWeekStart] = useState('')
   const [returnFocus, setReturnFocus] = useState({ plannedDate: '', lessonKey: '', occurrenceId: '' })
   const [editingSection, setEditingSection] = useState('')
+  const [showPortfolio, setShowPortfolio] = useState(false)
+  const [initialSyllabusView, setInitialSyllabusView] = useState('week')
   const [replacingLineage, setReplacingLineage] = useState('')
   const [historyOccurrenceId, setHistoryOccurrenceId] = useState('')
   const [selectedSyllabusLesson, setSelectedSyllabusLesson] = useState(null)
@@ -169,6 +172,7 @@ export default function FacilitatorPage() {
   })
   const planningAccess = syllabusEntitlementsFor({ role: 'facilitator', planTier })
   const canScheduleLessons = featuresForTier(planTier).lessonScheduling === true
+  const portfolioAllowed = featuresForTier(planTier).lessonPlanner === true
   const noSchoolByDate = useMemo(() => noSchoolReasonMap(syllabus?.no_school_dates || []), [syllabus?.no_school_dates])
   const inlineModalOpen = Boolean(slateScheduler)
 
@@ -187,6 +191,8 @@ export default function FacilitatorPage() {
         const returnDate = returnParams.get('date') || ''
         const preferredLearner = safeItems.some((item) => String(item.id) === String(requestedLearner)) ? requestedLearner : remembered
         if (returnDate) setSelectedWeekStart(startOfSyllabusWeek(returnDate))
+        setInitialSyllabusView(returnParams.get('view') === 'month' ? 'month' : 'week')
+        setShowPortfolio(returnParams.get('portfolio') === '1')
         setReturnFocus({ plannedDate: returnDate, lessonKey: returnParams.get('lessonKey') || '', occurrenceId: returnParams.get('occurrenceId') || '', open: returnParams.get('review') !== 'complete' })
         setToken(session?.access_token || '')
         setLearners(safeItems)
@@ -421,6 +427,15 @@ export default function FacilitatorPage() {
 
   function openSectionEditor(section) {
     setEditingSection(section)
+  }
+
+  function openPortfolio() {
+    setEditingSection('')
+    if (!portfolioAllowed) {
+      router.push('/facilitator/account/plan')
+      return
+    }
+    setShowPortfolio(true)
   }
 
   async function planningPost(action, payload = {}) {
@@ -1028,6 +1043,7 @@ export default function FacilitatorPage() {
               focusLessonKey={returnFocus.lessonKey}
               focusOccurrenceId={returnFocus.occurrenceId}
               openFocusedLesson={returnFocus.open !== false}
+              initialView={initialSyllabusView}
               today={syllabus.resolved_today}
               contentLoading={contentLoading && !Array.isArray(syllabus.timeline_items)}
             />}
@@ -1086,6 +1102,8 @@ export default function FacilitatorPage() {
             learnerId={learnerId}
             accessToken={token}
             today={syllabus?.resolved_today || draft?.effective_from || ''}
+            portfolioAllowed={portfolioAllowed}
+            onOpenPortfolio={openPortfolio}
             onClose={() => setEditingSection('')}
             onSaved={() => loadCurrent()}
           />}
@@ -1129,6 +1147,15 @@ export default function FacilitatorPage() {
             const occurrenceKey = slateScheduler.item?.source_occurrence_id || slateScheduler.item?.occurrence_id || slateScheduler.item?.id || ''
             return <div className={styles.editorBackdrop}><section className={styles.sectionEditor} role="dialog" aria-modal="true" aria-label={`Schedule Daily Review for ${slateScheduler.item?.title || 'lesson'}`}><header><h2>Schedule Daily Review</h2><button type="button" onClick={() => setSlateScheduler(null)}>Close</button></header>{error && <div className={styles.error} role="alert">{error}</div>}<p>Schedule a separate Daily Review for <strong>{slateScheduler.item?.title}</strong>. This does not change the instructional teacher or complete the lesson.</p><label>Review teacher<select value={normalizeReviewTeacherSelection(slateScheduler.reviewTeacher)} onChange={(event) => setSlateScheduler({ ...slateScheduler, reviewTeacher: normalizeReviewTeacherSelection(event.target.value) })}>{REVIEW_TEACHER_SELECTION_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label><label>Daily Review date<input autoFocus type="date" min={earliestDate} value={slateScheduler.scheduledDate} onChange={(event) => setSlateScheduler({ ...slateScheduler, scheduledDate: event.target.value })} /></label><footer><button type="button" className={styles.secondaryButton} onClick={() => setSlateScheduler(null)}>Cancel</button><button type="button" className={styles.primaryButton} disabled={!slateScheduler.scheduledDate || slateAssignmentBusy === occurrenceKey} onClick={scheduleSlateSession}>{slateAssignmentBusy === occurrenceKey ? 'Scheduling…' : 'Schedule Daily Review'}</button></footer></section></div>
           })()}
+
+          <GeneratePortfolioModal
+            open={showPortfolio && portfolioAllowed}
+            onClose={() => setShowPortfolio(false)}
+            learnerId={learnerId}
+            learnerName={selectedLearner?.name || ''}
+            authToken={token}
+            portal
+          />
 
           {historyOccurrenceId && <LessonHistoryOverlay
             learnerId={learnerId}

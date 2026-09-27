@@ -9,7 +9,6 @@ import { fetchLearnerTranscript } from '@/app/lib/learnerTranscript'
 import { validateLessonQuality, buildValidationChangeRequest } from '@/app/lib/lessonValidation'
 import ClipboardOverlay from './ClipboardOverlay'
 import GoalsClipboardOverlay from './GoalsClipboardOverlay'
-import CalendarOverlay from './overlays/CalendarOverlay'
 import LessonsOverlay from './overlays/LessonsOverlay'
 import LessonMakerOverlay from './overlays/LessonMakerOverlay'
 import MentorThoughtBubble from './MentorThoughtBubble'
@@ -136,7 +135,12 @@ export default function CounselorClient() {
   const [captionIndex, setCaptionIndex] = useState(0)
   
   // Screen overlay state
-  const [activeScreen, setActiveScreen] = useState('mentor') // 'mentor' | 'calendar' | 'lessons' | 'maker'
+  const [activeScreen, setActiveScreen] = useState('mentor') // 'mentor' | 'lessons' | 'maker'
+  const openSyllabusMonthView = useCallback(() => {
+    const params = new URLSearchParams({ view: 'month' })
+    if (selectedLearnerId && selectedLearnerId !== 'none') params.set('learnerId', selectedLearnerId)
+    router.push(`/facilitator?${params.toString()}`)
+  }, [router, selectedLearnerId])
   
   // Audio/Video refs
   const videoRef = useRef(null)
@@ -1639,7 +1643,7 @@ export default function CounselorClient() {
           
           // Dispatch events for verified schedule_lesson success.
           if (toolResult.success && toolResult.action === 'schedule_lesson') {
-            setLoadingThought("Updating calendar...")
+            setLoadingThought("Updating Syllabus...")
             try {
               window.dispatchEvent(new CustomEvent('mr-mentor:lesson-scheduled', {
                 detail: {
@@ -2391,13 +2395,6 @@ export default function CounselorClient() {
             overflow: 'hidden',
             display: activeScreen !== 'mentor' ? 'block' : 'none'
           }}>
-            <div style={{ display: activeScreen === 'calendar' ? 'block' : 'none', height: '100%' }}>
-              <CalendarOverlay 
-                learnerId={selectedLearnerId}
-                accessToken={accessToken}
-                tier={tier}
-              />
-            </div>
             <div style={{ display: activeScreen === 'lessons' ? 'block' : 'none', height: '100%' }}>
               <LessonsOverlay 
                 learnerId={selectedLearnerId}
@@ -2467,13 +2464,13 @@ export default function CounselorClient() {
                   <li><strong>Search Lessons:</strong> "What fractions lessons do you have for 3rd grade?"</li>
                   <li><strong>Review Details:</strong> "Tell me more about the photosynthesis lesson"</li>
                   <li><strong>Generate Lessons:</strong> "Create a 5th grade math lesson on fractions"</li>
-                  <li><strong>Schedule Lessons:</strong> "Add the photosynthesis lesson to Emma's calendar for Monday"</li>
+                  <li><strong>Schedule Lessons:</strong> "Add the photosynthesis lesson to Emma's Syllabus for Monday"</li>
                 </ul>
                 <p style={{ fontWeight: 600, marginBottom: 8, color: '#374151' }}>Quick Access Screens:</p>
                 <ul style={{ paddingLeft: 24, marginBottom: 12, lineHeight: 1.6 }}>
                   <li><strong>📚 Lessons:</strong> Browse and review all available lessons</li>
                   <li><strong>✨ Generator:</strong> Create custom lessons for your learners</li>
-                  <li><strong>📅 Calendar:</strong> Manage learner schedules and lesson plans</li>
+                  <li><strong>📅 Month view:</strong> Open the learner's Syllabus by month</li>
                 </ul>
                 <p style={{ fontSize: 13, fontStyle: 'italic', color: '#9ca3af', marginTop: 12 }}>
                   Select a learner from the dropdown below to get personalized guidance based on their progress. Use the menu button to access different screens.
@@ -2758,19 +2755,19 @@ export default function CounselorClient() {
                           
                           <button
                             onClick={() => {
-                              setActiveScreen('calendar')
+                              openSyllabusMonthView()
                               setMenuOpen(false)
                             }}
-                            title="Calendar"
+                            title="Month view"
                             style={{
                               display: 'flex',
                               alignItems: 'center',
                               gap: 8,
                               padding: '8px 12px',
                               border: '2px solid',
-                              borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
+                              borderColor: '#d1d5db',
                               borderRadius: 6,
-                              background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
+                              background: '#fff',
                               cursor: 'pointer',
                               fontSize: 14,
                               fontWeight: 500,
@@ -2779,7 +2776,7 @@ export default function CounselorClient() {
                             }}
                           >
                             <span style={{ fontSize: 20, width: 32, textAlign: 'center', flexShrink: 0 }}>📅</span>
-                            <span>Calendar</span>
+                            <span>Month view</span>
                           </button>
                         </div>
                       </>
@@ -2866,17 +2863,16 @@ export default function CounselorClient() {
                       ✨
                     </button>
                     <button
-                      onClick={() => setActiveScreen('calendar')}
-                      title={!hasAccess ? 'Pro required to use Calendar overlay' : 'Calendar'}
-                      disabled={!hasAccess}
+                      onClick={() => openSyllabusMonthView()}
+                      title="Month view"
                       style={{
                         width: 40,
                         height: 40,
                         border: '2px solid',
-                        borderColor: activeScreen === 'calendar' ? '#3b82f6' : '#d1d5db',
+                        borderColor: '#d1d5db',
                         borderRadius: 6,
-                        background: activeScreen === 'calendar' ? '#dbeafe' : '#fff',
-                        cursor: !hasAccess ? 'not-allowed' : 'pointer',
+                        background: '#fff',
+                        cursor: 'pointer',
                         fontSize: 20,
                         display: 'flex',
                         alignItems: 'center',

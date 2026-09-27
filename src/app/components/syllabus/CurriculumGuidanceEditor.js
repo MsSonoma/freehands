@@ -222,6 +222,8 @@ export default function CurriculumGuidanceEditor({
   learnerId,
   accessToken,
   today = '',
+  portfolioAllowed = false,
+  onOpenPortfolio = null,
   onClose,
   onSaved,
 }) {
@@ -608,6 +610,12 @@ export default function CurriculumGuidanceEditor({
 
       <div className={styles.body}>
         {includePlanStructure && <>
+        <section className={styles.section}>
+          <div className={styles.sectionHeader}>
+            <div><h3>Portfolio</h3><span>Create, review, and share a learner portfolio from the evidence already recorded in Ms. Sonoma.</span></div>
+            {onOpenPortfolio && <button type="button" className={styles.secondary} onClick={onOpenPortfolio}>{portfolioAllowed ? 'Open Portfolio' : 'Portfolio requires Pro'}</button>}
+          </div>
+        </section>
         <section className={styles.section}>
           <div className={styles.sectionHeader}>
             <div><h3>Subjects</h3><span>These subjects are available to the weekly pattern and Curriculum Guidance.</span></div>

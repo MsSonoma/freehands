@@ -35,13 +35,13 @@ test('learner-history and learner completion count consume the shared resolved s
   const lessons = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
   const webb = fs.readFileSync(path.resolve('src/app/session/webb/page.jsx'), 'utf8')
   const slate = fs.readFileSync(path.resolve('src/app/session/slate/page.jsx'), 'utf8')
-  const counselorCalendar = fs.readFileSync(path.resolve('src/app/facilitator/generator/counselor/overlays/CalendarOverlay.jsx'), 'utf8')
+
   assert.match(route, /resolveLessonSessionLifecycle\(session, eventsBySession\.get\(session\.id\) \|\| \[\]\)\.status/)
   assert.doesNotMatch(route, /status: endedAt \? 'completed'/)
   assert.match(lessons, /sonomaSessions\.filter\(s => s\.status === 'completed'\)/)
   assert.match(webb, /filter\(s => s\.status === 'completed'/)
   assert.match(slate, /filter\(s => s\.status === 'completed'/)
-  assert.doesNotMatch(counselorCalendar, /endedAt \? 'completed'/)
+
 })
 
 test('learner-history source contains no educational-history writes', () => {

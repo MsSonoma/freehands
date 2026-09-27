@@ -56,20 +56,23 @@ test('future planning excludes no-school dates from recurring open slots', () =>
   assert.equal(plan.open_slots.some((slot) => slot.planned_date === '2026-09-08'), false)
   assert.equal(plan.open_slots.some((slot) => slot.planned_date === '2026-09-07' && slot.subject === 'Math'), true)
 })
-test('Syllabus and Calendar share day actions and all new instructional write paths recognize no-school authority', () => {
+test('Syllabus month view owns day actions and all new instructional write paths recognize no-school authority', () => {
   const root = new URL('../../../', import.meta.url)
   const source = (relative) => fs.readFileSync(new URL(relative, root), 'utf8')
   const document = source('components/syllabus/SyllabusDocument.js')
   const dialog = source('components/syllabus/SyllabusDayActionDialog.js')
   const syllabusPage = source('facilitator/page.js')
   const calendarPage = source('facilitator/calendar/page.js')
-  const calendar = source('facilitator/calendar/LessonCalendar.js')
+
   const schedule = source('api/lesson-schedule/route.js')
   const slate = source('api/syllabus/slate-assignments/route.js')
   const materialization = source('lib/syllabus/materialization.server.mjs')
   assert.match(document, />\+<\/button>/)
-  assert.match(calendar, />\+<\/button>/)
-  for (const page of [syllabusPage, calendarPage]) {
+  assert.match(document, />Month view<\/button>/)
+  assert.match(calendarPage, /params\.set\('view', 'month'\)/)
+  assert.match(calendarPage, /router\.replace/)
+  assert.doesNotMatch(calendarPage, /SyllabusDayActionDialog|LessonCalendar/)
+  for (const page of [syllabusPage]) {
     assert.match(page, /SyllabusDayActionDialog/)
     assert.match(page, /\/facilitator\/generator\?/)
     assert.match(page, /plannedDate/)

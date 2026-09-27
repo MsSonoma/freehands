@@ -36,8 +36,9 @@ export function buildLessonWorkflowReturnHref({
   const normalizedSource = normalizeLessonWorkflowSource(source)
   if (normalizedSource === 'library') return '/facilitator/lessons'
 
-  const path = normalizedSource === 'calendar' ? '/facilitator/calendar' : '/facilitator'
+  const path = '/facilitator'
   const params = new URLSearchParams()
+  if (normalizedSource === 'calendar') params.set('view', 'month')
   if (learnerId) params.set('learnerId', String(learnerId))
   if (plannedDate) params.set('date', String(plannedDate).slice(0, 10))
   const canonicalKey = normalizeLessonKey(lessonKey)

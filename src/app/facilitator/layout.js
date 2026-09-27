@@ -1,15 +1,13 @@
 "use client";
 import { useEffect, useState } from 'react';
-import { usePathname, useRouter } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import LegalFooter from '@/components/LegalFooter';
 import { checkFacilitatorSection, ensurePinAllowed } from '@/app/lib/pinGate';
 
 /** @param {{ children: React.ReactNode }} props */
 export default function FacilitatorLayout({ children }) {
-  const pathname = usePathname();
   const router = useRouter();
   const [sectionAuthorized, setSectionAuthorized] = useState(false);
-  const hideFooter = pathname === '/facilitator/calendar';
 
   useEffect(() => {
     if (checkFacilitatorSection()) {
@@ -38,7 +36,7 @@ export default function FacilitatorLayout({ children }) {
       <main style={{ flex:'1 0 auto' }}>
         {children}
       </main>
-      {!hideFooter && <LegalFooter compact styleOverrides={{ marginTop: 0, padding: '0 12px' }} />}
+      <LegalFooter compact styleOverrides={{ marginTop: 0, padding: '0 12px' }} />
     </div>
   );
 }

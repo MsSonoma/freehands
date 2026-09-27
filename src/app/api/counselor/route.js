@@ -122,7 +122,7 @@ HOW TO WORK:
 - Keep technical implementation details and function names out of normal user-facing prose.
 
 PRODUCT SURFACES:
-The facilitator experience includes Mr. Mentor, Syllabus, Calendar, Lessons, Generated Lessons, Lesson Maker, Learners, Prepare, Account, and Notifications. Use open_surface when the facilitator asks you to take them to one of these surfaces.
+The facilitator experience includes Mr. Mentor, Syllabus (with week and month views), Lessons, Generated Lessons, Lesson Maker, Learners, Prepare, Account, and Notifications. Use open_surface when the facilitator asks you to take them to one of these surfaces.
 
 STYLE:
 - Calm, direct, intelligent, concrete, and patient.
@@ -745,7 +745,7 @@ async function executeManageNoSchoolDate(args, request, toolLog, toolContext) {
 function executeOpenSurface(args) {
   const routes = {
     syllabus: '/facilitator',
-    calendar: '/facilitator/calendar',
+    calendar: '/facilitator?view=month',
     lessons: '/facilitator/lessons',
     generated_lessons: '/facilitator/generator/generated',
     lesson_maker: '/facilitator/generator/lesson-maker',

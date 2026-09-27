@@ -12,7 +12,6 @@ test('facilitator header menu reflects the Syllabus-first information architectu
 
   const expected = [
     ['Syllabus', '/facilitator'],
-    ['Month View', '/facilitator/calendar'],
     ['Learners', '/facilitator/learners'],
     ['Lesson Library', '/facilitator/lessons'],
     ['Mr. Mentor', '/facilitator/mr-mentor'],
@@ -31,6 +30,7 @@ test('facilitator header menu reflects the Syllabus-first information architectu
   assert.match(menu, /label: 'Notifications'.*dividerBefore: true/)
   assert.doesNotMatch(menu, /label: 'Lessons'/)
   assert.doesNotMatch(menu, /label: 'Calendar'/)
+  assert.doesNotMatch(menu, /label: 'Month View'/)
 })
 
 test('desktop and mobile render the same canonical facilitator menu without icon mojibake', () => {

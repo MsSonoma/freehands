@@ -44,7 +44,8 @@ test('workflow return destinations preserve exact planning focus', () => {
   const calendar = new URL('http://localhost' + buildLessonWorkflowReturnHref({
     source: 'calendar', learnerId: 'learner 1', plannedDate: '2026-09-11', lessonKey: 'generated/division.json',
   }))
-  assert.equal(calendar.pathname, '/facilitator/calendar')
+  assert.equal(calendar.pathname, '/facilitator')
+  assert.equal(calendar.searchParams.get('view'), 'month')
   assert.equal(calendar.searchParams.get('learnerId'), 'learner 1')
   assert.equal(calendar.searchParams.get('date'), '2026-09-11')
   assert.equal(buildLessonWorkflowReturnHref({ source: 'library', learnerId: 'learner 1' }), '/facilitator/lessons')

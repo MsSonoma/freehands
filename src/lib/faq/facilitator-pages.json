@@ -68,20 +68,20 @@
       "relatedFeatures": ["subscription-tiers"]
     },
     {
-      "id": "facilitator-page-calendar",
-      "title": "Lesson Calendar (/facilitator/calendar)",
+      "id": "facilitator-page-syllabus-month-view",
+      "title": "Syllabus Month View (/facilitator?view=month)",
       "keywords": [
         "facilitator calendar",
         "lesson calendar",
         "schedule",
         "reschedule",
-        "planner tab",
+        "syllabus month view",
         "day view",
         "no-school dates",
         "/facilitator/calendar"
       ],
-      "description": "The Lesson Calendar is the main scheduling interface. You select a learner, view scheduled lessons by date, and (if your plan allows) schedule, reschedule, remove, and plan lessons.",
-      "howToUse": "Select a learner first. Use the calendar to pick a date and review scheduled items. Use scheduling/rescheduling controls to move lessons. Use the Planner tab (when available) to generate longer-term plans. You can also open per-lesson tools like notes, visual aids, and portfolio-related modals from calendar actions.",
+      "description": "Month view is a second view of the active Syllabus, not a separate calendar. It shows the same lessons, reviews, forecast suggestions, historical records, and no-school dates across a month.",
+      "howToUse": "Open Syllabus and choose Month view beside the date range. Select a day cell to open that day's Syllabus items, then select a lesson or review to open its normal Syllabus details. The retired /facilitator/calendar URL redirects here.",
       "relatedFeatures": ["calendar-view", "lesson-scheduling", "lesson-planner", "no-school-dates"]
     },
     {

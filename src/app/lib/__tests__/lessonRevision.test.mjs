@@ -59,17 +59,18 @@ test('generated lesson authoring surfaces share the canonical regeneration dialo
   const compatibility = fs.readFileSync(new URL('../../facilitator/prepare/page.js', import.meta.url), 'utf8')
   assert.doesNotMatch(compatibility, /LessonRevisionDialog|Regenerate with changes/)
   const calendar = fs.readFileSync(new URL('../../facilitator/calendar/page.js', import.meta.url), 'utf8')
-  assert.match(calendar, /FacilitatorSyllabusLessonOverlay/)
-  assert.match(calendar, /syllabusCalendarSelection/)
-  assert.doesNotMatch(calendar, /LessonRevisionDialog/)
+  assert.match(calendar, /params\.set\('view', 'month'\)/)
+  assert.match(calendar, /router\.replace/)
+  assert.doesNotMatch(calendar, /FacilitatorSyllabusLessonOverlay|syllabusCalendarSelection|LessonRevisionDialog/)
 })
 
-test('calendar surfaces no longer own lesson-plan revision', () => {
+test('retired calendar surfaces no longer own lesson-plan revision', () => {
   const calendar = fs.readFileSync(new URL('../../facilitator/calendar/page.js', import.meta.url), 'utf8')
-  const mentorCalendar = fs.readFileSync(new URL('../../facilitator/generator/counselor/overlays/CalendarOverlay.jsx', import.meta.url), 'utf8')
-  for (const source of [calendar, mentorCalendar]) {
-    assert.doesNotMatch(source, /Revise lesson plan|Lesson plan revision notes|LessonPlanner|\/api\/planned-lessons/)
-    assert.match(source, /FacilitatorSyllabusLessonOverlay/)
-    assert.match(source, /\/api\/syllabus\?learnerId=/)
-  }
+  const counselor = fs.readFileSync(new URL('../../facilitator/generator/counselor/CounselorClient.jsx', import.meta.url), 'utf8')
+  assert.doesNotMatch(calendar, /Revise lesson plan|Lesson plan revision notes|LessonPlanner|\/api\/planned-lessons|FacilitatorSyllabusLessonOverlay/)
+  assert.match(calendar, /params\.set\('view', 'month'\)/)
+  assert.match(counselor, /openSyllabusMonthView/)
+  assert.doesNotMatch(counselor, /CalendarOverlay|activeScreen === 'calendar'|\/api\/planned-lessons/)
+  assert.equal(fs.existsSync(new URL('../../facilitator/generator/counselor/overlays/CalendarOverlay.jsx', import.meta.url)), false)
+  assert.equal(fs.existsSync(new URL('../../facilitator/calendar/LessonCalendar.js', import.meta.url)), false)
 })
