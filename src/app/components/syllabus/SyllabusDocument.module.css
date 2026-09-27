@@ -35,7 +35,7 @@
 .loadingEntries i:nth-of-type(2) { width:min(430px,80%); }
 .loadingEntries i:nth-of-type(3) { width:min(350px,68%); }
 @keyframes syllabusLoading { 0% { background-position:200% 0; } 100% { background-position:-200% 0; } }
-.day { min-width:0; padding:9px 7px 12px; border-right:1px solid #ded8cf; }
+.day { min-width:0; padding:9px 7px 12px; border-right:1px solid #ded8cf; container-type:inline-size; }
 .day:last-child { border-right:0; }
 .day>header { min-height:36px; display:grid; grid-template-columns:minmax(0,1fr) auto; gap:2px 6px; color:#6d6359; font:700 10px Roboto,sans-serif; }
 .day>header time { min-width:0; }
@@ -49,7 +49,7 @@
 .emptyDay { margin:7px 0 0; color:#9a9187; font:italic 11px Georgia,serif; }
 .entryRow { display:grid; gap:8px; align-items:start; margin-top:7px; padding:9px 0 0; border-top:1px solid #ded8cf; }
 .suggestedEntry { display:grid; gap:8px; align-items:start; margin-top:7px; padding:9px 7px 8px; border:1px dashed #b8b5b0; background:#f1f0ed; color:#625f5b; opacity:1; }
-.suggestedEntry h4 { margin:2px 0 0; color:#615c56; font-size:15px; font-weight:500; overflow-wrap:anywhere; }
+.suggestedEntry h4 { margin:2px 0 0; color:#615c56; font-size:15px; font-weight:500; overflow-wrap:normal; word-break:normal; hyphens:none; }
 .suggestedLabel { display:inline-block; margin-top:5px; color:#817b74; font:700 10px Roboto,sans-serif; }
 
 .openPlanningSlot h4 { margin:2px 0 0; color:#6d6359; font:600 13px Georgia,serif; }
@@ -57,10 +57,12 @@
 
 
 .openSlotActions button:disabled { opacity:.45; cursor:default; }
-.entryBody h4 { margin:2px 0 0; font-size:15px; font-weight:500; overflow-wrap:anywhere; }.subject { margin:0;color:#6b382c; }
+.entryBody h4 { margin:2px 0 0; font-size:15px; font-weight:500; overflow-wrap:normal; word-break:normal; hyphens:none; }.subject { margin:0;color:#6b382c; }
 .statusLabel,.placementLabel,.teacherLabel,.preparing { display:inline-block; margin:5px 6px 0 0; color:#756b61; font:700 10px Roboto,sans-serif; text-transform:capitalize; }
-.cardMetaRow { display:flex; align-items:baseline; gap:6px; margin-top:5px; white-space:nowrap; }
+.cardMetaRow { display:flex; flex-wrap:wrap; align-items:baseline; gap:3px 6px; margin-top:5px; min-width:0; white-space:normal; }
 .cardMetaRow .teacherLabel,.cardMetaRow .statusLabel { margin:0; }
+.cardMetaRow .teacherLabel { min-width:0; }
+.cardMetaRow .statusLabel { flex:0 0 auto; }
 .teacherLabel { font-weight:500; font-style:normal; text-transform:none; }
 .placementLabel { font-weight:500; font-style:italic; text-transform:none; }
 .emptyWeek { margin:0;padding:22px 0;color:#7b7268;font-style:italic; }
@@ -116,5 +118,7 @@
 .dayOverlayItemTop em { color:#756b61; font:700 10px Roboto,sans-serif; font-style:normal; text-transform:capitalize; }
 .dayOverlayItem > b { font:600 15px Georgia,'Times New Roman',serif; }
 .dayOverlayTeacher { color:#756b61; font-size:11px; }
+@container (max-width:135px) { .entryBody h4,.suggestedEntry h4 { font-size:13px; line-height:1.2; } }
+@container (max-width:105px) { .entryBody h4,.suggestedEntry h4 { font-size:11px; line-height:1.18; } }
 @media (max-width:900px) { .entries { grid-template-columns:1fr; }.day { border-right:0; border-bottom:1px solid #ded8cf; }.day:last-child { border-bottom:0; } }
 @media (max-width:680px) { .document { padding:12px; } .documentHeader { align-items:flex-start; gap:10px; }.documentHeaderActions { gap:6px; }.changeLearnerButton,.planDetailsButton { min-height:32px; padding:6px 8px; font-size:10px; }.weekHeader { align-items:stretch; flex-direction:column; gap:7px; }.weekHeaderActions { justify-content:flex-start; flex-wrap:wrap; }.entryRow { grid-template-columns:1fr;gap:6px; }.timelineNav { grid-template-columns:1fr 1fr 1fr; }.timelineNav button { font-size:10px; } .weekHeader time { white-space:normal; } .dayOverlayBackdrop { padding:10px; } }
