@@ -14,7 +14,9 @@ const learningForecastServerSource = fs.readFileSync(path.resolve('src/app/lib/s
 
 test('active Syllabus exposes one Plan details button instead of the old disclosure', () => {
   assert.match(documentSource, /onClick=\{\(\) => onEditSection\('plan_details'\)\}>Plan details<\/button>/)
-  assert.match(documentCss, /\.planDetailsAction/)
+  assert.match(documentSource, /<header className=\{styles\.documentHeader\}>[\s\S]*className=\{styles\.planDetailsButton\}[\s\S]*onEditSection\('plan_details'\)/)
+  assert.match(documentCss, /\.planDetailsButton/)
+  assert.doesNotMatch(documentSource, /styles\.planDetailsAction/)
   assert.doesNotMatch(documentSource, /<details className=\{styles\.planDetails\}>/)
   assert.doesNotMatch(documentSource, /onEditSection\('(goals|subjects|weekly_pattern|teaching_guidance)'\)/)
   assert.doesNotMatch(documentSource, /revision\?\.goals\?\.legacy_notes/)

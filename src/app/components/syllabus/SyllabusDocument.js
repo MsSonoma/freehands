@@ -197,10 +197,8 @@ export default function SyllabusDocument({
           <h2>{learnerName ? `${learnerName}'s Syllabus` : 'My Syllabus'}</h2>
           <p>Weekly learning plan</p>
         </div>
+        {role === 'facilitator' && onEditSection && <button type="button" className={styles.planDetailsButton} onClick={() => onEditSection('plan_details')}>Plan details</button>}
       </header>
-      {role === 'facilitator' && onEditSection && <div className={styles.planDetailsAction}>
-        <button type="button" onClick={() => onEditSection('plan_details')}>Plan details</button>
-      </div>}
 
       <nav className={styles.timelineNav} aria-label="Syllabus timeline navigation">
         <button type="button" onClick={() => move('earlier')}>&larr; Previous week</button>
