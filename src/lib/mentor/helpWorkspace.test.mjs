@@ -24,6 +24,16 @@ test('Help resolves the shared active learner before Syllabus is opened', () => 
   assert.match(client, /persistLearnerSelection\(window\.localStorage, selectedLearner\)/)
 })
 
+test('Active learner name lives on the video overlay instead of the footer', () => {
+  assert.match(client, /const activeLearnerName = selectedLearnerId !== 'none'/)
+  assert.match(client, /aria-label=\{`Active learner: \$\{activeLearnerName\}`\}/)
+  assert.match(client, /top: 16,[\s\S]*left: 16,[\s\S]*background: '#1f2937',[\s\S]*color: '#fff'/)
+  assert.match(client, /fontWeight: 800/)
+  assert.match(client, /letterSpacing: '0\.06em'/)
+  assert.doesNotMatch(client, /Working with \$\{/)
+  assert.doesNotMatch(client, /General discussion/)
+})
+
 test('Compact footer has five modestly larger controls including Guidance', () => {
   assert.match(client, /<HelpBottomNav/)
   assert.match(bottomNav, /width: 46/)

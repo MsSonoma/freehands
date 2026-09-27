@@ -2084,6 +2084,9 @@ export default function CounselorClient() {
   const workspaceActive = activeScreen !== 'mentor'
   const workspaceFocus = workspaceExpanded
   const workspaceSideBySide = workspaceActive && !isMobilePortrait
+  const activeLearnerName = selectedLearnerId !== 'none'
+    ? String(learners.find((learner) => String(learner.id) === String(selectedLearnerId))?.name || '').trim()
+    : ''
 
   return (
     <div style={{
@@ -2163,6 +2166,35 @@ export default function CounselorClient() {
           {/* Overlay buttons - positioned relative to video panel container */}
           {activeScreen === 'mentor' && (
             <>
+              {activeLearnerName && (
+                <div
+                  aria-label={`Active learner: ${activeLearnerName}`}
+                  style={{
+                    position: 'absolute',
+                    top: 16,
+                    left: 16,
+                    minHeight: 38,
+                    padding: '0 14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderRadius: 999,
+                    background: '#1f2937',
+                    color: '#fff',
+                    boxShadow: '0 2px 6px rgba(0,0,0,0.3)',
+                    zIndex: 10,
+                    fontFamily: 'Arial, Helvetica, sans-serif',
+                    fontSize: 'clamp(13px, 2vw, 16px)',
+                    fontWeight: 800,
+                    letterSpacing: '0.06em',
+                    lineHeight: 1,
+                    whiteSpace: 'nowrap'
+                  }}
+                >
+                  {activeLearnerName}
+                </div>
+              )}
+
               {/* New Conversation button (top-right) - visible when conversation exists */}
               {conversationHistory.length > 0 && (
                 <button
@@ -2470,19 +2502,9 @@ export default function CounselorClient() {
           {learners.length > 0 && (
             <div style={{ marginBottom: 8 }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
-                <div style={{
-                  flex: workspaceExpanded && !isNarrowScreen ? '0 1 150px' : 1,
-                  minWidth: 0,
-                  fontSize: 13,
-                  color: '#6b645c',
-                  whiteSpace: 'nowrap',
-                  overflow: 'hidden',
-                  textOverflow: 'ellipsis'
-                }}>
-                  {selectedLearnerId !== 'none'
-                    ? `Working with ${learners.find(learner => learner.id === selectedLearnerId)?.name || 'selected learner'}`
-                    : 'General discussion'}
-                </div>
+                {!workspaceExpanded || isNarrowScreen ? (
+                  <div style={{ flex: 1, minWidth: 0 }} aria-hidden="true" />
+                ) : null}
                 {workspaceExpanded && !isNarrowScreen && (
                   <div
                     ref={compactConversationRef}
