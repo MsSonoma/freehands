@@ -289,11 +289,11 @@ export function buildWritingGuidanceInstructions(note, evaluation = {}, context 
     `The research stage is finished. You are coaching one learner-authored sentence in a planned paragraph.`,
     controllingIdea ? `The paragraph's private controlling idea is: "${controllingIdea}". Do not give this wording to the learner; use it only to guide questions.` : '',
     slot?.focus ? `This sentence's private composition focus is: "${String(slot.focus)}". Its role is ${role}.` : `The structural role is ${role}.`,
-    sourceNotes.length ? `The learner-authored research available for this slot is context only: ${JSON.stringify(sourceNotes)}.` : `This ${role} sentence is a writing-structure sentence and is not required to restate a mastery objective.`,
+    sourceNotes.length ? `The learner-authored research for this slot is the authoritative content boundary for this sentence: ${JSON.stringify(sourceNotes)}.` : `This legacy ${role} slot has no bound learner note; do not invent factual content.`,
     `The evaluator found concept fit: ${evaluation.accuracy || evaluation.conceptFit || 'partial'}; sentence readiness: ${evaluation.sentenceOk ? 'yes' : 'no'}; slot fit: ${evaluation.slotFit === false || evaluation.positionFit === false ? 'no' : 'yes'}; adds distinct information: ${evaluation.addsNewInformation === false ? 'no' : 'yes'}; paragraph fit: ${evaluation.paragraphFit === false ? 'no' : 'yes'}. Treat those judgments as authoritative.`,
     Number.isInteger(index) && Number.isInteger(total) && total > 0 ? `This is sentence ${index + 1} of ${total}.` : '',
     priorSentences.length ? `The accepted learner-written sentences before this one are context only: ${JSON.stringify(priorSentences)}.` : '',
-    `Guide the learner to notice the specific problem, then ask for another attempt in their own words. For a topic sentence, help them identify the paragraph's big idea. For a body sentence, help them decide what distinct information this slot should add. For a conclusion, help them close what they already explained.`,
+    `Guide the learner to notice the specific problem, then ask for another attempt in their own words. Keep the sentence anchored to the assigned learner note. For a topic sentence, shape the first note as opening content. For a body sentence, develop only that note. For a conclusion, shape the final note as closing content without introducing a new topic.`,
     `Never write, dictate, complete, rewrite, or offer a model sentence for the learner. Do not say "write" followed by suggested prose. The words accepted into the essay must come from the learner.`,
     `Use 2-3 short, warm sentences, no markdown.`,
   ].filter(Boolean).join('\n')

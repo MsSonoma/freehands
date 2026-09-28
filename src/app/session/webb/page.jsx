@@ -2245,7 +2245,7 @@ function WebbPageInner() {
           objectives: objectives[slotIndex] ? [{ objectiveIndex: slotIndex, objective: objectives[slotIndex] }] : [],
           notes: isWritingReadyNote(learnerNotesRef.current[slotIndex]) ? [learnerNotesRef.current[slotIndex]] : [],
         }
-    if (slot.role === 'body' && !slotSource.notes.length) return
+    if (slot.sourceObjectiveIndices?.length && !slotSource.notes.length) return
     finishWebbResponseTurn(trimmed, 'writing-submitted')
     const totalSentences = activePlan?.slots?.length || objectives.length
     const priorSentences = Array.from({ length: slotIndex }, (_, index) => acceptedSentences?.[index]?.text)
@@ -2291,7 +2291,7 @@ function WebbPageInner() {
       const evaluation = await evaluationRes.json()
       if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
       const attempt = createWritingAttempt({
-        objectiveIndex: slot.role === 'body' && slot.sourceObjectiveIndices?.length === 1 ? slot.sourceObjectiveIndices[0] : null,
+        objectiveIndex: slot.sourceObjectiveIndices?.length === 1 ? slot.sourceObjectiveIndices[0] : null,
         slotIndex, slotId: slot.id, slotRole: slot.role,
         text: trimmed, message: userMsg,
         accuracy: evaluation.accuracy, sentenceOk: evaluation.sentenceOk,
@@ -2882,11 +2882,10 @@ function WebbPageInner() {
 
   // ── Begin the distinct composition stage from verbatim learner notes ──
   function writingPromptForSlot(slot) {
-    if (slot?.role === 'topic') return "Start with a topic sentence in your own words. Tell the reader what this whole paragraph is going to explain."
-    if (slot?.role === 'conclusion') return "Now close the paragraph in your own words. Look back at what you explained and finish that same big thought."
-    return "Use this part of your research to add one new, connected sentence in your own words."
+    if (slot?.role === 'topic') return "Use this first research note to make one complete opening sentence in your own words. Introduce the paragraph without leaving the idea in your note."
+    if (slot?.role === 'conclusion') return "Use this final research note to make one complete closing sentence in your own words. Close the paragraph without adding a new topic."
+    return "Use this research note to add one complete, connected sentence in your own words."
   }
-
   function paragraphRepairMessage(reasonCode) {
     if (reasonCode === 'topic_mismatch') return "The paragraph needs a clearer topic sentence before it is finished. Let's go back to the first sentence and make sure it introduces the whole paragraph."
     if (reasonCode === 'conclusion_mismatch') return "The paragraph needs a stronger ending before it is finished. Let's make the last sentence close what you actually explained."

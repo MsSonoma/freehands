@@ -1,4 +1,4 @@
-﻿import test from 'node:test'
+import test from 'node:test'
 import assert from 'node:assert/strict'
 import { POST } from '../../api/webb-compositions/route.js'
 
@@ -10,6 +10,7 @@ const LESSON = 'generated/test-webb.json'
 const OCCURRENCE = 'scheduled:test-occurrence'
 
 const PLAN = {
+  protocolVersion: 'webb-composition-v1',
   controllingIdea: 'Historians compare evidence to understand the past.',
   slots: [
     { id: 'topic', role: 'topic', focus: 'introduce the paragraph', connection: 'frames the paragraph', sourceObjectiveIndices: [] },

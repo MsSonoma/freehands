@@ -53,8 +53,10 @@ test('writing evaluation is aware of ordered essay position without taking learn
   assert.match(page, /writingTotalObjectives: totalSentences/)
   assert.match(page, /writingPriorSentences: priorSentences/)
   assert.match(page, /positionFit: evaluation\.positionFit, slotFit: evaluation\.slotFit/)
-  assert.match(model, /accepted: accuracy === 'correct' && sentenceOk === true && fitsSlot && adds && fitsParagraph/)
+  assert.match(model, /accepted: accuracy === 'correct' && sentenceOk === true && fitsSlot && addsForAcceptance && fitsParagraph/)
   assert.match(route, /Do not require a transition word/)
+  assert.match(route, /authoritative content boundary/)
+  assert.match(page, /slot\.sourceObjectiveIndices\?\.length && !slotSource\.notes\.length/)
 })
 
 test('writing resume restores the durable composition stage instead of re-entering research', () => {

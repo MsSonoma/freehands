@@ -1,4 +1,5 @@
-﻿export const WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v1'
+export const WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v2-objective-blueprint'
+export const LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v1'
 
 function clean(value) {
   return String(value || '').trim()
@@ -11,6 +12,10 @@ function asIndex(value) {
 
 export function normalizeWebbCompositionPlan(raw, objectiveCount = 0) {
   const input = raw && typeof raw === 'object' && !Array.isArray(raw) ? raw : {}
+  const requestedProtocol = clean(input.protocolVersion || input.protocol_version)
+  const protocolVersion = requestedProtocol === LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION
+    ? LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION
+    : WEBB_COMPOSITION_PROTOCOL_VERSION
   const controllingIdea = clean(input.controllingIdea || input.controlling_idea).slice(0, 500)
   const rows = Array.isArray(input.slots) ? input.slots : []
   const slots = rows.map((row, index) => {
@@ -18,22 +23,41 @@ export function normalizeWebbCompositionPlan(raw, objectiveCount = 0) {
     const sourceObjectiveIndices = [...new Set((Array.isArray(row?.sourceObjectiveIndices) ? row.sourceObjectiveIndices : row?.source_objective_indices || [])
       .map(asIndex).filter(value => value !== null && value < objectiveCount))]
     return {
-      id: clean(row?.id || `${role || 'slot'}-${index + 1}`).slice(0, 100),
+      id: clean(row?.id || ((role || 'slot') + '-' + (index + 1))).slice(0, 100),
       role,
       focus: clean(row?.focus).slice(0, 320),
       connection: clean(row?.connection).slice(0, 500),
       sourceObjectiveIndices,
     }
   })
+  return { protocolVersion, controllingIdea, slots }
+}
+
+export function buildWebbCompositionPlan(objectives = [], learnerNotes = {}) {
+  const list = Array.isArray(objectives) ? objectives.map(value => clean(value)).filter(Boolean) : []
+  if (list.length < 2) throw new Error('Composition planning requires at least two mastery objectives')
+  const missingNotes = list
+    .map((_, objectiveIndex) => objectiveIndex)
+    .filter(objectiveIndex => learnerNotes?.[objectiveIndex]?.provenance !== 'learner-message' || !clean(learnerNotes?.[objectiveIndex]?.text))
+  if (missingNotes.length) throw new Error('Composition planning requires one learner-authored note for every mastery objective')
   return {
     protocolVersion: WEBB_COMPOSITION_PROTOCOL_VERSION,
-    controllingIdea,
-    slots,
+    controllingIdea: list[0],
+    slots: list.map((objective, index) => ({
+      id: 'objective-' + (index + 1),
+      role: index === 0 ? 'topic' : (index === list.length - 1 ? 'conclusion' : 'body'),
+      focus: objective,
+      connection: index === 0
+        ? 'opens the essay from the first mastered idea'
+        : (index === list.length - 1
+          ? 'closes the essay from the final mastered idea'
+          : 'continues the essay in the objective order established before instruction'),
+      sourceObjectiveIndices: [index],
+    })),
   }
 }
 
-export function compositionPlanViolations(plan, objectiveCount = 0) {
-  const normalized = normalizeWebbCompositionPlan(plan, objectiveCount)
+function legacyCompositionPlanViolations(normalized, objectiveCount = 0) {
   const violations = []
   const { slots } = normalized
   if (!normalized.controllingIdea) violations.push('missing controlling idea')
@@ -45,17 +69,38 @@ export function compositionPlanViolations(plan, objectiveCount = 0) {
   for (let index = 0; index < slots.length; index += 1) {
     const slot = slots[index]
     const expected = index === 0 ? 'topic' : (index === slots.length - 1 ? 'conclusion' : 'body')
-    if (slot.role !== expected) violations.push(`slot ${index + 1} has invalid role`)
-    if (!slot.id || !slot.focus || !slot.connection) violations.push(`slot ${index + 1} is incomplete`)
-    if (slot.role === 'body' && slot.sourceObjectiveIndices.length === 0) violations.push(`body slot ${index + 1} has no source objective`)
-    if (slot.role !== 'body' && slot.sourceObjectiveIndices.length > 0) violations.push(`${slot.role} slot must not be tied to a mastery objective`)
+    if (slot.role !== expected) violations.push('slot ' + (index + 1) + ' has invalid role')
+    if (!slot.id || !slot.focus || !slot.connection) violations.push('slot ' + (index + 1) + ' is incomplete')
+    if (slot.role === 'body' && slot.sourceObjectiveIndices.length === 0) violations.push('body slot ' + (index + 1) + ' has no source objective')
+    if (slot.role !== 'body' && slot.sourceObjectiveIndices.length > 0) violations.push(slot.role + ' slot must not be tied to a mastery objective')
   }
   const bodySources = bodies.flatMap(slot => slot.sourceObjectiveIndices)
   if (new Set(bodySources).size < Math.min(2, objectiveCount || 2)) violations.push('body slots do not draw from enough distinct mastery objectives')
   if (new Set(slots.map(slot => slot.id)).size !== slots.length) violations.push('slot ids must be unique')
-  return [...new Set(violations)]
+  return violations
 }
 
+export function compositionPlanViolations(plan, objectiveCount = 0) {
+  const normalized = normalizeWebbCompositionPlan(plan, objectiveCount)
+  if (normalized.protocolVersion === LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION) {
+    return [...new Set(legacyCompositionPlanViolations(normalized, objectiveCount))]
+  }
+  const violations = []
+  const { slots } = normalized
+  if (!normalized.controllingIdea) violations.push('missing controlling idea')
+  if (slots.length !== objectiveCount) violations.push('composition must contain exactly one sentence slot per mastery objective')
+  for (let index = 0; index < slots.length; index += 1) {
+    const slot = slots[index]
+    const expectedRole = index === 0 ? 'topic' : (index === slots.length - 1 ? 'conclusion' : 'body')
+    if (slot.role !== expectedRole) violations.push('slot ' + (index + 1) + ' has invalid role')
+    if (!slot.id || !slot.focus || !slot.connection) violations.push('slot ' + (index + 1) + ' is incomplete')
+    if (slot.sourceObjectiveIndices.length !== 1 || slot.sourceObjectiveIndices[0] !== index) {
+      violations.push('slot ' + (index + 1) + ' must derive from objective ' + index)
+    }
+  }
+  if (new Set(slots.map(slot => slot.id)).size !== slots.length) violations.push('slot ids must be unique')
+  return [...new Set(violations)]
+}
 export function compositionResearchSnapshot(objectives = [], learnerNotes = {}) {
   return (objectives || []).map((objective, objectiveIndex) => {
     const note = learnerNotes?.[objectiveIndex]
@@ -73,7 +118,7 @@ export function compositionResearchSnapshot(objectives = [], learnerNotes = {}) 
 }
 
 export function compositionSlotSource(slot, objectives = [], learnerNotes = {}) {
-  if (!slot || slot.role !== 'body') return { objectives: [], notes: [] }
+  if (!slot) return { objectives: [], notes: [] }
   const sourceObjectiveIndices = Array.isArray(slot.sourceObjectiveIndices) ? slot.sourceObjectiveIndices : []
   const sourceObjectives = []
   const sourceNotes = []

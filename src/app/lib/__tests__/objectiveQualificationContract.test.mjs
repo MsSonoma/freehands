@@ -9,25 +9,31 @@ const sonoma = fs.readFileSync(new URL('../../api/sonoma-discussion/route.js', i
 const webb = fs.readFileSync(new URL('../../api/webb-chat/route.js', import.meta.url), 'utf8')
 
 test('generated objectives are atomic rather than bundled clause checklists', () => {
-  assert.match(route, /derive 5 to 8 ATOMIC core comprehension objectives/)
+  assert.match(route, /reverse-engineer that hidden essay into 5 to 8 ATOMIC core comprehension objectives/)
   assert.match(route, /assess ONE central idea, relationship, process, or skill only/)
   assert.match(route, /must never require two independently gradable answers/)
   assert.match(route, /Do not combine identification plus explanation/)
   assert.doesNotMatch(route, /Consolidate overlapping questions into a single objective/)
 })
 
-test('Mrs. Webb objective order is an essay blueprint without sacrificing atomic mastery', () => {
-  assert.match(route, /silently reverse-engineer a coherent short essay appropriate to this lesson/)
+test('Mrs. Webb objective generation writes the hidden essay first and owns coherence before instruction', () => {
+  assert.match(route, /silently draft a coherent short essay ABOUT what this lesson teaches/)
   assert.match(route, /returned objective order is authoritative for later writing/)
+  assert.match(route, /exactly one learner-authored note for each objective/)
+  assert.match(route, /exactly one essay sentence in the same order/)
+  assert.match(route, /will not merge, omit, reorder, or invent content/)
   assert.match(route, /Objective 1 must establish the essay's controlling idea or necessary opening context/)
-  assert.match(route, /A bare title, author, character name, date, vocabulary definition, or trivia fact is not a topic sentence/)
-  assert.match(route, /Every middle objective must intentionally advance/)
+  assert.match(route, /Every middle objective must intentionally advance the essay/)
+  assert.match(route, /Avoid conceptual ricochet/)
   assert.match(route, /final objective must be the essay's synthesis, significance, theme, overall explanation/)
-  assert.match(route, /Do not use a name, date, event-identification task, evidence-identification task/)
-  assert.match(route, /Preserve mastery-first atomicity even while creating essay flow/)
-  assert.match(route, /Do not prescribe transition words, model sentences, or exact learner wording/)
 })
 
+test('current Mrs. Webb converts writing-production lessons into learnable essay content instead of switching formats', () => {
+  assert.match(route, /always writes from mastered lesson notes/)
+  assert.match(route, /does not switch into a separate composition assignment/)
+  assert.match(route, /lesson about opinion paragraphs can produce an essay explaining how opinion paragraphs work/)
+  assert.match(route, /will explain that learned content; it will not become a separate example essay/)
+})
 test('semantic qualification accepts the central concept without requiring secondary detail or polished form', () => {
   assert.match(route, /Judge the CENTRAL CONCEPT, not clause-by-clause coverage/)
   assert.match(route, /secondary detail was omitted/)
