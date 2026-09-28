@@ -398,7 +398,7 @@ export default function SyllabusDocument({
             })
             return <section className={`${styles.day} ${isNoSchool ? styles.dayOff : ''}`} key={day.date} data-syllabus-day={day.date} data-no-school={isNoSchool ? 'true' : undefined}>
             <header><time dateTime={day.date}>{prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}</time>{day.date === dateOnly(today) && <span>Today</span>}{dayActionAllowed && <button type="button" className={styles.addLesson} aria-label={`Plan ${prettyDate(day.date, { weekday: 'long', month: 'short', day: 'numeric' })}`} title="Add lesson or mark day off" onClick={() => dayAction(day.date)}>+</button>}</header>
-            {isNoSchool && <div className={styles.dayOffNotice}><strong>{noSchoolByDate[day.date] || 'Day off'}</strong><span>{presentations.length ? `${presentations.length} existing ${presentations.length === 1 ? 'item remains' : 'items remain'}` : 'No lessons planned'}</span></div>}
+            {isNoSchool && <div className={styles.dayOffNotice}><strong>{noSchoolByDate[day.date] || 'Day off'}</strong><span>{presentations.length ? `${presentations.length} existing ${presentations.length === 1 ? 'item remains' : 'items remain'}` : 'No lessons planned'}</span>{role === 'facilitator' && typeof dayAction === 'function' && <button type="button" className={styles.dayOffAction} onClick={() => dayAction(day.date)}>Remove day off</button>}</div>}
             {!isNoSchool && presentations.length === 0 && <p className={styles.emptyDay}>{forecastBusy && day.date >= forecastStart && day.date <= forecastEnd ? 'Preparing suggestions...' : 'No lessons'}</p>}
             {presentations.map(({ kind, item }) => {
             if (item.item_type === 'review_history' || item.item_type === 'slate_review_history') {
@@ -611,7 +611,7 @@ export default function SyllabusDocument({
             <button type="button" onClick={() => setSelectedMonthDate('')}>Close</button>
           </header>
           <div className={styles.dayOverlayBody}>
-            {Object.prototype.hasOwnProperty.call(noSchoolByDate, selectedMonthDate) && <div className={styles.dayOverlayOff}>{noSchoolByDate[selectedMonthDate] || 'Day off'} - this date is protected from new instructional planning.</div>}
+            {Object.prototype.hasOwnProperty.call(noSchoolByDate, selectedMonthDate) && <div className={styles.dayOverlayOff}><span>{noSchoolByDate[selectedMonthDate] || 'Day off'} - this date is protected from new instructional planning.</span>{role === 'facilitator' && typeof dayAction === 'function' && <button type="button" className={styles.dayOffAction} onClick={() => dayAction(selectedMonthDate)}>Remove day off</button>}</div>}
             {selectedMonthItems.length === 0 && <p className={styles.dayOverlayEmpty}>Nothing is placed on this date in the active Syllabus.</p>}
             {selectedMonthItems.map((item) => <button
               type="button"

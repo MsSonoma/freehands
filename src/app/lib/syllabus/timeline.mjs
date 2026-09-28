@@ -290,7 +290,6 @@ export function syllabusItemActions({ role, state, hasLessonArtifact = false, re
   if (state === 'needs_placement') return [{ id: 'view', label: 'Open' }, { id: 'prepare', label: 'Prepare' }, { id: 'schedule', label: 'Schedule' }]
   const actions = [{ id: 'view', label: 'Open' }, { id: 'edit', label: 'Edit' }, { id: 'prepare', label: 'Prepare' }]
   actions.push({ id: isScheduled ? 'reschedule' : 'schedule', label: isScheduled ? 'Reschedule' : 'Schedule' })
-  if (readinessState !== 'available') actions.push({ id: 'make_available', label: 'Make available' })
   return actions
 }
 

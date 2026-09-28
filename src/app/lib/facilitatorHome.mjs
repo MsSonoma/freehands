@@ -96,7 +96,7 @@ function resolveSnapshotDecision(snapshot, learners, legacyPreparePath) {
       kind: 'OPEN_APPROVED_LESSON',
       label: 'Open in Syllabus',
       title: 'An approved lesson is ready in the learner plan',
-      body: snapshot.proposal?.generationSpec?.title || snapshot.lessonIdentity?.file || 'Use the learner plan to schedule, make available, or start this lesson.',
+      body: snapshot.proposal?.generationSpec?.title || snapshot.lessonIdentity?.file || 'Use the learner plan to schedule or start this lesson.',
       href: lessonKey
         ? `${legacyPreparePath}?stage=DELIVERY&source=syllabus&learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}`
         : legacyPreparePath,

@@ -997,7 +997,7 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
                               gap: 6,
                               fontWeight: 700
                             }}
-                            title="Unlock this lesson to edit and assign"
+                            title="Unlock this lesson to edit and use in the Syllabus"
                           >
                             {downloadingLesson === `${subject}/${lesson.file}` ? 'Downloading...' : primaryLabel}
                           </button>

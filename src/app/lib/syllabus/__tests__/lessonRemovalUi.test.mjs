@@ -4,6 +4,9 @@ import test from 'node:test'
 
 const overlaySource = readFileSync(new URL('../../../components/syllabus/FacilitatorSyllabusLessonOverlay.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 const editorSource = readFileSync(new URL('../../../facilitator/lessons/edit/page.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const lessonEditorSource = readFileSync(new URL('../../../../components/LessonEditor.jsx', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const mentorToolRegistrySource = readFileSync(new URL('../../../../lib/mentor/toolRegistry.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
+const deleteRouteSource = readFileSync(new URL('../../../api/facilitator/lessons/delete/route.js', import.meta.url), 'utf8').replace(/\r\n/g, '\n')
 
 function between(source, startMarker, endMarker) {
   const start = source.indexOf(startMarker)
@@ -23,7 +26,7 @@ test('shared lesson details exposes separately scoped exact and broad removal ch
 test('exact removal uses occurrence authority and preserves historical records', () => {
   const exactAction = between(overlaySource, 'async function removeExactSyllabusOccurrence()', 'async function removeLessonFromLearner()')
   assert.match(overlaySource, /exactOccurrenceIsProtected = sourceOccurrenceId\.startsWith\('actual:'\) \|\| sourceOccurrenceId\.startsWith\('historical:'\)/)
-  assert.match(overlaySource, /canRemoveExactOccurrence = coreAuthority && canChangeIntent && Boolean\(sourceOccurrenceId\) && !exactOccurrenceIsProtected/)
+  assert.match(overlaySource, /canRemoveExactOccurrence = coreAuthority && canChangeIntent && !isHistorical && Boolean\(sourceOccurrenceId\) && !exactOccurrenceIsProtected/)
   assert.match(exactAction, /fetch\('\/api\/syllabus\/lesson-occurrences'/)
   assert.match(exactAction, /method: 'DELETE'/)
   assert.match(exactAction, /occurrenceId: sourceOccurrenceId/)
@@ -41,13 +44,14 @@ test('broad removal is gated by current server binding truth', () => {
   assert.doesNotMatch(broadAction, /lesson-occurrences/)
 })
 
-test('lesson editor is grant-only while retaining server binding truth', () => {
-  assert.match(editorSource, /fetch\(`\/api\/facilitator\/learners\/lesson-availability\?\$\{params\}`/)
-  assert.match(editorSource, /setAssignedLearners\(result\.currentlyBound\s*\?\s*\[learner\.id\]\s*:\s*\[\]\)/)
-  assert.match(editorSource, /Grant Access/)
-  assert.match(editorSource, /available:\s*true/)
-  assert.match(editorSource, /Already assigned/)
-  assert.doesNotMatch(editorSource, /Remove from learner/)
-  assert.doesNotMatch(editorSource, /available:\s*!isCurrentlyAssigned/)
-  assert.doesNotMatch(editorSource, /available:\s*false/)
+test('legacy lesson assignment actions are absent and generated deletion is verified server-side', () => {
+  assert.doesNotMatch(editorSource, /showAssign|assignedLearners|Grant Access|Already assigned|onAssign/)
+  assert.doesNotMatch(lessonEditorSource, /onAssign|Assign to learners|>\s*✓ Assign\s*</)
+  assert.doesNotMatch(mentorToolRegistrySource, /assign_lesson/)
+  assert.match(editorSource, /fetch\('\/api\/facilitator\/lessons\/delete'/)
+  assert.match(editorSource, /result\?\.deleted !== true/)
+  assert.doesNotMatch(editorSource, /\.from\('lessons'\)[\s\S]{0,180}\.remove\(/)
+  assert.match(deleteRouteSource, /\.remove\(\[storagePath\]\)/)
+  assert.match(deleteRouteSource, /Lesson deletion could not be verified/)
+  assert.match(deleteRouteSource, /deleted:true/)
 })

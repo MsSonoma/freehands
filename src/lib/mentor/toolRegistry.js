@@ -162,16 +162,6 @@ export const MENTOR_TOOL_REGISTRY = Object.freeze([
     parameters: objectSchema({ ...learnerSelector, lessonKey: { type: 'string' }, scheduledDate: { type: 'string', description: 'YYYY-MM-DD using the actual current date context.' } }, ['lessonKey', 'scheduledDate']),
   },
   {
-    name: 'assign_lesson',
-    authority: 'commit',
-    purpose: 'Make a lesson available to a learner without selecting a calendar date.',
-    whenToUse: 'When the facilitator explicitly asks to assign or make a lesson available.',
-    verification: 'assignment write response',
-    requiresLearner: true,
-    description: 'Assign a lesson to the selected or named learner without scheduling it to a date.',
-    parameters: objectSchema({ ...learnerSelector, lessonKey: { type: 'string' }, lessonTitle: { type: 'string' } }, ['lessonKey']),
-  },
-  {
     name: 'edit_lesson',
     authority: 'commit',
     purpose: 'Edit an existing lesson artifact.',

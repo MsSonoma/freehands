@@ -40,9 +40,10 @@ test('learner Syllabus selection opens detail first and applies PIN only when st
 test('facilitator lesson overlay is the operational control center after row selection', () => {
   assert.match(facilitatorSource, /onSelectLesson=\{\(item, context\) => setSelectedSyllabusLesson\(\{ item, \.\.\.context \}\)\}/)
   assert.match(facilitatorSource, /<FacilitatorSyllabusLessonOverlay/)
-  for (const control of ['Assigned teacher', 'Start now', 'Make available', 'Edit lesson', 'Schedule Daily Review', 'Review history', 'Review & approve draft']) {
+  for (const control of ['Assigned teacher', 'Start now', 'Edit lesson', 'Schedule Daily Review', 'Review history', 'Review & approve draft']) {
     assert.match(overlaySource, new RegExp(control.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
+  assert.doesNotMatch(overlaySource, /Make available|handleMakeAvailable|make_available/)
   assert.match(overlaySource, /fetch\('\/api\/facilitator\/learners\/lesson-availability'/)
   assert.match(overlaySource, /fetch\('\/api\/syllabus\/lesson-associations'/)
   assert.match(overlaySource, /postLessonScheduleWithCapacityPin/)

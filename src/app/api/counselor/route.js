@@ -269,14 +269,6 @@ function buildToolLogMessage(name, phase, context = {}) {
       }
       if (phase === 'error') return 'Could not schedule the lesson.'
       break
-    case 'assign_lesson':
-      if (phase === 'start') return 'Making the lesson available to the learner...'
-      if (phase === 'success') {
-        const learner = context.learnerName ? ` for ${context.learnerName}` : ''
-        return `Lesson assigned${learner}.`
-      }
-      if (phase === 'error') return 'Could not assign the lesson.'
-      break
     case 'edit_lesson':
       if (phase === 'start') return 'Improving the lesson...'
       if (phase === 'success') return 'Lesson updates are saved.'
@@ -1329,36 +1321,6 @@ async function executeLessonScheduling(args, request, toolLog, toolContext = {})
   }
 }
 
-// Helper function to execute lesson assignment (approved_lessons)
-async function executeLessonAssignment(args, request, toolLog, toolContext = {}) {
-  try {
-    const learner = await resolveOwnedLearner(args, request, toolContext)
-    const lessonKey = normalizeLessonKey(args?.lessonKey)
-    if (!lessonKey) return toolError('Missing lessonKey')
-    pushToolLog(toolLog, { name: 'assign_lesson', phase: 'start', context: { learnerId: learner.id, lessonKey } })
-    const response = await internalApiJson(request, '/api/lesson-assign', {
-      method: 'POST',
-      body: { learnerId: learner.id, lessonKey, assigned: true },
-    })
-    if (!response.ok) {
-      pushToolLog(toolLog, { name: 'assign_lesson', phase: 'error', context: { learnerId: learner.id, message: response.data?.error || 'Lesson assignment failed' } })
-      return toolError(response.data?.error || 'Lesson assignment failed', response.data)
-    }
-    let lessonTitle = args?.lessonTitle || null
-    if (!lessonTitle) {
-      const details = await executeGetLessonDetails({ lessonKey }, request, toolLog)
-      if (details?.success) lessonTitle = details.title || details.lessonTitle || null
-    }
-    pushToolLog(toolLog, { name: 'assign_lesson', phase: 'success', context: { learnerId: learner.id, lessonKey } })
-    return toolSuccess('assign_lesson', `Assigned the lesson to ${learner.name}.`, {
-      learner: { id: learner.id, name: learner.name }, lessonKey, lessonTitle, result: response.data,
-    })
-  } catch (error) {
-    pushToolLog(toolLog, { name: 'assign_lesson', phase: 'error', context: { message: error.message } })
-    return toolError(error.message)
-  }
-}
-
 // Helper function to execute lesson editing
 async function executeLessonEdit(args, request, toolLog) {
   try {
@@ -1602,7 +1564,6 @@ const MENTOR_TOOL_EXECUTORS = Object.freeze({
   propose_syllabus_plan: (args, context) => executeProposeSyllabusPlan(args, context.request, context.toolLog, context),
   generate_lesson: (args, context) => executeLessonGeneration(args, context.request, context.toolLog),
   schedule_lesson: (args, context) => executeLessonScheduling(args, context.request, context.toolLog, context),
-  assign_lesson: (args, context) => executeLessonAssignment(args, context.request, context.toolLog, context),
   edit_lesson: (args, context) => executeLessonEdit(args, context.request, context.toolLog),
   update_syllabus_plan: (args, context) => executeUpdateSyllabusPlan(args, context.request, context.toolLog, context),
   materialize_syllabus_lesson: (args, context) => executeMaterializeSyllabusLesson(args, context.request, context.toolLog, context),

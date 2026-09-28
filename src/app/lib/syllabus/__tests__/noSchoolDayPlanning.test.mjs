@@ -68,6 +68,7 @@ test('Syllabus month view owns day actions and all new instructional write paths
   const slate = source('api/syllabus/slate-assignments/route.js')
   const materialization = source('lib/syllabus/materialization.server.mjs')
   assert.match(document, />\+<\/button>/)
+  assert.match(document, />Remove day off<\/button>/)
   assert.match(document, />Month view<\/button>/)
   assert.match(calendarPage, /params\.set\('view', 'month'\)/)
   assert.match(calendarPage, /router\.replace/)

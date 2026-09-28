@@ -128,7 +128,6 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [coreBusy, setCoreBusy] = useState('')
   const [message, setMessage] = useState('')
   const [coreError, setCoreError] = useState('')
-  const [localAvailable, setLocalAvailable] = useState(false)
   const [localPlannedDate, setLocalPlannedDate] = useState('')
   const [localScheduleId, setLocalScheduleId] = useState('')
   const [localExplicitSchedule, setLocalExplicitSchedule] = useState(false)
@@ -156,7 +155,6 @@ export default function FacilitatorSyllabusLessonOverlay({
   useEffect(() => {
     if (!item) return
     setAssignedTeacher(normalizeInstructionalTeacher(selection.assignedTeacher || item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma')
-    setLocalAvailable(item.readiness_state === 'available')
     setLocalPlannedDate(dateOnly(item.planned_date))
     setLocalScheduleId(item.is_explicit_schedule === true && item.id ? String(item.id) : '')
     setLocalExplicitSchedule(item.is_explicit_schedule === true)
@@ -232,7 +230,6 @@ export default function FacilitatorSyllabusLessonOverlay({
   const canScheduleSlateCore = isLesson && item.lesson_key && !isDraft && !isHistorical && coreAuthority
   const canRepeat = !repeatDeliveryActive && selection.syllabus_state === 'completed_historical' && isLesson && item.lesson_key && (typeof onRepeat === 'function' || coreAuthority)
   const canPrintMaterials = coreAuthority && isLesson && Boolean(item.lesson_key) && !isDraft
-  const availableToLearner = localAvailable || item.readiness_state === 'available'
   const displayedDate = localPlannedDate || dateOnly(item.planned_date)
   const actualKind = String(item.actual_kind || '')
   const completedAt = item.completed_at || (actualKind === 'completed' ? item.actual_at : null)
@@ -249,7 +246,7 @@ export default function FacilitatorSyllabusLessonOverlay({
     if (typeof onChanged === 'function') await onChanged()
   }
 
-  async function setAvailability({ refresh = true, announce = true } = {}) {
+  async function ensureStartAccess() {
     if (!coreAuthority || isDraft) return false
     const response = await fetch('/api/facilitator/learners/lesson-availability', {
       method: 'POST',
@@ -257,24 +254,8 @@ export default function FacilitatorSyllabusLessonOverlay({
       body: JSON.stringify({ learnerId, lessonKey: item.lesson_key, available: true }),
     })
     const json = await response.json().catch(() => ({}))
-    if (!response.ok) throw new Error(json.error || 'Could not make this lesson available')
-    setLocalAvailable(true)
-    if (announce) setMessage('This lesson is available to the learner.')
-    if (refresh) await refreshAfterChange()
+    if (!response.ok) throw new Error(json.error || 'Could not prepare this lesson to start')
     return true
-  }
-
-  async function handleMakeAvailable() {
-    setCoreBusy('availability')
-    setCoreError('')
-    setMessage('')
-    try {
-      await setAvailability()
-    } catch (cause) {
-      setCoreError(cause.message || 'Could not make this lesson available')
-    } finally {
-      setCoreBusy('')
-    }
   }
 
   async function handleStartNow() {
@@ -283,7 +264,7 @@ export default function FacilitatorSyllabusLessonOverlay({
     setCoreError('')
     setMessage('')
     try {
-      await setAvailability({ refresh: false, announce: false })
+      await ensureStartAccess()
       const { subject, fileName } = splitLessonKey(item.lesson_key)
       if (!fileName) throw new Error('This lesson does not have a launchable file.')
       router.push(buildInstructionalSessionRoute({
@@ -392,8 +373,7 @@ export default function FacilitatorSyllabusLessonOverlay({
     })
     if (!allowed) return
     setRepeatMode(true)
-    setLocalAvailable(false)
-    setMessage('Retry ready. Choose Start now, Make available, or Schedule.')
+    setMessage('Retry ready. Choose Start now or Schedule.')
   }
 
   function openSlateScheduler() {
@@ -699,7 +679,6 @@ export default function FacilitatorSyllabusLessonOverlay({
             {actualKind === 'completed' && completedAt && <div><dt>Completed</dt><dd>{prettyDateTime(completedAt)}</dd></div>}
             {actualKind === 'in_progress' && startedAt && <div><dt>Started</dt><dd>{prettyDateTime(startedAt)}</dd></div>}
             {actualKind === 'incomplete' && attemptedAt && <div><dt>Attempted</dt><dd>{prettyDateTime(attemptedAt)}</dd></div>}
-            {canDeliver && <div><dt>Availability</dt><dd>{availableToLearner ? 'Available to learner' : 'Not yet available'}</dd></div>}
             {actualKind !== 'completed' && selection.currentLesson?.hasProgress && <div><dt>Progress</dt><dd>In progress</dd></div>}
             {isSlateAssignment && <><div><dt>Type</dt><dd>Daily Review</dd></div><div><dt>Review teacher</dt><dd>{reviewTeacherSelectionIcon(slateTeacher)} {reviewTeacherSelectionLabel(slateTeacher)}</dd></div></>}
           </dl>
@@ -751,7 +730,6 @@ export default function FacilitatorSyllabusLessonOverlay({
             {historyAvailable && <button type="button" onClick={openHistory}>Review history</button>}
             {canPrintMaterials && <button type="button" onClick={() => { setPrintOpen(true); setPrintError('') }}>Print</button>}
             {schedulingAvailable && <button type="button" disabled={coreBusy === 'schedule'} onClick={openSchedule}>{localExplicitSchedule ? 'Reschedule' : 'Schedule'}</button>}
-            {canDeliver && !availableToLearner && <button type="button" disabled={coreBusy === 'availability'} onClick={() => void handleMakeAvailable()}>{coreBusy === 'availability' ? 'Making available...' : 'Make available'}</button>}
             {canRegenerateOwnedLesson && <button type="button" onClick={() => setRevisionOpen(true)}>Regenerate with changes</button>}
             {canEditOwnedLesson && <button type="button" onClick={editLesson}>{isDraft ? 'Edit draft' : 'Edit lesson'}</button>}
             {isLesson && item.lesson_key && !isDraft && item.historical_record !== true && (typeof onScheduleSlate === 'function' || canScheduleSlateCore) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={openSlateScheduler}>Schedule Daily Review</button>}
@@ -784,7 +762,6 @@ export default function FacilitatorSyllabusLessonOverlay({
       accessToken={accessToken}
       onClose={() => setRevisionOpen(false)}
       onRevised={async () => {
-        setLocalAvailable(false)
         await refreshAfterChange()
         onClose?.()
       }}

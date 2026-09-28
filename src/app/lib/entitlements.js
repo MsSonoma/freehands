@@ -111,7 +111,6 @@ export function preparationDeliveryActionsForTier(tier) {
   const features = featuresForTier(tier);
   return {
     startNow: true,
-    makeAvailable: true,
     saveForLater: true,
     schedule: features.lessonScheduling === true,
   };

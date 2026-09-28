@@ -47,7 +47,8 @@ export async function POST(request){
   if (!featuresForTier(plan_tier).lessonGenerator) return NextResponse.json({ error:'Lesson Generator plan required' }, { status: 403 })
   let body
   try { body = await request.json() } catch { return NextResponse.json({ error:'Invalid body' }, { status: 400 }) }
-  const file = (body?.file || '').toString()
+  const requestedFile = (body?.file || '').toString().trim()
+  const file = requestedFile.replace(/^generated\//, '')
   if (!file || file.includes('..') || file.includes('/') || file.includes('\\')) return NextResponse.json({ error:'Invalid file' }, { status: 400 })
   
   try {
@@ -58,16 +59,27 @@ export async function POST(request){
     
     const supabase = createClient(url, svc, { auth: { persistSession: false } })
     
-    // Delete from Supabase Storage
+    // Delete from Supabase Storage, then verify the canonical object is gone before reporting success.
     const storagePath = `facilitator-lessons/${user.id}/${file}`
     const { error: deleteError } = await supabase.storage
       .from('lessons')
       .remove([storagePath])
     
     if (deleteError) {
-      return NextResponse.json({ error: 'Failed to delete' }, { status: 500 })
+      return NextResponse.json({ error: `Failed to delete: ${deleteError.message || 'storage error'}` }, { status: 500 })
     }
-    return NextResponse.json({ ok:true })
+
+    const { data: remaining, error: verifyError } = await supabase.storage
+      .from('lessons')
+      .list(`facilitator-lessons/${user.id}`, { limit: 1000, offset: 0, search: file })
+    if (verifyError) {
+      return NextResponse.json({ error: `Lesson deletion could not be verified: ${verifyError.message || 'storage readback failed'}` }, { status: 500 })
+    }
+    if ((remaining || []).some((entry) => entry?.name === file)) {
+      return NextResponse.json({ error: 'Lesson deletion could not be verified. The lesson still exists.' }, { status: 500 })
+    }
+
+    return NextResponse.json({ ok:true, deleted:true, file })
   } catch (e) {
     return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
   }

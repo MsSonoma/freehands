@@ -29,16 +29,14 @@ function EditLessonContent() {
   const [rewritingTeachingNotes, setRewritingTeachingNotes] = useState(false)
   const [rewritingVocabDefinition, setRewritingVocabDefinition] = useState({})
   
-  // New states for Notes, Schedule, Assign, Delete functionality
+  // Notes, Schedule, and Delete functionality
   const [showNotes, setShowNotes] = useState(false)
   const [lessonNote, setLessonNote] = useState('')
   const [showSchedule, setShowSchedule] = useState(false)
   const [scheduledDate, setScheduledDate] = useState(null) // null, 'today', or 'YYYY-MM-DD'
-  const [showAssign, setShowAssign] = useState(false)
   const [learners, setLearners] = useState([])
-  const [assignedLearners, setAssignedLearners] = useState([]) // Array of learner IDs
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
-  const [showLearnerSelect, setShowLearnerSelect] = useState(null) // 'notes', 'schedule', or 'assign'
+  const [showLearnerSelect, setShowLearnerSelect] = useState(null) // 'notes' or 'schedule'
   const [selectedLearnerId, setSelectedLearnerId] = useState(null)
   const [selectedLearner, setSelectedLearner] = useState(null)
   const [loadingLearners, setLoadingLearners] = useState(false)
@@ -603,7 +601,6 @@ function EditLessonContent() {
           rewritingVocabDefinition={rewritingVocabDefinition}
           onNotes={!isNewLesson ? (() => setShowLearnerSelect('notes')) : undefined}
           onSchedule={!isNewLesson ? (() => setShowLearnerSelect('schedule')) : undefined}
-          onAssign={!isNewLesson ? (() => setShowLearnerSelect('assign')) : undefined}
           onDelete={!isNewLesson ? (() => setShowDeleteConfirm(true)) : undefined}
           onGenerateVisualAids={!isNewLesson ? handleGenerateVisualAids : undefined}
           generatingVisualAids={!isNewLesson ? generatingVisualAids : false}
@@ -662,7 +659,6 @@ function EditLessonContent() {
             <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
               {showLearnerSelect === 'notes' && 'Choose a learner to add notes for this lesson'}
               {showLearnerSelect === 'schedule' && 'Choose a learner to schedule this lesson for'}
-              {showLearnerSelect === 'assign' && 'Choose a learner to assign this lesson to'}
             </p>
             
             {loadingLearners ? (
@@ -688,24 +684,6 @@ function EditLessonContent() {
                         setShowNotes(true)
                       } else if (selectedAction === 'schedule') {
                         setShowSchedule(true)
-                      } else if (selectedAction === 'assign') {
-                        try {
-                          setSaving(true)
-                          const supabase = getSupabaseClient()
-                          const { data: { session } } = await supabase.auth.getSession()
-                          const params = new URLSearchParams({ learnerId: learner.id, lessonKey })
-                          const response = await fetch(`/api/facilitator/learners/lesson-availability?${params}`, {
-                            headers: { 'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '' },
-                          })
-                          const result = await response.json().catch(() => null)
-                          if (!response.ok) throw new Error(result?.error || 'Failed to load learner lesson status')
-                          setAssignedLearners(result.currentlyBound ? [learner.id] : [])
-                          setShowAssign(true)
-                        } catch (err) {
-                          alert('Failed to load assignment: ' + (err.message || 'Unknown error'))
-                        } finally {
-                          setSaving(false)
-                        }
                       }
                     }}
                     style={{
@@ -1010,115 +988,6 @@ function EditLessonContent() {
         </div>
       )}
       
-      {/* Assign Modal */}
-      {showAssign && selectedLearnerId && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.5)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 10000
-        }}
-        onClick={() => setShowAssign(false)}
-        >
-          <div style={{
-            background: '#fff',
-            borderRadius: 8,
-            padding: 24,
-            maxWidth: 400,
-            width: '90%'
-          }}
-          onClick={(e) => e.stopPropagation()}
-          >
-            <h3 style={{ marginTop: 0 }}>✓ Assign Lesson</h3>
-            <p style={{ color: '#6b7280', fontSize: 14, marginBottom: 16 }}>
-              {selectedLearner?.name} - {lesson?.title}
-            </p>
-            
-            <p style={{ color: '#6b7280', fontSize: 13, marginBottom: 16 }}>
-              {assignedLearners.includes(selectedLearnerId) 
-                ? 'Already assigned. To remove it, open this learner\'s Syllabus and use the lesson preparation view.'
-                : 'This lesson is not currently available to this learner. Click to grant access.'}
-            </p>
-            
-            <div style={{ display: 'flex', gap: 8 }}>
-              {!assignedLearners.includes(selectedLearnerId) && <button
-                onClick={async () => {
-                  try {
-                    setSaving(true)
-                    const supabase = getSupabaseClient()
-                    const { data: { session } } = await supabase.auth.getSession()
-                    const response = await fetch('/api/facilitator/learners/lesson-availability', {
-                      method: 'POST',
-                      headers: {
-                        'Content-Type': 'application/json',
-                        'Authorization': session?.access_token ? `Bearer ${session.access_token}` : '',
-                      },
-                      body: JSON.stringify({
-                        learnerId: selectedLearnerId,
-                        lessonKey,
-                        available: true,
-                      }),
-                    })
-                    const result = await response.json().catch(() => null)
-                    if (!response.ok) throw new Error(result?.error || 'Failed to update assignment')
-                    const updatedApproved = result?.approvedLessons || {}
-
-                    // Update learners list
-                    setLearners(prev => prev.map(l => 
-                      l.id === selectedLearnerId ? { ...l, approved_lessons: updatedApproved } : l
-                    ))
-                    
-                    alert('Lesson assigned successfully')
-                    setShowAssign(false)
-                  } catch (err) {
-                    alert('Failed to update assignment: ' + (err.message || 'Unknown error'))
-                  } finally {
-                    setSaving(false)
-                  }
-                }}
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  background: '#059669',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 6,
-                  cursor: saving ? 'wait' : 'pointer',
-                  fontWeight: 600,
-                  fontSize: 14
-                }}
-              >
-                {saving ? 'Updating...' : 'Grant Access'}
-              </button>}
-              <button
-                onClick={() => setShowAssign(false)}
-                disabled={saving}
-                style={{
-                  flex: 1,
-                  padding: '10px',
-                  background: '#fff',
-                  color: '#6b7280',
-                  border: '1px solid #d1d5db',
-                  borderRadius: 6,
-                  cursor: saving ? 'wait' : 'pointer',
-                  fontWeight: 600,
-                  fontSize: 14
-                }}
-              >
-                Cancel
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
       {/* Delete Confirmation Modal */}
       {showDeleteConfirm && (
         <div style={{
@@ -1165,27 +1034,27 @@ function EditLessonContent() {
                     const supabase = getSupabaseClient()
                     const { data: { session } } = await supabase.auth.getSession()
                     const token = session?.access_token
-                    
-                    const filename = lessonKey.replace('generated/', '')
-                    const { data: { user } } = await supabase.auth.getUser()
-                    
-                    if (!user) {
+
+                    if (!token) {
                       setError('Not authenticated')
                       return
                     }
-                    
-                    // Delete from Supabase Storage
-                    const filePath = `facilitator-lessons/${user.id}/${filename}`
-                    const { error: deleteError } = await supabase.storage
-                      .from('lessons')
-                      .remove([filePath])
-                    
-                    if (deleteError) {
-                      setError('Failed to delete lesson: ' + deleteError.message)
+
+                    const response = await fetch('/api/facilitator/lessons/delete', {
+                      method: 'POST',
+                      headers: {
+                        'Content-Type': 'application/json',
+                        Authorization: `Bearer ${token}`,
+                      },
+                      body: JSON.stringify({ file: lessonKey }),
+                    })
+                    const result = await response.json().catch(() => ({}))
+
+                    if (!response.ok || result?.deleted !== true) {
+                      setError(result?.error || 'Failed to delete lesson')
                       return
                     }
-                    
-                    // Success - redirect to lessons page
+
                     router.push('/facilitator/lessons')
                   } catch (err) {
                     setError('Error deleting lesson: ' + (err.message || String(err)))

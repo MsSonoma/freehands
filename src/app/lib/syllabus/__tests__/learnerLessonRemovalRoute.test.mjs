@@ -56,7 +56,7 @@ test('lesson availability GET and POST reject another facilitator learner', asyn
   } finally { restore() }
 })
 
-test('available=true preserves Grant behavior and canonical association creation', async () => {
+test('available=true preserves internal launch access and canonical association creation', async () => {
   const restore = env()
   const captures = {}
   try {
@@ -73,15 +73,8 @@ test('available=false routes through the canonical removal service', () => {
   assert.match(route, /facilitatorId: user\.id/)
 })
 
-test('lesson editor uses server binding truth and remains grant-only for learner assignment', () => {
+test('lesson editor no longer exposes the legacy learner assignment path', () => {
   const source = fs.readFileSync(new URL('../../../facilitator/lessons/edit/page.js', import.meta.url), 'utf8')
-  assert.match(source, /lesson-availability\?\$\{params\}/)
-  assert.match(source, /result\.currentlyBound \? \[learner\.id\] : \[\]/)
-  assert.doesNotMatch(source, /\(learner\.approved_lessons \|\| \{\}\)\[lessonKey\]/)
-  assert.match(source, /Already assigned/)
-  assert.match(source, /Grant Access/)
-  assert.match(source, /available:\s*true/)
-  assert.doesNotMatch(source, /Remove from learner/)
-  assert.doesNotMatch(source, /available:\s*false/)
-  assert.doesNotMatch(source, /available:\s*!\s*isCurrentlyAssigned/)
+  assert.doesNotMatch(source, /lesson-availability/)
+  assert.doesNotMatch(source, /Already assigned|Grant Access|available:\s*true|available:\s*false/)
 })

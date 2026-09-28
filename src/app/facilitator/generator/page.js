@@ -812,7 +812,7 @@ export default function LessonMakerPage({ embeddedHref = '', onNavigate = null }
           show
           gateType={gateType || 'auth'}
           feature="Lesson Generator"
-          benefits={["Generate custom lessons instantly", "Edit and assign lessons", "Build a full curriculum over time"]}
+          benefits={["Generate custom lessons instantly", "Edit lessons and use them in the Syllabus", "Build a full curriculum over time"]}
           emoji="✨"
         />
       </main>
@@ -1345,7 +1345,7 @@ export default function LessonMakerPage({ embeddedHref = '', onNavigate = null }
       requiredTier="standard"
       currentTier={tier}
       feature="Lesson Generator"
-      benefits={["Generate custom lessons instantly","Edit and assign lessons", "Build a full curriculum over time"]}
+      benefits={["Generate custom lessons instantly","Edit lessons and use them in the Syllabus", "Build a full curriculum over time"]}
       emoji="✨"
     />
     </>

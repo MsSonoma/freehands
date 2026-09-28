@@ -27,7 +27,6 @@ export default function LessonEditor({
   // Additional action buttons
   onNotes,
   onSchedule,
-  onAssign,
   onDelete,
   onGenerateVisualAids,
   generatingVisualAids = false,
@@ -548,30 +547,6 @@ export default function LessonEditor({
                     </button>
                   )}
                   
-                  {onAssign && (
-                    <button
-                      onClick={() => {
-                        onAssign()
-                        setShowActionsMenu(false)
-                      }}
-                      disabled={busy}
-                      style={{
-                        width: '100%',
-                        padding: '12px 16px',
-                        background: '#fff',
-                        border: 'none',
-                        borderBottom: '1px solid #f3f4f6',
-                        textAlign: 'left',
-                        cursor: busy ? 'not-allowed' : 'pointer',
-                        fontSize: 14,
-                        fontWeight: 500,
-                        color: '#374151'
-                      }}
-                    >
-                      ✓ Assign
-                    </button>
-                  )}
-                  
                   {onGenerateVisualAids && (
                     <button
                       onClick={() => {
@@ -679,26 +654,6 @@ export default function LessonEditor({
               title="Schedule lesson"
             >
               📅 Schedule
-            </button>
-          )}
-
-          {onAssign && (
-            <button
-              style={{
-                padding: '9px 14px',
-                border: '1px solid #c7d2fe',
-                background: '#fff',
-                color: '#4338ca',
-                borderRadius: 8,
-                fontWeight: 600,
-                fontSize: 13,
-                cursor: busy ? 'not-allowed' : 'pointer',
-              }}
-              onClick={onAssign}
-              disabled={busy}
-              title="Assign to learners"
-            >
-              ✓ Assign
             </button>
           )}
 
