@@ -114,3 +114,28 @@ test('Mrs. Webb cannot expose first-turn input before objective tracking is read
   assert.doesNotMatch(startup.slice(openChat), /generateObjectives\(lesson\)/)
   assert.match(page, /if \(!res\.ok\) throw new Error\('Mrs\. Webb could not prepare the learning goals for this lesson\.'\)/)
 })
+
+
+test('Mrs. Webb acknowledges resume immediately while protected state is restored', () => {
+  assert.match(page, /const \[resumeBusy,\s*setResumeBusy\]\s*=\s*useState\(false\)/)
+  assert.match(page, /async function handleResume\(\) \{[\s\S]*if \(resumeBusy\) return[\s\S]*setResumeBusy\(true\)/)
+  assert.match(page, /finally \{[\s\S]*setResumeBusy\(false\)/)
+  assert.match(page, /onClick=\{handleResume\} disabled=\{resumeBusy\}/)
+  assert.match(page, /resumeBusy \? 'Resuming…' : '▶ Resume'/)
+  assert.match(page, /onClick=\{handleRestartFromPrompt\} disabled=\{resumeBusy\}/)
+})
+
+test('slow writing and completion transitions expose busy state without skipping persistence', () => {
+  assert.match(page, /const \[writingStartBusy,\s*setWritingStartBusy\]\s*=\s*useState\(false\)/)
+  assert.match(page, /setWritingStartBusy\(true\)[\s\S]*await prepareCompositionPlan\(\)[\s\S]*await persistCompositionArtifact/)
+  assert.match(page, /writingStartBusy \? 'Preparing writing…'/)
+
+  const completionStart = page.indexOf('async function handleCompleteLesson()')
+  const completionEnd = page.indexOf('async function interpretArticle()', completionStart)
+  assert.ok(completionStart >= 0 && completionEnd > completionStart)
+  const completion = page.slice(completionStart, completionEnd)
+  const markSaving = completion.indexOf("setCompletionState('saving')")
+  const persistFinal = completion.indexOf("persistCompositionArtifact({ plan: compositionPlan, accepted: acceptedSentences, status: 'final' })")
+  assert.ok(markSaving >= 0 && persistFinal > markSaving, 'completion feedback must appear before the awaited server persistence step')
+  assert.match(page, /completionState === 'saving' \? 'Recording completion…'/)
+})

@@ -207,9 +207,11 @@ function WebbPageInner() {
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
   const [offerResume,        setOfferResume]        = useState(false) // shown after lesson is selected, if a per-lesson snapshot exists
+  const [resumeBusy,         setResumeBusy]         = useState(false)
   const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
   const [essay,              setEssay]             = useState(null)  // deterministic assembly of accepted learner sentences
   const [writingEvaluating,    setWritingEvaluating]   = useState(false) // writing evaluation in flight
+  const [writingStartBusy,     setWritingStartBusy]    = useState(false)
   const [webbCompletionMap,  setWebbCompletionMap] = useState({}) // {[lessonKey]: {completed, completedAt}}
   const [justCompletedLesson, setJustCompletedLesson] = useState(null) // lesson title shown as completion toast
   const [completionState, setCompletionState] = useState('idle') // idle | saving | failed
@@ -546,6 +548,8 @@ function WebbPageInner() {
   }
 
   async function handleResume() {
+    if (resumeBusy) return
+    setResumeBusy(true)
     const run = ++runGenerationRef.current
     objectiveQueueRef.current.invalidate()
     setStartupError('')
@@ -663,7 +667,10 @@ function WebbPageInner() {
     } catch (cause) {
       if (run === runGenerationRef.current) setPageError(cause?.message || 'Could not securely resume this lesson.')
     } finally {
-      if (run === runGenerationRef.current && !webbExecutionFencedRef.current) setChatLoading(false)
+      if (run === runGenerationRef.current) {
+        setResumeBusy(false)
+        if (!webbExecutionFencedRef.current) setChatLoading(false)
+      }
     }
   }
 
@@ -2938,10 +2945,11 @@ function WebbPageInner() {
   }
 
   async function handleStartWriting() {
-    if (webbExecutionFencedRef.current || chatLoading || checkError || storageError) return
+    if (webbExecutionFencedRef.current || chatLoading || writingStartBusy || checkError || storageError) return
     if (writingEvaluating || !hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return
     let activePlan = compositionPlan?.slots?.length ? compositionPlan : null
     if (!activePlan && Object.keys(acceptedSentences || {}).length === 0) {
+      setWritingStartBusy(true)
       setChatLoading(true)
       try {
         activePlan = await prepareCompositionPlan()
@@ -2953,12 +2961,20 @@ function WebbPageInner() {
         setCompositionSaveError(error?.message || 'Mrs. Webb could not prepare the writing plan yet.')
         return
       } finally {
+        setWritingStartBusy(false)
         if (!webbExecutionFencedRef.current) setChatLoading(false)
       }
     }
     const nextIndex = activePlan ? nextCompositionSlotIndex(activePlan, acceptedSentences) : nextWritingObjectiveIndex(objectives, acceptedSentences)
     if (nextIndex === -1) {
-      await finalizeCompositionDraft(activePlan, acceptedSentences, chatMessages)
+      setWritingStartBusy(true)
+      setChatLoading(true)
+      try {
+        await finalizeCompositionDraft(activePlan, acceptedSentences, chatMessages)
+      } finally {
+        setWritingStartBusy(false)
+        if (!webbExecutionFencedRef.current) setChatLoading(false)
+      }
       return
     }
     if (!activePlan) {
@@ -3040,14 +3056,6 @@ function WebbPageInner() {
       : assembleLearnerEssay(objectives, acceptedSentences)
     if (checkError || storageError || !essay || assembledEssay !== essay) return
     if (!saveLearningSnapshot()) return
-    if (compositionPlan?.slots?.length) {
-      const persisted = await persistCompositionArtifact({ plan: compositionPlan, accepted: acceptedSentences, status: 'final' })
-      if (!persisted) {
-        setCompletionState('failed')
-        setCompletionError('Your essay is safe on this device, but it could not be confirmed on the server yet. Please try completing again.')
-        return
-      }
-    }
     const tracked = canonicalSessionRef.current
     if (!tracked?.id) {
       setCompletionState('failed')
@@ -3056,6 +3064,14 @@ function WebbPageInner() {
     }
     setCompletionState('saving')
     setCompletionError('')
+    if (compositionPlan?.slots?.length) {
+      const persisted = await persistCompositionArtifact({ plan: compositionPlan, accepted: acceptedSentences, status: 'final' })
+      if (!persisted) {
+        setCompletionState('failed')
+        setCompletionError('Your essay is safe on this device, but it could not be confirmed on the server yet. Please try completing again.')
+        return
+      }
+    }
     const lk = selectedLesson.lessonKey || selectedLesson.lesson_id || selectedLesson.id || 'unknown'
     const completed = await endLessonSession(tracked.id, {
       reason: 'completed',
@@ -3890,21 +3906,21 @@ function WebbPageInner() {
               <button
                 type="button"
                 onClick={handleStartWriting}
-                disabled={writingEvaluating}
+                disabled={writingEvaluating || writingStartBusy || chatLoading}
                 style={{
                   width: '100%',
-                  background: writingEvaluating ? '#e5e7eb' : '#0d9488',
-                  color: writingEvaluating ? '#9ca3af' : '#fff',
+                  background: (writingEvaluating || writingStartBusy || chatLoading) ? '#e5e7eb' : '#0d9488',
+                  color: (writingEvaluating || writingStartBusy || chatLoading) ? '#9ca3af' : '#fff',
                   border: 'none',
                   borderRadius: keyboardCompact ? 7 : 10,
                   padding: keyboardCompact ? '6px 10px' : '10px 16px',
-                  cursor: writingEvaluating ? 'default' : 'pointer',
+                  cursor: (writingEvaluating || writingStartBusy || chatLoading) ? 'wait' : 'pointer',
                   fontWeight: 800,
                   fontSize: keyboardCompact ? 11 : 14,
                   fontFamily: 'inherit',
                 }}
               >
-                {writingAllAccepted ? 'View my essay' : 'Start writing from my research'}
+                {writingStartBusy ? 'Preparing writing…' : writingAllAccepted ? 'View my essay' : 'Start writing from my research'}
               </button>
             </div>
           )}
@@ -4240,27 +4256,27 @@ function WebbPageInner() {
             boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #0d9488',
             padding: '28px 24px',
             textAlign: 'center',
-          }}>
+          }} aria-busy={resumeBusy}>
             <div style={{ fontSize: 36, marginBottom: 12 }}>👋</div>
             <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
             <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
               You were in the middle of{selectedLesson?.title ? <> <span style={{ color: '#e2e8f0', fontWeight: 600 }}>&ldquo;{selectedLesson.title}&rdquo;</span></> : ' a lesson'} with Mrs. Webb.<br/>
-              Would you like to pick up where you left off?
+              {resumeBusy ? 'Restoring your lesson now…' : 'Would you like to pick up where you left off?'}
             </div>
             <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
-              <button type="button" onClick={handleResume}
+              <button type="button" onClick={handleResume} disabled={resumeBusy}
                 style={{
                   flex: 1, background: '#0d9488', color: '#fff', border: 'none',
-                  borderRadius: 10, padding: '11px 0', cursor: 'pointer',
-                  fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
+                  borderRadius: 10, padding: '11px 0', cursor: resumeBusy ? 'wait' : 'pointer',
+                  fontWeight: 800, fontSize: 15, fontFamily: 'inherit', opacity: resumeBusy ? 0.78 : 1,
                 }}
-              >▶ Resume</button>
-              <button type="button" onClick={handleRestartFromPrompt}
+              >{resumeBusy ? 'Resuming…' : '▶ Resume'}</button>
+              <button type="button" onClick={handleRestartFromPrompt} disabled={resumeBusy}
                 style={{
                   flex: 1, background: 'rgba(255,255,255,0.07)', color: '#94a3b8',
                   border: '1px solid #334155',
-                  borderRadius: 10, padding: '11px 0', cursor: 'pointer',
-                  fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
+                  borderRadius: 10, padding: '11px 0', cursor: resumeBusy ? 'wait' : 'pointer',
+                  fontWeight: 700, fontSize: 15, fontFamily: 'inherit', opacity: resumeBusy ? 0.55 : 1,
                 }}
               >↺ Restart</button>
             </div>
@@ -4410,15 +4426,15 @@ function WebbPageInner() {
                   <button
                     type="button"
                     onClick={handleStartWriting}
-                    disabled={writingEvaluating}
+                    disabled={writingEvaluating || writingStartBusy || chatLoading}
                     style={{
-                      width: '100%', background: writingEvaluating ? '#1e293b' : '#0d9488',
+                      width: '100%', background: (writingEvaluating || writingStartBusy || chatLoading) ? '#1e293b' : '#0d9488',
                       color: '#fff', border: 'none', borderRadius: 10,
-                      padding: '11px 20px', cursor: writingEvaluating ? 'default' : 'pointer',
+                      padding: '11px 20px', cursor: (writingEvaluating || writingStartBusy || chatLoading) ? 'wait' : 'pointer',
                       fontWeight: 800, fontSize: 14, fontFamily: 'inherit',
                     }}
                   >
-                    {writingAllAccepted ? 'View my essay' : 'Start writing from my research'}
+                    {writingStartBusy ? 'Preparing writing…' : writingAllAccepted ? 'View my essay' : 'Start writing from my research'}
                   </button>
                 </div>
               )}
