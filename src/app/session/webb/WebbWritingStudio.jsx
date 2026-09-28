@@ -65,6 +65,7 @@ export default function WebbWritingStudio({
   totalSentences,
   guidance,
   evaluating,
+  transitionBusy = false,
   onDraftChange,
   onSubmit,
   onBlankComplete,
