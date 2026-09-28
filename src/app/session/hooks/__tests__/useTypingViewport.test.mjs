@@ -33,21 +33,21 @@ test('touch typing uses the visual viewport and computes the keyboard inset', ()
   assert.equal(state.keyboardInset, 408)
 })
 
-test('focused touch input does not enter keyboard mode for small browser chrome changes', () => {
+test('focused touch input enters compact typing mode even when keyboard geometry is unavailable', () => {
   const win = fakeWindow({ touch: true, innerHeight: 768, visualHeight: 730 })
   const state = measureTypingViewport(win, { activeElement: input() })
   assert.equal(state.textEntryFocused, true)
   assert.equal(state.keyboardVisible, false)
-  assert.equal(state.typing, false)
+  assert.equal(state.typing, true)
   assert.equal(state.keyboardInset, 0)
 })
 
-test('dismissing the touch keyboard restores normal mode even when the input keeps focus', () => {
+test('touch focus remains the compact-layout fallback when iPad reports no keyboard inset', () => {
   const win = fakeWindow({ touch: true, innerHeight: 768, visualHeight: 768 })
   const state = measureTypingViewport(win, { activeElement: input() })
   assert.equal(state.textEntryFocused, true)
   assert.equal(state.keyboardVisible, false)
-  assert.equal(state.typing, false)
+  assert.equal(state.typing, true)
   assert.equal(state.keyboardInset, 0)
 })
 
@@ -99,4 +99,13 @@ test('stale-focus recovery ignores desktop, inactive, and non-editable targets',
   assert.equal(releaseStaleTouchFocus(fakeWindow({ touch: true }), { activeElement: other }, field), false)
   assert.equal(releaseStaleTouchFocus(fakeWindow({ touch: true }), { activeElement: field }, input({ type: 'checkbox' })), false)
   assert.equal(blurCount, 0)
+})
+
+
+test('baseline viewport height detects a keyboard even when layout and visual viewports shrink together', () => {
+  const win = fakeWindow({ touch: true, innerHeight: 360, visualHeight: 360 })
+  const state = measureTypingViewport(win, { activeElement: input() }, { baselineHeight: 768 })
+  assert.equal(state.keyboardVisible, true)
+  assert.equal(state.typing, true)
+  assert.equal(state.keyboardInset, 408)
 })

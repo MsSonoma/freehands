@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { WEBB_WRITING_SUBPHASES } from '@/app/lib/webbWritingFlow.mjs'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import TypingConversationContext from '../components/TypingConversationContext'
+import WebbDictationButton from './WebbDictationButton'
 
 function GuidanceTranscript({ text, compact = false }) {
   if (!String(text || '').trim()) return null
@@ -75,8 +76,8 @@ export default function WebbWritingStudio({
   onLearnerActivity,
 }) {
   const inputRef = useRef(null)
-  const typingViewport = useTypingViewport()
-  const keyboardCompact = typingViewport.keyboardVisible
+  const typingViewport = useTypingViewport({ preserveTouchFocus: true, blurDelayMs: 350 })
+  const keyboardCompact = typingViewport.typing
   const blankCompleteRef = useRef(onBlankComplete)
 
   useEffect(() => {
@@ -124,7 +125,7 @@ export default function WebbWritingStudio({
   return createPortal(
     <div style={{
       position: 'fixed',
-      ...(typingViewport.keyboardVisible && typingViewport.visualHeight ? {
+      ...(typingViewport.typing && typingViewport.visualHeight ? {
         top: typingViewport.offsetTop, left: typingViewport.offsetLeft,
         width: typingViewport.visualWidth || '100%', height: typingViewport.visualHeight,
         right: 'auto', bottom: 'auto',
@@ -146,7 +147,7 @@ export default function WebbWritingStudio({
       <div style={{ position: keyboardCompact ? 'relative' : 'static', zIndex: 4, flexShrink: 0 }}>
         <TypingConversationContext
           entries={recentEntries}
-          visible={typingViewport.keyboardVisible}
+          visible={typingViewport.typing}
           maxItems={keyboardCompact ? 2 : 6}
           compact={keyboardCompact}
           teacherLabel="Mrs. Webb"
@@ -239,9 +240,21 @@ export default function WebbWritingStudio({
               )}
 
               <form onSubmit={submit} style={keyboardCompact ? { marginTop: 'auto', flexShrink: 0 } : undefined}>
-                <label htmlFor="webb-writing-attempt" style={{ display: 'block', color: '#0f766e', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 3 : 10 }}>
-                  {subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 'Try again' : 'Your sentence'}
-                </label>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: keyboardCompact ? 3 : 10 }}>
+                  <label htmlFor="webb-writing-attempt" style={{ display: 'block', color: '#0f766e', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', margin: 0 }}>
+                    {subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 'Try again' : 'Your sentence'}
+                  </label>
+                  <WebbDictationButton
+                    disabled={evaluating}
+                    compact={keyboardCompact}
+                    onBeforeRecord={() => inputRef.current?.blur()}
+                    onActivity={onLearnerActivity}
+                    onTranscript={text => {
+                      const next = [currentDraft.trim(), text].filter(Boolean).join(' ')
+                      onDraftChange?.(next)
+                    }}
+                  />
+                </div>
                 <textarea
                   ref={inputRef}
                   id="webb-writing-attempt"

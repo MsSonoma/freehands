@@ -1,6 +1,6 @@
 'use client'
 
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 export function isTouchLikeDevice(win = typeof window !== 'undefined' ? window : null) {
   if (!win) return false
@@ -37,7 +37,11 @@ export function isTextEntryElement(element) {
   return element.isContentEditable === true
 }
 
-export function measureTypingViewport(win = typeof window !== 'undefined' ? window : null, doc = typeof document !== 'undefined' ? document : null) {
+export function measureTypingViewport(
+  win = typeof window !== 'undefined' ? window : null,
+  doc = typeof document !== 'undefined' ? document : null,
+  { baselineHeight = 0 } = {},
+) {
   if (!win) return {
     touchLike: false, textEntryFocused: false, keyboardVisible: false, typing: false,
     visualHeight: 0, visualWidth: 0, offsetTop: 0, offsetLeft: 0, keyboardInset: 0,
@@ -49,16 +53,24 @@ export function measureTypingViewport(win = typeof window !== 'undefined' ? wind
   const offsetTop = Math.max(0, Math.round(Number(vv?.offsetTop || 0)))
   const offsetLeft = Math.max(0, Math.round(Number(vv?.offsetLeft || 0)))
   const layoutHeight = Math.max(0, Math.round(Number(win.innerHeight || visualHeight)))
-  const rawInset = Math.max(0, layoutHeight - visualHeight - offsetTop)
+  const liveInset = Math.max(0, layoutHeight - visualHeight - offsetTop)
+  const baselineInset = baselineHeight > 0
+    ? Math.max(0, Math.round(Number(baselineHeight)) - visualHeight - offsetTop)
+    : 0
+  const rawInset = Math.max(liveInset, baselineInset)
   const keyboardInset = rawInset >= 48 ? rawInset : 0
   const touchLike = isTouchLikeDevice(win)
   const textEntryFocused = isTextEntryElement(doc?.activeElement)
   const keyboardVisible = touchLike && textEntryFocused && keyboardInset > 0
+  // iPad browsers do not always expose a useful keyboard geometry change.
+  // Touch focus is therefore the reliable signal for switching lesson surfaces
+  // into their compact typing layout; keyboardVisible remains geometry-only.
+  const typing = touchLike && textEntryFocused
   return {
     touchLike,
     textEntryFocused,
     keyboardVisible,
-    typing: keyboardVisible,
+    typing,
     visualHeight,
     visualWidth,
     offsetTop,
@@ -90,8 +102,20 @@ export function releaseStaleTouchFocus(
   }
 }
 
-export default function useTypingViewport() {
-  const [state, setState] = useState(() => measureTypingViewport())
+export default function useTypingViewport({ preserveTouchFocus = false, blurDelayMs = 0 } = {}) {
+  const baselineHeightRef = useRef(0)
+  const measure = () => {
+    const measured = measureTypingViewport(window, document, { baselineHeight: baselineHeightRef.current })
+    if (!measured.textEntryFocused && measured.visualHeight > 0) {
+      baselineHeightRef.current = Math.max(baselineHeightRef.current, measured.visualHeight)
+    }
+    return measured
+  }
+  const [state, setState] = useState(() => {
+    const measured = measureTypingViewport()
+    baselineHeightRef.current = measured.visualHeight || 0
+    return measured
+  })
 
   useEffect(() => {
     let frame = null
@@ -100,17 +124,21 @@ export default function useTypingViewport() {
       if (frame) cancelAnimationFrame(frame)
       frame = requestAnimationFrame(() => {
         frame = null
-        setState(measureTypingViewport())
+        setState(measure())
       })
     }
     const handleFocusIn = (event) => {
-      const measured = measureTypingViewport()
+      if (blurTimer) {
+        clearTimeout(blurTimer)
+        blurTimer = null
+      }
+      const measured = measure()
       const textEntryFocused = isTextEntryElement(event.target)
       setState({
         ...measured,
         textEntryFocused,
         keyboardVisible: measured.touchLike && textEntryFocused && measured.keyboardInset > 0,
-        typing: measured.touchLike && textEntryFocused && measured.keyboardInset > 0,
+        typing: measured.touchLike && textEntryFocused,
       })
       updateViewport()
     }
@@ -118,8 +146,8 @@ export default function useTypingViewport() {
       if (blurTimer) clearTimeout(blurTimer)
       blurTimer = setTimeout(() => {
         blurTimer = null
-        setState(measureTypingViewport())
-      }, 0)
+        setState(measure())
+      }, Math.max(0, Number(blurDelayMs || 0)))
     }
     const handleTouchIntent = (event) => {
       if (event.type === 'pointerdown' && event.pointerType && !['touch', 'pen'].includes(event.pointerType)) return
@@ -132,7 +160,7 @@ export default function useTypingViewport() {
     window.addEventListener('orientationchange', updateViewport)
     document.addEventListener('focusin', handleFocusIn)
     document.addEventListener('focusout', handleFocusOut)
-    document.addEventListener(touchIntentEvent, handleTouchIntent, true)
+    if (!preserveTouchFocus) document.addEventListener(touchIntentEvent, handleTouchIntent, true)
     vv?.addEventListener?.('resize', updateViewport)
     vv?.addEventListener?.('scroll', updateViewport)
     return () => {
@@ -142,11 +170,11 @@ export default function useTypingViewport() {
       window.removeEventListener('orientationchange', updateViewport)
       document.removeEventListener('focusin', handleFocusIn)
       document.removeEventListener('focusout', handleFocusOut)
-      document.removeEventListener(touchIntentEvent, handleTouchIntent, true)
+      if (!preserveTouchFocus) document.removeEventListener(touchIntentEvent, handleTouchIntent, true)
       vv?.removeEventListener?.('resize', updateViewport)
       vv?.removeEventListener?.('scroll', updateViewport)
     }
-  }, [])
+  }, [blurDelayMs, preserveTouchFocus])
 
   return state
 }

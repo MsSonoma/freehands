@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import WebbWritingStudio from './WebbWritingStudio'
 import WebbResponseTimer from './WebbResponseTimer'
+import WebbDictationButton from './WebbDictationButton'
 import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
 import TimerControlOverlay from '../components/TimerControlOverlay'
 import TypingConversationContext from '../components/TypingConversationContext'
@@ -149,7 +150,7 @@ const VIDEO_TROUBLE_MSG = "Oh, I think I might know what's happening! 📺 A bla
 function WebbPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const typingViewport = useTypingViewport()
+  const typingViewport = useTypingViewport({ preserveTouchFocus: true, blurDelayMs: 350 })
   const routeLearnerId = searchParams?.get('learnerId') || ''
   const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
 
@@ -3433,7 +3434,7 @@ function WebbPageInner() {
   const videoEffH = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
   const msSBSH    = videoEffH ? `${videoEffH}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')
 
-  const keyboardCompact = typingViewport.keyboardVisible
+  const keyboardCompact = typingViewport.typing
   const mainLayoutStyle = keyboardCompact
     ? (isMobileLandscape
       ? { display: 'flex', alignItems: 'stretch', flex: '1 1 0', minHeight: 0, overflow: 'hidden', background: '#fff', paddingLeft: 4, paddingRight: 4, boxSizing: 'border-box' }
@@ -3611,7 +3612,7 @@ function WebbPageInner() {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div data-ms-webb-chat-compact={keyboardCompact ? 'true' : 'false'} style={{ height: typingViewport.keyboardVisible && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+    <div data-ms-webb-chat-compact={keyboardCompact ? 'true' : 'false'} style={{ height: typingViewport.typing && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
       <FeatureHelpToast
         suggestion={pendingFeatureHelp?.suggestion || null}
         onConfirm={confirmFeatureHelp}
@@ -3996,7 +3997,7 @@ function WebbPageInner() {
         <div style={keyboardCompact ? { ...footerStyle, padding: '3px 6px', paddingBottom: 'calc(3px + env(safe-area-inset-bottom, 0px))' } : footerStyle}>
           <TypingConversationContext
             entries={transcript}
-            visible={typingViewport.keyboardVisible}
+            visible={typingViewport.typing}
             maxItems={keyboardCompact ? 3 : 6}
             compact={keyboardCompact}
             teacherLabel="Mrs. Webb"
@@ -4984,6 +4985,15 @@ function StudentInput({ onSend, onActivity, loading, compact = false }) {
 
   return (
     <div style={{ display: 'flex', gap: compact ? 5 : 8, width: '100%', alignItems: 'flex-end' }}>
+      <WebbDictationButton
+        disabled={loading}
+        compact={compact}
+        onBeforeRecord={() => ref.current?.blur()}
+        onActivity={onActivity}
+        onTranscript={text => {
+          setValue(current => [current.trim(), text].filter(Boolean).join(' ').slice(0, 400))
+        }}
+      />
       <textarea
         ref={ref}
         rows={compact ? 1 : 2}

@@ -76,9 +76,11 @@ export async function POST(req) {
     const arrayBuffer = await file.arrayBuffer()
     const audioBytes = Buffer.from(arrayBuffer).toString('base64')
     const client = await getSpeechClient()
-    // Determine encoding heuristically (MediaRecorder default webm/opus)
+    // Determine encoding from the browser recorder container.
     let encoding = undefined
-    if ((file.type || '').includes('webm')) encoding = 'WEBM_OPUS'
+    const mediaType = String(file.type || '').toLowerCase()
+    if (mediaType.includes('webm')) encoding = 'WEBM_OPUS'
+    else if (mediaType.includes('ogg')) encoding = 'OGG_OPUS'
     // speech API request
     const request = {
       audio: { content: audioBytes },

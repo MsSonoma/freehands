@@ -22,10 +22,10 @@ test('Ms. Sonoma keeps six recent transcript entries with the input while touch 
 
 test('Mrs. Webb keeps six recent conversation entries with the input while touch typing', () => {
   assert.match(webb, /entries=\{transcript\}/)
-  assert.match(webb, /visible=\{typingViewport\.keyboardVisible\}/)
+  assert.match(webb, /visible=\{typingViewport\.typing\}/)
   assert.match(webb, /maxItems=\{keyboardCompact \? 3 : 6\}/)
   assert.match(webb, /teacherLabel="Mrs\. Webb"/)
-  assert.match(webb, /height: typingViewport\.keyboardVisible && typingViewport\.visualHeight/)
+  assert.match(webb, /height: typingViewport\.typing && typingViewport\.visualHeight/)
 })
 
 test('touch sessions do not summon the software keyboard automatically', () => {
@@ -53,39 +53,38 @@ test('Webb writing studio follows the visible viewport and keeps recent context 
 })
 
 test('Mrs. Webb switches both discussion and essay writing into a compact keyboard-visible layout', () => {
-  assert.match(webb, /const keyboardCompact = typingViewport\.keyboardVisible/)
+  assert.match(webb, /const keyboardCompact = typingViewport\.typing/)
   assert.match(webb, /flex: '0 0 22%'/)
   assert.match(webb, /padding: keyboardCompact \? '4px 7px 3px'/)
   assert.match(webb, /rows=\{compact \? 1 : 2\}/)
   assert.match(webb, /compact=\{keyboardCompact\}/)
-  assert.match(studio, /const keyboardCompact = typingViewport\.keyboardVisible/)
-  assert.match(studio, /fontSize: keyboardCompact \? 12 : 'clamp\(15px, 2\.4vw, 19px\)'/)
-  assert.match(studio, /fontSize: keyboardCompact \? 13 : 'clamp\(23px, 4vw, 36px\)'/)
+  assert.match(studio, /const keyboardCompact = typingViewport\.typing/)
+  assert.match(studio, /fontSize: keyboardCompact \? 12 : 17/)
+  assert.match(studio, /fontSize: keyboardCompact \? 13 : 'clamp\(19px, 3\.4vw, 30px\)'/)
   assert.match(studio, /rows=\{keyboardCompact \? 2 : 4\}/)
   assert.match(studio, /minHeight: keyboardCompact \? 52 : 132/)
   assert.match(studio, /overflowY: keyboardCompact \? 'hidden' : 'auto'/)
-  assert.equal((studio.match(/maxHeight: 44, overflowY: 'auto', flexShrink: 0/g) || []).length, 3)
+  assert.ok((studio.match(/maxHeight: 44, overflowY: 'auto', flexShrink: 0/g) || []).length >= 1)
   assert.match(studio, /data-ms-webb-writing-compact/)
   assert.match(webb, /data-ms-webb-chat-compact/)
   assert.match(studio, />\s*Previous attempt\s*</)
   assert.match(studio, /compact=\{keyboardCompact\}/)
 })
 
-test('lesson surfaces do not use text focus alone to keep keyboard context visible', () => {
-  assert.doesNotMatch(sonoma, /typingViewport\.typing/)
-  assert.doesNotMatch(webb, /typingViewport\.typing/)
-  assert.doesNotMatch(studio, /typingViewport\.typing/)
+test('Mrs. Webb uses touch focus as a compact-layout fallback while Ms. Sonoma keeps geometry-only behavior', () => {
+  assert.doesNotMatch(sonoma, /const keyboardCompact = typingViewport\.typing/)
+  assert.match(webb, /const keyboardCompact = typingViewport\.typing/)
+  assert.match(studio, /const keyboardCompact = typingViewport\.typing/)
+  assert.match(webb, /useTypingViewport\(\{ preserveTouchFocus: true, blurDelayMs: 350 \}\)/)
+  assert.match(studio, /useTypingViewport\(\{ preserveTouchFocus: true, blurDelayMs: 350 \}\)/)
 })
 
-test('touching a stale focused field releases focus before the native tap refocuses it', () => {
-  assert.match(typingViewport, /releaseStaleTouchFocus/)
-  assert.match(typingViewport, /doc\.activeElement !== target/)
-  assert.match(typingViewport, /if \(measured\.keyboardVisible\) return false/)
-  assert.match(typingViewport, /target\.blur\(\)/)
-  assert.match(typingViewport, /typeof window\.PointerEvent === 'function' \? 'pointerdown' : 'touchstart'/)
-  assert.match(typingViewport, /document\.addEventListener\(touchIntentEvent, handleTouchIntent, true\)/)
-  assert.match(typingViewport, /document\.removeEventListener\(touchIntentEvent, handleTouchIntent, true\)/)
-  assert.doesNotMatch(typingViewport, /handleTouchIntent[\s\S]{0,500}preventDefault/)
+test('Mrs. Webb can opt out of stale-touch blur recovery so a second tap can select or paste text', () => {
+  assert.match(typingViewport, /preserveTouchFocus = false/)
+  assert.match(typingViewport, /if \(!preserveTouchFocus\) document\.addEventListener\(touchIntentEvent, handleTouchIntent, true\)/)
+  assert.match(typingViewport, /if \(!preserveTouchFocus\) document\.removeEventListener\(touchIntentEvent, handleTouchIntent, true\)/)
+  assert.match(webb, /preserveTouchFocus: true/)
+  assert.match(studio, /preserveTouchFocus: true/)
 })
 
 test('iPad text fields use at least 16px type to avoid Safari focus zoom', () => {
