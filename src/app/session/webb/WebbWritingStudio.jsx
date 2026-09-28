@@ -355,13 +355,14 @@ export default function WebbWritingStudio({
             <button
               type="button"
               onClick={() => onNextSentence?.()}
+              disabled={transitionBusy}
               style={{
                 width: '100%', border: 0, borderRadius: 12, padding: '14px 18px',
-                background: '#0d9488', color: '#fff', fontWeight: 850, fontSize: 16,
-                cursor: 'pointer', fontFamily: 'inherit',
+                background: transitionBusy ? '#64748b' : '#0d9488', color: '#fff', fontWeight: 850, fontSize: 16,
+                cursor: transitionBusy ? 'wait' : 'pointer', fontFamily: 'inherit',
               }}
             >
-              {isLastSentence ? 'Finish essay' : 'Next sentence'}
+              {transitionBusy ? 'Play break starting...' : isLastSentence ? 'Finish essay' : 'Next sentence'}
             </button>
           </div>
         </div>

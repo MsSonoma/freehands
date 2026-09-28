@@ -35,7 +35,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, deferTransitionForPlay = false) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, deferTransitionForPlay = false, deferQuestionForPlay = false, resumeAfterPlay = false) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -100,6 +100,25 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
       `2. Tell them it's now time to turn their own notes into essay sentences — mention the big "Start writing from my notes" button they'll see below the chat.`,
       `3. Do NOT ask any question or probe any more research topics. The research part is complete; the writing part comes next.`,
       `Keep it to 2-3 sentences. Natural spoken language — no markdown, no bullet points.`,
+    )
+    return lines.filter(Boolean).join('\n')
+  }
+
+  if (deferQuestionForPlay && Array.isArray(remainingObjectives) && remainingObjectives.length) {
+    lines.push(
+      '\nA timed play break is due before the next Socratic question.',
+      'Warmly acknowledge what the learner just did in 1-2 short sentences. Do NOT ask any question yet and do NOT introduce the next concept.',
+      'Do not announce the timer yourself. The application will immediately tell the learner they can play after you finish speaking.',
+    )
+    return lines.filter(Boolean).join('\n')
+  }
+
+  if (resumeAfterPlay && Array.isArray(remainingObjectives) && remainingObjectives.length) {
+    lines.push(
+      `\nThe learner has just returned from a timed play break. The next undemonstrated concept is: "${remainingObjectives[0]}".`,
+      'Welcome them back warmly in one short sentence, then ask ONE clear Socratic question that invites them to explain that concept in their own words.',
+      'Do not reteach the answer before asking. Do not mention objectives, goals, checks, timers, or the mechanics of the break.',
+      'Keep the whole response to 2 short sentences in natural spoken language.',
     )
     return lines.filter(Boolean).join('\n')
   }
@@ -171,7 +190,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, deferTransitionForPlay = false } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, deferTransitionForPlay = false, deferQuestionForPlay = false, resumeAfterPlay = false } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -254,7 +273,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, writingSlot, writingControllingIdea, writingSourceNotes, completedObjectives, writingReady, deferTransitionForPlay)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
+      { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, writingSlot, writingControllingIdea, writingSourceNotes, completedObjectives, writingReady, deferTransitionForPlay, deferQuestionForPlay, resumeAfterPlay)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

@@ -70,11 +70,34 @@ test('research-to-writing play break owns the transition sequence', () => {
   assert.match(page, /deferTransitionForPlay: transitionPlayDue/)
   assert.match(page, /activePlayBreakRef\.current \|\| pendingPlayMilestoneRef\.current/)
   assert.match(page, /current\.milestone === 'research-to-writing'/)
-  assert.match(page, /Playtime is over\. Now it is time to turn your research notes into writing\./)
+  assert.match(page, /Welcome back! Playtime is over, and now it is time to turn your research notes into writing\./)
   assert.match(webbChatRoute, /allObjectivesMet && deferTransitionForPlay/)
   assert.match(webbChatRoute, /Do not mention writing, the next phase, the Start writing button/)
 })
 
+
+test('new Mrs. Webb speech replaces stale queued and playing speech', () => {
+  assert.match(page, /ttsQueueRef\.current = \[t\]/)
+  assert.match(page, /currentAudio\.pause\(\)/)
+  assert.match(page, /ttsGenRef\.current\+\+/)
+})
+
+test('research midpoint defers its Socratic question until the learner returns from play', () => {
+  assert.match(page, /deferQuestionForPlay: researchMidpointPlayDue/)
+  assert.match(page, /queueWebbPlayBreak\('research-midpoint'\)/)
+  assert.match(page, /current\.milestone === 'research-midpoint'/)
+  assert.match(page, /resumeAfterPlay: true/)
+  assert.match(webbChatRoute, /A timed play break is due before the next Socratic question/)
+  assert.match(webbChatRoute, /Welcome them back warmly/)
+})
+
+test('writing midpoint becomes a hard transition before the next sentence', () => {
+  assert.match(page, /if \(writingMidpointPlayDue\) queueWebbPlayBreak\('writing-midpoint'\)/)
+  assert.match(page, /writingTransitionBusy/)
+  assert.match(page, /transitionBusy=\{writingTransitionBusy\}/)
+  assert.match(writingStudio, /disabled=\{transitionBusy\}/)
+  assert.match(writingStudio, /Play break starting\.\.\./)
+})
 
 test('Mrs. Webb play overlays stay above Writing Studio', () => {
   assert.match(writingStudio, /zIndex: 1400/)

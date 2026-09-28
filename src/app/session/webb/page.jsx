@@ -866,8 +866,30 @@ function WebbPageInner() {
   function speakText(text) {
     const t = String(text || '').trim()
     if (!t) return
-    ttsQueueRef.current.push(t)
-    drainTTSQueue()
+
+    // Mrs. Webb should always speak the newest response. Older queued or currently
+    // playing speech becomes stale as soon as a new teacher response exists.
+    ttsGenRef.current++
+    ttsQueueRef.current = [t]
+
+    const currentAudio = ttsCurrentRef.current
+    if (currentAudio) {
+      currentAudio.pause()
+      const finishCurrent = currentAudio.onended || currentAudio.onerror
+      currentAudio.onended = null
+      currentAudio.onerror = null
+      if (typeof finishCurrent === 'function') finishCurrent()
+      else {
+        if (ttsCurrentRef.current === currentAudio) ttsCurrentRef.current = null
+        ttsBusyRef.current = false
+        drainTTSQueue()
+      }
+      return
+    }
+
+    // If an older TTS fetch is still in flight, the generation bump above makes it
+    // discard its audio. Its drain will pick up this newest queued response next.
+    if (!ttsBusyRef.current) drainTTSQueue()
   }
 
   function skipTTS() {
@@ -1196,6 +1218,45 @@ function WebbPageInner() {
     })()
   }
 
+  async function resumeResearchAfterPlay() {
+    if (webbExecutionFencedRef.current || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH) return
+    const progress = webbObjectiveProgress(objectives, learningStateRef.current)
+    if (!progress.remainingObjectives.length) return
+    const history = Array.isArray(snapshotRef.current?.chatMessages) && snapshotRef.current.chatMessages.length
+      ? snapshotRef.current.chatMessages
+      : chatMessages
+    setChatLoading(true)
+    try {
+      const response = await fetch('/api/webb-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: history,
+          lesson: selectedLesson,
+          remainingObjectives: progress.remainingObjectives,
+          completedObjectives: progress.completedObjectives,
+          resumeAfterPlay: true,
+        }),
+      })
+      if (!response.ok) throw new Error('Could not resume after play')
+      const data = await response.json()
+      const reply = String(data?.reply || '').trim()
+      if (!reply) throw new Error('Mrs. Webb did not return a resume question')
+      const assistantMsg = { role: 'assistant', content: reply, kind: 'pacing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+      const finalHistory = [...history, assistantMsg]
+      setChatMessages(finalHistory)
+      saveLearningSnapshot({ chatMessages: finalHistory })
+      addMsg(reply, { kind: 'pacing', pacingType: 'post-play-resume' })
+    } catch {
+      addMsg(`Welcome back! Let's pick up where we left off. Can you explain in your own words: ${progress.remainingObjectives[0]}?`, {
+        kind: 'pacing',
+        pacingType: 'post-play-resume',
+      })
+    } finally {
+      if (!webbExecutionFencedRef.current) setChatLoading(false)
+    }
+  }
+
   function finishWebbPlayBreak(reason = 'expired') {
     const current = activePlayBreakRef.current
     if (!current) return
@@ -1212,9 +1273,16 @@ function WebbPageInner() {
     commitActivePlayBreak(null)
     persistWebbPacing({ activePlayBreak: null })
     if (current.milestone === 'research-to-writing') {
-      addMsg('Playtime is over. Now it is time to turn your research notes into writing. Choose Start writing from my research when you are ready.', {
+      addMsg('Welcome back! Playtime is over, and now it is time to turn your research notes into writing. Choose Start writing from my research when you are ready.', {
         kind: 'pacing',
         pacingType: 'post-play-transition',
+      })
+    } else if (current.milestone === 'research-midpoint') {
+      void resumeResearchAfterPlay()
+    } else if (current.milestone === 'writing-midpoint') {
+      addMsg('Welcome back! Your last sentence is saved. Choose Next sentence when you are ready to keep building your essay.', {
+        kind: 'pacing',
+        pacingType: 'post-play-writing-resume',
       })
     }
   }
@@ -2358,9 +2426,20 @@ function WebbPageInner() {
       if (attempt.accepted) {
         const nextAccepted = { ...acceptedSentences, [slotIndex]: attempt }
         const hasNextSentence = activePlan ? nextCompositionSlotIndex(activePlan, nextAccepted) !== -1 : nextWritingObjectiveIndex(objectives, nextAccepted) !== -1
-        const reply = hasNextSentence
-          ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Next sentence when you're ready."
-          : "That sentence is ready. It's here in your paragraph. Copy it down, then choose Finish essay when you're ready."
+        const writingMidpointThreshold = midpointThreshold(totalSentences)
+        const acceptedCount = Array.from({ length: totalSentences }, (_, index) => index)
+          .filter(index => nextAccepted?.[index]?.provenance === 'learner-message').length
+        const writingMidpointPlayDue = hasNextSentence
+          && !!writingMidpointThreshold
+          && webbPacingSettings.playTimesEnabled
+          && webbPacingSettings.writingMidpointEnabled
+          && !playMilestonesRef.current?.['writing-midpoint']
+          && acceptedCount >= writingMidpointThreshold
+        const reply = writingMidpointPlayDue
+          ? "That sentence is ready. It's here in your paragraph. Nice work."
+          : hasNextSentence
+            ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Next sentence when you're ready."
+            : "That sentence is ready. It's here in your paragraph. Copy it down, then choose Finish essay when you're ready."
         const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
         const finalHistory = [...nextHistory, assistantMsg]
         setAcceptedSentences(nextAccepted)
@@ -2374,6 +2453,7 @@ function WebbPageInner() {
         })
         if (activePlan) void persistCompositionArtifact({ plan: activePlan, accepted: nextAccepted, status: 'draft' })
         addMsg(reply)
+        if (writingMidpointPlayDue) queueWebbPlayBreak('writing-midpoint')
       } else {
         setWritingSubphase(WEBB_WRITING_SUBPHASES.REVIEW)
         saveLearningSnapshot({
@@ -2459,11 +2539,23 @@ function WebbPageInner() {
       if (progress.allObjectivesMet && !progress.writingReady) {
         throw new Error('You have completed the learning goals. A saved note still needs recovery; retry without repeating your answer.')
       }
+      const researchMidpointThreshold = midpointThreshold(currentObjectives.length)
+      const researchMidpointPlayDue = !progress.allObjectivesMet
+        && !!researchMidpointThreshold
+        && webbPacingSettings.playTimesEnabled
+        && webbPacingSettings.researchMidpointEnabled
+        && !playMilestonesRef.current?.['research-midpoint']
+        && progress.understoodCount >= researchMidpointThreshold
       const transitionPlayDue = progress.allObjectivesMet
         && progress.writingReady
         && webbPacingSettings.playTimesEnabled
         && webbPacingSettings.transitionEnabled
         && !playMilestonesRef.current?.['research-to-writing']
+      const collapseResearchMidpointIntoTransition = transitionPlayDue
+        && !!researchMidpointThreshold
+        && webbPacingSettings.researchMidpointEnabled
+        && !playMilestonesRef.current?.['research-midpoint']
+        && progress.understoodCount >= researchMidpointThreshold
       const firstRemainingIndex = progress.remainingIndices[0]
       objectiveTargetRef.current = firstRemainingIndex ?? null
       const evaluatedTargetIndex = Number.isInteger(targetObjectiveIndex)
@@ -2483,6 +2575,7 @@ function WebbPageInner() {
           allObjectivesMet: progress.allObjectivesMet,
           writingReady: progress.writingReady,
           deferTransitionForPlay: transitionPlayDue,
+          deferQuestionForPlay: researchMidpointPlayDue,
           masteryStatus,
         }),
       })
@@ -2498,6 +2591,11 @@ function WebbPageInner() {
       const finalHistory = [...nextHistory, assistantMsg]
       setChatMessages(finalHistory)
       addMsg(data.reply)
+      if (transitionPlayDue) {
+        queueWebbPlayBreak('research-to-writing', collapseResearchMidpointIntoTransition ? ['research-midpoint'] : [])
+      } else if (researchMidpointPlayDue) {
+        queueWebbPlayBreak('research-midpoint')
+      }
       const assistanceType = answerRequested
         ? WEBB_ASSISTANCE_TYPES.ANSWER_REVEALED
         : ['no_answer', 'information_request'].includes(masteryStatus)
@@ -3087,10 +3185,24 @@ function WebbPageInner() {
 
   async function handleNextWritingSentence() {
     if (webbExecutionFencedRef.current || !writingMode || writingEvaluating || chatLoading) return
+    if (activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
     if (writingSubphase !== WEBB_WRITING_SUBPHASES.COMMITTED) return
     const accepted = acceptedSentences?.[writingIndex]
     if (!accepted || accepted.provenance !== 'learner-message' || !String(accepted.text || '').trim()) return
     const activePlan = compositionPlan?.slots?.length ? compositionPlan : null
+    const writingUnitCount = activePlan?.slots?.length || objectives.length
+    const writingMidpointThreshold = midpointThreshold(writingUnitCount)
+    const acceptedCount = Array.from({ length: writingUnitCount }, (_, index) => index)
+      .filter(index => acceptedSentences?.[index]?.provenance === 'learner-message').length
+    if (webbPacingSettings.playTimesEnabled
+      && webbPacingSettings.writingMidpointEnabled
+      && !playMilestonesRef.current?.['writing-midpoint']
+      && !!writingMidpointThreshold
+      && acceptedCount >= writingMidpointThreshold
+      && acceptedCount < writingUnitCount) {
+      queueWebbPlayBreak('writing-midpoint')
+      return
+    }
     const nextIndex = activePlan ? nextCompositionSlotIndex(activePlan, acceptedSentences) : nextWritingObjectiveIndex(objectives, acceptedSentences)
     if (nextIndex === -1) {
       setChatLoading(true)
@@ -3573,6 +3685,16 @@ function WebbPageInner() {
   const webbWorkRemainingSeconds = Math.max(0, Math.round(webbWorkTotalMinutes * 60 - responseElapsedSeconds))
   const activeWritingPlan = compositionPlan?.slots?.length ? compositionPlan : null
   const writingUnitCount = activeWritingPlan?.slots?.length || objectives.length
+  const writingMidpointThreshold = midpointThreshold(writingUnitCount)
+  const writingAcceptedCount = Array.from({ length: writingUnitCount }, (_, index) => index)
+    .filter(index => acceptedSentences?.[index]?.provenance === 'learner-message').length
+  const writingMidpointTransitionDue = webbPacingSettings.playTimesEnabled
+    && webbPacingSettings.writingMidpointEnabled
+    && !playMilestones?.['writing-midpoint']
+    && !!writingMidpointThreshold
+    && writingAcceptedCount >= writingMidpointThreshold
+    && writingAcceptedCount < writingUnitCount
+  const writingTransitionBusy = !!activePlayBreak || !!pendingPlayMilestoneRef.current || writingMidpointTransitionDue
   const currentWritingSlot = activeWritingPlan?.slots?.[writingIndex] || null
   const currentWritingSource = currentWritingSlot
     ? compositionSlotSource(currentWritingSlot, objectives, learnerNotes)
@@ -4562,6 +4684,7 @@ function WebbPageInner() {
         totalSentences={writingUnitCount}
         guidance={writingGuidance}
         evaluating={writingEvaluating}
+        transitionBusy={writingTransitionBusy}
         responseTimer={responseTurn ? (
           <WebbResponseTimer
             turn={responseTurn}
