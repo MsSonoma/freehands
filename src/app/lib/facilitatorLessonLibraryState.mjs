@@ -29,8 +29,14 @@ const formatScheduledDate = (value, formatter = null) => {
   return `Scheduled for ${date.toLocaleDateString('en-US', { month: 'long', day: 'numeric' })}`
 }
 
-export function resolveInitialLibraryLearner(learners = []) {
-  return Array.isArray(learners) && learners.length === 1 ? learners[0] : null
+export function resolveInitialLibraryLearner(learners = [], preferredLearnerId = '') {
+  if (!Array.isArray(learners) || learners.length === 0) return null
+  const preferred = String(preferredLearnerId || '').trim()
+  if (preferred) {
+    const match = learners.find((learner) => String(learner?.id || '') === preferred)
+    if (match) return match
+  }
+  return learners[0] || null
 }
 
 export function resolveLibraryLessonState({

@@ -1,5 +1,5 @@
 'use client'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { resolveLibraryLessonState, resolveInitialLibraryLearner, LIBRARY_PRIMARY_ACTIONS } from '@/app/lib/facilitatorLessonLibraryState.mjs'
@@ -12,8 +12,11 @@ import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
 
 import { useFacilitatorSubjects } from '@/app/hooks/useFacilitatorSubjects'
+import { persistLearnerSelection } from '@/app/learn/learnerSelection.mjs'
 
 const GRADES = ['K', '1', '2', '3', '4', '5', '6', '7', '8', '9', '10', '11', '12']
+const OWNED_PAGE_SIZE = 40
+const LESSON_ROW_BATCH_SIZE = 40
 
 function normalizeApprovedLessonKeys(map = {}) {
   let changed = false
@@ -42,6 +45,15 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
   const [allLessons, setAllLessons] = useState({}) // { subject: [lessons] }
   const [lessonLibraryScope, setLessonLibraryScope] = useState('owned') // owned | downloadable | all
   const [ownedLessonKeys, setOwnedLessonKeys] = useState({}) // { 'subject/file.json': true }
+  const [ownedLessonFiles, setOwnedLessonFiles] = useState({}) // { 'file.json': true }
+  const [ownedNextOffset, setOwnedNextOffset] = useState(null)
+  const [ownedHasMore, setOwnedHasMore] = useState(false)
+  const [ownedTotal, setOwnedTotal] = useState(0)
+  const [loadingMoreOwned, setLoadingMoreOwned] = useState(false)
+  const [publicLessonsLoaded, setPublicLessonsLoaded] = useState(false)
+  const [publicLessonsLoading, setPublicLessonsLoading] = useState(false)
+  const [visibleLessonCount, setVisibleLessonCount] = useState(LESSON_ROW_BATCH_SIZE)
+  const publicLoadPromiseRef = useRef(null)
   const [downloadingLesson, setDownloadingLesson] = useState(null) // `${subject}/${file}`
   const [availableLessons, setAvailableLessons] = useState({}) // { 'subject/lesson_file': true } - lessons shown to learner
   const [scheduledLessons, setScheduledLessons] = useState({}) // { 'subject/lesson_file': true } - lessons scheduled for today
@@ -171,12 +183,14 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
           const { data: learnersData } = await supabase.from('learners').select('*').order('created_at', { ascending: false })
           if (!cancelled && learnersData) {
             setLearners(learnersData)
-            const onlyLearner = resolveInitialLibraryLearner(learnersData)
-            if (onlyLearner) {
-              setSelectedLearnerId(onlyLearner.id)
-              setSelectedLearner(onlyLearner)
-              if (onlyLearner?.grade) {
-                const learnerGrade = String(onlyLearner.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
+            const rememberedLearnerId = typeof window !== 'undefined' ? localStorage.getItem('learner_id') || '' : ''
+            const initialLearner = resolveInitialLibraryLearner(learnersData, rememberedLearnerId)
+            if (initialLearner) {
+              setSelectedLearnerId(initialLearner.id)
+              setSelectedLearner(initialLearner)
+              if (typeof window !== 'undefined') persistLearnerSelection(localStorage, initialLearner)
+              if (initialLearner?.grade) {
+                const learnerGrade = String(initialLearner.grade).trim().replace(/(?:st|nd|rd|th)$/i, '').toUpperCase()
                 setSelectedGrade(learnerGrade)
               }
             }
@@ -188,141 +202,136 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
     return () => { cancelled = true }
   }, [pinChecked])
 
-  // Load all lessons from all subjects immediately on mount
+  // Owned lessons are the default view, so load only the first owned page for first paint.
   useEffect(() => {
-    let cancelled = false
-    ;(async () => {
-      setLessonsLoading(true)
+    void refreshOwnedLessons({ initial: true })
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-      const lessonsMap = {}
+  function mergeOwnedLessonPage(generatedList, { replace = false } = {}) {
+    const safeLessons = Array.isArray(generatedList) ? generatedList : []
 
-      // Start loading public lesson lists immediately (no auth needed) and do it in parallel.
-      const publicSubjects = coreSubjects
-      await Promise.all(
-        publicSubjects.map(async (subject) => {
-          try {
-            const res = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
-            if (!res.ok) {
-              lessonsMap[subject] = []
-              return
-            }
-            const list = await res.json()
-            lessonsMap[subject] = Array.isArray(list) ? list : []
-          } catch {
-            lessonsMap[subject] = []
-          }
-        })
-      )
-
-      // Initialize generated bucket even if we haven't loaded owned lessons yet.
-      lessonsMap['generated'] = []
-
-      // Publish public lessons ASAP so the library appears immediately.
-      if (!cancelled) {
-        setAllLessons({ ...lessonsMap })
-        setLessonsLoading(false)
+    setOwnedLessonKeys((previous) => {
+      const next = replace ? {} : { ...previous }
+      for (const lesson of safeLessons) {
+        const subject = (lesson?.subject || '').toString().toLowerCase() || 'math'
+        if (lesson?.file) next[`${subject}/${lesson.file}`] = true
       }
+      return next
+    })
 
-      // Now load owned lessons (requires auth) and merge them in.
-      try {
-        const supabase = getSupabaseClient()
-        const { data: { session } } = await supabase.auth.getSession()
-        const token = session?.access_token
-
-        if (token) {
-          const res = await fetch('/api/facilitator/lessons/list', {
-            cache: 'no-store',
-            headers: { Authorization: `Bearer ${token}` }
-          })
-
-          if (res.ok) {
-            const generatedList = await res.json()
-            const sortedGeneratedList = (Array.isArray(generatedList) ? generatedList : []).sort((a, b) => {
-              const timeA = new Date(a?.created_at || 0).getTime()
-              const timeB = new Date(b?.created_at || 0).getTime()
-              return timeB - timeA
-            })
-
-            const owned = {}
-            for (const lesson of sortedGeneratedList) {
-              const subj = (lesson?.subject || '').toString().toLowerCase() || 'math'
-              const file = lesson?.file
-              if (file) owned[`${subj}/${file}`] = true
-            }
-            if (!cancelled) setOwnedLessonKeys(owned)
-
-            const merged = { ...lessonsMap, generated: [] }
-            for (const lesson of sortedGeneratedList.slice().reverse()) {
-              const subject = lesson.subject || 'math'
-              const generatedLesson = { ...lesson, isGenerated: true }
-              if (!merged[subject]) merged[subject] = []
-              merged[subject].unshift(generatedLesson)
-              merged['generated'].push(generatedLesson)
-            }
-
-            if (!cancelled) setAllLessons(merged)
-          }
+    setAllLessons((previous) => {
+      const next = {}
+      for (const [subject, lessons] of Object.entries(previous || {})) {
+        if (!Array.isArray(lessons)) {
+          next[subject] = lessons
+          continue
         }
-      } catch {
-        // Silent fail
+        next[subject] = replace ? lessons.filter((lesson) => !lesson?.isGenerated) : [...lessons]
       }
-    })()
-    return () => { cancelled = true }
-  }, []) // Load once on mount
+      if (!Array.isArray(next.generated) || replace) next.generated = []
+      const seenFiles = new Set(next.generated.map((lesson) => lesson?.file).filter(Boolean))
 
-  async function refreshOwnedLessons() {
-    try {
-      const supabase = getSupabaseClient()
-      const { data: { session } } = await supabase.auth.getSession()
-      const token = session?.access_token
-      if (!token) return
-
-      const res = await fetch('/api/facilitator/lessons/list', {
-        cache: 'no-store',
-        headers: { Authorization: `Bearer ${token}` }
-      })
-      if (!res.ok) return
-
-      const generatedList = await res.json()
-      const sortedGeneratedList = (Array.isArray(generatedList) ? generatedList : []).sort((a, b) => {
-        const timeA = new Date(a?.created_at || 0).getTime()
-        const timeB = new Date(b?.created_at || 0).getTime()
-        return timeB - timeA
-      })
-
-      const owned = {}
-      for (const lesson of sortedGeneratedList) {
-        const subj = (lesson?.subject || '').toString().toLowerCase() || 'math'
-        const file = lesson?.file
-        if (file) owned[`${subj}/${file}`] = true
+      for (const lesson of safeLessons) {
+        if (!lesson?.file || seenFiles.has(lesson.file)) continue
+        const subject = (lesson?.subject || 'math').toString().toLowerCase()
+        const generatedLesson = { ...lesson, subject, isGenerated: true }
+        if (!Array.isArray(next[subject])) next[subject] = []
+        next[subject] = [...next[subject], generatedLesson]
+        next.generated = [...next.generated, generatedLesson]
+        seenFiles.add(lesson.file)
       }
-      setOwnedLessonKeys(owned)
+      return next
+    })
+  }
 
-      setAllLessons((prev) => {
-        const next = {}
-        for (const [subject, lessons] of Object.entries(prev || {})) {
-          if (!Array.isArray(lessons)) {
-            next[subject] = lessons
-            continue
-          }
-          next[subject] = lessons.filter((l) => !l?.isGenerated)
-        }
+  async function fetchOwnedLessonPage(offset = 0) {
+    const supabase = getSupabaseClient()
+    const { data: { session } } = await supabase.auth.getSession()
+    const token = session?.access_token
+    if (!token) return null
 
-        const ownedLessons = []
-        for (const lesson of sortedGeneratedList.slice().reverse()) {
-          const subject = lesson?.subject || 'math'
-          const generatedLesson = { ...lesson, isGenerated: true }
-          if (!next[subject]) next[subject] = []
-          next[subject].unshift(generatedLesson)
-          ownedLessons.unshift(generatedLesson)
-        }
-
-        next['generated'] = ownedLessons
-        return next
-      })
-    } catch {
-      // Silent fail
+    const params = new URLSearchParams({
+      paged: '1',
+      limit: String(OWNED_PAGE_SIZE),
+      offset: String(Math.max(0, Number(offset) || 0)),
+    })
+    const response = await fetch(`/api/facilitator/lessons/list?${params.toString()}`, {
+      cache: 'no-store',
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    if (!response.ok) return null
+    const json = await response.json()
+    return {
+      lessons: Array.isArray(json?.lessons) ? json.lessons : (Array.isArray(json) ? json : []),
+      total: Number(json?.total) || (Array.isArray(json) ? json.length : 0),
+      ownedFiles: Array.isArray(json?.ownedFiles) ? json.ownedFiles : [],
+      nextOffset: Number.isFinite(json?.nextOffset) ? json.nextOffset : null,
+      hasMore: json?.hasMore === true,
     }
+  }
+
+  async function refreshOwnedLessons({ initial = false } = {}) {
+    if (initial) setLessonsLoading(true)
+    try {
+      const page = await fetchOwnedLessonPage(0)
+      if (!page) return
+      const fileMap = {}
+      for (const fileName of page.ownedFiles) if (fileName) fileMap[fileName] = true
+      setOwnedLessonFiles(fileMap)
+      setOwnedTotal(page.total)
+      setOwnedNextOffset(page.nextOffset)
+      setOwnedHasMore(page.hasMore)
+      mergeOwnedLessonPage(page.lessons, { replace: true })
+      setVisibleLessonCount(LESSON_ROW_BATCH_SIZE)
+    } finally {
+      if (initial) setLessonsLoading(false)
+    }
+  }
+
+  async function loadMoreOwnedLessons() {
+    if (!ownedHasMore || ownedNextOffset == null || loadingMoreOwned) return false
+    setLoadingMoreOwned(true)
+    try {
+      const page = await fetchOwnedLessonPage(ownedNextOffset)
+      if (!page) return false
+      setOwnedNextOffset(page.nextOffset)
+      setOwnedHasMore(page.hasMore)
+      setOwnedTotal(page.total)
+      mergeOwnedLessonPage(page.lessons)
+      return true
+    } finally {
+      setLoadingMoreOwned(false)
+    }
+  }
+
+  async function ensurePublicLessonsLoaded() {
+    if (publicLessonsLoaded) return
+    if (publicLoadPromiseRef.current) return publicLoadPromiseRef.current
+
+    setPublicLessonsLoading(true)
+    const task = Promise.all(
+      coreSubjects.map(async (subject) => {
+        let list = []
+        try {
+          const response = await fetch(`/api/lessons/${encodeURIComponent(subject)}`, { cache: 'no-store' })
+          if (response.ok) {
+            const json = await response.json()
+            list = Array.isArray(json) ? json : []
+          }
+        } catch {
+          list = []
+        }
+        setAllLessons((previous) => ({ ...previous, [subject]: list }))
+      })
+    )
+      .then(() => setPublicLessonsLoaded(true))
+      .finally(() => {
+        setPublicLessonsLoading(false)
+        publicLoadPromiseRef.current = null
+      })
+
+    publicLoadPromiseRef.current = task
+    return task
   }
 
   async function downloadLesson(subject, file) {
@@ -480,6 +489,10 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
     return () => { cancelled = true }
   }, [selectedLearnerId, refreshTrigger]) // Load immediately when learner selected
 
+  useEffect(() => {
+    setVisibleLessonCount(LESSON_ROW_BATCH_SIZE)
+  }, [lessonLibraryScope, selectedSubject, selectedGrade, searchTerm, selectedLearnerId])
+
   function getFilteredLessons() {
     const filtered = []
     
@@ -498,7 +511,7 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
         const ownedKey = isOwned
           ? `${(lesson?.subject || subject || '').toString().toLowerCase() || 'math'}/${fileName || ''}`
           : `${(subject || '').toString().toLowerCase()}/${fileName || ''}`
-        const ownedByKey = Boolean(fileName && ownedLessonKeys?.[ownedKey])
+        const ownedByKey = Boolean(fileName && (ownedLessonKeys?.[ownedKey] || ownedLessonFiles?.[fileName]))
 
         // If a public lesson has been downloaded (owned copy exists), hide the public entry.
         if (!isOwned && ownedByKey) return
@@ -609,6 +622,20 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
   }
 
   const filteredLessons = getFilteredLessons()
+  const visibleLessons = filteredLessons.slice(0, visibleLessonCount)
+  const hasMoreVisibleLessons = visibleLessonCount < filteredLessons.length
+  const canLoadMoreOwned = (lessonLibraryScope === 'owned' || lessonLibraryScope === 'all') && ownedHasMore
+
+  async function revealMoreLessons() {
+    if (hasMoreVisibleLessons) {
+      setVisibleLessonCount((count) => count + LESSON_ROW_BATCH_SIZE)
+      return
+    }
+    if (canLoadMoreOwned) {
+      const loaded = await loadMoreOwnedLessons()
+      if (loaded) setVisibleLessonCount((count) => count + LESSON_ROW_BATCH_SIZE)
+    }
+  }
 
   const SUBJECT_COLORS = {
     math:           { bg: '#eff6ff', text: '#1d4ed8', border: '#3b82f6' },
@@ -697,6 +724,7 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
                   setSelectedLearnerId(learnerId)
                   const learner = learners.find(l => l.id === learnerId)
                   setSelectedLearner(learner)
+                  if (learner && typeof window !== 'undefined') persistLearnerSelection(localStorage, learner)
                   
                   // Set grade filter to learner's grade
                   if (learner?.grade) {
@@ -755,7 +783,11 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
                 </select>
                 <select
                   value={lessonLibraryScope}
-                  onChange={(e) => setLessonLibraryScope(e.target.value)}
+                  onChange={(e) => {
+                    const nextScope = e.target.value
+                    setLessonLibraryScope(nextScope)
+                    if (nextScope !== 'owned') void ensurePublicLessonsLoaded()
+                  }}
                   style={{ padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 6, fontSize: 14, background: '#fff', cursor: 'pointer', minWidth: '130px', flex: '1 1 130px' }}
                 >
                   <option value="owned">Owned</option>
@@ -789,7 +821,10 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
                   padding: '0 4px',
                   whiteSpace: 'nowrap'
                 }}>
-                  {filteredLessons.length} lessons
+                  {lessonLibraryScope === 'owned' && ownedTotal > filteredLessons.length
+                    ? `${filteredLessons.length} loaded · ${ownedTotal} owned`
+                    : `${filteredLessons.length} lessons`}
+                  {publicLessonsLoading ? ' · loading more…' : ''}
                 </div>
               )}
             </div>
@@ -836,9 +871,11 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
               color: '#6b7280',
               boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)'
             }}>
-              {Object.keys(allLessons).length === 0 
-                ? 'Loading lessons...' 
-                : 'No lessons match your filters'}
+              {publicLessonsLoading && lessonLibraryScope !== 'owned'
+                ? 'Loading downloadable lessons...'
+                : Object.keys(allLessons).length === 0
+                  ? 'Loading lessons...'
+                  : 'No lessons match your filters'}
             </div>
           ) : (
             <div style={{
@@ -848,7 +885,7 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
               overflow: 'hidden',
               boxShadow: '0 1px 4px rgba(0,0,0,0.06)'
             }}>
-              {filteredLessons.map(lesson => {
+              {visibleLessons.map(lesson => {
                 const { lessonKey, subject, displayGrade } = lesson
                 const learnerSelected = Boolean(selectedLearnerId)
                 const isOwned = lesson?.isGenerated === true
@@ -856,7 +893,7 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
                 const ownedKey = isOwned
                   ? `${(lesson?.subject || subject || '').toString().toLowerCase() || 'math'}/${fileName || ''}`
                   : `${(subject || '').toString().toLowerCase()}/${fileName || ''}`
-                const ownedByKey = Boolean(fileName && ownedLessonKeys?.[ownedKey])
+                const ownedByKey = Boolean(fileName && (ownedLessonKeys?.[ownedKey] || ownedLessonFiles?.[fileName]))
                 const isDownloadableNotOwned = !isOwned && !ownedByKey
                 const hasActiveKey = learnerSelected && !isDownloadableNotOwned && activeGoldenKeys[lessonKey] === true
                 const medalInfo = learnerSelected && !isDownloadableNotOwned ? medals[lessonKey] : null
@@ -1104,6 +1141,16 @@ export default function FacilitatorLessonsPage({ onNavigate = null } = {}) {
                 )
               })}
             </div>
+          )}
+          {(hasMoreVisibleLessons || canLoadMoreOwned) && (
+            <div style={{ textAlign: 'center', paddingTop: 14 }}>
+              <button type="button" onClick={() => void revealMoreLessons()} disabled={loadingMoreOwned}>
+                {loadingMoreOwned ? 'Loading more lessons...' : 'Load more lessons'}
+              </button>
+            </div>
+          )}
+          {publicLessonsLoading && filteredLessons.length > 0 && (
+            <p style={{ color: '#6b7280', fontSize: 13, textAlign: 'center' }}>Loading more downloadable lessons...</p>
           )}
           </>
           )}

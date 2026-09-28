@@ -170,13 +170,23 @@ test('all core facilitator entry surfaces explicitly require account authenticat
   assert.match(preparePage, /if \(!pinChecked \|\| !isAuthenticated\) return/)
 })
 
-test('lesson library auto-loads and keeps multi-learner choice explicit', () => {
+test('lesson library opens on the active learner and progressively loads lessons', () => {
   const source = read('src/app/facilitator/lessons/page.js')
+  const listRoute = read('src/app/api/facilitator/lessons/list/route.js')
 
-  assert.match(source, /resolveInitialLibraryLearner\(learnersData\)/)
+  assert.match(source, /localStorage\.getItem\('learner_id'\)/)
+  assert.match(source, /resolveInitialLibraryLearner\(learnersData, rememberedLearnerId\)/)
+  assert.match(source, /persistLearnerSelection\(localStorage, initialLearner\)/)
+  assert.match(source, /OWNED_PAGE_SIZE = 40/)
+  assert.match(source, /paged: '1'/)
+  assert.match(source, /ensurePublicLessonsLoaded/)
+  assert.match(source, /if \(nextScope !== 'owned'\) void ensurePublicLessonsLoaded\(\)/)
+  assert.match(source, /visibleLessons = filteredLessons\.slice\(0, visibleLessonCount\)/)
+  assert.match(source, /Load more lessons/)
+  assert.match(listRoute, /DOWNLOAD_CONCURRENCY = 6/)
+  assert.match(listRoute, /mapWithConcurrency/)
+  assert.match(listRoute, /ownedFiles: eligibleFiles\.map/)
   assert.match(source, /resolveLibraryLessonState/)
-  assert.match(source, /setSelectedLearnerId\(onlyLearner\.id\)/)
-  assert.doesNotMatch(source, /localStorage\.getItem\('learner_id'\)/)
   assert.doesNotMatch(source, /showLessons|setShowLessons|Load Lessons|Ready to load|Click <strong>Load Lessons/)
   assert.doesNotMatch(source, /WorkflowGuide|How Lesson Approval & Scheduling Works/)
   assert.doesNotMatch(source, /type="checkbox"|toggleAvailability|setLearnerLessonAvailability|function scheduleLesson|Schedule Lesson|Scheduling requires Standard/)
