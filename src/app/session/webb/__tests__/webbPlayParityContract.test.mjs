@@ -7,6 +7,7 @@ const page = fs.readFileSync(new URL('../page.jsx', import.meta.url), 'utf8')
 const webbChatRoute = fs.readFileSync(new URL('../../../api/webb-chat/route.js', import.meta.url), 'utf8')
 const writingStudio = fs.readFileSync(new URL('../WebbWritingStudio.jsx', import.meta.url), 'utf8')
 const fullscreenPlayTimer = fs.readFileSync(new URL('../../v2/FullscreenPlayTimerOverlay.jsx', import.meta.url), 'utf8')
+const responseTimer = fs.readFileSync(new URL('../WebbResponseTimer.jsx', import.meta.url), 'utf8')
 
 test('Mrs. Webb play surface matches the core Ms. Sonoma play controls', () => {
   assert.match(overlay, />\s*GO!\s*</)
@@ -31,6 +32,17 @@ test('Mrs. Webb play timer uses PIN-gated shared facilitator controls', () => {
   assert.match(overlay, /TimerControlOverlay/)
   assert.match(overlay, /onUpdateTime=\{onUpdateElapsed\}/)
   assert.match(overlay, /onTogglePause=\{onTogglePause\}/)
+})
+
+test('Mrs. Webb work timer opens the same PIN-gated timer controls during research and writing', () => {
+  assert.match(responseTimer, /onClick=\{onClick\}/)
+  assert.match(page, /handleWebbWorkTimerOpen/)
+  assert.match(page, /ensurePinAllowed\('timer'\)/)
+  assert.equal((page.match(/onClick=\{handleWebbWorkTimerOpen\}/g) || []).length, 2)
+  assert.match(page, /timerType="work"/)
+  assert.match(page, /onUpdateTime=\{handleWebbWorkElapsedUpdate\}/)
+  assert.match(page, /onTogglePause=\{handleWebbWorkPauseToggle\}/)
+  assert.match(page, /current\.facilitatorPaused === true/)
 })
 
 test('Golden Key changes are wired into the active Mrs. Webb break', () => {

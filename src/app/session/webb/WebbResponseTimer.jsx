@@ -2,13 +2,15 @@
 
 import { formatWebbElapsed, responseTimerColor } from './webbPacing.mjs'
 
-export default function WebbResponseTimer({ turn, elapsedSeconds = 0, settings, compact = false }) {
+export default function WebbResponseTimer({ turn, elapsedSeconds = 0, settings, compact = false, onClick = null }) {
   if (!turn || settings?.responsePacingEnabled === false) return null
   const color = responseTimerColor(elapsedSeconds, settings?.reminderIntervalMin)
   return (
-    <div
-      title="Time since Mrs. Webb handed you the turn. This is a pacing guide, not a deadline."
-      aria-label={`Your response time is ${formatWebbElapsed(elapsedSeconds)}`}
+    <button
+      type="button"
+      onClick={onClick}
+      title={onClick ? "Open Mrs. Webb work timer controls." : "Time since Mrs. Webb handed you the turn. This is a pacing guide, not a deadline."}
+      aria-label={onClick ? `Your response time is ${formatWebbElapsed(elapsedSeconds)}. Open timer controls.` : `Your response time is ${formatWebbElapsed(elapsedSeconds)}`}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -24,10 +26,11 @@ export default function WebbResponseTimer({ turn, elapsedSeconds = 0, settings, 
         lineHeight: 1,
         whiteSpace: 'nowrap',
         transition: 'color 240ms ease',
+        cursor: onClick ? 'pointer' : 'default',
       }}
     >
       <span aria-hidden>⏱</span>
       <span>{formatWebbElapsed(elapsedSeconds)}</span>
-    </div>
+    </button>
   )
 }

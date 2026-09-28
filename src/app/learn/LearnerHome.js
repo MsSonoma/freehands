@@ -724,13 +724,14 @@ function LessonsPageInner(){
     }
 
     // Golden Key selection is intent only. The actual key is atomically assigned
-    // to the exact Sonoma lesson at launch, so canceling selection never spends inventory.
+    // to the exact supported instructional lesson at launch, so canceling selection never spends inventory.
     const thisLessonKey = `${subject}/${fileBaseName}`
     const currentTeacher = isDemoLearnerId(learnerId)
       ? 'sonoma'
       : (syllabusOccurrence?.assigned_instructional_teacher || syllabusOccurrence?.instructional_teacher || 'sonoma')
-    let launchHasGoldenKey = currentTeacher === 'sonoma' && activeGoldenKeys[thisLessonKey] === true
-    if (currentTeacher === 'sonoma' && goldenKeysEnabled === true && goldenKeySelected && learnerId && learnerId !== 'demo') {
+    const goldenKeyTeacherEligible = currentTeacher === 'sonoma' || currentTeacher === 'webb'
+    let launchHasGoldenKey = goldenKeyTeacherEligible && activeGoldenKeys[thisLessonKey] === true
+    if (goldenKeyTeacherEligible && goldenKeysEnabled === true && goldenKeySelected && learnerId && learnerId !== 'demo') {
       try {
         const applied = await applyGoldenKeyToLesson({ learnerId, lessonKey: thisLessonKey })
         launchHasGoldenKey = applied?.ok === true
@@ -1302,7 +1303,7 @@ function LessonsPageInner(){
                 </div>
               )}
 
-              {/* Golden Keys apply only when the assigned instructional teacher is Ms. Sonoma. */}
+              {/* Golden Keys are available for supported instructional teachers. */}
               {goldenKeysEnabled === true && !loading && !lessonsLoading && (
                 <div style={{ marginBottom: 14 }}>
                   <GoldenKeyCounter
@@ -1888,8 +1889,8 @@ function LessonsPageInner(){
                       <p style={{ margin: '0 0 16px', color: '#374151', fontSize: 15, lineHeight: 1.6 }}>{l.blurb || syllabusItem?.description}</p>
                     )}
 
-                    {/* Golden Keys are a Sonoma instructional feature. */}
-                    {goldenKeysEnabled === true && !isDemo && !!lessonKey && syllabusItem?.has_lesson_artifact !== false && !isSlateSyllabusAssignment && assignedInstructionalTeacher === 'sonoma' && (() => {
+                    {/* Golden Keys are available for both Ms. Sonoma and Mrs. Webb lessons. */}
+                    {goldenKeysEnabled === true && !isDemo && !!lessonKey && syllabusItem?.has_lesson_artifact !== false && !isSlateSyllabusAssignment && (assignedInstructionalTeacher === 'sonoma' || assignedInstructionalTeacher === 'webb') && (() => {
                       const keyOn = goldenKeySelected || hasActiveKey
                       const facilitatorOnly = hasActiveKey && !goldenKeySelected
                       return (

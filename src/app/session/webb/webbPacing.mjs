@@ -84,6 +84,17 @@ export function responseElapsedSeconds(turn, nowMs = Date.now()) {
   return Math.max(0, Math.floor(elapsedMs / 1000))
 }
 
+export function setWebbResponseElapsedSeconds(turn, elapsedSeconds, nowMs = Date.now()) {
+  if (!turn) return null
+  const elapsedMs = Math.max(0, Math.floor(Number(elapsedSeconds || 0))) * 1000
+  const pausedAt = turn.pauseStartedAt ? Date.parse(turn.pauseStartedAt) : NaN
+  const anchorMs = Number.isFinite(pausedAt) ? pausedAt : nowMs
+  return {
+    ...turn,
+    startedAt: new Date(anchorMs - elapsedMs).toISOString(),
+    pausedMs: 0,
+  }
+}
 export function reminderStageForElapsed(elapsedSeconds, intervalMinutes) {
   const intervalSeconds = boundedNumber(intervalMinutes, 2, 1, 30) * 60
   if (intervalSeconds <= 0) return 0

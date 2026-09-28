@@ -161,3 +161,13 @@ test('passive presentation helper contains no lifecycle or persistence authority
   const source = fs.readFileSync(path.resolve('src/app/lib/syllabus/learnerPresentation.mjs'), 'utf8')
   assert.doesNotMatch(source, /fetch\(|getSupabase|createSession|startLesson|actualize|createHistory|createEvidence|mutateForecast|scheduleLesson|\.insert\(|\.update\(|\.delete\(/i)
 })
+
+
+test('learner Syllabus lesson overlay offers Golden Keys for both instructional teachers and applies them before launch', () => {
+  const source = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
+  assert.match(source, /const goldenKeyTeacherEligible = currentTeacher === 'sonoma' \|\| currentTeacher === 'webb'/)
+  assert.match(source, /if \(goldenKeyTeacherEligible && goldenKeysEnabled === true && goldenKeySelected/)
+  assert.match(source, /assignedInstructionalTeacher === 'sonoma' \|\| assignedInstructionalTeacher === 'webb'/)
+  assert.match(source, /applyGoldenKeyToLesson\(\{ learnerId, lessonKey: thisLessonKey \}\)/)
+  assert.match(source, /if \(currentTeacher === 'webb'\)/)
+})

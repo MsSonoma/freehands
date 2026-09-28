@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import WebbWritingStudio from './WebbWritingStudio'
 import WebbResponseTimer from './WebbResponseTimer'
 import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
+import TimerControlOverlay from '../components/TimerControlOverlay'
 import TypingConversationContext from '../components/TypingConversationContext'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import FeatureHelpToast from '../components/FeatureHelpToast'
@@ -22,7 +23,7 @@ import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
 import { applyGoldenKeyToLesson, finalizeGoldenKeyForSession } from '@/app/lib/goldenKeyClient'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { createWebbAttentionNotification, recordWebbPacingEvent } from '@/app/lib/webbPacingClient'
-import { requestFacilitatorPinException } from '@/app/lib/pinGate'
+import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { endLessonSession } from '@/app/lib/sessionTracking'
 import { useSessionTracking } from '@/app/hooks/useSessionTracking'
 import { getProtectedBrowserSessionId, startProtectedInstructionalSession } from '@/app/lib/syllabus/executionClient'
@@ -73,6 +74,7 @@ import {
   reminderStageForElapsed,
   responseElapsedSeconds as getResponseElapsedSeconds,
   resumeWebbResponseTurn,
+  setWebbResponseElapsedSeconds,
   setWebbPlayGoldenKeyBonus,
   setWebbPlayPaused,
   setWebbPlayRemainingSeconds,
@@ -225,6 +227,7 @@ function WebbPageInner() {
   const [responseTurn, setResponseTurn] = useState(null)
   const responseTurnRef = useRef(null)
   const [responseElapsedSeconds, setResponseElapsedSeconds] = useState(0)
+  const [showWorkTimerControls, setShowWorkTimerControls] = useState(false)
   const lastLearnerActivityRef = useRef(0)
   const responseArmSignatureRef = useRef(null)
   const escalationNotificationInFlightRef = useRef(false)
@@ -912,6 +915,43 @@ function WebbPageInner() {
     if (!next) setResponseElapsedSeconds(0)
   }
 
+  async function handleWebbWorkTimerOpen() {
+    if (!responseTurnRef.current) return
+    let allowed = false
+    try {
+      allowed = await ensurePinAllowed('timer')
+    } catch {}
+    if (allowed) setShowWorkTimerControls(true)
+  }
+
+  function handleWebbWorkElapsedUpdate(nextElapsedSeconds) {
+    const current = responseTurnRef.current
+    if (!current) return
+    const elapsed = Math.max(0, Number(nextElapsedSeconds || 0))
+    let next = setWebbResponseElapsedSeconds(current, elapsed, Date.now())
+    const reminderStage = reminderStageForElapsed(elapsed, webbPacingSettings.reminderIntervalMin)
+    next = {
+      ...next,
+      reminderStage: Math.min(Number(current.reminderStage || 0), reminderStage),
+    }
+    commitResponseTurn(next)
+    setResponseElapsedSeconds(getResponseElapsedSeconds(next, Date.now()))
+    persistWebbPacing({ responseTurn: next })
+  }
+
+  function handleWebbWorkPauseToggle() {
+    const current = responseTurnRef.current
+    if (!current) return
+    const now = Date.now()
+    const facilitatorPaused = current.facilitatorPaused === true
+    const withIntent = { ...current, facilitatorPaused: !facilitatorPaused }
+    const next = facilitatorPaused
+      ? resumeWebbResponseTurn(withIntent, now)
+      : pauseWebbResponseTurn(withIntent, now)
+    commitResponseTurn(next)
+    persistWebbPacing({ responseTurn: next })
+  }
+
   function commitPlayMilestones(next) {
     playMilestonesRef.current = next || {}
     setPlayMilestones(next || {})
@@ -1322,7 +1362,8 @@ function WebbPageInner() {
   useEffect(() => {
     const current = responseTurnRef.current
     if (!current) return
-    const shouldPause = phase !== PHASE.CHATTING
+    const shouldPause = current.facilitatorPaused === true
+      || phase !== PHASE.CHATTING
       || chatLoading
       || engineState === 'playing'
       || !!mediaOverlay
@@ -1336,6 +1377,10 @@ function WebbPageInner() {
       persistWebbPacing({ responseTurn: next })
     }
   }, [phase, chatLoading, engineState, mediaOverlay, activePlayBreak, pendingFeatureHelp, webbOwnershipEndedReason]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    setShowWorkTimerControls(false)
+  }, [responseTurn?.id])
 
   useEffect(() => {
     if (webbPacingSettings.responsePacingEnabled || !responseTurnRef.current) return
@@ -3523,6 +3568,8 @@ function WebbPageInner() {
     || (webbPacingSettings.playTimesEnabled
       && webbPacingSettings.transitionEnabled
       && !playMilestones?.['research-to-writing'])
+  const webbWorkTotalMinutes = Math.max(1, Number(webbPacingSettings.reminderIntervalMin || 2)) * 5
+  const webbWorkRemainingSeconds = Math.max(0, Math.round(webbWorkTotalMinutes * 60 - responseElapsedSeconds))
   const activeWritingPlan = compositionPlan?.slots?.length ? compositionPlan : null
   const writingUnitCount = activeWritingPlan?.slots?.length || objectives.length
   const currentWritingSlot = activeWritingPlan?.slots?.[writingIndex] || null
@@ -3589,6 +3636,29 @@ function WebbPageInner() {
         playActivityBusy={webbPlayActivityBusy}
       />
 
+      {showWorkTimerControls && responseTurn && (
+        <TimerControlOverlay
+          isOpen={showWorkTimerControls}
+          onClose={() => setShowWorkTimerControls(false)}
+          lessonKey={currentWebbLessonKey}
+          phase={responseTurn.stage === 'writing' ? 'Mrs. Webb writing' : 'Mrs. Webb research'}
+          timerType="work"
+          totalMinutes={webbWorkTotalMinutes}
+          goldenKeysEntitled={webbGoldenKeysEntitled}
+          goldenKeysEnabled={webbGoldenKeysEnabled}
+          goldenKeyBonus={0}
+          isPaused={!!responseTurn.pauseStartedAt}
+          remainingSeconds={webbWorkRemainingSeconds}
+          onUpdateTime={handleWebbWorkElapsedUpdate}
+          onTogglePause={handleWebbWorkPauseToggle}
+          hasGoldenKey={webbGoldenKeyApplied}
+          isGoldenKeySuspended={webbGoldenKeySuspended}
+          onApplyGoldenKey={handleWebbApplyGoldenKey}
+          onSuspendGoldenKey={handleWebbSuspendGoldenKey}
+          onUnsuspendGoldenKey={handleWebbUnsuspendGoldenKey}
+        />
+      )}
+
       {/* Header */}
       <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: keyboardCompact ? '4px 8px' : '10px 16px' }}>
@@ -3609,6 +3679,7 @@ function WebbPageInner() {
                 elapsedSeconds={responseElapsedSeconds}
                 settings={webbPacingSettings}
                 compact={keyboardCompact}
+                onClick={handleWebbWorkTimerOpen}
               />
             )}
             {isChatting && objectives.length > 0 && (
@@ -4496,6 +4567,7 @@ function WebbPageInner() {
             elapsedSeconds={responseElapsedSeconds}
             settings={webbPacingSettings}
             compact={keyboardCompact}
+            onClick={handleWebbWorkTimerOpen}
           />
         ) : null}
         storageWarning={storageError}

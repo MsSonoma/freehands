@@ -10,6 +10,7 @@ import {
   reminderStageForElapsed,
   responseElapsedSeconds,
   resumeWebbResponseTurn,
+  setWebbResponseElapsedSeconds,
   setWebbPlayGoldenKeyBonus,
   setWebbPlayPaused,
   setWebbPlayRemainingSeconds,
@@ -48,6 +49,20 @@ test('response elapsed time excludes paused time', () => {
   assert.equal(responseElapsedSeconds(turn, 121_000), 60)
   turn = resumeWebbResponseTurn(turn, 121_000)
   assert.equal(responseElapsedSeconds(turn, 181_000), 120)
+})
+
+test('work timer controls can move the active response clock while preserving pause state', () => {
+  let turn = createWebbResponseTurn({ stage: 'writing', turnId: 't-adjust', nowMs: 1_000 })
+  turn = setWebbResponseElapsedSeconds(turn, 180, 301_000)
+  assert.equal(responseElapsedSeconds(turn, 301_000), 180)
+
+  turn = pauseWebbResponseTurn(turn, 301_000)
+  turn = setWebbResponseElapsedSeconds(turn, 90, 361_000)
+  assert.equal(responseElapsedSeconds(turn, 421_000), 90)
+  assert.ok(turn.pauseStartedAt)
+
+  turn = resumeWebbResponseTurn(turn, 421_000)
+  assert.equal(responseElapsedSeconds(turn, 481_000), 150)
 })
 
 test('reminder ladder reaches silent escalation at the fifth interval', () => {
