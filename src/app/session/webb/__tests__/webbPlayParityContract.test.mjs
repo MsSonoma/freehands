@@ -5,6 +5,8 @@ import fs from 'node:fs'
 const overlay = fs.readFileSync(new URL('../WebbPlayBreakOverlay.jsx', import.meta.url), 'utf8')
 const page = fs.readFileSync(new URL('../page.jsx', import.meta.url), 'utf8')
 const webbChatRoute = fs.readFileSync(new URL('../../../api/webb-chat/route.js', import.meta.url), 'utf8')
+const writingStudio = fs.readFileSync(new URL('../WebbWritingStudio.jsx', import.meta.url), 'utf8')
+const fullscreenPlayTimer = fs.readFileSync(new URL('../../v2/FullscreenPlayTimerOverlay.jsx', import.meta.url), 'utf8')
 
 test('Mrs. Webb play surface matches the core Ms. Sonoma play controls', () => {
   assert.match(overlay, />\s*GO!\s*</)
@@ -59,4 +61,11 @@ test('research-to-writing play break owns the transition sequence', () => {
   assert.match(page, /Playtime is over\. Now it is time to turn your research notes into writing\./)
   assert.match(webbChatRoute, /allObjectivesMet && deferTransitionForPlay/)
   assert.match(webbChatRoute, /Do not mention writing, the next phase, the Start writing button/)
+})
+
+
+test('Mrs. Webb play overlays stay above Writing Studio', () => {
+  assert.match(writingStudio, /zIndex: 1400/)
+  assert.match(overlay, /zIndex: 1500/)
+  assert.match(fullscreenPlayTimer, /zIndex: 1600/)
 })

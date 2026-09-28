@@ -109,7 +109,7 @@ export default function WebbPlayBreakOverlay({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1100,
+        zIndex: 1500,
         background: 'linear-gradient(160deg, #0f766e 0%, #134e4a 100%)',
         color: '#fff',
         display: 'flex',

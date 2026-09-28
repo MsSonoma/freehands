@@ -26,7 +26,7 @@ export default function FullscreenPlayTimerOverlay({
       style={{
         position: 'fixed',
         inset: 0,
-        zIndex: 1200,
+        zIndex: 1600,
         background: 'rgba(17, 24, 39, 0.92)',
         color: '#ffffff',
         display: 'flex',
