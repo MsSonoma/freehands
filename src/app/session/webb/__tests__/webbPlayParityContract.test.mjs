@@ -4,6 +4,7 @@ import fs from 'node:fs'
 
 const overlay = fs.readFileSync(new URL('../WebbPlayBreakOverlay.jsx', import.meta.url), 'utf8')
 const page = fs.readFileSync(new URL('../page.jsx', import.meta.url), 'utf8')
+const webbChatRoute = fs.readFileSync(new URL('../../../api/webb-chat/route.js', import.meta.url), 'utf8')
 
 test('Mrs. Webb play surface matches the core Ms. Sonoma play controls', () => {
   assert.match(overlay, />\s*GO!\s*</)
@@ -43,4 +44,19 @@ test('GO ends play instead of advancing instructional evidence', () => {
   assert.match(overlay, /finish\('go'\)/)
   assert.doesNotMatch(overlay, /saveWebbCompletion/)
   assert.doesNotMatch(overlay, /objectiveEvidence/)
+})
+
+
+test('research-to-writing play break owns the transition sequence', () => {
+  const playAnnouncement = page.indexOf('You can play until the play timer runs out.')
+  const breakActivation = page.indexOf('commitActivePlayBreak(breakState)')
+
+  assert.ok(playAnnouncement >= 0)
+  assert.ok(breakActivation > playAnnouncement)
+  assert.match(page, /deferTransitionForPlay: transitionPlayDue/)
+  assert.match(page, /activePlayBreakRef\.current \|\| pendingPlayMilestoneRef\.current/)
+  assert.match(page, /current\.milestone === 'research-to-writing'/)
+  assert.match(page, /Playtime is over\. Now it is time to turn your research notes into writing\./)
+  assert.match(webbChatRoute, /allObjectivesMet && deferTransitionForPlay/)
+  assert.match(webbChatRoute, /Do not mention writing, the next phase, the Start writing button/)
 })

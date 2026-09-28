@@ -35,7 +35,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, deferTransitionForPlay = false) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -82,6 +82,14 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
   lines.push('For names, titles, dates and other fixed facts, do not demand different wording as proof. Correctly identifying the fact is sufficient for that factual task. Use the application completion state; do not invent an additional explanation requirement.')
   if (allObjectivesMet && writingReady === false) {
     lines.push('All comprehension goals are complete, but a saved note needs recovery. Acknowledge that the learner already answered. Do not ask for the fact again and do not say the writing button is available yet.')
+    return lines.filter(Boolean).join('\n')
+  }
+  if (allObjectivesMet && deferTransitionForPlay) {
+    lines.push(
+      'The research goals are complete, but the application is about to run a timed play break before the writing phase.',
+      'Warmly acknowledge the learner\'s work in 1-2 short sentences. Do not mention writing, the next phase, the Start writing button, or what comes after the break.',
+      'Do not announce the play break yourself. The application will immediately give the learner the dedicated playtime announcement after you finish speaking.',
+    )
     return lines.filter(Boolean).join('\n')
   }
   if (allObjectivesMet) {
@@ -163,7 +171,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, deferTransitionForPlay = false } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -246,7 +254,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, writingSlot, writingControllingIdea, writingSourceNotes, completedObjectives, writingReady)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
+      { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, writingSlot, writingControllingIdea, writingSourceNotes, completedObjectives, writingReady, deferTransitionForPlay)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 

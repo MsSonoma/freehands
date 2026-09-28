@@ -1104,6 +1104,16 @@ function WebbPageInner() {
         pendingPlayMilestoneRef.current = null
         return
       }
+      addMsg('You can play until the play timer runs out. I will let you know when it is time to continue.', {
+        kind: 'pacing',
+        pacingType: 'play-break-intro',
+      })
+      await waitForTTSIdle()
+      if (webbExecutionFencedRef.current || pendingPlayMilestoneRef.current !== milestone) return
+      if (!webbPacingSettings.playTimesEnabled) {
+        pendingPlayMilestoneRef.current = null
+        return
+      }
       const baseDurationSeconds = webbPlayDurationSeconds(webbPacingSettings, {
         goldenKeyActive: false,
         goldenKeyBonusMin: 0,
@@ -1160,6 +1170,12 @@ function WebbPageInner() {
     })
     commitActivePlayBreak(null)
     persistWebbPacing({ activePlayBreak: null })
+    if (current.milestone === 'research-to-writing') {
+      addMsg('Playtime is over. Now it is time to turn your research notes into writing. Choose Start writing from my research when you are ready.', {
+        kind: 'pacing',
+        pacingType: 'post-play-transition',
+      })
+    }
   }
 
   function persistActiveWebbPlayBreak(nextBreak, extra = {}) {
@@ -2397,6 +2413,11 @@ function WebbPageInner() {
       if (progress.allObjectivesMet && !progress.writingReady) {
         throw new Error('You have completed the learning goals. A saved note still needs recovery; retry without repeating your answer.')
       }
+      const transitionPlayDue = progress.allObjectivesMet
+        && progress.writingReady
+        && webbPacingSettings.playTimesEnabled
+        && webbPacingSettings.transitionEnabled
+        && !playMilestonesRef.current?.['research-to-writing']
       const firstRemainingIndex = progress.remainingIndices[0]
       objectiveTargetRef.current = firstRemainingIndex ?? null
       const evaluatedTargetIndex = Number.isInteger(targetObjectiveIndex)
@@ -2415,6 +2436,7 @@ function WebbPageInner() {
           completedObjectives: progress.completedObjectives,
           allObjectivesMet: progress.allObjectivesMet,
           writingReady: progress.writingReady,
+          deferTransitionForPlay: transitionPlayDue,
           masteryStatus,
         }),
       })
@@ -2945,7 +2967,8 @@ function WebbPageInner() {
   }
 
   async function handleStartWriting() {
-    if (webbExecutionFencedRef.current || chatLoading || writingStartBusy || checkError || storageError) return
+    if (webbExecutionFencedRef.current || chatLoading || writingStartBusy || checkError || storageError || activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
+    if (webbPacingSettings.playTimesEnabled && webbPacingSettings.transitionEnabled && !playMilestonesRef.current?.['research-to-writing']) return
     if (writingEvaluating || !hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return
     let activePlan = compositionPlan?.slots?.length ? compositionPlan : null
     if (!activePlan && Object.keys(acceptedSentences || {}).length === 0) {
@@ -3493,6 +3516,14 @@ function WebbPageInner() {
   const objectiveProgress = webbObjectiveProgress(objectives, learningState)
   const understoodCount = objectiveProgress.understoodCount
   const writingReadyCount = writingReadyNoteIndices(objectives, learnerNotes).length
+  const writingStartBlocked = writingEvaluating
+    || writingStartBusy
+    || chatLoading
+    || !!activePlayBreak
+    || !!pendingPlayMilestoneRef.current
+    || (webbPacingSettings.playTimesEnabled
+      && webbPacingSettings.transitionEnabled
+      && !playMilestones?.['research-to-writing'])
   const activeWritingPlan = compositionPlan?.slots?.length ? compositionPlan : null
   const writingUnitCount = activeWritingPlan?.slots?.length || objectives.length
   const currentWritingSlot = activeWritingPlan?.slots?.[writingIndex] || null
@@ -3906,15 +3937,15 @@ function WebbPageInner() {
               <button
                 type="button"
                 onClick={handleStartWriting}
-                disabled={writingEvaluating || writingStartBusy || chatLoading}
+                disabled={writingStartBlocked}
                 style={{
                   width: '100%',
-                  background: (writingEvaluating || writingStartBusy || chatLoading) ? '#e5e7eb' : '#0d9488',
-                  color: (writingEvaluating || writingStartBusy || chatLoading) ? '#9ca3af' : '#fff',
+                  background: writingStartBlocked ? '#e5e7eb' : '#0d9488',
+                  color: writingStartBlocked ? '#9ca3af' : '#fff',
                   border: 'none',
                   borderRadius: keyboardCompact ? 7 : 10,
                   padding: keyboardCompact ? '6px 10px' : '10px 16px',
-                  cursor: (writingEvaluating || writingStartBusy || chatLoading) ? 'wait' : 'pointer',
+                  cursor: writingStartBlocked ? 'wait' : 'pointer',
                   fontWeight: 800,
                   fontSize: keyboardCompact ? 11 : 14,
                   fontFamily: 'inherit',
@@ -4426,11 +4457,11 @@ function WebbPageInner() {
                   <button
                     type="button"
                     onClick={handleStartWriting}
-                    disabled={writingEvaluating || writingStartBusy || chatLoading}
+                    disabled={writingStartBlocked}
                     style={{
-                      width: '100%', background: (writingEvaluating || writingStartBusy || chatLoading) ? '#1e293b' : '#0d9488',
+                      width: '100%', background: writingStartBlocked ? '#1e293b' : '#0d9488',
                       color: '#fff', border: 'none', borderRadius: 10,
-                      padding: '11px 20px', cursor: (writingEvaluating || writingStartBusy || chatLoading) ? 'wait' : 'pointer',
+                      padding: '11px 20px', cursor: writingStartBlocked ? 'wait' : 'pointer',
                       fontWeight: 800, fontSize: 14, fontFamily: 'inherit',
                     }}
                   >
