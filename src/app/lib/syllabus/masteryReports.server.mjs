@@ -6,8 +6,11 @@ export async function loadRecentMasteryReports({
   learnerId,
   resolveLesson = null,
   limit = 25,
+  trackedSessions: suppliedTrackedSessions = null,
 }) {
-  const trackedSessions = await repository.listRecentTrackedSessions(learnerId, limit)
+  const trackedSessions = Array.isArray(suppliedTrackedSessions)
+    ? suppliedTrackedSessions
+    : await repository.listRecentTrackedSessions(learnerId, limit)
   const trackedIds = trackedSessions.map((row) => row.id)
   const evidenceSessions = await repository.listEvidenceSessions(facilitatorId, learnerId, trackedIds)
   const evidenceIds = evidenceSessions.map((row) => row.id)

@@ -268,6 +268,45 @@ export function projectCurriculumState({
   }))
 }
 
+export async function refreshCurriculumGuidanceBundleState({
+  repository,
+  facilitatorId,
+  learnerId,
+  bundle,
+  reports = [],
+  timelineItems = [],
+  proposedForecastItems = [],
+} = {}) {
+  if (!bundle?.period?.id || !bundle?.contract_version?.id) return bundle
+  const requirements = Array.isArray(bundle.requirements) ? bundle.requirements : []
+  if (!requirements.length) {
+    return { ...bundle, state: [], counts: curriculumGuidanceCounts([], []) }
+  }
+
+  const lessonKeys = [...new Set((timelineItems || []).map((item) => clean(item?.lesson_key)).filter(Boolean))]
+  const lessonTargets = typeof repository.listLessonCurriculumTargets === 'function'
+    ? await repository.listLessonCurriculumTargets(facilitatorId, learnerId, lessonKeys)
+    : []
+  const state = projectCurriculumState({
+    facilitatorId,
+    learnerId,
+    period: bundle.period,
+    requirements,
+    reports,
+    timelineItems,
+    proposedForecastItems,
+    lessonTargets,
+  })
+  if (typeof repository.upsertLearnerCurriculumState === 'function') {
+    await repository.upsertLearnerCurriculumState(state)
+  }
+  return {
+    ...bundle,
+    state,
+    counts: curriculumGuidanceCounts(requirements, state),
+  }
+}
+
 function goalBoost(requirement, goals = []) {
   let boost = 0
   const reasons = []

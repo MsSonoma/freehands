@@ -9,6 +9,7 @@ import {
   loadActiveCurriculumPlanningContext,
   loadCurriculumGuidanceBundle,
   projectCurriculumState,
+  refreshCurriculumGuidanceBundleState,
 } from '../curriculumGuidance.server.mjs'
 import {
   generateInstructionalForecastItems,
@@ -228,6 +229,41 @@ test('demonstrated mastery removes recent curriculum territory from immediate el
   assert.equal(division.blocked_reason, 'mastery_demonstrated')
   assert.equal(geometry.eligible, true)
   assert.ok(context.subjects.math.eligible_requirement_keys.includes('math:geometry'))
+})
+
+test('Current guidance refresh replaces stale stored state with current learner evidence', async () => {
+  const requirements = [requirement()]
+  let persisted = null
+  const repository = {
+    async listLessonCurriculumTargets() { return [] },
+    async upsertLearnerCurriculumState(rows) {
+      persisted = rows
+      return rows
+    },
+  }
+  const bundle = {
+    period: PERIOD,
+    contract_version: CONTRACT,
+    requirements,
+    state: [{ requirement_key: 'math:division', mastery_state: 'not_measured', coverage_state: 'not_started' }],
+    counts: { required: 1, demonstrated: 0, unresolved: 0, developing: 0, not_started: 1 },
+    decisions: [{ id: 'decision-1' }],
+  }
+
+  const refreshed = await refreshCurriculumGuidanceBundleState({
+    repository,
+    facilitatorId: 'facilitator',
+    learnerId: 'learner',
+    bundle,
+    reports: [conceptReport('math:division', { mastery: 'mastered', comprehension: 'demonstrated' })],
+    timelineItems: [],
+  })
+
+  assert.equal(refreshed.state[0].mastery_state, 'demonstrated')
+  assert.equal(refreshed.counts.demonstrated, 1)
+  assert.equal(refreshed.counts.not_started, 0)
+  assert.equal(refreshed.decisions, bundle.decisions)
+  assert.equal(persisted[0].mastery_state, 'demonstrated')
 })
 
 test('unresolved mastery permits a second or third progressive exposure, then forces a branch', () => {

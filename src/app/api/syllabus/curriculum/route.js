@@ -3,11 +3,15 @@ import { getSyllabusRequestContext } from '../../../lib/syllabus/request.server.
 import { createSyllabusRepository } from '../../../lib/syllabus/supabaseRepository.server.mjs'
 import { validateLearnerId, SyllabusError } from '../../../lib/syllabus/schema.mjs'
 import { resolveCalendarContext } from '../../../lib/calendarDate.mjs'
+import { composeSyllabusLessonTimeline } from '../../../lib/syllabus/lessonTimeline.mjs'
+import { loadSyllabusTimelineInputs } from '../../../lib/syllabus/lessonTimelineInputs.server.mjs'
+import { loadRecentMasteryReports } from '../../../lib/syllabus/masteryReports.server.mjs'
 import {
   validateCurriculumGuidanceInput,
 } from '../../../lib/syllabus/curriculumGuidance.mjs'
 import {
   loadCurriculumGuidanceBundle,
+  refreshCurriculumGuidanceBundleState,
 } from '../../../lib/syllabus/curriculumGuidance.server.mjs'
 import { updateSyllabusPlanDetails } from '../../../lib/syllabus/revisions.server.mjs'
 
@@ -167,7 +171,7 @@ export async function GET(request, deps = {}) {
 
     const calendar = await requestCalendar(context, repository, deps)
     const planning = await activeSubjects(repository, context.user.id, learnerId)
-    const bundle = await loadCurriculumGuidanceBundle({
+    let bundle = await loadCurriculumGuidanceBundle({
       repository,
       facilitatorId: context.user.id,
       learnerId,
@@ -177,6 +181,52 @@ export async function GET(request, deps = {}) {
       periodId,
       includeRecommendations: true,
     })
+
+    const selectedIsCurrent = Boolean(
+      bundle?.period?.id
+      && bundle?.current_period?.id
+      && String(bundle.period.id) === String(bundle.current_period.id),
+    )
+    const pinnedContractVersionId = planning.revision?.curriculum_contract_version_id
+      || planning.revision?.planning_policy?.curriculum_contract_version_id
+      || null
+    if (
+      planning.revision
+      && selectedIsCurrent
+      && bundle?.contract_version?.id
+      && String(pinnedContractVersionId || '') === String(bundle.contract_version.id)
+    ) {
+      const inputs = await loadSyllabusTimelineInputs({
+        repository,
+        admin: context.admin,
+        facilitatorId: context.user.id,
+        learner,
+        activeRevision: planning.revision,
+        includeSlateEvidence: false,
+      })
+      const timelineItems = composeSyllabusLessonTimeline({
+        activeRevision: planning.revision,
+        ...inputs,
+        approvedLessons: learner.approved_lessons || {},
+        today: calendar.today,
+        timeZone: calendar.timeZone,
+      })
+      const startsOn = String(bundle.period.starts_on || '').slice(0, 10)
+      const endsOn = String(bundle.period.ends_on || '').slice(0, 10)
+      const trackedSessions = (inputs.sessions || []).filter((row) => {
+        const observedOn = String(row?.ended_at || row?.started_at || '').slice(0, 10)
+        return observedOn && (!startsOn || observedOn >= startsOn) && (!endsOn || observedOn <= endsOn)
+      })
+      const reports = await loadRecentMasteryReports({
+        repository,
+        facilitatorId: context.user.id,
+        learnerId,
+        trackedSessions,
+      })
+      bundle = await refreshCurriculumGuidanceBundleState({
+        repository, facilitatorId: context.user.id, learnerId, bundle, reports, timelineItems,
+      })
+    }
 
     return NextResponse.json({
       ok: true,
