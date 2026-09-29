@@ -69,8 +69,8 @@
         "packs",
         "memory"
       ],
-      "description": "Facilitator Help conversations can be stored as events so the session can resume and stay consistent. This supports continuity, deterministic summaries, and retrieval.",
-      "howToUse": "If you want to avoid storing something, don’t include sensitive details. Focus on learner learning needs and teaching context.",
+      "description": "Facilitator Help conversations are stored as account-scoped events so Ms. Sonoma can keep continuity within a conversation and retrieve relevant context from earlier conversations. Learner-specific recall stays scoped to the selected learner, while current Syllabus, Curriculum Guidance, and learning evidence remain authoritative.",
+      "howToUse": "Use the Conversations library to rename or delete saved conversations. Deleting a conversation also removes its active ThoughtHub memory. For account-level access, deletion, or export requests, use the contact listed in the Privacy Policy.",
       "relatedFeatures": [
         "ai-safety"
       ]

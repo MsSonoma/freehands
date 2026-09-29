@@ -251,24 +251,6 @@ export const MENTOR_TOOL_REGISTRY = Object.freeze([
     description: 'Navigate to a known facilitator area. Learner management opens inside the Syllabus experience rather than as a standalone primary destination. This does not change educational state.',
     parameters: objectSchema({ surface: { type: 'string', enum: ['syllabus', 'month_view', 'lessons', 'generated_lessons', 'lesson_maker', 'learners', 'prepare', 'account', 'notifications', 'help'] }, learnerId: { type: 'string', description: 'Optional learner ID when the destination supports learner context.' } }, ['surface']),
   },
-  {
-    name: 'get_conversation_memory',
-    authority: 'read',
-    purpose: 'Retrieve prior Ms. Sonoma conversation memory.',
-    whenToUse: 'When the facilitator refers to earlier conversations or continuity is materially useful.',
-    verification: 'conversation memory read',
-    description: 'Retrieve conversation memory. Uses the selected learner automatically when appropriate.',
-    parameters: objectSchema({ learner_id: { type: 'string' } }),
-  },
-  {
-    name: 'search_conversation_history',
-    authority: 'read',
-    purpose: 'Search prior Ms. Sonoma conversations.',
-    whenToUse: 'When the facilitator asks what was previously discussed about a subject.',
-    verification: 'conversation history read',
-    description: 'Search prior conversation summaries using keywords.',
-    parameters: objectSchema({ search: { type: 'string' }, include_archive: { type: 'boolean' } }, ['search']),
-  },
 ])
 
 const TOOL_BY_NAME = new Map(MENTOR_TOOL_REGISTRY.map((tool) => [tool.name, tool]))

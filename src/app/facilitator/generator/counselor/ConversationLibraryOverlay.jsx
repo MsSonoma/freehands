@@ -71,7 +71,7 @@ export default function ConversationLibraryOverlay({
       }}>
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ fontSize: 18, fontWeight: 800, letterSpacing: '-0.02em', color: '#111827' }}>Conversations</div>
-          <div style={{ fontSize: 12, color: '#6b7280' }}>Saved Ms. Sonoma conversations</div>
+          <div style={{ fontSize: 12, color: '#6b7280' }}>Saved conversations help Ms. Sonoma remember relevant context across chats. They stay scoped to your account and can be deleted here.</div>
         </div>
         <button
           type="button"

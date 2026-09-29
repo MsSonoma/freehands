@@ -1,4 +1,4 @@
-﻿import test from 'node:test'
+import test from 'node:test'
 import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import {
@@ -97,4 +97,13 @@ test('MentorInterceptor forwards operational work instead of mutating state', ()
   assert.match(processSource, /handled: false/)
   assert.doesNotMatch(processSource, /executeAction/)
   assert.doesNotMatch(processSource, /save_weekly_pattern/)
+})
+
+test('legacy conversation-memory tools are not exposed', () => {
+  assert.equal(getMentorTool('get_conversation_memory'), null)
+  assert.equal(getMentorTool('search_conversation_history'), null)
+
+  const names = getMentorOpenAiTools().map((tool) => tool.function.name)
+  assert.equal(names.includes('get_conversation_memory'), false)
+  assert.equal(names.includes('search_conversation_history'), false)
 })

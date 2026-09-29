@@ -1571,8 +1571,8 @@ const MENTOR_TOOL_EXECUTORS = Object.freeze({
   manage_slate_practice: (args, context) => executeManageSlatePractice(args, context.request, context.toolLog, context),
   manage_no_school_date: (args, context) => executeManageNoSchoolDate(args, context.request, context.toolLog, context),
   open_surface: async (args, context) => executeOpenSurface({ ...args, learnerId: args?.learnerId || context.selectedLearnerId || null }),
-  get_conversation_memory: (args, context) => executeGetConversationMemory({ ...args, learner_id: args?.learner_id || context.selectedLearnerId || null }, context.request, context.toolLog),
-  search_conversation_history: (args, context) => executeSearchConversationHistory(args, context.request, context.toolLog),
+
+
 })
 
 const MISSING_MENTOR_EXECUTORS = MENTOR_TOOL_REGISTRY.map((tool) => tool.name).filter((name) => !MENTOR_TOOL_EXECUTORS[name])

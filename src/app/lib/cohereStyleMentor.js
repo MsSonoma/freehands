@@ -52,7 +52,13 @@ export function formatPackForSystemMessage(pack) {
       const role = e.role
       const text = (e.text || '').trim()
       if (!text) return null
-      return `${role.toUpperCase()}: ${text}`
+
+      const scope = String(e.memory_scope || 'prior_context').replace(/_/g, ' ')
+      const source = String(e.conversation_title || e.subject_key || '').trim()
+      const sourceType = String(e.meta?.source || '').replace(/_/g, ' ').trim()
+      const provenance = [scope, source, sourceType].filter(Boolean).join(' | ')
+
+      return `[${provenance}] ${role.toUpperCase()}: ${text}`
     })
     .filter(Boolean)
     .join('\n')
@@ -61,7 +67,7 @@ export function formatPackForSystemMessage(pack) {
   parts.push('=== COHERE-STYLE PACK (DETERMINISTIC) ===')
 
   if (goals) {
-    parts.push('CURRENT GOALS JSON:')
+    parts.push('SAVED GOAL MEMORY JSON (CONTEXT ONLY):')
     parts.push(goals)
   }
 
@@ -77,10 +83,11 @@ export function formatPackForSystemMessage(pack) {
   }
 
   if (recallBlock) {
-    parts.push('RECALL SNIPPETS (OLDER HITS):')
+    parts.push('RELEVANT MEMORY (PRIOR CONTEXT WITH PROVENANCE):')
     parts.push(recallBlock)
   }
 
+  parts.push('MEMORY RULE: Conversation memory is contextual, not authoritative learning evidence. Current Syllabus, Curriculum Guidance, and canonical learning evidence outrank remembered conversation content.')
   parts.push('=== END PACK ===')
 
   return parts.join('\n')
