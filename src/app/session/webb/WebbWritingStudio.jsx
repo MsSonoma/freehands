@@ -1,6 +1,6 @@
 ﻿'use client'
 
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { WEBB_WRITING_SUBPHASES } from '@/app/lib/webbWritingFlow.mjs'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
@@ -83,6 +83,7 @@ export default function WebbWritingStudio({
   onLearnerActivity,
 }) {
   const inputRef = useRef(null)
+  const [essayPeek, setEssayPeek] = useState(false)
   const typingViewport = useTypingViewport({ preserveTouchFocus: true, blurDelayMs: 350 })
   const keyboardCompact = typingViewport.typing
   const blankCompleteRef = useRef(onBlankComplete)
@@ -96,6 +97,10 @@ export default function WebbWritingStudio({
     const timer = setTimeout(() => blankCompleteRef.current?.(), 900)
     return () => clearTimeout(timer)
   }, [open, subphase])
+
+  useEffect(() => {
+    setEssayPeek(false)
+  }, [open, activeIndex, subphase])
 
   useEffect(() => {
     if (!open) return
@@ -127,6 +132,8 @@ export default function WebbWritingStudio({
     .map(([rawIndex, sentence]) => ({ index: Number(rawIndex), sentence }))
     .filter(entry => Number.isInteger(entry.index) && entry.sentence?.provenance === 'learner-message' && String(entry.sentence?.text || '').trim())
     .sort((a, b) => a.index - b.index)
+  const canPeekEssay = !finalView && entries.length > 0 && [WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(subphase)
+  const showEssayPeek = canPeekEssay && essayPeek
 
   const submit = (event) => {
     event.preventDefault()
@@ -166,6 +173,24 @@ export default function WebbWritingStudio({
           accent="#0d9488"
         />
       </div>
+      {canPeekEssay && (
+        <div style={{ width: keyboardCompact ? '100%' : 'min(92vw, 820px)', margin: keyboardCompact ? '0 auto 4px' : '0 auto 14px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+          <button
+            type="button"
+            onClick={() => {
+              if (!essayPeek) inputRef.current?.blur()
+              setEssayPeek(value => !value)
+            }}
+            style={{
+              border: '1px solid #cbd5e1', borderRadius: 999, padding: keyboardCompact ? '5px 9px' : '8px 13px',
+              background: essayPeek ? '#0d9488' : '#fff', color: essayPeek ? '#fff' : '#475569',
+              fontWeight: 850, fontSize: keyboardCompact ? 10 : 12, cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            {essayPeek ? 'Back to writing' : 'View essay'}
+          </button>
+        </div>
+      )}
       {subphase === WEBB_WRITING_SUBPHASES.BLANK && (
         <div style={{ animation: 'webb-writing-paper-in 0.55s ease both' }}>
           <GuidanceTranscript text={guidance} />
@@ -180,7 +205,28 @@ export default function WebbWritingStudio({
         </div>
       )}
 
-      {[WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(subphase) && (
+      {showEssayPeek && (
+        <div style={{ animation: 'webb-writing-paper-in 0.28s ease both' }}>
+          <Paper>
+            <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: 'uppercase' }}>
+              Your essay so far
+            </div>
+            <div style={{ color: '#64748b', fontSize: 13, lineHeight: 1.45, marginTop: 7 }}>
+              These are the sentences you have finished. Your current sentence stays saved while you look.
+            </div>
+            <div style={{ height: 1, background: '#e5e7eb', margin: '18px 0 28px' }} />
+            <div style={{ display: 'grid', gap: 14 }}>
+              {entries.map(({ index, sentence }) => (
+                <p key={index} style={{ margin: 0, color: '#1f2937', fontSize: 'clamp(18px, 3vw, 24px)', lineHeight: 1.65 }}>
+                  {sentence.text}
+                </p>
+              ))}
+            </div>
+          </Paper>
+        </div>
+      )}
+
+      {!showEssayPeek && [WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(subphase) && (
         <div style={{
           animation: 'webb-writing-focus-in 0.35s ease both',
           ...(keyboardCompact ? { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, overflow: 'hidden' } : {}),

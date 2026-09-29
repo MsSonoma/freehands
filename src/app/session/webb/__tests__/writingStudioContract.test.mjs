@@ -58,6 +58,16 @@ test('topic and conclusion explain their paragraph jobs without pretending they 
   assert.doesNotMatch(model, /shape the first note as opening content|shape the final note as closing content/)
 })
 
+test('learner can temporarily toggle from sentence writing to the accepted essay without advancing', () => {
+  assert.match(studio, /const \[essayPeek, setEssayPeek\] = useState\(false\)/)
+  assert.match(studio, /setEssayPeek\(false\)[\s\S]*\[open, activeIndex, subphase\]/)
+  assert.match(studio, /entries\.length > 0/)
+  assert.match(studio, /essayPeek \? 'Back to writing' : 'View essay'/)
+  assert.match(studio, /These are the sentences you have finished\. Your current sentence stays saved while you look\./)
+  assert.match(studio, /!showEssayPeek && \[WEBB_WRITING_SUBPHASES\.FOCUS, WEBB_WRITING_SUBPHASES\.REVIEW\]/)
+  assert.doesNotMatch(studio, /showEssayPeek[\s\S]{0,1200}onNextSentence/)
+})
+
 test('writing evaluation is aware of ordered essay position without taking learner authorship', () => {
   assert.match(route, /SLOT_FIT/)
   assert.match(route, /ADDS_NEW_INFORMATION/)
