@@ -211,7 +211,7 @@ function WebbPageInner() {
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
   const [offerResume,        setOfferResume]        = useState(false) // shown after lesson is selected, if a per-lesson snapshot exists
   const [resumeBusy,         setResumeBusy]         = useState(false)
-  const [essayMode,          setEssayMode]         = useState(false) // essay copy-down screen
+  const [essayMode,          setEssayMode]         = useState(false) // finished essay view in the current Writing Studio
   const [essay,              setEssay]             = useState(null)  // deterministic assembly of accepted learner sentences
   const [writingEvaluating,    setWritingEvaluating]   = useState(false) // writing evaluation in flight
   const [writingStartBusy,     setWritingStartBusy]    = useState(false)
@@ -4129,7 +4129,7 @@ function WebbPageInner() {
             <div style={{ marginBottom: keyboardCompact ? 3 : 10 }}>
               <button
                 type="button"
-                onClick={handleStartWriting}
+                onClick={writingAllAccepted && essay ? () => setEssayMode(true) : handleStartWriting}
                 disabled={writingStartBlocked}
                 style={{
                   width: '100%',
@@ -4649,7 +4649,7 @@ function WebbPageInner() {
                 <div style={{ padding: '16px 20px 4px' }}>
                   <button
                     type="button"
-                    onClick={handleStartWriting}
+                    onClick={writingAllAccepted && essay ? () => setEssayMode(true) : handleStartWriting}
                     disabled={writingStartBlocked}
                     style={{
                       width: '100%', background: writingStartBlocked ? '#1e293b' : '#0d9488',
@@ -4669,22 +4669,28 @@ function WebbPageInner() {
       )}
 
       <WebbWritingStudio
-        open={isChatting && writingMode}
-        subphase={writingSubphase}
+        open={isChatting && (writingMode || essayMode)}
+        subphase={essayMode ? WEBB_WRITING_SUBPHASES.COMMITTED : writingSubphase}
         note={currentWritingSource.notes?.[0] || learnerNotes[writingIndex]}
         objective={activeWritingPlan ? '' : objectives[writingIndex]}
-        slot={currentWritingSlot}
-        sourceNotes={currentWritingSource.notes || []}
+        slot={essayMode ? null : currentWritingSlot}
+        sourceNotes={essayMode ? [] : (currentWritingSource.notes || [])}
         lessonTitle={selectedLesson?.title || ''}
         lessonBlurb={selectedLesson?.blurb || selectedLesson?.description || ''}
         draft={writingDraft}
         previousAttempt={latestWritingAttempt(writingAttempts, writingIndex)}
         acceptedSentences={acceptedSentences}
-        activeIndex={writingIndex}
+        activeIndex={essayMode ? -1 : writingIndex}
         totalSentences={writingUnitCount}
         guidance={writingGuidance}
         evaluating={writingEvaluating}
         transitionBusy={writingTransitionBusy}
+        finalView={essayMode}
+        onCloseFinal={() => setEssayMode(false)}
+        onCompleteLesson={handleCompleteLesson}
+        completionState={completionState}
+        completionError={completionError}
+        lessonCompleted={!!webbCompletionMap?.[selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id]?.completed}
         responseTimer={responseTurn ? (
           <WebbResponseTimer
             turn={responseTurn}
@@ -4703,109 +4709,6 @@ function WebbPageInner() {
         isLastSentence={writingAllAccepted}
         recentEntries={transcript}
       />
-
-      {/* Essay full-screen overlay */}
-      {essayMode && essay && createPortal(
-        <div style={{
-          position: 'fixed', inset: 0, zIndex: 1100,
-          background: '#0f172a',
-          overflowY: 'auto',
-          padding: '28px 20px 48px',
-        }}>
-          <div style={{ maxWidth: 640, margin: '0 auto' }}>
-            {/* Header */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 20 }}>
-              <button
-                type="button"
-                onClick={() => setEssayMode(false)}
-                style={{
-                  background: 'rgba(255,255,255,0.08)', border: 'none', color: '#94a3b8',
-                  borderRadius: 8, padding: '6px 14px', cursor: 'pointer',
-                  fontSize: 13, fontFamily: 'inherit',
-                }}
-              >← Back</button>
-              <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 12, letterSpacing: 1.5, textTransform: 'uppercase' }}>
-                Your Essay
-              </div>
-              <div style={{ width: 60 }} />
-            </div>
-            {/* Headline */}
-            <h2 style={{ color: '#e2e8f0', fontSize: 22, fontWeight: 800, margin: '0 0 6px' }}>
-              🎉 You did it!
-            </h2>
-            <p style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, margin: '0 0 24px' }}>
-              These are <em>your</em> words, put together into an essay.
-              Copy it onto paper in your own handwriting!
-            </p>
-            {/* Essay text */}
-            <div style={{
-              background: '#1e293b',
-              borderRadius: 16,
-              padding: '24px 28px',
-              fontSize: 16,
-              lineHeight: 2,
-              color: '#e2e8f0',
-              whiteSpace: 'pre-wrap',
-              boxShadow: '0 0 0 2px #0d9488',
-              marginBottom: 28,
-            }}>
-              {essay}
-            </div>
-            {/* Copy-down instruction */}
-            <div style={{
-              background: '#0f2438',
-              border: '1px dashed #0d9488',
-              borderRadius: 12,
-              padding: '16px 20px',
-              color: '#94a3b8',
-              fontSize: 13,
-              lineHeight: 1.7,
-            }}>
-              ✏️ <strong style={{ color: '#e2e8f0' }}>Copy It Down!</strong><br />
-              Write every word on lined paper — this helps your brain remember it!
-              You can decorate the margins and add a title when you&apos;re done.
-            </div>
-            {/* Complete lesson button */}
-            {(() => {
-              const lk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
-              const alreadyDone = lk && webbCompletionMap[lk]?.completed
-              return (
-                <>
-                <button
-                  type="button"
-                  onClick={() => { if (!alreadyDone) handleCompleteLesson() }}
-                  disabled={completionState === 'saving'}
-                  style={{
-                    marginTop: 20,
-                    width: '100%',
-                    background: alreadyDone ? '#1e293b' : '#0d9488',
-                    color: alreadyDone ? '#94a3b8' : '#fff',
-                    border: alreadyDone ? '1px solid #334155' : 'none',
-                    borderRadius: 12,
-                    padding: '14px 20px',
-                    cursor: alreadyDone ? 'default' : 'pointer',
-                    fontWeight: 800,
-                    fontSize: 15,
-                    fontFamily: 'inherit',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: 8,
-                  }}
-                >
-                  <span style={{ fontSize: 20 }}>👩🏻‍🏫</span>
-                  {alreadyDone ? 'Lesson Completed ✓' : completionState === 'saving' ? 'Recording completion…' : completionState === 'failed' ? 'Retry completion' : 'Complete Lesson'}
-                </button>
-                {completionState === 'failed' && (
-                  <p role="alert" style={{ color: C.danger, fontWeight: 700, margin: '10px 0 0' }}>{completionError}</p>
-                )}
-                </>
-              )
-            })()}
-          </div>
-        </div>,
-        document.body
-      )}
 
       {newlySavedNote && createPortal(
         <div role="status" aria-live="polite" style={{

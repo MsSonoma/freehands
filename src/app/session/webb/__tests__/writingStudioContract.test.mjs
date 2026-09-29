@@ -35,7 +35,7 @@ test('writing studio keeps objective context and learner-controlled commit gates
   assert.match(studio, /Your research note/)
   assert.match(studio, />\s*Previous attempt\s*</)
   assert.match(studio, /'Try again'/)
-  assert.match(studio, />\s*Your essay so far\s*</)
+  assert.match(studio, /finalView \? 'Your essay' : 'Your essay so far'/)
   assert.match(studio, /webb-writing-glow/)
   assert.match(studio, /'Next sentence'/)
   assert.match(studio, /'Finish essay'/)
@@ -91,9 +91,20 @@ test('writing storage state is explicit and Mrs. Webb source stays free of mojib
   assert.match(model, /\["”\]/)
 })
 
-test('normal Mrs. Webb chat input is hidden while the writing studio is active', () => {
+test('finished essays stay in the current Writing Studio instead of the retired copy-down view', () => {
+  assert.match(page, /open=\{isChatting && \(writingMode \|\| essayMode\)\}/)
+  assert.match(page, /subphase=\{essayMode \? WEBB_WRITING_SUBPHASES\.COMMITTED : writingSubphase\}/)
+  assert.match(page, /finalView=\{essayMode\}/)
+  assert.match(page, /writingAllAccepted && essay \? \(\) => setEssayMode\(true\) : handleStartWriting/)
+  assert.doesNotMatch(page, /Essay full-screen overlay|Copy It Down|Copy it onto paper/)
+  assert.match(studio, /finalView \? 'Your essay' : 'Your essay so far'/)
+  assert.match(studio, /Complete Lesson/)
+  assert.match(studio, /Back to lesson/)
+})
+
+test('normal Mrs. Webb chat input is hidden while active writing uses the Writing Studio', () => {
   assert.match(page, /\{isChatting && !writingMode && \(/)
-  assert.match(page, /open=\{isChatting && writingMode\}/)
+  assert.match(page, /open=\{isChatting && \(writingMode \|\| essayMode\)\}/)
 })
 test('startup preparation errors do not imply learner work was lost before input opens', () => {
   assert.match(page, /Mrs\. Webb could not prepare this lesson yet\. Please retry\./)
@@ -139,5 +150,5 @@ test('slow writing and completion transitions expose busy state without skipping
   const markSaving = completion.indexOf("setCompletionState('saving')")
   const persistFinal = completion.indexOf("persistCompositionArtifact({ plan: compositionPlan, accepted: acceptedSentences, status: 'final' })")
   assert.ok(markSaving >= 0 && persistFinal > markSaving, 'completion feedback must appear before the awaited server persistence step')
-  assert.match(page, /completionState === 'saving' \? 'Recording completion…'/)
+  assert.match(studio, /completionState === 'saving' \? 'Recording completion\.\.\.'/)
 })

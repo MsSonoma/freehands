@@ -66,6 +66,12 @@ export default function WebbWritingStudio({
   guidance,
   evaluating,
   transitionBusy = false,
+  finalView = false,
+  onCloseFinal,
+  onCompleteLesson,
+  completionState = 'idle',
+  completionError = '',
+  lessonCompleted = false,
   onDraftChange,
   onSubmit,
   onBlankComplete,
@@ -315,7 +321,7 @@ export default function WebbWritingStudio({
           <GuidanceTranscript text={guidance} />
           {storageWarning && <div style={{ width: 'min(92vw, 820px)', margin: '0 auto 12px', padding: '9px 12px', borderRadius: 9, background: '#fff7ed', color: '#9a3412', fontSize: 12, fontWeight: 700 }}>{storageWarning}</div>}
           <div style={{ width: 'min(92vw, 820px)', margin: '0 auto 18px' }}>
-            {(slotLabel || currentObjective || visibleResearchNotes.length > 0) && (
+            {!finalView && (slotLabel || currentObjective || visibleResearchNotes.length > 0) && (
               <div style={{ background: '#fffdf7', border: '1px solid #ded6c7', borderRadius: 12, padding: '18px 20px' }}>
                 <div style={{ color: '#64748b', fontSize: 10, fontWeight: 900, letterSpacing: 1.3, textTransform: 'uppercase', marginBottom: 7 }}>
                   {slotLabel || 'What you showed'}
@@ -330,7 +336,7 @@ export default function WebbWritingStudio({
           </div>
           <Paper>
             <div style={{ color: '#94a3b8', fontSize: 12, fontWeight: 800, letterSpacing: 1.4, textTransform: 'uppercase' }}>
-              Your essay so far
+              {finalView ? 'Your essay' : 'Your essay so far'}
             </div>
             <div style={{ height: 1, background: '#e5e7eb', margin: '18px 0 28px' }} />
             <div style={{ display: 'grid', gap: 14 }}>
@@ -341,29 +347,58 @@ export default function WebbWritingStudio({
                   fontSize: 'clamp(18px, 3vw, 24px)',
                   lineHeight: 1.65,
                   borderRadius: 9,
-                  padding: index === activeIndex ? '8px 10px' : '0',
-                  background: index === activeIndex ? '#ecfdf5' : 'transparent',
-                  boxShadow: index === activeIndex ? '0 0 0 2px rgba(13,148,136,0.28), 0 0 28px rgba(13,148,136,0.18)' : 'none',
-                  animation: index === activeIndex ? 'webb-writing-glow 1.35s ease both' : 'none',
+                  padding: !finalView && index === activeIndex ? '8px 10px' : '0',
+                  background: !finalView && index === activeIndex ? '#ecfdf5' : 'transparent',
+                  boxShadow: !finalView && index === activeIndex ? '0 0 0 2px rgba(13,148,136,0.28), 0 0 28px rgba(13,148,136,0.18)' : 'none',
+                  animation: !finalView && index === activeIndex ? 'webb-writing-glow 1.35s ease both' : 'none',
                 }}>
                   {sentence.text}
                 </p>
               ))}
             </div>
           </Paper>
-          <div style={{ width: 'min(92vw, 820px)', margin: '20px auto 0' }}>
-            <button
-              type="button"
-              onClick={() => onNextSentence?.()}
-              disabled={transitionBusy}
-              style={{
-                width: '100%', border: 0, borderRadius: 12, padding: '14px 18px',
-                background: transitionBusy ? '#64748b' : '#0d9488', color: '#fff', fontWeight: 850, fontSize: 16,
-                cursor: transitionBusy ? 'wait' : 'pointer', fontFamily: 'inherit',
-              }}
-            >
-              {transitionBusy ? 'Play break starting...' : isLastSentence ? 'Finish essay' : 'Next sentence'}
-            </button>
+          <div style={{ width: 'min(92vw, 820px)', margin: '20px auto 0', display: 'grid', gap: 10 }}>
+            {finalView ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onCompleteLesson?.()}
+                  disabled={lessonCompleted || completionState === 'saving'}
+                  style={{
+                    width: '100%', border: 0, borderRadius: 12, padding: '14px 18px',
+                    background: lessonCompleted ? '#64748b' : '#0d9488', color: '#fff', fontWeight: 850, fontSize: 16,
+                    cursor: lessonCompleted || completionState === 'saving' ? 'default' : 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  {lessonCompleted ? 'Lesson Completed' : completionState === 'saving' ? 'Recording completion...' : completionState === 'failed' ? 'Retry completion' : 'Complete Lesson'}
+                </button>
+                {completionState === 'failed' && completionError && <div role="alert" style={{ color: '#b91c1c', fontSize: 13, fontWeight: 700 }}>{completionError}</div>}
+                <button
+                  type="button"
+                  onClick={() => onCloseFinal?.()}
+                  style={{
+                    width: '100%', border: '1px solid #cbd5e1', borderRadius: 12, padding: '12px 18px',
+                    background: '#fff', color: '#475569', fontWeight: 800, fontSize: 15,
+                    cursor: 'pointer', fontFamily: 'inherit',
+                  }}
+                >
+                  Back to lesson
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => onNextSentence?.()}
+                disabled={transitionBusy}
+                style={{
+                  width: '100%', border: 0, borderRadius: 12, padding: '14px 18px',
+                  background: transitionBusy ? '#64748b' : '#0d9488', color: '#fff', fontWeight: 850, fontSize: 16,
+                  cursor: transitionBusy ? 'wait' : 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {transitionBusy ? 'Play break starting...' : isLastSentence ? 'Finish essay' : 'Next sentence'}
+              </button>
+            )}
           </div>
         </div>
       )}
