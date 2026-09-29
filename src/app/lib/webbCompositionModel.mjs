@@ -119,6 +119,8 @@ export function compositionResearchSnapshot(objectives = [], learnerNotes = {}) 
 
 export function compositionSlotSource(slot, objectives = [], learnerNotes = {}) {
   if (!slot) return { objectives: [], notes: [] }
+  const role = clean(slot.role).toLowerCase()
+  if (role === 'topic' || role === 'conclusion') return { objectives: [], notes: [] }
   const sourceObjectiveIndices = Array.isArray(slot.sourceObjectiveIndices) ? slot.sourceObjectiveIndices : []
   const sourceObjectives = []
   const sourceNotes = []

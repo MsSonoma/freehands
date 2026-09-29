@@ -45,6 +45,19 @@ test('writing studio keeps objective context and learner-controlled commit gates
   assert.doesNotMatch(studio, /learnerNotes/)
 })
 
+test('topic and conclusion explain their paragraph jobs without pretending they are research notes', () => {
+  assert.match(page, /This is your topic sentence\. Its job is to tell the reader what your whole paragraph will be about\./)
+  assert.match(page, /This is your concluding sentence\. Its job is to bring your paragraph to a clear ending\./)
+  assert.match(studio, /You are not turning a research note into a sentence here\./)
+  assert.match(studio, /You are not turning one research note into a sentence here/)
+  assert.match(studio, /Concluding sentence/)
+  assert.match(route, /does not need to restate the first research note/)
+  assert.match(route, /does not need to restate the final research note/)
+  assert.match(model, /A topic sentence is a structural opening, not a conversion of one research note/)
+  assert.match(model, /A conclusion is a structural ending, not a conversion of one research note/)
+  assert.doesNotMatch(model, /shape the first note as opening content|shape the final note as closing content/)
+})
+
 test('writing evaluation is aware of ordered essay position without taking learner authorship', () => {
   assert.match(route, /SLOT_FIT/)
   assert.match(route, /ADDS_NEW_INFORMATION/)
@@ -56,7 +69,7 @@ test('writing evaluation is aware of ordered essay position without taking learn
   assert.match(model, /accepted: accuracy === 'correct' && sentenceOk === true && fitsSlot && addsForAcceptance && fitsParagraph/)
   assert.match(route, /Do not require a transition word/)
   assert.match(route, /authoritative content boundary/)
-  assert.match(page, /slot\.sourceObjectiveIndices\?\.length && !slotSource\.notes\.length/)
+  assert.match(page, /slot\.role === 'body' && slot\.sourceObjectiveIndices\?\.length && !slotSource\.notes\.length/)
 })
 
 test('writing resume restores the durable composition stage instead of re-entering research', () => {

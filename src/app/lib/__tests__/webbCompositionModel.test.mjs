@@ -56,9 +56,11 @@ test('new composition plan is a deterministic one-to-one projection of the objec
   assert.ok(plan.slots.slice(1, -1).every(slot => slot.role === 'body'))
 })
 
-test('every new writing slot carries exactly its own learner note, including topic and conclusion', () => {
+test('topic and conclusion are structural while body slots expose their learner notes', () => {
   const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes)
-  for (let index = 0; index < plan.slots.length; index += 1) {
+  assert.deepEqual(compositionSlotSource(plan.slots[0], OBJECTIVES, learnerNotes), { objectives: [], notes: [] })
+  assert.deepEqual(compositionSlotSource(plan.slots.at(-1), OBJECTIVES, learnerNotes), { objectives: [], notes: [] })
+  for (let index = 1; index < plan.slots.length - 1; index += 1) {
     const source = compositionSlotSource(plan.slots[index], OBJECTIVES, learnerNotes)
     assert.deepEqual(source.objectives.map(row => row.objectiveIndex), [index])
     assert.deepEqual(source.notes.map(row => row.text), [learnerNotes[index].text])
@@ -157,7 +159,7 @@ test('conclusion position fit does not require new factual information', async (
   assert.equal(result.positionFit, true)
 })
 
-test('writing evaluation binds topic and conclusion to their exact learner notes', async () => {
+test('writing evaluation treats topic and conclusion as structural roles rather than note conversions', async () => {
   const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes)
   for (const index of [0, plan.slots.length - 1]) {
     const source = compositionSlotSource(plan.slots[index], OBJECTIVES, learnerNotes)
@@ -167,14 +169,14 @@ test('writing evaluation binds topic and conclusion to their exact learner notes
         action: 'check-writing', slot: plan.slots[index], controllingIdea: plan.controllingIdea,
         sourceObjectives: source.objectives, sourceNotes: source.notes,
         text: index === 0 ? 'Historical evidence helps people understand the past.' : 'Using several sources helps historians understand the whole story.',
-        lesson: { title: 'Questioning Historical Evidence', subject: 'social studies', grade: 5 }, priorSentences: [],
+        lesson: { title: 'Questioning Historical Evidence', subject: 'social studies', grade: 5 }, priorSentences: ['Historians examine evidence.', 'They compare sources to check what happened.'],
       }),
     }), { apiKey: 'offline-test', callModel: async (system, user) => {
-      assert.match(system, /authoritative content boundary/i)
-      assert.match(system, /Topic and conclusion sentences are not exempt/i)
+      assert.match(system, /does not need to restate the first research note/i)
+      assert.match(system, /does not need to restate the final research note/i)
       const input = JSON.parse(user)
-      assert.equal(input.learner_research_notes.length, 1)
-      assert.equal(input.learner_research_notes[0].objectiveIndex, index)
+      assert.deepEqual(input.learner_research_notes, [])
+      assert.deepEqual(input.source_objectives, [])
       return 'correct|yes|yes|yes|yes'
     } })
     assert.equal(response.status, 200)

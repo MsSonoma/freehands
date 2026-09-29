@@ -170,23 +170,23 @@ async function checkWriting(apiKey, input, callModel = null) {
   const priorSentences = Array.isArray(input?.priorSentences) ? input.priorSentences.map(value => String(value || '').trim()).filter(Boolean) : []
   const duplicate = role === 'body' ? deterministicDuplicate(input?.text, priorSentences) : null
   const system = [
-    "You evaluate exactly one learner-authored essay sentence against the exact mastered lesson note assigned to this slot. Judge five facts independently.",
-    "(1) CONCEPT_FIT: correct, partial, or incorrect. When learner research is supplied, it is the authoritative content boundary. The proposed sentence must materially and accurately express the same central concept as that source objective and learner note. A sentence about a different topic is incorrect even when it would be excellent writing in some other essay. Topic and conclusion sentences are not exempt from this rule.",
+    "You evaluate exactly one learner-authored essay sentence for its role in this paragraph. Judge five facts independently.",
+    "(1) CONCEPT_FIT: correct, partial, or incorrect. For a body sentence, learner research is the authoritative content boundary and the sentence must accurately express that assigned research. For a topic sentence, judge whether it accurately introduces the overall subject and big idea of the lesson/paragraph; it does not need to restate the first research note. For a conclusion, judge whether it accurately closes or synthesizes the ideas already developed in the accepted paragraph; it does not need to restate the final research note and must not add a new unsupported fact.",
     "(2) SENTENCE_OK: yes only when the learner submitted exactly one complete coherent sentence usable verbatim. Two or more sentences must be no.",
-    "(3) SLOT_FIT: yes only when the sentence both stays faithful to its assigned note and performs this exact rhetorical role. A topic sentence must use the first note as opening content; a body sentence must develop its note; a conclusion must use the final note as closing content.",
-    "(4) ADDS_NEW_INFORMATION: for a body slot, yes only when it advances the paragraph instead of restating an accepted sentence. For a topic or conclusion, it may frame or synthesize rather than introduce new factual content, but it still cannot introduce content outside its assigned note.",
+    "(3) SLOT_FIT: yes only when the sentence performs its exact rhetorical role. A topic sentence should tell the reader what the paragraph will be about. A body sentence must develop its assigned research note. A conclusion should bring the paragraph's established ideas to a clear ending without starting a new topic.",
+    "(4) ADDS_NEW_INFORMATION: for a body slot, yes only when it advances the paragraph instead of restating an accepted sentence. For a topic or conclusion, framing or synthesis is allowed and does not need to add a new fact.",
     "(5) PARAGRAPH_FIT: yes only when accepting it makes the paragraph more coherent overall rather than causing a topic jump, contradiction, orphaned example, or unnecessary repetition.",
     "A simple child-written sentence can be excellent. Do not require a transition word, sophisticated style, or adult-level polish.",
-    "Never reward a sentence merely because it is a good example of the writing skill being studied. Judge whether it belongs in THIS essay and derives from THIS assigned learner note.",
-    "The learner's research notes are evidence and a content boundary, not wording to copy. Never rewrite, correct, complete, or suggest wording.",
+    "Never reward a sentence merely because it is a good example of the writing skill being studied. Judge whether it belongs in THIS essay and performs THIS role.",
+    "Research notes are evidence and a content boundary for body sentences, not wording to copy. Never rewrite, correct, complete, or suggest wording.",
     "Reply exactly CONCEPT_FIT|SENTENCE_OK|SLOT_FIT|ADDS_NEW_INFORMATION|PARAGRAPH_FIT where CONCEPT_FIT is correct, partial, or incorrect and all other fields are yes or no.",
   ].join(' ')
   const user = JSON.stringify({
     instructional_context: input?.lesson || {},
     controlling_idea: String(input?.controllingIdea || ''),
     slot: { id: slot.id || null, role, focus: slot.focus || '', connection: slot.connection || '', sourceObjectiveIndices: slot.sourceObjectiveIndices || [] },
-    source_objectives: Array.isArray(input?.sourceObjectives) ? input.sourceObjectives : [],
-    learner_research_notes: Array.isArray(input?.sourceNotes) ? input.sourceNotes : [],
+    source_objectives: role === 'body' && Array.isArray(input?.sourceObjectives) ? input.sourceObjectives : [],
+    learner_research_notes: role === 'body' && Array.isArray(input?.sourceNotes) ? input.sourceNotes : [],
     prior_accepted_learner_sentences: priorSentences,
     learner_proposed_sentence: String(input?.text || ''),
   })

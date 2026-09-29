@@ -289,11 +289,17 @@ export function buildWritingGuidanceInstructions(note, evaluation = {}, context 
     `The research stage is finished. You are coaching one learner-authored sentence in a planned paragraph.`,
     controllingIdea ? `The paragraph's private controlling idea is: "${controllingIdea}". Do not give this wording to the learner; use it only to guide questions.` : '',
     slot?.focus ? `This sentence's private composition focus is: "${String(slot.focus)}". Its role is ${role}.` : `The structural role is ${role}.`,
-    sourceNotes.length ? `The learner-authored research for this slot is the authoritative content boundary for this sentence: ${JSON.stringify(sourceNotes)}.` : `This legacy ${role} slot has no bound learner note; do not invent factual content.`,
+    role === 'body'
+      ? (sourceNotes.length ? `The learner-authored research for this body sentence is the authoritative content boundary: ${JSON.stringify(sourceNotes)}.` : `This body slot has no bound learner note; do not invent factual content.`)
+      : role === 'topic'
+        ? `A topic sentence is a structural opening, not a conversion of one research note. Use the lesson context and paragraph's big idea to judge whether it tells the reader what the paragraph will explain.`
+        : role === 'conclusion'
+          ? `A conclusion is a structural ending, not a conversion of one research note. Use the accepted paragraph ideas to judge whether it closes the same thought without adding a new fact.`
+          : (sourceNotes.length ? `The learner-authored research for this legacy writing slot is the authoritative content boundary: ${JSON.stringify(sourceNotes)}.` : `This legacy writing slot has no bound learner note; do not invent factual content.`),
     `The evaluator found concept fit: ${evaluation.accuracy || evaluation.conceptFit || 'partial'}; sentence readiness: ${evaluation.sentenceOk ? 'yes' : 'no'}; slot fit: ${evaluation.slotFit === false || evaluation.positionFit === false ? 'no' : 'yes'}; adds distinct information: ${evaluation.addsNewInformation === false ? 'no' : 'yes'}; paragraph fit: ${evaluation.paragraphFit === false ? 'no' : 'yes'}. Treat those judgments as authoritative.`,
     Number.isInteger(index) && Number.isInteger(total) && total > 0 ? `This is sentence ${index + 1} of ${total}.` : '',
     priorSentences.length ? `The accepted learner-written sentences before this one are context only: ${JSON.stringify(priorSentences)}.` : '',
-    `Guide the learner to notice the specific problem, then ask for another attempt in their own words. Keep the sentence anchored to the assigned learner note. For a topic sentence, shape the first note as opening content. For a body sentence, develop only that note. For a conclusion, shape the final note as closing content without introducing a new topic.`,
+    `Guide the learner to notice the specific problem, then ask for another attempt in their own words. For a topic sentence, help them identify the big idea the whole paragraph will explain; do not refer to a first research note. For a body sentence, keep the sentence anchored to its assigned learner note. For a conclusion, help them close the ideas already developed in the paragraph without introducing a new fact; do not refer to a final research note.`,
     `Never write, dictate, complete, rewrite, or offer a model sentence for the learner. Do not say "write" followed by suggested prose. The words accepted into the essay must come from the learner.`,
     `Use 2-3 short, warm sentences, no markdown.`,
   ].filter(Boolean).join('\n')

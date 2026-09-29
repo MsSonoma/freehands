@@ -115,7 +115,12 @@ export default function WebbWritingStudio({
   const showLessonContext = currentRole === 'topic' || currentRole === 'conclusion'
   const researchNotes = (Array.isArray(sourceNotes) ? sourceNotes : []).map(value => String(value?.text || value || '').trim()).filter(Boolean)
   const visibleResearchNotes = researchNotes.length ? researchNotes : (currentNote ? [currentNote] : [])
-  const slotLabel = currentRole === 'topic' ? 'Topic sentence' : currentRole === 'conclusion' ? 'Conclusion' : currentRole === 'body' ? 'Body sentence' : ''
+  const slotLabel = currentRole === 'topic' ? 'Topic sentence' : currentRole === 'conclusion' ? 'Concluding sentence' : currentRole === 'body' ? 'Body sentence' : ''
+  const roleDescription = currentRole === 'topic'
+    ? 'This is the first sentence of your paragraph. It tells the reader what the whole paragraph is about. Think about the lesson and what the ideas you learned have in common. You are not turning a research note into a sentence here.'
+    : currentRole === 'conclusion'
+      ? 'This is the last sentence of your paragraph. It reminds the reader of the main idea and makes the paragraph feel finished. Look back at what you already explained. You are not turning one research note into a sentence here, and you should not add a new fact.'
+      : ''
   const currentDraft = String(draft || '')
   const priorText = String(previousAttempt?.text || '').trim()
   const entries = Object.entries(acceptedSentences || {})
@@ -201,6 +206,11 @@ export default function WebbWritingStudio({
               {slotLabel && (
                 <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 3 : 12 }}>
                   {slotLabel}
+                </div>
+              )}
+              {roleDescription && (
+                <div style={{ color: '#334155', fontSize: keyboardCompact ? 11 : 16, lineHeight: keyboardCompact ? 1.28 : 1.55, fontWeight: 650, marginBottom: keyboardCompact ? 4 : 18 }}>
+                  {roleDescription}
                 </div>
               )}
               {showLessonContext && (visibleLessonTitle || visibleLessonBlurb) && (

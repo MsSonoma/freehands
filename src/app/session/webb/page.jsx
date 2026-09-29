@@ -2355,11 +2355,13 @@ function WebbPageInner() {
     if (!slot) return
     const slotSource = activePlan
       ? compositionSlotSource(slot, objectives, learnerNotesRef.current)
-      : {
-          objectives: objectives[slotIndex] ? [{ objectiveIndex: slotIndex, objective: objectives[slotIndex] }] : [],
-          notes: isWritingReadyNote(learnerNotesRef.current[slotIndex]) ? [learnerNotesRef.current[slotIndex]] : [],
-        }
-    if (slot.sourceObjectiveIndices?.length && !slotSource.notes.length) return
+      : (slot.role === 'body'
+        ? {
+            objectives: objectives[slotIndex] ? [{ objectiveIndex: slotIndex, objective: objectives[slotIndex] }] : [],
+            notes: isWritingReadyNote(learnerNotesRef.current[slotIndex]) ? [learnerNotesRef.current[slotIndex]] : [],
+          }
+        : { objectives: [], notes: [] })
+    if (slot.role === 'body' && slot.sourceObjectiveIndices?.length && !slotSource.notes.length) return
     finishWebbResponseTurn(trimmed, 'writing-submitted')
     const totalSentences = activePlan?.slots?.length || objectives.length
     const priorSentences = Array.from({ length: slotIndex }, (_, index) => acceptedSentences?.[index]?.text)
@@ -3026,8 +3028,8 @@ function WebbPageInner() {
 
   // ── Begin the distinct composition stage from verbatim learner notes ──
   function writingPromptForSlot(slot) {
-    if (slot?.role === 'topic') return "Use this first research note to make one complete opening sentence in your own words. Introduce the paragraph without leaving the idea in your note."
-    if (slot?.role === 'conclusion') return "Use this final research note to make one complete closing sentence in your own words. Close the paragraph without adding a new topic."
+    if (slot?.role === 'topic') return "This is your topic sentence. Its job is to tell the reader what your whole paragraph will be about. Think about the lesson and the big idea that connects what you learned, then say that idea in one complete sentence in your own words."
+    if (slot?.role === 'conclusion') return "This is your concluding sentence. Its job is to bring your paragraph to a clear ending. Look back at the ideas you already explained, then close that same thought in one complete sentence without adding a brand-new fact."
     return "Use this research note to add one complete, connected sentence in your own words."
   }
   function paragraphRepairMessage(reasonCode) {
