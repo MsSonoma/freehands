@@ -114,6 +114,18 @@ const C = {
 
 const PHASE = { LIST: 'list', STARTING: 'starting', CHATTING: 'chatting' }
 
+function objectivePromptMessage(content, objectiveIndex, objective, objectivePrompt, extra = {}) {
+  const message = { role: 'assistant', content, ...extra }
+  const prompt = String(objectivePrompt || '').trim()
+  const canonicalObjective = String(objective || '').trim()
+  if (prompt && Number.isInteger(objectiveIndex) && canonicalObjective) {
+    message.objectivePrompt = prompt
+    message.objectiveIndex = objectiveIndex
+    message.objective = canonicalObjective
+  }
+  return message
+}
+
 function makeWebbObjectiveItem(objective, index, sessionId = 'unknown-session') {
   const normalizedObjective = String(objective || '').trim().toLowerCase()
   return {
@@ -1242,16 +1254,19 @@ function WebbPageInner() {
       const data = await response.json()
       const reply = String(data?.reply || '').trim()
       if (!reply) throw new Error('Mrs. Webb did not return a resume question')
-      const assistantMsg = { role: 'assistant', content: reply, kind: 'pacing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
+      const assistantMsg = objectivePromptMessage(reply, progress.remainingIndices[0], progress.remainingObjectives[0], data.objectivePrompt, { kind: 'pacing', id: crypto.randomUUID(), createdAt: new Date().toISOString() })
       const finalHistory = [...history, assistantMsg]
       setChatMessages(finalHistory)
       saveLearningSnapshot({ chatMessages: finalHistory })
       addMsg(reply, { kind: 'pacing', pacingType: 'post-play-resume' })
     } catch {
-      addMsg(`Welcome back! Let's pick up where we left off. Can you explain in your own words: ${progress.remainingObjectives[0]}?`, {
-        kind: 'pacing',
-        pacingType: 'post-play-resume',
-      })
+      const fallbackPrompt = `Can you explain in your own words: ${progress.remainingObjectives[0]}?`
+      const fallbackReply = `Welcome back! Let's pick up where we left off. ${fallbackPrompt}`
+      const assistantMsg = objectivePromptMessage(fallbackReply, progress.remainingIndices[0], progress.remainingObjectives[0], fallbackPrompt, { kind: 'pacing', id: crypto.randomUUID(), createdAt: new Date().toISOString() })
+      const finalHistory = [...history, assistantMsg]
+      setChatMessages(finalHistory)
+      saveLearningSnapshot({ chatMessages: finalHistory })
+      addMsg(fallbackReply, { kind: 'pacing', pacingType: 'post-play-resume' })
     } finally {
       if (!webbExecutionFencedRef.current) setChatLoading(false)
     }
@@ -1765,18 +1780,26 @@ function WebbPageInner() {
         const assessData = await assessRes.json()
         const assessReply = assessData.reply
         if (assessReply) {
-          const aMsg = { role: 'assistant', content: assessReply }
+          const aMsg = objectivePromptMessage(assessReply, targetIndex, objectives[targetIndex], assessData.objectivePrompt)
           setChatMessages(prev => [...prev, aMsg])
           addMsg(assessReply)
           await waitForTTSIdle()
           // Check if the student's previous responses already covered anything
           await checkObjectivesAfterTurn([...videoResearchHistory, aMsg], objectives)
         } else {
-          addMsg('Great job watching those key moments! Tell me: what\'s the most interesting thing you just learned?')
+          const fallbackPrompt = targetIndex >= 0 ? `Can you explain in your own words: ${objectives[targetIndex]}?` : 'What was the most interesting thing you just learned?'
+          const fallbackReply = `Great job watching those key moments! ${fallbackPrompt}`
+          const aMsg = objectivePromptMessage(fallbackReply, targetIndex, objectives[targetIndex], targetIndex >= 0 ? fallbackPrompt : null)
+          setChatMessages(prev => [...prev, aMsg])
+          addMsg(fallbackReply)
           await waitForTTSIdle()
         }
       } catch {
-        addMsg('Those were the key moments! What was the most interesting part for you?')
+        const fallbackPrompt = targetIndex >= 0 ? `Can you explain in your own words: ${objectives[targetIndex]}?` : 'What was the most interesting part for you?'
+        const fallbackReply = `Those were the key moments! ${fallbackPrompt}`
+        const aMsg = objectivePromptMessage(fallbackReply, targetIndex, objectives[targetIndex], targetIndex >= 0 ? fallbackPrompt : null)
+        setChatMessages(prev => [...prev, aMsg])
+        addMsg(fallbackReply)
         await waitForTTSIdle()
       }
     } catch (e) { console.error('[webb] interpretVideo error:', e) }
@@ -2311,12 +2334,12 @@ function WebbPageInner() {
       const res = await fetch('/api/webb-chat', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ messages: [], lesson }),
+        body: JSON.stringify({ messages: [], lesson, remainingObjectives: startupObjectives }),
       })
       const data = await res.json()
       const reply = data.reply || `Hi! I'm Mrs. Webb. Today we're exploring "${lesson.title}". What do you already know about this topic?`
       if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
-      const firstMsg = { role: 'assistant', content: reply }
+      const firstMsg = objectivePromptMessage(reply, 0, startupObjectives[0], data.objectivePrompt)
       setChatMessages([firstMsg])
       addMsg(reply)
     } catch {
@@ -2586,10 +2609,9 @@ function WebbPageInner() {
       const data = await res.json()
       if (!active()) return
       if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('Mrs. Webb did not return a reply. Please retry.')
-      const assistantMsg = {
-        role: 'assistant', content: data.reply,
+      const assistantMsg = objectivePromptMessage(data.reply, firstRemainingIndex, progress.remainingObjectives[0], data.objectivePrompt, {
         id: crypto.randomUUID(), createdAt: new Date().toISOString(),
-      }
+      })
       const finalHistory = [...nextHistory, assistantMsg]
       setChatMessages(finalHistory)
       addMsg(data.reply)
@@ -2895,12 +2917,17 @@ function WebbPageInner() {
             }),
           })
           const fData  = await fRes.json()
-          const fReply = fData.reply || `Now that you've seen that, can you explain in your own words: ${obj}?`
-          const fEntry = { role: 'assistant', content: fReply }
+          const fallbackPrompt = `Can you explain in your own words: ${obj}?`
+          const fReply = fData.reply || `Now that you've seen that, ${fallbackPrompt}`
+          const fEntry = objectivePromptMessage(fReply, objIdx, obj, fData.objectivePrompt || (!fData.reply ? fallbackPrompt : null))
           setChatMessages(prev => [...prev, fEntry])
           addMsg(fReply)
         } catch {
-          addMsg(`Great! Now, can you explain in your own words: ${obj}?`)
+          const fallbackPrompt = `Can you explain in your own words: ${obj}?`
+          const fallbackReply = `Great! Now, ${fallbackPrompt}`
+          const fEntry = objectivePromptMessage(fallbackReply, objIdx, obj, fallbackPrompt)
+          setChatMessages(prev => [...prev, fEntry])
+          addMsg(fallbackReply)
         }
 
       // ═══ Path B: Article highlight + scroll ═════════════════════════
@@ -2989,12 +3016,17 @@ function WebbPageInner() {
             }),
           })
           const fData  = await fRes.json()
-          const fReply = fData.reply || `Now, can you explain in your own words: ${obj}?`
-          const fEntry = { role: 'assistant', content: fReply }
+          const fallbackPrompt = `Can you explain in your own words: ${obj}?`
+          const fReply = fData.reply || `Now, ${fallbackPrompt}`
+          const fEntry = objectivePromptMessage(fReply, objIdx, obj, fData.objectivePrompt || (!fData.reply ? fallbackPrompt : null))
           setChatMessages(prev => [...prev, fEntry])
           addMsg(fReply)
         } catch {
-          addMsg(`Now, can you explain in your own words: ${obj}?`)
+          const fallbackPrompt = `Can you explain in your own words: ${obj}?`
+          const fallbackReply = `Now, ${fallbackPrompt}`
+          const fEntry = objectivePromptMessage(fallbackReply, objIdx, obj, fallbackPrompt)
+          setChatMessages(prev => [...prev, fEntry])
+          addMsg(fallbackReply)
         }
 
       // ═══ Path C: No navigable media — teach directly in conversation ═
@@ -3011,17 +3043,26 @@ function WebbPageInner() {
             }),
           })
           const data  = await res.json()
-          const reply = data.reply || `Let me explain: "${obj}". Can you tell me what that means in your own words?`
-          const entry = { role: 'assistant', content: reply }
+          const fallbackPrompt = 'Can you tell me what that means in your own words?'
+          const reply = data.reply || `Let me explain: "${obj}". ${fallbackPrompt}`
+          const entry = objectivePromptMessage(reply, objIdx, obj, data.objectivePrompt || (!data.reply ? fallbackPrompt : null))
           setChatMessages(prev => [...prev, entry])
           addMsg(reply)
         } catch {
-          addMsg(`Let's explore this together: "${obj}". What do you already know about it?`)
+          const fallbackPrompt = 'What do you already know about it?'
+          const fallbackReply = `Let's explore this together: "${obj}". ${fallbackPrompt}`
+          const entry = objectivePromptMessage(fallbackReply, objIdx, obj, fallbackPrompt)
+          setChatMessages(prev => [...prev, entry])
+          addMsg(fallbackReply)
         }
       }
     } catch (e) {
       console.error('[webb] startResearch error:', e)
-      addMsg(`Let's explore this learning goal together: "${obj}". What do you already know?`)
+      const fallbackPrompt = 'What do you already know?'
+      const fallbackReply = `Let's explore this learning goal together: "${obj}". ${fallbackPrompt}`
+      const entry = objectivePromptMessage(fallbackReply, objIdx, obj, fallbackPrompt)
+      setChatMessages(prev => [...prev, entry])
+      addMsg(fallbackReply)
     }
     setChatLoading(false)
   }
@@ -3701,6 +3742,13 @@ function WebbPageInner() {
   const currentWritingSource = currentWritingSlot
     ? compositionSlotSource(currentWritingSlot, objectives, learnerNotes)
     : { objectives: objectives[writingIndex] ? [{ objectiveIndex: writingIndex, objective: objectives[writingIndex] }] : [], notes: learnerNotes[writingIndex] ? [learnerNotes[writingIndex]] : [] }
+  const currentWritingNote = currentWritingSource.notes?.[0] || learnerNotes[writingIndex] || null
+  const currentWritingObjective = currentWritingSource.objectives?.[0]?.objective || objectives[writingIndex] || ''
+  const currentWritingUsesResearchNote = !currentWritingSlot || currentWritingSlot.role === 'body'
+  const currentWritingObjectivePrompt = currentWritingUsesResearchNote
+    ? (String(currentWritingNote?.objectivePrompt || '').trim() || currentWritingObjective)
+    : ''
+  const currentWritingObjectivePromptCaptured = currentWritingUsesResearchNote && !!String(currentWritingNote?.objectivePrompt || '').trim()
   const nextWritingIndex = activeWritingPlan
     ? nextCompositionSlotIndex(activeWritingPlan, acceptedSentences)
     : nextWritingObjectiveIndex(objectives, acceptedSentences)
@@ -4673,8 +4721,10 @@ function WebbPageInner() {
       <WebbWritingStudio
         open={isChatting && (writingMode || essayMode)}
         subphase={essayMode ? WEBB_WRITING_SUBPHASES.COMMITTED : writingSubphase}
-        note={currentWritingSource.notes?.[0] || learnerNotes[writingIndex]}
-        objective={activeWritingPlan ? '' : objectives[writingIndex]}
+        note={currentWritingNote}
+        objective={currentWritingObjective}
+        objectivePrompt={currentWritingObjectivePrompt}
+        objectivePromptCaptured={currentWritingObjectivePromptCaptured}
         slot={essayMode ? null : currentWritingSlot}
         sourceNotes={essayMode ? [] : (currentWritingSource.notes || [])}
         lessonTitle={selectedLesson?.title || ''}

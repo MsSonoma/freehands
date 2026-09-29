@@ -54,6 +54,8 @@ export default function WebbWritingStudio({
   subphase,
   note,
   objective,
+  objectivePrompt = '',
+  objectivePromptCaptured = false,
   slot = null,
   sourceNotes = [],
   lessonTitle = '',
@@ -114,6 +116,7 @@ export default function WebbWritingStudio({
 
   const currentNote = String(note?.text || '').trim()
   const currentObjective = String(objective || '').trim()
+  const currentObjectivePrompt = String(objectivePrompt || currentObjective).trim()
   const currentRole = String(slot?.role || '').trim().toLowerCase()
   const visibleLessonTitle = String(lessonTitle || '').trim()
   const visibleLessonBlurb = String(lessonBlurb || '').trim()
@@ -266,10 +269,10 @@ export default function WebbWritingStudio({
                   {visibleLessonBlurb && <div style={{ color: '#475569', fontSize: keyboardCompact ? 11 : 15, lineHeight: keyboardCompact ? 1.25 : 1.5, marginTop: keyboardCompact ? 2 : 6 }}>{visibleLessonBlurb}</div>}
                 </div>
               )}
-              {!slot && currentObjective && (
+              {currentObjectivePrompt && currentRole !== 'topic' && currentRole !== 'conclusion' && (
                 <div style={{ marginBottom: keyboardCompact ? 3 : 20, paddingBottom: keyboardCompact ? 3 : 18, borderBottom: '1px solid #e7e0d2' }}>
-                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>What you showed</div>
-                  <div style={{ color: '#334155', fontSize: keyboardCompact ? 12 : 17, lineHeight: 1.5, fontWeight: 650 }}>{currentObjective}</div>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>{objectivePromptCaptured ? 'Mrs. Webb asked' : 'Learning objective'}</div>
+                  <div style={{ color: '#334155', fontSize: keyboardCompact ? 12 : 17, lineHeight: 1.5, fontWeight: 650 }}>{currentObjectivePrompt}</div>
                 </div>
               )}
               {visibleResearchNotes.length > 0 && currentRole !== 'topic' && currentRole !== 'conclusion' && (

@@ -33,9 +33,30 @@ export function evaluationSource(conversation, evaluation) {
   return source
 }
 
+export function objectivePromptBeforeLearner(conversation, sourceMessageIndex, objectiveIndex) {
+  const learnerIndex = learnerMessageIndex(sourceMessageIndex)
+  const wantedObjectiveIndex = learnerMessageIndex(objectiveIndex)
+  if (learnerIndex === null || wantedObjectiveIndex === null) return null
+  for (let index = learnerIndex - 1; index >= 0; index -= 1) {
+    const message = conversation?.[index]
+    if (message?.role === 'user') break
+    if (message?.role !== 'assistant') continue
+    const prompt = String(message.objectivePrompt || '').trim()
+    if (!prompt || learnerMessageIndex(message.objectiveIndex) !== wantedObjectiveIndex) continue
+    return {
+      text: prompt,
+      sourceMessageIndex: index,
+      sourceMessageId: message.id || null,
+      sourceMessageCreatedAt: message.createdAt || null,
+    }
+  }
+  return null
+}
+
 export function createLearnerNote({ objectiveIndex, evaluation, conversation, capturedAt }) {
   if (evaluation?.accuracy !== 'correct') return null
   const source = evaluationSource(conversation, evaluation)
+  const objectivePrompt = source ? objectivePromptBeforeLearner(conversation, source.index, objectiveIndex) : null
   if (!source) return null
   return {
     objectiveIndex,
@@ -43,6 +64,12 @@ export function createLearnerNote({ objectiveIndex, evaluation, conversation, ca
     sourceMessageIndex: source.index,
     sourceMessageId: source.message.id || null,
     sourceMessageCreatedAt: source.message.createdAt || null,
+    ...(objectivePrompt ? {
+      objectivePrompt: objectivePrompt.text,
+      objectivePromptSourceMessageIndex: objectivePrompt.sourceMessageIndex,
+      objectivePromptSourceMessageId: objectivePrompt.sourceMessageId,
+      objectivePromptSourceMessageCreatedAt: objectivePrompt.sourceMessageCreatedAt,
+    } : {}),
     accuracy: 'correct',
     sentenceReadyAtCapture: evaluation.sentenceOk === true,
     capturedAt: capturedAt || new Date().toISOString(),

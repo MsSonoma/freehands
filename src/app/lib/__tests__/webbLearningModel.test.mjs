@@ -27,6 +27,47 @@ test('correct fragment becomes an exact learner note independent of sentence qua
   assert.equal(note.sourceMessageId, 'm1')
 })
 
+test('learner note keeps the exact objective question without carrying prior congratulations', () => {
+  const objectivePrompt = 'What process do plants use to make their own food?'
+  const conversation = [
+    {
+      role: 'assistant',
+      content: `Great job explaining how roots take in water. ${objectivePrompt}`,
+      objectivePrompt,
+      objectiveIndex: 0,
+      objective: 'The learner can explain that plants use photosynthesis to make food.',
+      id: 'a-objective',
+      createdAt: '2026-01-01T00:00:00Z',
+    },
+    { role: 'user', content: 'photosynthesis', id: 'u-answer', createdAt: '2026-01-01T00:00:01Z' },
+  ]
+  const note = createLearnerNote({
+    objectiveIndex: 0,
+    evaluation: { accuracy: 'correct', sentenceOk: false, sourceMessageIndex: 1 },
+    conversation,
+    capturedAt: '2026-01-01T00:00:02Z',
+  })
+  assert.equal(note.text, 'photosynthesis')
+  assert.equal(note.objectivePrompt, objectivePrompt)
+  assert.equal(note.objectivePromptSourceMessageId, 'a-objective')
+  assert.equal(note.objectivePromptSourceMessageIndex, 0)
+  assert.doesNotMatch(note.objectivePrompt, /Great job/)
+})
+
+test('objective question metadata must belong to the same objective as the learner note', () => {
+  const conversation = [
+    { role: 'assistant', content: 'Who wrote it?', objectivePrompt: 'Who wrote it?', objectiveIndex: 1, id: 'a-wrong' },
+    { role: 'user', content: 'Roald Dahl', id: 'u-answer' },
+  ]
+  const note = createLearnerNote({
+    objectiveIndex: 0,
+    evaluation: { accuracy: 'correct', sentenceOk: false, sourceMessageIndex: 1 },
+    conversation,
+  })
+  assert.equal(note.text, 'Roald Dahl')
+  assert.equal(note.objectivePrompt, undefined)
+})
+
 test('partial, incorrect, manufactured, and wrong-source notes are rejected', () => {
   const conversation = [{ role: 'user', content: 'taxes', id: 'm1' }]
   for (const accuracy of ['partial', 'incorrect']) {

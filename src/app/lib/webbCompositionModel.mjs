@@ -111,6 +111,12 @@ export function compositionResearchSnapshot(objectives = [], learnerNotes = {}) 
         text: clean(note.text),
         sourceMessageId: note.sourceMessageId || null,
         sourceMessageCreatedAt: note.sourceMessageCreatedAt || null,
+        ...(clean(note.objectivePrompt) ? {
+          objectivePrompt: clean(note.objectivePrompt),
+          objectivePromptSourceMessageIndex: Number.isInteger(note.objectivePromptSourceMessageIndex) ? note.objectivePromptSourceMessageIndex : null,
+          objectivePromptSourceMessageId: note.objectivePromptSourceMessageId || null,
+          objectivePromptSourceMessageCreatedAt: note.objectivePromptSourceMessageCreatedAt || null,
+        } : {}),
         provenance: 'learner-message',
       } : null,
     }
@@ -134,6 +140,12 @@ export function compositionSlotSource(slot, objectives = [], learnerNotes = {}) 
         text: clean(note.text),
         sourceMessageId: note.sourceMessageId || null,
         sourceMessageCreatedAt: note.sourceMessageCreatedAt || null,
+        ...(clean(note.objectivePrompt) ? {
+          objectivePrompt: clean(note.objectivePrompt),
+          objectivePromptSourceMessageIndex: Number.isInteger(note.objectivePromptSourceMessageIndex) ? note.objectivePromptSourceMessageIndex : null,
+          objectivePromptSourceMessageId: note.objectivePromptSourceMessageId || null,
+          objectivePromptSourceMessageCreatedAt: note.objectivePromptSourceMessageCreatedAt || null,
+        } : {}),
         provenance: 'learner-message',
       })
     }

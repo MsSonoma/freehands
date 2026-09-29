@@ -12,6 +12,26 @@ const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 
+function structuredObjectiveReplyInstruction() {
+  return [
+    'Return ONLY a JSON object with exactly these keys: "reply" and "objectivePrompt".',
+    '"reply" is the complete natural-language response Mrs. Webb will say to the learner.',
+    'If reply contains a focused learning question that asks the learner to respond to the current concept, "objectivePrompt" must copy ONLY that exact question verbatim from reply, including its punctuation.',
+    'Do not include praise, congratulations, transitions, teaching, or wording about a previous concept in objectivePrompt.',
+    'If this response should not ask a focused learning question, set "objectivePrompt" to null.',
+    'Never invent an objectivePrompt that is not present verbatim inside reply.',
+  ].join('\n')
+}
+
+function parseStructuredObjectiveReply(raw, fallbackReply = '') {
+  let parsed = null
+  try { parsed = JSON.parse(String(raw || '')) } catch {}
+  const reply = String(parsed?.reply || fallbackReply || '').trim()
+  const candidate = String(parsed?.objectivePrompt || '').trim()
+  const objectivePrompt = candidate && reply.includes(candidate) ? candidate : null
+  return { reply, objectivePrompt }
+}
+
 function buildResearchSystem(lesson, targetObjective, media) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
@@ -252,15 +272,18 @@ export async function POST(req) {
         headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
         body: JSON.stringify({
           model: OPENAI_MODEL,
-          messages: [{ role: 'system', content: sysContent }],
+          messages: [{ role: 'system', content: `${sysContent}\n\n${structuredObjectiveReplyInstruction()}` }],
           max_completion_tokens: 180,
           temperature: 0.7,
+          response_format: { type: 'json_object' },
         }),
       })
       if (!r.ok) return NextResponse.json({ error: 'AI unavailable' }, { status: 502 })
       const d = await r.json()
-      const reply = d.choices?.[0]?.message?.content?.trim() || `Let me tell you about: ${targetObjective}. Can you explain it back to me in your own words?`
-      return NextResponse.json({ reply })
+      const fallbackReply = `Let me tell you about: ${targetObjective}. Can you explain it back to me in your own words?`
+      const rawReply = d.choices?.[0]?.message?.content?.trim() || ''
+      const { reply, objectivePrompt } = parseStructuredObjectiveReply(rawReply, fallbackReply)
+      return NextResponse.json({ reply, objectivePrompt })
     }
 
     // Classify sensitive turns without treating educational vocabulary as a veto.
@@ -274,6 +297,7 @@ export async function POST(req) {
 
     const oaiMessages = [
       { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, writingSlot, writingControllingIdea, writingSourceNotes, completedObjectives, writingReady, deferTransitionForPlay, deferQuestionForPlay, resumeAfterPlay)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
+      { role: 'system', content: structuredObjectiveReplyInstruction() },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 
@@ -288,6 +312,7 @@ export async function POST(req) {
         messages: oaiMessages,
         max_completion_tokens: 160,
         temperature: 0.75,
+        response_format: { type: 'json_object' },
       }),
     })
 
@@ -298,10 +323,11 @@ export async function POST(req) {
     }
 
     const data = await res.json()
-    const reply = data.choices?.[0]?.message?.content?.trim() ||
-      "That's a great question! What else would you like to know about this topic?"
+    const rawReply = data.choices?.[0]?.message?.content?.trim() || ''
+    const { reply, objectivePrompt } = parseStructuredObjectiveReply(rawReply,
+      "That's a great question! What else would you like to know about this topic?")
 
-    return NextResponse.json({ reply })
+    return NextResponse.json({ reply, objectivePrompt })
   } catch (e) {
     console.error('Webb-chat error:', e)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

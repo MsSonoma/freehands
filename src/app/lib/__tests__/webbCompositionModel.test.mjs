@@ -26,7 +26,7 @@ const OBJECTIVES = [
 const learnerNotes = {
   0: { text: 'evidence is from documents, artifacts, photographs.', provenance: 'learner-message', sourceMessageId: 'u0' },
   1: { text: 'a primary source is an original thing from being studied.', provenance: 'learner-message', sourceMessageId: 'u1' },
-  2: { text: 'a candle', provenance: 'learner-message', sourceMessageId: 'u2' },
+  2: { text: 'a candle', provenance: 'learner-message', sourceMessageId: 'u2', objectivePrompt: 'What is one example of an artifact?', objectivePromptSourceMessageId: 'a2' },
   3: { text: "it's you get one side of it", provenance: 'learner-message', sourceMessageId: 'u3' },
   4: { text: 'people have to compare it with other sources to see the whole story.', provenance: 'learner-message', sourceMessageId: 'u4' },
   5: { text: 'it is more believable when theirs 2 sources', provenance: 'learner-message', sourceMessageId: 'u5' },
@@ -64,6 +64,10 @@ test('topic and conclusion are structural while body slots expose their learner 
     const source = compositionSlotSource(plan.slots[index], OBJECTIVES, learnerNotes)
     assert.deepEqual(source.objectives.map(row => row.objectiveIndex), [index])
     assert.deepEqual(source.notes.map(row => row.text), [learnerNotes[index].text])
+    if (index === 2) {
+      assert.equal(source.notes[0].objectivePrompt, 'What is one example of an artifact?')
+      assert.equal(source.notes[0].objectivePromptSourceMessageId, 'a2')
+    }
   }
 })
 

@@ -4,6 +4,7 @@ import fs from 'node:fs'
 
 const page = fs.readFileSync(new URL('../page.jsx', import.meta.url), 'utf8')
 const studio = fs.readFileSync(new URL('../WebbWritingStudio.jsx', import.meta.url), 'utf8')
+const chatRoute = fs.readFileSync(new URL('../../../api/webb-chat/route.js', import.meta.url), 'utf8')
 const route = fs.readFileSync(new URL('../../../api/webb-objectives/route.js', import.meta.url), 'utf8')
   + fs.readFileSync(new URL('../../../lib/webbObjectiveEvaluation.mjs', import.meta.url), 'utf8')
 const model = fs.readFileSync(new URL('../../../lib/webbLearningModel.mjs', import.meta.url), 'utf8')
@@ -27,11 +28,24 @@ test('composition needs source-verified notes while discussion uses demonstrated
   assert.doesNotMatch(page, /Note unavailable/)
 })
 
+test('Mrs. Webb captures the focused objective question separately from the full conversational reply', () => {
+  assert.match(chatRoute, /structuredObjectiveReplyInstruction/)
+  assert.match(chatRoute, /"objectivePrompt" must copy ONLY that exact question verbatim from reply/)
+  assert.match(chatRoute, /reply\.includes\(candidate\)/)
+  assert.match(chatRoute, /response_format: \{ type: 'json_object' \}/)
+  assert.match(page, /remainingObjectives: startupObjectives/)
+  assert.match(page, /function objectivePromptMessage/)
+  assert.match(page, /data\.objectivePrompt/)
+})
+
 test('writing studio keeps objective context and learner-controlled commit gates', () => {
   assert.match(page, /<WebbWritingStudio/)
-  assert.match(page, /objective=\{activeWritingPlan \? '' : objectives\[writingIndex\]\}/)
-  assert.match(studio, />\s*What you showed\s*</)
-  assert.match(studio, /\{currentObjective\}/)
+  assert.match(page, /objective=\{currentWritingObjective\}/)
+  assert.match(page, /objectivePrompt=\{currentWritingObjectivePrompt\}/)
+  assert.match(page, /objectivePromptCaptured=\{currentWritingObjectivePromptCaptured\}/)
+  assert.match(studio, /Mrs\. Webb asked/)
+  assert.match(studio, /Learning objective/)
+  assert.match(studio, /\{currentObjectivePrompt\}/)
   assert.match(studio, /Your research note/)
   assert.match(studio, />\s*Previous attempt\s*</)
   assert.match(studio, /'Try again'/)
@@ -97,7 +111,7 @@ test('writing resume restores the durable composition stage instead of re-enteri
 
 test('keyboard-visible writing keeps objective, note, retry context, and sentence input in the compact stack', () => {
   assert.match(studio, /keyboardCompact/)
-  assert.match(studio, /What you showed/)
+  assert.match(studio, /Mrs\. Webb asked/)
   assert.match(studio, /Your research note/)
   assert.match(studio, /Previous attempt/)
   assert.match(studio, /rows=\{keyboardCompact \? 2 : 4\}/)
