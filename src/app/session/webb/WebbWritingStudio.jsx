@@ -68,6 +68,7 @@ export default function WebbWritingStudio({
   guidance,
   evaluating,
   transitionBusy = false,
+  playtimeDue = false,
   finalView = false,
   onCloseFinal,
   onCompleteLesson,
@@ -455,7 +456,7 @@ export default function WebbWritingStudio({
                   cursor: transitionBusy ? 'wait' : 'pointer', fontFamily: 'inherit',
                 }}
               >
-                {transitionBusy ? 'Play break starting...' : isLastSentence ? 'Finish essay' : 'Next sentence'}
+                {transitionBusy ? 'Play break starting...' : playtimeDue ? 'Playtime' : isLastSentence ? 'Finish essay' : 'Next sentence'}
               </button>
             )}
           </div>

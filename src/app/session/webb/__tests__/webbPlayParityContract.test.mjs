@@ -91,11 +91,19 @@ test('research midpoint defers its Socratic question until the learner returns f
   assert.match(webbChatRoute, /Welcome them back warmly/)
 })
 
-test('writing midpoint becomes a hard transition before the next sentence', () => {
-  assert.match(page, /if \(writingMidpointPlayDue\) queueWebbPlayBreak\('writing-midpoint'\)/)
-  assert.match(page, /writingTransitionBusy/)
-  assert.match(page, /transitionBusy=\{writingTransitionBusy\}/)
+test('writing midpoint waits for the learner to choose Playtime, then resumes on the next sentence', () => {
+  const submitStart = page.indexOf('async function submitWritingAttempt')
+  const submitEnd = page.indexOf('async function completeResearchTurn', submitStart)
+  const submitWritingAttempt = page.slice(submitStart, submitEnd)
+
+  assert.doesNotMatch(submitWritingAttempt, /queueWebbPlayBreak\('writing-midpoint'\)/)
+  assert.match(submitWritingAttempt, /choose Playtime when you're ready/)
+  assert.match(page, /acceptedCount >= writingMidpointThreshold[\s\S]*queueWebbPlayBreak\('writing-midpoint'\)/)
+  assert.match(page, /current\.milestone === 'writing-midpoint'[\s\S]*handleNextWritingSentence\(\)/)
+  assert.match(page, /const writingTransitionBusy = !!activePlayBreak \|\| !!pendingPlayMilestoneRef\.current/)
+  assert.match(page, /playtimeDue=\{writingMidpointTransitionDue\}/)
   assert.match(writingStudio, /disabled=\{transitionBusy\}/)
+  assert.match(writingStudio, /playtimeDue \? 'Playtime'/)
   assert.match(writingStudio, /Play break starting\.\.\./)
 })
 

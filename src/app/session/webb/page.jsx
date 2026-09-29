@@ -1295,10 +1295,11 @@ function WebbPageInner() {
     } else if (current.milestone === 'research-midpoint') {
       void resumeResearchAfterPlay()
     } else if (current.milestone === 'writing-midpoint') {
-      addMsg('Welcome back! Your last sentence is saved. Choose Next sentence when you are ready to keep building your essay.', {
+      addMsg("Welcome back! Let's move to the next sentence.", {
         kind: 'pacing',
         pacingType: 'post-play-writing-resume',
       })
+      void handleNextWritingSentence()
     }
   }
 
@@ -2461,7 +2462,7 @@ function WebbPageInner() {
           && !playMilestonesRef.current?.['writing-midpoint']
           && acceptedCount >= writingMidpointThreshold
         const reply = writingMidpointPlayDue
-          ? "That sentence is ready. It's here in your paragraph. Nice work."
+          ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Playtime when you're ready."
           : hasNextSentence
             ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Next sentence when you're ready."
             : "That sentence is ready. It's here in your paragraph. Copy it down, then choose Finish essay when you're ready."
@@ -2478,7 +2479,6 @@ function WebbPageInner() {
         })
         if (activePlan) void persistCompositionArtifact({ plan: activePlan, accepted: nextAccepted, status: 'draft' })
         addMsg(reply)
-        if (writingMidpointPlayDue) queueWebbPlayBreak('writing-midpoint')
       } else {
         setWritingSubphase(WEBB_WRITING_SUBPHASES.REVIEW)
         saveLearningSnapshot({
@@ -3737,7 +3737,7 @@ function WebbPageInner() {
     && !!writingMidpointThreshold
     && writingAcceptedCount >= writingMidpointThreshold
     && writingAcceptedCount < writingUnitCount
-  const writingTransitionBusy = !!activePlayBreak || !!pendingPlayMilestoneRef.current || writingMidpointTransitionDue
+  const writingTransitionBusy = !!activePlayBreak || !!pendingPlayMilestoneRef.current
   const currentWritingSlot = activeWritingPlan?.slots?.[writingIndex] || null
   const currentWritingSource = currentWritingSlot
     ? compositionSlotSource(currentWritingSlot, objectives, learnerNotes)
@@ -3760,7 +3760,9 @@ function WebbPageInner() {
     : writingSubphase === WEBB_WRITING_SUBPHASES.COMMITTED
       ? (writingAllAccepted
         ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Finish essay when you're ready."
-        : "That sentence is ready. It's here in your paragraph. Copy it down, then choose Next sentence when you're ready.")
+        : writingMidpointTransitionDue
+          ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Playtime when you're ready."
+          : "That sentence is ready. It's here in your paragraph. Copy it down, then choose Next sentence when you're ready.")
       : writingSubphase === WEBB_WRITING_SUBPHASES.REVIEW
         ? sanitizeWritingGuidance('', {}, { slot: currentWritingSlot })
         : (currentWritingSlot ? writingPromptForSlot(currentWritingSlot) : "Let's work with just this note. Turn it into one complete sentence in your own words.")
@@ -4737,6 +4739,7 @@ function WebbPageInner() {
         guidance={writingGuidance}
         evaluating={writingEvaluating}
         transitionBusy={writingTransitionBusy}
+        playtimeDue={writingMidpointTransitionDue}
         finalView={essayMode}
         onCloseFinal={() => setEssayMode(false)}
         onCompleteLesson={handleCompleteLesson}
