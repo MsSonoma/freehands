@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
+import { getReusableMicrophoneStream, pauseReusableMicrophoneStream } from "../utils/microphoneSession";
 
 const DEFAULT_HOTKEYS = { micHold: 'NumpadAdd', beginSend: 'Enter' };
 
@@ -8,6 +9,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   const [uploading, setUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
   const mediaRecorderRef = useRef(null);
+  const streamRef = useRef(null);
   const chunksRef = useRef([]);
   const autoStopRef = useRef(null);
   const inputRef = useRef(null);
@@ -55,7 +57,8 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     if (isRecording || uploading) return;
     setErrorMsg('');
     try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const stream = await getReusableMicrophoneStream();
+      streamRef.current = stream;
       try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'true'); } catch {}
       const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       chunksRef.current = [];
@@ -69,9 +72,17 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           }
         } catch {}
       };
-      mr.onerror = (e) => { setIsRecording(false); setErrorMsg('Recording error'); };
+      mr.onerror = (e) => {
+        setIsRecording(false);
+        setErrorMsg('Recording error');
+        pauseReusableMicrophoneStream(stream);
+        streamRef.current = null;
+      };
       mr.onstop = async () => {
-        try { stream.getTracks().forEach(tr => tr.stop()); } catch {}
+        if (streamRef.current === stream) {
+          pauseReusableMicrophoneStream(stream);
+          streamRef.current = null;
+        }
         const out = new Blob(chunksRef.current, { type: 'audio/webm' });
         await transcribeBlob(out);
       };
@@ -79,8 +90,10 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       mr.start();
       autoStopRef.current = setTimeout(() => { try { mr.state !== 'inactive' && mr.stop(); } catch {} }, 30000);
     } catch (e) {
+      pauseReusableMicrophoneStream(streamRef.current);
+      streamRef.current = null;
       // Mic permission denied
-      setErrorMsg('Mic permission denied');
+      setErrorMsg(e?.name === 'NotAllowedError' || e?.name === 'SecurityError' ? 'Mic permission denied' : 'Voice input unavailable');
       try {
         if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'NotFoundError')) {
           if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'false');
@@ -133,6 +146,8 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   useEffect(() => () => {
     try { mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive' && mediaRecorderRef.current.stop(); } catch {}
     if (autoStopRef.current) clearTimeout(autoStopRef.current);
+    pauseReusableMicrophoneStream(streamRef.current);
+    streamRef.current = null;
   }, []);
 
   // Stop any in-progress mic/STT when abortKey changes (skip pressed)

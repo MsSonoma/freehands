@@ -1,6 +1,7 @@
 'use client'
 
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { getReusableMicrophoneStream, pauseReusableMicrophoneStream } from '../utils/microphoneSession'
 
 const WEBB_STT_MIME_TYPES = [
   'audio/webm;codecs=opus',
@@ -36,7 +37,7 @@ export default function WebbDictationButton({
   const abortRef = useRef(null)
 
   const cleanupStream = useCallback(() => {
-    try { streamRef.current?.getTracks?.().forEach(track => track.stop()) } catch {}
+    pauseReusableMicrophoneStream(streamRef.current)
     streamRef.current = null
   }, [])
 
@@ -90,14 +91,12 @@ export default function WebbDictationButton({
     setError('')
     onBeforeRecord?.()
     try {
-      if (!navigator?.mediaDevices?.getUserMedia || typeof MediaRecorder === 'undefined') {
+      if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function' || typeof MediaRecorder === 'undefined') {
         throw new Error('Voice input unavailable')
       }
       const mimeType = chooseWebbSpeechMimeType(MediaRecorder)
       if (!mimeType) throw new Error('Voice input unavailable')
-      const stream = await navigator.mediaDevices.getUserMedia({
-        audio: { echoCancellation: true, noiseSuppression: true },
-      })
+      const stream = await getReusableMicrophoneStream()
       streamRef.current = stream
       const recorder = new MediaRecorder(stream, { mimeType })
       recorderRef.current = recorder

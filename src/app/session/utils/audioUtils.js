@@ -1,3 +1,5 @@
+import { getReusableMicrophoneStream, pauseReusableMicrophoneStream } from './microphoneSession';
+
 /**
  * audioUtils.js
  * 
@@ -432,11 +434,10 @@ export function requestAudioAndMicPermissions(
     const nav = (typeof navigator !== 'undefined') ? navigator : null;
     if (nav && nav.mediaDevices && typeof nav.mediaDevices.getUserMedia === 'function') {
       micRequestInFlightRef.current = true;
-      nav.mediaDevices.getUserMedia({ audio: true })
+      getReusableMicrophoneStream()
         .then((stream) => {
-          try { stream.getTracks().forEach(t => { try { t.stop(); } catch {} }); } catch {}
-          // Persist mic allowed state
-          try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'true'); } catch {}
+          // Keep the granted stream reusable without actively capturing between utterances.
+          pauseReusableMicrophoneStream(stream);
           try { setMicAllowed(true); } catch {}
         })
         .catch((err) => {
