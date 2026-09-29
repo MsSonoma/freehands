@@ -944,6 +944,63 @@ function WebbPageInner() {
     setTranscript(prev => [...prev, { text: t, role: 'user' }])
   }
 
+  async function handleWebbLineHelp(message, sourceIndex) {
+    const lineText = String(message?.text || '').trim()
+    if (!lineText || chatLoading || webbExecutionFencedRef.current) return
+
+    setChatLoading(true)
+    try {
+      const lessonTitle = selectedLesson?.title || 'this lesson'
+      let reply = lineText
+      try {
+        const instruction = [
+          'You are Mrs. Webb, a warm and patient teacher.',
+          `Lesson: "${lessonTitle}".`,
+          `The learner tapped the hand beside this exact Mrs. Webb line: "${lineText.slice(0, 1800)}"`,
+          'Repeat or rephrase only that selected line so it is easier to understand.',
+          'If the selected line is a question, restate the same question more simply. Do not answer it, give a hint, or move to a new question.',
+          'If it is an explanation or statement, keep the same meaning and explain it in simpler child-friendly words.',
+          'Do not advance the lesson, assess the learner, change objectives, or introduce new material.',
+          'Reply with only the restatement in 1-2 short spoken sentences. No markdown.',
+        ].join('\n')
+        const response = await fetch('/api/sonoma', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            instruction,
+            innertext: 'Repeat or rephrase the selected line.',
+            skipAudio: true,
+            lessonTopic: lessonTitle,
+          }),
+        })
+        if (response.ok) {
+          const data = await response.json()
+          reply = String(data?.reply || '').trim() || lineText
+        }
+      } catch {
+        // Exact repetition is the safe fallback when line-help generation is unavailable.
+      }
+
+      if (webbExecutionFencedRef.current) return
+
+      const sourceMessageIndex = Number.isInteger(sourceIndex) ? sourceIndex : null
+      const helpMessage = {
+        role: 'assistant',
+        content: reply,
+        kind: 'line_help',
+        sourceMessageIndex,
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `webb-line-help-${Date.now()}`,
+        createdAt: new Date().toISOString(),
+      }
+      const nextHistory = [...chatMessages, helpMessage]
+      setChatMessages(nextHistory)
+      addMsg(reply, { kind: 'line_help', sourceMessageIndex })
+      saveLearningSnapshot({ chatMessages: nextHistory, objectives })
+    } finally {
+      if (!webbExecutionFencedRef.current) setChatLoading(false)
+    }
+  }
+
   function commitResponseTurn(next) {
     responseTurnRef.current = next
     setResponseTurn(next)
@@ -1542,7 +1599,7 @@ function WebbPageInner() {
     if (responseTurnRef.current || activePlayBreakRef.current || pendingPlayMilestoneRef.current || mediaOverlay || pendingFeatureHelp) return undefined
     if (objectives.length > 0 && hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return undefined
     const last = transcript.at(-1)
-    if (last?.role !== 'assistant' || last?.kind === 'pacing' || !expectsLearnerResponse(last?.text)) return undefined
+    if (last?.role !== 'assistant' || ['pacing', 'line_help'].includes(last?.kind) || !expectsLearnerResponse(last?.text)) return undefined
     const signature = `research:${transcript.length}:${last.text}`
     if (responseArmSignatureRef.current === signature) return undefined
     responseArmSignatureRef.current = signature
@@ -4144,6 +4201,32 @@ function WebbPageInner() {
                         </>
                       ) : msg.text}
                     </div>
+                    {!isUser && (
+                      <button
+                        type="button"
+                        onClick={() => handleWebbLineHelp(msg, i)}
+                        disabled={chatLoading}
+                        aria-label="Repeat or rephrase this with Mrs. Webb"
+                        title="Repeat or rephrase this"
+                        style={{
+                          flex: '0 0 auto',
+                          border: '1px solid #d97706',
+                          background: '#fffbeb',
+                          color: '#92400e',
+                          borderRadius: 8,
+                          minWidth: 34,
+                          height: 32,
+                          padding: '0 8px',
+                          cursor: chatLoading ? 'not-allowed' : 'pointer',
+                          fontSize: 17,
+                          lineHeight: 1,
+                          marginBottom: 1,
+                          opacity: chatLoading ? 0.55 : 1,
+                        }}
+                      >
+                        {'\u{1F91A}'}
+                      </button>
+                    )}
                   </div>
                 )
               })}
