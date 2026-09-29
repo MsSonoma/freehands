@@ -259,22 +259,22 @@ export default function SyllabusDocument({
   const planningProjection = useMemo(() => buildFuturePlanningProjection({
     weeklyPattern: revision?.weekly_pattern,
     timelineItems: visibleItems,
-    proposedForecastItems: proposedForecastItems.filter((item) => !forecastStart || (dateOnly(item.planned_date) >= forecastStart && dateOnly(item.planned_date) <= forecastEnd)),
+    proposedForecastItems,
     noSchoolDates,
     rangeStart: week.week_start,
     rangeEnd: addSyllabusDays(week.week_start, 6),
     today,
     includeOpenSlots: false,
-  }), [revision?.weekly_pattern, visibleItems, proposedForecastItems, noSchoolDates, week.week_start, week.state, role, today, forecastStart, forecastEnd])
+  }), [revision?.weekly_pattern, visibleItems, proposedForecastItems, noSchoolDates, week.week_start, week.state, role, today])
   const projectedForecast = planningProjection.forecast_items
   const monthStart = selectedMonthStart || monthStartFor(week.week_start || today)
   const monthEnd = monthEndFor(monthStart)
   const monthState = monthStateFor(monthStart, today)
   const monthSlots = useMemo(() => monthCalendarSlots(monthStart), [monthStart])
   const monthItemsByDate = useMemo(() => groupSyllabusCalendarItems(visibleItems, {
-    proposedForecastItems: proposedForecastItems.filter((item) => !forecastStart || (dateOnly(item.planned_date) >= forecastStart && dateOnly(item.planned_date) <= forecastEnd)),
+    proposedForecastItems,
     noSchoolDates,
-  }), [visibleItems, proposedForecastItems, noSchoolDates, forecastStart, forecastEnd])
+  }), [visibleItems, proposedForecastItems, noSchoolDates])
   const selectedMonthItems = selectedMonthDate ? (monthItemsByDate[selectedMonthDate] || []) : []
   const openMonthView = () => {
     setSelectedMonthStart(monthStartFor(week.week_start || today))

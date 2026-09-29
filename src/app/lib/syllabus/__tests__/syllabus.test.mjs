@@ -726,6 +726,12 @@ test('Syllabus Curriculum Guidance replaces legacy preference controls with the 
   assert.match(source, /proposedForecastTargetWeek=\{proposalForecastTargetWeek\}/)
 })
 
+test('Syllabus keeps proposal rows visible by their own dates when the automatic forecast target advances', () => {
+  const source = fs.readFileSync(path.resolve('src', 'app', 'components', 'syllabus', 'SyllabusDocument.js'), 'utf8')
+  assert.equal(source.includes('proposedForecastItems: proposedForecastItems.filter'), false)
+  assert.ok(source.includes('proposedForecastItems,'))
+})
+
 test('future Syllabus mutations enforce the canonical entitlement on the server routes', () => {
   const activationRoute = fs.readFileSync(path.join(process.cwd(), 'src/app/api/syllabus/activate/route.js'), 'utf8')
   const forecastRoute = fs.readFileSync(path.join(process.cwd(), 'src/app/api/syllabus/forecast/route.js'), 'utf8')
