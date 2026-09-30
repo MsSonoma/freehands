@@ -47,6 +47,7 @@ class CDP {
 }
 let server, chrome, cdp, injectedScript
 const records = [], runtimeErrors = [], unknown = [], passed = []
+const keyboardLayoutOnly = process.env.WEBB_QA_KEYBOARD_LAYOUT_ONLY === '1'
 let mode = 'fresh', generateCount = 0, checkCount = 0
 let lastChat = null
 const snapshotExpression = `JSON.parse(localStorage.getItem('webb_session_${lessonKey}') || 'null')`
@@ -92,6 +93,10 @@ async function intercept({ requestId, request, resourceType }) {
     if (url.hostname === new URL(publicUrl).hostname) {
       if (request.method === 'OPTIONS') return cdp.send('Fetch.fulfillRequest', { requestId, responseCode: 204, responseHeaders: [{ name: 'Access-Control-Allow-Origin', value: origin }, { name: 'Access-Control-Allow-Headers', value: '*' }, { name: 'Access-Control-Allow-Methods', value: 'GET,POST,PUT,PATCH,OPTIONS' }] })
       if (url.pathname.includes('/auth/')) return fulfill(requestId, user)
+      if (url.pathname.includes('/rest/v1/learners')) {
+        const learner = { id: learnerId, name: 'Offline learner', grade: '5', webb_play_times_enabled: false }
+        return fulfill(requestId, url.searchParams.has('id') ? learner : [learner])
+      }
       if (url.pathname.includes('/storage/')) return fulfill(requestId, request.method === 'GET' ? [] : { Key: 'offline' })
       if (url.pathname.includes('lesson_sessions')) return fulfill(requestId, { id: sessionId, session_id: browserId, ended_at: null, lesson_id: lessonKey, learner_id: learnerId })
       return fulfill(requestId, [])
@@ -128,6 +133,16 @@ async function type(text, selector = 'textarea[aria-label="Chat with Mrs. Webb"]
   if (submit) { if (selector === '#webb-writing-attempt') await cdp.eval(`document.querySelector('#webb-writing-attempt').closest('form').requestSubmit()`); else { await cdp.send('Input.dispatchKeyEvent', { type: 'keyDown', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 }); await cdp.send('Input.dispatchKeyEvent', { type: 'keyUp', key: 'Enter', code: 'Enter', windowsVirtualKeyCode: 13 }) } }
 }
 async function click(text) { await cdp.eval(`(() => { const b=[...document.querySelectorAll('button')].find(e=>e.innerText.includes(${JSON.stringify(text)})); if(!b)throw Error('Button missing'); b.click() })()`) }
+async function continuePastPlaytimeIfNeeded() {
+  await until(() => cdp.eval(`!!document.querySelector('#webb-writing-attempt') || [...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'GO!')`), 'writing transition or play gate')
+  const hasGo = await cdp.eval(`[...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'GO!')`)
+  if (hasGo) {
+    await click('GO!')
+    await until(() => cdp.eval(`![...document.querySelectorAll('button')].some(button => button.textContent.trim() === 'GO!')`), 'play gate closes')
+    const hasWriting = await cdp.eval(`!!document.querySelector('#webb-writing-attempt')`)
+    if (!hasWriting) await click('Start writing from my research')
+  }
+}
 function pass(name) { passed.push(name); console.log('PASS ' + name) }
 try {
   server = spawn(process.execPath, ['node_modules/next/dist/bin/next', 'start', '-p', String(port), '-H', '127.0.0.1'], { cwd: root, stdio: ['ignore', 'pipe', 'pipe'] })
@@ -161,7 +176,7 @@ try {
     assert.notEqual(await cdp.eval(`document.activeElement?.getAttribute?.('aria-label')`), 'Chat with Mrs. Webb')
     await cdp.eval(`(() => { const input=document.querySelector('textarea[aria-label=\"Chat with Mrs. Webb\"]'); input?.focus(); input?.dispatchEvent(new FocusEvent('focusin', { bubbles:true })); })()`)
     await until(() => cdp.eval(`document.activeElement?.getAttribute?.('aria-label') === 'Chat with Mrs. Webb'`), 'touch focus modeled')
-    await until(() => cdp.eval(`!!document.querySelector('[data-ms-typing-context]')`), 'focus keeps context visible')
+    await until(() => cdp.eval(`document.querySelector('[data-ms-webb-chat-compact]')?.getAttribute('data-ms-webb-chat-compact') === 'true'`), 'focus keeps the same Webb surface compact')
     // Headless Chrome has no software keyboard. Shrink the viewport to model the visualViewport resize mobile browsers send when it opens.
     const keyboardMetrics = ipadLandscapeQa
       ? { width: 1024, height: 420, deviceScaleFactor: 1, mobile: true }
@@ -169,13 +184,14 @@ try {
     await cdp.send('Emulation.setDeviceMetricsOverride', keyboardMetrics)
     const keyboardHeightLimit = ipadLandscapeQa ? 430 : 530
     await until(() => cdp.eval(`window.visualViewport?.height <= ${keyboardHeightLimit}`), 'simulated touch keyboard viewport')
-    await until(() => cdp.eval(`!!document.querySelector('[data-ms-typing-context]')`), 'touch typing context')
-    assert.equal(await cdp.eval(`document.querySelector('[data-ms-typing-context]')?.textContent.includes('What do you already know about The Magic Finger?')`), true)
-    await until(() => cdp.eval(`(() => { const panel=document.querySelector('[data-ms-typing-context]'); const input=document.querySelector('textarea[aria-label=\"Chat with Mrs. Webb\"]'); const bottom=(window.visualViewport?.offsetTop||0)+(window.visualViewport?.height||window.innerHeight); return !!panel && !!input && panel.getBoundingClientRect().bottom <= bottom + 1 && input.getBoundingClientRect().bottom <= bottom + 1 })()`), 'typing controls fit the visible viewport')
+    await until(() => cdp.eval(`!!document.querySelector('[data-ms-webb-transcript]')`), 'touch typing transcript')
+    assert.equal(await cdp.eval(`document.querySelector('[data-ms-webb-transcript]')?.textContent.includes('What do you already know about The Magic Finger?')`), true)
+    assert.equal(await cdp.eval(`!!document.querySelector('[data-ms-typing-context]')`), false)
+    await until(() => cdp.eval(`(() => { const panel=document.querySelector('[data-ms-webb-transcript]'); const input=document.querySelector('textarea[aria-label=\"Chat with Mrs. Webb\"]'); const bottom=(window.visualViewport?.offsetTop||0)+(window.visualViewport?.height||window.innerHeight); return !!panel && !!input && panel.getBoundingClientRect().bottom <= bottom + 1 && input.getBoundingClientRect().bottom <= bottom + 1 })()`), 'typing controls fit the visible viewport')
     await cdp.send('Emulation.setDeviceMetricsOverride', ipadLandscapeQa
       ? { width: 1024, height: 768, deviceScaleFactor: 1, mobile: true }
       : { width: 390, height: 844, deviceScaleFactor: 1, mobile: true })
-    pass('touch typing keeps recent conversation visible without automatic keyboard focus')
+    pass('touch typing keeps the same conversation surface visible without automatic keyboard focus')
   }
   const answer = 'Roald Dahl wrote the magic finger'
   await type(answer)
@@ -187,17 +203,29 @@ try {
   assert.equal(await cdp.eval(`document.querySelector('[role="status"]')?.textContent.includes('Note saved')`), true)
   pass('first answer becomes exact saved note, visible credit and next-question context')
   await type('a girl'); await ready()
-  await click('Start writing from my notes')
+  await click('Start writing from my research')
+  await continuePastPlaytimeIfNeeded()
   await until(() => cdp.eval(`!!document.querySelector('#webb-writing-attempt')`), 'writing focus')
-  assert.equal(await cdp.eval(`document.body.textContent.includes(${JSON.stringify(AUTHOR)})`), true)
-  assert.equal(await cdp.eval(`document.body.textContent.includes('What you showed')`), true)
+  assert.equal(await cdp.eval(`document.body.textContent.includes('The Magic Finger: Book Report')`), true)
+  assert.equal(await cdp.eval(`document.body.textContent.includes('This is the first sentence of your paragraph')`), true)
   if (touchQa) {
     assert.notEqual(await cdp.eval(`document.activeElement?.id`), 'webb-writing-attempt')
     await cdp.eval(`(() => { const input=document.querySelector('#webb-writing-attempt'); input?.focus(); input?.dispatchEvent(new FocusEvent('focusin', { bubbles:true })); })()`)
-    await until(() => cdp.eval(`!!document.querySelector('[data-ms-typing-context]')`), 'writing keeps recent context visible')
-    assert.equal(await cdp.eval(`document.querySelector('[data-ms-typing-context]')?.textContent.includes('a girl')`), true)
+    await until(() => cdp.eval(`document.querySelector('[data-ms-webb-writing-compact]')?.getAttribute('data-ms-webb-writing-compact') === 'true'`), 'writing keeps the same studio compact')
+    assert.equal(await cdp.eval(`!!document.querySelector('[data-ms-typing-context]')`), false)
+    assert.equal(await cdp.eval(`document.querySelector('[data-ms-webb-writing-reference]')?.textContent.includes('The Magic Finger: Book Report')`), true)
+    assert.equal(await cdp.eval(`document.querySelector('[data-ms-webb-writing-reference]')?.textContent.includes('This is the first sentence of your paragraph')`), true)
     assert.equal(await cdp.eval(`parseFloat(getComputedStyle(document.querySelector('#webb-writing-attempt')).fontSize) >= 16`), true)
-    pass('writing studio preserves recent conversation while typing')
+    assert.equal(await cdp.eval(`getComputedStyle(document.querySelector('[data-ms-webb-writing-reference]')).overflowY === 'auto'`), true)
+    pass('writing studio preserves the same reference surface while typing')
+    if (keyboardLayoutOnly) {
+      assert.deepEqual(runtimeErrors, [])
+      fs.writeFileSync(path.join(out, 'result.json'), JSON.stringify({ passed, unexpectedApiPaths: [...new Set(unknown)], runtimeErrors, externalTraffic: 'intercepted', productionWrites: 0, keyboardLayoutOnly: true }, null, 2))
+      console.log(JSON.stringify({ browserScenarios: passed.length, runtimeErrors: runtimeErrors.length, unexpectedApiPaths: [...new Set(unknown)], productionWrites: 0, keyboardLayoutOnly: true, resultDirectory: out }))
+      const done = new Error('keyboard-layout-only-complete')
+      done.keyboardLayoutComplete = true
+      throw done
+    }
   }
   await type('Roald Dahl wrote The Magic Finger.', '#webb-writing-attempt')
   await until(() => cdp.eval(`${snapshotExpression}?.writingIndex === 0 && ${snapshotExpression}?.writingSubphase === 'committed'`), 'approved sentence held')
@@ -336,7 +364,7 @@ try {
   await until(() => cdp.eval(`${snapshotExpression}?.learnerNotes?.[0]?.text === ${JSON.stringify(answer)}`), 'storage retry')
   assert.equal(await cdp.eval(`document.querySelector('[role="status"]')?.textContent.includes('Note saved')`), true)
   pass('storage failure preserves comprehension and never falsely announces a saved note')
-  await type('a girl'); await ready(); await click('Start writing from my notes')
+  await type('a girl'); await ready(); await click('Start writing from my research'); await continuePastPlaytimeIfNeeded()
   await until(() => cdp.eval(`!!document.querySelector('#webb-writing-attempt')`), 'writer for storage failure')
   await cdp.eval('window.__failWebbSaves = true')
   await type('My unsent sentence', '#webb-writing-attempt', false)
@@ -356,8 +384,10 @@ try {
   fs.writeFileSync(path.join(out, 'server.log'), serverLog)
   console.log(JSON.stringify({ browserScenarios: passed.length, runtimeErrors: runtimeErrors.length, unexpectedApiPaths: [...new Set(unknown)], productionWrites: 0, resultDirectory: out }))
 } catch (error) {
-  if (cdp) { fs.writeFileSync(path.join(out, 'failure.txt'), String(error.stack) + '\n' + await cdp.eval('document.body.innerText').catch(() => '') + '\n' + JSON.stringify({ records: records.slice(-12), runtimeErrors, unknown }, null, 2)); const image = await cdp.send('Page.captureScreenshot').catch(() => null); if (image) fs.writeFileSync(path.join(out, 'failure.png'), Buffer.from(image.data, 'base64')) }
-  console.error(error); console.error('Diagnostics: ' + out); process.exitCode = 1
+  if (!error?.keyboardLayoutComplete) {
+    if (cdp) { fs.writeFileSync(path.join(out, 'failure.txt'), String(error.stack) + '\n' + await cdp.eval('document.body.innerText').catch(() => '') + '\n' + JSON.stringify({ records: records.slice(-12), runtimeErrors, unknown }, null, 2)); const image = await cdp.send('Page.captureScreenshot').catch(() => null); if (image) fs.writeFileSync(path.join(out, 'failure.png'), Buffer.from(image.data, 'base64')) }
+    console.error(error); console.error('Diagnostics: ' + out); process.exitCode = 1
+  }
 } finally {
   if (cdp) { void cdp.send('Browser.close').catch(() => {}); await delay(700); cdp.ws.close() }
   for (const proc of [chrome, server]) { if (!proc?.pid) continue; try { if (process.platform === 'win32') execFileSync('taskkill', ['/PID', String(proc.pid), '/T', '/F'], { stdio: 'ignore' }); else proc.kill('SIGTERM') } catch {} }

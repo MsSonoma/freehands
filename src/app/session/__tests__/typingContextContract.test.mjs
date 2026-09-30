@@ -20,12 +20,14 @@ test('Ms. Sonoma keeps six recent transcript entries with the input while touch 
   assert.match(sonoma, /const isLandscape = layoutW > layoutH/)
 })
 
-test('Mrs. Webb keeps six recent conversation entries with the input while touch typing', () => {
-  assert.match(webb, /entries=\{transcript\}/)
-  assert.match(webb, /visible=\{typingViewport\.typing\}/)
-  assert.match(webb, /maxItems=\{keyboardCompact \? 3 : 6\}/)
-  assert.match(webb, /teacherLabel="Mrs\. Webb"/)
-  assert.match(webb, /height: typingViewport\.typing && typingViewport\.visualHeight/)
+test('Mrs. Webb keeps the same transcript surface aligned to the visible viewport while touch typing', () => {
+  assert.match(webb, /data-ms-webb-transcript/)
+  assert.match(webb, /top: typingViewport\.offsetTop/)
+  assert.match(webb, /left: typingViewport\.offsetLeft/)
+  assert.match(webb, /width: typingViewport\.visualWidth/)
+  assert.match(webb, /height: typingViewport\.visualHeight/)
+  assert.doesNotMatch(webb, /<TypingConversationContext/)
+  assert.doesNotMatch(webb, /maxItems=\{keyboardCompact \? 3 : 6\}/)
 })
 
 test('touch sessions do not summon the software keyboard automatically', () => {
@@ -42,33 +44,32 @@ test('shared typing context is bounded to the most recent conversation instead o
   assert.match(context, /maxHeight: compact \? '40px' : 'min\(24dvh, 132px\)'/)
 })
 
-test('Webb writing studio follows the visible viewport and keeps recent context while the learner types', () => {
+test('Webb writing studio follows the visible viewport without switching to a second mini interface', () => {
   assert.match(studio, /top: typingViewport\.offsetTop/)
   assert.match(studio, /width: typingViewport\.visualWidth/)
   assert.match(studio, /height: typingViewport\.visualHeight/)
-  assert.match(studio, /entries=\{recentEntries\}/)
-  assert.match(studio, /maxItems=\{keyboardCompact \? 2 : 6\}/)
-  assert.match(studio, /position: keyboardCompact \? 'relative' : 'static'/)
-  assert.match(webb, /recentEntries=\{transcript\}/)
+  assert.match(studio, /data-ms-webb-writing-reference/)
+  assert.match(studio, /overflowY: 'auto'/)
+  assert.doesNotMatch(studio, /<TypingConversationContext/)
+  assert.doesNotMatch(webb, /recentEntries=\{transcript\}/)
 })
 
-test('Mrs. Webb switches both discussion and essay writing into a compact keyboard-visible layout', () => {
+test('Mrs. Webb compresses the same discussion and writing surfaces into the keyboard-visible viewport', () => {
   assert.match(webb, /const keyboardCompact = typingViewport\.typing/)
-  assert.match(webb, /flex: '0 0 22%'/)
-  assert.match(webb, /padding: keyboardCompact \? '4px 7px 3px'/)
+  assert.match(webb, /flex: '0 0 34%'/)
+  assert.match(webb, /data-ms-webb-transcript/)
+  assert.match(webb, /fontSize: keyboardCompact \? 13\.5 : 14/)
   assert.match(webb, /rows=\{compact \? 1 : 2\}/)
-  assert.match(webb, /compact=\{keyboardCompact\}/)
   assert.match(studio, /const keyboardCompact = typingViewport\.typing/)
-  assert.match(studio, /fontSize: keyboardCompact \? 12 : 17/)
-  assert.match(studio, /fontSize: keyboardCompact \? 13 : 'clamp\(19px, 3\.4vw, 30px\)'/)
+  assert.match(studio, /fontSize: keyboardCompact \? 14 : 17/)
+  assert.match(studio, /fontSize: keyboardCompact \? 16 : 'clamp\(19px, 3\.4vw, 30px\)'/)
   assert.match(studio, /rows=\{keyboardCompact \? 2 : 4\}/)
   assert.match(studio, /minHeight: keyboardCompact \? 52 : 132/)
-  assert.match(studio, /overflowY: keyboardCompact \? 'hidden' : 'auto'/)
-  assert.ok((studio.match(/maxHeight: 44, overflowY: 'auto', flexShrink: 0/g) || []).length >= 1)
+  assert.match(studio, /data-ms-webb-writing-reference/)
+  assert.doesNotMatch(studio, /maxHeight: 44, overflowY: 'auto'/)
   assert.match(studio, /data-ms-webb-writing-compact/)
   assert.match(webb, /data-ms-webb-chat-compact/)
   assert.match(studio, />\s*Previous attempt\s*</)
-  assert.match(studio, /compact=\{keyboardCompact\}/)
 })
 
 test('Mrs. Webb uses touch focus as a compact-layout fallback while Ms. Sonoma keeps geometry-only behavior', () => {

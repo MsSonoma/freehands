@@ -4,24 +4,23 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { WEBB_WRITING_SUBPHASES } from '@/app/lib/webbWritingFlow.mjs'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
-import TypingConversationContext from '../components/TypingConversationContext'
 import WebbDictationButton from './WebbDictationButton'
 
-function GuidanceTranscript({ text, compact = false }) {
+function GuidanceTranscript({ text, compact = false, tight = false }) {
   if (!String(text || '').trim()) return null
   return (
     <div style={{
       width: compact ? '100%' : 'min(92vw, 760px)',
-      margin: compact ? '0 auto 3px' : '0 auto 22px',
-      padding: compact ? '0 3px' : 0,
+      margin: compact ? '0 auto 6px' : '0 auto 22px',
+      padding: compact ? '0 6px' : 0,
       boxSizing: 'border-box',
       color: '#334155',
-      fontSize: compact ? 10.5 : 15,
-      lineHeight: compact ? 1.18 : 1.65,
+      fontSize: compact ? 13 : 15,
+      lineHeight: compact ? 1.4 : 1.65,
       textAlign: 'center',
       minHeight: compact ? 0 : 24,
-      maxHeight: compact ? 24 : 'none',
-      overflowY: compact ? 'auto' : 'visible',
+      maxHeight: compact && !tight ? 52 : 'none',
+      overflowY: compact && !tight ? 'auto' : 'visible',
       flexShrink: 0,
     }} aria-live="polite">
       {text}
@@ -80,7 +79,6 @@ export default function WebbWritingStudio({
   onBlankComplete,
   onNextSentence,
   isLastSentence,
-  recentEntries = [],
   responseTimer = null,
   storageWarning = '',
   onLearnerActivity,
@@ -89,6 +87,7 @@ export default function WebbWritingStudio({
   const [essayPeek, setEssayPeek] = useState(false)
   const typingViewport = useTypingViewport({ preserveTouchFocus: true, blurDelayMs: 350 })
   const keyboardCompact = typingViewport.typing
+  const keyboardTight = keyboardCompact && typingViewport.visualHeight > 0 && typingViewport.visualHeight < 280
   const blankCompleteRef = useRef(onBlankComplete)
 
   useEffect(() => {
@@ -155,8 +154,8 @@ export default function WebbWritingStudio({
       } : { inset: 0 }),
       zIndex: 1400,
       background: '#f1eee7',
-      overflowY: keyboardCompact ? 'hidden' : 'auto',
-      padding: keyboardCompact ? '3px 5px 5px' : 'clamp(20px, 4vw, 42px) 16px 56px',
+      overflowY: keyboardCompact && !keyboardTight ? 'hidden' : 'auto',
+      padding: keyboardCompact ? '5px 8px 8px' : 'clamp(20px, 4vw, 42px) 16px 56px',
       boxSizing: 'border-box',
       fontFamily: 'system-ui, -apple-system, sans-serif',
       display: 'flex',
@@ -167,18 +166,8 @@ export default function WebbWritingStudio({
           {responseTimer}
         </div>
       )}
-      <div style={{ position: keyboardCompact ? 'relative' : 'static', zIndex: 4, flexShrink: 0 }}>
-        <TypingConversationContext
-          entries={recentEntries}
-          visible={typingViewport.typing}
-          maxItems={keyboardCompact ? 2 : 6}
-          compact={keyboardCompact}
-          teacherLabel="Mrs. Webb"
-          accent="#0d9488"
-        />
-      </div>
       {canPeekEssay && (
-        <div style={{ width: keyboardCompact ? '100%' : 'min(92vw, 820px)', margin: keyboardCompact ? '0 auto 4px' : '0 auto 14px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
+        <div style={{ width: keyboardCompact ? '100%' : 'min(92vw, 820px)', margin: keyboardCompact ? '0 auto 6px' : '0 auto 14px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
           <button
             type="button"
             onClick={() => {
@@ -186,9 +175,9 @@ export default function WebbWritingStudio({
               setEssayPeek(value => !value)
             }}
             style={{
-              border: '1px solid #cbd5e1', borderRadius: 999, padding: keyboardCompact ? '5px 9px' : '8px 13px',
+              border: '1px solid #cbd5e1', borderRadius: 999, padding: keyboardCompact ? '6px 11px' : '8px 13px',
               background: essayPeek ? '#0d9488' : '#fff', color: essayPeek ? '#fff' : '#475569',
-              fontWeight: 850, fontSize: keyboardCompact ? 10 : 12, cursor: 'pointer', fontFamily: 'inherit',
+              fontWeight: 850, fontSize: keyboardCompact ? 11.5 : 12, cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
             {essayPeek ? 'Back to writing' : 'View essay'}
@@ -233,15 +222,15 @@ export default function WebbWritingStudio({
       {!showEssayPeek && [WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(subphase) && (
         <div style={{
           animation: 'webb-writing-focus-in 0.35s ease both',
-          ...(keyboardCompact ? { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, overflow: 'hidden' } : {}),
+          ...(keyboardCompact && !keyboardTight ? { display: 'flex', flexDirection: 'column', flex: '1 1 0', minHeight: 0, overflow: 'hidden' } : {}),
         }}>
-          <GuidanceTranscript text={guidance} compact={keyboardCompact} />
+          <GuidanceTranscript text={guidance} compact={keyboardCompact} tight={keyboardTight} />
           <div style={{
             width: keyboardCompact ? '100%' : 'min(92vw, 780px)',
             margin: '0 auto',
-            ...(keyboardCompact ? { flex: '1 1 0', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' } : {}),
+            ...(keyboardCompact && !keyboardTight ? { flex: '1 1 0', minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column' } : {}),
           }}>
-            <div style={{ textAlign: 'center', color: '#64748b', fontSize: keyboardCompact ? 9 : 12, fontWeight: 800, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 3 : 20 }}>
+            <div style={{ textAlign: 'center', color: '#64748b', fontSize: keyboardCompact ? 10.5 : 12, fontWeight: 800, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 4 : 20 }}>
               Sentence {activeIndex + 1} of {totalSentences}
             </div>
 
@@ -249,66 +238,67 @@ export default function WebbWritingStudio({
               background: '#fffdf7',
               border: '1px solid #ded6c7',
               borderRadius: keyboardCompact ? 8 : 16,
-              padding: keyboardCompact ? '5px 7px' : 'clamp(24px, 5vw, 44px)',
+              padding: keyboardCompact ? '8px 10px' : 'clamp(24px, 5vw, 44px)',
               boxShadow: keyboardCompact ? '0 4px 14px rgba(15,23,42,0.08)' : '0 20px 55px rgba(15,23,42,0.12)',
-              ...(keyboardCompact ? { flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' } : {}),
+              ...(keyboardCompact && !keyboardTight ? { flex: '1 1 0', minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' } : {}),
             }}>
+              <div data-ms-webb-writing-reference style={keyboardCompact && !keyboardTight ? { flex: '1 1 auto', minHeight: 0, overflowY: 'auto', WebkitOverflowScrolling: 'touch', paddingRight: 2 } : keyboardCompact ? { paddingRight: 2 } : undefined}>
               {slotLabel && (
-                <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 3 : 12 }}>
+                <div style={{ color: '#64748b', fontSize: keyboardCompact ? 10.5 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 5 : 12 }}>
                   {slotLabel}
                 </div>
               )}
               {roleDescription && (
-                <div style={{ color: '#334155', fontSize: keyboardCompact ? 11 : 16, lineHeight: keyboardCompact ? 1.28 : 1.55, fontWeight: 650, marginBottom: keyboardCompact ? 4 : 18 }}>
+                <div style={{ color: '#334155', fontSize: keyboardCompact ? 14 : 16, lineHeight: keyboardCompact ? 1.42 : 1.55, fontWeight: 650, marginBottom: keyboardCompact ? 8 : 18 }}>
                   {roleDescription}
                 </div>
               )}
               {showLessonContext && (visibleLessonTitle || visibleLessonBlurb) && (
-                <div style={{ marginBottom: keyboardCompact ? 4 : 22, paddingBottom: keyboardCompact ? 4 : 18, borderBottom: '1px solid #e7e0d2' }}>
-                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 10, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 6 }}>Lesson</div>
-                  {visibleLessonTitle && <div style={{ color: '#172033', fontSize: keyboardCompact ? 13 : 18, lineHeight: 1.35, fontWeight: 800 }}>{visibleLessonTitle}</div>}
-                  {visibleLessonBlurb && <div style={{ color: '#475569', fontSize: keyboardCompact ? 11 : 15, lineHeight: keyboardCompact ? 1.25 : 1.5, marginTop: keyboardCompact ? 2 : 6 }}>{visibleLessonBlurb}</div>}
+                <div style={{ marginBottom: keyboardCompact ? 8 : 22, paddingBottom: keyboardCompact ? 8 : 18, borderBottom: '1px solid #e7e0d2' }}>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 10 : 10, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 6 }}>Lesson</div>
+                  {visibleLessonTitle && <div style={{ color: '#172033', fontSize: keyboardCompact ? 16 : 18, lineHeight: 1.35, fontWeight: 800 }}>{visibleLessonTitle}</div>}
+                  {visibleLessonBlurb && <div style={{ color: '#475569', fontSize: keyboardCompact ? 13 : 15, lineHeight: keyboardCompact ? 1.4 : 1.5, marginTop: keyboardCompact ? 2 : 6 }}>{visibleLessonBlurb}</div>}
                 </div>
               )}
               {currentObjectivePrompt && currentRole !== 'topic' && currentRole !== 'conclusion' && (
-                <div style={{ marginBottom: keyboardCompact ? 3 : 20, paddingBottom: keyboardCompact ? 3 : 18, borderBottom: '1px solid #e7e0d2' }}>
-                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>{objectivePromptCaptured ? 'Mrs. Webb asked' : 'Learning objective'}</div>
-                  <div style={{ color: '#334155', fontSize: keyboardCompact ? 12 : 17, lineHeight: 1.5, fontWeight: 650 }}>{currentObjectivePrompt}</div>
+                <div style={{ marginBottom: keyboardCompact ? 8 : 20, paddingBottom: keyboardCompact ? 8 : 18, borderBottom: '1px solid #e7e0d2' }}>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 10 : 11, fontWeight: 900, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>{objectivePromptCaptured ? 'Mrs. Webb asked' : 'Learning objective'}</div>
+                  <div style={{ color: '#334155', fontSize: keyboardCompact ? 14 : 17, lineHeight: 1.5, fontWeight: 650 }}>{currentObjectivePrompt}</div>
                 </div>
               )}
               {visibleResearchNotes.length > 0 && currentRole !== 'topic' && currentRole !== 'conclusion' && (
-                <div style={{ marginBottom: keyboardCompact ? 3 : (subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 30 : 38) }}>
-                  <div style={{ color: '#0f766e', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 10 }}>
+                <div style={{ marginBottom: keyboardCompact ? 8 : (subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 30 : 38) }}>
+                  <div style={{ color: '#0f766e', fontSize: keyboardCompact ? 10 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 10 }}>
                     {visibleResearchNotes.length > 1 ? 'Your research notes' : 'Your research note'}
                   </div>
-                  <div style={{ display: 'grid', gap: keyboardCompact ? 3 : 10 }}>
-                    {visibleResearchNotes.map((text, index) => <div key={index} style={{ color: '#172033', fontSize: keyboardCompact ? 13 : 'clamp(19px, 3.4vw, 30px)', lineHeight: keyboardCompact ? 1.22 : 1.35, fontWeight: 720 }}>{text}</div>)}
+                  <div style={{ display: 'grid', gap: keyboardCompact ? 5 : 10 }}>
+                    {visibleResearchNotes.map((text, index) => <div key={index} style={{ color: '#172033', fontSize: keyboardCompact ? 16 : 'clamp(19px, 3.4vw, 30px)', lineHeight: keyboardCompact ? 1.35 : 1.35, fontWeight: 720 }}>{text}</div>)}
                   </div>
                 </div>
               )}
 
               {subphase === WEBB_WRITING_SUBPHASES.REVIEW && priorText && (
                 <div style={{
-                  marginBottom: keyboardCompact ? 5 : 28,
-                  padding: keyboardCompact ? '5px 7px' : '18px 20px',
-                  borderRadius: keyboardCompact ? 7 : 12,
+                  marginBottom: keyboardCompact ? 8 : 28,
+                  padding: keyboardCompact ? '8px 10px' : '18px 20px',
+                  borderRadius: keyboardCompact ? 8 : 12,
                   background: '#f1f5f9',
                   border: '1px solid #dbe4ef',
                   animation: 'webb-writing-attempt-aside 0.38s ease both',
-                  ...(keyboardCompact ? { maxHeight: 44, overflowY: 'auto', flexShrink: 0 } : {}),
                 }}>
-                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 9 : 10, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 8 }}>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 10 : 10, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.25, textTransform: 'uppercase', marginBottom: keyboardCompact ? 2 : 8 }}>
                     Previous attempt
                   </div>
-                  <div style={{ color: '#475569', fontSize: keyboardCompact ? 12 : 'clamp(16px, 2.6vw, 21px)', lineHeight: keyboardCompact ? 1.22 : 1.55 }}>
+                  <div style={{ color: '#475569', fontSize: keyboardCompact ? 14 : 'clamp(16px, 2.6vw, 21px)', lineHeight: keyboardCompact ? 1.4 : 1.55 }}>
                     {priorText}
                   </div>
                 </div>
               )}
+              </div>
 
-              <form onSubmit={submit} style={keyboardCompact ? { marginTop: 'auto', flexShrink: 0 } : undefined}>
-                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: keyboardCompact ? 3 : 10 }}>
-                  <label htmlFor="webb-writing-attempt" style={{ display: 'block', color: '#0f766e', fontSize: keyboardCompact ? 9 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', margin: 0 }}>
+              <form onSubmit={submit} style={keyboardCompact && !keyboardTight ? { marginTop: 6, flexShrink: 0 } : keyboardCompact ? { marginTop: 6 } : undefined}>
+                <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginBottom: keyboardCompact ? 5 : 10 }}>
+                  <label htmlFor="webb-writing-attempt" style={{ display: 'block', color: '#0f766e', fontSize: keyboardCompact ? 10 : 11, fontWeight: 900, letterSpacing: keyboardCompact ? 0.7 : 1.4, textTransform: 'uppercase', margin: 0 }}>
                     {subphase === WEBB_WRITING_SUBPHASES.REVIEW ? 'Try again' : 'Your sentence'}
                   </label>
                   <WebbDictationButton
@@ -363,7 +353,7 @@ export default function WebbWritingStudio({
                     background: evaluating || !currentDraft.trim() ? '#cbd5e1' : '#0d9488',
                     color: '#fff',
                     fontWeight: 850,
-                    fontSize: keyboardCompact ? 12 : 15,
+                    fontSize: keyboardCompact ? 13 : 15,
                     cursor: evaluating || !currentDraft.trim() ? 'default' : 'pointer',
                     fontFamily: 'inherit',
                   }}

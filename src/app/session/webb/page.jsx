@@ -7,7 +7,6 @@ import WebbResponseTimer from './WebbResponseTimer'
 import WebbDictationButton from './WebbDictationButton'
 import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
 import TimerControlOverlay from '../components/TimerControlOverlay'
-import TypingConversationContext from '../components/TypingConversationContext'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import FeatureHelpToast from '../components/FeatureHelpToast'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
@@ -3657,8 +3656,8 @@ function WebbPageInner() {
 
   const videoWrapperStyle = keyboardCompact
     ? (isMobileLandscape
-      ? { flex: '0 0 30%', position: 'relative', overflow: 'hidden', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }
-      : { flex: '0 0 22%', position: 'relative', width: '100%', overflow: 'hidden', minHeight: 0, boxSizing: 'border-box' })
+      ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', minWidth: 0, minHeight: 0, display: 'flex', flexDirection: 'column' }
+      : { flex: '0 0 34%', position: 'relative', width: '100%', overflow: 'hidden', minHeight: 0, boxSizing: 'border-box' })
     : (isMobileLandscape
       ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'hidden', minWidth: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
       : { flex: '0 0 50%', position: 'relative', width: '100%', overflow: 'hidden', minHeight: 0, boxSizing: 'border-box' })
@@ -3843,7 +3842,18 @@ function WebbPageInner() {
 
   // ── Render ────────────────────────────────────────────────────────────
   return (
-    <div data-ms-webb-chat-compact={keyboardCompact ? 'true' : 'false'} style={{ height: typingViewport.typing && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden' }}>
+    <div data-ms-webb-chat-compact={keyboardCompact ? 'true' : 'false'} style={{
+      ...(typingViewport.typing && typingViewport.visualHeight ? {
+        position: 'fixed',
+        top: typingViewport.offsetTop,
+        left: typingViewport.offsetLeft,
+        width: typingViewport.visualWidth || '100%',
+        height: typingViewport.visualHeight,
+        right: 'auto',
+        bottom: 'auto',
+      } : { width: '100%', height: '100dvh' }),
+      display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden', boxSizing: 'border-box',
+    }}>
       <FeatureHelpToast
         suggestion={pendingFeatureHelp?.suggestion || null}
         onConfirm={confirmFeatureHelp}
@@ -3893,18 +3903,18 @@ function WebbPageInner() {
 
       {/* Header */}
       <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: keyboardCompact ? '4px 8px' : '10px 16px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: keyboardCompact ? 5 : 10 }}>
-            <span style={{ fontSize: keyboardCompact ? 17 : 24 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: keyboardCompact ? '6px 12px' : '10px 16px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: keyboardCompact ? 8 : 10 }}>
+            <span style={{ fontSize: keyboardCompact ? 21 : 24 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
             <div>
-              <div style={{ fontWeight: 800, fontSize: keyboardCompact ? 12 : 15, letterSpacing: 0.5 }}>MRS. WEBB</div>
+              <div style={{ fontWeight: 800, fontSize: keyboardCompact ? 14 : 15, letterSpacing: 0.5 }}>MRS. WEBB</div>
               {selectedLesson
-                ? <div style={{ fontSize: keyboardCompact ? 9 : 11, opacity: 0.85, maxWidth: keyboardCompact ? 150 : 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedLesson.title}</div>
+                ? <div style={{ fontSize: keyboardCompact ? 10.5 : 11, opacity: 0.85, maxWidth: keyboardCompact ? 190 : 220, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{selectedLesson.title}</div>
                 : <div style={{ fontSize: 11, opacity: 0.75, letterSpacing: 1 }}>LESSON TEACHER</div>
               }
             </div>
           </div>
-          <div style={{ display: 'flex', gap: keyboardCompact ? 4 : 8, alignItems: 'center' }}>
+          <div style={{ display: 'flex', gap: keyboardCompact ? 6 : 8, alignItems: 'center' }}>
             {isChatting && responseTurn && (
               <WebbResponseTimer
                 turn={responseTurn}
@@ -3921,19 +3931,19 @@ function WebbPageInner() {
                 title="View learning objectives"
                 style={{
                   ...headerBtn,
-                  ...(keyboardCompact ? { padding: '3px 7px', fontSize: 10 } : {}),
-                  display: 'flex', alignItems: 'center', gap: keyboardCompact ? 3 : 5,
+                  ...(keyboardCompact ? { padding: '5px 8px', fontSize: 11 } : {}),
+                  display: 'flex', alignItems: 'center', gap: keyboardCompact ? 4 : 5,
                   background: understoodCount === objectives.length
                     ? 'rgba(13,148,136,0.45)'
                     : 'rgba(255,255,255,0.15)',
                 }}
               >
-                <span style={{ fontSize: keyboardCompact ? 11 : 14 }}>&#9989;</span>
-                <span style={{ fontSize: keyboardCompact ? 10 : 12 }}>{understoodCount}/{objectives.length}</span>
+                <span style={{ fontSize: keyboardCompact ? 12 : 14 }}>&#9989;</span>
+                <span style={{ fontSize: keyboardCompact ? 11 : 12 }}>{understoodCount}/{objectives.length}</span>
               </button>
             )}
             {isChatting && (
-              <button type="button" onClick={handleBack} style={keyboardCompact ? { ...headerBtn, padding: '3px 7px', fontSize: 10 } : headerBtn}>
+              <button type="button" onClick={handleBack} style={keyboardCompact ? { ...headerBtn, padding: '5px 8px', fontSize: 11 } : headerBtn}>
                 &#8592; Lessons
               </button>
             )}
@@ -4000,15 +4010,15 @@ function WebbPageInner() {
             {/* Media overlay: rendered as portal — see createPortal block near end of return */}
 
             {/* Overlay buttons — bottom right: Skip + Mute (always) */}
-            <div style={{ position: 'absolute', bottom: keyboardCompact ? 4 : 14, right: keyboardCompact ? 4 : 14, display: 'flex', gap: keyboardCompact ? 4 : 10, zIndex: 10 }}>
+            <div style={{ position: 'absolute', bottom: keyboardCompact ? 6 : 14, right: keyboardCompact ? 6 : 14, display: 'flex', gap: keyboardCompact ? 4 : 10, zIndex: 10 }}>
               {engineState === 'playing' && (
-                <button type="button" onClick={skipTTS} aria-label="Skip" style={keyboardCompact ? { ...overlayBtnStyle, width: 28, height: 28 } : overlayBtnStyle}>
+                <button type="button" onClick={skipTTS} aria-label="Skip" style={keyboardCompact ? { ...overlayBtnStyle, width: 34, height: 34 } : overlayBtnStyle}>
                   <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                     <polygon points="5 4 15 12 5 20 5 4" /><line x1="19" y1="5" x2="19" y2="19" />
                   </svg>
                 </button>
               )}
-              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={keyboardCompact ? { ...overlayBtnStyle, width: 28, height: 28 } : overlayBtnStyle}>
+              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={keyboardCompact ? { ...overlayBtnStyle, width: 34, height: 34 } : overlayBtnStyle}>
                 {isMuted
                   ? <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
                   : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
@@ -4018,7 +4028,7 @@ function WebbPageInner() {
 
             {/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
             {isChatting && (
-              <div style={{ position: 'absolute', bottom: keyboardCompact ? 4 : 14, left: keyboardCompact ? 4 : 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: keyboardCompact ? 3 : 6, zIndex: 10 }}>
+              <div style={{ position: 'absolute', bottom: keyboardCompact ? 6 : 14, left: keyboardCompact ? 6 : 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: keyboardCompact ? 3 : 6, zIndex: 10 }}>
                 {(videoLoading || articleLoading) && (
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', background: 'rgba(0,0,0,0.45)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.02em' }}>
                     Searching the web…
@@ -4030,7 +4040,7 @@ function WebbPageInner() {
                   onClick={handleVideoButtonClick}
                   aria-label="Watch a video"
                   title={videoLoading ? 'Loading video…' : videoResource ? 'Watch a video' : 'Loading video…'}
-                  style={{ ...overlayBtnStyle, ...(keyboardCompact ? { width: 28, height: 28 } : {}), background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
+                  style={{ ...overlayBtnStyle, ...(keyboardCompact ? { width: 34, height: 34 } : {}), background: mediaOverlay === 'video' ? C.accent : '#1f2937', opacity: videoLoading ? 0.55 : 1 }}
                 >
                   {videoLoading
                     ? <svg style={{ width: '55%', height: '55%', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
@@ -4042,7 +4052,7 @@ function WebbPageInner() {
                   onClick={() => { setMediaOverlay(v => v === 'article' ? null : 'article') }}
                   aria-label="Read Wikipedia article"
                   title={articleLoading ? 'Finding Wikipedia article…' : articleResource ? `Wikipedia: ${articleResource.wikiTitle}` : 'Finding Wikipedia article…'}
-                  style={{ ...overlayBtnStyle, ...(keyboardCompact ? { width: 28, height: 28 } : {}), background: mediaOverlay === 'article' ? C.accent : '#1f2937', opacity: articleLoading ? 0.55 : 1 }}
+                  style={{ ...overlayBtnStyle, ...(keyboardCompact ? { width: 34, height: 34 } : {}), background: mediaOverlay === 'article' ? C.accent : '#1f2937', opacity: articleLoading ? 0.55 : 1 }}
                 >
                   {articleLoading
                     ? <svg style={{ width: '55%', height: '55%', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
@@ -4134,11 +4144,12 @@ function WebbPageInner() {
           {isChatting && (
             <div
               ref={transcriptRef}
+              data-ms-webb-transcript
               style={{
                 flex: '1 1 0', minHeight: 0,
                 overflowY: 'auto', overflowX: 'hidden',
-                padding: keyboardCompact ? '4px 7px 3px' : '16px 12px 8px',
-                display: 'flex', flexDirection: 'column', gap: keyboardCompact ? 3 : 8,
+                padding: keyboardCompact ? '8px 10px 6px' : '16px 12px 8px',
+                display: 'flex', flexDirection: 'column', gap: keyboardCompact ? 6 : 8,
                 background: '#f9fafb',
                 WebkitOverflowScrolling: 'touch',
               }}
@@ -4146,17 +4157,17 @@ function WebbPageInner() {
               {transcript.map((msg, i) => {
                 const isUser = msg.role === 'user'
                 return (
-                  <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: keyboardCompact ? 4 : 7, flexDirection: isUser ? 'row-reverse' : 'row', padding: keyboardCompact ? 0 : '0 2px' }}>
+                  <div key={i} style={{ display: 'flex', alignItems: 'flex-end', gap: keyboardCompact ? 6 : 7, flexDirection: isUser ? 'row-reverse' : 'row', padding: keyboardCompact ? 0 : '0 2px' }}>
                     {!isUser && (
-                      <span style={{ fontSize: keyboardCompact ? 15 : 20, lineHeight: 1, flexShrink: 0, marginBottom: 1 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
+                      <span style={{ fontSize: keyboardCompact ? 18 : 20, lineHeight: 1, flexShrink: 0, marginBottom: 1 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
                     )}
                     <div style={{
-                      maxWidth: keyboardCompact ? 'min(88%, 420px)' : 'min(78%, 360px)',
+                      maxWidth: keyboardCompact ? 'min(84%, 400px)' : 'min(78%, 360px)',
                       background: isUser ? C.accent : '#ffffff',
                       color: isUser ? '#ffffff' : C.text,
                       borderRadius: isUser ? '18px 18px 4px 18px' : '4px 18px 18px 18px',
-                      padding: keyboardCompact ? '4px 7px' : '9px 13px',
-                      fontSize: keyboardCompact ? 12 : 14, lineHeight: keyboardCompact ? 1.28 : 1.55,
+                      padding: keyboardCompact ? '7px 10px' : '9px 13px',
+                      fontSize: keyboardCompact ? 13.5 : 14, lineHeight: keyboardCompact ? 1.4 : 1.55,
                       wordBreak: 'break-word',
                       boxShadow: '0 1px 3px rgba(0,0,0,0.09)',
                       border: isUser ? 'none' : '1px solid #e5e7eb',
@@ -4251,17 +4262,9 @@ function WebbPageInner() {
 
       {/* Footer: normal chat input. Writing uses the isolated full-screen studio. */}
       {isChatting && !writingMode && (
-        <div style={keyboardCompact ? { ...footerStyle, padding: '3px 6px', paddingBottom: 'calc(3px + env(safe-area-inset-bottom, 0px))' } : footerStyle}>
-          <TypingConversationContext
-            entries={transcript}
-            visible={typingViewport.typing}
-            maxItems={keyboardCompact ? 3 : 6}
-            compact={keyboardCompact}
-            teacherLabel="Mrs. Webb"
-            accent={C.accent}
-          />
+        <div style={keyboardCompact ? { ...footerStyle, padding: '5px 8px', paddingBottom: 'calc(5px + env(safe-area-inset-bottom, 0px))' } : footerStyle}>
           {hasAllWritingReadyNotes(objectives, learnerNotes) && !essayMode && (
-            <div style={{ marginBottom: keyboardCompact ? 3 : 10 }}>
+            <div style={{ marginBottom: keyboardCompact ? 5 : 10 }}>
               <button
                 type="button"
                 onClick={writingAllAccepted && essay ? () => setEssayMode(true) : handleStartWriting}
@@ -4271,11 +4274,11 @@ function WebbPageInner() {
                   background: writingStartBlocked ? '#e5e7eb' : '#0d9488',
                   color: writingStartBlocked ? '#9ca3af' : '#fff',
                   border: 'none',
-                  borderRadius: keyboardCompact ? 7 : 10,
-                  padding: keyboardCompact ? '6px 10px' : '10px 16px',
+                  borderRadius: keyboardCompact ? 8 : 10,
+                  padding: keyboardCompact ? '8px 12px' : '10px 16px',
                   cursor: writingStartBlocked ? 'wait' : 'pointer',
                   fontWeight: 800,
-                  fontSize: keyboardCompact ? 11 : 14,
+                  fontSize: keyboardCompact ? 12.5 : 14,
                   fontFamily: 'inherit',
                 }}
               >
@@ -4845,7 +4848,6 @@ function WebbPageInner() {
         onBlankComplete={handleWritingBlankComplete}
         onNextSentence={handleNextWritingSentence}
         isLastSentence={writingAllAccepted}
-        recentEntries={transcript}
       />
 
       {newlySavedNote && createPortal(
