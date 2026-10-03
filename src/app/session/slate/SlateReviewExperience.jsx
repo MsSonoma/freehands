@@ -4,56 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 import { actOnFollowUp, getFollowUpRun } from '@/app/lib/followUpsClient'
-
-const TEACHERS = Object.freeze({
-  sonoma: {
-    id: 'sonoma',
-    name: 'MS. SONOMA',
-    icon: '👩🏻‍🦰',
-    video: '/media/ms-sonoma-3.mp4',
-    tts: '/api/tts',
-    accent: '#6b4f3a',
-    background: '#f4efe8',
-    surface: '#fffaf4',
-    text: '#332b25',
-    muted: '#756c64',
-    border: '#d7c8b9',
-    choice: '#fff',
-  },
-  webb: {
-    id: 'webb',
-    name: 'MRS. WEBB',
-    icon: '👩🏻‍🏫',
-    video: '/media/webb-teacher.mp4',
-    tts: '/api/webb-tts',
-    accent: '#7b3f66',
-    background: '#f7f0f5',
-    surface: '#fffafd',
-    text: '#362a33',
-    muted: '#756974',
-    border: '#dccbd8',
-    choice: '#fff',
-  },
-  slate: {
-    id: 'slate',
-    name: 'MR. SLATE',
-    icon: '🤖',
-    video: '/media/Mr.%20Slate%20Suit.mp4',
-    tts: '/api/slate-tts',
-    accent: '#58a6ff',
-    background: '#0d1117',
-    surface: '#161b22',
-    text: '#e6edf3',
-    muted: '#8b949e',
-    border: '#30363d',
-    choice: '#1c2128',
-  },
-})
-
-function normalizeTeacher(value) {
-  const teacher = String(value || '').trim().toLowerCase()
-  return TEACHERS[teacher] ? teacher : 'slate'
-}
+import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
+import { reviewTeacherDesign } from '@/app/lib/reviewTeacherDesign.mjs'
 
 function reviewLabel(reviewType) {
   if (reviewType === 'weekly_review') return 'WEEKLY REVIEW'
@@ -91,8 +43,9 @@ export default function SlateReviewExperience({ runId }) {
   const audioRef = useRef(null)
   const speechGenerationRef = useRef(0)
 
-  const teacher = normalizeTeacher(state?.run?.instructional_teacher)
-  const teacherConfig = TEACHERS[teacher]
+  const teacher = normalizeReviewTeacher(state?.run?.instructional_teacher)
+  const teacherConfig = reviewTeacherConfig(teacher)
+  const teacherDesign = reviewTeacherDesign(teacher)
 
   const stopSpeech = useCallback(() => {
     speechGenerationRef.current += 1
@@ -239,7 +192,7 @@ export default function SlateReviewExperience({ runId }) {
 
   const item = state?.current_item
   const label = reviewLabel(state?.run?.review_type)
-  const styles = reviewStyles(teacherConfig)
+  const styles = reviewStyles(teacherDesign)
 
   return <main style={styles.main}>
     <header style={styles.header}>
@@ -251,14 +204,14 @@ export default function SlateReviewExperience({ runId }) {
           playsInline
           loop
           preload="auto"
-          style={{ width: 62, height: 62, objectFit: 'contain', borderRadius: 10 }}
+          style={styles.teacherVideo}
         />
         <div>
-          <div style={styles.name}>{teacherConfig.icon} {teacherConfig.name}</div>
+          <div style={styles.name}>{teacherConfig.icon} {teacherConfig.displayName}</div>
           <div style={styles.label}>{label}</div>
         </div>
       </div>
-      <button style={styles.ghost} onClick={() => router.push('/learn')}>BACK</button>
+      <button style={styles.headerGhost} onClick={() => router.push('/learn')}>BACK</button>
     </header>
 
     <section style={styles.card}>
@@ -268,7 +221,7 @@ export default function SlateReviewExperience({ runId }) {
         <div style={styles.progress}>{state.progress?.completed || 0} OF {state.progress?.total || 0}</div>
         {!started && !state.complete ? <div style={{ textAlign: 'center' }}>
           <h1 style={styles.title}>{state.progress?.total || 0}-question review</h1>
-          <p style={styles.muted}>{teacherConfig.name.replaceAll('.', '')} will give this quiz.</p>
+          <p style={styles.muted}>{teacherConfig.displayName.replaceAll('.', '')} will give this quiz.</p>
           <button style={styles.primary} onClick={beginQuiz}>BEGIN QUIZ</button>
         </div> : feedback ? <div style={{ textAlign: 'center' }}>
           <h1 style={styles.title}>{feedback.text}</h1>
@@ -315,20 +268,129 @@ export default function SlateReviewExperience({ runId }) {
 }
 
 function reviewStyles(teacher) {
+  const webb = teacher.id === 'webb'
+  const sonoma = teacher.id === 'sonoma'
+  const slate = teacher.id === 'slate'
   return {
-    main: { minHeight: '100vh', background: teacher.background, color: teacher.text, fontFamily: 'system-ui, sans-serif' },
-    header: { padding: '14px 20px', borderBottom: `1px solid ${teacher.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: teacher.surface },
-    name: { color: teacher.accent, fontWeight: 900, letterSpacing: 1.4 },
-    label: { color: teacher.muted, fontSize: 11, letterSpacing: 2, marginTop: 3 },
-    card: { maxWidth: 680, margin: '48px auto', background: teacher.surface, border: `1px solid ${teacher.border}`, borderRadius: 14, padding: 32, boxShadow: teacher.id === 'slate' ? 'none' : '0 8px 30px rgba(0,0,0,.06)' },
-    progress: { color: teacher.muted, fontSize: 11, letterSpacing: 2, marginBottom: 20 },
-    title: { fontSize: 24, lineHeight: 1.4, margin: '0 0 24px' },
-    input: { width: '100%', boxSizing: 'border-box', borderRadius: 8, border: `1px solid ${teacher.border}`, background: teacher.choice, color: teacher.text, padding: 13, fontSize: 16, marginBottom: 12 },
-    choice: { border: '1px solid', borderRadius: 8, background: teacher.choice, color: teacher.text, padding: 12, textAlign: 'left', cursor: 'pointer', fontSize: 15 },
-    primary: { border: 0, borderRadius: 7, background: teacher.accent, color: teacher.id === 'slate' ? '#0d1117' : '#fff', fontWeight: 900, padding: '11px 16px', cursor: 'pointer' },
-    ghost: { border: `1px solid ${teacher.border}`, borderRadius: 7, background: 'transparent', color: teacher.text, padding: '10px 14px', cursor: 'pointer' },
+    main: {
+      minHeight: '100vh',
+      background: teacher.page,
+      color: teacher.text,
+      fontFamily: teacher.fontFamily,
+    },
+    header: {
+      padding: webb ? '10px 16px' : '14px 20px',
+      borderBottom: `1px solid ${webb ? teacher.header : teacher.border}`,
+      display: 'flex',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      gap: 12,
+      background: teacher.header,
+      boxShadow: webb ? '0 2px 8px rgba(0,0,0,0.18)' : 'none',
+    },
+    teacherVideo: {
+      width: webb ? 44 : 62,
+      height: webb ? 44 : 62,
+      objectFit: teacher.videoObjectFit,
+      objectPosition: teacher.videoObjectPosition,
+      borderRadius: webb ? 8 : 10,
+      background: teacher.videoBackground,
+    },
+    name: {
+      color: webb ? teacher.headerText : teacher.accent,
+      fontWeight: 900,
+      letterSpacing: teacher.labelLetterSpacing,
+    },
+    label: {
+      color: webb ? teacher.headerMuted : teacher.muted,
+      fontSize: 11,
+      letterSpacing: webb ? 1 : teacher.labelLetterSpacing,
+      marginTop: 3,
+    },
+    card: {
+      maxWidth: sonoma ? 720 : 680,
+      margin: webb ? '24px auto 72px' : sonoma ? '20px auto 72px' : '48px auto',
+      background: teacher.surface,
+      border: `1px solid ${webb ? teacher.softBorder : teacher.border}`,
+      borderRadius: webb ? '4px 18px 18px 18px' : teacher.cardRadius,
+      padding: webb ? '24px 22px' : 32,
+      boxShadow: teacher.cardShadow,
+      width: 'calc(100% - 32px)',
+      boxSizing: 'border-box',
+    },
+    progress: {
+      color: teacher.muted,
+      fontSize: 11,
+      letterSpacing: slate ? 2 : 0.5,
+      marginBottom: 20,
+    },
+    title: {
+      fontSize: 24,
+      lineHeight: 1.4,
+      margin: '0 0 24px',
+      color: teacher.text,
+    },
+    input: {
+      width: '100%',
+      boxSizing: 'border-box',
+      borderRadius: webb ? 12 : 8,
+      border: `1px solid ${teacher.border}`,
+      background: teacher.input,
+      color: teacher.text,
+      padding: 13,
+      fontSize: 16,
+      fontFamily: teacher.fontFamily,
+      marginBottom: 12,
+      outlineColor: teacher.accent,
+    },
+    choice: {
+      border: '1px solid',
+      borderRadius: webb ? 12 : 8,
+      background: teacher.choice,
+      color: teacher.text,
+      padding: 12,
+      textAlign: 'left',
+      cursor: 'pointer',
+      fontSize: 15,
+      fontFamily: teacher.fontFamily,
+      boxShadow: webb ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+    },
+    primary: {
+      border: 0,
+      borderRadius: webb ? 10 : 8,
+      background: teacher.accent,
+      color: teacher.accentContrast,
+      fontWeight: 900,
+      padding: '11px 16px',
+      cursor: 'pointer',
+      fontFamily: teacher.fontFamily,
+    },
+    ghost: {
+      border: `1px solid ${teacher.border}`,
+      borderRadius: 8,
+      background: teacher.surface,
+      color: teacher.text,
+      padding: '10px 14px',
+      cursor: 'pointer',
+      fontFamily: teacher.fontFamily,
+    },
+    headerGhost: {
+      border: `1px solid ${webb ? 'rgba(255,255,255,0.35)' : teacher.border}`,
+      borderRadius: 8,
+      background: webb ? 'rgba(255,255,255,0.15)' : teacher.surface,
+      color: webb ? '#fff' : teacher.text,
+      padding: '10px 14px',
+      cursor: 'pointer',
+      fontFamily: teacher.fontFamily,
+    },
     muted: { color: teacher.muted },
-    error: { color: '#b42318' },
-    help: { color: teacher.text, background: teacher.id === 'slate' ? 'rgba(210,153,34,.12)' : 'rgba(0,0,0,.045)', padding: 12, borderRadius: 8 },
+    error: { color: teacher.wrong },
+    help: {
+      color: teacher.text,
+      background: slate ? 'rgba(210,153,34,.12)' : webb ? '#f0fdfa' : '#fff7ed',
+      padding: 12,
+      borderRadius: webb ? 12 : 8,
+      border: webb ? `1px solid ${teacher.border}` : 'none',
+    },
   }
 }

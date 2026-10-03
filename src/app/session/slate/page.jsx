@@ -28,6 +28,7 @@ import { recordSlateCompletion } from '@/app/lib/slateCompletionClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { authorizeProtectedOccurrence } from '@/app/lib/syllabus/executionClient'
 import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
+import { reviewTeacherCssVariables, reviewTeacherDesign } from '@/app/lib/reviewTeacherDesign.mjs'
 import {
   reviewTeacherCompletionAudioOptions,
   reviewTeacherCompletionMessage,
@@ -82,20 +83,23 @@ const SETTINGS_CONFIG = [
 // --- Color palette (dark robot theme) ----------------------------------------
 
 const C = {
-  bg: '#0d1117',
-  surface: '#161b22',
-  surfaceElev: '#1c2128',
-  border: '#30363d',
-  text: '#e6edf3',
-  muted: '#8b949e',
-  accent: '#58a6ff',
-  green: '#3fb950',
-  greenDim: 'rgba(63,185,80,0.15)',
-  red: '#f85149',
-  redDim: 'rgba(248,81,73,0.15)',
-  yellow: '#d29922',
-  yellowDim: 'rgba(210,153,34,0.15)',
-  mono: '"ui-monospace","Cascadia Code","Source Code Pro",monospace',
+  bg: 'var(--review-bg, #0d1117)',
+  surface: 'var(--review-surface, #161b22)',
+  surfaceElev: 'var(--review-surface-elev, #1c2128)',
+  input: 'var(--review-input, #0d1117)',
+  border: 'var(--review-border, #30363d)',
+  softBorder: 'var(--review-soft-border, #30363d)',
+  text: 'var(--review-text, #e6edf3)',
+  muted: 'var(--review-muted, #8b949e)',
+  accent: 'var(--review-accent, #58a6ff)',
+  accentContrast: 'var(--review-accent-contrast, #0d1117)',
+  green: 'var(--review-correct, #3fb950)',
+  greenDim: 'var(--review-correct-soft, rgba(63,185,80,0.15))',
+  red: 'var(--review-wrong, #f85149)',
+  redDim: 'var(--review-wrong-soft, rgba(248,81,73,0.15))',
+  yellow: 'var(--review-timeout, #d29922)',
+  yellowDim: 'var(--review-timeout-soft, rgba(210,153,34,0.15))',
+  mono: 'var(--review-font, "ui-monospace","Cascadia Code","Source Code Pro",monospace)',
 }
 
 // --- Question pool helpers ----------------------------------------------------
@@ -209,7 +213,7 @@ function TimerBar({ secondsLeft, total = QUESTION_SECONDS }) {
   const color = pct > 50 ? C.green : pct > 25 ? C.yellow : C.red
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-      <div style={{ flex: 1, height: 6, background: '#21262d', borderRadius: 3, overflow: 'hidden' }}>
+      <div style={{ flex: 1, height: 6, background: C.softBorder, borderRadius: 3, overflow: 'hidden' }}>
         <div style={{
           width: `${pct}%`,
           height: '100%',
@@ -231,7 +235,7 @@ function ScorePips({ score, goal = SCORE_GOAL }) {
           width: 14,
           height: 14,
           borderRadius: 2,
-          background: i < score ? C.green : '#21262d',
+          background: i < score ? C.green : C.softBorder,
           border: `1px solid ${i < score ? '#2ea043' : C.border}`,
           transition: 'background 0.3s, border-color 0.3s',
         }} />
@@ -270,7 +274,7 @@ const primaryBtn = {
   ...btnBase,
   background: C.green,
   border: `1px solid ${C.green}`,
-  color: '#0d1117',
+  color: C.accentContrast,
   borderRadius: 6,
   padding: '12px 28px',
   fontSize: 14,
@@ -371,6 +375,47 @@ function SlateDrillInner() {
   const routeReviewTeacher = normalizeReviewTeacher(searchParams?.get('reviewTeacher'))
   const [reviewTeacherId, setReviewTeacherId] = useState(routeReviewTeacher)
   const reviewTeacher = reviewTeacherConfig(reviewTeacherId)
+  const reviewDesign = reviewTeacherDesign(reviewTeacherId)
+  const reviewCssVars = reviewTeacherCssVariables(reviewTeacherId)
+  const isSlateDesign = reviewDesign.layout === 'slate'
+  const isSonomaDesign = reviewDesign.layout === 'sonoma'
+  const isWebbDesign = reviewDesign.layout === 'webb'
+  const themedGhostBtn = {
+    ...ghostBtn,
+    background: isWebbDesign ? 'rgba(255,255,255,0.15)' : reviewDesign.surface,
+    border: `1px solid ${isWebbDesign ? 'rgba(255,255,255,0.35)' : reviewDesign.border}`,
+    color: isWebbDesign ? '#fff' : reviewDesign.muted,
+    fontFamily: reviewDesign.fontFamily,
+  }
+  const panelGhostBtn = { ...ghostBtn, background: reviewDesign.surface, border: `1px solid ${reviewDesign.border}`, color: reviewDesign.text, fontFamily: reviewDesign.fontFamily }
+  const themedDangerBtn = {
+    ...dangerBtn,
+    background: isWebbDesign ? 'rgba(255,255,255,0.15)' : 'transparent',
+    border: `1px solid ${isWebbDesign ? 'rgba(255,255,255,0.35)' : reviewDesign.border}`,
+    color: isWebbDesign ? '#fff' : reviewDesign.wrong,
+    fontFamily: reviewDesign.fontFamily,
+  }
+  const themedSoundBtn = {
+    ...soundBtn,
+    background: isWebbDesign ? 'rgba(255,255,255,0.15)' : 'transparent',
+    border: `1px solid ${isWebbDesign ? 'rgba(255,255,255,0.35)' : reviewDesign.border}`,
+    color: isWebbDesign ? '#fff' : reviewDesign.muted,
+    fontFamily: reviewDesign.fontFamily,
+  }
+  const themedChoiceBtn = {
+    ...choiceBtn,
+    background: reviewDesign.choice,
+    border: `1px solid ${reviewDesign.border}`,
+    color: reviewDesign.text,
+    fontFamily: reviewDesign.fontFamily,
+    borderRadius: isWebbDesign ? 12 : 8,
+    boxShadow: isWebbDesign ? '0 1px 3px rgba(0,0,0,0.06)' : 'none',
+  }
+  const themedTfBtnBase = {
+    ...tfBtnBase,
+    background: reviewDesign.input,
+    fontFamily: reviewDesign.fontFamily,
+  }
 
   // Page state
   // Phases: loading | list | ready | asking | feedback | won | error
@@ -1207,7 +1252,7 @@ function SlateDrillInner() {
   // ===========================================================================
   if (pagePhase === 'loading') {
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: C.muted }}>
+      <div style={{ ...reviewCssVars, fontFamily: reviewDesign.fontFamily, background: reviewDesign.page, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', color: reviewDesign.muted }}>
         <div style={{ textAlign: 'center' }}>
           <div style={{ marginBottom: 16 }}>
             <SlateVideo teacher={reviewTeacherId} size={100} />
@@ -1224,12 +1269,12 @@ function SlateDrillInner() {
   // ===========================================================================
   if (pagePhase === 'error') {
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
+      <div style={{ ...reviewCssVars, fontFamily: reviewDesign.fontFamily, background: reviewDesign.page, color: reviewDesign.text, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
         <div style={{ textAlign: 'center', maxWidth: 400 }}>
           <div style={{ fontSize: 48, marginBottom: 12 }}>⚠️</div>
           <div style={{ color: C.red, fontWeight: 700, letterSpacing: 1, marginBottom: 8 }}>SYSTEM ERROR</div>
           <div style={{ color: C.muted, fontSize: 13, marginBottom: 24 }}>{errorMsg}</div>
-          <button onClick={exitToLessons} style={ghostBtn}>← RETURN TO LESSONS</button>
+          <button onClick={exitToLessons} style={panelGhostBtn}>← RETURN TO LESSONS</button>
         </div>
       </div>
     )
@@ -1243,7 +1288,7 @@ function SlateDrillInner() {
     // The lesson list is phased out; never expose it to the user.
     if (offerResume) {
       return (
-        <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ ...reviewCssVars, fontFamily: reviewDesign.fontFamily, background: reviewDesign.page, color: reviewDesign.text, minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <audio ref={audioEl} />
           <div style={{
             position: 'fixed', inset: 0, zIndex: 1200,
@@ -1252,31 +1297,31 @@ function SlateDrillInner() {
             padding: 20,
           }}>
             <div style={{
-              background: '#0f172a',
+              background: reviewDesign.surface,
               borderRadius: 18,
               width: 'min(92vw, 360px)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #6366f1',
+              boxShadow: `0 12px 48px rgba(0,0,0,${isSlateDesign ? 0.6 : 0.18}), 0 0 0 2px ${reviewDesign.accent}`,
               padding: '28px 24px',
               textAlign: 'center',
             }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>{reviewTeacher.icon}</div>
-              <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
-              <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+              <div style={{ color: reviewDesign.text, fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
+              <div style={{ color: reviewDesign.muted, fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
                 You were in the middle of a Daily Review with {reviewTeacher.label}.<br/>
                 Would you like to pick up where you left off?
               </div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <button type="button" onClick={handleSlateResume}
                   style={{
-                    flex: 1, background: '#6366f1', color: '#fff', border: 'none',
+                    flex: 1, background: reviewDesign.accent, color: reviewDesign.accentContrast, border: 'none',
                     borderRadius: 10, padding: '11px 0', cursor: 'pointer',
                     fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
                   }}
                 >▶ Resume</button>
                 <button type="button" onClick={handleSlateRestart}
                   style={{
-                    flex: 1, background: 'rgba(255,255,255,0.07)', color: '#94a3b8',
-                    border: '1px solid #334155',
+                    flex: 1, background: reviewDesign.page, color: reviewDesign.muted,
+                    border: `1px solid ${reviewDesign.border}`,
                     borderRadius: 10, padding: '11px 0', cursor: 'pointer',
                     fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
                   }}
@@ -1289,7 +1334,7 @@ function SlateDrillInner() {
     }
 
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+      <div data-review-teacher={reviewTeacherId} style={{ ...reviewCssVars, fontFamily: reviewDesign.fontFamily, background: reviewDesign.page, color: reviewDesign.text, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
         {/* ── Resume overlay ─────────────────────────────────────────── */}
         {offerResume && (
           <div style={{
@@ -1299,31 +1344,31 @@ function SlateDrillInner() {
             padding: 20,
           }}>
             <div style={{
-              background: '#0f172a',
+              background: reviewDesign.surface,
               borderRadius: 18,
               width: 'min(92vw, 360px)',
-              boxShadow: '0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px #6366f1',
+              boxShadow: `0 12px 48px rgba(0,0,0,${isSlateDesign ? 0.6 : 0.18}), 0 0 0 2px ${reviewDesign.accent}`,
               padding: '28px 24px',
               textAlign: 'center',
             }}>
               <div style={{ fontSize: 36, marginBottom: 12 }}>{reviewTeacher.icon}</div>
-              <div style={{ color: '#e2e8f0', fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
-              <div style={{ color: '#94a3b8', fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
+              <div style={{ color: reviewDesign.text, fontWeight: 800, fontSize: 18, marginBottom: 8 }}>Welcome back!</div>
+              <div style={{ color: reviewDesign.muted, fontSize: 14, lineHeight: 1.6, marginBottom: 24 }}>
                 You were in the middle of a Daily Review with {reviewTeacher.label}.<br/>
                 Would you like to pick up where you left off?
               </div>
               <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
                 <button type="button" onClick={handleSlateResume}
                   style={{
-                    flex: 1, background: '#6366f1', color: '#fff', border: 'none',
+                    flex: 1, background: reviewDesign.accent, color: reviewDesign.accentContrast, border: 'none',
                     borderRadius: 10, padding: '11px 0', cursor: 'pointer',
                     fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
                   }}
                 >▶ Resume</button>
                 <button type="button" onClick={handleSlateRestart}
                   style={{
-                    flex: 1, background: 'rgba(255,255,255,0.07)', color: '#94a3b8',
-                    border: '1px solid #334155',
+                    flex: 1, background: reviewDesign.page, color: reviewDesign.muted,
+                    border: `1px solid ${reviewDesign.border}`,
                     borderRadius: 10, padding: '11px 0', cursor: 'pointer',
                     fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
                   }}
@@ -1334,8 +1379,8 @@ function SlateDrillInner() {
         )}
         {/* Header */}
         <div style={{
-          background: C.surface,
-          borderBottom: `1px solid ${C.border}`,
+          background: reviewDesign.header,
+          borderBottom: `1px solid ${isWebbDesign ? reviewDesign.header : reviewDesign.border}`,
           padding: '14px 20px',
           display: 'flex',
           alignItems: 'center',
@@ -1345,11 +1390,11 @@ function SlateDrillInner() {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
             <video src={reviewTeacher.video} muted playsInline style={{ width: 36, height: 36, objectFit: 'contain' }} />
             <div>
-              <div style={{ color: C.accent, fontWeight: 800, fontSize: 15, letterSpacing: 2 }}>{reviewTeacher.icon} DAILY REVIEW</div>
-              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2 }}>{reviewTeacher.label.toUpperCase()} · REVIEW TEACHER</div>
+              <div style={{ color: isWebbDesign ? '#fff' : reviewDesign.accent, fontWeight: 800, fontSize: 15, letterSpacing: reviewDesign.labelLetterSpacing }}>{reviewTeacher.icon} DAILY REVIEW</div>
+              <div style={{ color: reviewDesign.headerMuted, fontSize: 10, letterSpacing: reviewDesign.labelLetterSpacing }}>{reviewTeacher.label.toUpperCase()} · REVIEW TEACHER</div>
             </div>
           </div>
-          <button onClick={exitToLessons} style={ghostBtn}>← BACK</button>
+          <button onClick={exitToLessons} style={themedGhostBtn}>← BACK</button>
         </div>
 
         {/* Body — flex column so controls stay fixed and only the list scrolls */}
@@ -1692,7 +1737,7 @@ ${rows}
     }
 
     return (
-      <div style={{ fontFamily: C.mono, background: C.bg, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
+      <div data-review-teacher={reviewTeacherId} style={{ ...reviewCssVars, fontFamily: reviewDesign.fontFamily, background: reviewDesign.page, color: reviewDesign.text, minHeight: '100vh', overflowY: 'auto', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
         <div style={{ maxWidth: 540, width: '100%', textAlign: 'center' }}>
           <div style={{ marginBottom: 12 }}>
             <SlateVideo teacher={reviewTeacherId} size={120} />
@@ -1720,10 +1765,10 @@ ${rows}
           )}
 
           <div style={{ display: 'flex', gap: 12, justifyContent: 'center', flexWrap: 'wrap' }}>
-            <button onClick={() => selectLesson(lessonData)} style={ghostBtn}>REVIEW AGAIN</button>
-            <button onClick={backToList} style={ghostBtn}>LESSON LIST</button>
+            <button onClick={() => selectLesson(lessonData)} style={panelGhostBtn}>REVIEW AGAIN</button>
+            <button onClick={backToList} style={panelGhostBtn}>LESSON LIST</button>
             {drillTranscript.length > 0 && (
-              <button onClick={openTranscript} style={ghostBtn}>TRANSCRIPT</button>
+              <button onClick={openTranscript} style={panelGhostBtn}>TRANSCRIPT</button>
             )}
             <button onClick={exitToLessons} style={primaryBtn}>← BACK TO LESSONS</button>
           </div>
@@ -1744,12 +1789,12 @@ ${rows}
     : C.border
 
   return (
-    <div style={{ fontFamily: C.mono, background: C.bg, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
+    <div data-review-teacher={reviewTeacherId} style={{ ...reviewCssVars, fontFamily: reviewDesign.fontFamily, background: reviewDesign.page, color: reviewDesign.text, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
 
       {/* Header bar */}
       <div style={{
-        background: C.surface,
-        borderBottom: `1px solid ${C.border}`,
+        background: reviewDesign.header,
+        borderBottom: `1px solid ${isWebbDesign ? reviewDesign.header : reviewDesign.border}`,
         padding: '10px 20px',
         display: 'flex',
         alignItems: 'center',
@@ -1760,8 +1805,8 @@ ${rows}
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, minWidth: 0 }}>
           <video src={reviewTeacher.video} muted playsInline style={{ width: 32, height: 32, objectFit: 'contain', flexShrink: 0 }} />
           <div style={{ minWidth: 0 }}>
-            <div style={{ color: C.accent, fontWeight: 800, fontSize: 13, letterSpacing: 2 }}>{reviewTeacher.icon} DAILY REVIEW</div>
-            <div style={{ color: C.muted, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '32ch' }}>{reviewTeacher.label} · {lessonTitle}</div>
+            <div style={{ color: isWebbDesign ? '#fff' : reviewDesign.accent, fontWeight: 800, fontSize: 13, letterSpacing: reviewDesign.labelLetterSpacing }}>{reviewTeacher.icon} DAILY REVIEW</div>
+            <div style={{ color: reviewDesign.headerMuted, fontSize: 11, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', maxWidth: '32ch' }}>{reviewTeacher.label} · {lessonTitle}</div>
           </div>
         </div>
 
@@ -1776,11 +1821,11 @@ ${rows}
               return next
             })}
             title={soundOn ? 'Mute voice' : 'Unmute voice'}
-            style={soundBtn}
+            style={themedSoundBtn}
           >
             {soundOn ? '🔊' : '🔇'}
           </button>
-          <button onClick={exitToLessons} style={dangerBtn}>EXIT</button>
+          <button onClick={exitToLessons} style={themedDangerBtn}>EXIT</button>
         </div>
       </div>
 
@@ -1788,22 +1833,22 @@ ${rows}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
         {/* Mr. Slate video — expands to fill all space above the card */}
-        <div style={{ flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 16px 0' }}>
-          <SlateVideo teacher={reviewTeacherId} ref={slateVideoRef} style={{ width: '100%', height: '100%', objectFit: 'contain', margin: 0 }} />
+        <div style={isSlateDesign ? { flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 16px 0' } : { flex: '0 0 auto', height: isSonomaDesign ? '35vh' : '30vh', minHeight: 180, width: isSonomaDesign ? '92%' : '96%', maxWidth: 960, margin: '8px auto 0', overflow: 'hidden', background: reviewDesign.videoBackground, borderRadius: reviewDesign.videoRadius, boxShadow: reviewDesign.videoShadow }}>
+          <SlateVideo teacher={reviewTeacherId} ref={slateVideoRef} style={{ width: '100%', height: '100%', objectFit: reviewDesign.videoObjectFit, objectPosition: reviewDesign.videoObjectPosition, margin: 0 }} />
         </div>
 
         {/* Question card — anchored to bottom, scrolls internally if very tall */}
-        <div style={{ flexShrink: 0, overflowY: 'auto', maxHeight: '60vh', padding: '12px 16px 56px', width: '100%', maxWidth: 632, margin: '0 auto', boxSizing: 'border-box' }}>
+        <div style={isSlateDesign ? { flexShrink: 0, overflowY: 'auto', maxHeight: '60vh', padding: '12px 16px 56px', width: '100%', maxWidth: 632, margin: '0 auto', boxSizing: 'border-box' } : { flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: isWebbDesign ? '16px 12px 72px' : '12px 4% 72px', width: '100%', maxWidth: isWebbDesign ? 720 : 760, margin: '0 auto', boxSizing: 'border-box', background: reviewDesign.content }}>
           {q && (
             <div style={{
               background: C.surface,
               border: `1px solid ${borderColor}`,
-              borderRadius: 12,
-              padding: 24,
-              transition: 'border-color 0.3s',
+              borderRadius: isWebbDesign ? '4px 18px 18px 18px' : reviewDesign.cardRadius,
+              padding: isWebbDesign ? '16px 18px' : isSonomaDesign ? 20 : 24,
+              boxShadow: reviewDesign.cardShadow, transition: 'border-color 0.3s',
             }}>
               {/* Query label */}
-              <div style={{ color: C.muted, fontSize: 10, letterSpacing: 2, marginBottom: 14 }}>
+              <div style={{ color: reviewDesign.muted, fontSize: 10, letterSpacing: reviewDesign.labelLetterSpacing, marginBottom: 14 }}>
                 QUERY #{qCount + (isAsking ? 1 : 0)} · {q.type.toUpperCase()}
               </div>
 
@@ -1823,7 +1868,7 @@ ${rows}
                       key={i}
                       onClick={() => onChoiceClick(i)}
                       disabled={isJudging}
-                      style={{ ...choiceBtn, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
+                      style={{ ...themedChoiceBtn, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                     >
                       <span style={{ color: C.accent, marginRight: 8, fontWeight: 800 }}>
                         {String.fromCharCode(65 + i)}.
@@ -1840,14 +1885,14 @@ ${rows}
                   <button
                     onClick={() => onChoiceClick('true')}
                     disabled={isJudging}
-                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.green}`, color: C.green, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
+                    style={{ ...themedTfBtnBase, background: C.input, border: `1px solid ${C.green}`, color: C.green, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                   >
                     TRUE
                   </button>
                   <button
                     onClick={() => onChoiceClick('false')}
                     disabled={isJudging}
-                    style={{ ...tfBtnBase, background: '#0d1117', border: `1px solid ${C.red}`, color: C.red, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
+                    style={{ ...themedTfBtnBase, background: C.input, border: `1px solid ${C.red}`, color: C.red, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                   >
                     FALSE
                   </button>
@@ -1866,7 +1911,7 @@ ${rows}
                     placeholder="TYPE YOUR ANSWER..."
                     style={{
                       flex: 1,
-                      background: C.bg,
+                      background: C.input,
                       border: `1px solid ${C.border}`,
                       borderRadius: 6,
                       padding: '10px 14px',
@@ -1879,7 +1924,7 @@ ${rows}
                   <button
                     onClick={onTextSubmit}
                     disabled={isJudging}
-                    style={{ ...btnBase, background: C.accent, border: `1px solid ${C.accent}`, color: '#0d1117', borderRadius: 6, padding: '10px 18px', fontSize: 13, fontWeight: 800, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
+                    style={{ ...btnBase, background: C.accent, border: `1px solid ${C.accent}`, color: C.accentContrast, borderRadius: 6, padding: '10px 18px', fontSize: 13, fontWeight: 800, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                   >
                     {isJudging ? '...' : 'SUBMIT'}
                   </button>
@@ -1932,7 +1977,7 @@ ${rows}
 export default function SlateDrillPage() {
   return (
     <Suspense fallback={
-      <div style={{ background: '#0d1117', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#8b949e', fontFamily: 'monospace' }}>
+      <div style={{ background: '#f9fafb', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#6b7280', fontFamily: 'system-ui, -apple-system, sans-serif' }}>
         <span>LOADING...</span>
       </div>
     }>
