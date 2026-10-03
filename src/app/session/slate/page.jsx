@@ -28,6 +28,13 @@ import { recordSlateCompletion } from '@/app/lib/slateCompletionClient'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { authorizeProtectedOccurrence } from '@/app/lib/syllabus/executionClient'
 import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
+import {
+  reviewTeacherCompletionAudioOptions,
+  reviewTeacherCompletionMessage,
+  reviewTeacherCorrectAnswerLine,
+  reviewTeacherDialogue,
+  reviewTeacherRecoveryLine,
+} from '@/app/lib/reviewTeacherTone.mjs'
 import SlateReviewExperience from './SlateReviewExperience'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { STAGE_6_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js'
@@ -177,73 +184,9 @@ function getCorrectText(q) {
   return (q.expectedAny || [])[0] || ''
 }
 
-// --- Robot dialogue ----------------------------------------------------------
+// --- Review-teacher dialogue -------------------------------------------------
 
 const pick = arr => arr[Math.floor(Math.random() * arr.length)]
-
-const GREETING_MSGS = [
-  'Time to run some drills.',
-  'Let the drill begin.',
-  'Drill sequence initiated.',
-  'Ready for your first query.',
-  'Systems online. First question loading.',
-  'Activating drill protocol.',
-  'Stand by. Loading first query.',
-  'Drill mode engaged. Let us begin.',
-  'Prepare for query processing.',
-  'Commencing drill sequence now.',
-  'Drill protocol active. Here we go.',
-]
-const CORRECT_MSGS = [
-  'Affirmative. Correct response.',
-  'Confirmed correct.',
-  'Accurate. Score updated.',
-  'Correct. Processing next query.',
-  'Response accepted.',
-  'Input validated. Correct.',
-  'Excellent. Moving on.',
-  'That is correct.',
-  'Right answer confirmed.',
-  'Positive match detected.',
-  'Score increment registered.',
-]
-const WRONG_MSGS = [
-  'Negative. Incorrect response.',
-  'Error. Wrong answer detected.',
-  'Incorrect.',
-  'Does not match expected output.',
-  'Incorrect response recorded.',
-  'Mismatch detected.',
-  'Negative. Try harder next time.',
-  'That is not the correct answer.',
-  'Error code: wrong answer.',
-  'Recalibrate. The answer was wrong.',
-  'Wrong. Score deducted.',
-]
-const TIMEOUT_MSGS = [
-  'Time limit exceeded. No response.',
-  'Query timeout. Moving on.',
-  'Response not received in time.',
-  'Time expired. Next query.',
-  'Timeout recorded. Stay faster.',
-  'Response window closed.',
-  'No input detected. Advancing.',
-  'Time is up. Focus.',
-  'Clock ran out. Next query loading.',
-  'Too slow. Speed up your recall.',
-  'Timeout. We do not wait.',
-  'Response overdue. Proceeding.',
-  'Timer zeroed. No credit awarded.',
-  'You ran out of time on that one.',
-  'Processing halted. Time limit reached.',
-  'That one slipped by. Stay sharp.',
-  'No answer in time. Noted.',
-  'Timeout flagged. Keep your pace.',
-  'The clock does not lie. Moving on.',
-  'Speed and accuracy. Work on both.',
-  'Time penalty applied. Next.',
-  'Zero seconds remaining. Advancing.',
-]
 // --- Sub-components ----------------------------------------------------------
 
 const SlateVideo = forwardRef(function SlateVideo({ size = 180, style: extraStyle, teacher = 'slate' }, ref) {
@@ -804,7 +747,7 @@ function SlateDrillInner() {
       setTimeout(() => inputEl.current?.focus?.(), 80)
       setTimeout(() => {
         const m = !soundRef.current
-        playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
+        playSlateAudio(pick(reviewTeacherDialogue(reviewTeacherId).greeting), audioEl.current, slateVideoRef.current, () => {
           playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
         }, slateIsSpeakingRef, m, reviewTeacherId)
       }, 120)
@@ -873,7 +816,7 @@ function SlateDrillInner() {
       showQuestion(q, true) // skipAudio — we chain greeting → question ourselves
       setTimeout(() => {
         const m = !soundRef.current
-        playSlateAudio(pick(GREETING_MSGS), audioEl.current, slateVideoRef.current, () => {
+        playSlateAudio(pick(reviewTeacherDialogue(reviewTeacherId).greeting), audioEl.current, slateVideoRef.current, () => {
           playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
         }, slateIsSpeakingRef, m, reviewTeacherId)
       }, 120)
@@ -1024,7 +967,8 @@ function SlateDrillInner() {
       setDrillTranscript([...drillTranscriptRef.current])
     }
 
-    const msgs = timeout ? TIMEOUT_MSGS : correct ? CORRECT_MSGS : WRONG_MSGS
+    const dialogue = reviewTeacherDialogue(reviewTeacherId)
+    const msgs = timeout ? dialogue.timeout : correct ? dialogue.correct : dialogue.wrong
     const feedbackText = pick(msgs)
     const correctAnswer = !correct && q ? getCorrectText(q) : ''
     const evidenceWrite = recordSlateResponse({ q, correct, timeout, rawAnswer, correctAnswer })
@@ -1062,11 +1006,18 @@ function SlateDrillInner() {
         }
         const finalEvidenceStatus = finalized?.status || 'unavailable'
         setEvidenceStatus(finalEvidenceStatus)
-        setCompletionMessage(pointGoalMessage({ evidenceStatus: finalEvidenceStatus, masteryOutcome: latestMasteryOutcomeRef.current }))
-        const completionAudioOptions = slateCompletionAudioOptions({
+        const completionContext = {
           evidenceStatus: finalEvidenceStatus,
           masteryOutcome: latestMasteryOutcomeRef.current,
-        })
+        }
+        setCompletionMessage(
+          reviewTeacherId === 'slate'
+            ? pointGoalMessage(completionContext)
+            : reviewTeacherCompletionMessage(reviewTeacherId, completionContext)
+        )
+        const completionAudioOptions = reviewTeacherId === 'slate'
+          ? slateCompletionAudioOptions(completionContext)
+          : reviewTeacherCompletionAudioOptions(reviewTeacherId, completionContext)
         const lid = learnerIdRef.current
         if (lid) getCanonicalMasteryForLearner(lid).then(setMasteryMap).catch(() => {})
         const doWon = () => { phaseRef.current = 'won'; setPagePhase('won') }
@@ -1077,13 +1028,13 @@ function SlateDrillInner() {
       // No separate timeout — audio onDone drives the transition so nothing cuts it off
       const m = !soundRef.current
       playSlateAudio(feedbackText, audioEl.current, slateVideoRef.current, () => {
-        playSlateAudio(`The correct answer was ${correctAnswer}.`, audioEl.current, slateVideoRef.current, () => {
+        playSlateAudio(reviewTeacherCorrectAnswerLine(reviewTeacherId, correctAnswer), audioEl.current, slateVideoRef.current, () => {
           void evidenceWrite.then((evidence) => {
             if (!evidence?.recoveryStarted) {
               feedbackTimeout.current = setTimeout(doAdvance, 600)
               return
             }
-            const recoveryText = `Let us review the idea. The question was: ${q?.question || 'this item'}. The correct response is ${correctAnswer}. Connect the question to that answer before the next query.`
+            const recoveryText = reviewTeacherRecoveryLine(reviewTeacherId, { question: q?.question || 'this item', correctAnswer })
             setLastResult((previous) => previous ? { ...previous, recoveryText } : previous)
             playSlateAudio(recoveryText, audioEl.current, slateVideoRef.current, () => {
               void completeSlateRecovery(evidence.recoveryContext).finally(() => {

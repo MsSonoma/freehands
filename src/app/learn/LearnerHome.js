@@ -1724,6 +1724,7 @@ function LessonsPageInner(){
               ? learnerReviewTeacherChoice
               : assignedReviewTeacher
             const reviewTeacherChoiceMissing = learnerChoosesReviewTeacher && !isReviewTeacher(learnerReviewTeacherChoice)
+            const selfReviewTeacher = isReviewTeacher(learnerReviewTeacherChoice) ? learnerReviewTeacherChoice : 'slate'
             const hasSnapshot = (() => {
               if (isDemo) return false
               if (assignedInstructionalTeacher === 'webb') {
@@ -1916,15 +1917,27 @@ function LessonsPageInner(){
                     })()}
 
                     {!isDemo && syllabusItem?.item_type !== 'slate_assignment' && syllabusItem?.has_lesson_artifact !== false && (
-                      <button
-                        onClick={() => {
-                          const occurrenceId = syllabusItem?.practice_occurrence_id || syllabusItem?.occurrence_id || ''
-                          router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=practice&reviewTeacher=slate`)
-                        }}
-                        style={{ fontSize: 13, color: '#5b21b6', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '6px 10px', cursor: 'pointer', marginBottom: 16 }}
-                      >
-                        🤖 Start Daily Review
-                      </button>
+                      <div style={{ display: 'flex', alignItems: 'end', gap: 8, flexWrap: 'wrap', marginBottom: 16 }}>
+                        <label style={{ display: 'grid', gap: 4, fontSize: 12, color: '#6b7280' }}>
+                          <span style={{ fontWeight: 700 }}>Review teacher</span>
+                          <select
+                            value={selfReviewTeacher}
+                            onChange={(event) => setLearnerReviewTeacherChoice(event.target.value)}
+                            style={{ minHeight: 34, border: '1px solid #ddd6fe', borderRadius: 8, background: '#fff', padding: '5px 8px', fontSize: 13, color: '#374151' }}
+                          >
+                            {REVIEW_TEACHER_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}
+                          </select>
+                        </label>
+                        <button
+                          onClick={() => {
+                            const occurrenceId = syllabusItem?.practice_occurrence_id || syllabusItem?.occurrence_id || ''
+                            router.push(`/session/slate?learnerId=${encodeURIComponent(learnerId)}&lessonKey=${encodeURIComponent(lessonKey)}&occurrenceId=${encodeURIComponent(occurrenceId)}&purpose=practice&reviewTeacher=${encodeURIComponent(selfReviewTeacher)}`)
+                          }}
+                          style={{ fontSize: 13, color: '#5b21b6', background: '#f5f3ff', border: '1px solid #ddd6fe', borderRadius: 8, padding: '7px 10px', cursor: 'pointer' }}
+                        >
+                          {reviewTeacherIcon(selfReviewTeacher)} Start Daily Review with {reviewTeacherLabel(selfReviewTeacher)}
+                        </button>
+                      </div>
                     )}
                     {/* History */}
                     {(inProgressAt || lastCompletedAt) && (
