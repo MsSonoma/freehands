@@ -722,22 +722,22 @@ export default function KidsResort() {
                 top: `${place.y}%`,
                 '--depth-scale':
                   place.id === 'suite'
-                    ? 1.55
+                    ? 1.68
                     : place.id === 'studio' || place.id === 'market'
-                      ? 1.25
+                      ? 1.36
                       : place.id === 'lobby'
-                        ? 1.05
+                        ? 1.14
                         : place.id === 'cafe'
-                          ? 0.82
-                          : 0.8,
+                          ? 0.9
+                          : 0.88,
                 '--label-offset':
                   place.id === 'suite'
-                    ? '-22px'
+                    ? '-27px'
                     : place.id === 'studio' || place.id === 'market'
-                      ? '2px'
+                      ? '-3px'
                       : place.id === 'lobby'
-                        ? '16px'
-                        : '34px',
+                        ? '10px'
+                        : '27px',
               }}
               onClick={() => travelTo(place)}
             >
@@ -773,7 +773,7 @@ export default function KidsResort() {
             style={{
               left: `${position.x}%`,
               top: `${position.y}%`,
-              '--player-depth-scale': (0.38 + position.y * 0.0037).toFixed(3),
+              '--player-depth-scale': (0.34 + position.y * 0.0034).toFixed(3),
             }}
             data-frame={walkFrame}
             data-shirt={look.shirt.id}
