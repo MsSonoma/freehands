@@ -207,48 +207,95 @@ export default function KidsResort() {
       return;
     }
 
-    const token = walkTokenRef.current + 1;
-    walkTokenRef.current = token;
+    const placeById = (id) => PLACES.find((place) => place.id === id);
+    const current = placeById(placeId);
+    const lobby = placeById('lobby');
+    const suite = placeById('suite');
+    const studio = placeById('studio');
+    const market = placeById('market');
 
-    const start = position;
-    const dx = nextPlace.x - start.x;
-    const dy = nextPlace.y - start.y;
-    const horizontalTravel = Math.abs(dx) > Math.abs(dy);
+    const suiteGateFor = (referencePlace) =>
+      (referencePlace?.x ?? 50) <= 50 ? studio : market;
 
-    if (horizontalTravel) {
-      setFacing(dx > 0 ? 'right' : 'left');
-      setWalkView('side');
+    let route;
+
+    if (current.id === 'suite') {
+      const gate = suiteGateFor(nextPlace);
+      route =
+        nextPlace.id === gate.id
+          ? [gate]
+          : nextPlace.id === 'lobby'
+            ? [gate, lobby]
+            : [gate, lobby, nextPlace];
+    } else if (nextPlace.id === 'suite') {
+      const gate = suiteGateFor(current);
+      route =
+        current.id === gate.id
+          ? [suite]
+          : current.id === 'lobby'
+            ? [gate, suite]
+            : [lobby, gate, suite];
+    } else if (current.id === 'lobby') {
+      route = [nextPlace];
+    } else if (nextPlace.id === 'lobby') {
+      route = [lobby];
     } else {
-      setWalkView('front');
+      route = [lobby, nextPlace];
     }
 
-    const steps = 8;
-    let step = 0;
+    const token = walkTokenRef.current + 1;
+    walkTokenRef.current = token;
     setIsWalking(true);
 
-    const timer = window.setInterval(() => {
-      if (walkTokenRef.current !== token) {
-        window.clearInterval(timer);
-        return;
-      }
+    const walkLeg = (start, destination, routeIndex) => {
+      if (walkTokenRef.current !== token) return;
 
-      step += 1;
-      const progress = step / steps;
-      setWalkFrame((step - 1) % 6);
-      setPosition({
-        x: clamp(start.x + (nextPlace.x - start.x) * progress, 4, 96),
-        y: clamp(start.y + (nextPlace.y - start.y) * progress, 7, 91),
-      });
+      const dx = destination.x - start.x;
+      const dy = destination.y - start.y;
+      const horizontalTravel = Math.abs(dx) > Math.abs(dy);
 
-      if (step >= steps) {
-        window.clearInterval(timer);
-        setPosition({ x: nextPlace.x, y: nextPlace.y });
-        setPlaceId(nextPlace.id);
-        setWalkFrame(0);
-        setIsWalking(false);
+      if (horizontalTravel) {
+        setFacing(dx > 0 ? 'right' : 'left');
+        setWalkView('side');
+      } else {
         setWalkView('front');
       }
-    }, 90);
+
+      const steps = 8;
+      let step = 0;
+
+      const timer = window.setInterval(() => {
+        if (walkTokenRef.current !== token) {
+          window.clearInterval(timer);
+          return;
+        }
+
+        step += 1;
+        const progress = step / steps;
+        setWalkFrame((step - 1) % 6);
+        setPosition({
+          x: clamp(start.x + dx * progress, 4, 96),
+          y: clamp(start.y + dy * progress, 7, 91),
+        });
+
+        if (step >= steps) {
+          window.clearInterval(timer);
+          setPosition({ x: destination.x, y: destination.y });
+          setPlaceId(destination.id);
+          setWalkFrame(0);
+
+          const nextStop = route[routeIndex + 1];
+          if (nextStop) {
+            walkLeg(destination, nextStop, routeIndex + 1);
+          } else {
+            setIsWalking(false);
+            setWalkView('front');
+          }
+        }
+      }, 90);
+    };
+
+    walkLeg(position, route[0], 0);
   };
 
   const openScreen = (nextScreen) => {
