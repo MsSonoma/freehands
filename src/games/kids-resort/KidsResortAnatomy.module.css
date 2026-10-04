@@ -924,6 +924,20 @@
   transform: rotate(7deg);
 }
 
+.playerDetailed[data-view="side"] .playerHairFront::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  right: -7px;
+  top: 1px;
+  width: 11px;
+  height: 9px;
+  border-radius: 65% 80% 55% 45%;
+  background: inherit;
+  transform: rotate(-8deg);
+  transform-origin: left center;
+}
+
 .playerDetailed[data-view="front"] .playerEye {
   position: absolute;
   top: 12px;
