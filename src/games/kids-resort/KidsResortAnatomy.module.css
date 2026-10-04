@@ -1017,3 +1017,65 @@
   right: auto;
   top: 23px;
 }
+
+/* Character creator palette and subtle gender silhouette. */
+.playerDetailed .playerHairDetail,
+.playerDetailed .playerHairFront {
+  background: linear-gradient(145deg, var(--character-hair, #704126), var(--character-hair-dark, #432518));
+}
+
+.playerDetailed[data-hair="ponytail"] .playerHairDetail::after,
+.playerDetailed[data-hair="bun"] .playerHairDetail::before,
+.playerDetailed[data-view="side"] .playerHairFront::after {
+  background: var(--character-hair-dark, #432518);
+}
+
+.playerDetailed .playerHeadDetail {
+  background: linear-gradient(145deg, var(--character-skin, #ffd0ad), var(--character-skin-shadow, #ed9e70));
+}
+
+.playerDetailed .playerBrow {
+  border-top-color: var(--character-hair-dark, #432518);
+}
+
+.playerDetailed .playerEye {
+  background: radial-gradient(
+    circle at 42% 38%,
+    #fff 0 18%,
+    var(--character-eye, #74401f) 22% 56%,
+    #24130d 60% 100%
+  );
+}
+
+.playerDetailed .playerEar,
+.playerDetailed .playerNeck,
+.playerDetailed .playerHand,
+.playerDetailed .playerFinger,
+.playerDetailed .playerThumb,
+.playerDetailed .playerElbow {
+  background: var(--character-skin-shadow, #ed9e70);
+}
+
+.playerDetailed .playerUpperArm,
+.playerDetailed .playerForearm {
+  background: linear-gradient(145deg, var(--character-skin, #ffd0ad), var(--character-skin-shadow, #ed9e70));
+}
+
+.playerDetailed[data-gender="boy"][data-view="front"] .playerHairDetail {
+  height: 38px;
+  border-radius: 50% 50% 38% 38%;
+}
+
+.playerDetailed[data-gender="boy"] .playerHairFront {
+  height: 28px;
+}
+
+.playerDetailed[data-gender="boy"][data-view="front"] .playerBodyDetail {
+  left: 14px;
+  width: 35px;
+}
+
+.playerDetailed[data-gender="boy"][data-view="front"] .playerPelvis {
+  left: 20px;
+  width: 23px;
+}

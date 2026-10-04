@@ -165,11 +165,13 @@
 }
 
 .settingsPanel {
-  width: 220px;
-  padding: 11px 12px;
-  border-radius: 14px;
-  background: rgba(255,255,255,0.96);
-  box-shadow: 0 8px 20px rgba(23, 48, 79, 0.2);
+  width: min(330px, calc(100vw - 32px));
+  max-height: min(660px, calc(100dvh - 120px));
+  overflow-y: auto;
+  padding: 14px;
+  border-radius: 18px;
+  background: rgba(255,255,255,0.97);
+  box-shadow: 0 10px 26px rgba(23, 48, 79, 0.24);
   text-align: left;
 }
 
@@ -196,6 +198,84 @@
 
 .settingsPanel input:focus {
   border-color: #ff73ae;
+}
+
+.creatorHeader {
+  display: grid;
+  gap: 2px;
+  margin-bottom: 12px;
+}
+
+.creatorHeader strong {
+  color: #17304f;
+  font-size: 1rem;
+  font-weight: 1000;
+}
+
+.creatorHeader span {
+  color: #6d8195;
+  font-size: 0.7rem;
+  font-weight: 750;
+}
+
+.creatorSection {
+  display: grid;
+  gap: 7px;
+  padding: 10px 0;
+  border-top: 1px solid #e3edf3;
+}
+
+.creatorSection:first-of-type {
+  border-top: 0;
+}
+
+.creatorLabel,
+.creatorSection > label {
+  color: #17304f;
+  font-size: 0.68rem;
+  font-weight: 1000;
+}
+
+.creatorChoiceRow,
+.creatorSwatches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.creatorTextChoice {
+  min-width: 78px;
+  border: 2px solid #d8e5ee;
+  border-radius: 999px;
+  padding: 7px 11px;
+  background: #f8fbfd;
+  color: #17304f;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.creatorTextChoice[data-selected="true"] {
+  border-color: #17304f;
+  background: #17304f;
+  color: #fff;
+}
+
+.creatorSwatch {
+  width: 31px;
+  height: 31px;
+  border: 3px solid #fff;
+  border-radius: 50%;
+  background: var(--swatch-color);
+  box-shadow: 0 0 0 2px #cfdae3;
+  cursor: pointer;
+}
+
+.creatorSwatch[data-selected="true"] {
+  box-shadow:
+    0 0 0 3px #17304f,
+    0 0 0 5px #fff;
 }
 
 .topBar {

@@ -112,6 +112,43 @@ const RECIPES = [
   { id: 'fruit-bowl', name: 'Fruit Bowl', icon: '\u{1F963}', ingredients: { berries: 1, apples: 1 } },
 ];
 
+const CHARACTER_OPTIONS = {
+  gender: [
+    { id: 'girl', name: 'Girl' },
+    { id: 'boy', name: 'Boy' },
+  ],
+  eye: [
+    { id: 'brown', name: 'Brown', color: '#74401f' },
+    { id: 'hazel', name: 'Hazel', color: '#8b6b2f' },
+    { id: 'green', name: 'Green', color: '#4f7e56' },
+    { id: 'blue', name: 'Blue', color: '#467db6' },
+    { id: 'gray', name: 'Gray', color: '#667785' },
+  ],
+  hair: [
+    { id: 'brown', name: 'Brown', color: '#704126', dark: '#432518' },
+    { id: 'black', name: 'Black', color: '#302923', dark: '#171412' },
+    { id: 'blonde', name: 'Blonde', color: '#d6a84c', dark: '#9a6f2e' },
+    { id: 'auburn', name: 'Auburn', color: '#9a4f32', dark: '#5f2b22' },
+    { id: 'red', name: 'Red', color: '#b65a37', dark: '#743322' },
+  ],
+  skin: [
+    { id: 'fair', name: 'Fair', color: '#f8d4bd', shadow: '#dea17c' },
+    { id: 'warm', name: 'Warm', color: '#ffd0ad', shadow: '#ed9e70' },
+    { id: 'tan', name: 'Tan', color: '#dca078', shadow: '#b87554' },
+    { id: 'brown', name: 'Brown', color: '#a96f50', shadow: '#784b39' },
+    { id: 'deep', name: 'Deep', color: '#704936', shadow: '#4b3025' },
+  ],
+  base: [
+    { id: 'pink', name: 'Pink', color: '#ff4f9a' },
+    { id: 'red', name: 'Red', color: '#db5656' },
+    { id: 'orange', name: 'Orange', color: '#ed8a43' },
+    { id: 'yellow', name: 'Yellow', color: '#e5b93e' },
+    { id: 'green', name: 'Green', color: '#54b879' },
+    { id: 'blue', name: 'Blue', color: '#438fd0' },
+    { id: 'purple', name: 'Purple', color: '#8d66bd' },
+  ],
+};
+
 const LOOK_OPTIONS = {
   shirt: [
     { id: 'pink', name: 'Pink Tee', swatch: '#ff4f9a' },
@@ -170,6 +207,13 @@ export default function KidsResort() {
   const [touchPlaceId, setTouchPlaceId] = useState(null);
   const [characterName, setCharacterName] = useState('Emily');
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [character, setCharacter] = useState({
+    gender: 'girl',
+    eye: 'brown',
+    hair: 'brown',
+    skin: 'warm',
+    base: 'pink',
+  });
   const walkTokenRef = useRef(0);
   const [look, setLook] = useState({
     shirt: LOOK_OPTIONS.shirt[0],
@@ -191,6 +235,20 @@ export default function KidsResort() {
 
   const placeDisplayName = (place) =>
     place?.id === 'suite' ? `${characterName}’s Suite` : place?.name;
+
+  const eyeChoice = CHARACTER_OPTIONS.eye.find((option) => option.id === character.eye) ?? CHARACTER_OPTIONS.eye[0];
+  const hairChoice = CHARACTER_OPTIONS.hair.find((option) => option.id === character.hair) ?? CHARACTER_OPTIONS.hair[0];
+  const skinChoice = CHARACTER_OPTIONS.skin.find((option) => option.id === character.skin) ?? CHARACTER_OPTIONS.skin[0];
+  const baseChoice = CHARACTER_OPTIONS.base.find((option) => option.id === character.base) ?? CHARACTER_OPTIONS.base[0];
+
+  const characterStyle = {
+    '--character-eye': eyeChoice.color,
+    '--character-hair': hairChoice.color,
+    '--character-hair-dark': hairChoice.dark,
+    '--character-skin': skinChoice.color,
+    '--character-skin-shadow': skinChoice.shadow,
+    '--character-base': baseChoice.color,
+  };
 
   useEffect(() => {
     return () => {
@@ -433,6 +491,21 @@ export default function KidsResort() {
     setBadges((items) => (items.includes('Suite Cook') ? items : [...items, 'Suite Cook']));
   };
 
+  const chooseCharacterOption = (category, option) => {
+    setCharacter((current) => ({ ...current, [category]: option.id }));
+
+    if (category === 'base') {
+      setLook((current) => ({
+        ...current,
+        shirt: {
+          id: `base-${option.id}`,
+          name: `${option.name} Top`,
+          swatch: option.color,
+        },
+      }));
+    }
+  };
+
   const chooseLook = (category, option) => {
     setLook((current) => ({ ...current, [category]: option }));
     setMessage(`${option.name} selected.`);
@@ -442,6 +515,8 @@ export default function KidsResort() {
     <div
       className={[styles.avatarFigure, large ? styles.avatarFigureLarge : ''].join(' ')}
       data-hair={look.hair.id}
+      data-gender={character.gender}
+      style={characterStyle}
       aria-label={characterName + ' preview'}
     >
       <div className={styles.avatarHair} />
@@ -868,11 +943,13 @@ export default function KidsResort() {
               left: `${position.x}%`,
               top: `${position.y}%`,
               '--player-depth-scale': (0.24 + position.y * 0.0043).toFixed(3),
+              ...characterStyle,
             }}
             data-frame={walkFrame}
             data-shirt={look.shirt.id}
             data-bottoms={look.bottoms.id}
             data-hair={look.hair.id}
+            data-gender={character.gender}
             data-facing={facing}
             data-view={isWalking ? walkView : 'front'}
             data-moving={isWalking ? 'true' : 'false'}
@@ -947,14 +1024,63 @@ export default function KidsResort() {
           <div className={styles.settingsDock}>
             {settingsOpen && (
               <div className={styles.settingsPanel}>
-                <label htmlFor="kids-resort-character-name">Character name</label>
-                <input
-                  id="kids-resort-character-name"
-                  type="text"
-                  value={characterName}
-                  maxLength={18}
-                  onChange={(event) => setCharacterName(event.target.value || 'Emily')}
-                />
+                <div className={styles.creatorHeader}>
+                  <strong>Character Creator</strong>
+                  <span>Make this character yours.</span>
+                </div>
+
+                <div className={styles.creatorSection}>
+                  <label htmlFor="kids-resort-character-name">Name</label>
+                  <input
+                    id="kids-resort-character-name"
+                    type="text"
+                    value={characterName}
+                    maxLength={18}
+                    onChange={(event) => setCharacterName(event.target.value || 'Emily')}
+                  />
+                </div>
+
+                <div className={styles.creatorSection}>
+                  <span className={styles.creatorLabel}>Gender</span>
+                  <div className={styles.creatorChoiceRow}>
+                    {CHARACTER_OPTIONS.gender.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={styles.creatorTextChoice}
+                        data-selected={character.gender === option.id ? 'true' : 'false'}
+                        onClick={() => chooseCharacterOption('gender', option)}
+                      >
+                        {option.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {[
+                  ['eye', 'Eye color'],
+                  ['hair', 'Hair color'],
+                  ['skin', 'Skin color'],
+                  ['base', 'Favorite color'],
+                ].map(([category, label]) => (
+                  <div key={category} className={styles.creatorSection}>
+                    <span className={styles.creatorLabel}>{label}</span>
+                    <div className={styles.creatorSwatches}>
+                      {CHARACTER_OPTIONS[category].map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          className={styles.creatorSwatch}
+                          data-selected={character[category] === option.id ? 'true' : 'false'}
+                          style={{ '--swatch-color': option.color }}
+                          aria-label={option.name}
+                          title={option.name}
+                          onClick={() => chooseCharacterOption(category, option)}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
             <button

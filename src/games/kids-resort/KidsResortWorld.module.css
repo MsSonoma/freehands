@@ -893,3 +893,58 @@
 .avatarEarRight {
   right: 29px;
 }
+
+.avatarFigure .avatarHair,
+.avatarFigure .avatarHairFront {
+  background: linear-gradient(145deg, var(--character-hair, #704126), var(--character-hair-dark, #432518));
+}
+
+.avatarFigure[data-hair="ponytail"] .avatarHair::after,
+.avatarFigure[data-hair="bun"] .avatarHair::before {
+  background: var(--character-hair-dark, #432518);
+}
+
+.avatarFigure .avatarHead {
+  background: linear-gradient(145deg, var(--character-skin, #ffd0ad), var(--character-skin-shadow, #ed9e70));
+}
+
+.avatarFigure .avatarBrow {
+  border-top-color: var(--character-hair-dark, #432518);
+}
+
+.avatarFigure .avatarEye {
+  background: radial-gradient(circle at 43% 38%, #fff 0 19%, var(--character-eye, #74401f) 22% 56%, #25130c 60% 100%);
+}
+
+.avatarFigure .avatarEar,
+.avatarFigure .avatarNeck,
+.avatarFigure .avatarHand,
+.avatarFigure .avatarFinger,
+.avatarFigure .avatarThumb,
+.avatarFigure .avatarElbow {
+  background: var(--character-skin-shadow, #ed9e70);
+}
+
+.avatarFigure .avatarUpperArm,
+.avatarFigure .avatarForearm {
+  background: linear-gradient(145deg, var(--character-skin, #ffd0ad), var(--character-skin-shadow, #ed9e70));
+}
+
+.avatarFigure[data-gender="boy"] .avatarHair {
+  height: 67px;
+  border-radius: 50% 50% 38% 38%;
+}
+
+.avatarFigure[data-gender="boy"] .avatarHairFront {
+  height: 27px;
+}
+
+.avatarFigure[data-gender="boy"] .avatarBody {
+  left: 30px;
+  width: 66px;
+}
+
+.avatarFigure[data-gender="boy"] .avatarPelvis {
+  left: 40px;
+  width: 46px;
+}
