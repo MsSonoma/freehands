@@ -318,7 +318,7 @@
 .avatarFigure {
   position: relative;
   width: 126px;
-  height: 242px;
+  height: 262px;
   filter: drop-shadow(0 10px 12px rgba(23, 48, 79, 0.15));
 }
 
@@ -403,11 +403,22 @@
   position: absolute;
   z-index: 2;
   left: 30px;
-  top: 84px;
+  top: 82px;
   width: 66px;
-  height: 64px;
+  height: 72px;
   border-radius: 18px 18px 10px 10px;
   box-shadow: inset -7px -5px 10px rgba(82, 28, 58, 0.13);
+}
+
+.avatarPelvis {
+  position: absolute;
+  z-index: 3;
+  left: 28px;
+  top: 146px;
+  width: 70px;
+  height: 23px;
+  border-radius: 11px 11px 9px 9px;
+  box-shadow: inset -5px -4px 8px rgba(24, 48, 85, 0.16);
 }
 
 .avatarArmRigLeft,
@@ -501,7 +512,7 @@
 .avatarLegRigRight {
   position: absolute;
   z-index: 1;
-  top: 141px;
+  top: 160px;
   width: 28px;
   height: 96px;
 }

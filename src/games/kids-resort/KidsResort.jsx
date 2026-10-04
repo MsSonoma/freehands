@@ -165,6 +165,7 @@ export default function KidsResort() {
   const [position, setPosition] = useState({ x: 50, y: 82 });
   const [isWalking, setIsWalking] = useState(false);
   const [walkFrame, setWalkFrame] = useState(0);
+  const [facing, setFacing] = useState('right');
   const walkTokenRef = useRef(0);
   const [look, setLook] = useState({
     shirt: LOOK_OPTIONS.shirt[0],
@@ -209,6 +210,10 @@ export default function KidsResort() {
     walkTokenRef.current = token;
 
     const start = position;
+    if (nextPlace.x !== start.x) {
+      setFacing(nextPlace.x > start.x ? 'right' : 'left');
+    }
+
     const steps = 8;
     let step = 0;
     setIsWalking(true);
@@ -344,6 +349,7 @@ export default function KidsResort() {
         <span className={styles.avatarSmile} />
       </div>
       <div className={styles.avatarBody} style={{ background: look.shirt.swatch }} />
+      <div className={styles.avatarPelvis} style={{ background: look.bottoms.swatch }} />
 
       <div className={styles.avatarArmRigLeft}>
         <span className={styles.avatarUpperArm} />
@@ -698,50 +704,54 @@ export default function KidsResort() {
             data-shirt={look.shirt.id}
             data-bottoms={look.bottoms.id}
             data-hair={look.hair.id}
+            data-facing={facing}
             aria-label="Emily"
           >
-            <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} />
-            <div className={[styles.playerHead, styles.playerHeadDetail].join(' ')}>
-              <span className={styles.playerEye} />
-              <span className={styles.playerEye} />
-              <span className={styles.playerNose} />
-              <span className={styles.playerSmile} />
-            </div>
-            <div className={styles.playerNeck} />
-            <div className={[styles.playerBody, styles.playerBodyDetail].join(' ')} style={{ background: look.shirt.swatch }} />
+            <div className={styles.playerSprite}>
+              <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} />
+              <div className={[styles.playerHead, styles.playerHeadDetail].join(' ')}>
+                <span className={styles.playerEye} />
+                <span className={styles.playerEye} />
+                <span className={styles.playerNose} />
+                <span className={styles.playerSmile} />
+              </div>
+              <div className={styles.playerNeck} />
+              <div className={[styles.playerBody, styles.playerBodyDetail].join(' ')} style={{ background: look.shirt.swatch }} />
+              <div className={styles.playerPelvis} style={{ background: look.bottoms.swatch }} />
 
-            <div className={styles.playerArmRigLeft}>
-              <span className={styles.playerUpperArm} />
-              <span className={styles.playerElbow} />
-              <span className={styles.playerForearm} />
-              <span className={styles.playerHand}>
-                <i className={styles.playerFinger} />
-                <i className={styles.playerFinger} />
-                <i className={styles.playerFinger} />
-              </span>
-            </div>
-            <div className={styles.playerArmRigRight}>
-              <span className={styles.playerUpperArm} />
-              <span className={styles.playerElbow} />
-              <span className={styles.playerForearm} />
-              <span className={styles.playerHand}>
-                <i className={styles.playerFinger} />
-                <i className={styles.playerFinger} />
-                <i className={styles.playerFinger} />
-              </span>
-            </div>
+              <div className={styles.playerArmRigLeft}>
+                <span className={styles.playerUpperArm} />
+                <span className={styles.playerElbow} />
+                <span className={styles.playerForearm} />
+                <span className={styles.playerHand}>
+                  <i className={styles.playerFinger} />
+                  <i className={styles.playerFinger} />
+                  <i className={styles.playerFinger} />
+                </span>
+              </div>
+              <div className={styles.playerArmRigRight}>
+                <span className={styles.playerUpperArm} />
+                <span className={styles.playerElbow} />
+                <span className={styles.playerForearm} />
+                <span className={styles.playerHand}>
+                  <i className={styles.playerFinger} />
+                  <i className={styles.playerFinger} />
+                  <i className={styles.playerFinger} />
+                </span>
+              </div>
 
-            <div className={styles.playerLegRigLeft}>
-              <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
-              <span className={styles.playerKnee} style={{ background: look.bottoms.swatch }} />
-              <span className={styles.playerShin} style={{ background: look.bottoms.swatch }} />
-              <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
-            </div>
-            <div className={styles.playerLegRigRight}>
-              <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
-              <span className={styles.playerKnee} style={{ background: look.bottoms.swatch }} />
-              <span className={styles.playerShin} style={{ background: look.bottoms.swatch }} />
-              <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
+              <div className={styles.playerLegRigLeft}>
+                <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
+                <span className={styles.playerKnee} style={{ background: look.bottoms.swatch }} />
+                <span className={styles.playerShin} style={{ background: look.bottoms.swatch }} />
+                <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
+              </div>
+              <div className={styles.playerLegRigRight}>
+                <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
+                <span className={styles.playerKnee} style={{ background: look.bottoms.swatch }} />
+                <span className={styles.playerShin} style={{ background: look.bottoms.swatch }} />
+                <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
+              </div>
             </div>
             <div className={[styles.playerName, styles.playerNameDetail].join(' ')}>Emily</div>
           </div>

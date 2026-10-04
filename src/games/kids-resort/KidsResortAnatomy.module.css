@@ -324,3 +324,151 @@
 .playerDetailed[data-frame="4"] .playerForearm {
   transform: rotate(8deg);
 }
+
+.playerDetailed {
+  height: 138px;
+}
+
+.playerSprite {
+  position: absolute;
+  inset: 0;
+  transform-origin: 50% 50%;
+}
+
+.playerDetailed[data-facing="left"] .playerSprite {
+  transform: scaleX(-1);
+}
+
+.playerDetailed .playerHairDetail {
+  z-index: 2;
+  left: 10px;
+  width: 43px;
+  height: 49px;
+  border-radius: 54% 46% 48% 46%;
+}
+
+.playerDetailed .playerHeadDetail {
+  z-index: 4;
+  left: 22px;
+  width: 27px;
+  height: 36px;
+  border-radius: 48% 58% 50% 45%;
+}
+
+.playerDetailed .playerHeadDetail .playerEye:first-child {
+  display: none;
+}
+
+.playerDetailed .playerHeadDetail .playerEye:nth-child(2) {
+  position: absolute;
+  right: 4px;
+  top: 12px;
+  margin: 0;
+}
+
+.playerDetailed .playerNose {
+  left: auto;
+  right: -4px;
+  top: 20px;
+  width: 7px;
+  height: 5px;
+  border-radius: 45% 70% 60% 45%;
+}
+
+.playerDetailed .playerSmile {
+  left: auto;
+  right: -1px;
+  top: 27px;
+  width: 9px;
+  height: 5px;
+}
+
+.playerDetailed .playerNeck {
+  left: 29px;
+  top: 40px;
+  width: 9px;
+  height: 10px;
+}
+
+.playerDetailed .playerBodyDetail {
+  z-index: 3;
+  left: 21px;
+  top: 45px;
+  width: 26px;
+  height: 40px;
+  border-radius: 10px 12px 7px 8px;
+}
+
+.playerPelvis {
+  position: absolute;
+  z-index: 4;
+  left: 18px;
+  top: 78px;
+  width: 31px;
+  height: 17px;
+  border-radius: 9px 11px 8px 8px;
+  box-shadow: inset -3px -3px 5px rgba(24, 48, 85, 0.16);
+}
+
+.playerDetailed .playerArmRigLeft {
+  z-index: 1;
+  left: 24px;
+  right: auto;
+  top: 49px;
+  scale: 0.88;
+  opacity: 0.92;
+}
+
+.playerDetailed .playerArmRigRight {
+  z-index: 6;
+  left: 30px;
+  right: auto;
+  top: 49px;
+  scale: 1;
+}
+
+.playerDetailed .playerArmRigLeft,
+.playerDetailed .playerArmRigRight {
+  width: 12px;
+  transform-origin: 50% 4px;
+}
+
+.playerDetailed .playerLegRigLeft {
+  z-index: 1;
+  left: 22px;
+  right: auto;
+  top: 89px;
+  scale: 0.88;
+  opacity: 0.94;
+}
+
+.playerDetailed .playerLegRigRight {
+  z-index: 5;
+  left: 28px;
+  right: auto;
+  top: 89px;
+  scale: 1;
+}
+
+.playerDetailed .playerThigh {
+  height: 21px;
+}
+
+.playerDetailed .playerKnee {
+  top: 18px;
+}
+
+.playerDetailed .playerShin {
+  top: 21px;
+  height: 22px;
+}
+
+.playerDetailed .playerShoe {
+  top: 40px;
+  width: 19px;
+  border-radius: 5px 9px 4px 4px;
+}
+
+.playerNameDetail {
+  top: 136px;
+}
