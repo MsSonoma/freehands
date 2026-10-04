@@ -1013,7 +1013,6 @@ export default function KidsResort({ libraryHref = null }) {
                 <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
               </div>
             </div>
-            <div className={[styles.playerName, styles.playerNameDetail].join(' ')}>{characterName}</div>
           </div>
 
           <button
