@@ -733,6 +733,7 @@ export default function KidsResort() {
               }}
               onClick={() => travelTo(place)}
             >
+              <span className={styles.placeLabel}>{place.name}</span>
               <span className={styles.placeBuilding} data-place={place.id} aria-hidden="true">
                 <span className={styles.buildingRoof} />
                 <span className={styles.buildingUpper} />
@@ -756,13 +757,16 @@ export default function KidsResort() {
                             : 'STUDIO'}
                 </span>
               </span>
-              <span className={styles.placeLabel}>{place.name}</span>
             </button>
           ))}
 
           <div
             className={[styles.player, styles.playerDetailed, isWalking ? styles.playerWalking : ''].join(' ')}
-            style={{ left: `${position.x}%`, top: `${position.y}%` }}
+            style={{
+              left: `${position.x}%`,
+              top: `${position.y}%`,
+              '--player-depth-scale': (0.48 + position.y * 0.0045).toFixed(3),
+            }}
             data-frame={walkFrame}
             data-shirt={look.shirt.id}
             data-bottoms={look.bottoms.id}

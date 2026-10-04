@@ -523,13 +523,19 @@
 }
 
 .placeLabel {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  top: -22px;
   display: inline-block;
   max-width: 145px;
+  transform: translateX(-50%);
   padding: 5px 9px 4px;
   border: 2px solid rgba(255, 255, 255, 0.96);
   border-radius: 999px;
   background: rgba(255,255,255,0.94);
   box-shadow: 0 4px 0 rgba(67, 103, 77, 0.14);
+  white-space: nowrap;
 }
 
 /* Sunshine Cafe: cheerful corner cafe with a striped awning and roof sign. */
