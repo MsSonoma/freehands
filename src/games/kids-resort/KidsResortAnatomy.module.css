@@ -906,6 +906,9 @@
 
 .playerDetailed[data-view="side"] .playerHeadDetail {
   z-index: 7;
+  width: 29px;
+  height: 39px;
+  border-radius: 48% 58% 46% 54% / 44% 52% 64% 56%;
 }
 
 .playerDetailed[data-view="side"] .playerHairDetail {
@@ -991,18 +994,6 @@
   transform: rotate(-5deg);
 }
 
-.playerDetailed[data-view="side"] .playerHeadDetail::after {
-  content: "";
-  position: absolute;
-  z-index: -1;
-  right: -2px;
-  bottom: -4px;
-  width: 12px;
-  height: 11px;
-  border-radius: 35% 45% 62% 55%;
-  background: linear-gradient(145deg, #ffd5b8, #ef9f72);
-  box-shadow: inset -2px -2px 3px rgba(173, 82, 48, 0.10);
-}
 
 .playerDetailed[data-view="front"] .playerEar {
   z-index: 3;
