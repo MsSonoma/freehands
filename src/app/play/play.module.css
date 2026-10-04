@@ -1,0 +1,149 @@
+.page {
+  min-height: 100vh;
+  padding: clamp(24px, 5vw, 60px);
+  color: #1f2937;
+  background: #f7f7f5;
+  font-family: Inter, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+.header {
+  width: min(980px, 100%);
+  margin: 0 auto 28px;
+}
+
+.siteLink {
+  display: inline-flex;
+  min-height: 40px;
+  align-items: center;
+  margin-bottom: 24px;
+  color: #6b7280;
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 700;
+}
+
+.siteLink:hover,
+.siteLink:focus-visible {
+  color: #1f2937;
+  text-decoration: underline;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: clamp(2rem, 6vw, 3.5rem);
+  line-height: 1;
+  letter-spacing: -0.05em;
+}
+
+.header p {
+  margin: 10px 0 0;
+  color: #6b7280;
+  font-size: 1rem;
+}
+
+.grid {
+  width: min(980px, 100%);
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 280px), 1fr));
+  gap: 14px;
+}
+
+.card {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 86px minmax(0, 1fr);
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid #deded9;
+  border-radius: 16px;
+  background: #fff;
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 140ms ease, transform 140ms ease;
+}
+
+.card:hover,
+.card:focus-visible {
+  border-color: #b9b9b3;
+  transform: translateY(-1px);
+  outline: none;
+}
+
+.card:focus-visible {
+  box-shadow: 0 0 0 3px rgba(199, 68, 46, 0.18);
+}
+
+.icon {
+  min-height: 144px;
+  display: grid;
+  place-items: center;
+  background: #f1ede3;
+  font-size: 2.4rem;
+}
+
+.cardBody {
+  min-width: 0;
+  padding: 18px;
+}
+
+.cardTopline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.card h2 {
+  min-width: 0;
+  margin: 0;
+  font-size: 1.15rem;
+  letter-spacing: -0.025em;
+}
+
+.status {
+  flex: 0 0 auto;
+  border: 1px solid #deded9;
+  border-radius: 999px;
+  padding: 3px 7px;
+  color: #77736b;
+  background: #faf9f6;
+  font-size: 0.65rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.card p {
+  margin: 9px 0 0;
+  color: #6b7280;
+  font-size: 0.86rem;
+  line-height: 1.45;
+}
+
+.playLabel {
+  display: inline-block;
+  margin-top: 14px;
+  color: #9f3e2e;
+  font-size: 0.86rem;
+  font-weight: 800;
+}
+
+@media (max-width: 540px) {
+  .page {
+    padding: 20px 12px 36px;
+  }
+
+  .card {
+    grid-template-columns: 72px minmax(0, 1fr);
+  }
+
+  .icon {
+    min-height: 132px;
+  }
+
+  .cardTopline {
+    display: grid;
+    justify-items: start;
+  }
+}

@@ -498,9 +498,10 @@ export default function HeaderBar() {
 			color: '#111'
 		};
 
-		// Mr. Slate and Mrs. Webb have their own full-page top bars — hide the global header
+		// Mr. Slate, Mrs. Webb, and the discreet play portal use their own full-page shells.
 		if (pathname.startsWith('/session/slate')) return null;
 		if (pathname.startsWith('/session/webb')) return null;
+		if (pathname.startsWith('/play')) return null;
 
 		return (
 			<>
