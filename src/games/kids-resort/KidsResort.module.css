@@ -265,8 +265,8 @@
 
 .horizonBack {
   z-index: 1;
-  top: 24%;
-  height: 18%;
+  top: 17%;
+  height: 19%;
   background: #79c985;
   clip-path: polygon(
     0 72%, 7% 53%, 14% 64%, 22% 38%, 31% 59%, 40% 31%,
@@ -278,8 +278,8 @@
 
 .horizonFront {
   z-index: 2;
-  top: 29%;
-  height: 16%;
+  top: 22%;
+  height: 18%;
   background: #68bd70;
   clip-path: polygon(
     0 58%, 10% 39%, 20% 57%, 31% 30%, 44% 59%, 56% 34%,
@@ -366,20 +366,61 @@
   transform: scale(1.32);
 }
 
-.pathLoop {
+.resortPaths {
   position: absolute;
+  inset: 0;
   z-index: 3;
-  left: 8%;
-  right: 8%;
-  top: 39%;
-  bottom: 7%;
-  border: 24px solid #f9dfad;
-  border-radius: 48% 48% 44% 44%;
-  transform: perspective(700px) rotateX(58deg) rotateZ(-3deg) scaleY(1.45);
-  transform-origin: 50% 100%;
+  pointer-events: none;
+}
+
+.pathSegment {
+  position: absolute;
+  display: block;
+  height: 16px;
+  border-radius: 999px;
+  background: #f9dfad;
   box-shadow:
-    inset 0 0 0 4px rgba(179, 132, 71, 0.08),
-    0 0 0 4px rgba(179, 132, 71, 0.08);
+    inset 0 0 0 3px rgba(179, 132, 71, 0.08),
+    0 3px 0 rgba(179, 132, 71, 0.08);
+  transform-origin: left center;
+}
+
+.pathToCafe {
+  left: 48%;
+  top: 49%;
+  width: 36%;
+  transform: rotate(201deg);
+}
+
+.pathToBank {
+  left: 52%;
+  top: 49%;
+  width: 34%;
+  transform: rotate(-20deg);
+}
+
+.pathToStudio {
+  left: 48%;
+  top: 53%;
+  width: 33%;
+  height: 19px;
+  transform: rotate(160deg);
+}
+
+.pathToMarket {
+  left: 52%;
+  top: 53%;
+  width: 32%;
+  height: 19px;
+  transform: rotate(20deg);
+}
+
+.pathToSuite {
+  left: 50%;
+  top: 54%;
+  width: 29%;
+  height: 22px;
+  transform: rotate(90deg);
 }
 
 .place {
@@ -1242,11 +1283,17 @@
     min-height: 500px;
   }
 
-  .pathLoop {
-    left: 5%;
-    right: 5%;
-    top: 40%;
-    bottom: 9%;
+  .pathSegment {
+    height: 12px;
+  }
+
+  .pathToStudio,
+  .pathToMarket {
+    height: 14px;
+  }
+
+  .pathToSuite {
+    height: 17px;
   }
 
   .place {

@@ -708,7 +708,13 @@ export default function KidsResort() {
           <div className={[styles.mapTree, styles.treeNearLeft].join(' ')} aria-hidden="true" />
           <div className={[styles.mapTree, styles.treeNearRight].join(' ')} aria-hidden="true" />
 
-          <div className={styles.pathLoop} />
+          <div className={styles.resortPaths} aria-hidden="true">
+            <span className={[styles.pathSegment, styles.pathToCafe].join(' ')} />
+            <span className={[styles.pathSegment, styles.pathToBank].join(' ')} />
+            <span className={[styles.pathSegment, styles.pathToStudio].join(' ')} />
+            <span className={[styles.pathSegment, styles.pathToMarket].join(' ')} />
+            <span className={[styles.pathSegment, styles.pathToSuite].join(' ')} />
+          </div>
 
           {PLACES.map((place) => (
             <button
@@ -722,7 +728,16 @@ export default function KidsResort() {
               style={{
                 left: `${place.x}%`,
                 top: `${place.y}%`,
-                '--depth-scale': (0.62 + place.y * 0.0065).toFixed(3),
+                '--depth-scale':
+                  place.id === 'suite'
+                    ? 1.38
+                    : place.id === 'studio' || place.id === 'market'
+                      ? 1.08
+                      : place.id === 'lobby'
+                        ? 0.86
+                        : place.id === 'cafe'
+                          ? 0.62
+                          : 0.6,
               }}
               onClick={() => travelTo(place)}
             >
