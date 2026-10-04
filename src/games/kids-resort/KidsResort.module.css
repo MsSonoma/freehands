@@ -526,7 +526,7 @@
   position: absolute;
   z-index: 20;
   left: 50%;
-  top: -22px;
+  top: var(--label-offset, -22px);
   display: inline-block;
   max-width: 145px;
   transform: translateX(-50%);

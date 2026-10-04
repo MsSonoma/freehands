@@ -1,7 +1,7 @@
 .playerDetailed {
   width: 62px;
   height: 118px;
-  transform: translate(-50%, -66%) scale(var(--player-depth-scale, 0.78));
+  transform: translate(-50%, -52%) scale(var(--player-depth-scale, 0.68));
   transform-origin: 50% 100%;
   filter: drop-shadow(0 6px 5px rgba(23, 48, 79, 0.24));
 }

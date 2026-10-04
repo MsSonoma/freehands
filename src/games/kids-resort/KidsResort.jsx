@@ -730,6 +730,14 @@ export default function KidsResort() {
                         : place.id === 'cafe'
                           ? 0.62
                           : 0.6,
+                '--label-offset':
+                  place.id === 'suite'
+                    ? '-22px'
+                    : place.id === 'studio' || place.id === 'market'
+                      ? '-17px'
+                      : place.id === 'lobby'
+                        ? '-14px'
+                        : '-10px',
               }}
               onClick={() => travelTo(place)}
             >
@@ -765,7 +773,7 @@ export default function KidsResort() {
             style={{
               left: `${position.x}%`,
               top: `${position.y}%`,
-              '--player-depth-scale': (0.48 + position.y * 0.0045).toFixed(3),
+              '--player-depth-scale': (0.38 + position.y * 0.0037).toFixed(3),
             }}
             data-frame={walkFrame}
             data-shirt={look.shirt.id}
