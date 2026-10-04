@@ -1080,7 +1080,7 @@
 .placeBuilding[data-place="market"] .buildingAwning {
   display: block;
   left: 3px;
-  top: 39px;
+  top: 32px;
   width: 130px;
   height: 12px;
   border: 2px solid #4e9c74;
