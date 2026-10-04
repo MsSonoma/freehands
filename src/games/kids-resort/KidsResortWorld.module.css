@@ -1,0 +1,557 @@
+.actionStack {
+  display: grid;
+  gap: 10px;
+}
+
+.secondaryButton {
+  width: 100%;
+  border: 2px solid #d8e4ee;
+  border-radius: 16px;
+  padding: 12px 16px;
+  background: #f7fbfe;
+  color: #17304f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 900;
+}
+
+.interiorScene {
+  width: min(1080px, 100%);
+  margin: 0 auto;
+  padding: clamp(18px, 4vw, 38px);
+  border: 4px solid #fff;
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 14px 36px rgba(23, 48, 79, 0.14);
+}
+
+.interiorHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.interiorHeader h1 {
+  margin: 3px 0 0;
+  font-size: clamp(2rem, 5vw, 3.6rem);
+  line-height: 0.95;
+  letter-spacing: -0.055em;
+}
+
+.interiorIcon {
+  width: 82px;
+  height: 82px;
+  flex: 0 0 auto;
+  display: grid;
+  place-items: center;
+  border-radius: 24px;
+  background: #fff1b8;
+  font-size: 2.8rem;
+  box-shadow: 0 7px 0 #e7ca65;
+}
+
+.shopGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+  gap: 12px;
+}
+
+.shopCard {
+  min-height: 156px;
+  border: 3px solid #e7eef4;
+  border-radius: 20px;
+  background: #fbfdff;
+  color: #17304f;
+  cursor: pointer;
+  font: inherit;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 7px;
+  padding: 16px;
+  text-align: center;
+}
+
+.shopCard:hover {
+  border-color: #ff9ac6;
+  background: #fff5fa;
+}
+
+.shopCard strong {
+  font-size: 1rem;
+}
+
+.shopCard > span:last-child {
+  color: #6e8296;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.shopIcon {
+  font-size: 2.7rem;
+}
+
+.fullMessage {
+  grid-column: 1 / -1;
+  min-height: 48px;
+  display: flex;
+  align-items: center;
+  padding: 12px 14px;
+  border-radius: 15px;
+  background: #eff9ff;
+  color: #57728d;
+  font-size: 0.84rem;
+  font-weight: 850;
+}
+
+.suiteLayout {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.roomCard {
+  min-width: 0;
+  border: 2px solid #e6edf2;
+  border-radius: 22px;
+  background: #fff;
+  padding: 18px;
+}
+
+.roomTitle {
+  margin-bottom: 8px;
+  font-size: 1.2rem;
+  font-weight: 1000;
+}
+
+.roomCard > p {
+  margin: 0 0 14px;
+  color: #687f98;
+  line-height: 1.45;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.recipeList {
+  display: grid;
+  gap: 8px;
+}
+
+.recipeButton {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  gap: 9px;
+  align-items: center;
+  width: 100%;
+  border: 2px solid #e5edf3;
+  border-radius: 14px;
+  background: #f9fcff;
+  color: #17304f;
+  cursor: pointer;
+  padding: 9px;
+  font: inherit;
+  text-align: left;
+}
+
+.recipeButton[data-ready="true"] {
+  border-color: #7acb9b;
+  background: #f0fff5;
+}
+
+.recipeButton > span:first-child {
+  font-size: 1.7rem;
+}
+
+.recipeButton strong,
+.recipeButton small {
+  display: block;
+}
+
+.recipeButton small {
+  margin-top: 2px;
+  color: #71869b;
+  font-size: 0.67rem;
+  line-height: 1.25;
+}
+
+.closetPreview {
+  display: grid;
+  grid-template-columns: 110px minmax(0, 1fr);
+  gap: 10px;
+  align-items: center;
+  min-height: 190px;
+}
+
+.closetPreview > div:last-child {
+  display: grid;
+  gap: 4px;
+  color: #6b7f94;
+  font-size: 0.78rem;
+}
+
+.closetPreview strong {
+  color: #17304f;
+}
+
+.inventoryList {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+  color: #5c748d;
+  font-size: 0.79rem;
+  font-weight: 800;
+}
+
+.mealHistory {
+  margin-top: 16px;
+  padding-top: 13px;
+  border-top: 2px dashed #dce8f1;
+  display: grid;
+  gap: 4px;
+  color: #70849a;
+  font-size: 0.76rem;
+}
+
+.mealHistory strong {
+  color: #17304f;
+}
+
+.studioLayout {
+  display: grid;
+  grid-template-columns: 280px minmax(0, 1fr);
+  gap: 18px;
+}
+
+.characterStage {
+  min-height: 430px;
+  border-radius: 24px;
+  background: linear-gradient(180deg, #eef9ff, #fff3f8);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  padding: 18px;
+}
+
+.lookSummary {
+  display: grid;
+  gap: 3px;
+  text-align: center;
+  color: #687e94;
+  font-size: 0.77rem;
+}
+
+.lookSummary strong {
+  color: #17304f;
+  font-size: 1rem;
+}
+
+.customizer {
+  display: grid;
+  gap: 16px;
+}
+
+.optionGroup {
+  min-width: 0;
+}
+
+.optionGroup h3 {
+  margin: 0 0 7px;
+  font-size: 0.83rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.optionRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.lookOption {
+  min-height: 52px;
+  border: 2px solid #e3eaf0;
+  border-radius: 13px;
+  background: #fff;
+  color: #17304f;
+  cursor: pointer;
+  font: inherit;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 8px 10px;
+  font-size: 0.76rem;
+  font-weight: 850;
+}
+
+.lookOption[data-selected="true"] {
+  border-color: #ff65a6;
+  background: #fff1f7;
+}
+
+.swatch {
+  width: 26px;
+  height: 26px;
+  border: 2px solid rgba(23, 48, 79, 0.15);
+  border-radius: 50%;
+}
+
+.optionIcon {
+  min-width: 26px;
+  text-align: center;
+  font-size: 1.25rem;
+}
+
+.introAvatar {
+  width: 130px;
+  height: 145px;
+  justify-self: center;
+  overflow: visible;
+}
+
+.introAvatar .avatarFigure {
+  transform: scale(0.67);
+  transform-origin: top center;
+}
+
+.avatarFigure {
+  position: relative;
+  width: 120px;
+  height: 220px;
+  filter: drop-shadow(0 10px 12px rgba(23, 48, 79, 0.15));
+}
+
+.avatarHair {
+  position: absolute;
+  z-index: 1;
+  left: 22px;
+  top: 2px;
+  width: 78px;
+  height: 76px;
+  border-radius: 50% 50% 45% 45%;
+  background: linear-gradient(145deg, #8a512c, #4b2a1e);
+}
+
+.avatarFigure[data-hair="ponytail"] .avatarHair::after {
+  content: "";
+  position: absolute;
+  right: -20px;
+  top: 24px;
+  width: 36px;
+  height: 48px;
+  border-radius: 50%;
+  background: #57301f;
+}
+
+.avatarFigure[data-hair="bun"] .avatarHair::before {
+  content: "";
+  position: absolute;
+  left: 24px;
+  top: -24px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #57301f;
+}
+
+.avatarHead {
+  position: absolute;
+  z-index: 2;
+  left: 33px;
+  top: 18px;
+  width: 56px;
+  height: 62px;
+  border-radius: 48% 48% 45% 45%;
+  background: linear-gradient(145deg, #ffd5b8, #ef9f72);
+}
+
+.avatarEye {
+  position: relative;
+  display: inline-block;
+  width: 9px;
+  height: 13px;
+  margin: 22px 7px 0;
+  border-radius: 50%;
+  background: #5c321f;
+}
+
+.avatarSmile {
+  position: absolute;
+  left: 20px;
+  top: 44px;
+  width: 18px;
+  height: 8px;
+  border-bottom: 2px solid #9d4b43;
+  border-radius: 50%;
+}
+
+.avatarBody {
+  position: absolute;
+  z-index: 2;
+  left: 25px;
+  top: 78px;
+  width: 72px;
+  height: 68px;
+  border-radius: 20px 20px 10px 10px;
+}
+
+.avatarArmLeft,
+.avatarArmRight {
+  position: absolute;
+  z-index: 1;
+  top: 84px;
+  width: 17px;
+  height: 63px;
+  border-radius: 10px;
+  background: #f0a477;
+}
+
+.avatarArmLeft {
+  left: 15px;
+  transform: rotate(6deg);
+}
+
+.avatarArmRight {
+  right: 15px;
+  transform: rotate(-6deg);
+}
+
+.avatarLegLeft,
+.avatarLegRight {
+  position: absolute;
+  z-index: 1;
+  top: 140px;
+  width: 26px;
+  height: 56px;
+  border-radius: 6px;
+}
+
+.avatarLegLeft {
+  left: 31px;
+}
+
+.avatarLegRight {
+  right: 31px;
+}
+
+.avatarShoeLeft,
+.avatarShoeRight {
+  position: absolute;
+  z-index: 3;
+  top: 188px;
+  width: 31px;
+  height: 18px;
+  border: 2px solid rgba(23, 48, 79, 0.12);
+  border-radius: 10px 14px 8px 8px;
+}
+
+.avatarShoeLeft {
+  left: 25px;
+}
+
+.avatarShoeRight {
+  right: 25px;
+}
+
+.avatarAccessory {
+  position: absolute;
+  z-index: 5;
+  right: -10px;
+  top: 48px;
+  font-size: 1.8rem;
+}
+
+.playerBody[data-shirt="sunshine"] {
+  background: #f1be38;
+}
+
+.playerBody[data-shirt="ocean"] {
+  background: #43aee5;
+}
+
+.playerBody[data-shirt="mint"] {
+  background: #54c79c;
+}
+
+.playerLegLeft[data-bottoms="navy"],
+.playerLegRight[data-bottoms="navy"] {
+  background: #334d78;
+}
+
+.playerLegLeft[data-bottoms="lavender"],
+.playerLegRight[data-bottoms="lavender"] {
+  background: #9a73c9;
+}
+
+.playerLegLeft[data-bottoms="coral"],
+.playerLegRight[data-bottoms="coral"] {
+  background: #dc6b63;
+}
+
+.player[data-hair="ponytail"] .playerHair::after {
+  content: "";
+  position: absolute;
+  right: -8px;
+  top: 11px;
+  width: 13px;
+  height: 19px;
+  border-radius: 50%;
+  background: #57301f;
+}
+
+.player[data-hair="bun"] .playerHair::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: -9px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #57301f;
+}
+
+@media (max-width: 840px) {
+  .suiteLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .studioLayout {
+    grid-template-columns: 1fr;
+  }
+
+  .characterStage {
+    min-height: 330px;
+  }
+}
+
+@media (max-width: 640px) {
+  .interiorScene {
+    padding: 14px;
+    border-radius: 22px;
+  }
+
+  .interiorHeader {
+    align-items: flex-start;
+  }
+
+  .interiorIcon {
+    width: 62px;
+    height: 62px;
+    border-radius: 18px;
+    font-size: 2rem;
+  }
+
+  .shopGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .shopCard {
+    min-height: 132px;
+    padding: 10px;
+  }
+
+  .closetPreview {
+    grid-template-columns: 100px minmax(0, 1fr);
+  }
+}

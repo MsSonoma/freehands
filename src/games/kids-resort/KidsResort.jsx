@@ -1,54 +1,65 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import styles from './KidsResort.module.css';
+import baseStyles from './KidsResort.module.css';
+import worldStyles from './KidsResortWorld.module.css';
+
+const styles = { ...worldStyles, ...baseStyles };
 
 const PLACES = [
+  {
+    id: 'suite',
+    name: 'Emily’s Suite',
+    icon: '🛏️',
+    x: 50,
+    y: 82,
+    role: 'Home Base',
+    description: 'Your private hotel suite. Cook in the kitchen, check your closet, and see what you own.',
+  },
   {
     id: 'lobby',
     name: 'Resort Lobby',
     icon: '🏨',
     x: 50,
-    y: 82,
-    role: 'Guest',
-    description: 'Your home base. Check your Resort Bucks, badges, and decide where to go next.',
+    y: 48,
+    role: 'Hotel Guest',
+    description: 'The main hotel building, with the Palm Court restaurant for sit-down meals.',
   },
   {
     id: 'cafe',
     name: 'Sunshine Café',
     icon: '🥪',
-    x: 18,
-    y: 24,
-    role: 'Café Manager',
-    description: 'Read each guest order, choose the right item, and run a friendly lunch shift.',
-    playable: true,
+    x: 16,
+    y: 22,
+    role: 'Café',
+    description: 'Grab a casual bite or work a café shift serving other resort guests.',
   },
   {
     id: 'bank',
     name: 'Resort Bank',
     icon: '🏦',
-    x: 78,
-    y: 23,
+    x: 82,
+    y: 21,
     role: 'Banker',
-    description: 'Practice deposits, budgets, and saving with pretend Resort Bucks.',
+    description: 'A future place to save Resort Bucks, plan budgets, and handle pretend banking.',
   },
   {
     id: 'market',
     name: 'Market Street',
     icon: '🛒',
-    x: 79,
-    y: 62,
-    role: 'Shop Manager',
-    description: 'Stock shelves, price items, make change, and help pretend customers.',
+    x: 81,
+    y: 66,
+    role: 'Shopping',
+    description: 'Buy groceries and useful things, then bring them back to your suite.',
   },
   {
     id: 'studio',
     name: 'Design Studio',
-    icon: '🎨',
-    x: 21,
-    y: 63,
-    role: 'Designer',
-    description: 'Take a client brief and build posters, rooms, outfits, and signs.',
+    icon: '👗',
+    x: 19,
+    y: 66,
+    role: 'Character Design',
+    description: 'Design Emily’s look with clothes, shoes, hair styles, and accessories.',
   },
 ];
 
@@ -73,20 +84,94 @@ const CAFE_ORDERS = [
   },
 ];
 
+const LOBBY_MENU = [
+  { id: 'pasta', name: 'Garden Pasta', icon: '\u{1F35D}', price: 7 },
+  { id: 'tacos', name: 'Resort Tacos', icon: '\u{1F32E}', price: 6 },
+  { id: 'dessert', name: 'Berry Sundae', icon: '\u{1F368}', price: 5 },
+];
+
+const CAFE_MENU = [
+  { id: 'toastie', name: 'Grilled Cheese', icon: '\u{1F96A}', price: 4 },
+  { id: 'juice', name: 'Berry Juice', icon: '\u{1F9C3}', price: 3 },
+  { id: 'apple-snack', name: 'Apple Slices', icon: '\u{1F34E}', price: 3 },
+];
+
+const MARKET_ITEMS = [
+  { id: 'eggs', name: 'Eggs', icon: '\u{1F95A}', price: 3 },
+  { id: 'milk', name: 'Milk', icon: '\u{1F95B}', price: 3 },
+  { id: 'berries', name: 'Berries', icon: '\u{1FAD0}', price: 3 },
+  { id: 'bread', name: 'Bread', icon: '\u{1F35E}', price: 2 },
+  { id: 'cheese', name: 'Cheese', icon: '\u{1F9C0}', price: 3 },
+  { id: 'apples', name: 'Apples', icon: '\u{1F34E}', price: 2 },
+];
+
+const RECIPES = [
+  { id: 'berry-breakfast', name: 'Berry Breakfast', icon: '\u{1F95E}', ingredients: { eggs: 1, milk: 1, berries: 1 } },
+  { id: 'grilled-cheese', name: 'Grilled Cheese', icon: '\u{1F96A}', ingredients: { bread: 1, cheese: 1 } },
+  { id: 'fruit-bowl', name: 'Fruit Bowl', icon: '\u{1F963}', ingredients: { berries: 1, apples: 1 } },
+];
+
+const LOOK_OPTIONS = {
+  shirt: [
+    { id: 'pink', name: 'Pink Tee', swatch: '#ff4f9a' },
+    { id: 'sunshine', name: 'Sunshine Top', swatch: '#f1be38' },
+    { id: 'ocean', name: 'Ocean Tee', swatch: '#43aee5' },
+    { id: 'mint', name: 'Mint Top', swatch: '#54c79c' },
+  ],
+  bottoms: [
+    { id: 'denim', name: 'Cuffed Jeans', swatch: '#3b78ba' },
+    { id: 'navy', name: 'Navy Shorts', swatch: '#334d78' },
+    { id: 'lavender', name: 'Lavender Skirt', swatch: '#9a73c9' },
+    { id: 'coral', name: 'Coral Pants', swatch: '#dc6b63' },
+  ],
+  shoes: [
+    { id: 'pink-sneakers', name: 'Pink Sneakers', swatch: '#f05d9b' },
+    { id: 'white-trainers', name: 'White Trainers', swatch: '#f4f4f0' },
+    { id: 'yellow-high-tops', name: 'Yellow High-Tops', swatch: '#efc33f' },
+    { id: 'blue-slip-ons', name: 'Blue Slip-Ons', swatch: '#448fcc' },
+  ],
+  hair: [
+    { id: 'waves', name: 'Loose Waves', icon: '~' },
+    { id: 'ponytail', name: 'Ponytail', icon: '\u{1F380}' },
+    { id: 'bun', name: 'High Bun', icon: '\u{1F7E4}' },
+  ],
+  accessory: [
+    { id: 'none', name: 'No Accessory', icon: '\u{2728}' },
+    { id: 'sunglasses', name: 'Sunglasses', icon: '\u{1F60E}' },
+    { id: 'headband', name: 'Headband', icon: '\u{1F380}' },
+    { id: 'backpack', name: 'Mini Backpack', icon: '\u{1F392}' },
+    { id: 'necklace', name: 'Necklace', icon: '\u{1F4FF}' },
+  ],
+};
+
+function ingredientLabel(id) {
+  return MARKET_ITEMS.find((item) => item.id === id)?.name ?? id;
+}
+
 function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
 export default function KidsResort() {
-  const [placeId, setPlaceId] = useState('lobby');
-  const [selectedPlaceId, setSelectedPlaceId] = useState('cafe');
+  const [placeId, setPlaceId] = useState('suite');
+  const [selectedPlaceId, setSelectedPlaceId] = useState('suite');
   const [screen, setScreen] = useState('map');
   const [bucks, setBucks] = useState(20);
   const [badges, setBadges] = useState([]);
+  const [inventory, setInventory] = useState({});
+  const [meals, setMeals] = useState([]);
+  const [message, setMessage] = useState('');
   const [position, setPosition] = useState({ x: 50, y: 82 });
   const [isWalking, setIsWalking] = useState(false);
   const [walkFrame, setWalkFrame] = useState(0);
   const walkTokenRef = useRef(0);
+  const [look, setLook] = useState({
+    shirt: LOOK_OPTIONS.shirt[0],
+    bottoms: LOOK_OPTIONS.bottoms[0],
+    shoes: LOOK_OPTIONS.shoes[0],
+    hair: LOOK_OPTIONS.hair[0],
+    accessory: LOOK_OPTIONS.accessory[0],
+  });
 
   const [orderIndex, setOrderIndex] = useState(0);
   const [cafeCorrect, setCafeCorrect] = useState(0);
@@ -113,6 +198,7 @@ export default function KidsResort() {
     if (!nextPlace || isWalking) return;
 
     setSelectedPlaceId(nextPlace.id);
+    setMessage('');
 
     if (nextPlace.id === placeId) {
       return;
@@ -150,9 +236,10 @@ export default function KidsResort() {
     }, 90);
   };
 
-  const openCurrentPlace = () => {
-    if (currentPlace.id === 'cafe') {
-      setScreen('cafe');
+  const openScreen = (nextScreen) => {
+    setMessage('');
+    setScreen(nextScreen);
+    if (nextScreen === 'cafe-work') {
       setOrderIndex(0);
       setCafeCorrect(0);
       setCafeMessage('');
@@ -189,9 +276,109 @@ export default function KidsResort() {
     }, 650);
   };
 
+  const buyMeal = (meal) => {
+    if (bucks < meal.price) {
+      setMessage(`You need ${meal.price} Resort Bucks for ${meal.name}.`);
+      return;
+    }
+    setBucks((value) => value - meal.price);
+    setMeals((items) => [...items, meal.name]);
+    setMessage(`Emily enjoyed ${meal.name}.`);
+  };
+
+  const buyMarketItem = (item) => {
+    if (bucks < item.price) {
+      setMessage(`You need ${item.price} Resort Bucks for ${item.name}.`);
+      return;
+    }
+    setBucks((value) => value - item.price);
+    setInventory((items) => ({
+      ...items,
+      [item.id]: (items[item.id] || 0) + 1,
+    }));
+    setMessage(`${item.name} went into your suite pantry.`);
+  };
+
+  const canCook = (recipe) =>
+    Object.entries(recipe.ingredients).every(([id, count]) => (inventory[id] || 0) >= count);
+
+  const cookRecipe = (recipe) => {
+    if (!canCook(recipe)) {
+      const missing = Object.entries(recipe.ingredients)
+        .filter(([id, count]) => (inventory[id] || 0) < count)
+        .map(([id]) => ingredientLabel(id))
+        .join(', ');
+      setMessage(`You still need: ${missing}.`);
+      return;
+    }
+
+    setInventory((items) => {
+      const next = { ...items };
+      Object.entries(recipe.ingredients).forEach(([id, count]) => {
+        next[id] = Math.max(0, (next[id] || 0) - count);
+      });
+      return next;
+    });
+    setMeals((items) => [...items, recipe.name]);
+    setMessage(`Emily cooked ${recipe.name} in her suite kitchen!`);
+    setBadges((items) => (items.includes('Suite Cook') ? items : [...items, 'Suite Cook']));
+  };
+
+  const chooseLook = (category, option) => {
+    setLook((current) => ({ ...current, [category]: option }));
+    setMessage(`${option.name} selected.`);
+  };
+
+  const renderCharacter = (large = false) => (
+    <div
+      className={[styles.avatarFigure, large ? styles.avatarFigureLarge : ''].join(' ')}
+      data-hair={look.hair.id}
+      aria-label="Emily preview"
+    >
+      <div className={styles.avatarHair} />
+      <div className={styles.avatarHead}>
+        <span className={styles.avatarEye} />
+        <span className={styles.avatarEye} />
+        <span className={styles.avatarSmile} />
+      </div>
+      <div className={styles.avatarBody} style={{ background: look.shirt.swatch }} />
+      <div className={styles.avatarArmLeft} />
+      <div className={styles.avatarArmRight} />
+      <div className={styles.avatarLegLeft} style={{ background: look.bottoms.swatch }} />
+      <div className={styles.avatarLegRight} style={{ background: look.bottoms.swatch }} />
+      <div className={styles.avatarShoeLeft} style={{ background: look.shoes.swatch }} />
+      <div className={styles.avatarShoeRight} style={{ background: look.shoes.swatch }} />
+      {look.accessory.id !== 'none' && (
+        <div className={styles.avatarAccessory} aria-hidden="true">{look.accessory.icon}</div>
+      )}
+    </div>
+  );
+
+  const interiorShell = (title, icon, subtitle, body) => (
+    <main className={styles.gameShell}>
+      <section className={styles.topBar}>
+        <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>
+          ← Resort Map
+        </button>
+        <div className={styles.brand}>Kids Resort</div>
+        <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+      </section>
+      <section className={styles.interiorScene}>
+        <header className={styles.interiorHeader}>
+          <div className={styles.interiorIcon}>{icon}</div>
+          <div>
+            <div className={styles.eyebrow}>{subtitle}</div>
+            <h1>{title}</h1>
+          </div>
+        </header>
+        {body}
+      </section>
+    </main>
+  );
+
   const currentOrder = CAFE_ORDERS[orderIndex];
 
-  if (screen === 'cafe') {
+  if (screen === 'cafe-work') {
     return (
       <main className={styles.gameShell}>
         <section className={styles.topBar}>
@@ -257,6 +444,173 @@ export default function KidsResort() {
     );
   }
 
+  if (screen === 'lobby-food' || screen === 'cafe-food') {
+    const isLobby = screen === 'lobby-food';
+    const menu = isLobby ? LOBBY_MENU : CAFE_MENU;
+    return interiorShell(
+      isLobby ? 'Palm Court' : 'Sunshine Cafe',
+      isLobby ? '\u{1F37D}\u{FE0F}' : '\u{1F96A}',
+      isLobby ? 'LOBBY RESTAURANT' : 'GRAB A BITE',
+      <div className={styles.shopGrid}>
+        {menu.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={styles.shopCard}
+            onClick={() => buyMeal(item)}
+          >
+            <span className={styles.shopIcon}>{item.icon}</span>
+            <strong>{item.name}</strong>
+            <span>{item.price} Resort Bucks</span>
+          </button>
+        ))}
+        <div className={styles.fullMessage} aria-live="polite">
+          {message || 'Choose something to eat.'}
+        </div>
+      </div>,
+    );
+  }
+
+  if (screen === 'market') {
+    return interiorShell(
+      'Market Street',
+      '\u{1F6D2}',
+      'SHOP FOR YOUR SUITE',
+      <div className={styles.shopGrid}>
+        {MARKET_ITEMS.map((item) => (
+          <button
+            key={item.id}
+            type="button"
+            className={styles.shopCard}
+            onClick={() => buyMarketItem(item)}
+          >
+            <span className={styles.shopIcon}>{item.icon}</span>
+            <strong>{item.name}</strong>
+            <span>{item.price} Resort Bucks - owned {inventory[item.id] || 0}</span>
+          </button>
+        ))}
+        <div className={styles.fullMessage} aria-live="polite">
+          {message || 'Groceries go straight to your suite pantry.'}
+        </div>
+      </div>,
+    );
+  }
+
+  if (screen === 'studio') {
+    return interiorShell(
+      'Design Studio',
+      '\u{1F457}',
+      'DESIGN EMILY',
+      <div className={styles.studioLayout}>
+        <section className={styles.characterStage}>
+          {renderCharacter(true)}
+          <div className={styles.lookSummary}>
+            <strong>Emily</strong>
+            <span>{look.shirt.name} - {look.bottoms.name}</span>
+            <span>{look.shoes.name} - {look.accessory.name}</span>
+          </div>
+        </section>
+
+        <section className={styles.customizer}>
+          {Object.entries(LOOK_OPTIONS).map(([category, options]) => (
+            <div key={category} className={styles.optionGroup}>
+              <h3>{category === 'bottoms' ? 'Bottoms' : category.charAt(0).toUpperCase() + category.slice(1)}</h3>
+              <div className={styles.optionRow}>
+                {options.map((option) => {
+                  const selected = look[category].id === option.id;
+                  return (
+                    <button
+                      key={option.id}
+                      type="button"
+                      className={styles.lookOption}
+                      data-selected={selected ? 'true' : 'false'}
+                      onClick={() => chooseLook(category, option)}
+                    >
+                      {'swatch' in option ? (
+                        <span className={styles.swatch} style={{ background: option.swatch }} />
+                      ) : (
+                        <span className={styles.optionIcon}>{option.icon}</span>
+                      )}
+                      <span>{option.name}</span>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          ))}
+          <div className={styles.fullMessage} aria-live="polite">
+            {message || 'Try combinations. You can change Emily whenever you want.'}
+          </div>
+        </section>
+      </div>,
+    );
+  }
+
+  if (screen === 'suite') {
+    return interiorShell(
+      "Emily's Suite",
+      '\u{1F6CF}\u{FE0F}',
+      'HOME BASE',
+      <div className={styles.suiteLayout}>
+        <section className={styles.roomCard}>
+          <div className={styles.roomTitle}>Kitchen</div>
+          <p>Cook with groceries you bought on Market Street.</p>
+          <div className={styles.recipeList}>
+            {RECIPES.map((recipe) => (
+              <button
+                key={recipe.id}
+                type="button"
+                className={styles.recipeButton}
+                data-ready={canCook(recipe) ? 'true' : 'false'}
+                onClick={() => cookRecipe(recipe)}
+              >
+                <span>{recipe.icon}</span>
+                <span>
+                  <strong>{recipe.name}</strong>
+                  <small>{Object.keys(recipe.ingredients).map(ingredientLabel).join(' + ')}</small>
+                </span>
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className={styles.roomCard}>
+          <div className={styles.roomTitle}>Closet</div>
+          <div className={styles.closetPreview}>
+            {renderCharacter(true)}
+            <div>
+              <strong>{look.shirt.name}</strong>
+              <span>{look.bottoms.name}</span>
+              <span>{look.shoes.name}</span>
+              <span>{look.hair.name}</span>
+              <span>{look.accessory.name}</span>
+            </div>
+          </div>
+          <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
+            Go to Design Studio
+          </button>
+        </section>
+
+        <section className={styles.roomCard}>
+          <div className={styles.roomTitle}>Pantry & Storage</div>
+          <div className={styles.inventoryList}>
+            {MARKET_ITEMS.map((item) => (
+              <span key={item.id}>{item.icon} {item.name}: {inventory[item.id] || 0}</span>
+            ))}
+          </div>
+          <div className={styles.mealHistory}>
+            <strong>Recent food</strong>
+            <span>{meals.length ? meals.slice(-4).join(' - ') : 'Nothing yet'}</span>
+          </div>
+        </section>
+
+        <div className={styles.fullMessage} aria-live="polite">
+          {message || "This is Emily's private space at the resort."}
+        </div>
+      </div>,
+    );
+  }
+
   return (
     <main className={styles.gameShell}>
       <section className={styles.topBar}>
@@ -273,21 +627,12 @@ export default function KidsResort() {
       <section className={styles.introCard}>
         <div>
           <div className={styles.eyebrow}>WELCOME, EMILY</div>
-          <h1>Today, you run the resort.</h1>
+          <h1>Your suite is your home at the resort.</h1>
           <p>
-            Try grown-up jobs, make choices, earn pretend money, and explore. Everything here is make-believe,
-            so you can experiment without real-world stakes.
+            Work, shop, eat out, design your look, then bring groceries and useful things back home.
           </p>
         </div>
-        <div className={styles.emilyPortrait} aria-label="Emily character placeholder">
-          <div className={styles.emilyHair} />
-          <div className={styles.emilyFace}>
-            <span className={styles.eye} />
-            <span className={styles.eye} />
-            <span className={styles.smile} />
-          </div>
-          <div className={styles.emilyShirt}>EMILY</div>
-        </div>
+        <div className={styles.introAvatar}>{renderCharacter(true)}</div>
       </section>
 
       <section className={styles.playArea}>
@@ -320,13 +665,16 @@ export default function KidsResort() {
             className={[styles.player, isWalking ? styles.playerWalking : ''].join(' ')}
             style={{ left: `${position.x}%`, top: `${position.y}%` }}
             data-frame={walkFrame}
+            data-shirt={look.shirt.id}
+            data-bottoms={look.bottoms.id}
+            data-hair={look.hair.id}
             aria-label="Emily"
           >
             <div className={styles.playerHair} />
             <div className={styles.playerHead} />
-            <div className={styles.playerBody} />
-            <div className={styles.playerLegLeft} />
-            <div className={styles.playerLegRight} />
+            <div className={styles.playerBody} data-shirt={look.shirt.id} />
+            <div className={styles.playerLegLeft} data-bottoms={look.bottoms.id} />
+            <div className={styles.playerLegRight} data-bottoms={look.bottoms.id} />
             <div className={styles.playerName}>Emily</div>
           </div>
         </div>
@@ -338,15 +686,41 @@ export default function KidsResort() {
           <p>{selectedPlace.description}</p>
 
           {selectedPlace.id === placeId ? (
-            selectedPlace.playable ? (
-              <button className={styles.primaryButton} type="button" onClick={openCurrentPlace}>
-                Start My Shift
-              </button>
-            ) : selectedPlace.id === 'lobby' ? (
-              <div className={styles.softNote}>Pick a destination on the map to start exploring.</div>
-            ) : (
-              <div className={styles.softNote}>This destination is ready for a future Kids Resort activity.</div>
-            )
+            <div className={styles.actionStack}>
+              {selectedPlace.id === 'suite' && (
+                <button className={styles.primaryButton} type="button" onClick={() => openScreen('suite')}>
+                  Enter My Suite
+                </button>
+              )}
+              {selectedPlace.id === 'lobby' && (
+                <button className={styles.primaryButton} type="button" onClick={() => openScreen('lobby-food')}>
+                  Eat at Palm Court
+                </button>
+              )}
+              {selectedPlace.id === 'cafe' && (
+                <>
+                  <button className={styles.primaryButton} type="button" onClick={() => openScreen('cafe-work')}>
+                    Work a Cafe Shift
+                  </button>
+                  <button className={styles.secondaryButton} type="button" onClick={() => openScreen('cafe-food')}>
+                    Eat at the Cafe
+                  </button>
+                </>
+              )}
+              {selectedPlace.id === 'market' && (
+                <button className={styles.primaryButton} type="button" onClick={() => openScreen('market')}>
+                  Shop Market Street
+                </button>
+              )}
+              {selectedPlace.id === 'studio' && (
+                <button className={styles.primaryButton} type="button" onClick={() => openScreen('studio')}>
+                  Design Emily
+                </button>
+              )}
+              {selectedPlace.id === 'bank' && (
+                <div className={styles.softNote}>Banking activities will come later.</div>
+              )}
+            </div>
           ) : (
             <button
               className={styles.primaryButton}
