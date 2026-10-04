@@ -878,3 +878,18 @@
   top: 28px;
   height: 51px;
 }
+
+
+/* Front preview ears now sit behind the face layer. */
+.avatarEar {
+  z-index: 3;
+  top: 48px;
+}
+
+.avatarEarLeft {
+  left: 29px;
+}
+
+.avatarEarRight {
+  right: 29px;
+}

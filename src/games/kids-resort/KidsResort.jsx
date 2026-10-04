@@ -351,9 +351,9 @@ export default function KidsResort() {
       aria-label="Emily preview"
     >
       <div className={styles.avatarHair} />
+      <span className={[styles.avatarEar, styles.avatarEarLeft].join(' ')} />
+      <span className={[styles.avatarEar, styles.avatarEarRight].join(' ')} />
       <div className={styles.avatarHead}>
-        <span className={[styles.avatarEar, styles.avatarEarLeft].join(' ')} />
-        <span className={[styles.avatarEar, styles.avatarEarRight].join(' ')} />
         <span className={[styles.avatarBrow, styles.avatarBrowLeft].join(' ')} />
         <span className={[styles.avatarBrow, styles.avatarBrowRight].join(' ')} />
         <span className={[styles.avatarEye, styles.avatarEyeLeft].join(' ')} />
@@ -729,9 +729,9 @@ export default function KidsResort() {
           >
             <div className={styles.playerSprite} style={playerView === 'front' ? { transform: 'none' } : undefined}>
               <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} style={playerView === 'front' ? { left: 7, top: 0, width: 48, height: 48, borderRadius: '50% 50% 45% 45%' } : undefined} />
+              <span className={[styles.playerEar, styles.playerEarLeft].join(' ')} />
+              <span className={[styles.playerEar, styles.playerEarRight].join(' ')} />
               <div className={[styles.playerHead, styles.playerHeadDetail].join(' ')} style={playerView === 'front' ? { left: 16, top: 9, width: 31, height: 35, borderRadius: '48% 48% 45% 45%' } : undefined}>
-                <span className={[styles.playerEar, styles.playerEarLeft].join(' ')} />
-                <span className={[styles.playerEar, styles.playerEarRight].join(' ')} />
                 <span className={[styles.playerBrow, styles.playerBrowLeft].join(' ')} />
                 <span className={[styles.playerBrow, styles.playerBrowRight].join(' ')} />
                 <span className={[styles.playerEye, styles.playerEyeLeft].join(' ')} />
