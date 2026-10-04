@@ -167,6 +167,7 @@ export default function KidsResort() {
   const [walkFrame, setWalkFrame] = useState(0);
   const [facing, setFacing] = useState('right');
   const [walkView, setWalkView] = useState('front');
+  const [touchPlaceId, setTouchPlaceId] = useState(null);
   const walkTokenRef = useRef(0);
   const [look, setLook] = useState({
     shirt: LOOK_OPTIONS.shirt[0],
@@ -296,6 +297,52 @@ export default function KidsResort() {
     };
 
     walkLeg(position, route[0], 0);
+  };
+
+  const enterPlace = (place) => {
+    if (!place || place.id !== placeId || isWalking) return;
+
+    if (place.id === 'suite') {
+      openScreen('suite');
+    } else if (place.id === 'lobby') {
+      openScreen('lobby-food');
+    } else if (place.id === 'cafe') {
+      openScreen('cafe-work');
+    } else if (place.id === 'market') {
+      openScreen('market');
+    } else if (place.id === 'studio') {
+      openScreen('studio');
+    }
+  };
+
+  const handlePlaceClick = (place) => {
+    setSelectedPlaceId(place.id);
+    setMessage('');
+
+    if (place.id === placeId) {
+      enterPlace(place);
+      return;
+    }
+
+    travelTo(place);
+  };
+
+  const handlePlaceTouch = (event, place) => {
+    event.preventDefault();
+    setSelectedPlaceId(place.id);
+    setMessage('');
+
+    if (touchPlaceId !== place.id) {
+      setTouchPlaceId(place.id);
+      return;
+    }
+
+    if (place.id === placeId) {
+      enterPlace(place);
+      return;
+    }
+
+    travelTo(place);
   };
 
   const openScreen = (nextScreen) => {
@@ -786,7 +833,9 @@ export default function KidsResort() {
                         ? '4px'
                         : '20px',
               }}
-              onClick={() => travelTo(place)}
+              data-label-open={touchPlaceId === place.id ? 'true' : 'false'}
+              onClick={() => handlePlaceClick(place)}
+              onTouchEnd={(event) => handlePlaceTouch(event, place)}
             >
               <span className={styles.placeLabel}>{place.name}</span>
               <span className={styles.placeBuilding} data-place={place.id} aria-hidden="true">
