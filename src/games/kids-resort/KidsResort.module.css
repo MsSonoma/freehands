@@ -50,6 +50,19 @@
   min-width: 0;
 }
 
+.libraryLink {
+  flex: 0 0 auto;
+  color: #6a5f58;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.libraryLink:hover {
+  text-decoration: underline;
+}
+
 .mapTopBar .brand {
   font-size: 1.2rem;
   letter-spacing: -0.035em;

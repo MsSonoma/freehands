@@ -190,7 +190,7 @@ function clamp(value, min, max) {
   return Math.max(min, Math.min(max, value));
 }
 
-export default function KidsResort() {
+export default function KidsResort({ libraryHref = null }) {
   const [placeId, setPlaceId] = useState('suite');
   const [selectedPlaceId, setSelectedPlaceId] = useState('suite');
   const [screen, setScreen] = useState('map');
@@ -838,6 +838,11 @@ export default function KidsResort() {
     <main className={[styles.gameShell, styles.mapGameShell].join(' ')}>
       <section className={[styles.topBar, styles.mapTopBar].join(' ')}>
         <div className={styles.mapBrandLine}>
+          {libraryHref && (
+            <a className={styles.libraryLink} href={libraryHref}>
+              ← Game Library
+            </a>
+          )}
           <div className={styles.brand}>Kids Resort</div>
           <div className={styles.tagline}>A grown-up world made just for kids.</div>
         </div>
