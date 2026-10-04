@@ -708,14 +708,6 @@ export default function KidsResort() {
           <div className={[styles.mapTree, styles.treeNearLeft].join(' ')} aria-hidden="true" />
           <div className={[styles.mapTree, styles.treeNearRight].join(' ')} aria-hidden="true" />
 
-          <div className={styles.resortPaths} aria-hidden="true">
-            <span className={[styles.pathSegment, styles.pathToCafe].join(' ')} />
-            <span className={[styles.pathSegment, styles.pathToBank].join(' ')} />
-            <span className={[styles.pathSegment, styles.pathToStudio].join(' ')} />
-            <span className={[styles.pathSegment, styles.pathToMarket].join(' ')} />
-            <span className={[styles.pathSegment, styles.pathToSuite].join(' ')} />
-          </div>
-
           {PLACES.map((place) => (
             <button
               key={place.id}

@@ -188,8 +188,6 @@
   border-radius: 30px;
   overflow: hidden;
   background:
-    radial-gradient(circle at 24% 70%, #7fd977 0 5%, transparent 5.5%),
-    radial-gradient(circle at 72% 45%, #72ce70 0 7%, transparent 7.5%),
     linear-gradient(180deg, #9de0ff 0 34%, #8fe07d 34% 100%);
   box-shadow: 0 14px 36px rgba(23, 48, 79, 0.14);
 }
@@ -364,63 +362,6 @@
   right: 7%;
   top: 72%;
   transform: scale(1.32);
-}
-
-.resortPaths {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  pointer-events: none;
-}
-
-.pathSegment {
-  position: absolute;
-  display: block;
-  height: 16px;
-  border-radius: 999px;
-  background: #f9dfad;
-  box-shadow:
-    inset 0 0 0 3px rgba(179, 132, 71, 0.08),
-    0 3px 0 rgba(179, 132, 71, 0.08);
-  transform-origin: left center;
-}
-
-.pathToCafe {
-  left: 48%;
-  top: 49%;
-  width: 36%;
-  transform: rotate(201deg);
-}
-
-.pathToBank {
-  left: 52%;
-  top: 49%;
-  width: 34%;
-  transform: rotate(-20deg);
-}
-
-.pathToStudio {
-  left: 48%;
-  top: 53%;
-  width: 33%;
-  height: 19px;
-  transform: rotate(160deg);
-}
-
-.pathToMarket {
-  left: 52%;
-  top: 53%;
-  width: 32%;
-  height: 19px;
-  transform: rotate(20deg);
-}
-
-.pathToSuite {
-  left: 50%;
-  top: 54%;
-  width: 29%;
-  height: 22px;
-  transform: rotate(90deg);
 }
 
 .place {
@@ -1281,19 +1222,6 @@
 
   .mapPanel {
     min-height: 500px;
-  }
-
-  .pathSegment {
-    height: 12px;
-  }
-
-  .pathToStudio,
-  .pathToMarket {
-    height: 14px;
-  }
-
-  .pathToSuite {
-    height: 17px;
   }
 
   .place {
