@@ -1,0 +1,323 @@
+.playerDetailed {
+  width: 62px;
+  height: 118px;
+  transform: translate(-50%, -88%);
+  filter: drop-shadow(0 6px 5px rgba(23, 48, 79, 0.24));
+}
+
+.playerHairDetail {
+  z-index: 3;
+  left: 7px;
+  top: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50% 50% 45% 45%;
+  background: linear-gradient(145deg, #9d6338 0%, #704126 48%, #432518 100%);
+  box-shadow: inset 5px 0 6px rgba(255, 210, 160, 0.13), inset -5px -4px 7px rgba(45, 20, 10, 0.26);
+}
+
+.playerHeadDetail {
+  z-index: 4;
+  left: 16px;
+  top: 9px;
+  width: 31px;
+  height: 35px;
+  border-radius: 48% 48% 45% 45%;
+  background: linear-gradient(145deg, #ffd5b8, #ef9f72);
+  box-shadow: inset -3px -3px 5px rgba(173, 82, 48, 0.14);
+}
+
+.playerEye {
+  position: relative;
+  display: inline-block;
+  width: 6px;
+  height: 8px;
+  margin: 12px 2px 0;
+  border-radius: 50%;
+  background: radial-gradient(circle at 42% 38%, #fff 0 18%, #74401f 22% 56%, #24130d 60% 100%);
+  box-shadow: 0 -1px 0 rgba(73, 39, 22, 0.38);
+}
+
+.playerNose {
+  position: absolute;
+  left: 14px;
+  top: 20px;
+  width: 4px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgba(200, 104, 68, 0.5);
+}
+
+.playerSmile {
+  position: absolute;
+  left: 10px;
+  top: 25px;
+  width: 11px;
+  height: 5px;
+  border-bottom: 1.5px solid #974941;
+  border-radius: 0 0 50% 50%;
+}
+
+.playerNeck {
+  position: absolute;
+  z-index: 2;
+  left: 27px;
+  top: 40px;
+  width: 9px;
+  height: 9px;
+  border-radius: 4px;
+  background: #efaa7d;
+}
+
+.playerBodyDetail {
+  z-index: 3;
+  left: 15px;
+  top: 45px;
+  width: 33px;
+  height: 32px;
+  border-radius: 10px 10px 6px 6px;
+  box-shadow: inset -4px -3px 6px rgba(82, 28, 58, 0.12);
+}
+
+.playerArmRigLeft,
+.playerArmRigRight {
+  position: absolute;
+  z-index: 2;
+  top: 49px;
+  width: 12px;
+  height: 52px;
+  transform-origin: 50% 4px;
+}
+
+.playerArmRigLeft {
+  left: 7px;
+  transform: rotate(5deg);
+}
+
+.playerArmRigRight {
+  right: 7px;
+  transform: rotate(-5deg);
+}
+
+.playerUpperArm,
+.playerForearm {
+  position: absolute;
+  left: 2px;
+  width: 8px;
+  border-radius: 999px;
+  background: linear-gradient(145deg, #ffd0ad, #ed9e70);
+  box-shadow: inset -2px -2px 3px rgba(160, 73, 42, 0.12);
+}
+
+.playerUpperArm {
+  top: 0;
+  height: 17px;
+}
+
+.playerElbow {
+  position: absolute;
+  z-index: 2;
+  left: 1px;
+  top: 14px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #f0a477;
+}
+
+.playerForearm {
+  top: 21px;
+  height: 17px;
+  transform-origin: 50% 2px;
+}
+
+.playerHand {
+  position: absolute;
+  z-index: 3;
+  left: 1px;
+  top: 35px;
+  width: 10px;
+  height: 10px;
+  border-radius: 45% 45% 50% 50%;
+  background: #efaa7d;
+}
+
+.playerFinger {
+  position: absolute;
+  bottom: -5px;
+  width: 2px;
+  height: 7px;
+  border-radius: 999px;
+  background: #efaa7d;
+  transform-origin: top center;
+}
+
+.playerFinger:nth-child(1) {
+  left: 1px;
+  transform: rotate(10deg);
+}
+
+.playerFinger:nth-child(2) {
+  left: 4px;
+}
+
+.playerFinger:nth-child(3) {
+  right: 1px;
+  transform: rotate(-10deg);
+}
+
+.playerLegRigLeft,
+.playerLegRigRight {
+  position: absolute;
+  z-index: 2;
+  top: 72px;
+  width: 16px;
+  height: 47px;
+  transform-origin: 50% 3px;
+}
+
+.playerLegRigLeft {
+  left: 17px;
+}
+
+.playerLegRigRight {
+  right: 16px;
+}
+
+.playerThigh,
+.playerShin {
+  position: absolute;
+  left: 3px;
+  width: 10px;
+  border-radius: 5px;
+  box-shadow: inset -2px -2px 3px rgba(24, 48, 85, 0.13);
+}
+
+.playerThigh {
+  top: 0;
+  height: 18px;
+}
+
+.playerKnee {
+  position: absolute;
+  z-index: 2;
+  left: 3px;
+  top: 15px;
+  width: 10px;
+  height: 9px;
+  border-radius: 50%;
+}
+
+.playerShin {
+  top: 22px;
+  height: 19px;
+  transform-origin: 50% 2px;
+}
+
+.playerShoe {
+  position: absolute;
+  z-index: 4;
+  left: 0;
+  top: 38px;
+  width: 17px;
+  height: 9px;
+  border: 1px solid rgba(23, 48, 79, 0.15);
+  border-radius: 5px 8px 4px 4px;
+  box-shadow: inset 0 -2px 0 rgba(255, 255, 255, 0.52);
+}
+
+.playerNameDetail {
+  top: 116px;
+  font-size: 0.55rem;
+}
+
+.playerDetailed[data-hair="ponytail"] .playerHairDetail::after {
+  content: "";
+  position: absolute;
+  right: -10px;
+  top: 15px;
+  width: 18px;
+  height: 26px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #7d492c, #4a281a);
+}
+
+.playerDetailed[data-hair="bun"] .playerHairDetail::before {
+  content: "";
+  position: absolute;
+  left: 15px;
+  top: -12px;
+  width: 19px;
+  height: 19px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #7d492c, #4a281a);
+}
+
+.playerDetailed[data-frame="0"] .playerArmRigLeft,
+.playerDetailed[data-frame="3"] .playerArmRigRight {
+  transform: rotate(24deg);
+}
+
+.playerDetailed[data-frame="0"] .playerArmRigRight,
+.playerDetailed[data-frame="3"] .playerArmRigLeft {
+  transform: rotate(-24deg);
+}
+
+.playerDetailed[data-frame="1"] .playerArmRigLeft,
+.playerDetailed[data-frame="4"] .playerArmRigRight {
+  transform: rotate(12deg);
+}
+
+.playerDetailed[data-frame="1"] .playerArmRigRight,
+.playerDetailed[data-frame="4"] .playerArmRigLeft {
+  transform: rotate(-12deg);
+}
+
+.playerDetailed[data-frame="2"] .playerArmRigLeft,
+.playerDetailed[data-frame="2"] .playerArmRigRight,
+.playerDetailed[data-frame="5"] .playerArmRigLeft,
+.playerDetailed[data-frame="5"] .playerArmRigRight {
+  transform: rotate(0deg);
+}
+
+.playerDetailed[data-frame="0"] .playerLegRigLeft,
+.playerDetailed[data-frame="3"] .playerLegRigRight {
+  transform: rotate(25deg);
+}
+
+.playerDetailed[data-frame="0"] .playerLegRigRight,
+.playerDetailed[data-frame="3"] .playerLegRigLeft {
+  transform: rotate(-25deg);
+}
+
+.playerDetailed[data-frame="1"] .playerLegRigLeft,
+.playerDetailed[data-frame="4"] .playerLegRigRight {
+  transform: rotate(12deg);
+}
+
+.playerDetailed[data-frame="1"] .playerLegRigRight,
+.playerDetailed[data-frame="4"] .playerLegRigLeft {
+  transform: rotate(-12deg);
+}
+
+.playerDetailed[data-frame="2"] .playerLegRigLeft,
+.playerDetailed[data-frame="2"] .playerLegRigRight,
+.playerDetailed[data-frame="5"] .playerLegRigLeft,
+.playerDetailed[data-frame="5"] .playerLegRigRight {
+  transform: rotate(0deg);
+}
+
+.playerDetailed[data-frame="0"] .playerLegRigLeft .playerShin,
+.playerDetailed[data-frame="3"] .playerLegRigRight .playerShin {
+  transform: rotate(-17deg);
+}
+
+.playerDetailed[data-frame="0"] .playerLegRigRight .playerShin,
+.playerDetailed[data-frame="3"] .playerLegRigLeft .playerShin {
+  transform: rotate(13deg);
+}
+
+.playerDetailed[data-frame="1"] .playerForearm,
+.playerDetailed[data-frame="4"] .playerForearm {
+  transform: rotate(8deg);
+}
