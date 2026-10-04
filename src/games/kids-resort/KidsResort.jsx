@@ -10,12 +10,12 @@ const styles = { ...worldStyles, ...anatomyStyles, ...baseStyles };
 const PLACES = [
   {
     id: 'suite',
-    name: 'Emily’s Suite',
+    name: 'Emily’s House',
     icon: '🛏️',
     x: 50,
     y: 82,
     role: 'Home Base',
-    description: 'Your private hotel suite. Cook in the kitchen, check your closet, and see what you own.',
+    description: 'Your private resort house. Cook in the kitchen, check your closet, and see what you own.',
   },
   {
     id: 'lobby',
@@ -51,7 +51,7 @@ const PLACES = [
     x: 81,
     y: 66,
     role: 'Shopping',
-    description: 'Buy groceries and useful things, then bring them back to your suite.',
+    description: 'Buy groceries and useful things, then bring them back to your house.',
   },
   {
     id: 'studio',
@@ -234,7 +234,7 @@ export default function KidsResort() {
   );
 
   const placeDisplayName = (place) =>
-    place?.id === 'suite' ? `${characterName}’s Suite` : place?.name;
+    place?.id === 'suite' ? `${characterName}’s House` : place?.name;
 
   const eyeChoice = CHARACTER_OPTIONS.eye.find((option) => option.id === character.eye) ?? CHARACTER_OPTIONS.eye[0];
   const hairChoice = CHARACTER_OPTIONS.hair.find((option) => option.id === character.hair) ?? CHARACTER_OPTIONS.hair[0];
@@ -463,7 +463,7 @@ export default function KidsResort() {
       ...items,
       [item.id]: (items[item.id] || 0) + 1,
     }));
-    setMessage(`${item.name} went into your suite pantry.`);
+    setMessage(`${item.name} went into your house pantry.`);
   };
 
   const canCook = (recipe) =>
@@ -487,8 +487,8 @@ export default function KidsResort() {
       return next;
     });
     setMeals((items) => [...items, recipe.name]);
-    setMessage(`${characterName} cooked ${recipe.name} in her suite kitchen!`);
-    setBadges((items) => (items.includes('Suite Cook') ? items : [...items, 'Suite Cook']));
+    setMessage(`${characterName} cooked ${recipe.name} in her house kitchen!`);
+    setBadges((items) => (items.includes('House Cook') ? items : [...items, 'House Cook']));
   };
 
   const chooseCharacterOption = (category, option) => {
@@ -698,7 +698,7 @@ export default function KidsResort() {
     return interiorShell(
       'Market Street',
       '\u{1F6D2}',
-      'SHOP FOR YOUR SUITE',
+      'SHOP FOR YOUR HOUSE',
       <div className={styles.shopGrid}>
         {MARKET_ITEMS.map((item) => (
           <button
@@ -713,7 +713,7 @@ export default function KidsResort() {
           </button>
         ))}
         <div className={styles.fullMessage} aria-live="polite">
-          {message || 'Groceries go straight to your suite pantry.'}
+          {message || 'Groceries go straight to your house pantry.'}
         </div>
       </div>,
     );
@@ -771,7 +771,7 @@ export default function KidsResort() {
 
   if (screen === 'suite') {
     return interiorShell(
-      `${characterName}'s Suite`,
+      `${characterName}'s House`,
       '\u{1F6CF}\u{FE0F}',
       'HOME BASE',
       <div className={styles.suiteLayout}>
