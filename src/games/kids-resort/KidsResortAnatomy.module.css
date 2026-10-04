@@ -102,6 +102,7 @@
 .playerUpperArm,
 .playerForearm {
   position: absolute;
+  z-index: 2;
   left: 2px;
   width: 8px;
   border-radius: 999px;
@@ -111,23 +112,23 @@
 
 .playerUpperArm {
   top: 0;
-  height: 17px;
+  height: 19px;
 }
 
 .playerElbow {
   position: absolute;
-  z-index: 2;
-  left: 1px;
-  top: 14px;
-  width: 10px;
-  height: 10px;
+  z-index: 1;
+  left: 3px;
+  top: 16px;
+  width: 6px;
+  height: 6px;
   border-radius: 50%;
   background: #f0a477;
 }
 
 .playerForearm {
-  top: 21px;
-  height: 17px;
+  top: 18px;
+  height: 20px;
   transform-origin: 50% 2px;
 }
 
@@ -187,6 +188,7 @@
 .playerThigh,
 .playerShin {
   position: absolute;
+  z-index: 2;
   left: 3px;
   width: 10px;
   border-radius: 5px;
@@ -195,22 +197,23 @@
 
 .playerThigh {
   top: 0;
-  height: 18px;
+  height: 20px;
+  z-index: 2;
 }
 
 .playerKnee {
   position: absolute;
-  z-index: 2;
-  left: 3px;
-  top: 15px;
-  width: 10px;
-  height: 9px;
+  z-index: 1;
+  left: 5px;
+  top: 17px;
+  width: 6px;
+  height: 5px;
   border-radius: 50%;
 }
 
 .playerShin {
-  top: 22px;
-  height: 19px;
+  top: 20px;
+  height: 21px;
   transform-origin: 50% 2px;
 }
 

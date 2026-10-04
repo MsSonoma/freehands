@@ -433,6 +433,7 @@
 .avatarUpperArm,
 .avatarForearm {
   position: absolute;
+  z-index: 2;
   left: 3px;
   width: 14px;
   border-radius: 999px;
@@ -442,23 +443,23 @@
 
 .avatarUpperArm {
   top: 0;
-  height: 34px;
+  height: 36px;
 }
 
 .avatarElbow {
   position: absolute;
-  z-index: 2;
-  left: 2px;
-  top: 29px;
-  width: 16px;
-  height: 16px;
+  z-index: 1;
+  left: 4px;
+  top: 30px;
+  width: 12px;
+  height: 12px;
   border-radius: 50%;
   background: linear-gradient(145deg, #ffd3b2, #eca071);
 }
 
 .avatarForearm {
-  top: 39px;
-  height: 35px;
+  top: 35px;
+  height: 38px;
 }
 
 .avatarHand {
@@ -516,6 +517,7 @@
 .avatarThigh,
 .avatarShin {
   position: absolute;
+  z-index: 2;
   left: 2px;
   width: 24px;
   border-radius: 9px;
@@ -524,21 +526,23 @@
 
 .avatarThigh {
   top: 0;
-  height: 35px;
+  height: 38px;
+  z-index: 2;
 }
 
 .avatarKnee {
   position: absolute;
-  left: 3px;
-  top: 31px;
-  width: 22px;
-  height: 15px;
+  z-index: 1;
+  left: 6px;
+  top: 33px;
+  width: 16px;
+  height: 10px;
   border-radius: 50%;
 }
 
 .avatarShin {
-  top: 42px;
-  height: 38px;
+  top: 38px;
+  height: 41px;
 }
 
 .avatarShoe {
