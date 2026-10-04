@@ -849,3 +849,124 @@
 .playerDetailed[data-view="side"] .playerBrowLeft {
   display: none;
 }
+
+
+/* Emily anatomy refinement: hidden hinge joints, slimmer torso, corrected face/hair depth. */
+.playerDetailed .playerUpperArm {
+  z-index: 1;
+}
+
+.playerDetailed .playerElbow {
+  z-index: 0;
+}
+
+.playerDetailed .playerForearm {
+  z-index: 3;
+  top: 13px;
+  height: 25px;
+}
+
+.playerDetailed .playerThigh {
+  z-index: 1;
+}
+
+.playerDetailed .playerKnee {
+  z-index: 0;
+}
+
+.playerDetailed[data-view="side"] .playerShin {
+  z-index: 3;
+  top: 15px;
+  height: 28px;
+}
+
+.playerDetailed[data-view="front"] .playerShin {
+  z-index: 3;
+  top: 15px;
+  height: 26px;
+}
+
+.playerDetailed .playerPelvis {
+  z-index: 2;
+}
+
+.playerDetailed .playerBodyDetail {
+  z-index: 4;
+}
+
+.playerDetailed[data-view="side"] .playerBodyDetail {
+  left: 23px;
+  width: 22px;
+}
+
+.playerDetailed[data-view="front"] .playerBodyDetail {
+  left: 17px;
+  width: 29px;
+}
+
+.playerDetailed[data-view="side"] .playerHeadDetail {
+  z-index: 7;
+}
+
+.playerDetailed[data-view="side"] .playerHairDetail {
+  z-index: 2;
+  left: 8px;
+  width: 40px;
+}
+
+.playerDetailed[data-view="side"] .playerHairFront {
+  z-index: 3;
+  left: 8px;
+  top: 8px;
+  width: 16px;
+  height: 36px;
+  border-radius: 62% 48% 58% 42%;
+  transform: rotate(5deg);
+}
+
+.playerDetailed[data-view="front"] .playerEye {
+  position: absolute;
+  top: 12px;
+  margin: 0;
+}
+
+.playerDetailed[data-view="front"] .playerEyeLeft {
+  display: block;
+  left: 6px;
+  right: auto;
+}
+
+.playerDetailed[data-view="front"] .playerEyeRight {
+  display: block;
+  left: auto;
+  right: 6px;
+}
+
+.playerDetailed[data-view="side"] .playerEyeLeft {
+  display: none;
+}
+
+.playerDetailed[data-view="side"] .playerEyeRight {
+  display: block;
+  position: absolute;
+  right: 4px;
+  left: auto;
+  top: 12px;
+  margin: 0;
+}
+
+.playerDetailed[data-view="front"] .playerNeck {
+  z-index: 3;
+  left: 27px;
+  top: 39px;
+  width: 9px;
+  height: 11px;
+}
+
+.playerDetailed[data-view="side"] .playerNeck {
+  z-index: 3;
+  left: 29px;
+  top: 39px;
+  width: 8px;
+  height: 12px;
+}

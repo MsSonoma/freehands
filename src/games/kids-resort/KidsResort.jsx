@@ -356,12 +356,13 @@ export default function KidsResort() {
         <span className={[styles.avatarEar, styles.avatarEarRight].join(' ')} />
         <span className={[styles.avatarBrow, styles.avatarBrowLeft].join(' ')} />
         <span className={[styles.avatarBrow, styles.avatarBrowRight].join(' ')} />
-        <span className={styles.avatarEye} />
-        <span className={styles.avatarEye} />
+        <span className={[styles.avatarEye, styles.avatarEyeLeft].join(' ')} />
+        <span className={[styles.avatarEye, styles.avatarEyeRight].join(' ')} />
         <span className={styles.avatarNose} />
         <span className={styles.avatarSmile} />
       </div>
       <div className={styles.avatarHairFront} />
+      <div className={styles.avatarNeck} />
       <div className={styles.avatarBody} style={{ background: look.shirt.swatch }} />
       <div className={styles.avatarPelvis} style={{ background: look.bottoms.swatch }} />
 
@@ -733,8 +734,8 @@ export default function KidsResort() {
                 <span className={[styles.playerEar, styles.playerEarRight].join(' ')} />
                 <span className={[styles.playerBrow, styles.playerBrowLeft].join(' ')} />
                 <span className={[styles.playerBrow, styles.playerBrowRight].join(' ')} />
-                <span className={styles.playerEye} />
-                <span className={styles.playerEye} />
+                <span className={[styles.playerEye, styles.playerEyeLeft].join(' ')} />
+                <span className={[styles.playerEye, styles.playerEyeRight].join(' ')} />
                 <span className={styles.playerNose} />
                 <span className={styles.playerSmile} />
               </div>

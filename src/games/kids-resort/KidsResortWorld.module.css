@@ -805,3 +805,76 @@
     grid-template-columns: 100px minmax(0, 1fr);
   }
 }
+
+
+/* Emily anatomy refinement: hide hinge joints inside overlapping limb segments. */
+.avatarHead {
+  z-index: 4;
+}
+
+.avatarEye {
+  position: absolute;
+  top: 23px;
+  margin: 0;
+}
+
+.avatarEyeLeft {
+  left: 10px;
+}
+
+.avatarEyeRight {
+  right: 10px;
+}
+
+.avatarNeck {
+  position: absolute;
+  z-index: 2;
+  left: 55px;
+  top: 76px;
+  width: 16px;
+  height: 18px;
+  border-radius: 7px;
+  background: linear-gradient(145deg, #f7bc94, #e8976d);
+  box-shadow: inset -2px -2px 4px rgba(144, 67, 39, 0.12);
+}
+
+.avatarBody {
+  z-index: 3;
+  left: 34px;
+  width: 58px;
+}
+
+.avatarPelvis {
+  z-index: 1;
+  left: 37px;
+  top: 145px;
+  width: 52px;
+}
+
+.avatarUpperArm {
+  z-index: 1;
+}
+
+.avatarElbow {
+  z-index: 0;
+}
+
+.avatarForearm {
+  z-index: 3;
+  top: 24px;
+  height: 49px;
+}
+
+.avatarThigh {
+  z-index: 1;
+}
+
+.avatarKnee {
+  z-index: 0;
+}
+
+.avatarShin {
+  z-index: 3;
+  top: 28px;
+  height: 51px;
+}
