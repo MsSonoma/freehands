@@ -506,13 +506,13 @@
 .playerHairFront {
   position: absolute;
   z-index: 7;
-  left: 34px;
-  top: 5px;
-  width: 15px;
-  height: 39px;
-  border-radius: 55% 55% 65% 35%;
+  left: 14px;
+  top: 6px;
+  width: 17px;
+  height: 40px;
+  border-radius: 62% 48% 58% 42%;
   background: linear-gradient(160deg, #915835, #54301f);
-  transform: rotate(-6deg);
+  transform: rotate(7deg);
   transform-origin: top center;
 }
 
@@ -534,7 +534,7 @@
 }
 
 .playerDetailed[data-hair="bun"] .playerHairFront {
-  left: 35px;
+  left: 15px;
   width: 13px;
   height: 33px;
 }
