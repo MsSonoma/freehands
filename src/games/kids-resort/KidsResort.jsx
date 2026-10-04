@@ -166,6 +166,7 @@ export default function KidsResort() {
   const [isWalking, setIsWalking] = useState(false);
   const [walkFrame, setWalkFrame] = useState(0);
   const [facing, setFacing] = useState('right');
+  const [walkView, setWalkView] = useState('front');
   const walkTokenRef = useRef(0);
   const [look, setLook] = useState({
     shirt: LOOK_OPTIONS.shirt[0],
@@ -210,8 +211,15 @@ export default function KidsResort() {
     walkTokenRef.current = token;
 
     const start = position;
-    if (nextPlace.x !== start.x) {
-      setFacing(nextPlace.x > start.x ? 'right' : 'left');
+    const dx = nextPlace.x - start.x;
+    const dy = nextPlace.y - start.y;
+    if (dy > 0) {
+      setWalkView('front');
+    } else if (dx !== 0) {
+      setFacing(dx > 0 ? 'right' : 'left');
+      setWalkView('side');
+    } else {
+      setWalkView('front');
     }
 
     const steps = 8;
@@ -238,6 +246,7 @@ export default function KidsResort() {
         setPlaceId(nextPlace.id);
         setWalkFrame(0);
         setIsWalking(false);
+        setWalkView('front');
       }
     }, 90);
   };
@@ -420,6 +429,7 @@ export default function KidsResort() {
   );
 
   const currentOrder = CAFE_ORDERS[orderIndex];
+  const playerView = isWalking ? walkView : 'front';
 
   if (screen === 'cafe-work') {
     return (
@@ -712,13 +722,17 @@ export default function KidsResort() {
             data-bottoms={look.bottoms.id}
             data-hair={look.hair.id}
             data-facing={facing}
+            data-view={isWalking ? walkView : 'front'}
+            data-moving={isWalking ? 'true' : 'false'}
             aria-label="Emily"
           >
-            <div className={styles.playerSprite}>
-              <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} />
-              <div className={[styles.playerHead, styles.playerHeadDetail].join(' ')}>
-                <span className={styles.playerEar} />
-                <span className={styles.playerBrow} />
+            <div className={styles.playerSprite} style={playerView === 'front' ? { transform: 'none' } : undefined}>
+              <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} style={playerView === 'front' ? { left: 7, top: 0, width: 48, height: 48, borderRadius: '50% 50% 45% 45%' } : undefined} />
+              <div className={[styles.playerHead, styles.playerHeadDetail].join(' ')} style={playerView === 'front' ? { left: 16, top: 9, width: 31, height: 35, borderRadius: '48% 48% 45% 45%' } : undefined}>
+                <span className={[styles.playerEar, styles.playerEarLeft].join(' ')} />
+                <span className={[styles.playerEar, styles.playerEarRight].join(' ')} />
+                <span className={[styles.playerBrow, styles.playerBrowLeft].join(' ')} />
+                <span className={[styles.playerBrow, styles.playerBrowRight].join(' ')} />
                 <span className={styles.playerEye} />
                 <span className={styles.playerEye} />
                 <span className={styles.playerNose} />

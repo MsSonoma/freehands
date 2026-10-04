@@ -565,3 +565,287 @@
   transform: translateX(1px) skewX(-8deg);
   transform-origin: left center;
 }
+
+
+/* Front-facing rest pose and toward-view walk cycle. */
+.playerDetailed[data-view="front"] .playerHairDetail {
+  z-index: 2;
+  left: 7px;
+  top: 0;
+  width: 48px;
+  height: 48px;
+  border-radius: 50% 50% 45% 45%;
+}
+
+.playerDetailed[data-view="front"] .playerHeadDetail {
+  z-index: 4;
+  left: 16px;
+  top: 9px;
+  width: 31px;
+  height: 35px;
+  border-radius: 48% 48% 45% 45%;
+}
+
+.playerDetailed[data-view="front"] .playerHeadDetail .playerEye:first-child {
+  display: inline-block;
+}
+
+.playerDetailed[data-view="front"] .playerHeadDetail .playerEye:nth-child(2) {
+  position: relative;
+  right: auto;
+  top: auto;
+  margin: 12px 2px 0;
+}
+
+.playerDetailed[data-view="front"] .playerNose {
+  left: 14px;
+  right: auto;
+  top: 20px;
+  width: 4px;
+  height: 3px;
+  border-radius: 50%;
+}
+
+.playerDetailed[data-view="front"] .playerSmile {
+  left: 10px;
+  right: auto;
+  top: 25px;
+  width: 11px;
+  height: 5px;
+}
+
+.playerDetailed[data-view="front"] .playerNeck {
+  left: 27px;
+  top: 40px;
+  width: 9px;
+  height: 9px;
+}
+
+.playerDetailed[data-view="front"] .playerBodyDetail {
+  z-index: 3;
+  left: 15px;
+  top: 45px;
+  width: 33px;
+  height: 34px;
+  border-radius: 10px 10px 6px 6px;
+}
+
+.playerDetailed[data-view="front"] .playerPelvis {
+  z-index: 4;
+  left: 18px;
+  top: 74px;
+  width: 27px;
+  height: 13px;
+  border-radius: 7px 7px 6px 6px;
+}
+
+.playerDetailed[data-view="front"] .playerEar {
+  display: block;
+  top: 14px;
+  width: 7px;
+  height: 11px;
+}
+
+.playerDetailed[data-view="front"] .playerEarLeft {
+  left: -4px;
+  right: auto;
+}
+
+.playerDetailed[data-view="front"] .playerEarRight {
+  left: auto;
+  right: -4px;
+}
+
+.playerDetailed[data-view="front"] .playerBrow {
+  display: block;
+  top: 8px;
+  width: 8px;
+  height: 3px;
+}
+
+.playerDetailed[data-view="front"] .playerBrowLeft {
+  left: 4px;
+  right: auto;
+  transform: rotate(-4deg);
+}
+
+.playerDetailed[data-view="front"] .playerBrowRight {
+  left: auto;
+  right: 4px;
+  transform: rotate(4deg);
+}
+
+.playerDetailed[data-view="front"] .playerHairFront {
+  z-index: 7;
+  left: 17px;
+  top: 5px;
+  width: 29px;
+  height: 18px;
+  border-radius: 52% 48% 42% 44%;
+  transform: none;
+  clip-path: polygon(0 0, 100% 0, 94% 58%, 76% 42%, 65% 78%, 51% 48%, 38% 80%, 22% 45%, 7% 64%);
+}
+
+.playerDetailed[data-view="front"] .playerArmRigLeft,
+.playerDetailed[data-view="front"] .playerArmRigRight {
+  top: 49px;
+  width: 12px;
+  opacity: 1;
+  scale: 1;
+  transform: none;
+  transform-origin: 50% 4px;
+}
+
+.playerDetailed[data-view="front"] .playerArmRigLeft {
+  z-index: 2;
+  left: 7px;
+  right: auto;
+}
+
+.playerDetailed[data-view="front"] .playerArmRigRight {
+  z-index: 2;
+  left: auto;
+  right: 7px;
+}
+
+.playerDetailed[data-view="front"] .playerLegRigLeft,
+.playerDetailed[data-view="front"] .playerLegRigRight {
+  top: 82px;
+  width: 16px;
+  opacity: 1;
+  scale: 1;
+  transform: none;
+  transform-origin: 50% 3px;
+}
+
+.playerDetailed[data-view="front"] .playerLegRigLeft {
+  z-index: 2;
+  left: 17px;
+  right: auto;
+}
+
+.playerDetailed[data-view="front"] .playerLegRigRight {
+  z-index: 2;
+  left: auto;
+  right: 16px;
+}
+
+.playerDetailed[data-view="front"] .playerThigh,
+.playerDetailed[data-view="front"] .playerShin {
+  left: 3px;
+  width: 10px;
+  border-radius: 5px;
+}
+
+.playerDetailed[data-view="front"] .playerThigh {
+  top: 0;
+  height: 20px;
+}
+
+.playerDetailed[data-view="front"] .playerKnee {
+  left: 5px;
+  top: 17px;
+  width: 6px;
+  height: 5px;
+}
+
+.playerDetailed[data-view="front"] .playerShin {
+  top: 20px;
+  height: 21px;
+  transform: none;
+}
+
+.playerDetailed[data-view="front"] .playerShoe {
+  left: 0;
+  top: 38px;
+  width: 17px;
+  height: 9px;
+  border-radius: 5px 8px 4px 4px;
+  transform: none;
+}
+
+/* Front walk: alternating lift and depth, never side-swinging the limbs. */
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="0"] .playerLegRigLeft {
+  z-index: 5;
+  transform: translateY(-4px) scale(1.07);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="0"] .playerLegRigRight {
+  z-index: 1;
+  transform: scale(0.94);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="1"] .playerLegRigLeft {
+  z-index: 5;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="1"] .playerLegRigRight {
+  z-index: 1;
+  transform: scale(0.97);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="3"] .playerLegRigRight {
+  z-index: 5;
+  transform: translateY(-4px) scale(1.07);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="3"] .playerLegRigLeft {
+  z-index: 1;
+  transform: scale(0.94);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="4"] .playerLegRigRight {
+  z-index: 5;
+  transform: translateY(-2px) scale(1.04);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="4"] .playerLegRigLeft {
+  z-index: 1;
+  transform: scale(0.97);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="0"] .playerArmRigRight {
+  z-index: 6;
+  transform: translateY(1px) scale(1.10);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="0"] .playerArmRigLeft {
+  z-index: 1;
+  transform: translateY(-1px) scale(0.90);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="1"] .playerArmRigRight {
+  z-index: 6;
+  transform: scale(1.06);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="1"] .playerArmRigLeft {
+  z-index: 1;
+  transform: scale(0.94);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="3"] .playerArmRigLeft {
+  z-index: 6;
+  transform: translateY(1px) scale(1.10);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="3"] .playerArmRigRight {
+  z-index: 1;
+  transform: translateY(-1px) scale(0.90);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="4"] .playerArmRigLeft {
+  z-index: 6;
+  transform: scale(1.06);
+}
+
+.playerDetailed[data-view="front"][data-moving="true"][data-frame="4"] .playerArmRigRight {
+  z-index: 1;
+  transform: scale(0.94);
+}
+
+.playerDetailed[data-view="side"] .playerEarRight,
+.playerDetailed[data-view="side"] .playerBrowLeft {
+  display: none;
+}
