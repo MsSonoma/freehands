@@ -64,26 +64,14 @@ const PLACES = [
   },
 ];
 
-const CAFE_ORDERS = [
-  {
-    guest: 'Maya',
-    request: 'I would like something cold and fruity to drink.',
-    answer: 'Berry Juice',
-    choices: ['Berry Juice', 'Grilled Cheese', 'Apple Slices'],
-  },
-  {
-    guest: 'Noah',
-    request: 'Could I have a warm sandwich with cheese?',
-    answer: 'Grilled Cheese',
-    choices: ['Apple Slices', 'Berry Juice', 'Grilled Cheese'],
-  },
-  {
-    guest: 'Avery',
-    request: 'I want a crunchy fruit snack, please.',
-    answer: 'Apple Slices',
-    choices: ['Grilled Cheese', 'Apple Slices', 'Berry Juice'],
-  },
+const CAFE_RECIPES = [
+  { id:'burger', name:'Sunshine Burger', icon:'🍔', price:6, ingredients:['bun','patty','lettuce','tomato'], formula:'🍔 = 🫓 + 🍖 + 🥬 + 🍅' },
+  { id:'toastie', name:'Grilled Cheese', icon:'🥪', price:4, ingredients:['bread','cheese','tomato'], formula:'🥪 = 🍞 + 🧀 + 🍅' },
+  { id:'taco', name:'Sunshine Taco', icon:'🌮', price:5, ingredients:['tortilla','taco-meat','cheese','lettuce'], formula:'🌮 = 🌮 + 🍖 + 🧀 + 🥬' },
+  { id:'breakfast', name:'Cafe Breakfast', icon:'🍳', price:6, ingredients:['egg','bacon','toast'], formula:'🍳 = 🥚 + 🥓 + 🍞' },
 ];
+const CAFE_INGREDIENTS={bun:{icon:'🫓',name:'Bun',source:'cabinet'},patty:{icon:'🍖',name:'Patty',source:'fridge',cook:6500},lettuce:{icon:'🥬',name:'Lettuce',source:'fridge'},tomato:{icon:'🍅',name:'Tomato',source:'fridge'},bread:{icon:'🍞',name:'Bread',source:'cabinet',cook:5500},cheese:{icon:'🧀',name:'Cheese',source:'fridge'},tortilla:{icon:'🌮',name:'Tortilla',source:'cabinet'},'taco-meat':{icon:'🍖',name:'Taco Meat',source:'fridge',cook:6000},egg:{icon:'🥚',name:'Egg',source:'fridge',cook:5000},bacon:{icon:'🥓',name:'Bacon',source:'fridge',cook:7000},toast:{icon:'🍞',name:'Toast',source:'cabinet'}};
+const CAFE_GUESTS=['Maya','Noah','Avery','Leo','Zoe','Kai'];
 
 const LOBBY_MENU = [
   { id: 'pasta', name: 'Garden Pasta', icon: '\u{1F35D}', price: 7 },
@@ -91,11 +79,7 @@ const LOBBY_MENU = [
   { id: 'dessert', name: 'Berry Sundae', icon: '\u{1F368}', price: 5 },
 ];
 
-const CAFE_MENU = [
-  { id: 'toastie', name: 'Grilled Cheese', icon: '\u{1F96A}', price: 4 },
-  { id: 'juice', name: 'Berry Juice', icon: '\u{1F9C3}', price: 3 },
-  { id: 'apple-snack', name: 'Apple Slices', icon: '\u{1F34E}', price: 3 },
-];
+const CAFE_MENU = CAFE_RECIPES.map(({ id, name, icon, price }) => ({ id, name, icon, price }));
 
 const MARKET_ITEMS = [
   { id: 'eggs', name: 'Eggs', icon: '\u{1F95A}', price: 3 },
@@ -223,9 +207,13 @@ export default function KidsResort({ libraryHref = null }) {
     accessory: LOOK_OPTIONS.accessory[0],
   });
 
-  const [orderIndex, setOrderIndex] = useState(0);
-  const [cafeCorrect, setCafeCorrect] = useState(0);
   const [cafeMessage, setCafeMessage] = useState('');
+  const [cafeOrders, setCafeOrders] = useState([]);
+  const [cafePlate, setCafePlate] = useState([]);
+  const [cafeGrill, setCafeGrill] = useState([]);
+  const [cafeStorage, setCafeStorage] = useState(null);
+  const [cafeServed, setCafeServed] = useState(0);
+  const [cafeNow, setCafeNow] = useState(Date.now());
   const [cafeFinished, setCafeFinished] = useState(false);
 
   const selectedPlace = useMemo(
@@ -255,6 +243,24 @@ export default function KidsResort({ libraryHref = null }) {
       walkTokenRef.current += 1;
     };
   }, []);
+
+  useEffect(() => {
+    if (screen !== 'cafe-work' || cafeFinished) return undefined;
+    const timer=window.setInterval(()=>setCafeNow(Date.now()),250);
+    return ()=>window.clearInterval(timer);
+  }, [screen,cafeFinished]);
+
+  useEffect(() => {
+    if (screen !== 'cafe-work' || cafeFinished) return undefined;
+    const delay=Math.max(4500,14000-cafeServed*1000);
+    const timer=window.setInterval(()=>setCafeOrders((items)=>items.length<3?[...items,makeCafeOrder(cafeServed+items.length)]:items),delay);
+    return ()=>window.clearInterval(timer);
+  }, [screen,cafeFinished,cafeServed]);
+
+  useEffect(() => {
+    if (screen !== 'cafe-work') return;
+    setCafeOrders((items)=>items.filter((order)=>cafeNow-order.born<30000));
+  }, [cafeNow,screen]);
 
   const travelTo = (nextPlace) => {
     if (!nextPlace || isWalking) return;
@@ -365,7 +371,7 @@ export default function KidsResort({ libraryHref = null }) {
     } else if (place.id === 'lobby') {
       openScreen('lobby-food');
     } else if (place.id === 'cafe') {
-      openScreen('cafe-work');
+      openScreen('cafe');
     } else if (place.id === 'market') {
       openScreen('market');
     } else if (place.id === 'studio') {
@@ -414,34 +420,11 @@ export default function KidsResort({ libraryHref = null }) {
     }
   };
 
-  const answerCafeOrder = (choice) => {
-    if (cafeFinished) return;
-
-    const order = CAFE_ORDERS[orderIndex];
-    if (!order) return;
-
-    if (choice !== order.answer) {
-      setCafeMessage('Not that one. Read the guest request again and try another choice.');
-      return;
-    }
-
-    const nextCorrect = cafeCorrect + 1;
-    const nextIndex = orderIndex + 1;
-    setCafeCorrect(nextCorrect);
-    setCafeMessage(`Nice work. ${order.guest}'s order is ready!`);
-
-    if (nextIndex >= CAFE_ORDERS.length) {
-      setCafeFinished(true);
-      setBucks((value) => value + 12);
-      setBadges((items) => (items.includes('Café Shift') ? items : [...items, 'Café Shift']));
-      return;
-    }
-
-    window.setTimeout(() => {
-      setOrderIndex(nextIndex);
-      setCafeMessage('');
-    }, 650);
-  };
+  const makeCafeOrder=(number,born=Date.now())=>({id:`${born}-${number}`,guest:CAFE_GUESTS[number%CAFE_GUESTS.length],recipeId:CAFE_RECIPES[number%CAFE_RECIPES.length].id,born});
+  const startCafeShift=()=>{const now=Date.now();setCafeOrders([makeCafeOrder(0,now)]);setCafePlate([]);setCafeGrill([]);setCafeStorage(null);setCafeServed(0);setCafeMessage('First customer! Check the recipe wall, then build the order.');setCafeNow(now);setCafeFinished(false);setScreen('cafe-work');};
+  const takeCafeIngredient=(id)=>{const item=CAFE_INGREDIENTS[id];if(!item)return;if(item.cook){if(cafeGrill.length>=3){setCafeMessage('The grill is full.');return;}setCafeGrill((items)=>[...items,{id:`${Date.now()}-${id}`,ingredientId:id,started:Date.now()}]);setCafeMessage(`${item.name} is cooking. Remember to come back for it!`);return;}setCafePlate((items)=>[...items,id]);setCafeMessage(`${item.name} added to the plate.`);};
+  const pullFromGrill=(g)=>{const item=CAFE_INGREDIENTS[g.ingredientId],elapsed=Date.now()-g.started;if(elapsed<item.cook){setCafeMessage(`${item.name} isn't ready yet.`);return;}if(elapsed>item.cook+4500){setCafeGrill((items)=>items.filter((x)=>x.id!==g.id));setCafeMessage(`${item.name} burned! Start that part again.`);return;}setCafeGrill((items)=>items.filter((x)=>x.id!==g.id));setCafePlate((items)=>[...items,g.ingredientId]);setCafeMessage(`${item.name} is ready and on the plate.`);};
+  const serveCafeOrder=(order)=>{const recipe=CAFE_RECIPES.find((x)=>x.id===order.recipeId);if([...recipe.ingredients].sort().join('|')!==[...cafePlate].sort().join('|')){setCafeMessage(`That plate isn't ${recipe.icon} yet. Check the recipe wall.`);return;}const served=cafeServed+1;setCafeOrders((items)=>items.filter((x)=>x.id!==order.id));setCafePlate([]);setCafeServed(served);setBucks((v)=>v+4);setCafeMessage(`${order.guest} loved it! +4 Resort Bucks`);if(served>=8){setCafeFinished(true);setBucks((v)=>v+8);setBadges((items)=>items.includes('Sunshine Cafe Shift')?items:[...items,'Sunshine Cafe Shift']);}else{window.setTimeout(()=>setCafeOrders((items)=>items.length<3?[...items,makeCafeOrder(served)]:items),Math.max(2500,8000-served*650));}};
 
   const buyMeal = (meal) => {
     if (bucks < meal.price) {
@@ -450,7 +433,9 @@ export default function KidsResort({ libraryHref = null }) {
     }
     setBucks((value) => value - meal.price);
     setMeals((items) => [...items, meal.name]);
-    setMessage(`${characterName} enjoyed ${meal.name}.`);
+    const foodBadge = `Tried ${meal.name}`;
+    setBadges((items) => (items.includes(foodBadge) ? items : [...items, foodBadge]));
+    setMessage(`${characterName} enjoyed ${meal.name}. ⭐ Food badge earned!`);
   };
 
   const buyMarketItem = (item) => {
@@ -598,73 +583,22 @@ export default function KidsResort({ libraryHref = null }) {
     </main>
   );
 
-  const currentOrder = CAFE_ORDERS[orderIndex];
   const playerView = isWalking ? walkView : 'front';
 
+  if (screen === 'cafe') {
+    return <main className={styles.gameShell}><section className={styles.topBar}><button className={styles.backButton} type="button" onClick={()=>setScreen('map')}>← Resort Map</button><div className={styles.brand}>Kids Resort</div><div className={styles.wallet}>🪙 {bucks} Resort Bucks</div></section><section className={styles.cafeInterior}><div className={styles.cafeDining}><div className={styles.cafeLogo}>☀️ <strong>Sunshine Café</strong></div><div className={styles.cafeTables}><span>🪑　🍽️　🪑</span><span>🪑　🍽️　🪑</span></div><button className={styles.cafeModeButton} type="button" onClick={()=>setScreen('cafe-food')}>🍽️ Eat Here</button></div><div className={styles.cafeCounter}><div className={styles.counterTop}>🥤　🧾　🔔</div><div className={styles.counterFront}>SUNSHINE CAFÉ</div><button className={styles.cafeModeButton} type="button" onClick={startCafeShift}>🧑‍🍳 Start Shift</button></div></section></main>;
+  }
+
   if (screen === 'cafe-work') {
-    return (
-      <main className={styles.gameShell}>
-        <section className={styles.topBar}>
-          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>
-            ← Resort Map
-          </button>
-          <div className={styles.brand}>Kids Resort</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
-        </section>
-
-        <section className={styles.cafeScene}>
-          <div className={styles.cafeSign}>
-            <span>🥪</span>
-            <div>
-              <div className={styles.eyebrow}>YOUR SHIFT</div>
-              <h1>Sunshine Café</h1>
-              <p>You are the café manager. Listen carefully, make the order, and keep the line moving.</p>
-            </div>
-          </div>
-
-          {!cafeFinished && currentOrder ? (
-            <div className={styles.orderBoard}>
-              <div className={styles.guestCard}>
-                <div className={styles.guestAvatar}>{currentOrder.guest.slice(0, 1)}</div>
-                <div>
-                  <div className={styles.guestName}>{currentOrder.guest}</div>
-                  <p>“{currentOrder.request}”</p>
-                </div>
-              </div>
-
-              <div className={styles.orderChoices}>
-                {currentOrder.choices.map((choice) => (
-                  <button
-                    key={choice}
-                    type="button"
-                    className={styles.foodButton}
-                    onClick={() => answerCafeOrder(choice)}
-                  >
-                    <span aria-hidden>{choice === 'Berry Juice' ? '🧃' : choice === 'Grilled Cheese' ? '🥪' : '🍎'}</span>
-                    {choice}
-                  </button>
-                ))}
-              </div>
-
-              <div className={styles.shiftFooter}>
-                <div>Orders ready: {cafeCorrect} / {CAFE_ORDERS.length}</div>
-                <div className={styles.feedback}>{cafeMessage || 'Choose the item that matches the request.'}</div>
-              </div>
-            </div>
-          ) : (
-            <div className={styles.shiftComplete}>
-              <div className={styles.bigBadge}>⭐</div>
-              <div className={styles.eyebrow}>SHIFT COMPLETE</div>
-              <h2>You ran the café!</h2>
-              <p>You earned 12 Resort Bucks and the Café Shift badge.</p>
-              <button className={styles.primaryButton} type="button" onClick={() => setScreen('map')}>
-                Back to the Resort
-              </button>
-            </div>
-          )}
-        </section>
-      </main>
-    );
+    const fridgeItems=Object.entries(CAFE_INGREDIENTS).filter(([,x])=>x.source==='fridge');
+    const cabinetItems=Object.entries(CAFE_INGREDIENTS).filter(([,x])=>x.source==='cabinet');
+    return <main className={styles.gameShell}><section className={styles.topBar}><button className={styles.backButton} type="button" onClick={()=>setScreen('cafe')}>← Café</button><div className={styles.brand}>Sunshine Café Shift</div><div className={styles.wallet}>🪙 {bucks} Resort Bucks</div></section><section className={styles.cafeWorkScene}>
+      <aside className={styles.recipeWall}><h2>Recipe Wall</h2>{CAFE_RECIPES.map((r)=><div key={r.id} className={styles.wallRecipe}><strong>{r.name}</strong><span>{r.formula}</span></div>)}</aside>
+      <section className={styles.orderRail}><b>Orders · {cafeServed}/8</b>{cafeOrders.map((o)=>{const r=CAFE_RECIPES.find((x)=>x.id===o.recipeId),age=cafeNow-o.born,mood=age<8000?'🙂':age<16000?'😐':age<23000?'☹️':'😡';return <button key={o.id} type="button" className={styles.orderTicket} onClick={()=>serveCafeOrder(o)}><span>{mood}</span><strong>{o.guest}</strong><span>{r.icon}</span><small>{Math.max(0,Math.ceil((30000-age)/1000))}s</small></button>})}</section>
+      <section className={styles.kitchenStations}><button type="button" onClick={()=>setCafeStorage(cafeStorage==='fridge'?null:'fridge')}>🧊<strong>Refrigerator</strong></button><div className={styles.grillStation}><b>🔥 Grill</b><div>{cafeGrill.map((g)=>{const x=CAFE_INGREDIENTS[g.ingredientId],age=cafeNow-g.started,state=age<x.cook?'Cooking…':age<=x.cook+4500?'READY!':'BURNT';return <button key={g.id} type="button" data-state={state} onClick={()=>pullFromGrill(g)}><span>{x.icon}</span><strong>{state}</strong></button>})}</div></div><button type="button" onClick={()=>setCafeStorage(cafeStorage==='cabinet'?null:'cabinet')}>🥫<strong>Cabinet</strong></button></section>
+      {cafeStorage&&<section className={styles.ingredientDrawer}>{(cafeStorage==='fridge'?fridgeItems:cabinetItems).map(([id,x])=><button key={id} type="button" onClick={()=>takeCafeIngredient(id)}><span>{x.icon}</span><small>{x.name}</small></button>)}</section>}
+      <section className={styles.plateStation}><strong>🍽️ Plate</strong><div>{cafePlate.map((id,i)=><span key={`${id}-${i}`}>{CAFE_INGREDIENTS[id]?.icon}</span>)}</div><button type="button" onClick={()=>setCafePlate([])}>Clear</button></section><div className={styles.cafeFeedback}>{cafeMessage}</div>{cafeFinished&&<div className={styles.cafeWin}><div>⭐</div><h2>Shift complete!</h2><p>8 Resort Buck bonus earned.</p><button className={styles.primaryButton} type="button" onClick={()=>setScreen('cafe')}>Back to Café</button></div>}
+    </section></main>;
   }
 
   if (screen === 'lobby-food' || screen === 'cafe-food') {
