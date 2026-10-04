@@ -269,39 +269,475 @@
 .place {
   position: absolute;
   z-index: 5;
-  width: 132px;
-  min-height: 82px;
+  width: 152px;
+  min-height: 116px;
   transform: translate(-50%, -50%);
-  border: 3px solid rgba(255, 255, 255, 0.95);
-  border-radius: 18px;
-  background: rgba(255, 255, 255, 0.91);
+  border: 0;
+  background: transparent;
   color: var(--ink);
-  box-shadow: 0 9px 0 rgba(67, 103, 77, 0.18), 0 12px 24px rgba(23, 48, 79, 0.11);
-  padding: 9px;
+  padding: 0;
   display: grid;
   place-items: center;
-  gap: 3px;
+  align-content: end;
+  gap: 4px;
   cursor: pointer;
   font: inherit;
-  font-size: 0.73rem;
-  line-height: 1.1;
-  font-weight: 950;
+  font-size: 0.7rem;
+  line-height: 1.05;
+  font-weight: 1000;
   text-align: center;
+  filter: drop-shadow(0 10px 8px rgba(23, 48, 79, 0.18));
 }
 
 .place:hover,
 .placeSelected {
-  outline: 4px solid rgba(255, 79, 154, 0.32);
-  transform: translate(-50%, -50%) scale(1.04);
+  transform: translate(-50%, -50%) scale(1.055);
 }
 
-.placeCurrent {
-  background: #fff8cf;
-  border-color: #ffdb45;
+.placeSelected .placeBuilding {
+  filter: drop-shadow(0 0 7px rgba(255, 79, 154, 0.55));
 }
 
-.placeIcon {
-  font-size: 1.72rem;
+.placeCurrent .placeLabel {
+  background: #fff4a5;
+  border-color: #f5c63d;
+}
+
+.placeBuilding {
+  --wall: #fff4d2;
+  --wall-dark: #e4c88b;
+  --roof: #ef6b62;
+  --trim: #fffdf7;
+  --glass: #9ee2f5;
+  --door: #6c4535;
+  position: relative;
+  display: block;
+  width: 126px;
+  height: 84px;
+  transform-origin: bottom center;
+}
+
+.buildingFacade,
+.buildingUpper,
+.buildingRoof,
+.buildingDoor,
+.buildingWindow,
+.buildingAwning,
+.buildingDetail,
+.buildingSign {
+  position: absolute;
+  display: block;
+}
+
+.buildingFacade {
+  left: 10px;
+  right: 10px;
+  bottom: 4px;
+  height: 58px;
+  border: 2px solid rgba(64, 63, 70, 0.17);
+  border-radius: 5px 5px 3px 3px;
+  background: linear-gradient(90deg, rgba(255,255,255,0.22), transparent 28%), var(--wall);
+  box-shadow:
+    inset 0 -6px 0 rgba(90, 65, 42, 0.07),
+    0 5px 0 rgba(82, 82, 65, 0.14);
+}
+
+.buildingUpper {
+  display: none;
+}
+
+.buildingRoof {
+  z-index: 3;
+  left: 5px;
+  top: 11px;
+  width: 116px;
+  height: 18px;
+  border: 2px solid rgba(76, 54, 48, 0.16);
+  border-radius: 5px 5px 2px 2px;
+  background: var(--roof);
+  box-shadow: inset 0 -5px 0 rgba(96, 43, 35, 0.12);
+}
+
+.buildingWindow {
+  z-index: 5;
+  top: 40px;
+  width: 20px;
+  height: 22px;
+  border: 3px solid var(--trim);
+  border-radius: 3px;
+  background:
+    linear-gradient(90deg, transparent 45%, rgba(255,255,255,0.7) 46% 54%, transparent 55%),
+    linear-gradient(0deg, transparent 45%, rgba(255,255,255,0.7) 46% 54%, transparent 55%),
+    var(--glass);
+  box-shadow: 0 0 0 1px rgba(38, 101, 123, 0.18);
+}
+
+.buildingWindowLeft {
+  left: 23px;
+}
+
+.buildingWindowRight {
+  right: 23px;
+}
+
+.buildingDoor {
+  z-index: 6;
+  left: 50%;
+  bottom: 5px;
+  width: 24px;
+  height: 32px;
+  transform: translateX(-50%);
+  border: 3px solid var(--trim);
+  border-bottom: 0;
+  border-radius: 10px 10px 1px 1px;
+  background:
+    radial-gradient(circle at 78% 52%, #f4c74d 0 1.5px, transparent 2px),
+    linear-gradient(90deg, rgba(255,255,255,0.13), transparent),
+    var(--door);
+}
+
+.buildingAwning {
+  display: none;
+  z-index: 7;
+}
+
+.buildingDetail {
+  z-index: 8;
+}
+
+.buildingSign {
+  z-index: 10;
+  left: 50%;
+  top: 24px;
+  min-width: 52px;
+  max-width: 92px;
+  transform: translateX(-50%);
+  padding: 3px 6px 2px;
+  border: 2px solid rgba(89, 62, 48, 0.15);
+  border-radius: 4px;
+  background: #fffdf3;
+  color: #5d493d;
+  font-size: 0.45rem;
+  line-height: 1;
+  letter-spacing: 0.08em;
+  box-shadow: 0 2px 0 rgba(85, 61, 48, 0.1);
+}
+
+.placeLabel {
+  display: inline-block;
+  max-width: 145px;
+  padding: 5px 9px 4px;
+  border: 2px solid rgba(255, 255, 255, 0.96);
+  border-radius: 999px;
+  background: rgba(255,255,255,0.94);
+  box-shadow: 0 4px 0 rgba(67, 103, 77, 0.14);
+}
+
+/* Sunshine Cafe: cheerful corner cafe with a striped awning and roof sign. */
+.placeBuilding[data-place="cafe"] {
+  --wall: #ffe8a3;
+  --wall-dark: #d9b252;
+  --roof: #f69043;
+  --trim: #fff9e8;
+  --glass: #8fdbe7;
+  --door: #4d8f91;
+}
+
+.placeBuilding[data-place="cafe"] .buildingFacade {
+  left: 7px;
+  right: 7px;
+  height: 55px;
+  border-radius: 5px 5px 4px 4px;
+}
+
+.placeBuilding[data-place="cafe"] .buildingRoof {
+  top: 9px;
+  left: 13px;
+  width: 100px;
+  height: 15px;
+  border-radius: 12px 12px 3px 3px;
+  background: #f7c84b;
+}
+
+.placeBuilding[data-place="cafe"] .buildingAwning {
+  display: block;
+  left: 8px;
+  top: 35px;
+  width: 110px;
+  height: 13px;
+  border: 2px solid #d85e53;
+  border-radius: 3px 3px 7px 7px;
+  background: repeating-linear-gradient(90deg, #f86f64 0 12px, #fff7dc 12px 24px);
+  box-shadow: 0 5px 0 rgba(93, 57, 43, 0.1);
+}
+
+.placeBuilding[data-place="cafe"] .buildingSign {
+  top: 10px;
+  background: #fff7c8;
+  color: #c65d28;
+}
+
+.placeBuilding[data-place="cafe"] .buildingWindow {
+  top: 50px;
+  height: 18px;
+}
+
+/* Resort Lobby: the central hotel, taller with a tower and palm-court feel. */
+.placeBuilding[data-place="lobby"] {
+  --wall: #ffe0ba;
+  --roof: #d95c54;
+  --trim: #fffaf1;
+  --glass: #8bd5ec;
+  --door: #6a4639;
+  width: 138px;
+  height: 94px;
+}
+
+.placeBuilding[data-place="lobby"] .buildingFacade {
+  left: 3px;
+  right: 3px;
+  height: 66px;
+  border-radius: 4px 4px 3px 3px;
+}
+
+.placeBuilding[data-place="lobby"] .buildingUpper {
+  display: block;
+  z-index: 2;
+  left: 38px;
+  top: 3px;
+  width: 62px;
+  height: 44px;
+  border: 2px solid rgba(64,63,70,0.16);
+  border-radius: 7px 7px 0 0;
+  background: var(--wall);
+}
+
+.placeBuilding[data-place="lobby"] .buildingRoof {
+  left: 29px;
+  top: 0;
+  width: 80px;
+  height: 13px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  border: 0;
+  border-radius: 0;
+}
+
+.placeBuilding[data-place="lobby"] .buildingWindow {
+  top: 45px;
+  width: 19px;
+  height: 20px;
+}
+
+.placeBuilding[data-place="lobby"] .buildingSign {
+  top: 27px;
+  background: #fff2cd;
+}
+
+.placeBuilding[data-place="lobby"] .buildingDetail {
+  left: 8px;
+  bottom: 5px;
+  width: 11px;
+  height: 34px;
+  border-radius: 9px 9px 2px 2px;
+  background: #62ad73;
+  box-shadow: 111px 0 0 #62ad73;
+}
+
+/* Emily's Suite: a smaller resort villa with a balcony and homey roofline. */
+.placeBuilding[data-place="suite"] {
+  --wall: #ffdce9;
+  --roof: #a65e86;
+  --trim: #fff9fd;
+  --glass: #9eddec;
+  --door: #7c5071;
+}
+
+.placeBuilding[data-place="suite"] .buildingRoof {
+  left: 10px;
+  top: 9px;
+  width: 106px;
+  height: 22px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  border: 0;
+  border-radius: 0;
+}
+
+.placeBuilding[data-place="suite"] .buildingFacade {
+  height: 58px;
+}
+
+.placeBuilding[data-place="suite"] .buildingAwning {
+  display: block;
+  z-index: 7;
+  left: 20px;
+  top: 50px;
+  width: 34px;
+  height: 5px;
+  border-radius: 3px;
+  background: #fff;
+  box-shadow: 52px 0 0 #fff;
+}
+
+.placeBuilding[data-place="suite"] .buildingSign {
+  top: 28px;
+  background: #fff0f7;
+  color: #8d4b72;
+}
+
+/* Resort Bank: formal stone building with pediment and columns. */
+.placeBuilding[data-place="bank"] {
+  --wall: #e8e2d0;
+  --roof: #78849c;
+  --trim: #fffdf6;
+  --glass: #a9d6e4;
+  --door: #59677c;
+}
+
+.placeBuilding[data-place="bank"] .buildingFacade {
+  left: 8px;
+  right: 8px;
+  height: 52px;
+  background: linear-gradient(180deg, #f2eee2, #d8cfb7);
+}
+
+.placeBuilding[data-place="bank"] .buildingRoof {
+  left: 9px;
+  top: 8px;
+  width: 108px;
+  height: 24px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+  border: 0;
+  border-radius: 0;
+  background: #8793aa;
+}
+
+.placeBuilding[data-place="bank"] .buildingWindow {
+  display: none;
+}
+
+.placeBuilding[data-place="bank"] .buildingDoor {
+  width: 27px;
+  height: 30px;
+}
+
+.placeBuilding[data-place="bank"] .buildingDetail {
+  left: 22px;
+  top: 38px;
+  width: 8px;
+  height: 34px;
+  border-radius: 3px;
+  background: #fffdf6;
+  box-shadow: 18px 0 0 #fffdf6, 58px 0 0 #fffdf6, 76px 0 0 #fffdf6;
+}
+
+.placeBuilding[data-place="bank"] .buildingSign {
+  top: 29px;
+  background: #f7f4ea;
+  color: #667188;
+}
+
+/* Market Street: a broad storefront with twin shop windows and canopy. */
+.placeBuilding[data-place="market"] {
+  --wall: #d6ecce;
+  --roof: #4e9c74;
+  --trim: #fffdf2;
+  --glass: #99dce6;
+  --door: #46775f;
+  width: 136px;
+}
+
+.placeBuilding[data-place="market"] .buildingFacade {
+  left: 2px;
+  right: 2px;
+  height: 56px;
+}
+
+.placeBuilding[data-place="market"] .buildingRoof {
+  left: 0;
+  top: 13px;
+  width: 136px;
+  height: 14px;
+  border-radius: 4px;
+  background: #4e9c74;
+}
+
+.placeBuilding[data-place="market"] .buildingAwning {
+  display: block;
+  left: 3px;
+  top: 39px;
+  width: 130px;
+  height: 12px;
+  border: 2px solid #4e9c74;
+  border-radius: 2px 2px 7px 7px;
+  background: repeating-linear-gradient(90deg, #5eb885 0 13px, #f8f0cf 13px 26px);
+}
+
+.placeBuilding[data-place="market"] .buildingWindow {
+  top: 51px;
+  width: 27px;
+  height: 18px;
+}
+
+.placeBuilding[data-place="market"] .buildingWindowLeft {
+  left: 16px;
+}
+
+.placeBuilding[data-place="market"] .buildingWindowRight {
+  right: 16px;
+}
+
+.placeBuilding[data-place="market"] .buildingSign {
+  top: 20px;
+  background: #fffbe7;
+  color: #3e7b5d;
+}
+
+/* Design Studio: boutique facade with dramatic display windows and marquee. */
+.placeBuilding[data-place="studio"] {
+  --wall: #e8d8f5;
+  --roof: #8d65af;
+  --trim: #fffafe;
+  --glass: #9edfec;
+  --door: #74528e;
+}
+
+.placeBuilding[data-place="studio"] .buildingFacade {
+  left: 8px;
+  right: 8px;
+  height: 58px;
+  border-radius: 7px 7px 3px 3px;
+}
+
+.placeBuilding[data-place="studio"] .buildingRoof {
+  left: 10px;
+  top: 8px;
+  width: 106px;
+  height: 18px;
+  border-radius: 13px 13px 3px 3px;
+  background: linear-gradient(90deg, #a375c7, #815aa4);
+}
+
+.placeBuilding[data-place="studio"] .buildingWindow {
+  top: 45px;
+  width: 25px;
+  height: 24px;
+  border-radius: 9px 9px 3px 3px;
+}
+
+.placeBuilding[data-place="studio"] .buildingSign {
+  top: 23px;
+  background: #fff1ff;
+  color: #7a4b98;
+}
+
+.placeBuilding[data-place="studio"] .buildingDetail {
+  left: 16px;
+  top: 32px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #ffd86b;
+  box-shadow: 13px 0 0 #ffd86b, 82px 0 0 #ffd86b, 95px 0 0 #ffd86b;
 }
 
 .player {

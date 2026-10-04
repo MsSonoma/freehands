@@ -710,8 +710,30 @@ export default function KidsResort() {
               style={{ left: `${place.x}%`, top: `${place.y}%` }}
               onClick={() => travelTo(place)}
             >
-              <span className={styles.placeIcon}>{place.icon}</span>
-              <span>{place.name}</span>
+              <span className={styles.placeBuilding} data-place={place.id} aria-hidden="true">
+                <span className={styles.buildingRoof} />
+                <span className={styles.buildingUpper} />
+                <span className={styles.buildingFacade} />
+                <span className={[styles.buildingWindow, styles.buildingWindowLeft].join(' ')} />
+                <span className={[styles.buildingWindow, styles.buildingWindowRight].join(' ')} />
+                <span className={styles.buildingDoor} />
+                <span className={styles.buildingAwning} />
+                <span className={styles.buildingDetail} />
+                <span className={styles.buildingSign}>
+                  {place.id === 'suite'
+                    ? 'EMILY'
+                    : place.id === 'lobby'
+                      ? 'RESORT'
+                      : place.id === 'cafe'
+                        ? 'SUNSHINE'
+                        : place.id === 'bank'
+                          ? 'BANK'
+                          : place.id === 'market'
+                            ? 'MARKET'
+                            : 'STUDIO'}
+                </span>
+              </span>
+              <span className={styles.placeLabel}>{place.name}</span>
             </button>
           ))}
 
