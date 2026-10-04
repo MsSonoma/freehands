@@ -909,6 +909,7 @@
 }
 
 .placeBuilding[data-place="lobby"] .buildingFacade {
+  z-index: 2;
   left: 3px;
   right: 3px;
   height: 66px;
@@ -917,9 +918,9 @@
 
 .placeBuilding[data-place="lobby"] .buildingUpper {
   display: block;
-  z-index: 2;
+  z-index: 1;
   left: 38px;
-  top: -5px;
+  top: 2px;
   width: 62px;
   height: 56px;
   border: 2px solid rgba(64,63,70,0.16);
