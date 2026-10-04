@@ -916,11 +916,11 @@
 
 .playerDetailed[data-view="side"] .playerHairFront {
   z-index: 8;
-  left: 14px;
-  top: 6px;
-  width: 17px;
-  height: 40px;
-  border-radius: 62% 48% 58% 42%;
+  left: 13px;
+  top: 1px;
+  width: 19px;
+  height: 45px;
+  border-radius: 68% 46% 58% 42%;
   transform: rotate(7deg);
 }
 
