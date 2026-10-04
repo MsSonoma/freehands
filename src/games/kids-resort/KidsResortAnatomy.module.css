@@ -915,7 +915,7 @@
 }
 
 .playerDetailed[data-view="side"] .playerHairFront {
-  z-index: 3;
+  z-index: 8;
   left: 8px;
   top: 8px;
   width: 16px;
