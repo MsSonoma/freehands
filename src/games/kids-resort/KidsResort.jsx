@@ -31,7 +31,7 @@ const PLACES = [
     name: 'Sunshine Café',
     icon: '🥪',
     x: 16,
-    y: 22,
+    y: 38,
     role: 'Café',
     description: 'Grab a casual bite or work a café shift serving other resort guests.',
   },
@@ -40,7 +40,7 @@ const PLACES = [
     name: 'Resort Bank',
     icon: '🏦',
     x: 82,
-    y: 21,
+    y: 37,
     role: 'Banker',
     description: 'A future place to save Resort Bucks, plan budgets, and handle pretend banking.',
   },
@@ -696,6 +696,18 @@ export default function KidsResort() {
             <div className={styles.cloudOne} />
             <div className={styles.cloudTwo} />
           </div>
+
+          <div className={styles.horizonBack} />
+          <div className={styles.horizonFront} />
+
+          <div className={[styles.mapTree, styles.treeFarLeft].join(' ')} aria-hidden="true" />
+          <div className={[styles.mapTree, styles.treeFarCenter].join(' ')} aria-hidden="true" />
+          <div className={[styles.mapTree, styles.treeFarRight].join(' ')} aria-hidden="true" />
+          <div className={[styles.mapTree, styles.treeMidLeft].join(' ')} aria-hidden="true" />
+          <div className={[styles.mapTree, styles.treeMidRight].join(' ')} aria-hidden="true" />
+          <div className={[styles.mapTree, styles.treeNearLeft].join(' ')} aria-hidden="true" />
+          <div className={[styles.mapTree, styles.treeNearRight].join(' ')} aria-hidden="true" />
+
           <div className={styles.pathLoop} />
 
           {PLACES.map((place) => (
@@ -707,7 +719,11 @@ export default function KidsResort() {
                 selectedPlaceId === place.id ? styles.placeSelected : '',
                 place.id === placeId ? styles.placeCurrent : '',
               ].join(' ')}
-              style={{ left: `${place.x}%`, top: `${place.y}%` }}
+              style={{
+                left: `${place.x}%`,
+                top: `${place.y}%`,
+                '--depth-scale': (0.62 + place.y * 0.0065).toFixed(3),
+              }}
               onClick={() => travelTo(place)}
             >
               <span className={styles.placeBuilding} data-place={place.id} aria-hidden="true">
