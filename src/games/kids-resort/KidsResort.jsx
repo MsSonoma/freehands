@@ -168,6 +168,8 @@ export default function KidsResort() {
   const [facing, setFacing] = useState('right');
   const [walkView, setWalkView] = useState('front');
   const [touchPlaceId, setTouchPlaceId] = useState(null);
+  const [characterName, setCharacterName] = useState('Emily');
+  const [settingsOpen, setSettingsOpen] = useState(false);
   const walkTokenRef = useRef(0);
   const [look, setLook] = useState({
     shirt: LOOK_OPTIONS.shirt[0],
@@ -187,10 +189,8 @@ export default function KidsResort() {
     [selectedPlaceId],
   );
 
-  const currentPlace = useMemo(
-    () => PLACES.find((place) => place.id === placeId) ?? PLACES[0],
-    [placeId],
-  );
+  const placeDisplayName = (place) =>
+    place?.id === 'suite' ? `${characterName}’s Suite` : place?.name;
 
   useEffect(() => {
     return () => {
@@ -392,7 +392,7 @@ export default function KidsResort() {
     }
     setBucks((value) => value - meal.price);
     setMeals((items) => [...items, meal.name]);
-    setMessage(`Emily enjoyed ${meal.name}.`);
+    setMessage(`${characterName} enjoyed ${meal.name}.`);
   };
 
   const buyMarketItem = (item) => {
@@ -429,7 +429,7 @@ export default function KidsResort() {
       return next;
     });
     setMeals((items) => [...items, recipe.name]);
-    setMessage(`Emily cooked ${recipe.name} in her suite kitchen!`);
+    setMessage(`${characterName} cooked ${recipe.name} in her suite kitchen!`);
     setBadges((items) => (items.includes('Suite Cook') ? items : [...items, 'Suite Cook']));
   };
 
@@ -442,7 +442,7 @@ export default function KidsResort() {
     <div
       className={[styles.avatarFigure, large ? styles.avatarFigureLarge : ''].join(' ')}
       data-hair={look.hair.id}
-      aria-label="Emily preview"
+      aria-label={characterName + ' preview'}
     >
       <div className={styles.avatarHair} />
       <span className={[styles.avatarEar, styles.avatarEarLeft].join(' ')} />
@@ -648,12 +648,12 @@ export default function KidsResort() {
     return interiorShell(
       'Design Studio',
       '\u{1F457}',
-      'DESIGN EMILY',
+      `DESIGN ${characterName.toUpperCase()}`,
       <div className={styles.studioLayout}>
         <section className={styles.characterStage}>
           {renderCharacter(true)}
           <div className={styles.lookSummary}>
-            <strong>Emily</strong>
+            <strong>{characterName}</strong>
             <span>{look.shirt.name} - {look.bottoms.name}</span>
             <span>{look.shoes.name} - {look.accessory.name}</span>
           </div>
@@ -687,7 +687,7 @@ export default function KidsResort() {
             </div>
           ))}
           <div className={styles.fullMessage} aria-live="polite">
-            {message || 'Try combinations. You can change Emily whenever you want.'}
+            {message || `Try combinations. You can change ${characterName} whenever you want.`}
           </div>
         </section>
       </div>,
@@ -696,7 +696,7 @@ export default function KidsResort() {
 
   if (screen === 'suite') {
     return interiorShell(
-      "Emily's Suite",
+      `${characterName}'s Suite`,
       '\u{1F6CF}\u{FE0F}',
       'HOME BASE',
       <div className={styles.suiteLayout}>
@@ -753,16 +753,16 @@ export default function KidsResort() {
         </section>
 
         <div className={styles.fullMessage} aria-live="polite">
-          {message || "This is Emily's private space at the resort."}
+          {message || `This is ${characterName}'s private space at the resort.`}
         </div>
       </div>,
     );
   }
 
   return (
-    <main className={styles.gameShell}>
-      <section className={styles.topBar}>
-        <div>
+    <main className={[styles.gameShell, styles.mapGameShell].join(' ')}>
+      <section className={[styles.topBar, styles.mapTopBar].join(' ')}>
+        <div className={styles.mapBrandLine}>
           <div className={styles.brand}>Kids Resort</div>
           <div className={styles.tagline}>A grown-up world made just for kids.</div>
         </div>
@@ -772,23 +772,18 @@ export default function KidsResort() {
         </div>
       </section>
 
-      <section className={styles.introCard}>
-        <div>
-          <div className={styles.eyebrow}>WELCOME, EMILY</div>
-          <h1>Your suite is your home at the resort.</h1>
-          <p>
-            Work, shop, eat out, design your look, then bring groceries and useful things back home.
-          </p>
-        </div>
-        <div className={styles.introAvatar}>{renderCharacter(true)}</div>
-      </section>
-
-      <section className={styles.playArea}>
+      <section className={[styles.playArea, styles.mapPlayArea].join(' ')}>
         <div className={styles.mapPanel}>
           <div className={styles.mapSky}>
             <div className={styles.sun} />
             <div className={styles.cloudOne} />
             <div className={styles.cloudTwo} />
+          </div>
+
+          <div className={styles.mapInfo} aria-live="polite">
+            <div className={styles.mapInfoRole}>{selectedPlace.role}</div>
+            <div className={styles.mapInfoTitle}>{placeDisplayName(selectedPlace)}</div>
+            <div className={styles.mapInfoDescription}>{selectedPlace.description.replace('Emily', characterName)}</div>
           </div>
 
           <div className={styles.horizonBack} />
@@ -837,7 +832,10 @@ export default function KidsResort() {
               onClick={() => handlePlaceClick(place)}
               onTouchEnd={(event) => handlePlaceTouch(event, place)}
             >
-              <span className={styles.placeLabel}>{place.name}</span>
+              <span className={styles.placeLabel}>{placeDisplayName(place)}</span>
+              {place.id === placeId && place.id !== 'bank' && !isWalking && (
+                <span className={styles.placeEnterPrompt}>Enter</span>
+              )}
               <span className={styles.placeBuilding} data-place={place.id} aria-hidden="true">
                 <span className={styles.buildingRoof} />
                 <span className={styles.buildingUpper} />
@@ -849,7 +847,7 @@ export default function KidsResort() {
                 <span className={styles.buildingDetail} />
                 <span className={styles.buildingSign}>
                   {place.id === 'suite'
-                    ? 'EMILY'
+                    ? characterName.toUpperCase()
                     : place.id === 'lobby'
                       ? 'RESORT'
                       : place.id === 'cafe'
@@ -878,7 +876,7 @@ export default function KidsResort() {
             data-facing={facing}
             data-view={isWalking ? walkView : 'front'}
             data-moving={isWalking ? 'true' : 'false'}
-            aria-label="Emily"
+            aria-label={characterName}
           >
             <div className={styles.playerSprite} style={playerView === 'front' ? { transform: 'none' } : undefined}>
               <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} style={playerView === 'front' ? { left: 7, top: 0, width: 48, height: 48, borderRadius: '50% 50% 45% 45%' } : undefined} />
@@ -933,68 +931,43 @@ export default function KidsResort() {
                 <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
               </div>
             </div>
-            <div className={[styles.playerName, styles.playerNameDetail].join(' ')}>Emily</div>
+            <div className={[styles.playerName, styles.playerNameDetail].join(' ')}>{characterName}</div>
+          </div>
+
+          <button
+            type="button"
+            className={[styles.mapCornerButton, styles.addCharacterButton].join(' ')}
+            aria-label="Add another character"
+            title="Add another character later"
+            disabled
+          >
+            +
+          </button>
+
+          <div className={styles.settingsDock}>
+            {settingsOpen && (
+              <div className={styles.settingsPanel}>
+                <label htmlFor="kids-resort-character-name">Character name</label>
+                <input
+                  id="kids-resort-character-name"
+                  type="text"
+                  value={characterName}
+                  maxLength={18}
+                  onChange={(event) => setCharacterName(event.target.value || 'Emily')}
+                />
+              </div>
+            )}
+            <button
+              type="button"
+              className={styles.mapCornerButton}
+              aria-label="Options"
+              aria-expanded={settingsOpen}
+              onClick={() => setSettingsOpen((open) => !open)}
+            >
+              ⚙
+            </button>
           </div>
         </div>
-
-        <aside className={styles.placePanel}>
-          <div className={styles.placeHeroIcon}>{selectedPlace.icon}</div>
-          <div className={styles.eyebrow}>{selectedPlace.role}</div>
-          <h2>{selectedPlace.name}</h2>
-          <p>{selectedPlace.description}</p>
-
-          {selectedPlace.id === placeId ? (
-            <div className={styles.actionStack}>
-              {selectedPlace.id === 'suite' && (
-                <button className={styles.primaryButton} type="button" onClick={() => openScreen('suite')}>
-                  Enter My Suite
-                </button>
-              )}
-              {selectedPlace.id === 'lobby' && (
-                <button className={styles.primaryButton} type="button" onClick={() => openScreen('lobby-food')}>
-                  Eat at Palm Court
-                </button>
-              )}
-              {selectedPlace.id === 'cafe' && (
-                <>
-                  <button className={styles.primaryButton} type="button" onClick={() => openScreen('cafe-work')}>
-                    Work a Cafe Shift
-                  </button>
-                  <button className={styles.secondaryButton} type="button" onClick={() => openScreen('cafe-food')}>
-                    Eat at the Cafe
-                  </button>
-                </>
-              )}
-              {selectedPlace.id === 'market' && (
-                <button className={styles.primaryButton} type="button" onClick={() => openScreen('market')}>
-                  Shop Market Street
-                </button>
-              )}
-              {selectedPlace.id === 'studio' && (
-                <button className={styles.primaryButton} type="button" onClick={() => openScreen('studio')}>
-                  Design Emily
-                </button>
-              )}
-              {selectedPlace.id === 'bank' && (
-                <div className={styles.softNote}>Banking activities will come later.</div>
-              )}
-            </div>
-          ) : (
-            <button
-              className={styles.primaryButton}
-              type="button"
-              disabled={isWalking}
-              onClick={() => travelTo(selectedPlace)}
-            >
-              {isWalking ? 'Walking…' : `Walk to ${selectedPlace.name}`}
-            </button>
-          )}
-
-          <div className={styles.placeStatus}>
-            <span>Current location</span>
-            <strong>{currentPlace.name}</strong>
-          </div>
-        </aside>
       </section>
     </main>
   );
