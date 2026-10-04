@@ -343,11 +343,16 @@ export default function KidsResort() {
     >
       <div className={styles.avatarHair} />
       <div className={styles.avatarHead}>
+        <span className={[styles.avatarEar, styles.avatarEarLeft].join(' ')} />
+        <span className={[styles.avatarEar, styles.avatarEarRight].join(' ')} />
+        <span className={[styles.avatarBrow, styles.avatarBrowLeft].join(' ')} />
+        <span className={[styles.avatarBrow, styles.avatarBrowRight].join(' ')} />
         <span className={styles.avatarEye} />
         <span className={styles.avatarEye} />
         <span className={styles.avatarNose} />
         <span className={styles.avatarSmile} />
       </div>
+      <div className={styles.avatarHairFront} />
       <div className={styles.avatarBody} style={{ background: look.shirt.swatch }} />
       <div className={styles.avatarPelvis} style={{ background: look.bottoms.swatch }} />
 
@@ -356,6 +361,7 @@ export default function KidsResort() {
         <span className={styles.avatarElbow} />
         <span className={styles.avatarForearm} />
         <span className={styles.avatarHand}>
+          <i className={styles.avatarThumb} />
           <i className={styles.avatarFinger} />
           <i className={styles.avatarFinger} />
           <i className={styles.avatarFinger} />
@@ -366,6 +372,7 @@ export default function KidsResort() {
         <span className={styles.avatarElbow} />
         <span className={styles.avatarForearm} />
         <span className={styles.avatarHand}>
+          <i className={styles.avatarThumb} />
           <i className={styles.avatarFinger} />
           <i className={styles.avatarFinger} />
           <i className={styles.avatarFinger} />
@@ -710,11 +717,14 @@ export default function KidsResort() {
             <div className={styles.playerSprite}>
               <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} />
               <div className={[styles.playerHead, styles.playerHeadDetail].join(' ')}>
+                <span className={styles.playerEar} />
+                <span className={styles.playerBrow} />
                 <span className={styles.playerEye} />
                 <span className={styles.playerEye} />
                 <span className={styles.playerNose} />
                 <span className={styles.playerSmile} />
               </div>
+              <div className={styles.playerHairFront} />
               <div className={styles.playerNeck} />
               <div className={[styles.playerBody, styles.playerBodyDetail].join(' ')} style={{ background: look.shirt.swatch }} />
               <div className={styles.playerPelvis} style={{ background: look.bottoms.swatch }} />
@@ -724,6 +734,7 @@ export default function KidsResort() {
                 <span className={styles.playerElbow} />
                 <span className={styles.playerForearm} />
                 <span className={styles.playerHand}>
+                  <i className={styles.playerThumb} />
                   <i className={styles.playerFinger} />
                   <i className={styles.playerFinger} />
                   <i className={styles.playerFinger} />
@@ -734,6 +745,7 @@ export default function KidsResort() {
                 <span className={styles.playerElbow} />
                 <span className={styles.playerForearm} />
                 <span className={styles.playerHand}>
+                  <i className={styles.playerThumb} />
                   <i className={styles.playerFinger} />
                   <i className={styles.playerFinger} />
                   <i className={styles.playerFinger} />

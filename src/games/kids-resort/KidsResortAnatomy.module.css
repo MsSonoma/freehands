@@ -472,3 +472,96 @@
 .playerNameDetail {
   top: 136px;
 }
+
+.playerPelvis {
+  left: 22px;
+  width: 24px;
+  height: 16px;
+  border-radius: 8px;
+}
+
+.playerEar {
+  position: absolute;
+  z-index: 2;
+  left: 1px;
+  top: 15px;
+  width: 8px;
+  height: 12px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f5b48c, #dc895f);
+}
+
+.playerBrow {
+  position: absolute;
+  z-index: 6;
+  right: 3px;
+  top: 8px;
+  width: 9px;
+  height: 3px;
+  border-top: 2px solid #704126;
+  border-radius: 50%;
+  transform: rotate(5deg);
+}
+
+.playerHairFront {
+  position: absolute;
+  z-index: 7;
+  left: 34px;
+  top: 5px;
+  width: 15px;
+  height: 39px;
+  border-radius: 55% 55% 65% 35%;
+  background: linear-gradient(160deg, #915835, #54301f);
+  transform: rotate(-6deg);
+  transform-origin: top center;
+}
+
+.playerThumb {
+  position: absolute;
+  z-index: 4;
+  right: -3px;
+  top: 3px;
+  width: 3px;
+  height: 7px;
+  border-radius: 999px;
+  background: #efaa7d;
+  transform: rotate(38deg);
+  transform-origin: top center;
+}
+
+.playerDetailed[data-hair="ponytail"] .playerHairFront {
+  height: 34px;
+}
+
+.playerDetailed[data-hair="bun"] .playerHairFront {
+  left: 35px;
+  width: 13px;
+  height: 33px;
+}
+
+.playerDetailed .playerLegRigLeft,
+.playerDetailed .playerLegRigRight {
+  width: 19px;
+}
+
+.playerDetailed .playerThigh,
+.playerDetailed .playerShin {
+  left: 2px;
+  width: 13px;
+  border-radius: 6px;
+}
+
+.playerDetailed .playerKnee {
+  left: 4px;
+  width: 9px;
+  height: 6px;
+}
+
+.playerDetailed .playerShoe {
+  left: 1px;
+  width: 22px;
+  height: 10px;
+  border-radius: 4px 12px 4px 4px;
+  transform: translateX(1px) skewX(-8deg);
+  transform-origin: left center;
+}

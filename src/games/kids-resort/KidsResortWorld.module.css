@@ -634,6 +634,84 @@
   font-size: 1.8rem;
 }
 
+.avatarPelvis {
+  left: 34px;
+  width: 58px;
+  height: 21px;
+  border-radius: 9px 9px 8px 8px;
+}
+
+.avatarEar {
+  position: absolute;
+  z-index: 1;
+  top: 28px;
+  width: 11px;
+  height: 17px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, #f7bc94, #df8e64);
+}
+
+.avatarEarLeft {
+  left: -6px;
+}
+
+.avatarEarRight {
+  right: -6px;
+}
+
+.avatarBrow {
+  position: absolute;
+  z-index: 5;
+  top: 18px;
+  width: 13px;
+  height: 4px;
+  border-top: 3px solid #704126;
+  border-radius: 50%;
+}
+
+.avatarBrowLeft {
+  left: 8px;
+  transform: rotate(-4deg);
+}
+
+.avatarBrowRight {
+  right: 8px;
+  transform: rotate(4deg);
+}
+
+.avatarHairFront {
+  position: absolute;
+  z-index: 5;
+  left: 31px;
+  top: 13px;
+  width: 65px;
+  height: 34px;
+  pointer-events: none;
+  background: linear-gradient(145deg, #8f5632, #59301f);
+  border-radius: 55% 45% 38% 45%;
+  clip-path: polygon(0 0, 100% 0, 94% 58%, 78% 43%, 66% 78%, 51% 47%, 38% 82%, 22% 46%, 8% 64%);
+}
+
+.avatarThumb {
+  position: absolute;
+  top: 5px;
+  width: 5px;
+  height: 11px;
+  border-radius: 999px;
+  background: #efaa7e;
+  transform-origin: top center;
+}
+
+.avatarArmRigLeft .avatarThumb {
+  left: -4px;
+  transform: rotate(-38deg);
+}
+
+.avatarArmRigRight .avatarThumb {
+  right: -4px;
+  transform: rotate(38deg);
+}
+
 .playerBody[data-shirt="sunshine"] {
   background: #f1be38;
 }
