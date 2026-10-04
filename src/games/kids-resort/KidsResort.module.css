@@ -973,7 +973,7 @@
 
 .placeBuilding[data-place="suite"] .buildingRoof {
   left: 10px;
-  top: 9px;
+  top: 2px;
   width: 106px;
   height: 22px;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
