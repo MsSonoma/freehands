@@ -905,7 +905,7 @@
   --glass: #8bd5ec;
   --door: #6a4639;
   width: 138px;
-  height: 94px;
+  height: 104px;
 }
 
 .placeBuilding[data-place="lobby"] .buildingFacade {
@@ -919,9 +919,9 @@
   display: block;
   z-index: 2;
   left: 38px;
-  top: 3px;
+  top: -5px;
   width: 62px;
-  height: 44px;
+  height: 56px;
   border: 2px solid rgba(64,63,70,0.16);
   border-radius: 7px 7px 0 0;
   background: var(--wall);
@@ -929,9 +929,9 @@
 
 .placeBuilding[data-place="lobby"] .buildingRoof {
   left: 29px;
-  top: 0;
+  top: -13px;
   width: 80px;
-  height: 13px;
+  height: 18px;
   clip-path: polygon(50% 0, 100% 100%, 0 100%);
   border: 0;
   border-radius: 0;
@@ -944,7 +944,7 @@
 }
 
 .placeBuilding[data-place="lobby"] .buildingSign {
-  top: 27px;
+  top: 20px;
   background: #fff2cd;
 }
 
