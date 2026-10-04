@@ -986,15 +986,7 @@
 }
 
 .placeBuilding[data-place="suite"] .buildingAwning {
-  display: block;
-  z-index: 7;
-  left: 20px;
-  top: 50px;
-  width: 34px;
-  height: 5px;
-  border-radius: 3px;
-  background: #fff;
-  box-shadow: 52px 0 0 #fff;
+  display: none;
 }
 
 .placeBuilding[data-place="suite"] .buildingSign {
