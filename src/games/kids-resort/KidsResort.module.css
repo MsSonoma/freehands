@@ -1103,7 +1103,7 @@
 }
 
 .placeBuilding[data-place="market"] .buildingSign {
-  top: 20px;
+  top: 13px;
   background: #fffbe7;
   color: #3e7b5d;
 }
