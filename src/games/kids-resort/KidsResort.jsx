@@ -722,22 +722,22 @@ export default function KidsResort() {
                 top: `${place.y}%`,
                 '--depth-scale':
                   place.id === 'suite'
-                    ? 1.38
+                    ? 1.55
                     : place.id === 'studio' || place.id === 'market'
-                      ? 1.08
+                      ? 1.25
                       : place.id === 'lobby'
-                        ? 0.86
+                        ? 1.05
                         : place.id === 'cafe'
-                          ? 0.62
-                          : 0.6,
+                          ? 0.82
+                          : 0.8,
                 '--label-offset':
                   place.id === 'suite'
                     ? '-22px'
                     : place.id === 'studio' || place.id === 'market'
-                      ? '-17px'
+                      ? '2px'
                       : place.id === 'lobby'
-                        ? '-14px'
-                        : '-10px',
+                        ? '16px'
+                        : '34px',
               }}
               onClick={() => travelTo(place)}
             >
