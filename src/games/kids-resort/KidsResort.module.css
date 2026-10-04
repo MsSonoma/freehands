@@ -866,7 +866,7 @@
 }
 
 .placeBuilding[data-place="cafe"] .buildingRoof {
-  top: 9px;
+  top: 11px;
   left: 13px;
   width: 100px;
   height: 15px;
@@ -877,7 +877,7 @@
 .placeBuilding[data-place="cafe"] .buildingAwning {
   display: block;
   left: 8px;
-  top: 35px;
+  top: 31px;
   width: 110px;
   height: 13px;
   border: 2px solid #d85e53;
@@ -887,9 +887,12 @@
 }
 
 .placeBuilding[data-place="cafe"] .buildingSign {
-  top: 10px;
+  top: 8px;
+  min-width: 68px;
+  padding: 4px 8px 3px;
   background: #fff7c8;
   color: #c65d28;
+  font-size: 0.54rem;
 }
 
 .placeBuilding[data-place="cafe"] .buildingWindow {
@@ -945,7 +948,7 @@
 }
 
 .placeBuilding[data-place="lobby"] .buildingSign {
-  top: 27px;
+  top: 34px;
   background: #fff2cd;
 }
 
