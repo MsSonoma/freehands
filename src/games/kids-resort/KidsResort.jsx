@@ -213,9 +213,9 @@ export default function KidsResort() {
     const start = position;
     const dx = nextPlace.x - start.x;
     const dy = nextPlace.y - start.y;
-    if (dy > 0) {
-      setWalkView('front');
-    } else if (dx !== 0) {
+    const horizontalTravel = Math.abs(dx) > Math.abs(dy);
+
+    if (horizontalTravel) {
       setFacing(dx > 0 ? 'right' : 'left');
       setWalkView('side');
     } else {
@@ -743,7 +743,7 @@ export default function KidsResort() {
               <div className={[styles.playerBody, styles.playerBodyDetail].join(' ')} style={{ background: look.shirt.swatch }} />
               <div className={styles.playerPelvis} style={{ background: look.bottoms.swatch }} />
 
-              <div className={styles.playerArmRigLeft}>
+              <div className={styles.playerArmRigLeft} style={playerView === 'front' ? { left: 7, right: 'auto', top: 49, transform: 'none', scale: isWalking ? (walkFrame < 3 ? 1.08 : 0.92) : 1, opacity: 1 } : undefined}>
                 <span className={styles.playerUpperArm} />
                 <span className={styles.playerElbow} />
                 <span className={styles.playerForearm} />
@@ -754,7 +754,7 @@ export default function KidsResort() {
                   <i className={styles.playerFinger} />
                 </span>
               </div>
-              <div className={styles.playerArmRigRight}>
+              <div className={styles.playerArmRigRight} style={playerView === 'front' ? { right: 7, left: 'auto', top: 49, transform: 'none', scale: isWalking ? (walkFrame < 3 ? 0.92 : 1.08) : 1, opacity: 1 } : undefined}>
                 <span className={styles.playerUpperArm} />
                 <span className={styles.playerElbow} />
                 <span className={styles.playerForearm} />
@@ -766,13 +766,13 @@ export default function KidsResort() {
                 </span>
               </div>
 
-              <div className={styles.playerLegRigLeft}>
+              <div className={styles.playerLegRigLeft} style={playerView === 'front' ? { transform: isWalking && walkFrame < 3 ? 'translateY(-4px)' : 'none', scale: isWalking && walkFrame < 3 ? 1.05 : 0.95 } : undefined}>
                 <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerKnee} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerShin} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
               </div>
-              <div className={styles.playerLegRigRight}>
+              <div className={styles.playerLegRigRight} style={playerView === 'front' ? { transform: isWalking && walkFrame >= 3 ? 'translateY(-4px)' : 'none', scale: isWalking && walkFrame >= 3 ? 1.05 : 0.95 } : undefined}>
                 <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerKnee} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerShin} style={{ background: look.bottoms.swatch }} />
