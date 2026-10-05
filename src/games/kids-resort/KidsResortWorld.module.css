@@ -2942,8 +2942,8 @@
 
 .conversationTranscript {
   position: absolute;
-  top: 18px;
   right: 18px;
+  bottom: 98px;
   z-index: 6;
   width: min(260px, 28vw);
   max-height: 35vh;
@@ -3076,8 +3076,8 @@
   }
 
   .conversationTranscript {
-    top: 12px;
     right: 10px;
+    bottom: 96px;
     width: min(210px, 46vw);
     max-height: 24vh;
   }
