@@ -344,79 +344,82 @@ function fashionKey(category, option) {
 }
 
 const FASHION_CUSTOMERS = [
-  {
-    id: 'maya',
-    name: 'Maya',
-    emoji: '😊',
-    pickiness: 'easygoing',
-    category: 'shirt',
-    type: 'puff-sleeve',
-    color: '#8d66bd',
-    colorName: 'purple',
-    reward: 5,
-    feeling: 'playful and creative',
-    request: 'I want to feel playful and creative, like my outfit matches my imagination.',
-  },
-  {
-    id: 'leo',
-    name: 'Leo',
-    emoji: '😄',
-    pickiness: 'particular',
-    category: 'shoes',
-    type: 'high-tops',
-    color: '#438fd0',
-    colorName: 'blue',
-    reward: 6,
-    request: 'I really want high-tops. Blue is my favorite.',
-  },
-  {
-    id: 'zoe',
-    name: 'Zoe',
-    emoji: '🧐',
-    pickiness: 'picky',
-    category: 'glasses',
-    type: 'cat-eye',
-    color: '#ff4f9a',
-    colorName: 'pink',
-    reward: 7,
-    request: 'Cat-eye glasses, and I want them pink. I know exactly what I like.',
-  },
-  {
-    id: 'kai',
-    name: 'Kai',
-    emoji: '🙂',
-    pickiness: 'easygoing',
-    category: 'bottoms',
-    type: 'wide-leg',
-    color: '#54c79c',
-    colorName: 'mint',
-    reward: 5,
-    request: 'Could you make me wide-leg pants? Mint sounds cool, but surprise me.',
-  },
-  {
-    id: 'nina',
-    name: 'Nina',
-    emoji: '🤨',
-    pickiness: 'picky',
-    category: 'headwear',
-    type: 'bow',
-    color: '#f1be38',
-    colorName: 'yellow',
-    reward: 7,
-    request: 'I want a yellow hair bow. Not a hat. A bow.',
-  },
+  { id: 'maya', pickiness: 'easygoing' },
+  { id: 'leo', pickiness: 'particular' },
+  { id: 'zoe', pickiness: 'picky' },
+  { id: 'kai', pickiness: 'easygoing' },
+  { id: 'nina', pickiness: 'picky' },
 ];
 
+const FASHION_BASE_PAY = 3;
+const FASHION_STAR_SCORE = 8;
+
 const FASHION_FEELINGS = {
-  maya: { label: 'playful and creative', request: 'I want to feel playful and creative, like my outfit matches my imagination.' },
-  leo: { label: 'confident and comfortable', request: 'I want to feel confident and comfortable, like I can relax and still feel cool.' },
-  zoe: { label: 'stylish and dramatic', request: 'I want to feel stylish and dramatic, with a look that feels bold and expressive.' },
-  kai: { label: 'comfortable and free', request: 'I want to feel comfortable and free, with a look that feels easy and a little unexpected.' },
-  nina: { label: 'cheerful and put-together', request: 'I want to feel cheerful and put-together, like today is a little bit special.' },
+  maya: {
+    label: 'playful and creative',
+    request: 'I want to feel playful and creative, like my outfit matches my imagination.',
+    targets: {
+      shirt: { type: 'puff-sleeve', color: '#8d66bd' },
+      bottoms: { type: 'shorts', color: '#dc6b63' },
+      shoes: { type: 'high-tops', color: '#efc33f' },
+      glasses: { type: 'round', color: '#8d66bd' },
+      headwear: { type: 'bow', color: '#ff4f9a' },
+    },
+  },
+  leo: {
+    label: 'confident and comfortable',
+    request: 'I want to feel confident and comfortable, like I can relax and still feel cool.',
+    targets: {
+      shirt: { type: 'tee', color: '#438fd0' },
+      bottoms: { type: 'straight', color: '#334d78' },
+      shoes: { type: 'high-tops', color: '#438fd0' },
+      glasses: { type: 'square', color: '#35516d' },
+      headwear: { type: 'cap', color: '#438fd0' },
+    },
+  },
+  zoe: {
+    label: 'stylish and dramatic',
+    request: 'I want to feel stylish and dramatic, with a look that feels bold and expressive.',
+    targets: {
+      shirt: { type: 'long-sleeve', color: '#252c38' },
+      bottoms: { type: 'flares', color: '#dc6b63' },
+      shoes: { type: 'slip-ons', color: '#252c38' },
+      glasses: { type: 'cat-eye', color: '#ff4f9a' },
+      headwear: { type: 'headband', color: '#8d66bd' },
+    },
+  },
+  kai: {
+    label: 'comfortable and free',
+    request: 'I want to feel comfortable and free, with a look that feels easy and a little unexpected.',
+    targets: {
+      shirt: { type: 'tank', color: '#54c79c' },
+      bottoms: { type: 'wide-leg', color: '#9a73c9' },
+      shoes: { type: 'slip-ons', color: '#448fcc' },
+      glasses: { type: 'round', color: '#6f4b3e' },
+      headwear: { type: 'beanie', color: '#54c79c' },
+    },
+  },
+  nina: {
+    label: 'cheerful and put-together',
+    request: 'I want to feel cheerful and put-together, like today is a little bit special.',
+    targets: {
+      shirt: { type: 'puff-sleeve', color: '#f1be38' },
+      bottoms: { type: 'shorts', color: '#ff4f9a' },
+      shoes: { type: 'sneakers', color: '#f1be38' },
+      glasses: { type: 'round', color: '#ff4f9a' },
+      headwear: { type: 'bow', color: '#f1be38' },
+    },
+  },
 };
 
 function fashionFeeling(customer) {
-  return FASHION_FEELINGS[customer.id] || { label: 'good in my clothes', request: 'I want these clothes to feel like me.' };
+  return FASHION_FEELINGS[customer.id] || FASHION_FEELINGS.maya;
+}
+
+function fashionColorThreshold(customer) {
+  if (customer.pickiness === 'picky') return 58;
+  if (customer.pickiness === 'particular') return 78;
+  return 100;
 }
 
 function hexToRgb(hex) {
@@ -492,6 +495,7 @@ export default function KidsResort({ libraryHref = null }) {
   const [studioCustomerIndex, setStudioCustomerIndex] = useState(0);
   const [studioCustomerPerson, setStudioCustomerPerson] = useState(null);
   const [studioCustomerDone, setStudioCustomerDone] = useState(false);
+  const [studioTipResult, setStudioTipResult] = useState(null);
   const [artColor, setArtColor] = useState('#ff4f9a');
   const artCanvasRef = useRef(null);
   const artDrawingRef = useRef(false);
@@ -1045,7 +1049,8 @@ export default function KidsResort({ libraryHref = null }) {
     setStudioCustomerIndex(index);
     setStudioCustomerPerson(person);
     setStudioCustomerDone(false);
-    setStudioCategory(customer.category);
+    setStudioTipResult(null);
+    setStudioCategory('shirt');
     setStudioDraftLook(cloneLook(person.look));
     return person;
   };
@@ -1055,23 +1060,41 @@ export default function KidsResort({ libraryHref = null }) {
     const person = studioCustomerPerson;
     if (!person) return;
 
+    const profile = fashionFeeling(customer);
     const draft = studioDraftLook || person.look;
-    const item = draft[customer.category];
-    const typeMatch = item?.id === customer.type;
-    const colorGap = colorDistance(item?.swatch, customer.color);
-    const colorMatch = colorGap <= 72;
-    const pickyColorMatch = colorGap <= 42;
+    const colorThreshold = fashionColorThreshold(customer);
 
-    let accepted = true;
-    if (customer.pickiness === 'particular') accepted = typeMatch || colorMatch;
-    if (customer.pickiness === 'picky') accepted = typeMatch && pickyColorMatch;
+    const details = FASHION_CATEGORIES.map((category) => {
+      const item = draft[category.id];
+      const target = profile.targets[category.id];
+      const typeMatch = item?.id === target.type;
+      const colorMatch =
+        item?.id !== 'none' &&
+        colorDistance(item?.swatch, target.color) <= colorThreshold;
+      const points = Number(typeMatch) + Number(colorMatch);
+      return {
+        id: category.id,
+        label: category.label,
+        typeMatch,
+        colorMatch,
+        points,
+      };
+    });
 
-    if (!accepted) {
-      setStudioMessage(person.name + ': Not quite yet. Can we try again?');
-      return;
+    const score = details.reduce((sum, detail) => sum + detail.points, 0);
+    const maxScore = FASHION_CATEGORIES.length * 2;
+    const tip = score;
+    const totalPay = FASHION_BASE_PAY + tip;
+    const earnedStar = score >= FASHION_STAR_SCORE;
+
+    let opinion = 'Thanks for making this for me!';
+    if (earnedStar) {
+      opinion = 'Yes! This makes me feel ' + profile.label + '.';
+    } else if (score >= 5) {
+      opinion = 'I can feel some of the ' + profile.label + ' idea in this. You understood a lot of what I meant.';
+    } else {
+      opinion = 'I can see what you were trying. Some parts feel like me, and some parts are a surprise.';
     }
-
-    const opinion = 'Yes! This makes me feel ' + fashionFeeling(customer).label + '.';
 
     const completedLook = cloneLook(draft);
     setStudioCustomerPerson((current) => (
@@ -1084,16 +1107,25 @@ export default function KidsResort({ libraryHref = null }) {
     )));
 
     setStudioCreations((value) => value + 1);
-    setBucks((value) => value + customer.reward);
-    setBadges((items) => (
-      items.includes('Design Studio Fashion Star')
-        ? items
-        : [...items, 'Design Studio Fashion Star']
-    ));
+    setBucks((value) => value + totalPay);
+    if (earnedStar) {
+      setBadges((items) => (
+        items.includes('Design Studio Fashion Star')
+          ? items
+          : [...items, 'Design Studio Fashion Star']
+      ));
+    }
+    setStudioTipResult({
+      basePay: FASHION_BASE_PAY,
+      tip,
+      totalPay,
+      score,
+      maxScore,
+      earnedStar,
+      details,
+    });
     setStudioCustomerDone(true);
-    setStudioMessage(
-      person.name + ': ' + opinion + ' +' + customer.reward + ' Resort Bucks · ⭐ Fashion Star earned'
-    );
+    setStudioMessage(person.name + ': ' + opinion);
   };
 
   const nextFashionCustomer = () => {
@@ -1346,11 +1378,10 @@ export default function KidsResort({ libraryHref = null }) {
     const customer = FASHION_CUSTOMERS[studioCustomerIndex % FASHION_CUSTOMERS.length];
     const customerPerson = studioCustomerPerson;
     const previewLook = studioDraftLook || customerPerson?.look || null;
-    const customerItem = previewLook?.[customer.category] || LOOK_OPTIONS[customer.category][0];
-    const customerOptions = LOOK_OPTIONS[customer.category];
-    const wanted = customerOptions.find((option) => option.id === customer.type);
-    const customerCategoryLabel =
-      FASHION_CATEGORIES.find((category) => category.id === customer.category)?.label || 'Fashion';
+    const activeItem = previewLook?.[studioCategory] || LOOK_OPTIONS[studioCategory][0];
+    const activeOptions = LOOK_OPTIONS[studioCategory];
+    const activeLabel =
+      FASHION_CATEGORIES.find((category) => category.id === studioCategory)?.label || 'Fashion';
 
     return interiorShell(
       'Design Studio',
@@ -1364,8 +1395,10 @@ export default function KidsResort({ libraryHref = null }) {
             onClick={() => {
               setStudioWorkTool('fashion');
               if (studioCustomerPerson) {
-                setStudioCategory(customer.category);
+                setStudioCategory('shirt');
                 setStudioDraftLook(cloneLook(studioCustomerPerson.look));
+                setStudioTipResult(null);
+                setStudioCustomerDone(false);
               } else {
                 prepareFashionCustomer(studioCustomerIndex);
               }
@@ -1402,31 +1435,44 @@ export default function KidsResort({ libraryHref = null }) {
             </section>
 
             <section className={styles.customizer}>
+              <div className={styles.fashionCategoryTabs}>
+                {FASHION_CATEGORIES.map((category) => (
+                  <button
+                    key={category.id}
+                    type="button"
+                    data-active={studioCategory === category.id ? 'true' : 'false'}
+                    onClick={() => setStudioCategory(category.id)}
+                  >
+                    {category.label}
+                  </button>
+                ))}
+              </div>
+
               <div className={styles.fashionEditorCard}>
                 <div className={styles.fashionEditorHeading}>
                   <div>
-                    <small>{customerCategoryLabel}</small>
-                    <h3>{customerItem.name}</h3>
+                    <small>{activeLabel}</small>
+                    <h3>{activeItem.name}</h3>
                   </div>
-                  {customerItem.id !== 'none' && (
+                  {activeItem.id !== 'none' && (
                     <label className={styles.fashionColorControl}>
                       Any color
                       <input
                         type="color"
-                        value={customerItem.swatch || '#777777'}
-                        onChange={(event) => updateStudioColor(customer.category, event.target.value)}
+                        value={activeItem.swatch || '#777777'}
+                        onChange={(event) => updateStudioColor(studioCategory, event.target.value)}
                       />
                     </label>
                   )}
                 </div>
 
                 <div className={styles.fashionTypeGrid}>
-                  {customerOptions.map((option) => (
+                  {activeOptions.map((option) => (
                     <button
                       key={option.id}
                       type="button"
-                      data-selected={customerItem.id === option.id ? 'true' : 'false'}
-                      onClick={() => updateStudioType(customer.category, option)}
+                      data-selected={activeItem.id === option.id ? 'true' : 'false'}
+                      onClick={() => updateStudioType(studioCategory, option)}
                     >
                       <strong>{option.name}</strong>
                       <small>Design option</small>
@@ -1438,7 +1484,7 @@ export default function KidsResort({ libraryHref = null }) {
                   {studioCustomerDone ? (
                     <button type="button" onClick={nextFashionCustomer}>Next Customer</button>
                   ) : (
-                    <button type="button" onClick={showFashionToCustomer}>Show Customer</button>
+                    <button type="button" onClick={showFashionToCustomer}>Finish Outfit</button>
                   )}
                 </div>
               </div>
@@ -1451,10 +1497,32 @@ export default function KidsResort({ libraryHref = null }) {
               </span>
               <p className={styles.customerRequest}>{fashionFeeling(customer).request}</p>
               <div className={styles.studioCreationCount}>
-                Pays {customer.reward} Resort Bucks if accepted
+                Base pay {FASHION_BASE_PAY} Resort Bucks + tips for each style/color match · {FASHION_STAR_SCORE}/10 earns a Fashion Star
               </div>
+              {studioTipResult && (
+                <div className={styles.fashionTipResult}>
+                  <div className={styles.fashionTipHeadline}>
+                    <strong>Base {studioTipResult.basePay} + Tips {studioTipResult.tip}</strong>
+                    <span>{studioTipResult.totalPay} Resort Bucks total</span>
+                  </div>
+                  <div className={styles.fashionTipScore}>
+                    {studioTipResult.score}/{studioTipResult.maxScore} outfit points
+                    {studioTipResult.earnedStar ? ' · ⭐ Fashion Star earned' : ''}
+                  </div>
+                  <div className={styles.fashionTipBreakdown}>
+                    {studioTipResult.details.map((detail) => (
+                      <span key={detail.id}>
+                        <strong>{detail.label}</strong>
+                        <small>
+                          Style {detail.typeMatch ? '+1' : '+0'} · Color {detail.colorMatch ? '+1' : '+0'}
+                        </small>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
               <p className={styles.customerOpinion}>
-                {studioMessage || 'Design it, then show the customer what you made.'}
+                {studioMessage || 'Design the whole outfit, then finish it to see the customer tip.'}
               </p>
             </aside>
           </div>

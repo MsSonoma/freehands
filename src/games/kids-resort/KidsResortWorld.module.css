@@ -2534,3 +2534,73 @@
 .avatarFigure .avatarLegRigRight {
   transform: none;
 }
+
+
+/* Full-outfit fashion job tips */
+.fashionTipResult {
+  width: 100%;
+  display: grid;
+  gap: 8px;
+  border: 2px solid #dce8ef;
+  border-radius: 16px;
+  background: #f9fcfe;
+  padding: 11px;
+  text-align: left;
+}
+
+.fashionTipHeadline {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fashionTipHeadline strong {
+  color: #17304f;
+  font-size: .82rem;
+}
+
+.fashionTipHeadline span {
+  color: #527087;
+  font-size: .68rem;
+  font-weight: 850;
+}
+
+.fashionTipScore {
+  border-radius: 10px;
+  background: #fff4f9;
+  color: #8d4265;
+  padding: 7px 8px;
+  font-size: .7rem;
+  font-weight: 950;
+}
+
+.fashionTipBreakdown {
+  display: grid;
+  gap: 5px;
+}
+
+.fashionTipBreakdown > span {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  border-top: 1px solid #e7eef3;
+  padding-top: 5px;
+}
+
+.fashionTipBreakdown > span:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.fashionTipBreakdown strong {
+  color: #49667d;
+  font-size: .66rem;
+}
+
+.fashionTipBreakdown small {
+  color: #73879a;
+  font-size: .62rem;
+  font-weight: 850;
+}
