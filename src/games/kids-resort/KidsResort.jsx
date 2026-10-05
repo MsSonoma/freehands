@@ -4,9 +4,8 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import baseStyles from './KidsResort.module.css';
 import worldStyles from './KidsResortWorld.module.css';
 import anatomyStyles from './KidsResortAnatomy.module.css';
-import cafeStyles from './KidsResortCafe.module.css';
 
-const styles = { ...worldStyles, ...anatomyStyles, ...baseStyles, ...cafeStyles };
+const styles = { ...worldStyles, ...anatomyStyles, ...baseStyles };
 
 const PLACES = [
   {
@@ -74,17 +73,6 @@ const CAFE_RECIPES = [
 const CAFE_INGREDIENTS={bun:{icon:'🫓',name:'Bun',source:'cabinet'},patty:{icon:'🍖',name:'Patty',source:'fridge',cook:6500},lettuce:{icon:'🥬',name:'Lettuce',source:'fridge'},tomato:{icon:'🍅',name:'Tomato',source:'fridge'},bread:{icon:'🍞',name:'Bread',source:'cabinet',cook:5500},cheese:{icon:'🧀',name:'Cheese',source:'fridge'},tortilla:{icon:'🌮',name:'Tortilla',source:'cabinet'},'taco-meat':{icon:'🍖',name:'Taco Meat',source:'fridge',cook:6000},egg:{icon:'🥚',name:'Egg',source:'fridge',cook:5000},bacon:{icon:'🥓',name:'Bacon',source:'fridge',cook:7000},toast:{icon:'🍞',name:'Toast',source:'cabinet'}};
 const CAFE_GUESTS=['Maya','Noah','Avery','Leo','Zoe','Kai'];
 
-function summarizeCafePlate(recipe, plate = []) {
-  const missing = [...recipe.ingredients];
-  const extras = [];
-  plate.forEach((ingredientId, index) => {
-    const neededIndex = missing.indexOf(ingredientId);
-    if (neededIndex >= 0) missing.splice(neededIndex, 1);
-    else extras.push({ ingredientId, index });
-  });
-  return { complete: missing.length === 0, missing, extras };
-}
-
 const LOBBY_MENU = [
   { id: 'pasta', name: 'Garden Pasta', icon: '\u{1F35D}', price: 8 },
   { id: 'chicken', name: 'Herb Chicken Plate', icon: '\u{1F357}', price: 9 },
@@ -94,13 +82,50 @@ const LOBBY_MENU = [
   { id: 'dessert', name: 'Berry Sundae', icon: '\u{1F368}', price: 5 },
 ];
 
-const LOBBY_MENU = [
-  { id: 'pasta', name: 'Garden Pasta', icon: '\u{1F35D}', price: 8 },
-  { id: 'chicken', name: 'Herb Chicken Plate', icon: '\u{1F357}', price: 9 },
-  { id: 'salmon', name: 'Lemon Salmon Dinner', icon: '\u{1F41F}', price: 10 },
-  { id: 'ravioli', name: 'Vegetable Ravioli', icon: '\u{1F35D}', price: 8 },
-  { id: 'breakfast', name: 'Palm Court Breakfast', icon: '\u{1F373}', price: 7 },
-  { id: 'dessert', name: 'Berry Sundae', icon: '\u{1F368}', price: 5 },
+const PALM_KITCHEN_INGREDIENTS = {
+  pasta: { name: 'Pasta', icon: '\u{1F35D}', source: 'pantry', cook: 3200 },
+  sauce: { name: 'Tomato Sauce', icon: '\u{1F345}', source: 'pantry' },
+  herbs: { name: 'Fresh Herbs', icon: '\u{1F33F}', source: 'fridge' },
+  chicken: { name: 'Chicken', icon: '\u{1F357}', source: 'fridge', cook: 4200 },
+  potatoes: { name: 'Potatoes', icon: '\u{1F954}', source: 'pantry', cook: 3600 },
+  salmon: { name: 'Salmon', icon: '\u{1F41F}', source: 'fridge', cook: 4200 },
+  lemon: { name: 'Lemon', icon: '\u{1F34B}', source: 'fridge' },
+  vegetables: { name: 'Vegetables', icon: '\u{1F966}', source: 'fridge' },
+  ravioli: { name: 'Ravioli', icon: '\u{1F95F}', source: 'fridge', cook: 3200 },
+  eggs: { name: 'Eggs', icon: '\u{1F373}', source: 'fridge', cook: 3000 },
+  toast: { name: 'Toast', icon: '\u{1F35E}', source: 'pantry' },
+  berries: { name: 'Berries', icon: '\u{1F353}', source: 'fridge' },
+  cream: { name: 'Ice Cream', icon: '\u{1F368}', source: 'freezer' },
+  wafer: { name: 'Wafer', icon: '\u{1F36A}', source: 'pantry' },
+};
+
+const PALM_KITCHEN_RECIPES = [
+  { id: 'pasta', name: 'Garden Pasta', icon: '\u{1F35D}', ingredients: ['pasta', 'sauce', 'herbs'] },
+  { id: 'chicken', name: 'Herb Chicken Plate', icon: '\u{1F357}', ingredients: ['chicken', 'potatoes', 'herbs'] },
+  { id: 'salmon', name: 'Lemon Salmon Dinner', icon: '\u{1F41F}', ingredients: ['salmon', 'lemon', 'vegetables'] },
+  { id: 'ravioli', name: 'Vegetable Ravioli', icon: '\u{1F95F}', ingredients: ['ravioli', 'sauce', 'vegetables'] },
+  { id: 'breakfast', name: 'Palm Court Breakfast', icon: '\u{1F373}', ingredients: ['eggs', 'toast', 'berries'] },
+  { id: 'dessert', name: 'Berry Sundae', icon: '\u{1F368}', ingredients: ['berries', 'cream', 'wafer'] },
+];
+
+const DINING_DRINKS = [
+  { id: 'water', name: 'Ice Water', icon: '\u{1F4A7}' },
+  { id: 'lemonade', name: 'Lemonade', icon: '\u{1F34B}' },
+  { id: 'juice', name: 'Fruit Juice', icon: '\u{1F9C3}' },
+];
+
+const CUSTODIAN_TASKS = [
+  { id: 'spill', name: 'Lobby Spill', icon: '\u{1F4A7}', tool: 'mop', hint: 'A mop works best on a spill.' },
+  { id: 'crumbs', name: 'Crumbs on the Floor', icon: '\u{1F35E}', tool: 'broom', hint: 'Sweep dry crumbs with the broom.' },
+  { id: 'glass', name: 'Fingerprints on Glass', icon: '\u{1FA9F}', tool: 'spray', hint: 'Use spray and a cloth on the glass.' },
+  { id: 'trash', name: 'Full Waste Bin', icon: '\u{1F5D1}', tool: 'bag', hint: 'Use a fresh bag for the waste bin.' },
+];
+
+const CUSTODIAN_TOOLS = [
+  { id: 'mop', name: 'Mop', icon: '\u{1F9F9}' },
+  { id: 'broom', name: 'Broom', icon: '\u{1F9F9}' },
+  { id: 'spray', name: 'Spray + Cloth', icon: '\u{1F9F4}' },
+  { id: 'bag', name: 'Trash Bag', icon: '\u{1F6CD}' },
 ];
 
 const CAFE_MENU = CAFE_RECIPES.map(({ id, name, icon, price }) => ({ id, name, icon, price }));
@@ -593,12 +618,37 @@ export default function KidsResort({ libraryHref = null }) {
 
   const [cafeMessage, setCafeMessage] = useState('');
   const [cafeOrders, setCafeOrders] = useState([]);
-  const [cafeDrag, setCafeDrag] = useState(null);
+  const [cafePlate, setCafePlate] = useState([]);
   const [cafeGrill, setCafeGrill] = useState([]);
   const [cafeStorage, setCafeStorage] = useState(null);
   const [cafeServed, setCafeServed] = useState(0);
   const [cafeNow, setCafeNow] = useState(Date.now());
   const [cafeFinished, setCafeFinished] = useState(false);
+
+  const [palmKitchenActive, setPalmKitchenActive] = useState(false);
+  const [palmKitchenServed, setPalmKitchenServed] = useState(0);
+  const [palmKitchenPlate, setPalmKitchenPlate] = useState([]);
+  const [palmKitchenStove, setPalmKitchenStove] = useState([]);
+  const [palmKitchenStorage, setPalmKitchenStorage] = useState(null);
+  const [palmKitchenNow, setPalmKitchenNow] = useState(Date.now());
+  const [palmKitchenMessage, setPalmKitchenMessage] = useState('');
+  const [palmKitchenFinished, setPalmKitchenFinished] = useState(false);
+
+  const [diningMealId, setDiningMealId] = useState(null);
+  const [diningDrinkId, setDiningDrinkId] = useState('water');
+  const [diningBites, setDiningBites] = useState(0);
+  const [diningAction, setDiningAction] = useState('');
+  const [diningActionTick, setDiningActionTick] = useState(0);
+
+  const [custodianTaskIndex, setCustodianTaskIndex] = useState(0);
+  const [custodianTool, setCustodianTool] = useState(null);
+  const [custodianCleaned, setCustodianCleaned] = useState(0);
+  const [custodianFinished, setCustodianFinished] = useState(false);
+  const [custodianMessage, setCustodianMessage] = useState('');
+
+  const [poolAction, setPoolAction] = useState('');
+  const [poolActionTick, setPoolActionTick] = useState(0);
+  const [poolFun, setPoolFun] = useState(0);
 
   const selectedPlace = useMemo(
     () => PLACES.find((place) => place.id === selectedPlaceId) ?? PLACES[0],
@@ -871,6 +921,12 @@ export default function KidsResort({ libraryHref = null }) {
     setCafeOrders((items) => items.filter((order) => cafeNow - order.born < 45000));
   }, [cafeNow, screen]);
 
+  useEffect(() => {
+    if (screen !== 'lobby-restaurant-work' || !palmKitchenActive || palmKitchenFinished) return undefined;
+    const timer = window.setInterval(() => setPalmKitchenNow(Date.now()), 250);
+    return () => window.clearInterval(timer);
+  }, [screen, palmKitchenActive, palmKitchenFinished]);
+
   const travelTo = (nextPlace) => {
     if (!nextPlace || isWalking) return;
 
@@ -1023,200 +1079,183 @@ export default function KidsResort({ libraryHref = null }) {
     setScreen(nextScreen);
   };
 
-  const makeCafeOrder = (number, born = Date.now()) => ({
-    id: `${born}-${number}`,
-    guest: CAFE_GUESTS[number % CAFE_GUESTS.length],
-    recipeId: CAFE_RECIPES[number % CAFE_RECIPES.length].id,
-    born,
-    plate: [],
-  });
+  const makeCafeOrder=(number,born=Date.now())=>({id:`${born}-${number}`,guest:CAFE_GUESTS[number%CAFE_GUESTS.length],recipeId:CAFE_RECIPES[number%CAFE_RECIPES.length].id,born});
+  const startCafeShift=()=>{const now=Date.now();setCafeOrders([makeCafeOrder(0,now)]);setCafePlate([]);setCafeGrill([]);setCafeStorage(null);setCafeServed(0);setCafeMessage('First customer! Check the recipe wall, then build the order.');setCafeNow(now);setCafeFinished(false);setScreen('cafe-work');};
+  const takeCafeIngredient=(id)=>{const item=CAFE_INGREDIENTS[id];if(!item)return;if(item.cook){if(cafeGrill.length>=3){setCafeMessage('The grill is full.');return;}setCafeGrill((items)=>[...items,{id:`${Date.now()}-${id}`,ingredientId:id,started:Date.now()}]);setCafeMessage(`${item.name} is cooking. Remember to come back for it!`);return;}setCafePlate((items)=>[...items,id]);setCafeMessage(`${item.name} added to the plate.`);};
+  const pullFromGrill=(g)=>{const item=CAFE_INGREDIENTS[g.ingredientId],elapsed=Date.now()-g.started;if(elapsed<item.cook){setCafeMessage(`${item.name} isn't ready yet.`);return;}if(elapsed>item.cook+4500){setCafeGrill((items)=>items.filter((x)=>x.id!==g.id));setCafeMessage(`${item.name} burned! Start that part again.`);return;}setCafeGrill((items)=>items.filter((x)=>x.id!==g.id));setCafePlate((items)=>[...items,g.ingredientId]);setCafeMessage(`${item.name} is ready and on the plate.`);};
+  const serveCafeOrder=(order)=>{const recipe=CAFE_RECIPES.find((x)=>x.id===order.recipeId);if([...recipe.ingredients].sort().join('|')!==[...cafePlate].sort().join('|')){setCafeMessage(`That plate isn't ${recipe.icon} yet. Check the recipe wall.`);return;}const served=cafeServed+1;setCafeOrders((items)=>items.filter((x)=>x.id!==order.id));setCafePlate([]);setCafeServed(served);setBucks((v)=>v+4);setCafeMessage(`${order.guest} loved it! +4 Resort Bucks`);if(served>=8){setCafeFinished(true);setBucks((v)=>v+8);setBadges((items)=>items.includes('Sunshine Cafe Shift')?items:[...items,'Sunshine Cafe Shift']);}};
 
-  const startCafeShift = () => {
-    const now = Date.now();
-    setCafeOrders([makeCafeOrder(0, now)]);
-    setCafeGrill([]);
-    setCafeStorage(null);
-    setCafeDrag(null);
-    setCafeServed(0);
-    setCafeMessage('First customer! Drag ingredients from storage to a plate. Cook hot ingredients on the grill first.');
-    setCafeNow(now);
-    setCafeFinished(false);
-    setScreen('cafe-work');
+  const palmKitchenRecipeFor = (served) => PALM_KITCHEN_RECIPES[served % PALM_KITCHEN_RECIPES.length];
+
+  const startPalmKitchenShift = () => {
+    setPalmKitchenActive(true);
+    setPalmKitchenServed(0);
+    setPalmKitchenPlate([]);
+    setPalmKitchenStove([]);
+    setPalmKitchenStorage(null);
+    setPalmKitchenNow(Date.now());
+    setPalmKitchenFinished(false);
+    setPalmKitchenMessage('First dinner ticket is in. Build the plate, cook the hot ingredients, then send it through the pass.');
   };
 
-  const removeCafePlateIngredient = (orderId, index) => {
-    setCafeOrders((items) => items.map((order) => {
-      if (order.id !== orderId) return order;
-      const nextPlate = [...(order.plate || [])];
-      nextPlate.splice(index, 1);
-      return { ...order, plate: nextPlate };
-    }));
-  };
-
-  const dropCafeOnStorage = (storage, payload) => {
-    if (payload.from !== 'plate') {
-      setCafeMessage('Ingredients come out of storage. Put them on a plate or the grill.');
-      return;
-    }
-    const ingredient = CAFE_INGREDIENTS[payload.ingredientId];
-    if (!ingredient) return;
-    if (ingredient.source !== storage) {
-      const home = ingredient.source === 'fridge' ? 'refrigerator' : 'cabinet';
-      setCafeMessage(`${ingredient.name} belongs in the ${home}.`);
-      return;
-    }
-    removeCafePlateIngredient(payload.orderId, payload.index);
-    setCafeMessage(`${ingredient.name} put back in the ${storage === 'fridge' ? 'refrigerator' : 'cabinet'}.`);
-  };
-
-  const dropCafeOnGrill = (payload) => {
-    const ingredient = CAFE_INGREDIENTS[payload.ingredientId];
-    if (!ingredient) return;
-    if (payload.from !== 'storage') {
-      setCafeMessage('Use a fresh cooking ingredient from storage on the grill.');
-      return;
-    }
-    if (!ingredient.cook) {
-      setCafeMessage(`${ingredient.name} does not need cooking. Drag it straight to a plate.`);
-      return;
-    }
-    if (cafeGrill.length >= 3) {
-      setCafeMessage('The grill is full.');
-      return;
-    }
-    setCafeGrill((items) => [...items, {
-      id: `${Date.now()}-${payload.ingredientId}`,
-      ingredientId: payload.ingredientId,
-      started: Date.now(),
-    }]);
-    setCafeMessage(`${ingredient.name} is cooking. Drag it to a plate when it turns READY!`);
-  };
-
-  const dropCafeOnPlate = (orderId, payload) => {
-    const ingredient = CAFE_INGREDIENTS[payload.ingredientId];
-    const targetOrder = cafeOrders.find((order) => order.id === orderId);
-    if (!ingredient || !targetOrder) return;
-
-    if (payload.from === 'storage' && ingredient.cook) {
-      setCafeMessage(`${ingredient.name} needs to be cooked on the grill first.`);
-      return;
-    }
-
-    if (payload.from === 'grill') {
-      const grillItem = cafeGrill.find((item) => item.id === payload.grillId);
-      if (!grillItem) return;
-      const elapsed = Date.now() - grillItem.started;
-      if (elapsed < ingredient.cook) {
-        setCafeMessage(`${ingredient.name} isn't ready yet.`);
+  const takePalmKitchenIngredient = (id) => {
+    const item = PALM_KITCHEN_INGREDIENTS[id];
+    if (!item || !palmKitchenActive || palmKitchenFinished) return;
+    if (item.cook) {
+      if (palmKitchenStove.length >= 3) {
+        setPalmKitchenMessage('The stove is full. Finish something before starting another hot ingredient.');
         return;
       }
-      if (elapsed > ingredient.cook + 4500) {
-        setCafeGrill((items) => items.filter((item) => item.id !== grillItem.id));
-        setCafeMessage(`${ingredient.name} burned! Start that part again.`);
-        return;
-      }
-      setCafeGrill((items) => items.filter((item) => item.id !== grillItem.id));
-    }
-
-    if (payload.from === 'plate' && payload.orderId === orderId) return;
-
-    setCafeOrders((items) => items.map((order) => {
-      let nextPlate = [...(order.plate || [])];
-      if (payload.from === 'plate' && order.id === payload.orderId) {
-        nextPlate.splice(payload.index, 1);
-      }
-      if (order.id === orderId) nextPlate.push(payload.ingredientId);
-      return nextPlate === order.plate ? order : { ...order, plate: nextPlate };
-    }));
-
-    const anticipatedPlate = [...(targetOrder.plate || []), payload.ingredientId];
-    const recipe = CAFE_RECIPES.find((item) => item.id === targetOrder.recipeId);
-    const plateState = summarizeCafePlate(recipe, anticipatedPlate);
-    setCafeMessage(
-      plateState.complete
-        ? `${recipe.icon} ${recipe.name} assembled on ${targetOrder.guest}'s plate!`
-        : `${ingredient.name} moved to ${targetOrder.guest}'s plate.`,
-    );
-  };
-
-  const finishCafeDrop = (clientX, clientY, payload) => {
-    const dropTarget = document.elementFromPoint(clientX, clientY)?.closest('[data-cafe-drop]');
-    if (!dropTarget) {
-      setCafeMessage('Drop ingredients on a plate, the grill, refrigerator, or cabinet.');
+      setPalmKitchenStove((items) => [...items, { id: `${Date.now()}-${id}`, ingredientId: id, started: Date.now() }]);
+      setPalmKitchenMessage(`${item.name} is cooking. Watch for READY.`);
       return;
     }
-    const dropType = dropTarget.dataset.cafeDrop;
-    if (dropType === 'plate') dropCafeOnPlate(dropTarget.dataset.orderId, payload);
-    else if (dropType === 'grill') dropCafeOnGrill(payload);
-    else if (dropType === 'storage') dropCafeOnStorage(dropTarget.dataset.storage, payload);
+    setPalmKitchenPlate((items) => [...items, id]);
+    setPalmKitchenMessage(`${item.name} is on the plate.`);
   };
 
-  const cafeDragHandlers = (payload) => ({
-    onPointerDown: (event) => {
-      if (event.pointerType === 'mouse' && event.button !== 0) return;
-      event.preventDefault();
-      event.currentTarget.setPointerCapture?.(event.pointerId);
-      setCafeDrag({ ...payload, x: event.clientX, y: event.clientY });
-    },
-    onPointerMove: (event) => {
-      if (!event.currentTarget.hasPointerCapture?.(event.pointerId)) return;
-      event.preventDefault();
-      setCafeDrag({ ...payload, x: event.clientX, y: event.clientY });
-    },
-    onPointerUp: (event) => {
-      if (!event.currentTarget.hasPointerCapture?.(event.pointerId)) return;
-      event.preventDefault();
-      finishCafeDrop(event.clientX, event.clientY, payload);
-      event.currentTarget.releasePointerCapture?.(event.pointerId);
-      setCafeDrag(null);
-    },
-    onPointerCancel: () => setCafeDrag(null),
-  });
-
-  const cafeGrillDragHandlers = (grillItem, state) => {
-    if (state === 'READY!') {
-      return cafeDragHandlers({
-        from: 'grill',
-        grillId: grillItem.id,
-        ingredientId: grillItem.ingredientId,
-      });
+  const pullPalmKitchenStove = (itemOnStove) => {
+    const item = PALM_KITCHEN_INGREDIENTS[itemOnStove.ingredientId];
+    const elapsed = Date.now() - itemOnStove.started;
+    if (elapsed < item.cook) {
+      setPalmKitchenMessage(`${item.name} still needs a little more time.`);
+      return;
     }
-    return {
-      onPointerDown: (event) => {
-        event.preventDefault();
-        const ingredient = CAFE_INGREDIENTS[grillItem.ingredientId];
-        if (state === 'BURNT') {
-          setCafeGrill((items) => items.filter((item) => item.id !== grillItem.id));
-          setCafeMessage(`${ingredient.name} burned! It was cleared from the grill.`);
-        } else {
-          setCafeMessage(`${ingredient.name} isn't ready yet.`);
-        }
-      },
+    if (elapsed > item.cook + 5500) {
+      setPalmKitchenStove((items) => items.filter((entry) => entry.id !== itemOnStove.id));
+      setPalmKitchenMessage(`${item.name} overcooked. Start that ingredient again.`);
+      return;
+    }
+    setPalmKitchenStove((items) => items.filter((entry) => entry.id !== itemOnStove.id));
+    setPalmKitchenPlate((items) => [...items, itemOnStove.ingredientId]);
+    setPalmKitchenMessage(`${item.name} is ready and plated.`);
+  };
+
+  const servePalmKitchenOrder = () => {
+    if (!palmKitchenActive || palmKitchenFinished) return;
+    const recipe = palmKitchenRecipeFor(palmKitchenServed);
+    const expected = [...recipe.ingredients].sort().join('|');
+    const actual = [...palmKitchenPlate].sort().join('|');
+    if (expected !== actual) {
+      setPalmKitchenMessage(`That plate is not ${recipe.name} yet. Check the ticket and fix the plate.`);
+      return;
+    }
+    const served = palmKitchenServed + 1;
+    setPalmKitchenPlate([]);
+    setPalmKitchenStorage(null);
+    setPalmKitchenServed(served);
+    setBucks((value) => value + 6);
+    if (served >= 5) {
+      setPalmKitchenFinished(true);
+      setBucks((value) => value + 10);
+      setBadges((items) => (items.includes('Palm Court Kitchen Shift') ? items : [...items, 'Palm Court Kitchen Shift']));
+      setPalmKitchenMessage('Dinner rush complete! +10 Resort Buck shift bonus.');
+      return;
+    }
+    const nextRecipe = palmKitchenRecipeFor(served);
+    setPalmKitchenMessage(`${recipe.name} sent out! +6 Resort Bucks. Next ticket: ${nextRecipe.name}.`);
+  };
+
+  const orderPalmCourtMeal = (meal) => {
+    if (diningMealId && diningBites < 3) {
+      setMessage('Finish the meal already at the table before ordering another entree.');
+      return;
+    }
+    if (bucks < meal.price) {
+      setMessage(`You need ${meal.price} Resort Bucks for ${meal.name}.`);
+      return;
+    }
+    setBucks((value) => value - meal.price);
+    setDiningMealId(meal.id);
+    setDiningBites(0);
+    setDiningAction('order');
+    setDiningActionTick((value) => value + 1);
+    setMessage(`${meal.name} is on the table. Take three bites to enjoy the meal.`);
+  };
+
+  const takeDiningBite = () => {
+    const meal = LOBBY_MENU.find((item) => item.id === diningMealId);
+    if (!meal) {
+      setMessage('Choose something from the dinner menu first.');
+      return;
+    }
+    if (diningBites >= 3) {
+      setMessage(`${meal.name} is finished. You can order something else if you want.`);
+      return;
+    }
+    const bites = diningBites + 1;
+    setDiningBites(bites);
+    setDiningAction(bites >= 3 ? 'celebrate' : 'bite');
+    setDiningActionTick((value) => value + 1);
+    if (bites >= 3) {
+      setMeals((items) => [...items, meal.name]);
+      const foodBadge = `Tried ${meal.name}`;
+      setBadges((items) => (items.includes(foodBadge) ? items : [...items, foodBadge]));
+      setMessage(`${characterName} finished ${meal.name}. Food badge earned!`);
+    } else {
+      setMessage(`That was bite ${bites} of 3. ${meal.name} looks good!`);
+    }
+  };
+
+  const sipDiningDrink = (drinkId) => {
+    const drink = DINING_DRINKS.find((item) => item.id === drinkId) || DINING_DRINKS[0];
+    setDiningDrinkId(drink.id);
+    setDiningAction('sip');
+    setDiningActionTick((value) => value + 1);
+    setMessage(`${characterName} takes a sip of ${drink.name}.`);
+  };
+
+  const restartCustodianShift = () => {
+    setCustodianTaskIndex(0);
+    setCustodianTool(null);
+    setCustodianCleaned(0);
+    setCustodianFinished(false);
+    setCustodianMessage('Choose a tool from the cleaning cart, then take care of the highlighted lobby job.');
+  };
+
+  const attemptCustodianTask = () => {
+    if (custodianFinished) return;
+    const task = CUSTODIAN_TASKS[custodianTaskIndex % CUSTODIAN_TASKS.length];
+    if (!custodianTool) {
+      setCustodianMessage('Choose a tool from the cart first.');
+      return;
+    }
+    if (custodianTool !== task.tool) {
+      setCustodianMessage(`That tool is not the best choice. ${task.hint}`);
+      return;
+    }
+    const cleaned = custodianCleaned + 1;
+    setCustodianCleaned(cleaned);
+    setCustodianTool(null);
+    setBucks((value) => value + 3);
+    if (cleaned >= 6) {
+      setCustodianFinished(true);
+      setBucks((value) => value + 6);
+      setBadges((items) => (items.includes('Resort Custodian Shift') ? items : [...items, 'Resort Custodian Shift']));
+      setCustodianMessage('Lobby shift complete! +6 Resort Buck bonus and a Resort Custodian badge.');
+      return;
+    }
+    setCustodianTaskIndex((value) => value + 1);
+    const nextTask = CUSTODIAN_TASKS[(custodianTaskIndex + 1) % CUSTODIAN_TASKS.length];
+    setCustodianMessage(`${task.name} finished! +3 Resort Bucks. Next: ${nextTask.name}.`);
+  };
+
+  const playPoolActivity = (activity) => {
+    const labels = {
+      float: 'Relaxing on the pool float',
+      slide: 'Splashing down the pool slide',
+      ball: 'Playing with the beach ball',
     };
+    const nextFun = Math.min(6, poolFun + 1);
+    setPoolAction(activity);
+    setPoolActionTick((value) => value + 1);
+    setPoolFun(nextFun);
+    if (nextFun >= 4) {
+      setBadges((items) => (items.includes('Indoor Pool Day') ? items : [...items, 'Indoor Pool Day']));
+    }
+    setMessage(`${labels[activity] || 'Pool fun'}! Fun meter: ${nextFun}/6${nextFun >= 4 ? ' - Pool Day badge earned!' : ''}`);
   };
 
-  const serveCafeOrder = (order) => {
-    const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
-    const plateState = summarizeCafePlate(recipe, order.plate || []);
-    if (!plateState.complete) {
-      setCafeMessage(`That plate isn't ${recipe.icon} yet. It is still missing ingredients.`);
-      return;
-    }
-    if (plateState.extras.length > 0) {
-      setCafeMessage('That plate has an extra ingredient. Move it to another plate or put it back in storage.');
-      return;
-    }
-    const served = cafeServed + 1;
-    setCafeOrders((items) => items.filter((item) => item.id !== order.id));
-    setCafeServed(served);
-    setBucks((value) => value + 4);
-    setCafeMessage(`${order.guest} loved it! +4 Resort Bucks`);
-    if (served >= 8) {
-      setCafeFinished(true);
-      setBucks((value) => value + 8);
-      setBadges((items) => items.includes('Sunshine Cafe Shift') ? items : [...items, 'Sunshine Cafe Shift']);
-    }
-  };
   const buyMeal = (meal) => {
     if (bucks < meal.price) {
       setMessage(`You need ${meal.price} Resort Bucks for ${meal.name}.`);
@@ -1837,187 +1876,18 @@ export default function KidsResort({ libraryHref = null }) {
   }
 
   if (screen === 'cafe-work') {
-    const fridgeItems = Object.entries(CAFE_INGREDIENTS).filter(([, item]) => item.source === 'fridge');
-    const cabinetItems = Object.entries(CAFE_INGREDIENTS).filter(([, item]) => item.source === 'cabinet');
-    const openStorageItems = cafeStorage === 'fridge' ? fridgeItems : cabinetItems;
-
-    return (
-      <main className={styles.gameShell}>
-        <section className={styles.topBar}>
-          <button className={styles.backButton} type="button" onClick={() => setScreen('cafe')}>← Café</button>
-          <div className={styles.brand}>Sunshine Café Shift</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
-        </section>
-        <section className={styles.cafeWorkScene}>
-          <div className={styles.cafeWorkBackdrop} aria-hidden="true">
-            <div className={styles.workWindow}><span>🌴</span><span>☀️</span></div>
-            <div className={styles.workWallSign}>SUNSHINE CAFÉ</div>
-            <div className={styles.workPendantRow}><span>💡</span><span>💡</span><span>💡</span></div>
-            <div className={styles.workServiceCounter}><span>🥤</span><span>🔔</span><span>🧁</span></div>
-          </div>
-
-          <div className={[styles.cafeSceneCharacter, styles.cafeWorkCharacter].join(' ')} aria-label={`${characterName} working in the cafe kitchen`}>
-            {renderCharacter(false)}
-          </div>
-
-          <aside className={styles.recipeWall}>
-            <h2>Recipe Wall</h2>
-            {CAFE_RECIPES.map((recipe) => (
-              <div key={recipe.id} className={styles.wallRecipe}>
-                <strong>{recipe.name}</strong>
-                <span>{recipe.formula}</span>
-              </div>
-            ))}
-          </aside>
-
-          <section className={styles.cafeOrderBoard}>
-            <div className={styles.cafeOrderBoardHeader}>
-              <b>Orders · {cafeServed}/8</b>
-              <span>Each order gets its own plate</span>
-            </div>
-            <div className={styles.cafeOrderStations}>
-              {cafeOrders.map((order) => {
-                const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
-                const age = cafeNow - order.born;
-                const mood = age < 12000 ? '🙂' : age < 24000 ? '😐' : age < 35000 ? '☹️' : '😡';
-                const plate = order.plate || [];
-                const plateState = summarizeCafePlate(recipe, plate);
-                const visibleItems = plateState.complete
-                  ? plateState.extras
-                  : plate.map((ingredientId, index) => ({ ingredientId, index }));
-                const readyToServe = plateState.complete && plateState.extras.length === 0;
-                return (
-                  <article key={order.id} className={styles.cafeOrderStation}>
-                    <div className={styles.cafeTicket}>
-                      <span>{mood}</span>
-                      <strong>{order.guest}</strong>
-                      <span className={styles.cafeTicketFood}>{recipe.icon}</span>
-                      <small>{Math.max(0, Math.ceil((45000 - age) / 1000))}s</small>
-                    </div>
-                    <div
-                      className={[styles.cafeOrderPlate, cafeDrag ? styles.cafeDropTarget : ''].join(' ')}
-                      data-cafe-drop="plate"
-                      data-order-id={order.id}
-                    >
-                      {plateState.complete && (
-                        <div className={styles.cafeFinishedDish} aria-label={`${recipe.name} assembled`}>
-                          <span>{recipe.icon}</span>
-                          <small>{recipe.name}</small>
-                        </div>
-                      )}
-                      {visibleItems.map(({ ingredientId, index }) => {
-                        const ingredient = CAFE_INGREDIENTS[ingredientId];
-                        return (
-                          <button
-                            key={`${order.id}-${ingredientId}-${index}`}
-                            type="button"
-                            className={[styles.cafePlateIngredient, plateState.complete ? styles.cafeExtraIngredient : ''].join(' ')}
-                            aria-label={`Move ${ingredient.name}`}
-                            {...cafeDragHandlers({ from: 'plate', orderId: order.id, index, ingredientId })}
-                          >
-                            <span>{ingredient.icon}</span>
-                          </button>
-                        );
-                      })}
-                      {!plateState.complete && plate.length === 0 && <span className={styles.cafePlateHint}>Drop ingredients here</span>}
-                    </div>
-                    <button
-                      type="button"
-                      className={styles.cafeServePlate}
-                      disabled={!readyToServe}
-                      onClick={() => serveCafeOrder(order)}
-                    >
-                      {readyToServe ? `Serve ${recipe.icon}` : plateState.extras.length ? 'Remove extra' : 'Build order'}
-                    </button>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className={styles.kitchenStations}>
-            <button
-              type="button"
-              className={[styles.cafeStorageStation, cafeDrag?.from === 'plate' ? styles.cafeStorageReturn : ''].join(' ')}
-              data-cafe-drop="storage"
-              data-storage="fridge"
-              onClick={() => setCafeStorage(cafeStorage === 'fridge' ? null : 'fridge')}
-            >
-              🧊<strong>Refrigerator</strong><small>Drop returns here</small>
-            </button>
-            <div
-              className={[styles.grillStation, cafeDrag?.from === 'storage' ? styles.cafeGrillDrop : ''].join(' ')}
-              data-cafe-drop="grill"
-            >
-              <b>🔥 Grill · drop cooking items here</b>
-              <div>
-                {cafeGrill.map((grillItem) => {
-                  const ingredient = CAFE_INGREDIENTS[grillItem.ingredientId];
-                  const age = cafeNow - grillItem.started;
-                  const state = age < ingredient.cook ? 'Cooking…' : age <= ingredient.cook + 4500 ? 'READY!' : 'BURNT';
-                  return (
-                    <button
-                      key={grillItem.id}
-                      type="button"
-                      data-state={state}
-                      className={state === 'READY!' ? styles.cafeDraggableIngredient : ''}
-                      {...cafeGrillDragHandlers(grillItem, state)}
-                    >
-                      <span>{ingredient.icon}</span>
-                      <strong>{state}</strong>
-                      {state === 'READY!' && <small>Drag to a plate</small>}
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-            <button
-              type="button"
-              className={[styles.cafeStorageStation, cafeDrag?.from === 'plate' ? styles.cafeStorageReturn : ''].join(' ')}
-              data-cafe-drop="storage"
-              data-storage="cabinet"
-              onClick={() => setCafeStorage(cafeStorage === 'cabinet' ? null : 'cabinet')}
-            >
-              🥫<strong>Cabinet</strong><small>Drop returns here</small>
-            </button>
-          </section>
-
-          {cafeStorage && (
-            <section className={styles.ingredientDrawer}>
-              <strong className={styles.cafeDrawerTitle}>Drag an ingredient</strong>
-              {openStorageItems.map(([id, ingredient]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={styles.cafeDraggableIngredient}
-                  {...cafeDragHandlers({ from: 'storage', storage: cafeStorage, ingredientId: id })}
-                >
-                  <span>{ingredient.icon}</span>
-                  <small>{ingredient.name}</small>
-                  {ingredient.cook && <em>Grill first</em>}
-                </button>
-              ))}
-            </section>
-          )}
-
-          <div className={styles.cafeFeedback}>{cafeMessage}</div>
-          {cafeDrag && (
-            <div className={styles.cafeDragGhost} style={{ left: cafeDrag.x, top: cafeDrag.y }} aria-hidden="true">
-              {CAFE_INGREDIENTS[cafeDrag.ingredientId]?.icon}
-            </div>
-          )}
-          {cafeFinished && (
-            <div className={styles.cafeWin}>
-              <div>⭐</div>
-              <h2>Shift complete!</h2>
-              <p>8 Resort Buck bonus earned.</p>
-              <button className={styles.primaryButton} type="button" onClick={() => setScreen('cafe')}>Back to Café</button>
-            </div>
-          )}
-        </section>
-      </main>
-    );
+    const fridgeItems=Object.entries(CAFE_INGREDIENTS).filter(([,x])=>x.source==='fridge');
+    const cabinetItems=Object.entries(CAFE_INGREDIENTS).filter(([,x])=>x.source==='cabinet');
+    return <main className={styles.gameShell}><section className={styles.topBar}><button className={styles.backButton} type="button" onClick={()=>setScreen('cafe')}>← Café</button><div className={styles.brand}>Sunshine Café Shift</div><div className={styles.wallet}>🪙 {bucks} Resort Bucks</div></section><section className={styles.cafeWorkScene}><div className={styles.cafeWorkBackdrop} aria-hidden="true"><div className={styles.workWindow}><span>🌴</span><span>☀️</span></div><div className={styles.workWallSign}>SUNSHINE CAFÉ</div><div className={styles.workPendantRow}><span>💡</span><span>💡</span><span>💡</span></div><div className={styles.workServiceCounter}><span>🥤</span><span>🔔</span><span>🧁</span></div></div>
+      <div className={[styles.cafeSceneCharacter, styles.cafeWorkCharacter].join(' ')} aria-label={`${characterName} working in the cafe kitchen`}>{renderCharacter(false)}</div>
+      <aside className={styles.recipeWall}><h2>Recipe Wall</h2>{CAFE_RECIPES.map((r)=><div key={r.id} className={styles.wallRecipe}><strong>{r.name}</strong><span>{r.formula}</span></div>)}</aside>
+      <section className={styles.orderRail}><b>Orders · {cafeServed}/8</b>{cafeOrders.map((o)=>{const r=CAFE_RECIPES.find((x)=>x.id===o.recipeId),age=cafeNow-o.born,mood=age<12000?'🙂':age<24000?'😐':age<35000?'☹️':'😡';return <button key={o.id} type="button" className={styles.orderTicket} onClick={()=>serveCafeOrder(o)}><span>{mood}</span><strong>{o.guest}</strong><span>{r.icon}</span><small>{Math.max(0,Math.ceil((45000-age)/1000))}s</small></button>})}</section>
+      <section className={styles.kitchenStations}><button type="button" onClick={()=>setCafeStorage(cafeStorage==='fridge'?null:'fridge')}>🧊<strong>Refrigerator</strong></button><div className={styles.grillStation}><b>🔥 Grill</b><div>{cafeGrill.map((g)=>{const x=CAFE_INGREDIENTS[g.ingredientId],age=cafeNow-g.started,state=age<x.cook?'Cooking…':age<=x.cook+4500?'READY!':'BURNT';return <button key={g.id} type="button" data-state={state} onClick={()=>pullFromGrill(g)}><span>{x.icon}</span><strong>{state}</strong></button>})}</div></div><button type="button" onClick={()=>setCafeStorage(cafeStorage==='cabinet'?null:'cabinet')}>🥫<strong>Cabinet</strong></button></section>
+      {cafeStorage&&<section className={styles.ingredientDrawer}>{(cafeStorage==='fridge'?fridgeItems:cabinetItems).map(([id,x])=><button key={id} type="button" onClick={()=>takeCafeIngredient(id)}><span>{x.icon}</span><small>{x.name}</small></button>)}</section>}
+      <section className={styles.plateStation}><strong>🍽️ Plate</strong><div>{cafePlate.map((id,i)=><span key={`${id}-${i}`}>{CAFE_INGREDIENTS[id]?.icon}</span>)}</div><button type="button" onClick={()=>setCafePlate([])}>Clear</button></section><div className={styles.cafeFeedback}>{cafeMessage}</div>{cafeFinished&&<div className={styles.cafeWin}><div>⭐</div><h2>Shift complete!</h2><p>8 Resort Buck bonus earned.</p><button className={styles.primaryButton} type="button" onClick={()=>setScreen('cafe')}>Back to Café</button></div>}
+    </section></main>;
   }
+
   if (screen === 'cafe-food') {
     const diningMeal = CAFE_MENU.find((item) => item.name === meals[meals.length - 1]);
     return (
@@ -2114,34 +1984,126 @@ export default function KidsResort({ libraryHref = null }) {
   }
 
   if (screen === 'lobby-restaurant-work') {
+    const kitchenRecipe = palmKitchenRecipeFor(palmKitchenServed);
+    const kitchenStorageItems = palmKitchenStorage
+      ? Object.entries(PALM_KITCHEN_INGREDIENTS).filter(([, item]) => item.source === palmKitchenStorage)
+      : [];
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
           <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
-          <div className={styles.brand}>Palm Court · Work</div>
+          <div className={styles.brand}>Palm Court · Kitchen</div>
           <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
         </section>
-        <section className={[styles.lobbyExperienceRoom, styles.palmCourtWorkRoom].join(' ')}>
-          <div className={styles.palmCourtSign}><strong>PALM COURT</strong><span>Restaurant Service</span></div>
+        <section className={[styles.lobbyExperienceRoom, styles.palmCourtWorkRoom, styles.palmKitchenGame].join(' ')}>
+          <div className={styles.palmCourtSign}><strong>PALM COURT</strong><span>Kitchen Shift</span></div>
           <div className={styles.palmCourtWindows} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.lobbyFloorLine} aria-hidden="true" />
-          <div className={[styles.lobbyCharacter, styles.restaurantWorkerCharacter].join(' ')} aria-label={`${characterName} working in Palm Court`}>{renderCharacter(false)}</div>
-          <div className={[styles.lobbyCharacter, styles.restaurantGuestCharacter].join(' ')} aria-label={`${lobbyAmbientPeople[0].name} dining in Palm Court`}>{renderCharacter(false, lobbyAmbientPeople[0].look, lobbyAmbientPeople[0].character, lobbyAmbientPeople[0].name)}</div>
-          <button className={[styles.lobbySkeletonObject, styles.restaurantOrderStand].join(' ')} type="button" onClick={() => setMessage('The Palm Court serving game will begin from the order stand.')}>
-            <span aria-hidden="true">🧾</span><strong>Order Stand</strong><small>Take table orders</small>
-          </button>
-          <button className={[styles.lobbySkeletonObject, styles.restaurantPass].join(' ')} type="button" onClick={() => setMessage('The kitchen pass will hold plated dining orders in the restaurant game.')}>
-            <span aria-hidden="true">🍽️ 🍝 🥘</span><strong>Kitchen Pass</strong><small>Pick up plated meals</small>
-          </button>
-          <div className={styles.restaurantTableScene} aria-hidden="true"><i /><b>🥗</b><em /><em /></div>
-          <div className={styles.lobbySceneMessage} aria-live="polite">{message || 'Restaurant job skeleton ready. Future play will build on the café serving loop with sit-down dining orders.'}</div>
+          <div className={[styles.lobbyCharacter, styles.restaurantWorkerCharacter].join(' ')} aria-label={`${characterName} working in the Palm Court kitchen`}>{renderCharacter(false)}</div>
+          <div className={[styles.lobbyCharacter, styles.restaurantGuestCharacter].join(' ')} aria-label={`${lobbyAmbientPeople[0].name} waiting for a Palm Court meal`}>{renderCharacter(false, lobbyAmbientPeople[0].look, lobbyAmbientPeople[0].character, lobbyAmbientPeople[0].name, 'seated')}</div>
+
+          {!palmKitchenActive ? (
+            <button className={styles.palmKitchenStart} type="button" onClick={startPalmKitchenShift}>
+              <strong>Start Dinner Shift</strong>
+              <span>Cook 5 plated meals for Palm Court guests.</span>
+            </button>
+          ) : (
+            <>
+              <aside className={styles.palmKitchenTicket}>
+                <small>ORDER {Math.min(palmKitchenServed + 1, 5)} / 5</small>
+                <strong>{kitchenRecipe.icon} {kitchenRecipe.name}</strong>
+                <span>{kitchenRecipe.ingredients.map((id) => PALM_KITCHEN_INGREDIENTS[id].name).join(' + ')}</span>
+              </aside>
+
+              <div className={styles.palmKitchenStorageRow}>
+                {[
+                  ['fridge', 'Refrigerator'],
+                  ['pantry', 'Pantry'],
+                  ['freezer', 'Freezer'],
+                ].map(([id, label]) => (
+                  <button
+                    key={id}
+                    type="button"
+                    data-active={palmKitchenStorage === id}
+                    onClick={() => setPalmKitchenStorage((value) => value === id ? null : id)}
+                  >
+                    <strong>{label}</strong>
+                  </button>
+                ))}
+              </div>
+
+              {palmKitchenStorage && (
+                <div className={styles.palmKitchenIngredientShelf}>
+                  {kitchenStorageItems.map(([id, item]) => (
+                    <button key={id} type="button" onClick={() => takePalmKitchenIngredient(id)}>
+                      <span>{item.icon}</span>
+                      <small>{item.name}</small>
+                    </button>
+                  ))}
+                </div>
+              )}
+
+              <div className={styles.palmKitchenStove}>
+                <strong>Stove</strong>
+                <div>
+                  {palmKitchenStove.length === 0 && <small>Hot ingredients cook here.</small>}
+                  {palmKitchenStove.map((entry) => {
+                    const item = PALM_KITCHEN_INGREDIENTS[entry.ingredientId];
+                    const age = palmKitchenNow - entry.started;
+                    const state = age < item.cook ? 'Cooking' : age <= item.cook + 5500 ? 'READY' : 'Overcooked';
+                    return (
+                      <button key={entry.id} type="button" data-state={state} onClick={() => pullPalmKitchenStove(entry)}>
+                        <span>{item.icon}</span>
+                        <b>{state}</b>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+
+              <div className={styles.palmKitchenPlate}>
+                <strong>Plate</strong>
+                <div>
+                  {palmKitchenPlate.length === 0
+                    ? <small>Build the ordered meal here.</small>
+                    : palmKitchenPlate.map((id, index) => <span key={`${id}-${index}`}>{PALM_KITCHEN_INGREDIENTS[id]?.icon}</span>)}
+                </div>
+                <button type="button" onClick={() => setPalmKitchenPlate([])}>Clear Plate</button>
+              </div>
+
+              <button className={styles.palmKitchenPass} type="button" onClick={servePalmKitchenOrder}>
+                <strong>Send Through Pass</strong>
+                <small>Serve the completed plate</small>
+              </button>
+            </>
+          )}
+
+          <div className={styles.lobbySceneMessage} aria-live="polite">
+            {palmKitchenMessage || 'Read the dinner ticket, gather ingredients, cook the hot items, and plate the order.'}
+          </div>
+
+          {palmKitchenFinished && (
+            <div className={styles.lobbyGameComplete}>
+              <strong>Kitchen Shift Complete!</strong>
+              <span>5 dinner orders served · 40 Resort Bucks earned</span>
+              <button type="button" onClick={startPalmKitchenShift}>Work Another Shift</button>
+            </div>
+          )}
         </section>
       </main>
     );
   }
 
   if (screen === 'lobby-restaurant-dine') {
-    const diningMeal = LOBBY_MENU.find((item) => item.name === meals[meals.length - 1]);
+    const diningMeal = LOBBY_MENU.find((item) => item.id === diningMealId) || null;
+    const diningDrink = DINING_DRINKS.find((item) => item.id === diningDrinkId) || DINING_DRINKS[0];
+    const diningMotionClass = diningAction === 'bite'
+      ? styles.diningActionBite
+      : diningAction === 'sip'
+        ? styles.diningActionSip
+        : diningAction === 'celebrate'
+          ? styles.diningActionCelebrate
+          : '';
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
@@ -2149,28 +2111,73 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.brand}>Palm Court · Dining</div>
           <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
         </section>
-        <section className={[styles.lobbyExperienceRoom, styles.palmCourtDiningRoom].join(' ')}>
+        <section className={[styles.lobbyExperienceRoom, styles.palmCourtDiningRoom, styles.palmDiningGame].join(' ')}>
           <div className={styles.palmCourtSign}><strong>PALM COURT</strong><span>Dining Room</span></div>
           <div className={styles.palmCourtWindows} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.lobbyFloorLine} aria-hidden="true" />
-          <div className={[styles.lobbyCharacter, styles.restaurantDiningCharacter].join(' ')} aria-label={`${characterName} dining in Palm Court`}>{renderCharacter(false)}</div>
-          <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining in Palm Court`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name)}</div>
-          <div className={styles.palmCourtDiningTable} aria-hidden="true"><span>{diningMeal?.icon || '🍽️'}</span><i /><b /></div>
+          <div
+            key={`dining-${diningActionTick}`}
+            className={[styles.lobbyCharacter, styles.restaurantDiningCharacter, styles.diningPlayerCharacter, diningMotionClass].filter(Boolean).join(' ')}
+            aria-label={`${characterName} dining in Palm Court`}
+          >
+            {renderCharacter(false, look, character, characterName, 'seated')}
+          </div>
+          <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining in Palm Court`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name, 'seated')}</div>
+          <div className={styles.palmCourtDiningTable} aria-hidden="true">
+            <span>{diningMeal?.icon || '🍽️'}</span>
+            <i />
+            <b />
+          </div>
+
           <div className={styles.palmCourtMenuStand}>
             <strong>Dinner Menu</strong>
             <div>
               {LOBBY_MENU.map((item) => (
-                <button key={item.id} type="button" onClick={() => buyMeal(item)}><span>{item.icon}</span><b>{item.name}</b><small>{item.price} Bucks</small></button>
+                <button key={item.id} type="button" onClick={() => orderPalmCourtMeal(item)}>
+                  <span>{item.icon}</span>
+                  <b>{item.name}</b>
+                  <small>{item.price} Bucks</small>
+                </button>
               ))}
             </div>
           </div>
-          <div className={styles.lobbySceneMessage} aria-live="polite">{message || `${characterName} has a table at Palm Court.`}</div>
+
+          <div className={styles.palmDiningControls}>
+            <div className={styles.palmDiningCourse}>
+              <strong>{diningMeal ? diningMeal.name : 'Choose an entree'}</strong>
+              <span className={styles.palmDiningBites} aria-label={`${diningBites} of 3 bites`}>
+                {[0, 1, 2].map((index) => <i key={index} data-done={index < diningBites} />)}
+              </span>
+              <button type="button" disabled={!diningMeal || diningBites >= 3} onClick={takeDiningBite}>
+                {diningBites >= 3 ? 'Meal Finished' : 'Take a Bite'}
+              </button>
+            </div>
+            <div className={styles.palmDiningDrinks}>
+              <strong>Drink</strong>
+              {DINING_DRINKS.map((drink) => (
+                <button
+                  key={drink.id}
+                  type="button"
+                  data-active={diningDrink.id === drink.id}
+                  onClick={() => sipDiningDrink(drink.id)}
+                >
+                  <span>{drink.icon}</span>
+                  <small>{drink.name}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.lobbySceneMessage} aria-live="polite">
+            {message || `${characterName} has a table at Palm Court. Order a meal, enjoy it, and choose a drink.`}
+          </div>
         </section>
       </main>
     );
   }
 
   if (screen === 'lobby-custodian') {
+    const custodianTask = CUSTODIAN_TASKS[custodianTaskIndex % CUSTODIAN_TASKS.length];
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
@@ -2178,27 +2185,68 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.brand}>Resort Custodian</div>
           <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
         </section>
-        <section className={[styles.lobbyExperienceRoom, styles.custodianRoom].join(' ')}>
-          <div className={styles.custodianWallSign}><strong>LOBBY CARE</strong><span>Resort Custodian</span></div>
+        <section className={[styles.lobbyExperienceRoom, styles.custodianRoom, styles.custodianGame].join(' ')}>
+          <div className={styles.custodianWallSign}><strong>LOBBY CARE</strong><span>Resort Custodian · {custodianCleaned}/6 jobs</span></div>
           <div className={styles.custodianReception} aria-hidden="true"><span>FRONT DESK</span><i /></div>
           <div className={styles.lobbyFloorLine} aria-hidden="true" />
           <div className={[styles.lobbyCharacter, styles.custodianCharacter].join(' ')} aria-label={`${characterName} working as resort custodian`}>{renderCharacter(false)}</div>
-          <button className={[styles.lobbySkeletonObject, styles.custodianCart].join(' ')} type="button" onClick={() => setMessage('Cleaning cart selected. Future jobs will send the custodian to messes around the resort.')}>
-            <span aria-hidden="true">🧹 🧴 🧽</span><strong>Cleaning Cart</strong><small>Choose supplies</small>
-          </button>
-          <button className={[styles.lobbySkeletonObject, styles.custodianSpill].join(' ')} type="button" onClick={() => setMessage('Spill selected. This will become a clean-up task.')}>
-            <span aria-hidden="true">💧</span><strong>Lobby Spill</strong><small>Clean this area</small>
-          </button>
-          <button className={[styles.lobbySkeletonObject, styles.custodianBin].join(' ')} type="button" onClick={() => setMessage('Trash bin selected. This will become a collection task.')}>
-            <span aria-hidden="true">🗑️</span><strong>Waste Bin</strong><small>Empty and replace</small>
-          </button>
-          <div className={styles.lobbySceneMessage} aria-live="polite">{message || 'Custodian mode is confined to the lobby for now. The same job can later expand throughout the resort.'}</div>
+
+          <div className={styles.custodianCartGame}>
+            <strong>Cleaning Cart</strong>
+            <div>
+              {CUSTODIAN_TOOLS.map((tool) => (
+                <button
+                  key={tool.id}
+                  type="button"
+                  data-active={custodianTool === tool.id}
+                  onClick={() => {
+                    setCustodianTool(tool.id);
+                    setCustodianMessage(`${tool.name} selected. Now click the lobby job.`);
+                  }}
+                >
+                  <span>{tool.icon}</span>
+                  <small>{tool.name}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {!custodianFinished && (
+            <button
+              className={styles.custodianTaskObject}
+              data-task={custodianTask.id}
+              type="button"
+              onClick={attemptCustodianTask}
+            >
+              <span>{custodianTask.icon}</span>
+              <strong>{custodianTask.name}</strong>
+              <small>Click after choosing the right tool</small>
+            </button>
+          )}
+
+          <div className={styles.custodianShiftCard}>
+            <strong>{custodianFinished ? 'Shift Complete' : 'Current Job'}</strong>
+            <span>{custodianFinished ? '6 lobby jobs finished.' : custodianTask.name}</span>
+            <small>{custodianFinished ? 'Great work keeping the resort ready for guests.' : custodianTask.hint}</small>
+            {custodianFinished && <button type="button" onClick={restartCustodianShift}>Start Another Shift</button>}
+          </div>
+
+          <div className={styles.lobbySceneMessage} aria-live="polite">
+            {custodianMessage || 'Choose a tool from the cart, then clean the highlighted lobby job. Each correct job earns 3 Resort Bucks.'}
+          </div>
         </section>
       </main>
     );
   }
 
   if (screen === 'lobby-pool') {
+    const poolMotionClass = poolAction === 'float'
+      ? styles.poolActionFloat
+      : poolAction === 'slide'
+        ? styles.poolActionSlide
+        : poolAction === 'ball'
+          ? styles.poolActionBall
+          : '';
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
@@ -2206,20 +2254,43 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.brand}>Indoor Pool</div>
           <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
         </section>
-        <section className={[styles.lobbyExperienceRoom, styles.poolRoom].join(' ')}>
+        <section className={[styles.lobbyExperienceRoom, styles.poolRoom, styles.poolGame].join(' ')}>
           <div className={styles.poolWallSign}><strong>INDOOR POOL</strong><span>Swim · splash · play</span></div>
           <div className={styles.poolWindows} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.poolWater} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.poolDeckLine} aria-hidden="true" />
-          <div className={[styles.lobbyCharacter, styles.poolCharacter].join(' ')} aria-label={`${characterName} at the indoor pool`}>{renderCharacter(false)}</div>
-          <button className={[styles.poolPlayObject, styles.poolFloat].join(' ')} type="button" onClick={() => setMessage('Float selected. A character animation can be attached here later.')}><span aria-hidden="true">🛟</span><strong>Pool Float</strong></button>
-          <button className={[styles.poolPlayObject, styles.poolSlide].join(' ')} type="button" onClick={() => setMessage('Slide selected. A slide-and-splash animation can be attached here later.')}><span aria-hidden="true">🛝</span><strong>Pool Slide</strong></button>
-          <button className={[styles.poolPlayObject, styles.poolBall].join(' ')} type="button" onClick={() => setMessage('Beach ball selected. A pool play animation can be attached here later.')}><span aria-hidden="true">🏐</span><strong>Beach Ball</strong></button>
-          <div className={styles.lobbySceneMessage} aria-live="polite">{message || 'Pool play skeleton ready. These objects are future animation triggers.'}</div>
+          <div
+            key={`pool-${poolActionTick}`}
+            className={[styles.lobbyCharacter, styles.poolCharacter, styles.poolPlayingCharacter, poolMotionClass].filter(Boolean).join(' ')}
+            aria-label={`${characterName} playing at the indoor pool`}
+          >
+            {renderCharacter(false)}
+          </div>
+
+          <button className={[styles.poolPlayObject, styles.poolFloat].join(' ')} type="button" onClick={() => playPoolActivity('float')}>
+            <span aria-hidden="true">{'\u{1F6DF}'}</span><strong>Pool Float</strong>
+          </button>
+          <button className={[styles.poolPlayObject, styles.poolSlide].join(' ')} type="button" onClick={() => playPoolActivity('slide')}>
+            <span aria-hidden="true">{'\u{1F6DD}'}</span><strong>Pool Slide</strong>
+          </button>
+          <button className={[styles.poolPlayObject, styles.poolBall].join(' ')} type="button" onClick={() => playPoolActivity('ball')}>
+            <span aria-hidden="true">{'\u{1F3D0}'}</span><strong>Beach Ball</strong>
+          </button>
+
+          <div className={styles.poolFunMeter}>
+            <strong>Pool Fun</strong>
+            <div>{[0, 1, 2, 3, 4, 5].map((index) => <i key={index} data-filled={index < poolFun} />)}</div>
+            <small>{poolFun >= 4 ? 'Pool Day badge earned!' : 'Try the pool activities to fill the meter.'}</small>
+          </div>
+
+          <div className={styles.lobbySceneMessage} aria-live="polite">
+            {message || 'Choose a pool object and watch Emily play. Try different activities to fill the fun meter.'}
+          </div>
         </section>
       </main>
     );
   }
+
   if (screen === 'market') {
     return interiorShell(
       'Market Street',
