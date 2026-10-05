@@ -3601,6 +3601,19 @@
   .cafeDinerFigure > [data-hair] { transform:translateX(-50%) scale(.4); }
 }
 
+@media (max-width:900px) {
+  .cafeDiningRoom::before {
+    right:calc(1.5% + 61px);
+    top:calc(91% - 6px);
+  }
+}
+@media (max-width:650px) {
+  .cafeDiningRoom::before {
+    right:50px;
+    top:calc(86% - 6px);
+  }
+}
+
 /* Resort Lobby interior system: room-first full-screen scenes. */
 .lobbyGameShell {
   height: 100dvh;
