@@ -525,6 +525,12 @@ export default function KidsResort({ libraryHref = null }) {
     ...DEFAULT_FACE_BUILD,
   });
   const walkTokenRef = useRef(0);
+  const mapPanelRef = useRef(null);
+  const placeBuildingRefs = useRef({});
+  const npcRoamRef = useRef({});
+  const [buildingDepths, setBuildingDepths] = useState(() => (
+    Object.fromEntries(PLACES.map((place) => [place.id, place.y]))
+  ));
   const [look, setLook] = useState({
     shirt: LOOK_OPTIONS.shirt[0],
     bottoms: LOOK_OPTIONS.bottoms[0],
@@ -651,6 +657,152 @@ export default function KidsResort({ libraryHref = null }) {
   }, [screen,cafeFinished]);
 
   useEffect(() => {
+    if (screen !== 'map') return undefined;
+
+    const measureBuildingDepths = () => {
+      const panel = mapPanelRef.current;
+      if (!panel) return;
+
+      const panelRect = panel.getBoundingClientRect();
+      if (!panelRect.height) return;
+
+      const nextDepths = {};
+      PLACES.forEach((place) => {
+        const building = placeBuildingRefs.current[place.id];
+        if (!building) {
+          nextDepths[place.id] = place.y;
+          return;
+        }
+
+        const buildingRect = building.getBoundingClientRect();
+        nextDepths[place.id] = Math.max(
+          0,
+          Math.min(100, ((buildingRect.bottom - panelRect.top) / panelRect.height) * 100),
+        );
+      });
+
+      setBuildingDepths((current) => {
+        const changed = PLACES.some((place) => (
+          Math.abs((current[place.id] ?? place.y) - nextDepths[place.id]) > 0.02
+        ));
+        return changed ? nextDepths : current;
+      });
+    };
+
+    const frame = window.requestAnimationFrame(measureBuildingDepths);
+    const observer = typeof ResizeObserver === 'function'
+      ? new ResizeObserver(measureBuildingDepths)
+      : null;
+
+    if (observer) {
+      if (mapPanelRef.current) observer.observe(mapPanelRef.current);
+      Object.values(placeBuildingRefs.current).forEach((building) => {
+        if (building) observer.observe(building);
+      });
+    }
+
+    window.addEventListener('resize', measureBuildingDepths);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer?.disconnect();
+      window.removeEventListener('resize', measureBuildingDepths);
+    };
+  }, [screen, selectedPlaceId]);
+
+  useEffect(() => {
+    if (screen !== 'map' || people.length === 0) return undefined;
+
+    const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
+
+    const chooseTarget = (person) => {
+      const current = person.spawn ?? { x: 50, y: 65 };
+      const angle = Math.random() * Math.PI * 2;
+      const distance = 8 + Math.random() * 18;
+
+      return {
+        x: clamp(current.x + Math.cos(angle) * distance, 8, 92),
+        y: clamp(current.y + Math.sin(angle) * distance * 0.7, 44, 90),
+      };
+    };
+
+    const tick = () => {
+      const now = performance.now();
+
+      setPeople((items) => {
+        let changed = false;
+        const liveIds = new Set(items.map((person) => person.id));
+
+        Object.keys(npcRoamRef.current).forEach((id) => {
+          if (!liveIds.has(id)) delete npcRoamRef.current[id];
+        });
+
+        const nextItems = items.map((person) => {
+          const current = person.spawn ?? { x: 50, y: 65 };
+          let roam = npcRoamRef.current[person.id];
+
+          if (!roam) {
+            roam = {
+              target: null,
+              pauseUntil: now + 400 + Math.random() * 1800,
+            };
+            npcRoamRef.current[person.id] = roam;
+          }
+
+          if (now < roam.pauseUntil) {
+            if (person.isRoaming) {
+              changed = true;
+              return { ...person, isRoaming: false };
+            }
+            return person;
+          }
+
+          if (!roam.target) {
+            roam.target = chooseTarget(person);
+          }
+
+          const dx = roam.target.x - current.x;
+          const dy = roam.target.y - current.y;
+          const distance = Math.hypot(dx, dy);
+
+          if (distance < 0.45) {
+            roam.target = null;
+            roam.pauseUntil = now + 700 + Math.random() * 2300;
+            if (person.isRoaming) {
+              changed = true;
+              return { ...person, isRoaming: false };
+            }
+            return person;
+          }
+
+          const energy = Math.max(1, Math.min(5, Number(person.personality?.energy) || 3));
+          const step = Math.min(distance, 0.17 + energy * 0.038);
+          const nextX = current.x + (dx / distance) * step;
+          const nextY = current.y + (dy / distance) * step;
+
+          changed = true;
+          return {
+            ...person,
+            isRoaming: true,
+            walkDirection: Math.abs(dx) > Math.abs(dy)
+              ? (dx < 0 ? 'left' : 'right')
+              : (dy < 0 ? 'back' : 'front'),
+            spawn: {
+              x: nextX,
+              y: nextY,
+            },
+          };
+        });
+
+        return changed ? nextItems : items;
+      });
+    };
+
+    tick();
+    const timer = window.setInterval(tick, 120);
+    return () => window.clearInterval(timer);
+  }, [screen, people.length]);
+
+  useEffect(() => {
     if (screen !== 'cafe-work' || cafeFinished) return undefined;
     const delay = Math.max(11000, 19000 - cafeServed * 900);
     const maxOrders = cafeServed < 4 ? 2 : 3;
@@ -663,6 +815,35 @@ export default function KidsResort({ libraryHref = null }) {
     }, delay);
     return () => window.clearInterval(timer);
   }, [screen, cafeFinished, cafeServed]);
+
+  const mapDepthRanks = useMemo(() => {
+    const entries = [
+      ...PLACES.map((place) => ({
+        key: `place:${place.id}`,
+        depth: buildingDepths[place.id] ?? place.y,
+        building: true,
+      })),
+      ...people.map((person) => ({
+        key: `person:${person.id}`,
+        depth: person.spawn?.y ?? 60,
+        building: false,
+      })),
+      {
+        key: 'player',
+        depth: position.y,
+        building: false,
+      },
+    ];
+
+    entries.sort((first, second) => {
+      const depthDifference = first.depth - second.depth;
+      if (Math.abs(depthDifference) > 0.001) return depthDifference;
+      if (first.building === second.building) return first.key.localeCompare(second.key);
+      return first.building ? 1 : -1;
+    });
+
+    return Object.fromEntries(entries.map((entry, index) => [entry.key, 5 + index]));
+  }, [buildingDepths, people, position.y]);
 
   useEffect(() => {
     if (screen !== 'cafe-work') return;
@@ -2379,7 +2560,7 @@ export default function KidsResort({ libraryHref = null }) {
       </section>
 
       <section className={[styles.playArea, styles.mapPlayArea].join(' ')}>
-        <div className={styles.mapPanel}>
+        <div className={styles.mapPanel} ref={mapPanelRef}>
           <div className={styles.mapSky}>
             <div className={styles.sun} />
             <div className={styles.cloudOne} />
@@ -2415,6 +2596,7 @@ export default function KidsResort({ libraryHref = null }) {
               style={{
                 left: `${place.x}%`,
                 top: `${place.y}%`,
+                zIndex: mapDepthRanks[`place:${place.id}`] ?? 5,
                 '--depth-scale':
                   place.id === 'suite'
                     ? 1.78
@@ -2442,7 +2624,15 @@ export default function KidsResort({ libraryHref = null }) {
               {place.id === placeId && place.id !== 'bank' && !isWalking && (
                 <span className={styles.placeEnterPrompt}>Enter</span>
               )}
-              <span className={styles.placeBuilding} data-place={place.id} aria-hidden="true">
+              <span
+                className={styles.placeBuilding}
+                data-place={place.id}
+                aria-hidden="true"
+                ref={(node) => {
+                  if (node) placeBuildingRefs.current[place.id] = node;
+                  else delete placeBuildingRefs.current[place.id];
+                }}
+              >
                 <span className={styles.buildingRoof} />
                 <span className={styles.buildingUpper} />
                 <span className={styles.buildingFacade} />
@@ -2476,7 +2666,10 @@ export default function KidsResort({ libraryHref = null }) {
               style={{
                 left: person.spawn.x + '%',
                 top: person.spawn.y + '%',
+                zIndex: mapDepthRanks[`person:${person.id}`] ?? 12,
               }}
+              data-moving={person.isRoaming ? 'true' : 'false'}
+              data-direction={person.walkDirection || 'front'}
               onClick={() => {
                 setPeopleOpen(true);
                 openPersonEditor(person, 'edit');
@@ -2495,6 +2688,7 @@ export default function KidsResort({ libraryHref = null }) {
             style={{
               left: `${position.x}%`,
               top: `${position.y}%`,
+              zIndex: mapDepthRanks.player ?? 12,
               '--player-depth-scale': (0.24 + position.y * 0.0043).toFixed(3),
               ...characterStyle,
               '--character-idle-delay': idlePhaseForName(characterName),

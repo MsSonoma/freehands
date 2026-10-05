@@ -1917,6 +1917,8 @@
   padding: 0;
   transform: translate(-50%, -82%);
   cursor: pointer;
+  transition: left 140ms linear, top 140ms linear;
+  will-change: left, top;
 }
 
 .mapNpcFigure {
@@ -1932,6 +1934,51 @@
 .mapNpcFigure .avatarFigure {
   transform: scale(.29);
   transform-origin: top center;
+}
+
+.mapNpc[data-moving="true"] .mapNpcFigure {
+  animation: mapNpcWalkBob .52s ease-in-out infinite;
+}
+
+.mapNpc[data-moving="true"] .avatarFigure[data-pose="standing"] .avatarArmRigLeft {
+  animation: mapNpcWalkArmLeft .52s ease-in-out infinite;
+}
+
+.mapNpc[data-moving="true"] .avatarFigure[data-pose="standing"] .avatarArmRigRight {
+  animation: mapNpcWalkArmRight .52s ease-in-out infinite;
+}
+
+.mapNpc[data-moving="true"] .avatarLegRigLeft {
+  animation: mapNpcWalkLegLeft .52s ease-in-out infinite;
+}
+
+.mapNpc[data-moving="true"] .avatarLegRigRight {
+  animation: mapNpcWalkLegRight .52s ease-in-out infinite;
+}
+
+@keyframes mapNpcWalkBob {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -1.5px; }
+}
+
+@keyframes mapNpcWalkArmLeft {
+  0%, 100% { rotate: 7deg; }
+  50% { rotate: -9deg; }
+}
+
+@keyframes mapNpcWalkArmRight {
+  0%, 100% { rotate: -7deg; }
+  50% { rotate: 9deg; }
+}
+
+@keyframes mapNpcWalkLegLeft {
+  0%, 100% { translate: 0 0; rotate: 2deg; }
+  50% { translate: 0 -3px; rotate: -3deg; }
+}
+
+@keyframes mapNpcWalkLegRight {
+  0%, 100% { translate: 0 -3px; rotate: -3deg; }
+  50% { translate: 0 0; rotate: 2deg; }
 }
 
 .mapNpcName {
