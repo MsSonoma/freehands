@@ -1230,6 +1230,10 @@
   width: 27px;
 }
 
+.avatarFigure[data-sleeve="puff"] .avatarArmRigRight .avatarUpperArm {
+  left: -10px;
+}
+
 
 .studioToolTabs {
   display: grid;
