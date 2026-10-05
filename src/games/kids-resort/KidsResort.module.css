@@ -3379,14 +3379,28 @@
 }
 .cafeDinerTable::after,
 .cafeDiningPlaceSetting::after {
+  content:none;
+}
+.cafeDiner::after {
   content:"";
   position:absolute;
-  z-index:-1;
+  z-index:1;
   left:50%;
-  top:18px;
+  top:176px;
   width:10px;
   height:58px;
   transform:translateX(-50%);
+  border-radius:3px;
+  background:#795039;
+}
+.cafeDiningRoom::before {
+  content:"";
+  position:absolute;
+  z-index:6;
+  right:calc(2.8% + 74px);
+  top:calc(92% - 6px);
+  width:10px;
+  height:58px;
   border-radius:3px;
   background:#795039;
 }
@@ -3563,7 +3577,7 @@
 }
 .cafeDinerFigure {
   z-index:2;
-  bottom:38px;
+  bottom:22px;
   width:126px;
   height:150px;
   overflow:visible;
@@ -3585,4 +3599,1159 @@
   .cafeWorkScene .cafeWorkCharacter { right:116px; top:34px; --cafe-character-scale:.29; }
   .cafeDiningCharacter { right:9%; bottom:15%; --cafe-character-scale:.34; }
   .cafeDinerFigure > [data-hair] { transform:translateX(-50%) scale(.4); }
+}
+
+/* Resort Lobby interior system: room-first full-screen scenes. */
+.lobbyGameShell {
+  height: 100dvh;
+  min-height: 100dvh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #efe7db;
+}
+
+.topBar.lobbyTopBar {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(23,48,79,.12);
+  background: rgba(255,255,255,.97);
+}
+
+.lobbyTopBar .backButton {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: .72rem;
+}
+
+.lobbyTopBar .brand {
+  font-size: 1rem;
+  letter-spacing: -.025em;
+}
+
+.lobbyTopBar .wallet {
+  padding: 5px 9px;
+  font-size: .72rem;
+}
+
+.lobbyRoom,
+.lobbyExperienceRoom {
+  position: relative;
+  width: 100%;
+  height: calc(100dvh - 44px);
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  isolation: isolate;
+  background: #eee3d4;
+}
+
+.lobbyRoom::before,
+.lobbyExperienceRoom:not(.poolRoom)::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 39% 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(135,113,86,.04) 0 1px, transparent 1px 72px),
+    linear-gradient(180deg, #f5eee5 0%, #e8dac8 100%);
+}
+
+.lobbyRoom::after,
+.lobbyExperienceRoom:not(.poolRoom)::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 61% 0 0 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(111,81,55,.15) 0 2px, transparent 2px 94px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.16) 0 2px, transparent 2px 46px),
+    linear-gradient(180deg, #cfad82 0%, #b98a61 100%);
+}
+
+.lobbyFloorLine {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  top: 61%;
+  height: 8px;
+  background: #9c7454;
+  box-shadow: 0 -3px 0 rgba(255,255,255,.58), 0 5px 9px rgba(85,57,37,.17);
+  pointer-events: none;
+}
+
+.lobbyWallMark,
+.palmCourtSign,
+.custodianWallSign,
+.poolWallSign {
+  position: absolute;
+  z-index: 4;
+  top: clamp(14px, 3.5dvh, 34px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  text-align: center;
+  color: #74533d;
+  pointer-events: none;
+}
+
+.lobbyWallMark strong,
+.palmCourtSign strong,
+.custodianWallSign strong,
+.poolWallSign strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1rem, 2.6vw, 1.9rem);
+  letter-spacing: .17em;
+}
+
+.lobbyWallMark span,
+.palmCourtSign span,
+.custodianWallSign span,
+.poolWallSign span {
+  font-size: clamp(.55rem, 1.15vw, .76rem);
+  font-weight: 900;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.lobbyReception {
+  position: absolute;
+  z-index: 3;
+  top: 22%;
+  left: 50%;
+  width: clamp(180px, 28vw, 340px);
+  height: clamp(76px, 15dvh, 126px);
+  transform: translateX(-50%);
+  border-radius: 15px 15px 5px 5px;
+  background: linear-gradient(180deg, #a66e45, #7c4f32);
+  border-top: 12px solid #c58c5f;
+  box-shadow: inset 0 -12px 0 rgba(58,32,18,.14), 0 11px 18px rgba(68,42,27,.14);
+  color: #fff4df;
+  display: grid;
+  place-items: center;
+  font-size: clamp(.66rem, 1vw, .82rem);
+  letter-spacing: .18em;
+}
+
+.lobbyReception::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: -44%;
+  height: 45%;
+  border-radius: 10px 10px 2px 2px;
+  border: 6px solid #a66e45;
+  background: linear-gradient(145deg, #d8f1f3, #f8fcfa);
+}
+
+.lobbyReceptionBell {
+  position: absolute;
+  top: -26px;
+  right: 13%;
+  font-size: clamp(1rem, 2vw, 1.5rem);
+}
+
+.lobbyReception i {
+  position: absolute;
+  left: 16%;
+  bottom: 15%;
+  width: 18%;
+  height: 24%;
+  border: 3px solid rgba(255,255,255,.52);
+  border-radius: 3px;
+}
+
+.lobbyPlant {
+  position: absolute;
+  z-index: 3;
+  top: 25%;
+  right: max(4%, calc((100vw - 1180px) / 2 + 4%));
+  font-size: clamp(3rem, 7vw, 6.5rem);
+  filter: drop-shadow(0 9px 6px rgba(65,45,32,.14));
+}
+
+.lobbyCharacter {
+  position: absolute;
+  z-index: 8;
+  width: 88px;
+  height: 168px;
+  pointer-events: none;
+}
+
+.lobbyCharacter > div {
+  transform: scale(.56);
+  transform-origin: top center;
+}
+
+.lobbyMainCharacter {
+  left: 43%;
+  bottom: 17%;
+}
+
+.lobbyGuestCharacter {
+  left: 54%;
+  bottom: 18%;
+}
+
+.lobbyActivityStage {
+  --lobby-gutter: max(10px, calc((100vw - 1180px) / 2 + 14px));
+  position: absolute;
+  z-index: 6;
+  inset: 0;
+  padding: clamp(118px, 21dvh, 170px) var(--lobby-gutter) clamp(10px, 2dvh, 20px);
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  align-items: end;
+  gap: clamp(7px, 1.3vw, 18px);
+}
+
+.lobbyActivity {
+  min-width: 0;
+  min-height: clamp(170px, 31dvh, 265px);
+  padding: 0 3px 7px;
+  border: 0;
+  background: transparent;
+  color: #17304f;
+  cursor: pointer;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  align-items: end;
+  justify-items: center;
+  gap: 3px;
+  font: inherit;
+  transition: transform .16s ease;
+}
+
+.lobbyActivity:hover,
+.lobbyActivity:focus-visible,
+.lobbySkeletonObject:hover,
+.lobbySkeletonObject:focus-visible,
+.poolPlayObject:hover,
+.poolPlayObject:focus-visible {
+  transform: translateY(-5px);
+}
+
+.lobbyActivity:focus-visible,
+.lobbySkeletonObject:focus-visible,
+.poolPlayObject:focus-visible {
+  outline: 3px solid #17304f;
+  outline-offset: 2px;
+  border-radius: 16px;
+}
+
+.lobbyActivity > strong,
+.lobbySkeletonObject > strong,
+.poolPlayObject > strong {
+  position: relative;
+  z-index: 10;
+  min-width: 74%;
+  border: 2px solid rgba(23,48,79,.14);
+  border-radius: 999px;
+  background: rgba(255,255,255,.95);
+  padding: 6px 9px;
+  box-shadow: 0 4px 10px rgba(45,36,45,.12);
+  font-size: clamp(.65rem, 1.1vw, .84rem);
+  text-align: center;
+}
+
+.lobbyActivity > small,
+.lobbySkeletonObject > small {
+  color: #637080;
+  font-size: clamp(.48rem, .82vw, .64rem);
+  font-weight: 850;
+  text-align: center;
+}
+
+.lobbyHostObject,
+.lobbyDiningObject,
+.lobbyCustodianObject,
+.lobbyPoolDoorObject {
+  position: relative;
+  display: block;
+  width: min(100%, 190px);
+  height: clamp(104px, 22dvh, 180px);
+  filter: drop-shadow(0 9px 7px rgba(65,43,29,.15));
+}
+
+.lobbyHostObject i {
+  position: absolute;
+  left: 18%;
+  right: 18%;
+  bottom: 5%;
+  height: 62%;
+  border-radius: 10px 10px 5px 5px;
+  background: linear-gradient(90deg, #7f5438, #a87450 45% 55%, #7f5438);
+  border-top: 9px solid #c49165;
+}
+
+.lobbyHostObject b {
+  position: absolute;
+  left: 50%;
+  top: 18%;
+  width: 72%;
+  transform: translateX(-50%);
+  border: 4px solid #8a5b3c;
+  border-radius: 5px;
+  background: #f7ead3;
+  padding: 7px 3px;
+  color: #785035;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(.48rem, 1vw, .72rem);
+  letter-spacing: .1em;
+}
+
+.lobbyHostObject em {
+  position: absolute;
+  left: 50%;
+  bottom: 15%;
+  transform: translateX(-50%);
+  font-style: normal;
+  font-size: clamp(1.3rem, 3vw, 2.1rem);
+}
+
+.lobbyDiningObject i {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: 30%;
+  height: 24%;
+  border-radius: 50%;
+  background: #f2e8db;
+  border: 7px solid #966744;
+  box-shadow: 0 11px 0 -2px #754c35;
+}
+
+.lobbyDiningObject b {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 42%;
+  transform: translateX(-50%);
+  font-size: clamp(1.2rem, 2.5vw, 2rem);
+}
+
+.lobbyDiningObject em {
+  position: absolute;
+  bottom: 4%;
+  width: 28%;
+  height: 49%;
+  border-radius: 17px 17px 6px 6px;
+  background: #7a8f77;
+  border-bottom: 9px solid #5f725e;
+}
+
+.lobbyDiningObject em:nth-of-type(1) { left: 6%; }
+.lobbyDiningObject em:nth-of-type(2) { right: 6%; }
+
+.lobbyCustodianObject {
+  border-radius: 10px;
+  background:
+    linear-gradient(90deg, transparent 0 13%, #7f8b92 13% 17%, transparent 17% 83%, #7f8b92 83% 87%, transparent 87%),
+    linear-gradient(180deg, transparent 0 32%, #5697a5 32% 81%, #3d7480 81%);
+}
+
+.lobbyCustodianObject::before,
+.lobbyCustodianObject::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: #4c555b;
+}
+
+.lobbyCustodianObject::before { left: 16%; }
+.lobbyCustodianObject::after { right: 16%; }
+
+.lobbyCustodianObject i,
+.lobbyCustodianObject b,
+.lobbyCustodianObject em {
+  position: absolute;
+  z-index: 2;
+  font-style: normal;
+  font-size: clamp(1.2rem, 2.7vw, 2.1rem);
+}
+
+.lobbyCustodianObject i { left: 9%; top: 12%; }
+.lobbyCustodianObject b { left: 42%; top: 35%; }
+.lobbyCustodianObject em { right: 8%; top: 36%; }
+
+.lobbyPoolDoorObject {
+  border: 7px solid #77a8ad;
+  border-bottom-width: 13px;
+  border-radius: 50% 50% 5px 5px / 22% 22% 5px 5px;
+  background:
+    linear-gradient(90deg, transparent 49%, #77a8ad 49% 52%, transparent 52%),
+    linear-gradient(180deg, #d7f5f7, #8ad2dc);
+}
+
+.lobbyPoolDoorObject i {
+  position: absolute;
+  left: 50%;
+  top: 12%;
+  transform: translateX(-50%);
+  border-radius: 999px;
+  background: #fff;
+  color: #28758a;
+  padding: 4px 11px;
+  font-style: normal;
+  font-size: clamp(.6rem, 1.2vw, .82rem);
+  font-weight: 1000;
+  letter-spacing: .11em;
+}
+
+.lobbyPoolDoorObject b {
+  position: absolute;
+  left: 50%;
+  bottom: 20%;
+  transform: translateX(-50%);
+  font-size: clamp(1.6rem, 3.5vw, 2.6rem);
+}
+
+/* Palm Court and lobby job destination rooms */
+.palmCourtWorkRoom::before,
+.palmCourtDiningRoom::before {
+  background:
+    repeating-linear-gradient(90deg, rgba(106,68,38,.035) 0 1px, transparent 1px 58px),
+    linear-gradient(180deg, #f6eadb, #e6d2ba) !important;
+}
+
+.palmCourtWorkRoom::after,
+.palmCourtDiningRoom::after {
+  background:
+    repeating-linear-gradient(90deg, rgba(92,59,37,.13) 0 2px, transparent 2px 86px),
+    linear-gradient(180deg, #bd8c62, #9a6848) !important;
+}
+
+.palmCourtSign {
+  color: #7c4c32;
+}
+
+.palmCourtWindows {
+  position: absolute;
+  z-index: 2;
+  top: 14%;
+  right: max(18px, calc((100vw - 1160px) / 2 + 24px));
+  width: clamp(180px, 27vw, 330px);
+  height: clamp(70px, 17dvh, 135px);
+  border: 8px solid #9d6c49;
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  background: #d9f3f4;
+  box-shadow: inset 0 0 0 4px rgba(255,255,255,.65);
+}
+
+.palmCourtWindows i {
+  border-right: 4px solid #9d6c49;
+  background:
+    linear-gradient(165deg, transparent 0 58%, rgba(69,147,111,.42) 59% 70%, transparent 71%),
+    linear-gradient(#bfe8f2 0 68%, #94cbb1 68%);
+}
+
+.palmCourtWindows i:last-child { border-right: 0; }
+
+.restaurantWorkerCharacter {
+  left: 46%;
+  bottom: 14%;
+}
+
+.restaurantGuestCharacter {
+  right: 12%;
+  bottom: 17%;
+}
+
+.restaurantDiningCharacter {
+  left: 51%;
+  bottom: 14%;
+}
+
+.restaurantDiningGuest {
+  right: 13%;
+  bottom: 16%;
+}
+
+.lobbySkeletonObject {
+  position: absolute;
+  z-index: 7;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  color: #17304f;
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 2px;
+  font: inherit;
+  transition: transform .16s ease;
+}
+
+.restaurantOrderStand {
+  left: max(3%, calc((100vw - 1180px) / 2 + 3%));
+  bottom: 9%;
+  width: clamp(145px, 18vw, 230px);
+}
+
+.restaurantOrderStand > span {
+  width: 72%;
+  min-height: clamp(80px, 17dvh, 130px);
+  display: grid;
+  place-items: center;
+  border: 7px solid #84583b;
+  border-radius: 8px 8px 3px 3px;
+  background: #f8e9ca;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+  box-shadow: inset 0 -12px 0 #d0a879;
+}
+
+.restaurantPass {
+  left: 27%;
+  bottom: 7%;
+  width: clamp(190px, 28vw, 350px);
+}
+
+.restaurantPass > span {
+  width: 100%;
+  min-height: clamp(75px, 14dvh, 112px);
+  display: grid;
+  place-items: center;
+  border-radius: 7px 7px 2px 2px;
+  border-top: 10px solid #8a5c3d;
+  background: #d1aa7b;
+  font-size: clamp(1.4rem, 3vw, 2.3rem);
+  box-shadow: inset 0 -14px 0 #b0835a;
+}
+
+.restaurantTableScene {
+  position: absolute;
+  z-index: 4;
+  right: max(3%, calc((100vw - 1180px) / 2 + 3%));
+  bottom: 8%;
+  width: clamp(180px, 24vw, 290px);
+  height: clamp(110px, 23dvh, 180px);
+}
+
+.restaurantTableScene i {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 31%;
+  height: 27%;
+  border-radius: 50%;
+  border: 7px solid #8e5f41;
+  background: #f2e8da;
+  box-shadow: 0 12px 0 -4px #6c4936;
+}
+
+.restaurantTableScene b {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  bottom: 45%;
+  transform: translateX(-50%);
+  font-size: clamp(1.3rem, 3vw, 2.2rem);
+}
+
+.restaurantTableScene em {
+  position: absolute;
+  bottom: 0;
+  width: 28%;
+  height: 49%;
+  border-radius: 18px 18px 4px 4px;
+  background: #768a70;
+}
+.restaurantTableScene em:nth-of-type(1) { left: 3%; }
+.restaurantTableScene em:nth-of-type(2) { right: 3%; }
+
+.palmCourtDiningTable {
+  position: absolute;
+  z-index: 6;
+  left: 43%;
+  bottom: 5%;
+  width: clamp(230px, 34vw, 430px);
+  height: clamp(115px, 24dvh, 190px);
+}
+
+.palmCourtDiningTable::before {
+  content: "";
+  position: absolute;
+  left: 4%;
+  right: 4%;
+  top: 18%;
+  height: 46%;
+  border-radius: 50%;
+  border: 9px solid #906042;
+  background: #f7ede0;
+  box-shadow: 0 16px 0 -5px #6f4935;
+}
+
+.palmCourtDiningTable span {
+  position: absolute;
+  z-index: 2;
+  left: 50%;
+  top: 26%;
+  transform: translateX(-50%);
+  font-size: clamp(1.7rem, 4vw, 3rem);
+}
+
+.palmCourtDiningTable i,
+.palmCourtDiningTable b {
+  position: absolute;
+  bottom: 0;
+  width: 21%;
+  height: 65%;
+  border-radius: 18px 18px 5px 5px;
+  background: #768a70;
+  border-bottom: 10px solid #5c6e58;
+}
+.palmCourtDiningTable i { left: -3%; }
+.palmCourtDiningTable b { right: -3%; }
+
+.palmCourtMenuStand {
+  position: absolute;
+  z-index: 8;
+  left: max(12px, calc((100vw - 1180px) / 2 + 18px));
+  top: clamp(105px, 20dvh, 155px);
+  width: clamp(210px, 31vw, 350px);
+  max-height: 48%;
+  overflow: auto;
+  border: 9px solid #81583d;
+  border-radius: 8px;
+  background: #fff8e9;
+  padding: 9px;
+  box-shadow: 0 12px 0 -5px #68442f, 0 14px 22px rgba(65,39,23,.14);
+}
+
+.palmCourtMenuStand > strong {
+  display: block;
+  margin-bottom: 6px;
+  color: #7b4d31;
+  font-family: Georgia, 'Times New Roman', serif;
+  text-align: center;
+  letter-spacing: .09em;
+}
+
+.palmCourtMenuStand > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+}
+
+.palmCourtMenuStand button {
+  min-width: 0;
+  border: 1px solid #ead6bc;
+  border-radius: 8px;
+  background: #fffdf8;
+  color: #17304f;
+  padding: 5px;
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 2px 5px;
+  font: inherit;
+  cursor: pointer;
+  text-align: left;
+}
+
+.palmCourtMenuStand button span {
+  grid-row: 1 / span 2;
+  font-size: clamp(1rem, 2vw, 1.4rem);
+}
+
+.palmCourtMenuStand button b {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(.52rem, 1vw, .7rem);
+}
+
+.palmCourtMenuStand button small {
+  font-size: clamp(.45rem, .8vw, .58rem);
+  color: #7a7067;
+  font-weight: 800;
+}
+
+.custodianRoom {
+  background: #eee3d4;
+}
+
+/* Custodian lobby */
+.custodianWallSign {
+  color: #416978;
+}
+
+.custodianReception {
+  position: absolute;
+  z-index: 2;
+  top: 19%;
+  right: max(18px, calc((100vw - 1160px) / 2 + 24px));
+  width: clamp(200px, 30vw, 370px);
+  height: clamp(80px, 16dvh, 130px);
+  border-radius: 14px 14px 4px 4px;
+  background: #8d6549;
+  border-top: 12px solid #b48661;
+  color: #fff;
+  display: grid;
+  place-items: center;
+  font-size: clamp(.58rem, 1vw, .76rem);
+  font-weight: 900;
+  letter-spacing: .15em;
+}
+
+.custodianReception i {
+  position: absolute;
+  left: 9%;
+  right: 9%;
+  top: -45%;
+  height: 42%;
+  border: 6px solid #9a704f;
+  background: #d8eef0;
+}
+
+.custodianCharacter {
+  left: 47%;
+  bottom: 13%;
+}
+
+.custodianCart {
+  left: max(4%, calc((100vw - 1160px) / 2 + 4%));
+  bottom: 7%;
+  width: clamp(175px, 24vw, 290px);
+}
+
+.custodianCart > span {
+  width: 100%;
+  min-height: clamp(92px, 19dvh, 145px);
+  border: 7px solid #5d7e85;
+  border-radius: 11px;
+  background: linear-gradient(180deg, #7fc0ca, #4e8c98);
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.5rem, 3.5vw, 2.7rem);
+  box-shadow: inset 0 -17px 0 rgba(46,97,108,.35);
+}
+
+.custodianSpill {
+  left: 38%;
+  bottom: 4%;
+  width: clamp(125px, 16vw, 190px);
+}
+
+.custodianSpill > span {
+  width: 100%;
+  min-height: clamp(60px, 11dvh, 90px);
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, #b9e6ee 0 38%, #83cbd8 40% 62%, transparent 64%);
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.8rem, 4vw, 3rem);
+}
+
+.custodianBin {
+  right: max(5%, calc((100vw - 1160px) / 2 + 5%));
+  bottom: 8%;
+  width: clamp(120px, 16vw, 190px);
+}
+
+.custodianBin > span {
+  width: 72%;
+  min-height: clamp(90px, 18dvh, 135px);
+  border-radius: 8px 8px 17px 17px;
+  border-top: 10px solid #586b70;
+  background: #809399;
+  display: grid;
+  place-items: center;
+  font-size: clamp(1.8rem, 4vw, 2.9rem);
+}
+
+/* Indoor pool destination room */
+.poolRoom {
+  background: #d8f1f3;
+}
+
+.poolRoom::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 47% 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(35,123,142,.06) 0 2px, transparent 2px 64px),
+    repeating-linear-gradient(0deg, rgba(255,255,255,.5) 0 2px, transparent 2px 48px),
+    linear-gradient(180deg, #e9f8f7, #ccebec);
+}
+
+.poolRoom::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 53% 0 0 0;
+  background:
+    repeating-linear-gradient(90deg, rgba(255,255,255,.28) 0 3px, transparent 3px 80px),
+    linear-gradient(180deg, #e9ded0 0 30%, #d1c0ab 31%);
+}
+
+.poolWallSign {
+  color: #25738a;
+}
+
+.poolWindows {
+  position: absolute;
+  z-index: 2;
+  top: 13%;
+  right: max(16px, calc((100vw - 1160px) / 2 + 20px));
+  width: clamp(180px, 30vw, 360px);
+  height: clamp(75px, 18dvh, 140px);
+  border: 8px solid #64a1ad;
+  display: grid;
+  grid-template-columns: repeat(3,1fr);
+  background: #cceef4;
+}
+
+.poolWindows i {
+  border-right: 4px solid #64a1ad;
+  background: linear-gradient(180deg,#beeaf5 0 68%,#7fc4a2 68%);
+}
+.poolWindows i:last-child { border-right: 0; }
+
+.poolDeckLine {
+  position: absolute;
+  z-index: 3;
+  left: 0;
+  right: 0;
+  top: 53%;
+  height: 9px;
+  background: #7c9da0;
+  box-shadow: 0 -3px 0 rgba(255,255,255,.8);
+}
+
+.poolWater {
+  position: absolute;
+  z-index: 2;
+  left: max(3%, calc((100vw - 1240px) / 2 + 3%));
+  right: max(3%, calc((100vw - 1240px) / 2 + 3%));
+  top: 68%;
+  bottom: 2%;
+  overflow: hidden;
+  border: 10px solid #f1f3ed;
+  border-radius: 22px;
+  background:
+    repeating-linear-gradient(165deg, rgba(255,255,255,.28) 0 8px, transparent 8px 34px),
+    linear-gradient(180deg, #5fd1e3, #2a9ec2);
+  box-shadow: inset 0 9px 0 rgba(255,255,255,.45), 0 5px 14px rgba(44,110,126,.18);
+}
+
+.poolWater i {
+  position: absolute;
+  width: 26%;
+  height: 12px;
+  border-radius: 50%;
+  border-top: 3px solid rgba(255,255,255,.58);
+}
+.poolWater i:nth-child(1) { left: 8%; top: 25%; }
+.poolWater i:nth-child(2) { left: 39%; top: 48%; }
+.poolWater i:nth-child(3) { right: 7%; top: 20%; }
+
+.poolCharacter {
+  left: 17%;
+  bottom: 27%;
+}
+
+.poolPlayObject {
+  position: absolute;
+  z-index: 8;
+  border: 0;
+  background: transparent;
+  color: #17304f;
+  cursor: pointer;
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+  padding: 2px;
+  font: inherit;
+  transition: transform .16s ease;
+}
+
+.poolPlayObject span {
+  display: grid;
+  place-items: center;
+  font-size: clamp(2.4rem, 7vw, 5.3rem);
+  filter: drop-shadow(0 9px 6px rgba(20,93,116,.2));
+}
+
+.poolFloat { left: 31%; bottom: 5%; }
+.poolSlide { right: 8%; bottom: 18%; }
+.poolBall { left: 58%; bottom: 7%; }
+
+.lobbySceneMessage {
+  position: absolute;
+  z-index: 12;
+  left: 50%;
+  bottom: 1%;
+  transform: translateX(-50%);
+  max-width: min(680px, 74vw);
+  border: 1px solid rgba(23,48,79,.12);
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  color: #45566b;
+  padding: 6px 13px;
+  box-shadow: 0 4px 12px rgba(32,48,61,.1);
+  font-size: clamp(.5rem, .9vw, .68rem);
+  font-weight: 800;
+  text-align: center;
+}
+
+@media (max-width: 760px) {
+  .lobbyActivityStage {
+    padding: 82px 7px 7px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    align-items: end;
+    gap: 2px 7px;
+  }
+
+  .lobbyActivity {
+    min-height: 0;
+    height: 100%;
+  }
+
+  .lobbyHostObject,
+  .lobbyDiningObject,
+  .lobbyCustodianObject,
+  .lobbyPoolDoorObject {
+    height: clamp(70px, 15dvh, 116px);
+  }
+
+  .lobbyMainCharacter {
+    left: 46%;
+    bottom: 34%;
+  }
+
+  .lobbyGuestCharacter {
+    left: 58%;
+    bottom: 35%;
+  }
+
+  .lobbyReception {
+    top: 18%;
+    transform: translateX(-50%) scale(.82);
+    transform-origin: top center;
+  }
+
+  .lobbyPlant {
+    top: 20%;
+    right: 4%;
+    transform: scale(.75);
+  }
+
+  .restaurantWorkerCharacter,
+  .restaurantDiningCharacter,
+  .custodianCharacter {
+    left: 53%;
+  }
+
+  .restaurantOrderStand {
+    left: 2%;
+    width: 29%;
+  }
+
+  .restaurantPass {
+    left: 31%;
+    width: 35%;
+  }
+
+  .restaurantTableScene {
+    right: 2%;
+    width: 31%;
+  }
+
+  .palmCourtMenuStand {
+    top: 82px;
+    width: 40%;
+    max-height: 44%;
+  }
+
+  .palmCourtDiningTable {
+    left: 42%;
+    width: 52%;
+  }
+
+  .custodianCart { left: 2%; width: 31%; }
+  .custodianSpill { left: 34%; width: 27%; }
+  .custodianBin { right: 2%; width: 27%; }
+
+  .poolCharacter {
+    left: 8%;
+    bottom: 28%;
+  }
+}
+
+@media (max-width: 520px) {
+  .lobbyTopBar .brand {
+    font-size: .78rem;
+  }
+
+  .lobbyTopBar .wallet {
+    font-size: .58rem;
+    padding: 4px 6px;
+  }
+
+  .lobbyWallMark,
+  .palmCourtSign,
+  .custodianWallSign,
+  .poolWallSign {
+    top: 7px;
+  }
+
+  .lobbyWallMark strong,
+  .palmCourtSign strong,
+  .custodianWallSign strong,
+  .poolWallSign strong {
+    font-size: .82rem;
+  }
+
+  .lobbyWallMark span,
+  .palmCourtSign span,
+  .custodianWallSign span,
+  .poolWallSign span {
+    font-size: .46rem;
+  }
+
+  .lobbyActivityStage {
+    padding-top: 55px;
+  }
+
+  .lobbyActivity > strong,
+  .lobbySkeletonObject > strong,
+  .poolPlayObject > strong {
+    font-size: .51rem;
+    padding: 3px 4px;
+  }
+
+  .lobbyActivity > small,
+  .lobbySkeletonObject > small {
+    display: none;
+  }
+
+  .lobbyCharacter {
+    transform: scale(.78);
+    transform-origin: bottom center;
+  }
+
+  .lobbyGuestCharacter,
+  .restaurantGuestCharacter,
+  .restaurantDiningGuest {
+    display: none;
+  }
+
+  .palmCourtWindows,
+  .poolWindows {
+    transform: scale(.72);
+    transform-origin: top right;
+  }
+
+  .palmCourtMenuStand {
+    top: 58px;
+    left: 5px;
+    width: 45%;
+    max-height: 47%;
+    border-width: 5px;
+    padding: 4px;
+  }
+
+  .palmCourtMenuStand > div {
+    grid-template-columns: 1fr;
+  }
+
+  .palmCourtMenuStand button {
+    padding: 3px;
+  }
+
+  .palmCourtMenuStand button span {
+    font-size: .8rem;
+  }
+
+  .palmCourtMenuStand button b {
+    font-size: .48rem;
+  }
+
+  .palmCourtMenuStand button small {
+    font-size: .42rem;
+  }
+
+  .lobbySceneMessage {
+    max-width: 92vw;
+    padding: 4px 8px;
+    font-size: .47rem;
+  }
+
+  .poolPlayObject span {
+    font-size: clamp(1.8rem, 11vw, 3.2rem);
+  }
+}
+
+@media (max-height: 610px) {
+  .lobbyWallMark,
+  .palmCourtSign,
+  .custodianWallSign,
+  .poolWallSign {
+    top: 5px;
+    transform: translateX(-50%) scale(.78);
+    transform-origin: top center;
+  }
+
+  .lobbyActivityStage {
+    padding-top: 48px;
+  }
+
+  .lobbyHostObject,
+  .lobbyDiningObject,
+  .lobbyCustodianObject,
+  .lobbyPoolDoorObject {
+    height: clamp(58px, 18dvh, 98px);
+  }
+
+  .lobbyActivity {
+    min-height: 0;
+  }
+
+  .lobbyReception,
+  .palmCourtWindows,
+  .poolWindows,
+  .custodianReception {
+    transform: scale(.72);
+    transform-origin: top right;
+  }
+
+  .lobbyReception {
+    transform: translateX(-50%) scale(.72);
+    transform-origin: top center;
+  }
+
+  .lobbyCharacter {
+    transform: scale(.73);
+    transform-origin: bottom center;
+  }
+
+  .palmCourtMenuStand {
+    top: 46px;
+    max-height: 49%;
+  }
+
+  .restaurantOrderStand > span,
+  .restaurantPass > span,
+  .custodianCart > span,
+  .custodianBin > span {
+    min-height: 64px;
+  }
 }

@@ -74,8 +74,11 @@ const CAFE_INGREDIENTS={bun:{icon:'🫓',name:'Bun',source:'cabinet'},patty:{ico
 const CAFE_GUESTS=['Maya','Noah','Avery','Leo','Zoe','Kai'];
 
 const LOBBY_MENU = [
-  { id: 'pasta', name: 'Garden Pasta', icon: '\u{1F35D}', price: 7 },
-  { id: 'tacos', name: 'Resort Tacos', icon: '\u{1F32E}', price: 6 },
+  { id: 'pasta', name: 'Garden Pasta', icon: '\u{1F35D}', price: 8 },
+  { id: 'chicken', name: 'Herb Chicken Plate', icon: '\u{1F357}', price: 9 },
+  { id: 'salmon', name: 'Lemon Salmon Dinner', icon: '\u{1F41F}', price: 10 },
+  { id: 'ravioli', name: 'Vegetable Ravioli', icon: '\u{1F35D}', price: 8 },
+  { id: 'breakfast', name: 'Palm Court Breakfast', icon: '\u{1F373}', price: 7 },
   { id: 'dessert', name: 'Berry Sundae', icon: '\u{1F368}', price: 5 },
 ];
 
@@ -525,6 +528,7 @@ export default function KidsResort({ libraryHref = null }) {
   const [people, setPeople] = useState([]);
   const [studioAmbientPerson] = useState(() => makeCharacterPerson('random'));
   const [cafeAmbientPeople] = useState(() => [makeCafeAmbientPerson(0), makeCafeAmbientPerson(1)]);
+  const [lobbyAmbientPeople] = useState(() => [makeCharacterPerson('random'), makeCharacterPerson('random')]);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [personEditorOpen, setPersonEditorOpen] = useState(false);
   const [personDraft, setPersonDraft] = useState(null);
@@ -763,7 +767,7 @@ export default function KidsResort({ libraryHref = null }) {
     if (place.id === 'suite') {
       openScreen('suite');
     } else if (place.id === 'lobby') {
-      openScreen('lobby-food');
+      openScreen('lobby');
     } else if (place.id === 'cafe') {
       openScreen('cafe');
     } else if (place.id === 'market') {
@@ -1487,28 +1491,155 @@ export default function KidsResort({ libraryHref = null }) {
     );
   }
 
-  if (screen === 'lobby-food') {
-    return interiorShell(
-      'Palm Court',
-      '\u{1F37D}\u{FE0F}',
-      'LOBBY RESTAURANT',
-      <div className={styles.shopGrid}>
-        {LOBBY_MENU.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={styles.shopCard}
-            onClick={() => buyMeal(item)}
-          >
-            <span className={styles.shopIcon}>{item.icon}</span>
-            <strong>{item.name}</strong>
-            <span>{item.price} Resort Bucks</span>
+  if (screen === 'lobby') {
+    return (
+      <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>← Resort Map</button>
+          <div className={styles.brand}>Resort Lobby</div>
+          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+        </section>
+        <section className={styles.lobbyRoom}>
+          <div className={styles.lobbyWallMark}><strong>KIDS RESORT</strong><span>Lobby & Palm Court</span></div>
+          <div className={styles.lobbyReception} aria-hidden="true"><span className={styles.lobbyReceptionBell}>🔔</span><i /><b>WELCOME</b></div>
+          <div className={styles.lobbyPlant} aria-hidden="true">🌴</div>
+          <div className={styles.lobbyFloorLine} aria-hidden="true" />
+
+          <div className={[styles.lobbyCharacter, styles.lobbyMainCharacter].join(' ')} aria-label={`${characterName} in the resort lobby`}>
+            {renderCharacter(false)}
+          </div>
+          <div className={[styles.lobbyCharacter, styles.lobbyGuestCharacter].join(' ')} aria-label={`${lobbyAmbientPeople[0].name} in the resort lobby`}>
+            {renderCharacter(false, lobbyAmbientPeople[0].look, lobbyAmbientPeople[0].character, lobbyAmbientPeople[0].name)}
+          </div>
+
+          <div className={styles.lobbyActivityStage}>
+            <button className={styles.lobbyActivity} data-activity="restaurant-work" type="button" onClick={() => openScreen('lobby-restaurant-work')}>
+              <span className={styles.lobbyHostObject} aria-hidden="true"><i /><b>PALM COURT</b><em>🍽️</em></span>
+              <strong>Work at Palm Court</strong><small>Serve restaurant guests</small>
+            </button>
+            <button className={styles.lobbyActivity} data-activity="restaurant-dine" type="button" onClick={() => openScreen('lobby-restaurant-dine')}>
+              <span className={styles.lobbyDiningObject} aria-hidden="true"><i /><b>🍝</b><em /><em /></span>
+              <strong>Eat at Palm Court</strong><small>Sit down for a meal</small>
+            </button>
+            <button className={styles.lobbyActivity} data-activity="custodian" type="button" onClick={() => openScreen('lobby-custodian')}>
+              <span className={styles.lobbyCustodianObject} aria-hidden="true"><i>🧹</i><b>🧴</b><em>🧽</em></span>
+              <strong>Resort Custodian</strong><small>Care for the lobby</small>
+            </button>
+            <button className={styles.lobbyActivity} data-activity="pool" type="button" onClick={() => openScreen('lobby-pool')}>
+              <span className={styles.lobbyPoolDoorObject} aria-hidden="true"><i>POOL</i><b>🏊</b></span>
+              <strong>Indoor Pool</strong><small>Go swimming</small>
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'lobby-restaurant-work') {
+    return (
+      <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
+          <div className={styles.brand}>Palm Court · Work</div>
+          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+        </section>
+        <section className={[styles.lobbyExperienceRoom, styles.palmCourtWorkRoom].join(' ')}>
+          <div className={styles.palmCourtSign}><strong>PALM COURT</strong><span>Restaurant Service</span></div>
+          <div className={styles.palmCourtWindows} aria-hidden="true"><i /><i /><i /></div>
+          <div className={styles.lobbyFloorLine} aria-hidden="true" />
+          <div className={[styles.lobbyCharacter, styles.restaurantWorkerCharacter].join(' ')} aria-label={`${characterName} working in Palm Court`}>{renderCharacter(false)}</div>
+          <div className={[styles.lobbyCharacter, styles.restaurantGuestCharacter].join(' ')} aria-label={`${lobbyAmbientPeople[0].name} dining in Palm Court`}>{renderCharacter(false, lobbyAmbientPeople[0].look, lobbyAmbientPeople[0].character, lobbyAmbientPeople[0].name)}</div>
+          <button className={[styles.lobbySkeletonObject, styles.restaurantOrderStand].join(' ')} type="button" onClick={() => setMessage('The Palm Court serving game will begin from the order stand.')}>
+            <span aria-hidden="true">🧾</span><strong>Order Stand</strong><small>Take table orders</small>
           </button>
-        ))}
-        <div className={styles.fullMessage} aria-live="polite">
-          {message || 'Choose something to eat.'}
-        </div>
-      </div>,
+          <button className={[styles.lobbySkeletonObject, styles.restaurantPass].join(' ')} type="button" onClick={() => setMessage('The kitchen pass will hold plated dining orders in the restaurant game.')}>
+            <span aria-hidden="true">🍽️ 🍝 🥘</span><strong>Kitchen Pass</strong><small>Pick up plated meals</small>
+          </button>
+          <div className={styles.restaurantTableScene} aria-hidden="true"><i /><b>🥗</b><em /><em /></div>
+          <div className={styles.lobbySceneMessage} aria-live="polite">{message || 'Restaurant job skeleton ready. Future play will build on the café serving loop with sit-down dining orders.'}</div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'lobby-restaurant-dine') {
+    const diningMeal = LOBBY_MENU.find((item) => item.name === meals[meals.length - 1]);
+    return (
+      <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
+          <div className={styles.brand}>Palm Court · Dining</div>
+          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+        </section>
+        <section className={[styles.lobbyExperienceRoom, styles.palmCourtDiningRoom].join(' ')}>
+          <div className={styles.palmCourtSign}><strong>PALM COURT</strong><span>Dining Room</span></div>
+          <div className={styles.palmCourtWindows} aria-hidden="true"><i /><i /><i /></div>
+          <div className={styles.lobbyFloorLine} aria-hidden="true" />
+          <div className={[styles.lobbyCharacter, styles.restaurantDiningCharacter].join(' ')} aria-label={`${characterName} dining in Palm Court`}>{renderCharacter(false)}</div>
+          <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining in Palm Court`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name)}</div>
+          <div className={styles.palmCourtDiningTable} aria-hidden="true"><span>{diningMeal?.icon || '🍽️'}</span><i /><b /></div>
+          <div className={styles.palmCourtMenuStand}>
+            <strong>Dinner Menu</strong>
+            <div>
+              {LOBBY_MENU.map((item) => (
+                <button key={item.id} type="button" onClick={() => buyMeal(item)}><span>{item.icon}</span><b>{item.name}</b><small>{item.price} Bucks</small></button>
+              ))}
+            </div>
+          </div>
+          <div className={styles.lobbySceneMessage} aria-live="polite">{message || `${characterName} has a table at Palm Court.`}</div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'lobby-custodian') {
+    return (
+      <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
+          <div className={styles.brand}>Resort Custodian</div>
+          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+        </section>
+        <section className={[styles.lobbyExperienceRoom, styles.custodianRoom].join(' ')}>
+          <div className={styles.custodianWallSign}><strong>LOBBY CARE</strong><span>Resort Custodian</span></div>
+          <div className={styles.custodianReception} aria-hidden="true"><span>FRONT DESK</span><i /></div>
+          <div className={styles.lobbyFloorLine} aria-hidden="true" />
+          <div className={[styles.lobbyCharacter, styles.custodianCharacter].join(' ')} aria-label={`${characterName} working as resort custodian`}>{renderCharacter(false)}</div>
+          <button className={[styles.lobbySkeletonObject, styles.custodianCart].join(' ')} type="button" onClick={() => setMessage('Cleaning cart selected. Future jobs will send the custodian to messes around the resort.')}>
+            <span aria-hidden="true">🧹 🧴 🧽</span><strong>Cleaning Cart</strong><small>Choose supplies</small>
+          </button>
+          <button className={[styles.lobbySkeletonObject, styles.custodianSpill].join(' ')} type="button" onClick={() => setMessage('Spill selected. This will become a clean-up task.')}>
+            <span aria-hidden="true">💧</span><strong>Lobby Spill</strong><small>Clean this area</small>
+          </button>
+          <button className={[styles.lobbySkeletonObject, styles.custodianBin].join(' ')} type="button" onClick={() => setMessage('Trash bin selected. This will become a collection task.')}>
+            <span aria-hidden="true">🗑️</span><strong>Waste Bin</strong><small>Empty and replace</small>
+          </button>
+          <div className={styles.lobbySceneMessage} aria-live="polite">{message || 'Custodian mode is confined to the lobby for now. The same job can later expand throughout the resort.'}</div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'lobby-pool') {
+    return (
+      <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
+          <div className={styles.brand}>Indoor Pool</div>
+          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+        </section>
+        <section className={[styles.lobbyExperienceRoom, styles.poolRoom].join(' ')}>
+          <div className={styles.poolWallSign}><strong>INDOOR POOL</strong><span>Swim · splash · play</span></div>
+          <div className={styles.poolWindows} aria-hidden="true"><i /><i /><i /></div>
+          <div className={styles.poolWater} aria-hidden="true"><i /><i /><i /></div>
+          <div className={styles.poolDeckLine} aria-hidden="true" />
+          <div className={[styles.lobbyCharacter, styles.poolCharacter].join(' ')} aria-label={`${characterName} at the indoor pool`}>{renderCharacter(false)}</div>
+          <button className={[styles.poolPlayObject, styles.poolFloat].join(' ')} type="button" onClick={() => setMessage('Float selected. A character animation can be attached here later.')}><span aria-hidden="true">🛟</span><strong>Pool Float</strong></button>
+          <button className={[styles.poolPlayObject, styles.poolSlide].join(' ')} type="button" onClick={() => setMessage('Slide selected. A slide-and-splash animation can be attached here later.')}><span aria-hidden="true">🛝</span><strong>Pool Slide</strong></button>
+          <button className={[styles.poolPlayObject, styles.poolBall].join(' ')} type="button" onClick={() => setMessage('Beach ball selected. A pool play animation can be attached here later.')}><span aria-hidden="true">🏐</span><strong>Beach Ball</strong></button>
+          <div className={styles.lobbySceneMessage} aria-live="polite">{message || 'Pool play skeleton ready. These objects are future animation triggers.'}</div>
+        </section>
+      </main>
     );
   }
   if (screen === 'market') {
