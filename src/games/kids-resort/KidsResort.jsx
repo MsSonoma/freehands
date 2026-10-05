@@ -2660,6 +2660,8 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.palmCourtSign}><strong>PALM COURT</strong><span>Dining Room</span></div>
           <div className={styles.palmCourtWindows} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.lobbyFloorLine} aria-hidden="true" />
+          <div className={[styles.palmCourtDiningChair, styles.palmCourtEmilyChair].join(' ')} aria-hidden="true" />
+          <div className={[styles.palmCourtDiningChair, styles.palmCourtGuestChair].join(' ')} aria-hidden="true" />
           <div
             key={`dining-${diningActionTick}`}
             className={[styles.lobbyCharacter, styles.restaurantDiningCharacter, styles.diningPlayerCharacter, diningMotionClass].filter(Boolean).join(' ')}
@@ -2670,8 +2672,6 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining in Palm Court`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name, 'seated')}</div>
           <div className={styles.palmCourtDiningTable} aria-hidden="true">
             <span>{diningMeal?.icon || '🍽️'}</span>
-            <i />
-            <b />
           </div>
 
           <div className={styles.palmCourtMenuStand}>

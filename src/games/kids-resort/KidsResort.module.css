@@ -6168,3 +6168,59 @@
 .palmDiningGame .palmCourtDiningTable {
   z-index: 8;
 }
+
+/* Palm Court dining chairs: chair -> diner -> table. */
+.palmCourtDiningChair {
+  position: absolute;
+  z-index: 5;
+  width: clamp(54px, 5.5vw, 70px);
+  height: clamp(76px, 15dvh, 112px);
+  border-radius: 18px 18px 5px 5px;
+  background: #768a70;
+  border-bottom: 10px solid #5c6e58;
+  box-shadow: inset 0 -8px 0 rgba(53, 73, 50, .12);
+  pointer-events: none;
+}
+
+.palmCourtEmilyChair {
+  left: calc(51% + 9px);
+  bottom: 12%;
+}
+
+.palmCourtGuestChair {
+  right: calc(13% + 9px);
+  bottom: 14%;
+}
+
+.palmDiningGame .restaurantDiningCharacter,
+.palmDiningGame .restaurantDiningGuest,
+.palmDiningGame .diningPlayerCharacter {
+  z-index: 6;
+}
+
+.palmDiningGame .palmCourtDiningTable {
+  z-index: 8;
+}
+
+@media (max-width: 760px) {
+  .palmCourtEmilyChair {
+    left: calc(53% + 2px);
+  }
+
+  .palmCourtGuestChair {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmCourtDiningChair {
+    width: 48px;
+    height: 74px;
+    border-bottom-width: 7px;
+  }
+
+  .palmCourtEmilyChair {
+    left: calc(53% - 2px);
+    bottom: 11%;
+  }
+}
