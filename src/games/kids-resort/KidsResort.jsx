@@ -759,10 +759,26 @@ export default function KidsResort({ libraryHref = null }) {
           return;
         }
 
-        const buildingRect = building.getBoundingClientRect();
+        const visiblePartBottoms = Array.from(building.children)
+          .map((part) => {
+            const rect = part.getBoundingClientRect();
+            const computed = window.getComputedStyle(part);
+            return computed.display !== 'none'
+              && computed.visibility !== 'hidden'
+              && rect.width > 0
+              && rect.height > 0
+              ? rect.bottom
+              : null;
+          })
+          .filter((bottom) => bottom !== null);
+
+        const visualBottom = visiblePartBottoms.length
+          ? Math.max(...visiblePartBottoms)
+          : building.getBoundingClientRect().bottom;
+
         nextDepths[place.id] = Math.max(
           0,
-          Math.min(100, ((buildingRect.bottom - panelRect.top) / panelRect.height) * 100),
+          Math.min(100, ((visualBottom - panelRect.top) / panelRect.height) * 100),
         );
       });
 
