@@ -5096,7 +5096,7 @@ export default function KidsResort({ libraryHref = null }) {
               onTouchEnd={(event) => handlePlaceTouch(event, place)}
             >
               <span className={styles.placeLabel}>{placeDisplayName(place)}</span>
-              {place.id === placeId && place.id !== 'bank' && !isWalking && (
+              {place.id === placeId && !isWalking && (
                 <span className={styles.placeEnterPrompt}>Enter</span>
               )}
               <span
