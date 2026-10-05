@@ -5173,3 +5173,987 @@
     transform-origin: bottom center;
   }
 }
+
+/* Lobby mini-games: playable room-based interactions. */
+.palmKitchenGame .restaurantWorkerCharacter {
+  left: 47%;
+  bottom: 13%;
+}
+
+.palmKitchenGame .restaurantGuestCharacter {
+  right: 8%;
+  bottom: 16%;
+}
+
+.palmKitchenStart {
+  position: absolute;
+  z-index: 10;
+  left: 50%;
+  bottom: 10%;
+  transform: translateX(-50%);
+  width: clamp(220px, 32vw, 390px);
+  border: 7px solid #8b5d3d;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fff6df, #ead1a6);
+  color: #664126;
+  padding: clamp(12px, 2vw, 20px);
+  box-shadow: 0 13px 0 -5px #6f4932, 0 18px 26px rgba(67,42,27,.16);
+  display: grid;
+  gap: 6px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.palmKitchenStart strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1rem, 2vw, 1.4rem);
+}
+
+.palmKitchenStart span {
+  font-size: clamp(.62rem, 1vw, .78rem);
+  font-weight: 800;
+}
+
+.palmKitchenTicket {
+  position: absolute;
+  z-index: 9;
+  top: clamp(64px, 12dvh, 98px);
+  left: max(2%, calc((100vw - 1180px) / 2 + 2%));
+  width: clamp(190px, 23vw, 290px);
+  border: 5px solid #8d684c;
+  border-radius: 7px;
+  background:
+    repeating-linear-gradient(0deg, rgba(104,78,55,.06) 0 1px, transparent 1px 24px),
+    #fffdf6;
+  color: #5e4738;
+  padding: 10px 11px 12px;
+  box-shadow: 0 8px 14px rgba(58,40,27,.12);
+  display: grid;
+  gap: 5px;
+}
+
+.palmKitchenTicket::before {
+  content: "";
+  position: absolute;
+  left: 15%;
+  right: 15%;
+  top: -9px;
+  height: 9px;
+  border-radius: 5px 5px 0 0;
+  background: #57636a;
+}
+
+.palmKitchenTicket small {
+  color: #8b6d5a;
+  font-size: clamp(.5rem, .9vw, .64rem);
+  font-weight: 1000;
+  letter-spacing: .13em;
+}
+
+.palmKitchenTicket strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(.78rem, 1.4vw, 1rem);
+}
+
+.palmKitchenTicket span {
+  font-size: clamp(.52rem, .9vw, .68rem);
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.palmKitchenStorageRow {
+  position: absolute;
+  z-index: 7;
+  left: max(2%, calc((100vw - 1180px) / 2 + 2%));
+  bottom: 5%;
+  width: clamp(190px, 23vw, 290px);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.palmKitchenStorageRow button {
+  min-width: 0;
+  min-height: clamp(56px, 12dvh, 86px);
+  border: 5px solid #68645e;
+  border-radius: 7px 7px 3px 3px;
+  background: linear-gradient(180deg, #b9c4c4, #858f90);
+  color: #fff;
+  padding: 4px;
+  box-shadow: inset 0 -8px 0 rgba(49,58,59,.18), 0 7px 9px rgba(45,39,34,.12);
+  font: inherit;
+  cursor: pointer;
+}
+
+.palmKitchenStorageRow button[data-active="true"] {
+  outline: 4px solid #f5c45d;
+  outline-offset: 2px;
+}
+
+.palmKitchenStorageRow button strong {
+  font-size: clamp(.48rem, .8vw, .62rem);
+}
+
+.palmKitchenIngredientShelf {
+  position: absolute;
+  z-index: 11;
+  left: max(2%, calc((100vw - 1180px) / 2 + 2%));
+  bottom: clamp(72px, 17dvh, 118px);
+  width: clamp(210px, 25vw, 320px);
+  max-height: 27%;
+  overflow: auto;
+  border: 6px solid #795139;
+  border-radius: 10px;
+  background: #f0dcc0;
+  padding: 7px;
+  box-shadow: 0 10px 18px rgba(64,38,24,.16);
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 5px;
+}
+
+.palmKitchenIngredientShelf button {
+  min-width: 0;
+  border: 1px solid #d8b891;
+  border-radius: 8px;
+  background: #fff9ee;
+  color: #5f4634;
+  padding: 5px 2px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.palmKitchenIngredientShelf button span {
+  font-size: clamp(1.1rem, 2.4vw, 1.8rem);
+}
+
+.palmKitchenIngredientShelf button small {
+  font-size: clamp(.43rem, .72vw, .56rem);
+  font-weight: 850;
+  text-align: center;
+}
+
+.palmKitchenStove {
+  position: absolute;
+  z-index: 7;
+  left: 31%;
+  bottom: 5%;
+  width: clamp(190px, 25vw, 310px);
+  min-height: clamp(92px, 18dvh, 138px);
+  border: 8px solid #4f5357;
+  border-radius: 8px;
+  background:
+    radial-gradient(circle at 24% 31%, #25292b 0 17px, #72787b 18px 23px, transparent 24px),
+    radial-gradient(circle at 74% 31%, #25292b 0 17px, #72787b 18px 23px, transparent 24px),
+    linear-gradient(180deg, #8d9496, #606669);
+  color: #fff;
+  padding: 8px;
+  box-shadow: inset 0 -14px 0 rgba(28,31,32,.22), 0 10px 14px rgba(44,35,29,.14);
+}
+
+.palmKitchenStove > strong {
+  display: block;
+  margin-bottom: 5px;
+  font-size: clamp(.58rem, 1vw, .76rem);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.palmKitchenStove > div {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  min-height: 54px;
+}
+
+.palmKitchenStove > div > small {
+  font-size: clamp(.45rem, .8vw, .6rem);
+  font-weight: 800;
+  opacity: .84;
+}
+
+.palmKitchenStove button {
+  min-width: 0;
+  flex: 1;
+  border: 2px solid #d4d8d8;
+  border-radius: 8px;
+  background: #f6f3eb;
+  color: #4d4a45;
+  padding: 5px 2px;
+  display: grid;
+  justify-items: center;
+  font: inherit;
+  cursor: pointer;
+}
+
+.palmKitchenStove button[data-state="READY"] {
+  box-shadow: 0 0 0 4px rgba(93,190,111,.7);
+}
+
+.palmKitchenStove button[data-state="Overcooked"] {
+  box-shadow: 0 0 0 4px rgba(184,85,71,.68);
+}
+
+.palmKitchenStove button span {
+  font-size: clamp(1rem, 2.2vw, 1.55rem);
+}
+
+.palmKitchenStove button b {
+  font-size: clamp(.42rem, .72vw, .54rem);
+}
+
+.palmKitchenPlate {
+  position: absolute;
+  z-index: 7;
+  right: 24%;
+  bottom: 5%;
+  width: clamp(160px, 21vw, 260px);
+  min-height: clamp(86px, 17dvh, 130px);
+  border-radius: 50%;
+  border: 8px solid #8d6548;
+  background: #f7efe4;
+  box-shadow: 0 11px 0 -4px #6e4c37;
+  color: #594234;
+  padding: 10px 14px;
+  display: grid;
+  justify-items: center;
+  align-content: center;
+  gap: 4px;
+}
+
+.palmKitchenPlate > strong {
+  font-size: clamp(.55rem, .9vw, .7rem);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.palmKitchenPlate > div {
+  min-height: 30px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  flex-wrap: wrap;
+}
+
+.palmKitchenPlate > div span {
+  font-size: clamp(1rem, 2.4vw, 1.65rem);
+}
+
+.palmKitchenPlate > div small {
+  font-size: clamp(.42rem, .7vw, .54rem);
+  font-weight: 800;
+  color: #887466;
+}
+
+.palmKitchenPlate > button {
+  border: 1px solid #cbb6a3;
+  border-radius: 999px;
+  background: #fff;
+  color: #6a5344;
+  padding: 3px 8px;
+  font: inherit;
+  font-size: clamp(.42rem, .72vw, .56rem);
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.palmKitchenPass {
+  position: absolute;
+  z-index: 8;
+  right: max(2%, calc((100vw - 1180px) / 2 + 2%));
+  bottom: 5%;
+  width: clamp(145px, 18vw, 220px);
+  min-height: clamp(82px, 16dvh, 124px);
+  border: 8px solid #80543b;
+  border-top-width: 13px;
+  border-radius: 7px;
+  background: linear-gradient(180deg, #cda57b, #a27655);
+  color: #fff8ec;
+  padding: 8px;
+  box-shadow: inset 0 -12px 0 rgba(87,52,31,.18), 0 9px 13px rgba(55,35,22,.14);
+  display: grid;
+  place-content: center;
+  gap: 4px;
+  text-align: center;
+  font: inherit;
+  cursor: pointer;
+}
+
+.palmKitchenPass strong {
+  font-size: clamp(.58rem, 1vw, .76rem);
+}
+
+.palmKitchenPass small {
+  font-size: clamp(.44rem, .75vw, .56rem);
+  font-weight: 800;
+}
+
+.lobbyGameComplete {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(88vw, 430px);
+  border: 8px solid #9d6a45;
+  border-radius: 18px;
+  background: #fff8e9;
+  color: #65452f;
+  padding: 22px;
+  box-shadow: 0 22px 45px rgba(52,31,20,.28);
+  display: grid;
+  gap: 9px;
+  text-align: center;
+}
+
+.lobbyGameComplete strong {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(1.1rem, 2.5vw, 1.7rem);
+}
+
+.lobbyGameComplete span {
+  font-size: clamp(.62rem, 1vw, .78rem);
+  font-weight: 800;
+}
+
+.lobbyGameComplete button,
+.custodianShiftCard button {
+  border: 0;
+  border-radius: 999px;
+  background: #17304f;
+  color: #fff;
+  padding: 8px 14px;
+  font: inherit;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+/* Palm Court dining play */
+.palmDiningGame .palmCourtDiningTable {
+  z-index: 7;
+}
+
+.diningPlayerCharacter > div {
+  transform-origin: top center;
+}
+
+.diningActionBite > div {
+  animation: palmDiningBite .62s ease-in-out;
+}
+
+.diningActionSip > div {
+  animation: palmDiningSip .72s ease-in-out;
+}
+
+.diningActionCelebrate > div {
+  animation: palmDiningCelebrate .8s ease-in-out;
+}
+
+@keyframes palmDiningBite {
+  0%,100% { transform: scale(.56); }
+  45% { transform: translate(10px, 8px) rotate(4deg) scale(.56); }
+}
+
+@keyframes palmDiningSip {
+  0%,100% { transform: scale(.56); }
+  45% { transform: translate(5px, -5px) rotate(-5deg) scale(.56); }
+}
+
+@keyframes palmDiningCelebrate {
+  0%,100% { transform: scale(.56); }
+  35% { transform: translateY(-8px) rotate(-3deg) scale(.56); }
+  65% { transform: translateY(-8px) rotate(3deg) scale(.56); }
+}
+
+.palmDiningControls {
+  position: absolute;
+  z-index: 10;
+  right: max(2%, calc((100vw - 1180px) / 2 + 2%));
+  bottom: 5%;
+  width: clamp(190px, 25vw, 310px);
+  border: 6px solid #875b3e;
+  border-radius: 12px;
+  background: #f8ecdb;
+  color: #60462f;
+  padding: 8px;
+  box-shadow: 0 10px 0 -4px #67452f, 0 14px 20px rgba(56,36,24,.13);
+  display: grid;
+  gap: 7px;
+}
+
+.palmDiningCourse {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 5px;
+  align-items: center;
+}
+
+.palmDiningCourse > strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(.58rem, 1vw, .78rem);
+}
+
+.palmDiningCourse > button {
+  grid-column: 1 / -1;
+  border: 0;
+  border-radius: 999px;
+  background: #8c5c3e;
+  color: #fff;
+  padding: 6px 8px;
+  font: inherit;
+  font-size: clamp(.5rem, .82vw, .64rem);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.palmDiningCourse > button:disabled {
+  opacity: .52;
+  cursor: default;
+}
+
+.palmDiningBites {
+  display: flex;
+  gap: 3px;
+}
+
+.palmDiningBites i {
+  width: 10px;
+  height: 10px;
+  border: 2px solid #a67a5b;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.palmDiningBites i[data-done="true"] {
+  background: #e6a44e;
+}
+
+.palmDiningDrinks {
+  border-top: 1px solid #d5b99b;
+  padding-top: 6px;
+  display: grid;
+  grid-template-columns: auto repeat(3, 1fr);
+  gap: 4px;
+  align-items: center;
+}
+
+.palmDiningDrinks > strong {
+  font-size: clamp(.48rem, .8vw, .62rem);
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.palmDiningDrinks button {
+  min-width: 0;
+  border: 1px solid #c9ab8d;
+  border-radius: 8px;
+  background: #fffaf2;
+  color: #5c493b;
+  padding: 3px;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.palmDiningDrinks button[data-active="true"] {
+  box-shadow: 0 0 0 3px #e6b35f;
+}
+
+.palmDiningDrinks button span {
+  font-size: clamp(.9rem, 1.7vw, 1.2rem);
+}
+
+.palmDiningDrinks button small {
+  font-size: clamp(.38rem, .62vw, .5rem);
+  font-weight: 800;
+}
+
+/* Custodian game */
+.custodianGame .custodianCharacter {
+  left: 48%;
+  bottom: 12%;
+}
+
+.custodianCartGame {
+  position: absolute;
+  z-index: 8;
+  left: max(2%, calc((100vw - 1180px) / 2 + 2%));
+  bottom: 5%;
+  width: clamp(210px, 27vw, 330px);
+  min-height: clamp(105px, 20dvh, 150px);
+  border: 8px solid #527983;
+  border-radius: 12px;
+  background: linear-gradient(180deg, #82c5ce, #5595a0);
+  color: #f5ffff;
+  padding: 8px;
+  box-shadow: inset 0 -16px 0 rgba(44,108,119,.26), 0 10px 14px rgba(37,76,82,.15);
+}
+
+.custodianCartGame::before,
+.custodianCartGame::after {
+  content: "";
+  position: absolute;
+  bottom: -14px;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: #465257;
+  border: 4px solid #77868b;
+}
+
+.custodianCartGame::before { left: 12%; }
+.custodianCartGame::after { right: 12%; }
+
+.custodianCartGame > strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: clamp(.58rem, 1vw, .76rem);
+  letter-spacing: .1em;
+  text-transform: uppercase;
+}
+
+.custodianCartGame > div {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+
+.custodianCartGame button {
+  min-width: 0;
+  border: 2px solid rgba(255,255,255,.6);
+  border-radius: 8px;
+  background: rgba(255,255,255,.9);
+  color: #395e67;
+  padding: 4px 2px;
+  display: grid;
+  justify-items: center;
+  gap: 1px;
+  font: inherit;
+  cursor: pointer;
+}
+
+.custodianCartGame button[data-active="true"] {
+  outline: 4px solid #ffd56a;
+  outline-offset: 2px;
+}
+
+.custodianCartGame button span {
+  font-size: clamp(1rem, 2.2vw, 1.5rem);
+}
+
+.custodianCartGame button small {
+  font-size: clamp(.36rem, .6vw, .48rem);
+  font-weight: 850;
+  text-align: center;
+}
+
+.custodianTaskObject {
+  position: absolute;
+  z-index: 10;
+  min-width: clamp(130px, 17vw, 210px);
+  border: 0;
+  background: transparent;
+  color: #17304f;
+  padding: 4px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font: inherit;
+  cursor: pointer;
+  animation: custodianTaskPulse 1.6s ease-in-out infinite;
+}
+
+.custodianTaskObject[data-task="spill"] {
+  left: 38%;
+  bottom: 3%;
+}
+
+.custodianTaskObject[data-task="crumbs"] {
+  left: 58%;
+  bottom: 4%;
+}
+
+.custodianTaskObject[data-task="glass"] {
+  right: 7%;
+  top: 28%;
+}
+
+.custodianTaskObject[data-task="trash"] {
+  right: 4%;
+  bottom: 7%;
+}
+
+.custodianTaskObject > span {
+  font-size: clamp(2rem, 5vw, 3.8rem);
+  filter: drop-shadow(0 7px 5px rgba(36,66,71,.16));
+}
+
+.custodianTaskObject > strong {
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  padding: 5px 8px;
+  box-shadow: 0 4px 9px rgba(32,49,55,.12);
+  font-size: clamp(.52rem, .9vw, .68rem);
+}
+
+.custodianTaskObject > small {
+  max-width: 150px;
+  color: #5c7180;
+  font-size: clamp(.4rem, .7vw, .54rem);
+  font-weight: 800;
+  text-align: center;
+}
+
+@keyframes custodianTaskPulse {
+  0%,100% { transform: scale(1); }
+  50% { transform: scale(1.045); }
+}
+
+.custodianShiftCard {
+  position: absolute;
+  z-index: 8;
+  top: clamp(76px, 15dvh, 120px);
+  left: max(2%, calc((100vw - 1180px) / 2 + 2%));
+  width: clamp(190px, 23vw, 280px);
+  border: 5px solid #7397a0;
+  border-radius: 10px;
+  background: rgba(247,252,251,.95);
+  color: #42616a;
+  padding: 9px;
+  box-shadow: 0 7px 12px rgba(50,79,85,.12);
+  display: grid;
+  gap: 4px;
+}
+
+.custodianShiftCard strong {
+  font-size: clamp(.58rem, 1vw, .76rem);
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.custodianShiftCard span {
+  font-family: Georgia, 'Times New Roman', serif;
+  font-size: clamp(.72rem, 1.25vw, .94rem);
+  font-weight: 800;
+}
+
+.custodianShiftCard small {
+  font-size: clamp(.46rem, .78vw, .58rem);
+  font-weight: 750;
+  line-height: 1.3;
+}
+
+/* Indoor pool play */
+.poolFunMeter {
+  position: absolute;
+  z-index: 9;
+  left: max(2%, calc((100vw - 1160px) / 2 + 2%));
+  top: clamp(72px, 14dvh, 112px);
+  width: clamp(170px, 22vw, 270px);
+  border: 5px solid #5b9baa;
+  border-radius: 12px;
+  background: rgba(242,253,255,.94);
+  color: #2f6f7e;
+  padding: 8px;
+  box-shadow: 0 7px 12px rgba(33,96,111,.13);
+  display: grid;
+  gap: 5px;
+}
+
+.poolFunMeter > strong {
+  font-size: clamp(.58rem, 1vw, .76rem);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.poolFunMeter > div {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.poolFunMeter i {
+  height: 12px;
+  border-radius: 999px;
+  border: 2px solid #72aebb;
+  background: #fff;
+}
+
+.poolFunMeter i[data-filled="true"] {
+  background: linear-gradient(90deg, #64d0df, #88e1d5);
+}
+
+.poolFunMeter small {
+  font-size: clamp(.43rem, .72vw, .55rem);
+  font-weight: 800;
+}
+
+.poolPlayingCharacter {
+  --pool-action-scale: 1;
+  --pool-slide-x: clamp(45px, 8vw, 105px);
+}
+
+.poolActionFloat > div {
+  animation: poolFloatPlay 1.7s ease-in-out;
+}
+
+.poolActionSlide > div {
+  animation: poolSlidePlay 1.35s ease-in-out;
+}
+
+.poolActionBall > div {
+  animation: poolBallPlay 1s ease-in-out;
+}
+
+@keyframes poolFloatPlay {
+  0%,100% { transform: scale(.56); }
+  28% { transform: translate(28px, 44px) rotate(-5deg) scale(.56); }
+  50% { transform: translate(42px, 48px) rotate(3deg) scale(.56); }
+  72% { transform: translate(30px, 44px) rotate(-2deg) scale(.56); }
+}
+
+@keyframes poolSlidePlay {
+  0%,100% { transform: scale(.56); }
+  28% { transform: translate(22px, -24px) rotate(-8deg) scale(.56); }
+  68% { transform: translate(var(--pool-slide-x), 50px) rotate(15deg) scale(.56); }
+  82% { transform: translate(calc(var(--pool-slide-x) + 8px), 58px) rotate(7deg) scale(.56); }
+}
+
+@keyframes poolBallPlay {
+  0%,100% { transform: scale(.56); }
+  30% { transform: translateY(-28px) rotate(-8deg) scale(.56); }
+  60% { transform: translate(16px, -12px) rotate(10deg) scale(.56); }
+}
+
+.poolGame .poolPlayObject {
+  animation: poolObjectBob 2.2s ease-in-out infinite;
+}
+
+.poolGame .poolSlide {
+  animation-delay: -.65s;
+}
+
+.poolGame .poolBall {
+  animation-delay: -1.2s;
+}
+
+@keyframes poolObjectBob {
+  0%,100% { margin-bottom: 0; }
+  50% { margin-bottom: 5px; }
+}
+
+@media (max-width: 760px) {
+  .palmKitchenTicket {
+    top: 60px;
+    left: 5px;
+    width: 29%;
+  }
+
+  .palmKitchenStorageRow {
+    left: 4px;
+    width: 29%;
+  }
+
+  .palmKitchenIngredientShelf {
+    left: 4px;
+    width: 34%;
+    bottom: 70px;
+  }
+
+  .palmKitchenStove {
+    left: 30%;
+    width: 29%;
+  }
+
+  .palmKitchenPlate {
+    right: 20%;
+    width: 22%;
+  }
+
+  .palmKitchenPass {
+    right: 2%;
+    width: 18%;
+  }
+
+  .palmDiningControls {
+    right: 2%;
+    width: 31%;
+  }
+
+  .custodianCartGame {
+    left: 2%;
+    width: 34%;
+  }
+
+  .custodianShiftCard {
+    left: 4px;
+    top: 62px;
+    width: 31%;
+  }
+
+  .custodianTaskObject[data-task="spill"] { left: 37%; }
+  .custodianTaskObject[data-task="crumbs"] { left: 55%; }
+  .custodianTaskObject[data-task="glass"] { right: 3%; }
+  .custodianTaskObject[data-task="trash"] { right: 2%; }
+
+  .poolFunMeter {
+    left: 5px;
+    top: 60px;
+    width: 28%;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenTicket {
+    top: 45px;
+    width: 34%;
+    padding: 5px;
+    border-width: 4px;
+  }
+
+  .palmKitchenTicket span {
+    font-size: .42rem;
+  }
+
+  .palmKitchenStorageRow {
+    width: 35%;
+    gap: 2px;
+  }
+
+  .palmKitchenStorageRow button {
+    min-height: 44px;
+    border-width: 3px;
+  }
+
+  .palmKitchenStorageRow button strong {
+    font-size: .38rem;
+  }
+
+  .palmKitchenIngredientShelf {
+    width: 39%;
+    bottom: 52px;
+    max-height: 31%;
+    grid-template-columns: repeat(2, 1fr);
+    border-width: 4px;
+    padding: 4px;
+  }
+
+  .palmKitchenStove {
+    left: 35%;
+    bottom: 3%;
+    width: 27%;
+    min-height: 70px;
+    border-width: 5px;
+  }
+
+  .palmKitchenPlate {
+    right: 18%;
+    bottom: 3%;
+    width: 22%;
+    min-height: 66px;
+    border-width: 5px;
+    padding: 5px;
+  }
+
+  .palmKitchenPass {
+    right: 1%;
+    bottom: 3%;
+    width: 18%;
+    min-height: 66px;
+    border-width: 5px;
+    border-top-width: 8px;
+  }
+
+  .palmDiningControls {
+    right: 2%;
+    bottom: 2%;
+    width: 42%;
+    padding: 5px;
+    border-width: 4px;
+  }
+
+  .palmDiningDrinks {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .palmDiningDrinks > strong {
+    grid-column: 1 / -1;
+  }
+
+  .custodianCartGame {
+    left: 2%;
+    bottom: 3%;
+    width: 39%;
+    min-height: 82px;
+    border-width: 5px;
+  }
+
+  .custodianCartGame > div {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .custodianShiftCard {
+    top: 47px;
+    width: 37%;
+    padding: 5px;
+    border-width: 4px;
+  }
+
+  .custodianShiftCard small {
+    font-size: .4rem;
+  }
+
+  .custodianTaskObject {
+    min-width: 100px;
+  }
+
+  .custodianTaskObject > span {
+    font-size: 2rem;
+  }
+
+  .poolFunMeter {
+    top: 47px;
+    width: 36%;
+    padding: 5px;
+    border-width: 4px;
+  }
+
+  .poolFunMeter small {
+    font-size: .4rem;
+  }
+}
+
+@media (max-height: 610px) {
+  .palmKitchenTicket,
+  .custodianShiftCard,
+  .poolFunMeter {
+    top: 43px;
+  }
+
+  .palmKitchenStorageRow,
+  .palmKitchenStove,
+  .palmKitchenPlate,
+  .palmKitchenPass,
+  .custodianCartGame,
+  .palmDiningControls {
+    bottom: 2%;
+  }
+
+  .palmKitchenIngredientShelf {
+    bottom: 50px;
+  }
+
+  .lobbyGameComplete {
+    padding: 14px;
+  }
+}
