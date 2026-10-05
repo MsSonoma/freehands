@@ -1175,9 +1175,6 @@ export default function KidsResort({ libraryHref = null }) {
   const placeCompanionsBehind = (playerPoint, dx, dy, moving = true) => {
     if (companionIds.length === 0) return;
 
-    const distance = Math.hypot(dx, dy) || 1;
-    const unitX = dx / distance;
-    const unitY = dy / distance;
     const walkDirection = Math.abs(dx) > Math.abs(dy)
       ? (dx < 0 ? 'left' : 'right')
       : (dy < 0 ? 'back' : 'front');
@@ -1187,7 +1184,7 @@ export default function KidsResort({ libraryHref = null }) {
       if (partyIndex < 0) return person;
 
       const followGap = 4.2 + partyIndex * 2.7;
-      const sideOffset = partyIndex % 2 === 0 ? 0 : 1.1;
+      const horizontalDirection = Math.abs(dx) > 0.05 ? Math.sign(dx) : (partyIndex % 2 === 0 ? 1 : -1);
 
       return {
         ...person,
@@ -1203,8 +1200,8 @@ export default function KidsResort({ libraryHref = null }) {
           endsAt: null,
         },
         spawn: {
-          x: clamp(playerPoint.x - unitX * followGap + unitY * sideOffset, 4, 96),
-          y: clamp(playerPoint.y - unitY * followGap - unitX * sideOffset, 7, 91),
+          x: clamp(playerPoint.x - horizontalDirection * followGap, 4, 96),
+          y: clamp(playerPoint.y, 7, 91),
         },
       };
     }));
@@ -1414,7 +1411,7 @@ export default function KidsResort({ libraryHref = null }) {
         isRoaming: false,
         spawn: {
           x: clamp(position.x - 4, 4, 96),
-          y: clamp(position.y + 1.5, 7, 91),
+          y: clamp(position.y, 7, 91),
         },
         activity: {
           id: 'walk-together',
@@ -2902,7 +2899,10 @@ export default function KidsResort({ libraryHref = null }) {
               className={styles.conversationCustomizeButton}
               data-active={companionIds.includes(conversationPerson.id) ? 'true' : 'false'}
               aria-pressed={companionIds.includes(conversationPerson.id)}
-              onClick={() => toggleWalkTogether(conversationPerson)}
+              onClick={() => {
+                toggleWalkTogether(conversationPerson);
+                endConversation();
+              }}
             >
               Walk together
             </button>
