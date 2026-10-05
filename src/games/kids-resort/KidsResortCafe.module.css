@@ -791,7 +791,7 @@
 /* One visible customer walks to the pass for every active cafe order. */
 .cafeWorkViewport > .cafePassGuest {
   position: absolute;
-  z-index: 44;
+  z-index: 1;
   top: clamp(8px, 1.5dvh, 20px);
   bottom: auto;
   width: 92px;
