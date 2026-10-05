@@ -459,7 +459,6 @@ export default function KidsResort({ libraryHref = null }) {
   const [personEditorOpen, setPersonEditorOpen] = useState(false);
   const [personDraft, setPersonDraft] = useState(null);
   const [personEditorMode, setPersonEditorMode] = useState('edit');
-  const peopleSeededRef = useRef(false);
 
   const [studioMessage, setStudioMessage] = useState('');
   const [studioCreations, setStudioCreations] = useState(0);
@@ -545,10 +544,19 @@ export default function KidsResort({ libraryHref = null }) {
   }, []);
 
   useEffect(() => {
-    if (peopleSeededRef.current) return;
-    peopleSeededRef.current = true;
-    setPeople([makeCharacterPerson('random'), makeCharacterPerson('random')]);
-  }, []);
+    if (screen !== 'map' || people.length > 0) return undefined;
+
+    const delay = 120000 + Math.round(Math.random() * 180000);
+    const timer = window.setTimeout(() => {
+      setPeople((items) => (
+        items.length === 0
+          ? [makeCharacterPerson('random')]
+          : items
+      ));
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [screen, people.length]);
 
   useEffect(() => {
     if (screen !== 'cafe-work' || cafeFinished) return undefined;
@@ -819,13 +827,6 @@ export default function KidsResort({ libraryHref = null }) {
       spawn: { ...person.spawn },
     });
     setPersonEditorOpen(true);
-  };
-
-  const spawnRandomPerson = () => {
-    const person = makeCharacterPerson('random');
-    setPeople((items) => [...items, person]);
-    setPeopleOpen(true);
-    openPersonEditor(person, 'edit');
   };
 
   const createCustomPerson = () => {
@@ -1867,11 +1868,11 @@ export default function KidsResort({ libraryHref = null }) {
           <button
             type="button"
             className={[styles.mapCornerButton, styles.addCharacterButton].join(' ')}
-            aria-label="People"
-            title="People"
+            aria-label="Create character"
+            title="Create character"
             onClick={() => {
-              setPeopleOpen(true);
-              setPersonEditorOpen(false);
+              setPeopleOpen(false);
+              createCustomPerson();
             }}
           >
             +
@@ -1888,7 +1889,6 @@ export default function KidsResort({ libraryHref = null }) {
               </div>
 
               <div className={styles.peoplePanelActions}>
-                <button type="button" onClick={spawnRandomPerson}>Random Visitor</button>
                 <button type="button" onClick={createCustomPerson}>Create Character</button>
               </div>
 
