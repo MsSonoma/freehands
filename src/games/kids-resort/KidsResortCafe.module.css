@@ -844,3 +844,42 @@
 @media (prefers-reduced-motion: reduce) {
   .cafeWorkViewport > .cafePassGuest { animation: none; }
 }
+/* Keep cafe storage inventory visible above the kitchen character. */
+.cafeWorkViewport > .cafeIngredientDrawer {
+  position: relative;
+  z-index: 55;
+}
+
+/* Put live cooking instructions in unused wall space instead of over storage inventory. */
+.cafeWorkViewport > .cafeFeedback {
+  top: clamp(48px, 8dvh, 70px);
+  left: clamp(8px, 1.35vw, 18px);
+  width: clamp(150px, 20vw, 235px);
+  min-height: 34px;
+  padding: 6px 9px;
+  transform: none;
+  border-radius: 12px;
+  font-size: clamp(.5rem, 1.15dvh, .66rem);
+}
+
+@media (max-width: 760px) {
+  .cafeWorkViewport > .cafeFeedback {
+    top: clamp(28px, 5dvh, 40px);
+    left: 5px;
+    width: clamp(116px, 29vw, 150px);
+    min-height: 28px;
+    padding: 4px 6px;
+    font-size: .43rem;
+  }
+}
+
+@media (max-height: 440px) {
+  .cafeWorkViewport > .cafeFeedback {
+    top: 3px;
+    left: 5px;
+    width: clamp(108px, 24vw, 142px);
+    min-height: 23px;
+    padding: 2px 5px;
+    font-size: .38rem;
+  }
+}
