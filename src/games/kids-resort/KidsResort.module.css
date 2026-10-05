@@ -6157,3 +6157,14 @@
     padding: 14px;
   }
 }
+
+/* Palm Court dining depth: seated diners belong behind the table. */
+.palmDiningGame .restaurantDiningCharacter,
+.palmDiningGame .restaurantDiningGuest,
+.palmDiningGame .diningPlayerCharacter {
+  z-index: 6;
+}
+
+.palmDiningGame .palmCourtDiningTable {
+  z-index: 8;
+}
