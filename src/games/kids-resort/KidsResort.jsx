@@ -1085,15 +1085,6 @@ export default function KidsResort({ libraryHref = null }) {
                       data-selected={customerItem.id === option.id ? 'true' : 'false'}
                       onClick={() => updateStudioType(customer.category, option)}
                     >
-                      <span
-                        className={styles.fashionTypeSwatch}
-                        style={{
-                          background:
-                            customerItem.id === option.id && option.id !== 'none'
-                              ? customerItem.swatch
-                              : option.swatch,
-                        }}
-                      />
                       <strong>{option.name}</strong>
                       <small>Design option</small>
                     </button>
@@ -1281,10 +1272,6 @@ export default function KidsResort({ libraryHref = null }) {
                   data-selected={activeItem.id === option.id ? 'true' : 'false'}
                   onClick={() => updateStudioType(studioCategory, option)}
                 >
-                  <span
-                    className={styles.fashionTypeSwatch}
-                    style={{ background: activeItem.id === option.id && option.id !== 'none' ? activeItem.swatch : option.swatch }}
-                  />
                   <strong>{option.name}</strong>
                   <small>{option.price === 0 ? 'Free' : option.price + ' Resort Bucks'}</small>
                 </button>
