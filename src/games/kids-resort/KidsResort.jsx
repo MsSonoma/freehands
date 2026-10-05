@@ -503,10 +503,55 @@ const FASHION_CATEGORIES = [
   { id: 'headwear', label: 'Hats & Hair Accessories' },
 ];
 
+const WEARABLE_FIT_CATEGORIES = new Set(['glasses', 'headwear']);
+
+function wearableFit(option) {
+  return {
+    x: Number(option?.fitX ?? 0),
+    y: Number(option?.fitY ?? 0),
+    scale: Number(option?.fitScale ?? 1),
+  };
+}
+
+function carryWearableFit(category, option, current) {
+  if (!WEARABLE_FIT_CATEGORIES.has(category)) return { ...option };
+  const fit = wearableFit(current || option);
+  return {
+    ...option,
+    fitX: fit.x,
+    fitY: fit.y,
+    fitScale: fit.scale,
+  };
+}
+
+function wearableFitStyle(displayLook) {
+  const glasses = wearableFit(displayLook?.glasses);
+  const headwear = wearableFit(displayLook?.headwear);
+  return {
+    '--glasses-fit-x': glasses.x + 'px',
+    '--glasses-fit-y': glasses.y + 'px',
+    '--glasses-player-fit-x': glasses.x * 0.5 + 'px',
+    '--glasses-player-fit-y': glasses.y * 0.5 + 'px',
+    '--glasses-fit-scale': glasses.scale,
+    '--headwear-fit-x': headwear.x + 'px',
+    '--headwear-fit-y': headwear.y + 'px',
+    '--headwear-player-fit-x': headwear.x * 0.5 + 'px',
+    '--headwear-player-fit-y': headwear.y * 0.5 + 'px',
+    '--headwear-fit-scale': headwear.scale,
+  };
+}
+
 function fashionKey(category, option) {
   if (!option) return '';
   const color = option.id === 'none' ? 'none' : (option.swatch || '').toLowerCase();
   return category + ':' + option.id + ':' + color;
+}
+
+function fashionAppearanceKey(category, option) {
+  const base = fashionKey(category, option);
+  if (!WEARABLE_FIT_CATEGORIES.has(category) || !option || option.id === 'none') return base;
+  const fit = wearableFit(option);
+  return base + ':' + fit.x + ':' + fit.y + ':' + fit.scale.toFixed(2);
 }
 
 const FASHION_CUSTOMERS = [
@@ -1904,7 +1949,7 @@ export default function KidsResort({ libraryHref = null }) {
         look: {
           ...current.look,
           [category]: {
-            ...option,
+            ...carryWearableFit(category, option, currentItem),
             swatch: currentItem?.swatch || option.swatch,
           },
         },
@@ -1920,6 +1965,71 @@ export default function KidsResort({ libraryHref = null }) {
         [category]: { ...current.look[category], swatch },
       },
     } : current);
+  };
+
+  const updatePersonLookFit = (category, key, value) => {
+    setPersonDraft((current) => current ? {
+      ...current,
+      look: {
+        ...current.look,
+        [category]: {
+          ...current.look[category],
+          [key]: Number(value),
+        },
+      },
+    } : current);
+  };
+
+  const updateMainLookFit = (category, key, value) => {
+    setLook((current) => ({
+      ...current,
+      [category]: {
+        ...current[category],
+        [key]: Number(value),
+      },
+    }));
+  };
+
+  const renderWearableFitControls = (item, onChange) => {
+    if (!item || item.id === 'none') return null;
+    const fit = wearableFit(item);
+    return (
+      <div className={styles.wearableFitControls}>
+        <label>
+          <span>Size</span>
+          <input
+            type="range"
+            min="60"
+            max="160"
+            step="5"
+            value={Math.round(fit.scale * 100)}
+            onChange={(event) => onChange('fitScale', Number(event.target.value) / 100)}
+          />
+        </label>
+        <label>
+          <span>Left / right</span>
+          <input
+            type="range"
+            min="-24"
+            max="24"
+            step="1"
+            value={fit.x}
+            onChange={(event) => onChange('fitX', Number(event.target.value))}
+          />
+        </label>
+        <label>
+          <span>Up / down</span>
+          <input
+            type="range"
+            min="-24"
+            max="24"
+            step="1"
+            value={fit.y}
+            onChange={(event) => onChange('fitY', Number(event.target.value))}
+          />
+        </label>
+      </div>
+    );
   };
 
   const updatePersonPersonality = (key, value) => {
@@ -1994,7 +2104,7 @@ export default function KidsResort({ libraryHref = null }) {
     if (!base) return;
     const current = base[category];
     const nextOption = {
-      ...option,
+      ...carryWearableFit(category, option, current),
       swatch: current?.swatch || option.swatch,
     };
     setStudioDraftLook({ ...base, [category]: nextOption });
@@ -2015,6 +2125,25 @@ export default function KidsResort({ libraryHref = null }) {
       [category]: { ...current, swatch },
     });
     setStudioMessage('Color changed. Keep designing.');
+  };
+
+  const updateStudioFit = (category, key, value) => {
+    const base =
+      studioDraftLook ||
+      (screen === 'studio-work' && studioWorkTool === 'fashion'
+        ? studioCustomerPerson?.look
+        : look);
+    if (!base) return;
+    const current = base[category];
+    if (!current || current.id === 'none') return;
+    setStudioDraftLook({
+      ...base,
+      [category]: {
+        ...current,
+        [key]: Number(value),
+      },
+    });
+    setStudioMessage('Accessory fit adjusted.');
   };
 
   const buyStudioLook = (category, option) => {
@@ -2239,6 +2368,7 @@ export default function KidsResort({ libraryHref = null }) {
       data-pose={pose}
       style={{
         ...characterStyleFor(displayCharacter),
+        ...wearableFitStyle(displayLook),
         '--character-idle-delay': idlePhaseForName(displayName),
         '--outfit-shirt': displayLook.shirt.swatch,
         '--outfit-bottoms': displayLook.bottoms.swatch,
@@ -2325,6 +2455,7 @@ export default function KidsResort({ libraryHref = null }) {
           transform: 'translateX(-50%) scale(.56)',
           transformOrigin: 'top center',
           ...characterStyleFor(displayCharacter),
+          ...wearableFitStyle(displayLook),
           '--character-idle-delay': idlePhaseForName(person.name),
           '--outfit-shirt': displayLook.shirt.swatch,
           '--outfit-bottoms': displayLook.bottoms.swatch,
@@ -3641,6 +3772,12 @@ export default function KidsResort({ libraryHref = null }) {
               ))}
             </div>
 
+            {WEARABLE_FIT_CATEGORIES.has(studioCategory) &&
+              renderWearableFitControls(
+                activeItem,
+                (key, value) => updateStudioFit(studioCategory, key, value),
+              )}
+
             <div className={styles.fashionActionRow}>
               {studioCustomerDone ? (
                 <button type="button" onClick={nextFashionCustomer}>Next Customer</button>
@@ -3723,7 +3860,9 @@ export default function KidsResort({ libraryHref = null }) {
     const activeOptions = LOOK_OPTIONS[studioCategory];
     const activeKey = fashionKey(studioCategory, activeItem);
     const owned = ownedLooks.has(activeKey) || (activeItem?.price || 0) === 0;
-    const worn = fashionKey(studioCategory, look[studioCategory]) === activeKey;
+    const worn =
+      fashionAppearanceKey(studioCategory, look[studioCategory]) ===
+      fashionAppearanceKey(studioCategory, activeItem);
     const activeLabel =
       FASHION_CATEGORIES.find((category) => category.id === studioCategory)?.label || 'Fashion';
     const tryOnItems = FASHION_CATEGORIES
@@ -3731,8 +3870,8 @@ export default function KidsResort({ libraryHref = null }) {
         ...category,
         item: previewLook[category.id],
         changed:
-          fashionKey(category.id, previewLook[category.id]) !==
-          fashionKey(category.id, look[category.id]),
+          fashionAppearanceKey(category.id, previewLook[category.id]) !==
+          fashionAppearanceKey(category.id, look[category.id]),
       }))
       .filter((category) => category.changed);
 
@@ -3794,6 +3933,12 @@ export default function KidsResort({ libraryHref = null }) {
               </button>
             ))}
           </div>
+
+          {WEARABLE_FIT_CATEGORIES.has(studioCategory) &&
+            renderWearableFitControls(
+              activeItem,
+              (key, value) => updateStudioFit(studioCategory, key, value),
+            )}
 
           <div className={styles.fashionActionRow}>
             <button
@@ -4069,6 +4214,7 @@ export default function KidsResort({ libraryHref = null }) {
               zIndex: mapDepthRanks.player ?? 12,
               '--player-depth-scale': (0.24 + position.y * 0.0043).toFixed(3),
               ...characterStyle,
+              ...wearableFitStyle(look),
               '--character-idle-delay': idlePhaseForName(characterName),
               '--outfit-shirt': look.shirt.swatch,
               '--outfit-bottoms': look.bottoms.swatch,
@@ -4404,6 +4550,11 @@ export default function KidsResort({ libraryHref = null }) {
                                 </button>
                               ))}
                             </div>
+                            {WEARABLE_FIT_CATEGORIES.has(category.id) &&
+                              renderWearableFitControls(
+                                item,
+                                (key, value) => updatePersonLookFit(category.id, key, value),
+                              )}
                           </div>
                         );
                       })}
@@ -4637,6 +4788,30 @@ export default function KidsResort({ libraryHref = null }) {
                     </label>
                   )}
                 </div>
+
+                {(look.glasses.id !== 'none' || look.headwear.id !== 'none') && (
+                  <div className={styles.creatorSection}>
+                    <span className={styles.creatorLabel}>Accessory fit</span>
+                    {look.glasses.id !== 'none' && (
+                      <div className={styles.creatorAccessoryFit}>
+                        <strong>{look.glasses.name}</strong>
+                        {renderWearableFitControls(
+                          look.glasses,
+                          (key, value) => updateMainLookFit('glasses', key, value),
+                        )}
+                      </div>
+                    )}
+                    {look.headwear.id !== 'none' && (
+                      <div className={styles.creatorAccessoryFit}>
+                        <strong>{look.headwear.name}</strong>
+                        {renderWearableFitControls(
+                          look.headwear,
+                          (key, value) => updateMainLookFit('headwear', key, value),
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
             )}
             <button

@@ -1754,3 +1754,20 @@
     animation: none !important;
   }
 }
+
+
+/* Match movable/scalable accessories on the articulated map character.
+   Left-facing profile inherits these offsets through the mirrored playerSprite. */
+.playerGlasses {
+  margin-left: var(--glasses-player-fit-x, 0px);
+  margin-top: var(--glasses-player-fit-y, 0px);
+  scale: var(--glasses-fit-scale, 1);
+  transform-origin: center center;
+}
+
+.playerHeadwear {
+  margin-left: var(--headwear-player-fit-x, 0px);
+  margin-top: var(--headwear-player-fit-y, 0px);
+  scale: var(--headwear-fit-scale, 1);
+  transform-origin: center center;
+}

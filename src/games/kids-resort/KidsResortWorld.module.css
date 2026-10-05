@@ -3089,3 +3089,67 @@
     max-height: 16vh;
   }
 }
+
+
+/* User-adjustable accessory fit. Position is stored in full-size character pixels. */
+.avatarGlasses {
+  margin-left: var(--glasses-fit-x, 0px);
+  margin-top: var(--glasses-fit-y, 0px);
+  scale: var(--glasses-fit-scale, 1);
+  transform-origin: center center;
+}
+
+.avatarHeadwear {
+  margin-left: var(--headwear-fit-x, 0px);
+  margin-top: var(--headwear-fit-y, 0px);
+  scale: var(--headwear-fit-scale, 1);
+  transform-origin: center center;
+}
+
+.wearableFitControls {
+  display: grid;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 9px 10px;
+  border: 1px solid #dfe8ee;
+  border-radius: 12px;
+  background: #f8fbfd;
+}
+
+.wearableFitControls label {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+}
+
+.wearableFitControls label > span {
+  color: #5f758a;
+  font-size: .66rem;
+  font-weight: 900;
+}
+
+.wearableFitControls input[type="range"] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  accent-color: #17304f;
+}
+
+.creatorAccessoryFit {
+  display: grid;
+  gap: 3px;
+  padding-top: 8px;
+  border-top: 1px solid #e3eaf0;
+}
+
+.creatorAccessoryFit:first-of-type {
+  padding-top: 0;
+  border-top: 0;
+}
+
+.creatorAccessoryFit > strong {
+  color: #17304f;
+  font-size: .68rem;
+}
