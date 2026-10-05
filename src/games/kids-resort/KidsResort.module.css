@@ -3203,3 +3203,295 @@
     max-height: 52%;
   }
 }
+
+/* Cafe characters live inside each cafe environment */
+.cafeSceneCharacter {
+  position:absolute;
+  z-index:8;
+  width:92px;
+  height:154px;
+  pointer-events:none;
+  --cafe-character-scale:.52;
+}
+.cafeSceneCharacter > .avatarFigure {
+  position:absolute;
+  left:50%;
+  bottom:0;
+  transform:translateX(-50%) scale(var(--cafe-character-scale));
+  transform-origin:bottom center;
+}
+.cafeWaitingCharacter {
+  left:47%;
+  bottom:72px;
+}
+.cafeWorkScene .cafeWorkCharacter {
+  position:absolute;
+  z-index:1;
+  right:128px;
+  top:28px;
+  width:74px;
+  height:108px;
+  --cafe-character-scale:.38;
+}
+
+/* Full-screen Sunshine Cafe dining room */
+.cafeDiningRoom {
+  position:relative;
+  flex:1 1 auto;
+  width:100%;
+  min-height:0;
+  height:calc(100dvh - 44px);
+  overflow:hidden;
+  background:
+    repeating-linear-gradient(90deg,rgba(255,255,255,.2) 0 76px,rgba(214,166,112,.12) 76px 80px),
+    linear-gradient(#fff2cf 0 59%,#e9bd88 59% 100%);
+}
+.cafeDiningRoom::after {
+  content:"";
+  position:absolute;
+  z-index:1;
+  left:0;
+  right:0;
+  top:59%;
+  bottom:0;
+  pointer-events:none;
+  background:
+    linear-gradient(90deg,transparent 49.5%,rgba(151,102,65,.16) 49.6% 50.4%,transparent 50.5%),
+    linear-gradient(0deg,transparent 49.5%,rgba(151,102,65,.12) 49.6% 50.4%,transparent 50.5%);
+  background-size:140px 92px;
+  transform:perspective(520px) rotateX(58deg) scale(1.35);
+  transform-origin:top center;
+}
+.cafeDiningWallSign {
+  position:absolute;
+  z-index:5;
+  left:max(24px,calc((100vw - 1100px)/2 + 30px));
+  top:24px;
+  width:255px;
+  padding:14px 18px;
+  border:6px solid #3d8c8d;
+  border-radius:20px;
+  background:#ffe39b;
+  color:#176b77;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  column-gap:10px;
+  align-items:center;
+}
+.cafeDiningWallSign span { grid-row:1/3; font-size:2.2rem; }
+.cafeDiningWallSign strong { font-size:1.1rem; }
+.cafeDiningWallSign small { font-size:.68rem; font-weight:800; }
+.cafeDiningWindow {
+  position:absolute;
+  z-index:3;
+  left:34%;
+  top:22px;
+  width:31%;
+  height:150px;
+  overflow:hidden;
+  border:8px solid #83583a;
+  background:linear-gradient(#8edcf5 0 54%,#2ab6c8 55% 76%,#e9c47f 77%);
+  display:flex;
+  justify-content:space-between;
+  align-items:end;
+  padding:8px 20px;
+  font-size:2.5rem;
+}
+.cafeDiningLights {
+  position:absolute;
+  z-index:5;
+  left:67%;
+  top:0;
+  display:flex;
+  gap:38px;
+}
+.cafeDiningLights span {
+  position:relative;
+  width:28px;
+  height:72px;
+  padding-top:43px;
+  font-size:0;
+}
+.cafeDiningLights span::before {
+  content:"";
+  position:absolute;
+  left:50%;
+  top:0;
+  width:3px;
+  height:47px;
+  background:#805b44;
+}
+.cafeDiningLights span::after {
+  content:"💡";
+  display:inline-block;
+  font-size:1.8rem;
+  transform:rotate(180deg);
+  transform-origin:center;
+}
+.cafeDiningCharacter {
+  z-index:7;
+  right:6%;
+  bottom:10%;
+  --cafe-character-scale:.5;
+}
+.cafeDiner {
+  position:absolute;
+  z-index:6;
+  bottom:11%;
+  width:176px;
+  height:176px;
+  pointer-events:none;
+}
+.cafeDinerOne { left:12%; }
+.cafeDinerTwo { left:39%; }
+.cafeDinerFigure {
+  position:absolute;
+  z-index:1;
+  left:50%;
+  bottom:27px;
+  width:76px;
+  height:126px;
+  overflow:hidden;
+  transform:translateX(-50%);
+}
+.cafeDinerFigure > .avatarFigure {
+  transform:scale(.4);
+  transform-origin:top center;
+}
+.cafeDinerTable,
+.cafeDiningPlaceSetting {
+  position:absolute;
+  z-index:7;
+  height:24px;
+  border-radius:50%;
+  background:#b97243;
+  box-shadow:0 9px 0 #8b5535;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:16px;
+  font-size:1.35rem;
+}
+.cafeDinerTable {
+  left:8px;
+  right:8px;
+  bottom:20px;
+}
+.cafeDinerTable::after,
+.cafeDiningPlaceSetting::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:50%;
+  top:18px;
+  width:10px;
+  height:58px;
+  transform:translateX(-50%);
+  border-radius:3px;
+  background:#795039;
+}
+.cafeDiningPlaceSetting {
+  right:2.8%;
+  bottom:8%;
+  width:158px;
+}
+.cafeDiningPlaceSetting span { position:relative; z-index:2; margin-top:-12px; font-size:1.8rem; }
+.cafeDiningMenu {
+  position:absolute;
+  z-index:10;
+  right:2.5%;
+  top:16%;
+  width:min(310px,25vw);
+  padding:12px;
+  border:7px solid #9a643d;
+  border-radius:14px;
+  background:#285e55;
+  color:#fff7df;
+  box-shadow:0 7px 0 rgba(91,57,36,.16);
+}
+.cafeDiningMenu > strong {
+  display:block;
+  margin-bottom:8px;
+  text-align:center;
+  font-size:.85rem;
+  letter-spacing:.04em;
+}
+.cafeDiningMenu > div {
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:7px;
+}
+.cafeDiningMenu button {
+  min-width:0;
+  min-height:62px;
+  padding:6px;
+  border:2px solid rgba(255,255,255,.55);
+  border-radius:9px;
+  background:#fff7df;
+  color:#17304f;
+  cursor:pointer;
+  display:grid;
+  grid-template-columns:auto 1fr;
+  column-gap:6px;
+  align-items:center;
+  text-align:left;
+}
+.cafeDiningMenu button span { grid-row:1/3; font-size:1.55rem; }
+.cafeDiningMenu button b { font-size:.65rem; }
+.cafeDiningMenu button small { font-size:.55rem; font-weight:800; }
+.cafeDiningMessage {
+  position:absolute;
+  z-index:11;
+  left:50%;
+  bottom:14px;
+  transform:translateX(-50%);
+  max-width:420px;
+  padding:7px 15px;
+  border-radius:999px;
+  background:rgba(255,255,255,.94);
+  color:#17304f;
+  font-size:.72rem;
+  font-weight:850;
+  text-align:center;
+  box-shadow:0 4px 10px rgba(91,57,36,.12);
+}
+.cafeDiningFloorLine {
+  position:absolute;
+  z-index:2;
+  left:0;
+  right:0;
+  top:59%;
+  height:4px;
+  background:#a96f45;
+  box-shadow:0 4px 0 rgba(255,255,255,.45);
+}
+@media (max-width: 900px) {
+  .cafeWaitingCharacter { left:45%; --cafe-character-scale:.45; }
+  .cafeWorkScene .cafeWorkCharacter { right:76px; --cafe-character-scale:.34; }
+  .cafeDiningWallSign { left:14px; top:12px; transform:scale(.82); transform-origin:top left; }
+  .cafeDiningWindow { left:31%; width:35%; top:12px; height:125px; }
+  .cafeDiningLights { display:none; }
+  .cafeDiner { --diner-shift:0; transform:scale(.88); transform-origin:bottom center; }
+  .cafeDinerOne { left:7%; }
+  .cafeDinerTwo { left:32%; }
+  .cafeDiningMenu { top:10px; right:12px; width:30%; padding:8px; }
+  .cafeDiningMenu > div { grid-template-columns:1fr; gap:4px; }
+  .cafeDiningMenu button { min-height:44px; }
+  .cafeDiningCharacter { right:5%; bottom:12%; --cafe-character-scale:.44; }
+  .cafeDiningPlaceSetting { right:1.5%; bottom:9%; width:132px; }
+}
+@media (max-width: 650px) {
+  .cafeWaitingCharacter { left:50%; bottom:76px; --cafe-character-scale:.4; }
+  .cafeWorkScene .cafeWorkCharacter { right:18px; top:35px; --cafe-character-scale:.3; }
+  .cafeDiningWallSign { transform:scale(.68); }
+  .cafeDiningWindow { left:28%; width:38%; height:102px; border-width:5px; font-size:1.7rem; }
+  .cafeDiner { transform:scale(.72); bottom:15%; }
+  .cafeDinerOne { left:0; }
+  .cafeDinerTwo { left:24%; }
+  .cafeDiningCharacter { right:1%; bottom:17%; --cafe-character-scale:.36; }
+  .cafeDiningPlaceSetting { right:0; bottom:14%; width:110px; }
+  .cafeDiningMenu { top:116px; right:6px; width:46%; }
+  .cafeDiningMenu button { min-height:40px; padding:4px; }
+  .cafeDiningMenu button span { font-size:1.25rem; }
+  .cafeDiningMessage { bottom:6px; width:90%; }
+}

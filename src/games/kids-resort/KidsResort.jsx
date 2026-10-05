@@ -484,6 +484,7 @@ export default function KidsResort({ libraryHref = null }) {
 
   const [people, setPeople] = useState([]);
   const [studioAmbientPerson] = useState(() => makeCharacterPerson('random'));
+  const [cafeAmbientPeople] = useState(() => [makeCharacterPerson('random'), makeCharacterPerson('random')]);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [personEditorOpen, setPersonEditorOpen] = useState(false);
   const [personDraft, setPersonDraft] = useState(null);
@@ -1371,6 +1372,7 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.cafeWallArt}><span>☀️</span><strong>Sunshine Café</strong><small>Good food. Bright days.</small></div>
           <div className={styles.cafeWindow} aria-hidden="true"><span className={styles.cafeSky} /><span className={styles.cafeSea} /><span className={styles.cafePalm}>🌴</span><span className={styles.cafeUmbrella}>⛱️</span></div>
           <div className={styles.cafePendantRow} aria-hidden="true"><span>💡</span><span>💡</span><span>💡</span></div>
+          <div className={[styles.cafeSceneCharacter, styles.cafeWaitingCharacter].join(' ')} aria-label={`${characterName} waiting in the cafe`}>{renderCharacter(false)}</div>
           <div className={styles.cafeDining}>
             <div className={styles.cafeBooth}><span className={styles.cafePlant}>🪴</span><div className={styles.cafeBench} /><div className={styles.cafeTable}><span>🌼</span></div></div>
             <div className={styles.cafeTables}><div className={styles.cafeTableGroup}><span className={styles.cafeChair}>🪑</span><div className={styles.cafeSmallTable}><span>🍽️</span></div><span className={styles.cafeChair}>🪑</span></div><div className={styles.cafeTableGroup}><span className={styles.cafeChair}>🪑</span><div className={styles.cafeSmallTable}><span>🍽️</span></div><span className={styles.cafeChair}>🪑</span></div></div>
@@ -1392,6 +1394,7 @@ export default function KidsResort({ libraryHref = null }) {
     const fridgeItems=Object.entries(CAFE_INGREDIENTS).filter(([,x])=>x.source==='fridge');
     const cabinetItems=Object.entries(CAFE_INGREDIENTS).filter(([,x])=>x.source==='cabinet');
     return <main className={styles.gameShell}><section className={styles.topBar}><button className={styles.backButton} type="button" onClick={()=>setScreen('cafe')}>← Café</button><div className={styles.brand}>Sunshine Café Shift</div><div className={styles.wallet}>🪙 {bucks} Resort Bucks</div></section><section className={styles.cafeWorkScene}><div className={styles.cafeWorkBackdrop} aria-hidden="true"><div className={styles.workWindow}><span>🌴</span><span>☀️</span></div><div className={styles.workWallSign}>SUNSHINE CAFÉ</div><div className={styles.workPendantRow}><span>💡</span><span>💡</span><span>💡</span></div><div className={styles.workServiceCounter}><span>🥤</span><span>🔔</span><span>🧁</span></div></div>
+      <div className={[styles.cafeSceneCharacter, styles.cafeWorkCharacter].join(' ')} aria-label={`${characterName} working in the cafe kitchen`}>{renderCharacter(false)}</div>
       <aside className={styles.recipeWall}><h2>Recipe Wall</h2>{CAFE_RECIPES.map((r)=><div key={r.id} className={styles.wallRecipe}><strong>{r.name}</strong><span>{r.formula}</span></div>)}</aside>
       <section className={styles.orderRail}><b>Orders · {cafeServed}/8</b>{cafeOrders.map((o)=>{const r=CAFE_RECIPES.find((x)=>x.id===o.recipeId),age=cafeNow-o.born,mood=age<12000?'🙂':age<24000?'😐':age<35000?'☹️':'😡';return <button key={o.id} type="button" className={styles.orderTicket} onClick={()=>serveCafeOrder(o)}><span>{mood}</span><strong>{o.guest}</strong><span>{r.icon}</span><small>{Math.max(0,Math.ceil((45000-age)/1000))}s</small></button>})}</section>
       <section className={styles.kitchenStations}><button type="button" onClick={()=>setCafeStorage(cafeStorage==='fridge'?null:'fridge')}>🧊<strong>Refrigerator</strong></button><div className={styles.grillStation}><b>🔥 Grill</b><div>{cafeGrill.map((g)=>{const x=CAFE_INGREDIENTS[g.ingredientId],age=cafeNow-g.started,state=age<x.cook?'Cooking…':age<=x.cook+4500?'READY!':'BURNT';return <button key={g.id} type="button" data-state={state} onClick={()=>pullFromGrill(g)}><span>{x.icon}</span><strong>{state}</strong></button>})}</div></div><button type="button" onClick={()=>setCafeStorage(cafeStorage==='cabinet'?null:'cabinet')}>🥫<strong>Cabinet</strong></button></section>
@@ -1400,15 +1403,53 @@ export default function KidsResort({ libraryHref = null }) {
     </section></main>;
   }
 
-  if (screen === 'lobby-food' || screen === 'cafe-food') {
-    const isLobby = screen === 'lobby-food';
-    const menu = isLobby ? LOBBY_MENU : CAFE_MENU;
+  if (screen === 'cafe-food') {
+    const diningMeal = CAFE_MENU.find((item) => item.name === meals[meals.length - 1]);
+    return (
+      <main className={[styles.gameShell, styles.cafeGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.cafeTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('cafe')}>← Café</button>
+          <div className={styles.brand}>Sunshine Café Dining</div>
+          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+        </section>
+        <section className={styles.cafeDiningRoom}>
+          <div className={styles.cafeDiningWallSign}><span>☀️</span><strong>Sunshine Dining</strong><small>Take a table and enjoy.</small></div>
+          <div className={styles.cafeDiningWindow} aria-hidden="true"><span>🌴</span><span>⛱️</span></div>
+          <div className={styles.cafeDiningLights} aria-hidden="true"><span>💡</span><span>💡</span><span>💡</span></div>
+          <div className={[styles.cafeSceneCharacter, styles.cafeDiningCharacter].join(' ')} aria-label={`${characterName} in the dining room`}>{renderCharacter(false)}</div>
+          <div className={[styles.cafeDiner, styles.cafeDinerOne].join(' ')}>
+            <div className={styles.cafeDinerFigure}>{renderCharacter(false, cafeAmbientPeople[0].look, cafeAmbientPeople[0].character, cafeAmbientPeople[0].name)}</div>
+            <div className={styles.cafeDinerTable}><span>🥪</span><span>🥤</span></div>
+          </div>
+          <div className={[styles.cafeDiner, styles.cafeDinerTwo].join(' ')}>
+            <div className={styles.cafeDinerFigure}>{renderCharacter(false, cafeAmbientPeople[1].look, cafeAmbientPeople[1].character, cafeAmbientPeople[1].name)}</div>
+            <div className={styles.cafeDinerTable}><span>🍔</span><span>🥤</span></div>
+          </div>
+          <div className={styles.cafeDiningMenu}>
+            <strong>What would you like?</strong>
+            <div>
+              {CAFE_MENU.map((item) => (
+                <button key={item.id} type="button" onClick={() => buyMeal(item)}>
+                  <span>{item.icon}</span><b>{item.name}</b><small>{item.price} Bucks</small>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className={styles.cafeDiningPlaceSetting} aria-hidden="true"><span>{diningMeal?.icon || '🍽️'}</span></div>
+          <div className={styles.cafeDiningMessage} aria-live="polite">{message || `${characterName} is ready to eat.`}</div>
+          <div className={styles.cafeDiningFloorLine} aria-hidden="true" />
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'lobby-food') {
     return interiorShell(
-      isLobby ? 'Palm Court' : 'Sunshine Cafe',
-      isLobby ? '\u{1F37D}\u{FE0F}' : '\u{1F96A}',
-      isLobby ? 'LOBBY RESTAURANT' : 'GRAB A BITE',
+      'Palm Court',
+      '\u{1F37D}\u{FE0F}',
+      'LOBBY RESTAURANT',
       <div className={styles.shopGrid}>
-        {menu.map((item) => (
+        {LOBBY_MENU.map((item) => (
           <button
             key={item.id}
             type="button"
@@ -1426,7 +1467,6 @@ export default function KidsResort({ libraryHref = null }) {
       </div>,
     );
   }
-
   if (screen === 'market') {
     return interiorShell(
       'Market Street',
