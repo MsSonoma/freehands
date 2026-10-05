@@ -5272,7 +5272,7 @@
   gap: 5px;
 }
 
-.palmKitchenStorageRow button {
+.palmKitchenStorageDoor {
   min-width: 0;
   min-height: clamp(56px, 12dvh, 86px);
   border: 5px solid #68645e;
@@ -5285,12 +5285,12 @@
   cursor: pointer;
 }
 
-.palmKitchenStorageRow button[data-active="true"] {
+.palmKitchenStorageDoor[data-active="true"] {
   outline: 4px solid #f5c45d;
   outline-offset: 2px;
 }
 
-.palmKitchenStorageRow button strong {
+.palmKitchenStorageDoor strong {
   font-size: clamp(.48rem, .8vw, .62rem);
 }
 
@@ -6030,12 +6030,12 @@
     gap: 2px;
   }
 
-  .palmKitchenStorageRow button {
+  .palmKitchenStorageDoor {
     min-height: 44px;
     border-width: 3px;
   }
 
-  .palmKitchenStorageRow button strong {
+  .palmKitchenStorageDoor strong {
     font-size: .38rem;
   }
 
@@ -6460,7 +6460,7 @@
   gap: clamp(5px, .7vw, 9px);
 }
 
-.palmKitchenStorageRow button {
+.palmKitchenStorageDoor {
   position: relative;
   isolation: isolate;
   min-height: clamp(92px, 18dvh, 138px);
@@ -6471,22 +6471,22 @@
   text-shadow: 0 1px 0 rgba(255,255,255,.7);
 }
 
-.palmKitchenStorageRow button strong {
+.palmKitchenStorageDoor strong {
   position: relative;
   z-index: 4;
   display: block;
   font-size: clamp(.46rem, .76vw, .62rem);
 }
 
-.palmKitchenStorageRow button::before,
-.palmKitchenStorageRow button::after {
+.palmKitchenStorageDoor::before,
+.palmKitchenStorageDoor::after {
   content: "";
   position: absolute;
   pointer-events: none;
 }
 
-.palmKitchenStorageRow button[data-storage="fridge"],
-.palmKitchenStorageRow button[data-storage="freezer"] {
+.palmKitchenStorageDoor[data-storage="fridge"],
+.palmKitchenStorageDoor[data-storage="freezer"] {
   border-color: #8c9da2;
   background: linear-gradient(135deg, #f9fcfc 0%, #dde7e9 52%, #c4d0d3 100%);
   box-shadow:
@@ -6495,8 +6495,8 @@
     0 8px 12px rgba(54,64,67,.14);
 }
 
-.palmKitchenStorageRow button[data-storage="fridge"]::before,
-.palmKitchenStorageRow button[data-storage="freezer"]::before {
+.palmKitchenStorageDoor[data-storage="fridge"]::before,
+.palmKitchenStorageDoor[data-storage="freezer"]::before {
   z-index: 1;
   left: 14%;
   right: 14%;
@@ -6510,8 +6510,8 @@
   box-shadow: inset 3px 0 0 rgba(255,255,255,.65);
 }
 
-.palmKitchenStorageRow button[data-storage="fridge"]::after,
-.palmKitchenStorageRow button[data-storage="freezer"]::after {
+.palmKitchenStorageDoor[data-storage="fridge"]::after,
+.palmKitchenStorageDoor[data-storage="freezer"]::after {
   z-index: 2;
   top: 19%;
   left: 64%;
@@ -6522,17 +6522,17 @@
   box-shadow: 0 24px 0 #75888e;
 }
 
-.palmKitchenStorageRow button[data-storage="freezer"] {
+.palmKitchenStorageDoor[data-storage="freezer"] {
   background: linear-gradient(135deg, #f7fbff 0%, #dceaf2 50%, #bdced8 100%);
 }
 
-.palmKitchenStorageRow button[data-storage="freezer"]::before {
+.palmKitchenStorageDoor[data-storage="freezer"]::before {
   background:
     linear-gradient(to bottom, transparent 0 36%, #91a8b4 36% 39%, transparent 39% 100%),
     linear-gradient(135deg, rgba(255,255,255,.9), rgba(187,211,224,.76));
 }
 
-.palmKitchenStorageRow button[data-storage="pantry"] {
+.palmKitchenStorageDoor[data-storage="pantry"] {
   border-color: #855332;
   background: linear-gradient(180deg, #c68a56, #9e6039);
   color: #fff5e6;
@@ -6543,7 +6543,7 @@
     0 8px 12px rgba(74,42,24,.15);
 }
 
-.palmKitchenStorageRow button[data-storage="pantry"]::before {
+.palmKitchenStorageDoor[data-storage="pantry"]::before {
   z-index: 1;
   left: 12%;
   right: 12%;
@@ -6556,7 +6556,7 @@
   box-shadow: inset 0 0 0 3px rgba(234,171,110,.35);
 }
 
-.palmKitchenStorageRow button[data-storage="pantry"]::after {
+.palmKitchenStorageDoor[data-storage="pantry"]::after {
   z-index: 2;
   top: 37%;
   left: calc(50% - 13px);
@@ -6567,12 +6567,12 @@
   box-shadow: 26px 0 0 #edd09c;
 }
 
-.palmKitchenStorageRow button[data-active="true"] {
+.palmKitchenStorageDoor[data-active="true"] {
   outline: 4px solid #f5c45d;
   outline-offset: 2px;
 }
 
-.palmKitchenStorageRow button[data-return-home="true"] {
+.palmKitchenStorageDoor[data-return-home="true"] {
   outline: 4px solid #62bcae;
   outline-offset: 2px;
 }
@@ -6810,7 +6810,7 @@
 }
 
 @media (max-width: 760px) {
-  .palmKitchenStorageRow button {
+  .palmKitchenStorageDoor {
     min-height: 82px;
     padding-top: 56px;
   }
@@ -6830,14 +6830,14 @@
 }
 
 @media (max-width: 520px) {
-  .palmKitchenStorageRow button {
+  .palmKitchenStorageDoor {
     min-height: 66px;
     padding: 43px 2px 4px;
     border-width: 3px;
   }
 
-  .palmKitchenStorageRow button[data-storage="fridge"]::after,
-  .palmKitchenStorageRow button[data-storage="freezer"]::after {
+  .palmKitchenStorageDoor[data-storage="fridge"]::after,
+  .palmKitchenStorageDoor[data-storage="freezer"]::after {
     box-shadow: 0 17px 0 #75888e;
   }
 
@@ -6936,7 +6936,7 @@
 }
 
 /* Palm Court kitchen proportion refinement: taller storage, shorter range. */
-.palmKitchenGame .palmKitchenStorageRow button {
+.palmKitchenGame .palmKitchenStorageDoor {
   min-height: clamp(145px, 29dvh, 220px);
   padding: clamp(103px, 20dvh, 164px) 4px 7px;
 }
@@ -6970,7 +6970,7 @@
 }
 
 @media (max-width: 760px) {
-  .palmKitchenGame .palmKitchenStorageRow button {
+  .palmKitchenGame .palmKitchenStorageDoor {
     min-height: 125px;
     padding-top: 86px;
   }
@@ -6990,7 +6990,7 @@
 }
 
 @media (max-width: 520px) {
-  .palmKitchenGame .palmKitchenStorageRow button {
+  .palmKitchenGame .palmKitchenStorageDoor {
     min-height: 100px;
     padding: 68px 2px 4px;
   }
@@ -7316,5 +7316,25 @@
 
   .palmKitchenGame .palmKitchenPass small {
     display: none;
+  }
+}
+
+/* Palm Court storage scoping and range position repair. */
+/* At mid-width layouts the wider storage bank needs more horizontal room before the range. */
+@media (max-width: 1200px) and (min-width: 761px) {
+  .palmKitchenGame .palmKitchenStove {
+    left: 39%;
+  }
+}
+
+@media (max-width: 760px) {
+  .palmKitchenGame .palmKitchenStove {
+    left: 40%;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenGame .palmKitchenStove {
+    left: 43%;
   }
 }
