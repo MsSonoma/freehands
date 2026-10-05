@@ -1830,3 +1830,25 @@
     height: 104px;
   }
 }
+/* Keep the two cafe actions on one horizontal baseline */
+.cafeGameShell .cafeDining,
+.cafeGameShell .cafeCounter {
+  padding-bottom: 66px;
+}
+.cafeGameShell .cafeModeButton {
+  position: absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 0;
+  margin: 0;
+}
+@media (max-width: 800px) {
+  .cafeGameShell .cafeModeButton {
+    position: static;
+    margin-top: 18px;
+  }
+  .cafeGameShell .cafeDining,
+  .cafeGameShell .cafeCounter {
+    padding-bottom: 0;
+  }
+}
