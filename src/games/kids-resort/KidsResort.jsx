@@ -1500,35 +1500,44 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
         </section>
         <section className={styles.lobbyRoom}>
-          <div className={styles.lobbyWallMark}><strong>KIDS RESORT</strong><span>Lobby & Palm Court</span></div>
-          <div className={styles.lobbyReception} aria-hidden="true"><span className={styles.lobbyReceptionBell}>🔔</span><i /><b>WELCOME</b></div>
+          <div className={styles.lobbyWallMark}><strong>KIDS RESORT</strong><span>Main Lobby</span></div>
+          <button
+            className={[styles.lobbyReception, styles.lobbyWorkDesk].join(' ')}
+            type="button"
+            onClick={() => openScreen('lobby-custodian')}
+            aria-label="Start resort work from the front desk"
+          >
+            <span className={styles.lobbyReceptionBell} aria-hidden="true">🔔</span>
+            <i aria-hidden="true" />
+            <b>FRONT DESK</b>
+            <em>Start Resort Work</em>
+          </button>
           <div className={styles.lobbyPlant} aria-hidden="true">🌴</div>
           <div className={styles.lobbyFloorLine} aria-hidden="true" />
+
+          <div className={styles.lobbyDoorRow} aria-label="Lobby destinations">
+            <button className={styles.lobbyDoor} data-door="restaurant" type="button" onClick={() => openScreen('lobby-restaurant-dine')}>
+              <span>PALM COURT</span>
+              <strong>Restaurant</strong>
+              <small>Dining Room</small>
+            </button>
+            <button className={styles.lobbyDoor} data-door="kitchen" type="button" onClick={() => openScreen('lobby-restaurant-work')}>
+              <span>PALM COURT</span>
+              <strong>Kitchen</strong>
+              <small>Staff Entrance</small>
+            </button>
+            <button className={styles.lobbyDoor} data-door="pool" type="button" onClick={() => openScreen('lobby-pool')}>
+              <span>KIDS RESORT</span>
+              <strong>Indoor Pool</strong>
+              <small>Pool Room</small>
+            </button>
+          </div>
 
           <div className={[styles.lobbyCharacter, styles.lobbyMainCharacter].join(' ')} aria-label={`${characterName} in the resort lobby`}>
             {renderCharacter(false)}
           </div>
           <div className={[styles.lobbyCharacter, styles.lobbyGuestCharacter].join(' ')} aria-label={`${lobbyAmbientPeople[0].name} in the resort lobby`}>
             {renderCharacter(false, lobbyAmbientPeople[0].look, lobbyAmbientPeople[0].character, lobbyAmbientPeople[0].name)}
-          </div>
-
-          <div className={styles.lobbyActivityStage}>
-            <button className={styles.lobbyActivity} data-activity="restaurant-work" type="button" onClick={() => openScreen('lobby-restaurant-work')}>
-              <span className={styles.lobbyHostObject} aria-hidden="true"><i /><b>PALM COURT</b><em>🍽️</em></span>
-              <strong>Work at Palm Court</strong><small>Serve restaurant guests</small>
-            </button>
-            <button className={styles.lobbyActivity} data-activity="restaurant-dine" type="button" onClick={() => openScreen('lobby-restaurant-dine')}>
-              <span className={styles.lobbyDiningObject} aria-hidden="true"><i /><b>🍝</b><em /><em /></span>
-              <strong>Eat at Palm Court</strong><small>Sit down for a meal</small>
-            </button>
-            <button className={styles.lobbyActivity} data-activity="custodian" type="button" onClick={() => openScreen('lobby-custodian')}>
-              <span className={styles.lobbyCustodianObject} aria-hidden="true"><i>🧹</i><b>🧴</b><em>🧽</em></span>
-              <strong>Resort Custodian</strong><small>Care for the lobby</small>
-            </button>
-            <button className={styles.lobbyActivity} data-activity="pool" type="button" onClick={() => openScreen('lobby-pool')}>
-              <span className={styles.lobbyPoolDoorObject} aria-hidden="true"><i>POOL</i><b>🏊</b></span>
-              <strong>Indoor Pool</strong><small>Go swimming</small>
-            </button>
           </div>
         </section>
       </main>
