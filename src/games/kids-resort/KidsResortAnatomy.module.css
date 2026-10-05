@@ -1312,3 +1312,103 @@
   left: 5px;
   transform: rotate(-18deg);
 }
+
+
+/* Profile compliance for glasses and headwear.
+   Right-facing profile is authored here; left-facing inherits through the mirrored playerSprite. */
+.playerDetailed[data-view="side"] .playerGlasses {
+  left: 35px;
+  top: 20px;
+  width: 16px;
+  height: 10px;
+  background: linear-gradient(currentColor, currentColor) left 4px center / 10px 2px no-repeat;
+}
+
+.playerDetailed[data-view="side"] .playerGlasses::before {
+  left: auto;
+  right: 0;
+  width: 9px;
+  height: 7px;
+}
+
+.playerDetailed[data-view="side"] .playerGlasses::after {
+  display: none;
+}
+
+.playerDetailed[data-view="side"][data-glasses="round"] .playerGlasses::before {
+  border-radius: 50%;
+}
+
+.playerDetailed[data-view="side"][data-glasses="square"] .playerGlasses::before {
+  border-radius: 2px;
+}
+
+.playerDetailed[data-view="side"][data-glasses="cat-eye"] .playerGlasses::before {
+  border-radius: 65% 35% 48% 52%;
+  transform: skewY(-7deg);
+}
+
+.playerDetailed[data-view="side"][data-glasses="sunglasses"] .playerGlasses::before {
+  border-radius: 3px;
+  background: rgba(30,38,52,.72);
+}
+
+.playerDetailed[data-view="side"][data-headwear="cap"] .playerHeadwear {
+  left: 9px;
+  top: -2px;
+  width: 40px;
+  height: 15px;
+  border-radius: 62% 48% 24% 20%;
+  transform: rotate(-2deg);
+}
+
+.playerDetailed[data-view="side"][data-headwear="cap"] .playerHeadwear::after {
+  right: -10px;
+  bottom: 0;
+  width: 22px;
+  height: 4px;
+  transform: rotate(4deg);
+  transform-origin: left center;
+}
+
+.playerDetailed[data-view="side"][data-headwear="beanie"] .playerHeadwear {
+  left: 9px;
+  top: -4px;
+  width: 40px;
+  height: 19px;
+  border-radius: 60% 47% 23% 18%;
+  transform: rotate(1deg);
+}
+
+.playerDetailed[data-view="side"][data-headwear="headband"] .playerHeadwear {
+  left: 10px;
+  top: 5px;
+  width: 38px;
+  height: 18px;
+  border-width: 4px;
+  border-right-width: 3px;
+  border-bottom: 0;
+  border-radius: 58% 43% 0 0;
+  transform: rotate(5deg);
+}
+
+.playerDetailed[data-view="side"][data-headwear="bow"] .playerHeadwear {
+  left: 11px;
+  top: 3px;
+  width: 7px;
+  height: 7px;
+}
+
+.playerDetailed[data-view="side"][data-headwear="bow"] .playerHeadwear::before {
+  right: 4px;
+  left: auto;
+  top: -2px;
+  width: 15px;
+  height: 12px;
+  border-radius: 65% 35% 60% 40%;
+  transform: rotate(-14deg);
+}
+
+.playerDetailed[data-view="side"][data-headwear="bow"] .playerHeadwear::after {
+  display: none;
+}
