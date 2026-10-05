@@ -6224,3 +6224,102 @@
     bottom: 11%;
   }
 }
+
+
+/* Palm Court dining layout: Emily's two-seat table plus a separate guest table. */
+.palmDiningGame .restaurantDiningCharacter {
+  left: 39%;
+  bottom: 14%;
+}
+
+.palmDiningGame .palmCourtEmilyChair {
+  left: calc(39% + 9px);
+  bottom: 12%;
+}
+
+.palmCourtFriendChair {
+  left: 52%;
+  bottom: 12%;
+}
+
+.palmDiningGame .palmCourtEmilyTable {
+  left: 30%;
+  bottom: 5%;
+  width: clamp(240px, 31vw, 380px);
+  height: clamp(115px, 24dvh, 190px);
+  z-index: 8;
+}
+
+.palmDiningGame .restaurantDiningGuest {
+  right: 9%;
+  bottom: 32%;
+  z-index: 6;
+}
+
+.palmDiningGame .palmCourtGuestChair {
+  right: calc(9% + 9px);
+  bottom: 30%;
+  z-index: 5;
+}
+
+.palmDiningGame .palmCourtGuestTable {
+  left: auto;
+  right: 3%;
+  bottom: 25%;
+  width: clamp(150px, 18vw, 220px);
+  height: clamp(82px, 17dvh, 125px);
+  z-index: 8;
+}
+
+.palmDiningGame .palmCourtGuestTable::before {
+  border-width: 7px;
+}
+
+.palmDiningGame .palmCourtGuestTable span {
+  font-size: clamp(1.2rem, 2.6vw, 2rem);
+}
+
+@media (max-width: 760px) {
+  .palmDiningGame .restaurantDiningCharacter {
+    left: 42%;
+  }
+
+  .palmDiningGame .palmCourtEmilyChair {
+    left: calc(42% + 2px);
+  }
+
+  .palmCourtFriendChair {
+    left: 56%;
+  }
+
+  .palmDiningGame .palmCourtEmilyTable {
+    left: 32%;
+    width: 47%;
+  }
+
+  .palmDiningGame .palmCourtGuestChair,
+  .palmDiningGame .palmCourtGuestTable {
+    display: none;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmDiningGame .restaurantDiningCharacter {
+    left: 39%;
+  }
+
+  .palmDiningGame .palmCourtEmilyChair {
+    left: calc(39% - 2px);
+    bottom: 11%;
+  }
+
+  .palmCourtFriendChair {
+    left: 56%;
+    bottom: 11%;
+  }
+
+  .palmDiningGame .palmCourtEmilyTable {
+    left: 27%;
+    width: 57%;
+  }
+}

@@ -2976,6 +2976,7 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.palmCourtWindows} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.lobbyFloorLine} aria-hidden="true" />
           <div className={[styles.palmCourtDiningChair, styles.palmCourtEmilyChair].join(' ')} aria-hidden="true" />
+          <div className={[styles.palmCourtDiningChair, styles.palmCourtFriendChair].join(' ')} aria-label="Empty chair reserved for a dining companion" />
           <div className={[styles.palmCourtDiningChair, styles.palmCourtGuestChair].join(' ')} aria-hidden="true" />
           <div
             key={`dining-${diningActionTick}`}
@@ -2984,9 +2985,12 @@ export default function KidsResort({ libraryHref = null }) {
           >
             {renderCharacter(false, look, character, characterName, 'seated')}
           </div>
-          <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining in Palm Court`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name, 'seated')}</div>
-          <div className={styles.palmCourtDiningTable} aria-hidden="true">
-            <span>{diningMeal?.icon || '🍽️'}</span>
+          <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining at a separate Palm Court table`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name, 'seated')}</div>
+          <div className={[styles.palmCourtDiningTable, styles.palmCourtEmilyTable].join(' ')} aria-hidden="true">
+            <span>{diningMeal?.icon || '???'}</span>
+          </div>
+          <div className={[styles.palmCourtDiningTable, styles.palmCourtGuestTable].join(' ')} aria-hidden="true">
+            <span>???</span>
           </div>
 
           <div className={styles.palmCourtMenuStand}>
