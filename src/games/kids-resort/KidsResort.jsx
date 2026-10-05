@@ -265,6 +265,46 @@ function cloneLook(source) {
   };
 }
 
+function makeCafeAmbientPerson(variant) {
+  const person = makeCharacterPerson('random');
+  if (variant === 0) {
+    return {
+      ...person,
+      name: 'Kai',
+      character: {
+        ...person.character,
+        gender: 'boy', eye: 'blue', hair: 'black', skin: 'brown', base: 'blue',
+        height: 4, weight: 2, strength: 3, makeup: 'none',
+      },
+      look: {
+        shirt: { ...LOOK_OPTIONS.shirt[2], swatch: '#43aee5' },
+        bottoms: { ...LOOK_OPTIONS.bottoms[1], swatch: '#334d78' },
+        shoes: { ...LOOK_OPTIONS.shoes[2], swatch: '#efc33f' },
+        glasses: { ...LOOK_OPTIONS.glasses[2], swatch: '#35516d' },
+        headwear: { ...LOOK_OPTIONS.headwear[1], swatch: '#43aee5' },
+        hair: { ...LOOK_OPTIONS.hair[8] },
+      },
+    };
+  }
+  return {
+    ...person,
+    name: 'Zoe',
+    character: {
+      ...person.character,
+      gender: 'girl', eye: 'green', hair: 'auburn', skin: 'fair', base: 'purple',
+      height: 2, weight: 4, strength: 2, makeup: 'freckles', makeupColor: '#a45e45',
+    },
+    look: {
+      shirt: { ...LOOK_OPTIONS.shirt[3], swatch: '#54c79c' },
+      bottoms: { ...LOOK_OPTIONS.bottoms[3], swatch: '#dc6b63' },
+      shoes: { ...LOOK_OPTIONS.shoes[3], swatch: '#448fcc' },
+      glasses: { ...LOOK_OPTIONS.glasses[3], swatch: '#a73e78' },
+      headwear: { ...LOOK_OPTIONS.headwear[4], swatch: '#ff4f9a' },
+      hair: { ...LOOK_OPTIONS.hair[5] },
+    },
+  };
+}
+
 function makeCharacterPerson(mode = 'random') {
   const random = mode === 'random' || mode === 'custom';
   const gender = random ? randomChoice(CHARACTER_OPTIONS.gender).id : 'girl';
@@ -484,7 +524,7 @@ export default function KidsResort({ libraryHref = null }) {
 
   const [people, setPeople] = useState([]);
   const [studioAmbientPerson] = useState(() => makeCharacterPerson('random'));
-  const [cafeAmbientPeople] = useState(() => [makeCharacterPerson('random'), makeCharacterPerson('random')]);
+  const [cafeAmbientPeople] = useState(() => [makeCafeAmbientPerson(0), makeCafeAmbientPerson(1)]);
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [personEditorOpen, setPersonEditorOpen] = useState(false);
   const [personDraft, setPersonDraft] = useState(null);
@@ -1213,6 +1253,7 @@ export default function KidsResort({ libraryHref = null }) {
     displayLook = look,
     displayCharacter = character,
     displayName = characterName,
+    pose = 'standing',
   ) => (
     <div
       className={[styles.avatarFigure, large ? styles.avatarFigureLarge : ''].join(' ')}
@@ -1224,6 +1265,7 @@ export default function KidsResort({ libraryHref = null }) {
       data-shoe={displayLook.shoes.shoe || 'sneakers'}
       data-glasses={displayLook.glasses?.id || 'none'}
       data-headwear={displayLook.headwear?.id || 'none'}
+      data-pose={pose}
       style={{
         ...characterStyleFor(displayCharacter),
         '--outfit-shirt': displayLook.shirt.swatch,
@@ -1418,11 +1460,13 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.cafeDiningLights} aria-hidden="true"><span>💡</span><span>💡</span><span>💡</span></div>
           <div className={[styles.cafeSceneCharacter, styles.cafeDiningCharacter].join(' ')} aria-label={`${characterName} in the dining room`}>{renderCharacter(false)}</div>
           <div className={[styles.cafeDiner, styles.cafeDinerOne].join(' ')}>
-            <div className={styles.cafeDinerFigure}>{renderCharacter(false, cafeAmbientPeople[0].look, cafeAmbientPeople[0].character, cafeAmbientPeople[0].name)}</div>
+            <div className={styles.cafeDinerChair} aria-hidden="true" />
+            <div className={styles.cafeDinerFigure}>{renderCharacter(false, cafeAmbientPeople[0].look, cafeAmbientPeople[0].character, cafeAmbientPeople[0].name, 'seated')}</div>
             <div className={styles.cafeDinerTable}><span>🥪</span><span>🥤</span></div>
           </div>
           <div className={[styles.cafeDiner, styles.cafeDinerTwo].join(' ')}>
-            <div className={styles.cafeDinerFigure}>{renderCharacter(false, cafeAmbientPeople[1].look, cafeAmbientPeople[1].character, cafeAmbientPeople[1].name)}</div>
+            <div className={styles.cafeDinerChair} aria-hidden="true" />
+            <div className={styles.cafeDinerFigure}>{renderCharacter(false, cafeAmbientPeople[1].look, cafeAmbientPeople[1].character, cafeAmbientPeople[1].name, 'seated')}</div>
             <div className={styles.cafeDinerTable}><span>🍔</span><span>🥤</span></div>
           </div>
           <div className={styles.cafeDiningMenu}>

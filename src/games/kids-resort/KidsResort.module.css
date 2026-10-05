@@ -3213,7 +3213,7 @@
   pointer-events:none;
   --cafe-character-scale:.52;
 }
-.cafeSceneCharacter > .avatarFigure {
+.cafeSceneCharacter > [data-hair] {
   position:absolute;
   left:50%;
   bottom:0;
@@ -3354,7 +3354,7 @@
   overflow:hidden;
   transform:translateX(-50%);
 }
-.cafeDinerFigure > .avatarFigure {
+.cafeDinerFigure > [data-hair] {
   transform:scale(.4);
   transform-origin:top center;
 }
@@ -3494,4 +3494,95 @@
   .cafeDiningMenu button { min-height:40px; padding:4px; }
   .cafeDiningMenu button span { font-size:1.25rem; }
   .cafeDiningMessage { bottom:6px; width:90%; }
+}
+/* Ground cafe characters in the scene and keep anatomy on the shared world character root. */
+.cafeSceneCharacter {
+  width:126px;
+  height:262px;
+}
+.cafeSceneCharacter::after {
+  content:"";
+  position:absolute;
+  z-index:-1;
+  left:50%;
+  bottom:3px;
+  width:58px;
+  height:13px;
+  transform:translateX(-50%);
+  border-radius:50%;
+  background:rgba(92,62,42,.16);
+}
+.cafeWaitingCharacter {
+  left:50%;
+  bottom:64px;
+  transform:translateX(-50%);
+  --cafe-character-scale:.48;
+}
+.cafeWorkScene .cafeWorkCharacter {
+  right:332px;
+  top:20px;
+  width:126px;
+  height:118px;
+  --cafe-character-scale:.38;
+}
+.cafeWorkScene .cafeWorkCharacter::after {
+  bottom:0;
+  width:46px;
+  height:9px;
+}
+.cafeDiningCharacter {
+  right:22%;
+  bottom:8%;
+  --cafe-character-scale:.48;
+}
+.cafeDiner {
+  bottom:8%;
+  height:202px;
+}
+.cafeDinerChair {
+  position:absolute;
+  z-index:0;
+  left:50%;
+  bottom:26px;
+  width:62px;
+  height:80px;
+  transform:translateX(-50%);
+  border-radius:18px 18px 9px 9px;
+  background:#49aaa7;
+  box-shadow:inset 0 -12px 0 #338b8b, 0 5px 0 rgba(91,57,36,.12);
+}
+.cafeDinerChair::after {
+  content:"";
+  position:absolute;
+  left:7px;
+  right:7px;
+  bottom:-24px;
+  height:28px;
+  border-left:7px solid #7d563d;
+  border-right:7px solid #7d563d;
+}
+.cafeDinerFigure {
+  z-index:2;
+  bottom:38px;
+  width:126px;
+  height:150px;
+  overflow:visible;
+}
+.cafeDinerFigure > [data-hair] {
+  position:absolute;
+  left:50%;
+  top:0;
+  transform:translateX(-50%) scale(.46);
+  transform-origin:top center;
+}
+@media (max-width:900px) {
+  .cafeWaitingCharacter { left:50%; bottom:60px; --cafe-character-scale:.43; }
+  .cafeWorkScene .cafeWorkCharacter { right:250px; top:25px; --cafe-character-scale:.34; }
+  .cafeDiningCharacter { right:19%; --cafe-character-scale:.42; }
+}
+@media (max-width:650px) {
+  .cafeWaitingCharacter { left:50%; bottom:72px; --cafe-character-scale:.38; }
+  .cafeWorkScene .cafeWorkCharacter { right:116px; top:34px; --cafe-character-scale:.29; }
+  .cafeDiningCharacter { right:9%; bottom:15%; --cafe-character-scale:.34; }
+  .cafeDinerFigure > [data-hair] { transform:translateX(-50%) scale(.4); }
 }

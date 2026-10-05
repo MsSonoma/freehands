@@ -2558,3 +2558,57 @@
   font-size: .68rem;
   font-weight: 900;
 }
+
+/* True seated pose for articulated cafe diners. */
+.avatarFigure[data-pose="seated"] .avatarLegRigLeft,
+.avatarFigure[data-pose="seated"] .avatarLegRigRight {
+  top:158px;
+  transform-origin:50% 4px;
+}
+.avatarFigure[data-pose="seated"] .avatarLegRigLeft {
+  left:35px;
+  transform:rotate(68deg);
+}
+.avatarFigure[data-pose="seated"] .avatarLegRigRight {
+  right:35px;
+  transform:rotate(62deg);
+}
+.avatarFigure[data-pose="seated"] .avatarSkinLeg {
+  display:none;
+}
+.avatarFigure[data-pose="seated"] .avatarThigh {
+  height:36px;
+}
+.avatarFigure[data-pose="seated"] .avatarKnee {
+  top:31px;
+}
+.avatarFigure[data-pose="seated"] .avatarShin {
+  top:34px;
+  height:39px;
+  transform:rotate(-66deg);
+  transform-origin:50% 2px;
+}
+.avatarFigure[data-pose="seated"] .avatarLegRigLeft .avatarShin {
+  transform:rotate(-68deg);
+}
+.avatarFigure[data-pose="seated"] .avatarLegRigRight .avatarShin {
+  transform:rotate(-62deg);
+}
+.avatarFigure[data-pose="seated"] .avatarShoe {
+  top:63px;
+  left:31px;
+  transform:rotate(-66deg);
+  transform-origin:center;
+}
+.avatarFigure[data-pose="seated"] .avatarLegRigLeft .avatarShoe {
+  transform:translate(-3px,7px) rotate(-68deg);
+}
+.avatarFigure[data-pose="seated"] .avatarLegRigRight .avatarShoe {
+  transform:translate(-1px,6px) rotate(-62deg);
+}
+.avatarFigure[data-pose="seated"] .avatarArmRigLeft {
+  transform:rotate(34deg);
+}
+.avatarFigure[data-pose="seated"] .avatarArmRigRight {
+  transform:rotate(-34deg);
+}
