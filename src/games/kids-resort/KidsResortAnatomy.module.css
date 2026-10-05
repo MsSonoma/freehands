@@ -1079,3 +1079,48 @@
   left: 20px;
   width: 23px;
 }
+
+
+/* Shoulder connection: widen only the shoulder end toward the torso while preserving elbow placement. */
+.playerDetailed[data-view="front"] .playerArmRigLeft .playerUpperArm {
+  width: 9px;
+  left: 2px;
+  clip-path: polygon(0 0, 100% 0, 72% 100%, 0 100%);
+}
+
+.playerDetailed[data-view="front"] .playerArmRigRight .playerUpperArm {
+  width: 9px;
+  left: 1px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 28% 100%);
+}
+
+.playerDetailed[data-sleeve="short"] .playerUpperArm,
+.playerDetailed[data-sleeve="puff"] .playerUpperArm,
+.playerDetailed[data-sleeve="long"] .playerUpperArm {
+  background: var(--outfit-shirt);
+}
+
+.playerDetailed[data-sleeve="long"] .playerForearm {
+  background: var(--outfit-shirt);
+}
+
+.playerDetailed[data-sleeve="puff"] .playerUpperArm {
+  width: 11px;
+  border-radius: 999px;
+}
+
+.playerDetailed[data-leg="wide"] .playerThigh,
+.playerDetailed[data-leg="wide"] .playerShin {
+  width: 17px;
+  left: 0;
+}
+
+.playerDetailed[data-leg="flare"] .playerShin {
+  width: 19px;
+  left: -1px;
+  clip-path: polygon(24% 0, 76% 0, 100% 100%, 0 100%);
+}
+
+.playerDetailed[data-leg="short"] .playerThigh {
+  height: 14px;
+}

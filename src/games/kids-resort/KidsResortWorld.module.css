@@ -948,3 +948,410 @@
   left: 40px;
   width: 46px;
 }
+
+
+/* Design Studio: creative work and clothing shop. */
+.studioChoiceGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.studioChoiceCard {
+  min-height: 260px;
+  border: 3px solid #e6e9f2;
+  border-radius: 28px;
+  background: linear-gradient(145deg, #fff8fc, #f3fbff);
+  color: #17304f;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 28px;
+  text-align: center;
+  font: inherit;
+}
+
+.studioChoiceCard:hover {
+  border-color: #ff83b8;
+  transform: translateY(-2px);
+}
+
+.studioChoiceCard strong {
+  font-size: 1.35rem;
+}
+
+.studioChoiceCard > span:last-child {
+  max-width: 290px;
+  color: #647c93;
+  font-weight: 750;
+  line-height: 1.45;
+}
+
+.studioChoiceIcon {
+  font-size: 4rem;
+}
+
+.studioWorkLayout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 280px;
+  gap: 18px;
+}
+
+.studioWorkbench {
+  display: grid;
+  gap: 16px;
+}
+
+.studioCanvas {
+  min-height: 280px;
+  border: 3px dashed #d7bfd8;
+  border-radius: 26px;
+  background:
+    linear-gradient(rgba(255,255,255,.72), rgba(255,255,255,.72)),
+    repeating-linear-gradient(45deg, #ffe4f0 0 22px, #e7f7ff 22px 44px);
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 8px;
+  text-align: center;
+  padding: 24px;
+}
+
+.studioCanvas > span {
+  font-size: 3.8rem;
+}
+
+.studioCanvas strong {
+  font-size: 1.5rem;
+}
+
+.studioCanvas small {
+  color: #71869b;
+  font-weight: 800;
+}
+
+.studioWorkButtons {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.studioWorkButtons button {
+  border: 2px solid #e2e8ef;
+  border-radius: 18px;
+  background: #fff;
+  color: #17304f;
+  cursor: pointer;
+  display: grid;
+  gap: 4px;
+  justify-items: start;
+  padding: 16px;
+  text-align: left;
+  font: inherit;
+}
+
+.studioWorkButtons button > span {
+  font-size: 2rem;
+}
+
+.studioWorkButtons button strong {
+  font-size: 1rem;
+}
+
+.studioWorkButtons button small {
+  color: #70859a;
+  font-weight: 700;
+}
+
+.studioCustomerCard {
+  border: 2px solid #e7e2ed;
+  border-radius: 24px;
+  background: #fff;
+  display: grid;
+  align-content: start;
+  justify-items: center;
+  gap: 10px;
+  padding: 22px;
+  text-align: center;
+}
+
+.studioCustomerFace {
+  font-size: 4rem;
+}
+
+.studioCustomerCard p {
+  min-height: 82px;
+  margin: 0;
+  color: #637b92;
+  line-height: 1.45;
+  font-weight: 750;
+}
+
+.studioCreationCount {
+  width: 100%;
+  border-radius: 14px;
+  background: #f3f8fc;
+  padding: 10px;
+  color: #506b84;
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.studioShopGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.studioShopItem {
+  border: 2px solid #e3eaf0;
+  border-radius: 16px;
+  background: #fff;
+  display: grid;
+  gap: 6px;
+  padding: 12px;
+}
+
+.studioShopItem[data-owned="true"] {
+  border-color: #9bd6b1;
+  background: #f7fff9;
+}
+
+.studioShopItem strong,
+.studioShopItem small {
+  display: block;
+}
+
+.studioShopItem small {
+  color: #72869b;
+  font-weight: 800;
+}
+
+.studioShopItem > div {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.studioShopItem button {
+  border: 0;
+  border-radius: 10px;
+  background: #eef5fa;
+  color: #17304f;
+  cursor: pointer;
+  padding: 8px 6px;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 900;
+}
+
+.studioShopItem button:last-child {
+  background: #ffedf5;
+}
+
+.studioShopItem button:disabled {
+  cursor: default;
+  opacity: .55;
+}
+
+.tryOnBadge {
+  border-radius: 999px;
+  background: #17304f;
+  color: white;
+  padding: 6px 10px;
+  font-size: .68rem;
+  font-weight: 1000;
+  letter-spacing: .08em;
+}
+
+.avatarFigure[data-sleeve="short"] .avatarUpperArm,
+.avatarFigure[data-sleeve="puff"] .avatarUpperArm,
+.avatarFigure[data-sleeve="long"] .avatarUpperArm {
+  background: var(--outfit-shirt);
+}
+
+.avatarFigure[data-sleeve="long"] .avatarForearm {
+  background: var(--outfit-shirt);
+}
+
+.avatarFigure[data-sleeve="puff"] .avatarUpperArm {
+  width: 18px;
+  left: 1px;
+  border-radius: 999px 999px 55% 55%;
+}
+
+.avatarFigure[data-leg="wide"] .avatarThigh,
+.avatarFigure[data-leg="wide"] .avatarShin {
+  width: 29px;
+  left: 0;
+}
+
+.avatarFigure[data-leg="flare"] .avatarShin {
+  width: 31px;
+  left: -1px;
+  clip-path: polygon(22% 0, 78% 0, 100% 100%, 0 100%);
+}
+
+.avatarFigure[data-leg="short"] .avatarThigh {
+  height: 25px;
+}
+
+@media (max-width: 840px) {
+  .studioChoiceGrid,
+  .studioWorkLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .studioWorkButtons {
+    grid-template-columns: 1fr;
+  }
+}
+
+
+/* Preview shoulder repair: move only the shoulder edge inward; elbow/forearm anchors stay put. */
+.avatarArmRigLeft .avatarUpperArm {
+  width: 18px;
+  left: 3px;
+  clip-path: polygon(0 0, 100% 0, 78% 100%, 0 100%);
+}
+
+.avatarArmRigRight .avatarUpperArm {
+  width: 18px;
+  left: -1px;
+  clip-path: polygon(0 0, 100% 0, 100% 100%, 22% 100%);
+}
+
+.avatarFigure[data-sleeve="puff"] .avatarArmRigLeft .avatarUpperArm,
+.avatarFigure[data-sleeve="puff"] .avatarArmRigRight .avatarUpperArm {
+  width: 20px;
+}
+
+
+.studioToolTabs {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.studioToolTabs button {
+  border: 2px solid #e2e8ef;
+  border-radius: 14px;
+  background: #fff;
+  color: #17304f;
+  cursor: pointer;
+  padding: 11px 14px;
+  font: inherit;
+  font-weight: 900;
+}
+
+.studioToolTabs button[data-active="true"] {
+  border-color: #ff83b8;
+  background: #fff0f7;
+}
+
+.artStudio {
+  display: grid;
+  gap: 10px;
+}
+
+.artCanvas {
+  width: 100%;
+  aspect-ratio: 12 / 7;
+  border: 3px solid #e2d9e7;
+  border-radius: 22px;
+  background:
+    linear-gradient(rgba(255,255,255,.94), rgba(255,255,255,.94)),
+    repeating-linear-gradient(0deg, #eef4f8 0 1px, transparent 1px 28px),
+    repeating-linear-gradient(90deg, #eef4f8 0 1px, transparent 1px 28px);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.artToolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+}
+
+.artToolbar label,
+.fashionControls label {
+  display: grid;
+  gap: 5px;
+  color: #5e758b;
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.artToolbar button,
+.fashionControls button {
+  border: 0;
+  border-radius: 12px;
+  background: #17304f;
+  color: #fff;
+  cursor: pointer;
+  padding: 10px 14px;
+  font: inherit;
+  font-size: .78rem;
+  font-weight: 900;
+}
+
+.artToolbar button:first-of-type {
+  background: #eef4f8;
+  color: #17304f;
+}
+
+.fashionDesk {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr);
+  gap: 16px;
+  min-height: 390px;
+}
+
+.fashionPreview {
+  border-radius: 22px;
+  background: linear-gradient(180deg, #eff9ff, #fff1f7);
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  padding: 16px;
+}
+
+.fashionControls {
+  display: grid;
+  align-content: start;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.fashionControls select,
+.fashionControls input[type="color"] {
+  width: 100%;
+  min-height: 40px;
+  border: 2px solid #dde7ef;
+  border-radius: 10px;
+  background: #fff;
+}
+
+.fashionControls button {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 720px) {
+  .fashionDesk,
+  .fashionControls {
+    grid-template-columns: 1fr;
+  }
+
+  .fashionPreview {
+    min-height: 320px;
+  }
+
+  .studioToolTabs {
+    grid-template-columns: 1fr;
+  }
+}

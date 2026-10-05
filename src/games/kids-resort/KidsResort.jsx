@@ -135,22 +135,22 @@ const CHARACTER_OPTIONS = {
 
 const LOOK_OPTIONS = {
   shirt: [
-    { id: 'pink', name: 'Pink Tee', swatch: '#ff4f9a' },
-    { id: 'sunshine', name: 'Sunshine Top', swatch: '#f1be38' },
-    { id: 'ocean', name: 'Ocean Tee', swatch: '#43aee5' },
-    { id: 'mint', name: 'Mint Top', swatch: '#54c79c' },
+    { id: 'pink', name: 'Pink Tee', swatch: '#ff4f9a', sleeve: 'short', price: 0 },
+    { id: 'sunshine', name: 'Sunshine Tank', swatch: '#f1be38', sleeve: 'none', price: 6 },
+    { id: 'ocean', name: 'Ocean Long Sleeve', swatch: '#43aee5', sleeve: 'long', price: 8 },
+    { id: 'mint', name: 'Mint Puff Sleeve', swatch: '#54c79c', sleeve: 'puff', price: 8 },
   ],
   bottoms: [
-    { id: 'denim', name: 'Cuffed Jeans', swatch: '#3b78ba' },
-    { id: 'navy', name: 'Navy Shorts', swatch: '#334d78' },
-    { id: 'lavender', name: 'Lavender Skirt', swatch: '#9a73c9' },
-    { id: 'coral', name: 'Coral Pants', swatch: '#dc6b63' },
+    { id: 'denim', name: 'Cuffed Jeans', swatch: '#3b78ba', leg: 'straight', price: 0 },
+    { id: 'navy', name: 'Navy Shorts', swatch: '#334d78', leg: 'short', price: 6 },
+    { id: 'lavender', name: 'Lavender Wide Legs', swatch: '#9a73c9', leg: 'wide', price: 8 },
+    { id: 'coral', name: 'Coral Flares', swatch: '#dc6b63', leg: 'flare', price: 8 },
   ],
   shoes: [
-    { id: 'pink-sneakers', name: 'Pink Sneakers', swatch: '#f05d9b' },
-    { id: 'white-trainers', name: 'White Trainers', swatch: '#f4f4f0' },
-    { id: 'yellow-high-tops', name: 'Yellow High-Tops', swatch: '#efc33f' },
-    { id: 'blue-slip-ons', name: 'Blue Slip-Ons', swatch: '#448fcc' },
+    { id: 'pink-sneakers', name: 'Pink Sneakers', swatch: '#f05d9b', price: 0 },
+    { id: 'white-trainers', name: 'White Trainers', swatch: '#f4f4f0', price: 5 },
+    { id: 'yellow-high-tops', name: 'Yellow High-Tops', swatch: '#efc33f', price: 7 },
+    { id: 'blue-slip-ons', name: 'Blue Slip-Ons', swatch: '#448fcc', price: 5 },
   ],
   hair: [
     { id: 'waves', name: 'Loose Waves', icon: '~' },
@@ -206,6 +206,25 @@ export default function KidsResort({ libraryHref = null }) {
     hair: LOOK_OPTIONS.hair[0],
     accessory: LOOK_OPTIONS.accessory[0],
   });
+
+  const [studioMessage, setStudioMessage] = useState('');
+  const [studioCreations, setStudioCreations] = useState(0);
+  const [studioTool, setStudioTool] = useState('art');
+  const [artColor, setArtColor] = useState('#ff4f9a');
+  const artCanvasRef = useRef(null);
+  const artDrawingRef = useRef(false);
+  const [fashionDraft, setFashionDraft] = useState({
+    shirt: '#7ec8f5',
+    bottoms: '#8c73c7',
+    sleeve: 'short',
+    leg: 'straight',
+  });
+  const [studioTryLook, setStudioTryLook] = useState(null);
+  const [ownedLooks, setOwnedLooks] = useState(() => new Set([
+    'shirt:pink',
+    'bottoms:denim',
+    'shoes:pink-sneakers',
+  ]));
 
   const [cafeMessage, setCafeMessage] = useState('');
   const [cafeOrders, setCafeOrders] = useState([]);
@@ -497,12 +516,100 @@ export default function KidsResort({ libraryHref = null }) {
     setMessage(`${option.name} selected.`);
   };
 
-  const renderCharacter = (large = false) => (
+  const makeStudioCreation = (kind) => {
+    const reward = 5;
+    const label = kind === 'fashion' ? 'fashion design' : 'artwork';
+    setStudioCreations((value) => value + 1);
+    setBucks((value) => value + reward);
+    setStudioMessage('Your customer loves your ' + label + '! +' + reward + ' Resort Bucks');
+  };
+
+  const artPoint = (event) => {
+    const canvas = artCanvasRef.current;
+    if (!canvas) return null;
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: (event.clientX - rect.left) * (canvas.width / rect.width),
+      y: (event.clientY - rect.top) * (canvas.height / rect.height),
+    };
+  };
+
+  const beginArt = (event) => {
+    const canvas = artCanvasRef.current;
+    const point = artPoint(event);
+    if (!canvas || !point) return;
+    artDrawingRef.current = true;
+    canvas.setPointerCapture?.(event.pointerId);
+    const ctx = canvas.getContext('2d');
+    ctx.strokeStyle = artColor;
+    ctx.lineWidth = 12;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(point.x, point.y);
+  };
+
+  const drawArt = (event) => {
+    if (!artDrawingRef.current) return;
+    const canvas = artCanvasRef.current;
+    const point = artPoint(event);
+    if (!canvas || !point) return;
+    const ctx = canvas.getContext('2d');
+    ctx.lineTo(point.x, point.y);
+    ctx.stroke();
+  };
+
+  const endArt = () => {
+    artDrawingRef.current = false;
+  };
+
+  const clearArt = () => {
+    const canvas = artCanvasRef.current;
+    if (!canvas) return;
+    canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+    setStudioMessage('Fresh canvas ready.');
+  };
+
+  const tryStudioLook = (category, option) => {
+    setStudioTryLook({ ...look, [category]: option });
+    setStudioMessage('Trying on ' + option.name + '.');
+  };
+
+  const buyStudioLook = (category, option) => {
+    const key = category + ':' + option.id;
+    if (ownedLooks.has(key)) {
+      setLook((current) => ({ ...current, [category]: option }));
+      setStudioTryLook(null);
+      setStudioMessage(option.name + ' is already yours.');
+      return;
+    }
+    if (bucks < option.price) {
+      setStudioMessage('You need ' + option.price + ' Resort Bucks for ' + option.name + '.');
+      return;
+    }
+    setBucks((value) => value - option.price);
+    setOwnedLooks((current) => {
+      const next = new Set(current);
+      next.add(key);
+      return next;
+    });
+    setLook((current) => ({ ...current, [category]: option }));
+    setStudioTryLook(null);
+    setStudioMessage(option.name + ' is yours!');
+  };
+
+  const renderCharacter = (large = false, displayLook = look) => (
     <div
       className={[styles.avatarFigure, large ? styles.avatarFigureLarge : ''].join(' ')}
-      data-hair={look.hair.id}
+      data-hair={displayLook.hair.id}
       data-gender={character.gender}
-      style={characterStyle}
+      data-sleeve={displayLook.shirt.sleeve || 'short'}
+      data-leg={displayLook.bottoms.leg || 'straight'}
+      style={{
+        ...characterStyle,
+        '--outfit-shirt': displayLook.shirt.swatch,
+        '--outfit-bottoms': displayLook.bottoms.swatch,
+      }}
       aria-label={characterName + ' preview'}
     >
       <div className={styles.avatarHair} />
@@ -518,8 +625,8 @@ export default function KidsResort({ libraryHref = null }) {
       </div>
       <div className={styles.avatarHairFront} />
       <div className={styles.avatarNeck} />
-      <div className={styles.avatarBody} style={{ background: look.shirt.swatch }} />
-      <div className={styles.avatarPelvis} style={{ background: look.bottoms.swatch }} />
+      <div className={styles.avatarBody} style={{ background: displayLook.shirt.swatch }} />
+      <div className={styles.avatarPelvis} style={{ background: displayLook.bottoms.swatch }} />
 
       <div className={styles.avatarArmRigLeft}>
         <span className={styles.avatarUpperArm} />
@@ -545,19 +652,19 @@ export default function KidsResort({ libraryHref = null }) {
       </div>
 
       <div className={styles.avatarLegRigLeft}>
-        <span className={styles.avatarThigh} style={{ background: look.bottoms.swatch }} />
-        <span className={styles.avatarKnee} style={{ background: look.bottoms.swatch }} />
-        <span className={styles.avatarShin} style={{ background: look.bottoms.swatch }} />
-        <span className={styles.avatarShoe} style={{ background: look.shoes.swatch }} />
+        <span className={styles.avatarThigh} style={{ background: displayLook.bottoms.swatch }} />
+        <span className={styles.avatarKnee} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
+        <span className={styles.avatarShin} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
+        <span className={styles.avatarShoe} style={{ background: displayLook.shoes.swatch }} />
       </div>
       <div className={styles.avatarLegRigRight}>
-        <span className={styles.avatarThigh} style={{ background: look.bottoms.swatch }} />
-        <span className={styles.avatarKnee} style={{ background: look.bottoms.swatch }} />
-        <span className={styles.avatarShin} style={{ background: look.bottoms.swatch }} />
-        <span className={styles.avatarShoe} style={{ background: look.shoes.swatch }} />
+        <span className={styles.avatarThigh} style={{ background: displayLook.bottoms.swatch }} />
+        <span className={styles.avatarKnee} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
+        <span className={styles.avatarShin} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
+        <span className={styles.avatarShoe} style={{ background: displayLook.shoes.swatch }} />
       </div>
-      {look.accessory.id !== 'none' && (
-        <div className={styles.avatarAccessory} aria-hidden="true">{look.accessory.icon}</div>
+      {displayLook.accessory.id !== 'none' && (
+        <div className={styles.avatarAccessory} aria-hidden="true">{displayLook.accessory.icon}</div>
       )}
     </div>
   );
@@ -683,47 +790,145 @@ export default function KidsResort({ libraryHref = null }) {
     return interiorShell(
       'Design Studio',
       '\u{1F457}',
-      `DESIGN ${characterName.toUpperCase()}`,
+      'CREATE OR SHOP',
+      <div className={styles.studioChoiceGrid}>
+        <button className={styles.studioChoiceCard} type="button" onClick={() => { setStudioMessage(''); setScreen('studio-work'); }}>
+          <span className={styles.studioChoiceIcon}>🎨</span>
+          <strong>Work Here</strong>
+          <span>Make art or design fashion. Creativity is the job.</span>
+        </button>
+        <button className={styles.studioChoiceCard} type="button" onClick={() => { setStudioMessage(''); setStudioTryLook(null); setScreen('studio-shop'); }}>
+          <span className={styles.studioChoiceIcon}>🛍️</span>
+          <strong>Shop & Try On</strong>
+          <span>Try clothes on, buy favorites, and wear them around the resort.</span>
+        </button>
+      </div>,
+    );
+  }
+
+  if (screen === 'studio-work') {
+    const fashionLook = {
+      ...look,
+      shirt: { ...look.shirt, name: 'My Design Top', swatch: fashionDraft.shirt, sleeve: fashionDraft.sleeve },
+      bottoms: { ...look.bottoms, name: 'My Design Bottoms', swatch: fashionDraft.bottoms, leg: fashionDraft.leg },
+    };
+    return interiorShell(
+      'Design Studio',
+      '🎨',
+      'CREATIVE WORK',
+      <div className={styles.studioWorkLayout}>
+        <section className={styles.studioWorkbench}>
+          <div className={styles.studioToolTabs}>
+            <button type="button" data-active={studioTool === 'art'} onClick={() => setStudioTool('art')}>🖌️ Art Studio</button>
+            <button type="button" data-active={studioTool === 'fashion'} onClick={() => setStudioTool('fashion')}>✂️ Fashion Desk</button>
+          </div>
+
+          {studioTool === 'art' ? (
+            <div className={styles.artStudio}>
+              <canvas
+                ref={artCanvasRef}
+                className={styles.artCanvas}
+                width="720"
+                height="420"
+                onPointerDown={beginArt}
+                onPointerMove={drawArt}
+                onPointerUp={endArt}
+                onPointerCancel={endArt}
+                onPointerLeave={endArt}
+                aria-label="Drawing canvas"
+              />
+              <div className={styles.artToolbar}>
+                <label>Color <input type="color" value={artColor} onChange={(event) => setArtColor(event.target.value)} /></label>
+                <button type="button" onClick={clearArt}>Clear</button>
+                <button type="button" onClick={() => makeStudioCreation('art')}>Finish Artwork +5</button>
+              </div>
+            </div>
+          ) : (
+            <div className={styles.fashionDesk}>
+              <div className={styles.fashionPreview}>{renderCharacter(true, fashionLook)}</div>
+              <div className={styles.fashionControls}>
+                <label>Top color <input type="color" value={fashionDraft.shirt} onChange={(event) => setFashionDraft((draft) => ({ ...draft, shirt: event.target.value }))} /></label>
+                <label>Bottom color <input type="color" value={fashionDraft.bottoms} onChange={(event) => setFashionDraft((draft) => ({ ...draft, bottoms: event.target.value }))} /></label>
+                <label>Sleeves
+                  <select value={fashionDraft.sleeve} onChange={(event) => setFashionDraft((draft) => ({ ...draft, sleeve: event.target.value }))}>
+                    <option value="none">Tank</option>
+                    <option value="short">Short</option>
+                    <option value="puff">Puff</option>
+                    <option value="long">Long</option>
+                  </select>
+                </label>
+                <label>Pant legs
+                  <select value={fashionDraft.leg} onChange={(event) => setFashionDraft((draft) => ({ ...draft, leg: event.target.value }))}>
+                    <option value="straight">Straight</option>
+                    <option value="short">Shorts</option>
+                    <option value="wide">Wide</option>
+                    <option value="flare">Flare</option>
+                  </select>
+                </label>
+                <button type="button" onClick={() => makeStudioCreation('fashion')}>Finish Fashion Design +5</button>
+              </div>
+            </div>
+          )}
+        </section>
+        <aside className={styles.studioCustomerCard}>
+          <div className={styles.studioCustomerFace}>😊</div>
+          <strong>Happy Customer</strong>
+          <p>{studioMessage || 'Make whatever you want. Your customer is excited to see it.'}</p>
+          <div className={styles.studioCreationCount}>{studioCreations} creations made</div>
+          <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>Studio Lobby</button>
+        </aside>
+      </div>,
+    );
+  }
+
+  if (screen === 'studio-shop') {
+    const previewLook = studioTryLook || look;
+    const shopCategories = ['shirt', 'bottoms', 'shoes'];
+    return interiorShell(
+      'Design Studio',
+      '🛍️',
+      'CLOTHING SHOP',
       <div className={styles.studioLayout}>
         <section className={styles.characterStage}>
-          {renderCharacter(true)}
+          {renderCharacter(true, previewLook)}
           <div className={styles.lookSummary}>
             <strong>{characterName}</strong>
-            <span>{look.shirt.name} - {look.bottoms.name}</span>
-            <span>{look.shoes.name} - {look.accessory.name}</span>
+            <span>{previewLook.shirt.name} - {previewLook.bottoms.name}</span>
+            <span>{previewLook.shoes.name}</span>
           </div>
+          {studioTryLook && <div className={styles.tryOnBadge}>TRYING ON</div>}
         </section>
 
         <section className={styles.customizer}>
-          {Object.entries(LOOK_OPTIONS).map(([category, options]) => (
+          {shopCategories.map((category) => (
             <div key={category} className={styles.optionGroup}>
               <h3>{category === 'bottoms' ? 'Bottoms' : category.charAt(0).toUpperCase() + category.slice(1)}</h3>
-              <div className={styles.optionRow}>
-                {options.map((option) => {
-                  const selected = look[category].id === option.id;
+              <div className={styles.studioShopGrid}>
+                {LOOK_OPTIONS[category].map((option) => {
+                  const key = category + ':' + option.id;
+                  const owned = ownedLooks.has(key);
+                  const worn = look[category].id === option.id;
                   return (
-                    <button
-                      key={option.id}
-                      type="button"
-                      className={styles.lookOption}
-                      data-selected={selected ? 'true' : 'false'}
-                      onClick={() => chooseLook(category, option)}
-                    >
-                      {'swatch' in option ? (
-                        <span className={styles.swatch} style={{ background: option.swatch }} />
-                      ) : (
-                        <span className={styles.optionIcon}>{option.icon}</span>
-                      )}
-                      <span>{option.name}</span>
-                    </button>
+                    <div key={option.id} className={styles.studioShopItem} data-owned={owned ? 'true' : 'false'}>
+                      <span className={styles.swatch} style={{ background: option.swatch }} />
+                      <strong>{option.name}</strong>
+                      <small>{owned ? 'Owned' : option.price + ' Resort Bucks'}</small>
+                      <div>
+                        <button type="button" onClick={() => tryStudioLook(category, option)}>Try On</button>
+                        <button type="button" disabled={worn} onClick={() => buyStudioLook(category, option)}>
+                          {worn ? 'Wearing' : owned ? 'Wear' : 'Buy'}
+                        </button>
+                      </div>
+                    </div>
                   );
                 })}
               </div>
             </div>
           ))}
           <div className={styles.fullMessage} aria-live="polite">
-            {message || `Try combinations. You can change ${characterName} whenever you want.`}
+            {studioMessage || 'Try anything on before you buy it.'}
           </div>
+          <button className={styles.secondaryButton} type="button" onClick={() => { setStudioTryLook(null); setScreen('studio'); }}>Studio Lobby</button>
         </section>
       </div>,
     );
@@ -909,10 +1114,14 @@ export default function KidsResort({ libraryHref = null }) {
               top: `${position.y}%`,
               '--player-depth-scale': (0.24 + position.y * 0.0043).toFixed(3),
               ...characterStyle,
+              '--outfit-shirt': look.shirt.swatch,
+              '--outfit-bottoms': look.bottoms.swatch,
             }}
             data-frame={walkFrame}
             data-shirt={look.shirt.id}
             data-bottoms={look.bottoms.id}
+            data-sleeve={look.shirt.sleeve || 'short'}
+            data-leg={look.bottoms.leg || 'straight'}
             data-hair={look.hair.id}
             data-gender={character.gender}
             data-facing={facing}
@@ -962,14 +1171,14 @@ export default function KidsResort({ libraryHref = null }) {
 
               <div className={styles.playerLegRigLeft} style={playerView === 'front' ? { transform: isWalking && walkFrame < 3 ? 'translateY(-4px)' : 'none', scale: isWalking && walkFrame < 3 ? 1.05 : 0.95 } : undefined}>
                 <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
-                <span className={styles.playerKnee} style={{ background: look.bottoms.swatch }} />
-                <span className={styles.playerShin} style={{ background: look.bottoms.swatch }} />
+                <span className={styles.playerKnee} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
+                <span className={styles.playerShin} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
                 <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
               </div>
               <div className={styles.playerLegRigRight} style={playerView === 'front' ? { transform: isWalking && walkFrame >= 3 ? 'translateY(-4px)' : 'none', scale: isWalking && walkFrame >= 3 ? 1.05 : 0.95 } : undefined}>
                 <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
-                <span className={styles.playerKnee} style={{ background: look.bottoms.swatch }} />
-                <span className={styles.playerShin} style={{ background: look.bottoms.swatch }} />
+                <span className={styles.playerKnee} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
+                <span className={styles.playerShin} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
                 <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
               </div>
             </div>
