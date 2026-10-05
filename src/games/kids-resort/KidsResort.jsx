@@ -585,10 +585,12 @@ export default function KidsResort({ libraryHref = null }) {
   const walkTokenRef = useRef(0);
   const mapPanelRef = useRef(null);
   const placeBuildingRefs = useRef({});
+  const mapActorRefs = useRef({});
   const npcRoamRef = useRef({});
   const [buildingDepths, setBuildingDepths] = useState(() => (
     Object.fromEntries(PLACES.map((place) => [place.id, place.y]))
   ));
+  const [actorFootDepths, setActorFootDepths] = useState({ player: position.y });
   const [look, setLook] = useState({
     shirt: LOOK_OPTIONS.shirt[0],
     bottoms: LOOK_OPTIONS.bottoms[0],
@@ -793,6 +795,60 @@ export default function KidsResort({ libraryHref = null }) {
   }, [screen, selectedPlaceId]);
 
   useEffect(() => {
+    if (screen !== 'map') return undefined;
+
+    const measureActorFeet = () => {
+      const panel = mapPanelRef.current;
+      if (!panel) return;
+
+      const panelRect = panel.getBoundingClientRect();
+      if (!panelRect.height) return;
+
+      const toDepth = (node, fallback) => {
+        if (!node) return fallback;
+        const footElements = Array.from(node.querySelectorAll('[data-depth-foot="true"]'));
+        const bottom = footElements.length
+          ? Math.max(...footElements.map((foot) => foot.getBoundingClientRect().bottom))
+          : node.getBoundingClientRect().bottom;
+        return Math.max(
+          0,
+          Math.min(100, ((bottom - panelRect.top) / panelRect.height) * 100),
+        );
+      };
+
+      const nextDepths = {
+        player: toDepth(mapActorRefs.current.player, position.y),
+      };
+
+      people.forEach((person) => {
+        const key = `person:${person.id}`;
+        nextDepths[key] = toDepth(
+          mapActorRefs.current[key],
+          person.spawn?.y ?? 60,
+        );
+      });
+
+      setActorFootDepths((current) => {
+        const currentKeys = Object.keys(current);
+        const nextKeys = Object.keys(nextDepths);
+        const changed = currentKeys.length !== nextKeys.length
+          || nextKeys.some((key) => Math.abs((current[key] ?? -1) - nextDepths[key]) > 0.02);
+        return changed ? nextDepths : current;
+      });
+    };
+
+    let secondFrame = 0;
+    const firstFrame = window.requestAnimationFrame(() => {
+      secondFrame = window.requestAnimationFrame(measureActorFeet);
+    });
+
+    return () => {
+      window.cancelAnimationFrame(firstFrame);
+      if (secondFrame) window.cancelAnimationFrame(secondFrame);
+    };
+  }, [people, position.x, position.y, screen]);
+
+  useEffect(() => {
     if (screen !== 'map' || people.length === 0) return undefined;
 
     const clamp = (value, minimum, maximum) => Math.max(minimum, Math.min(maximum, value));
@@ -908,12 +964,12 @@ export default function KidsResort({ libraryHref = null }) {
       })),
       ...people.map((person) => ({
         key: `person:${person.id}`,
-        depth: person.spawn?.y ?? 60,
+        depth: actorFootDepths[`person:${person.id}`] ?? person.spawn?.y ?? 60,
         building: false,
       })),
       {
         key: 'player',
-        depth: position.y,
+        depth: actorFootDepths.player ?? position.y,
         building: false,
       },
     ];
@@ -922,11 +978,11 @@ export default function KidsResort({ libraryHref = null }) {
       const depthDifference = first.depth - second.depth;
       if (Math.abs(depthDifference) > 0.001) return depthDifference;
       if (first.building === second.building) return first.key.localeCompare(second.key);
-      return first.building ? 1 : -1;
+      return first.building ? -1 : 1;
     });
 
     return Object.fromEntries(entries.map((entry, index) => [entry.key, 5 + index]));
-  }, [buildingDepths, people, position.y]);
+  }, [actorFootDepths, buildingDepths, people, position.y]);
 
   useEffect(() => {
     if (screen !== 'cafe-work') return;
@@ -1977,6 +2033,108 @@ export default function KidsResort({ libraryHref = null }) {
       </div>
     </div>
   );
+
+  const renderMapTraveler = (person) => {
+    const displayLook = person.look;
+    const displayCharacter = person.character;
+    const direction = person.walkDirection || 'front';
+    const moving = Boolean(person.isRoaming);
+    const view = moving && (direction === 'left' || direction === 'right') ? 'side' : 'front';
+    const facingDirection = direction === 'left' ? 'left' : 'right';
+
+    return (
+      <div
+        className={styles.playerDetailed}
+        style={{
+          position: 'absolute',
+          left: '50%',
+          top: 0,
+          transform: 'translateX(-50%) scale(.56)',
+          transformOrigin: 'top center',
+          ...characterStyleFor(displayCharacter),
+          '--character-idle-delay': idlePhaseForName(person.name),
+          '--outfit-shirt': displayLook.shirt.swatch,
+          '--outfit-bottoms': displayLook.bottoms.swatch,
+          '--outfit-shoes': displayLook.shoes.swatch,
+          '--outfit-glasses': displayLook.glasses?.swatch || '#6f4b3e',
+          '--outfit-headwear': displayLook.headwear?.swatch || '#ff4f9a',
+        }}
+        data-shirt={displayLook.shirt.id}
+        data-bottoms={displayLook.bottoms.id}
+        data-sleeve={displayLook.shirt.sleeve || 'short'}
+        data-leg={displayLook.bottoms.leg || 'straight'}
+        data-shoe={displayLook.shoes.shoe || 'sneakers'}
+        data-glasses={displayLook.glasses?.id || 'none'}
+        data-headwear={displayLook.headwear?.id || 'none'}
+        data-hair={displayLook.hair.id}
+        data-gender={displayCharacter.gender}
+        data-makeup={displayCharacter.makeup || 'none'}
+        data-facing={facingDirection}
+        data-view={view}
+        data-moving={moving ? 'true' : 'false'}
+        aria-hidden="true"
+      >
+        <div className={styles.playerSprite}>
+          <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} />
+          <span className={styles.playerHeadwear} />
+          <span className={[styles.playerEar, styles.playerEarLeft].join(' ')} />
+          <span className={[styles.playerEar, styles.playerEarRight].join(' ')} />
+          <div className={[styles.playerHead, styles.playerHeadDetail].join(' ')}>
+            <span className={[styles.playerBrow, styles.playerBrowLeft].join(' ')} />
+            <span className={[styles.playerBrow, styles.playerBrowRight].join(' ')} />
+            <span className={[styles.playerEye, styles.playerEyeLeft].join(' ')} />
+            <span className={[styles.playerEye, styles.playerEyeRight].join(' ')} />
+            <span className={styles.playerNose} />
+            <span className={styles.playerSmile} />
+            <span className={styles.playerMakeup} />
+          </div>
+          <div className={styles.playerHairFront} />
+          <span className={styles.playerGlasses} />
+          <div className={styles.playerNeck} />
+          <div className={[styles.playerBody, styles.playerBodyDetail].join(' ')} style={{ background: displayLook.shirt.swatch }} />
+          <div className={styles.playerPelvis} style={{ background: displayLook.bottoms.swatch }} />
+
+          <div className={styles.playerArmRigLeft}>
+            <span className={styles.playerUpperArm} />
+            <span className={styles.playerElbow} />
+            <span className={styles.playerForearm} />
+            <span className={styles.playerHand}>
+              <i className={styles.playerThumb} />
+              <i className={styles.playerFinger} />
+              <i className={styles.playerFinger} />
+              <i className={styles.playerFinger} />
+            </span>
+          </div>
+          <div className={styles.playerArmRigRight}>
+            <span className={styles.playerUpperArm} />
+            <span className={styles.playerElbow} />
+            <span className={styles.playerForearm} />
+            <span className={styles.playerHand}>
+              <i className={styles.playerThumb} />
+              <i className={styles.playerFinger} />
+              <i className={styles.playerFinger} />
+              <i className={styles.playerFinger} />
+            </span>
+          </div>
+
+          <div className={styles.playerLegRigLeft}>
+            <span className={styles.playerSkinLeg} />
+            <span className={styles.playerThigh} style={{ background: displayLook.bottoms.swatch }} />
+            <span className={styles.playerKnee} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
+            <span className={styles.playerShin} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
+            <span className={styles.playerShoe} data-depth-foot="true" style={{ background: displayLook.shoes.swatch }} />
+          </div>
+          <div className={styles.playerLegRigRight}>
+            <span className={styles.playerSkinLeg} />
+            <span className={styles.playerThigh} style={{ background: displayLook.bottoms.swatch }} />
+            <span className={styles.playerKnee} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
+            <span className={styles.playerShin} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
+            <span className={styles.playerShoe} data-depth-foot="true" style={{ background: displayLook.shoes.swatch }} />
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   const renderStudioActor = (
     displayLook,
@@ -3494,14 +3652,25 @@ export default function KidsResort({ libraryHref = null }) {
               }}
               aria-label={'Edit ' + person.name}
             >
-              <span className={styles.mapNpcFigure}>
-                {renderCharacter(false, person.look, person.character, person.name)}
+              <span
+                className={styles.mapNpcFigure}
+                ref={(node) => {
+                  const key = `person:${person.id}`;
+                  if (node) mapActorRefs.current[key] = node;
+                  else delete mapActorRefs.current[key];
+                }}
+              >
+                {renderMapTraveler(person)}
               </span>
               <span className={styles.mapNpcName}>{person.name}</span>
             </button>
           ))}
 
           <div
+            ref={(node) => {
+              if (node) mapActorRefs.current.player = node;
+              else delete mapActorRefs.current.player;
+            }}
             className={[styles.player, styles.playerDetailed, isWalking ? styles.playerWalking : ''].join(' ')}
             style={{
               left: `${position.x}%`,
@@ -3580,14 +3749,14 @@ export default function KidsResort({ libraryHref = null }) {
                 <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerKnee} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
                 <span className={styles.playerShin} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
-                <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
+                <span className={styles.playerShoe} data-depth-foot="true" style={{ background: look.shoes.swatch }} />
               </div>
               <div className={styles.playerLegRigRight} style={playerView === 'front' ? { transform: isWalking && walkFrame >= 3 ? 'translateY(-4px)' : 'none', scale: isWalking && walkFrame >= 3 ? 1.05 : 0.95 } : undefined}>
                 <span className={styles.playerSkinLeg} />
                 <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerKnee} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
                 <span className={styles.playerShin} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
-                <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
+                <span className={styles.playerShoe} data-depth-foot="true" style={{ background: look.shoes.swatch }} />
               </div>
             </div>
           </div>

@@ -1940,19 +1940,19 @@
   animation: mapNpcWalkBob .52s ease-in-out infinite;
 }
 
-.mapNpc[data-moving="true"] .avatarFigure[data-pose="standing"] .avatarArmRigLeft {
+.mapNpc[data-moving="true"] .playerDetailed .playerArmRigLeft {
   animation: mapNpcWalkArmLeft .52s ease-in-out infinite;
 }
 
-.mapNpc[data-moving="true"] .avatarFigure[data-pose="standing"] .avatarArmRigRight {
+.mapNpc[data-moving="true"] .playerDetailed .playerArmRigRight {
   animation: mapNpcWalkArmRight .52s ease-in-out infinite;
 }
 
-.mapNpc[data-moving="true"] .avatarLegRigLeft {
+.mapNpc[data-moving="true"] .playerDetailed .playerLegRigLeft {
   animation: mapNpcWalkLegLeft .52s ease-in-out infinite;
 }
 
-.mapNpc[data-moving="true"] .avatarLegRigRight {
+.mapNpc[data-moving="true"] .playerDetailed .playerLegRigRight {
   animation: mapNpcWalkLegRight .52s ease-in-out infinite;
 }
 
