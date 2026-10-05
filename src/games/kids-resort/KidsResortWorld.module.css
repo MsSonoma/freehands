@@ -2470,6 +2470,10 @@
   transform: skewY(-6deg);
 }
 
+.avatarFigure[data-glasses="cat-eye"] .avatarGlasses::before {
+  transform: scaleX(-1) skewY(-6deg);
+}
+
 .avatarFigure[data-glasses="sunglasses"] .avatarGlasses::before,
 .avatarFigure[data-glasses="sunglasses"] .avatarGlasses::after {
   border-radius: 5px;

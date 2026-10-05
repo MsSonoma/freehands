@@ -1215,6 +1215,10 @@
   border-radius: 65% 35% 48% 52%;
 }
 
+.playerDetailed:not([data-view="side"])[data-glasses="cat-eye"] .playerGlasses::before {
+  transform: scaleX(-1);
+}
+
 .playerDetailed[data-glasses="sunglasses"] .playerGlasses::before,
 .playerDetailed[data-glasses="sunglasses"] .playerGlasses::after {
   border-radius: 2px;
