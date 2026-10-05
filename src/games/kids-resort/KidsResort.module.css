@@ -1781,13 +1781,52 @@
   font-size: .72rem;
 }
 .cafeGameShell .cafeInterior {
+  --cafe-wall-gutter: max(22px, calc((100vw - 1080px) / 2 + 38px));
   width: 100%;
   max-width: none;
   min-height: 0;
-  height: auto;
+  height: calc(100dvh - 44px);
   margin: 0;
   flex: 1 1 auto;
+  padding-top: clamp(170px, 25dvh, 230px);
+  padding-right: var(--cafe-wall-gutter);
+  padding-bottom: clamp(12px, 3dvh, 42px);
+  padding-left: var(--cafe-wall-gutter);
   border: 0;
   border-radius: 0;
   box-shadow: none;
+}
+.cafeGameShell .cafeWallArt {
+  left: var(--cafe-wall-gutter);
+}
+.cafeGameShell .cafeWindow {
+  right: var(--cafe-wall-gutter);
+}
+@media (max-height: 700px) {
+  .cafeGameShell .cafeInterior {
+    padding-top: 150px;
+    padding-bottom: 12px;
+  }
+  .cafeGameShell .cafeWallArt {
+    top: 14px;
+  }
+  .cafeGameShell .cafeWindow {
+    top: 14px;
+    height: 128px;
+  }
+}
+@media (max-height: 610px) {
+  .cafeGameShell .cafeInterior {
+    padding-top: 124px;
+    padding-bottom: 8px;
+  }
+  .cafeGameShell .cafeWallArt {
+    top: 8px;
+    transform: scale(.82);
+    transform-origin: top left;
+  }
+  .cafeGameShell .cafeWindow {
+    top: 8px;
+    height: 104px;
+  }
 }
