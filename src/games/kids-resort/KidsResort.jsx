@@ -483,6 +483,7 @@ export default function KidsResort({ libraryHref = null }) {
   });
 
   const [people, setPeople] = useState([]);
+  const [studioAmbientPerson] = useState(() => makeCharacterPerson('random'));
   const [peopleOpen, setPeopleOpen] = useState(false);
   const [personEditorOpen, setPersonEditorOpen] = useState(false);
   const [personDraft, setPersonDraft] = useState(null);
@@ -1291,6 +1292,49 @@ export default function KidsResort({ libraryHref = null }) {
     </div>
   );
 
+  const renderStudioActor = (
+    displayLook,
+    displayCharacter,
+    displayName,
+    role = 'guest',
+    bubble = '',
+  ) => (
+    <div className={styles.studioSceneActor} data-role={role}>
+      <div className={styles.studioSceneActorFigure}>
+        {renderCharacter(false, displayLook, displayCharacter, displayName)}
+      </div>
+      <span className={styles.studioSceneActorName}>{displayName}</span>
+      {bubble && <span className={styles.studioSceneSpeech}>{bubble}</span>}
+    </div>
+  );
+
+  const studioExperienceShell = (mode, title, subtitle, actors, body) => (
+    <main className={[styles.gameShell, styles.studioModeGameShell].join(' ')}>
+      <section className={[styles.topBar, styles.studioTopBar].join(' ')}>
+        <button className={styles.backButton} type="button" onClick={() => setScreen('studio')}>
+          ← Design Studio
+        </button>
+        <div className={styles.brand}>{title}</div>
+        <div className={styles.wallet}>💵 {bucks} Resort Bucks</div>
+      </section>
+
+      <section className={styles.studioExperienceRoom} data-mode={mode}>
+        <div className={styles.studioExperienceWallSign}>
+          <strong>{title}</strong>
+          <span>{subtitle}</span>
+        </div>
+        <div className={styles.studioExperienceDecor} aria-hidden="true">
+          <span className={styles.studioDecorOne} />
+          <span className={styles.studioDecorTwo} />
+          <span className={styles.studioDecorThree} />
+        </div>
+        <div className={styles.studioExperienceActors}>{actors}</div>
+        <div className={styles.studioExperienceFloorLine} aria-hidden="true" />
+        <div className={styles.studioExperienceWorkspace}>{body}</div>
+      </section>
+    </main>
+  );
+
   const interiorShell = (title, icon, subtitle, body) => (
     <main className={styles.gameShell}>
       <section className={styles.topBar}>
@@ -1432,6 +1476,16 @@ export default function KidsResort({ libraryHref = null }) {
           </div>
           <div className={styles.studioRoomFloorLine} aria-hidden="true" />
 
+          <div className={styles.studioRoomPeople} aria-label="People in the Design Studio">
+            {renderStudioActor(look, character, characterName, 'player')}
+            {renderStudioActor(
+              studioAmbientPerson.look,
+              studioAmbientPerson.character,
+              studioAmbientPerson.name,
+              'guest',
+            )}
+          </div>
+
           <div className={styles.studioRoomStage}>
             <button
               className={styles.studioRoomStation}
@@ -1528,107 +1582,119 @@ export default function KidsResort({ libraryHref = null }) {
 
   if (screen === 'studio-beauty-work') {
     const person = studioCustomerPerson;
+
     if (!person) {
-      return interiorShell('Beauty Station', '💇', 'WORK HERE', (
-        <button className={styles.primaryButton} type="button" onClick={beginBeautyWork}>Start Appointment</button>
-      ));
+      return studioExperienceShell(
+        'beauty-work',
+        'Beauty Station',
+        'WORK HERE',
+        <>
+          {renderStudioActor(look, character, characterName, 'player')}
+          {renderStudioActor(
+            studioAmbientPerson.look,
+            studioAmbientPerson.character,
+            studioAmbientPerson.name,
+            'customer',
+            'I would love a fresh look.',
+          )}
+        </>,
+        <button className={styles.primaryButton} type="button" onClick={beginBeautyWork}>
+          Start Appointment
+        </button>,
+      );
     }
 
-    return interiorShell(
+    return studioExperienceShell(
+      'beauty-work',
       'Beauty Station',
-      '💇',
       'WORK HERE',
-      <div className={styles.beautyStudioLayout}>
-        <section className={styles.characterStage}>
-          {renderCharacter(true, person.look, person.character, person.name)}
-          <div className={styles.lookSummary}>
-            <strong>{person.name}</strong>
-            <span>Beauty customer</span>
+      <>
+        {renderStudioActor(look, character, characterName, 'player')}
+        {renderStudioActor(
+          person.look,
+          person.character,
+          person.name,
+          'customer',
+          studioCustomerDone ? 'Thank you!' : 'I would love a fresh look.',
+        )}
+      </>,
+      <div className={styles.studioExperienceControls}>
+        <div className={styles.beautyControlGroup}>
+          <h3>Hair Style</h3>
+          <div className={styles.creatorChoiceWrap}>
+            {LOOK_OPTIONS.hair.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={styles.creatorTextChoice}
+                data-selected={person.look.hair.id === option.id ? 'true' : 'false'}
+                onClick={() => updateBeautyCustomerHair(option)}
+              >
+                {option.name}
+              </button>
+            ))}
           </div>
-        </section>
+        </div>
 
-        <section className={styles.beautyControlPanel}>
-          <div className={styles.beautyControlGroup}>
-            <h3>Hair Style</h3>
-            <div className={styles.creatorChoiceWrap}>
-              {LOOK_OPTIONS.hair.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={styles.creatorTextChoice}
-                  data-selected={person.look.hair.id === option.id ? 'true' : 'false'}
-                  onClick={() => updateBeautyCustomerHair(option)}
-                >
-                  {option.name}
-                </button>
-              ))}
-            </div>
+        <div className={styles.beautyControlGroup}>
+          <h3>Hair Color</h3>
+          <div className={styles.creatorSwatches}>
+            {CHARACTER_OPTIONS.hair.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={styles.creatorSwatch}
+                data-selected={person.character.hair === option.id ? 'true' : 'false'}
+                style={{ '--swatch-color': option.color }}
+                aria-label={option.name}
+                title={option.name}
+                onClick={() => updateBeautyCustomerCharacter('hair', option.id)}
+              />
+            ))}
           </div>
+        </div>
 
-          <div className={styles.beautyControlGroup}>
-            <h3>Hair Color</h3>
-            <div className={styles.creatorSwatches}>
-              {CHARACTER_OPTIONS.hair.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={styles.creatorSwatch}
-                  data-selected={person.character.hair === option.id ? 'true' : 'false'}
-                  style={{ '--swatch-color': option.color }}
-                  aria-label={option.name}
-                  title={option.name}
-                  onClick={() => updateBeautyCustomerCharacter('hair', option.id)}
-                />
-              ))}
-            </div>
+        <div className={styles.beautyControlGroup}>
+          <h3>Makeup & Face Details</h3>
+          <div className={styles.creatorChoiceWrap}>
+            {[
+              ['none', 'None'],
+              ['blush', 'Blush'],
+              ['freckles', 'Freckles'],
+              ['lashes', 'Lashes'],
+              ['lip', 'Lip Color'],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={styles.creatorTextChoice}
+                data-selected={person.character.makeup === id ? 'true' : 'false'}
+                onClick={() => updateBeautyCustomerCharacter('makeup', id)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+          {person.character.makeup !== 'none' && (
+            <label className={styles.creatorColorInput}>
+              <span>Detail color</span>
+              <input
+                type="color"
+                value={person.character.makeupColor}
+                onChange={(event) => updateBeautyCustomerCharacter('makeupColor', event.target.value)}
+              />
+            </label>
+          )}
+        </div>
 
-          <div className={styles.beautyControlGroup}>
-            <h3>Makeup & Face Details</h3>
-            <div className={styles.creatorChoiceWrap}>
-              {[
-                ['none', 'None'],
-                ['blush', 'Blush'],
-                ['freckles', 'Freckles'],
-                ['lashes', 'Lashes'],
-                ['lip', 'Lip Color'],
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={styles.creatorTextChoice}
-                  data-selected={person.character.makeup === id ? 'true' : 'false'}
-                  onClick={() => updateBeautyCustomerCharacter('makeup', id)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {person.character.makeup !== 'none' && (
-              <label className={styles.creatorColorInput}>
-                <span>Detail color</span>
-                <input
-                  type="color"
-                  value={person.character.makeupColor}
-                  onChange={(event) => updateBeautyCustomerCharacter('makeupColor', event.target.value)}
-                />
-              </label>
-            )}
-          </div>
-
-          <div className={styles.fashionActionRow}>
-            {studioCustomerDone ? (
-              <button type="button" onClick={nextBeautyCustomer}>Next Customer</button>
-            ) : (
-              <button type="button" onClick={finishBeautyWork}>Finish Service</button>
-            )}
-          </div>
-          <p className={styles.customerOpinion}>{studioMessage}</p>
-        </section>
-
-        <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
-          Design Studio
-        </button>
+        <div className={styles.fashionActionRow}>
+          {studioCustomerDone ? (
+            <button type="button" onClick={nextBeautyCustomer}>Next Customer</button>
+          ) : (
+            <button type="button" onClick={finishBeautyWork}>Finish Service</button>
+          )}
+        </div>
+        <p className={styles.customerOpinion}>{studioMessage}</p>
       </div>,
     );
   }
@@ -1636,311 +1702,132 @@ export default function KidsResort({ libraryHref = null }) {
   if (screen === 'studio-beauty-shop') {
     const draft = studioBeautyDraft || { character, look };
 
-    return interiorShell(
+    return studioExperienceShell(
+      'beauty-shop',
       'Beauty Bar',
-      '💄',
       'HAIR & MAKEUP',
-      <div className={styles.beautyStudioLayout}>
-        <section className={styles.characterStage}>
-          {renderCharacter(true, draft.look, draft.character, characterName)}
-          <div className={styles.lookSummary}>
-            <strong>{characterName}</strong>
-            <span>Your beauty appointment</span>
+      <>
+        {renderStudioActor(
+          draft.look,
+          draft.character,
+          characterName,
+          'player',
+          studioCustomerDone ? 'I love my new look!' : '',
+        )}
+        {renderStudioActor(
+          studioAmbientPerson.look,
+          studioAmbientPerson.character,
+          studioAmbientPerson.name,
+          'stylist',
+          'Let’s find a look you like.',
+        )}
+      </>,
+      <div className={styles.studioExperienceControls}>
+        <div className={styles.beautyControlGroup}>
+          <h3>Hair Style</h3>
+          <div className={styles.creatorChoiceWrap}>
+            {LOOK_OPTIONS.hair.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={styles.creatorTextChoice}
+                data-selected={draft.look.hair.id === option.id ? 'true' : 'false'}
+                onClick={() => updateBeautyDraftHair(option)}
+              >
+                {option.name}
+              </button>
+            ))}
           </div>
-        </section>
+        </div>
 
-        <section className={styles.beautyControlPanel}>
-          <div className={styles.beautyControlGroup}>
-            <h3>Hair Style</h3>
-            <div className={styles.creatorChoiceWrap}>
-              {LOOK_OPTIONS.hair.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={styles.creatorTextChoice}
-                  data-selected={draft.look.hair.id === option.id ? 'true' : 'false'}
-                  onClick={() => updateBeautyDraftHair(option)}
-                >
-                  {option.name}
-                </button>
-              ))}
-            </div>
+        <div className={styles.beautyControlGroup}>
+          <h3>Hair Color</h3>
+          <div className={styles.creatorSwatches}>
+            {CHARACTER_OPTIONS.hair.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                className={styles.creatorSwatch}
+                data-selected={draft.character.hair === option.id ? 'true' : 'false'}
+                style={{ '--swatch-color': option.color }}
+                aria-label={option.name}
+                title={option.name}
+                onClick={() => updateBeautyDraftCharacter('hair', option.id)}
+              />
+            ))}
           </div>
+        </div>
 
-          <div className={styles.beautyControlGroup}>
-            <h3>Hair Color</h3>
-            <div className={styles.creatorSwatches}>
-              {CHARACTER_OPTIONS.hair.map((option) => (
-                <button
-                  key={option.id}
-                  type="button"
-                  className={styles.creatorSwatch}
-                  data-selected={draft.character.hair === option.id ? 'true' : 'false'}
-                  style={{ '--swatch-color': option.color }}
-                  aria-label={option.name}
-                  title={option.name}
-                  onClick={() => updateBeautyDraftCharacter('hair', option.id)}
-                />
-              ))}
-            </div>
+        <div className={styles.beautyControlGroup}>
+          <h3>Makeup & Face Details</h3>
+          <div className={styles.creatorChoiceWrap}>
+            {[
+              ['none', 'None'],
+              ['blush', 'Blush'],
+              ['freckles', 'Freckles'],
+              ['lashes', 'Lashes'],
+              ['lip', 'Lip Color'],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                className={styles.creatorTextChoice}
+                data-selected={draft.character.makeup === id ? 'true' : 'false'}
+                onClick={() => updateBeautyDraftCharacter('makeup', id)}
+              >
+                {label}
+              </button>
+            ))}
           </div>
+          {draft.character.makeup !== 'none' && (
+            <label className={styles.creatorColorInput}>
+              <span>Detail color</span>
+              <input
+                type="color"
+                value={draft.character.makeupColor}
+                onChange={(event) => updateBeautyDraftCharacter('makeupColor', event.target.value)}
+              />
+            </label>
+          )}
+        </div>
 
-          <div className={styles.beautyControlGroup}>
-            <h3>Makeup & Face Details</h3>
-            <div className={styles.creatorChoiceWrap}>
-              {[
-                ['none', 'None'],
-                ['blush', 'Blush'],
-                ['freckles', 'Freckles'],
-                ['lashes', 'Lashes'],
-                ['lip', 'Lip Color'],
-              ].map(([id, label]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={styles.creatorTextChoice}
-                  data-selected={draft.character.makeup === id ? 'true' : 'false'}
-                  onClick={() => updateBeautyDraftCharacter('makeup', id)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {draft.character.makeup !== 'none' && (
-              <label className={styles.creatorColorInput}>
-                <span>Detail color</span>
-                <input
-                  type="color"
-                  value={draft.character.makeupColor}
-                  onChange={(event) => updateBeautyDraftCharacter('makeupColor', event.target.value)}
-                />
-              </label>
-            )}
-          </div>
-
-          <div className={styles.fashionActionRow}>
-            {studioCustomerDone ? (
-              <button type="button" onClick={() => setScreen('studio')}>Done</button>
-            ) : (
-              <button type="button" onClick={finishBeautyService}>Finish Service · 3 Resort Bucks</button>
-            )}
-          </div>
-          <p className={styles.customerOpinion}>{studioMessage}</p>
-        </section>
-
-        <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
-          Design Studio
-        </button>
+        <div className={styles.fashionActionRow}>
+          {studioCustomerDone ? (
+            <button type="button" onClick={() => setScreen('studio')}>Done</button>
+          ) : (
+            <button type="button" onClick={finishBeautyService}>Finish Service · 3 Resort Bucks</button>
+          )}
+        </div>
+        <p className={styles.customerOpinion}>{studioMessage}</p>
       </div>,
     );
   }
 
   if (screen === 'studio-work') {
     const customer = FASHION_CUSTOMERS[studioCustomerIndex % FASHION_CUSTOMERS.length];
-    const customerPerson = studioCustomerPerson;
-    const previewLook = studioDraftLook || customerPerson?.look || null;
-    const activeItem = previewLook?.[studioCategory] || LOOK_OPTIONS[studioCategory][0];
+    const customerPerson = studioCustomerPerson || studioAmbientPerson;
+    const previewLook = studioDraftLook || customerPerson.look;
+    const activeItem = previewLook[studioCategory] || LOOK_OPTIONS[studioCategory][0];
     const activeOptions = LOOK_OPTIONS[studioCategory];
     const activeLabel =
       FASHION_CATEGORIES.find((category) => category.id === studioCategory)?.label || 'Fashion';
 
-    return interiorShell(
-      'Design Studio',
-      '🎨',
-      'WORK HERE',
-      <div className={styles.studioWorkPage}>
-        <div className={styles.studioModeTitle}>
-          {studioWorkTool === 'fashion' ? 'Fashion Work' : 'Art Work'}
-        </div>
-
-        {studioWorkTool === 'fashion' ? (
-          <div className={styles.studioFashionWorkLayout}>
-            <section className={styles.characterStage}>
-              {customerPerson && previewLook && (
-                <>
-                  {renderCharacter(true, previewLook, customerPerson.character, customerPerson.name)}
-                  <div className={styles.lookSummary}>
-                    <strong>{customerPerson.name}</strong>
-                    <span>Fashion customer</span>
-                  </div>
-                </>
-              )}
-              <div className={styles.tryOnBadge}>CUSTOMER DESIGN</div>
-            </section>
-
-            <section className={styles.customizer}>
-              <div className={styles.fashionCategoryTabs}>
-                {FASHION_CATEGORIES.map((category) => (
-                  <button
-                    key={category.id}
-                    type="button"
-                    data-active={studioCategory === category.id ? 'true' : 'false'}
-                    onClick={() => setStudioCategory(category.id)}
-                  >
-                    {category.label}
-                  </button>
-                ))}
-              </div>
-
-              <div className={styles.fashionEditorCard}>
-                <div className={styles.fashionEditorHeading}>
-                  <div>
-                    <small>{activeLabel}</small>
-                    <h3>{activeItem.name}</h3>
-                  </div>
-                  {activeItem.id !== 'none' && (
-                    <label className={styles.fashionColorControl}>
-                      Any color
-                      <input
-                        type="color"
-                        value={activeItem.swatch || '#777777'}
-                        onChange={(event) => updateStudioColor(studioCategory, event.target.value)}
-                      />
-                    </label>
-                  )}
-                </div>
-
-                <div className={styles.fashionTypeGrid}>
-                  {activeOptions.map((option) => (
-                    <button
-                      key={option.id}
-                      type="button"
-                      data-selected={activeItem.id === option.id ? 'true' : 'false'}
-                      onClick={() => updateStudioType(studioCategory, option)}
-                    >
-                      <strong>{option.name}</strong>
-                      <small>Design option</small>
-                    </button>
-                  ))}
-                </div>
-
-                <div className={styles.fashionActionRow}>
-                  {studioCustomerDone ? (
-                    <button type="button" onClick={nextFashionCustomer}>Next Customer</button>
-                  ) : (
-                    <button type="button" onClick={showFashionToCustomer}>Finish Outfit</button>
-                  )}
-                </div>
-              </div>
-            </section>
-
-            <aside className={styles.studioCustomerCard}>
-              <strong>{customerPerson?.name || 'Customer'}</strong>
-              <p className={styles.customerRequest}>{fashionFeeling(customer).request}</p>
-              {studioTipResult && (
-                <div className={styles.fashionTipOnly}>
-                  <strong>Tip +{studioTipResult.tip} Resort Bucks</strong>
-                  {studioTipResult.earnedStar && <span>⭐ Fashion Star earned</span>}
-                </div>
-              )}
-              <p className={styles.customerOpinion}>
-                {studioMessage || 'Design the whole outfit, then finish it for the customer.'}
-              </p>
-            </aside>
-          </div>
-        ) : (
-          <div className={styles.studioWorkLayout}>
-            <section className={styles.studioWorkbench}>
-              <div className={styles.artStudio}>
-                <canvas
-                  ref={artCanvasRef}
-                  className={styles.artCanvas}
-                  width="720"
-                  height="420"
-                  onPointerDown={beginArt}
-                  onPointerMove={drawArt}
-                  onPointerUp={endArt}
-                  onPointerCancel={endArt}
-                  onPointerLeave={endArt}
-                  aria-label="Drawing canvas"
-                />
-                <div className={styles.artToolbar}>
-                  <label>
-                    Color
-                    <input
-                      type="color"
-                      value={artColor}
-                      onChange={(event) => setArtColor(event.target.value)}
-                    />
-                  </label>
-                  <button type="button" onClick={clearArt}>Clear</button>
-                  <button type="button" onClick={() => makeStudioCreation('art')}>
-                    Finish Artwork +5
-                  </button>
-                </div>
-              </div>
-            </section>
-            <aside className={styles.studioCustomerCard}>
-              <div className={styles.studioCustomerFace}>😊</div>
-              <strong>Art Customer</strong>
-              <p>{studioMessage || 'For artwork, the customer is happy to see your own creative idea.'}</p>
-              <div className={styles.studioCreationCount}>{studioCreations} creations made</div>
-            </aside>
-          </div>
-        )}
-
-        <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
-          Design Studio
-        </button>
-      </div>,
-    );
-  }
-
-  if (screen === 'studio-shop') {
-    const previewLook = studioDraftLook || look;
-    const activeItem = previewLook[studioCategory];
-    const activeOptions = LOOK_OPTIONS[studioCategory];
-    const activeKey = fashionKey(studioCategory, activeItem);
-    const owned = ownedLooks.has(activeKey) || (activeItem?.price || 0) === 0;
-    const worn = fashionKey(studioCategory, look[studioCategory]) === activeKey;
-    const activeLabel = FASHION_CATEGORIES.find((category) => category.id === studioCategory)?.label || 'Fashion';
-    const tryOnItems = FASHION_CATEGORIES
-      .map((category) => ({
-        ...category,
-        item: previewLook[category.id],
-        changed:
-          fashionKey(category.id, previewLook[category.id]) !==
-          fashionKey(category.id, look[category.id]),
-      }))
-      .filter((category) => category.changed);
-
-    return interiorShell(
-      'Design Studio',
-      '👗',
-      'SHOP & TRY ON',
-      <div className={styles.studioLayout}>
-        <section className={styles.characterStage}>
-          {renderCharacter(true, previewLook)}
-          <div className={styles.lookSummary}>
-            <strong>{characterName}</strong>
-            <span>{previewLook.shirt.name} · {previewLook.bottoms.name}</span>
-            <span>{previewLook.shoes.name}</span>
-            <span>{previewLook.glasses.name} · {previewLook.headwear.name}</span>
-          </div>
-          <div className={styles.tryOnBadge}>LIVE TRY-ON</div>
-          <div className={styles.tryOnTray}>
-            <strong>Trying on together</strong>
-            <div className={styles.tryOnTrayItems}>
-              {tryOnItems.length > 0 ? (
-                tryOnItems.map((category) => (
-                  <span key={category.id}>
-                    <i style={{ background: category.item.swatch }} />
-                    {category.item.name}
-                  </span>
-                ))
-              ) : (
-                <span>Your current outfit</span>
-              )}
-            </div>
-            {tryOnItems.length > 0 && (
-              <button type="button" onClick={() => setStudioDraftLook({ ...look })}>
-                Reset try-on
-              </button>
-            )}
-          </div>
-        </section>
-
-        <section className={styles.customizer}>
+    if (studioWorkTool === 'fashion') {
+      return studioExperienceShell(
+        'fashion-work',
+        'Fashion Atelier',
+        'DESIGN FOR CUSTOMERS',
+        <>
+          {renderStudioActor(look, character, characterName, 'player')}
+          {renderStudioActor(
+            previewLook,
+            customerPerson.character,
+            customerPerson.name,
+            'customer',
+            'I want to feel ' + fashionFeeling(customer).label + '.',
+          )}
+        </>,
+        <div className={styles.studioExperienceControls}>
           <div className={styles.fashionCategoryTabs}>
             {FASHION_CATEGORIES.map((category) => (
               <button
@@ -1981,28 +1868,208 @@ export default function KidsResort({ libraryHref = null }) {
                   onClick={() => updateStudioType(studioCategory, option)}
                 >
                   <strong>{option.name}</strong>
-                  <small>{option.price === 0 ? 'Free' : option.price + ' Resort Bucks'}</small>
+                  <small>Design option</small>
                 </button>
               ))}
             </div>
 
             <div className={styles.fashionActionRow}>
-              <button
-                className={styles.primaryButton}
-                type="button"
-                disabled={worn}
-                onClick={() => buyStudioLook(studioCategory, activeItem)}
-              >
-                {worn ? 'Wearing This' : owned ? 'Wear This' : 'Buy & Wear · ' + activeItem.price}
-              </button>
+              {studioCustomerDone ? (
+                <button type="button" onClick={nextFashionCustomer}>Next Customer</button>
+              ) : (
+                <button type="button" onClick={showFashionToCustomer}>Finish Outfit</button>
+              )}
             </div>
           </div>
 
-          <div className={styles.fullMessage} aria-live="polite">
-            {studioMessage || 'Choose a type and any color. Trying it on is free; keeping the custom design costs Resort Bucks.'}
+          <div className={styles.studioSceneMessage}>
+            <strong>{customerPerson.name}</strong>
+            <span>{fashionFeeling(customer).request}</span>
+            {studioTipResult && (
+              <b>
+                Tip +{studioTipResult.tip} Resort Bucks
+                {studioTipResult.earnedStar ? ' · Fashion Star earned' : ''}
+              </b>
+            )}
+            <small>{studioMessage || 'Design the whole outfit, then finish it for the customer.'}</small>
           </div>
-          <button className={styles.secondaryButton} type="button" onClick={() => { setStudioDraftLook(null); setScreen('studio'); }}>Design Studio</button>
-        </section>
+        </div>,
+      );
+    }
+
+    return studioExperienceShell(
+      'art-work',
+      'Art Corner',
+      'CREATE FOR CUSTOMERS',
+      <>
+        {renderStudioActor(look, character, characterName, 'player')}
+        {renderStudioActor(
+          studioAmbientPerson.look,
+          studioAmbientPerson.character,
+          studioAmbientPerson.name,
+          'customer',
+          'Make something creative for me.',
+        )}
+      </>,
+      <div className={styles.studioExperienceControls}>
+        <div className={[styles.artStudio, styles.studioExperienceArtStudio].join(' ')}>
+          <canvas
+            ref={artCanvasRef}
+            className={[styles.artCanvas, styles.studioExperienceArtCanvas].join(' ')}
+            width="720"
+            height="420"
+            onPointerDown={beginArt}
+            onPointerMove={drawArt}
+            onPointerUp={endArt}
+            onPointerCancel={endArt}
+            onPointerLeave={endArt}
+            aria-label="Drawing canvas"
+          />
+          <div className={styles.artToolbar}>
+            <label>
+              Color
+              <input
+                type="color"
+                value={artColor}
+                onChange={(event) => setArtColor(event.target.value)}
+              />
+            </label>
+            <button type="button" onClick={clearArt}>Clear</button>
+            <button type="button" onClick={() => makeStudioCreation('art')}>
+              Finish Artwork +5
+            </button>
+          </div>
+        </div>
+        <div className={styles.studioSceneMessage}>
+          <strong>{studioAmbientPerson.name}</strong>
+          <span>{studioMessage || 'Make your own creative idea for the customer.'}</span>
+          <small>{studioCreations} creations made</small>
+        </div>
+      </div>,
+    );
+  }
+
+  if (screen === 'studio-shop') {
+    const previewLook = studioDraftLook || look;
+    const activeItem = previewLook[studioCategory];
+    const activeOptions = LOOK_OPTIONS[studioCategory];
+    const activeKey = fashionKey(studioCategory, activeItem);
+    const owned = ownedLooks.has(activeKey) || (activeItem?.price || 0) === 0;
+    const worn = fashionKey(studioCategory, look[studioCategory]) === activeKey;
+    const activeLabel =
+      FASHION_CATEGORIES.find((category) => category.id === studioCategory)?.label || 'Fashion';
+    const tryOnItems = FASHION_CATEGORIES
+      .map((category) => ({
+        ...category,
+        item: previewLook[category.id],
+        changed:
+          fashionKey(category.id, previewLook[category.id]) !==
+          fashionKey(category.id, look[category.id]),
+      }))
+      .filter((category) => category.changed);
+
+    return studioExperienceShell(
+      'fashion-shop',
+      'Fashion Boutique',
+      'SHOP & TRY ON',
+      <>
+        {renderStudioActor(
+          previewLook,
+          character,
+          characterName,
+          'player',
+          tryOnItems.length > 0 ? 'How does this look?' : '',
+        )}
+        {renderStudioActor(
+          studioAmbientPerson.look,
+          studioAmbientPerson.character,
+          studioAmbientPerson.name,
+          'stylist',
+          'Try anything you like.',
+        )}
+      </>,
+      <div className={styles.studioExperienceControls}>
+        <div className={styles.fashionCategoryTabs}>
+          {FASHION_CATEGORIES.map((category) => (
+            <button
+              key={category.id}
+              type="button"
+              data-active={studioCategory === category.id ? 'true' : 'false'}
+              onClick={() => setStudioCategory(category.id)}
+            >
+              {category.label}
+            </button>
+          ))}
+        </div>
+
+        <div className={styles.fashionEditorCard}>
+          <div className={styles.fashionEditorHeading}>
+            <div>
+              <small>{activeLabel}</small>
+              <h3>{activeItem.name}</h3>
+            </div>
+            {activeItem.id !== 'none' && (
+              <label className={styles.fashionColorControl}>
+                Any color
+                <input
+                  type="color"
+                  value={activeItem.swatch || '#777777'}
+                  onChange={(event) => updateStudioColor(studioCategory, event.target.value)}
+                />
+              </label>
+            )}
+          </div>
+
+          <div className={styles.fashionTypeGrid}>
+            {activeOptions.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                data-selected={activeItem.id === option.id ? 'true' : 'false'}
+                onClick={() => updateStudioType(studioCategory, option)}
+              >
+                <strong>{option.name}</strong>
+                <small>{option.price === 0 ? 'Free' : option.price + ' Resort Bucks'}</small>
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.fashionActionRow}>
+            <button
+              className={styles.primaryButton}
+              type="button"
+              disabled={worn}
+              onClick={() => buyStudioLook(studioCategory, activeItem)}
+            >
+              {worn ? 'Wearing This' : owned ? 'Wear This' : 'Buy & Wear · ' + activeItem.price}
+            </button>
+          </div>
+        </div>
+
+        <div className={styles.tryOnTray}>
+          <strong>Trying on together</strong>
+          <div className={styles.tryOnTrayItems}>
+            {tryOnItems.length > 0 ? (
+              tryOnItems.map((category) => (
+                <span key={category.id}>
+                  <i style={{ background: category.item.swatch }} />
+                  {category.item.name}
+                </span>
+              ))
+            ) : (
+              <span>Your current outfit</span>
+            )}
+          </div>
+          {tryOnItems.length > 0 && (
+            <button type="button" onClick={() => setStudioDraftLook(cloneLook(look))}>
+              Reset try-on
+            </button>
+          )}
+        </div>
+
+        <div className={styles.fullMessage} aria-live="polite">
+          {studioMessage || 'Choose a type and any color. Trying it on is free; keeping the custom design costs Resort Bucks.'}
+        </div>
       </div>,
     );
   }
