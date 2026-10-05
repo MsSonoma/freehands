@@ -1619,6 +1619,24 @@
   .houseMessage { top: 1%; }
 }
 
+/* Wall fixtures rest on the baseboard instead of floating above the floor. */
+.houseKitchen,
+.housePantry,
+.houseCloset,
+.houseTv {
+  top: auto;
+  bottom: 41%;
+}
+
+@media (max-width: 560px) {
+  .houseKitchen,
+  .housePantry,
+  .houseCloset,
+  .houseTv {
+    bottom: 44%;
+  }
+}
+
 @media (max-width: 840px) {
   .suiteLayout {
     grid-template-columns: 1fr;
