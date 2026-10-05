@@ -1745,3 +1745,26 @@
 .cafeSmallTable::after { content:""; position:absolute; z-index:-1; left:54px; top:17px; width:10px; height:54px; border-radius:3px; background:#795039; }
 .cafeSmallTable span { position:relative; z-index:4; margin-top:-17px; font-size:1.55rem; filter:drop-shadow(0 2px 0 rgba(0,0,0,.08)); }
 @media(max-width:600px){.cafeTables{grid-template-columns:1fr;}.cafeTableGroup:nth-child(2){display:none}}
+/* Keep table geometry unchanged; stack pedestal behind both tabletop layers */
+.cafeTable { box-shadow:none; }
+.cafeTable::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:50%;
+  background:#8b5535;
+  transform:translateY(10px);
+}
+.cafeTable::after { z-index:-2; }
+.cafeSmallTable { box-shadow:none; }
+.cafeSmallTable::before {
+  content:"";
+  position:absolute;
+  inset:0;
+  z-index:-1;
+  border-radius:50%;
+  background:#8b5535;
+  transform:translateY(8px);
+}
+.cafeSmallTable::after { z-index:-2; }
