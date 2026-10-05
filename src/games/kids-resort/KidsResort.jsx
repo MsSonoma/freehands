@@ -1082,19 +1082,11 @@ export default function KidsResort({ libraryHref = null }) {
     });
 
     const score = details.reduce((sum, detail) => sum + detail.points, 0);
-    const maxScore = FASHION_CATEGORIES.length * 2;
     const tip = score;
     const totalPay = FASHION_BASE_PAY + tip;
     const earnedStar = score >= FASHION_STAR_SCORE;
 
-    let opinion = 'Thanks for making this for me!';
-    if (earnedStar) {
-      opinion = 'Yes! This makes me feel ' + profile.label + '.';
-    } else if (score >= 5) {
-      opinion = 'I can feel some of the ' + profile.label + ' idea in this. You understood a lot of what I meant.';
-    } else {
-      opinion = 'I can see what you were trying. Some parts feel like me, and some parts are a surprise.';
-    }
+    const opinion = 'Thanks for making this for me!';
 
     const completedLook = cloneLook(draft);
     setStudioCustomerPerson((current) => (
@@ -1116,13 +1108,8 @@ export default function KidsResort({ libraryHref = null }) {
       ));
     }
     setStudioTipResult({
-      basePay: FASHION_BASE_PAY,
       tip,
-      totalPay,
-      score,
-      maxScore,
       earnedStar,
-      details,
     });
     setStudioCustomerDone(true);
     setStudioMessage(person.name + ': ' + opinion);
@@ -1492,37 +1479,15 @@ export default function KidsResort({ libraryHref = null }) {
 
             <aside className={styles.studioCustomerCard}>
               <strong>{customerPerson?.name || 'Customer'}</strong>
-              <span className={styles.customerPickiness} data-level={customer.pickiness}>
-                {customer.pickiness}
-              </span>
               <p className={styles.customerRequest}>{fashionFeeling(customer).request}</p>
-              <div className={styles.studioCreationCount}>
-                Base pay {FASHION_BASE_PAY} Resort Bucks + tips for each style/color match · {FASHION_STAR_SCORE}/10 earns a Fashion Star
-              </div>
               {studioTipResult && (
-                <div className={styles.fashionTipResult}>
-                  <div className={styles.fashionTipHeadline}>
-                    <strong>Base {studioTipResult.basePay} + Tips {studioTipResult.tip}</strong>
-                    <span>{studioTipResult.totalPay} Resort Bucks total</span>
-                  </div>
-                  <div className={styles.fashionTipScore}>
-                    {studioTipResult.score}/{studioTipResult.maxScore} outfit points
-                    {studioTipResult.earnedStar ? ' · ⭐ Fashion Star earned' : ''}
-                  </div>
-                  <div className={styles.fashionTipBreakdown}>
-                    {studioTipResult.details.map((detail) => (
-                      <span key={detail.id}>
-                        <strong>{detail.label}</strong>
-                        <small>
-                          Style {detail.typeMatch ? '+1' : '+0'} · Color {detail.colorMatch ? '+1' : '+0'}
-                        </small>
-                      </span>
-                    ))}
-                  </div>
+                <div className={styles.fashionTipOnly}>
+                  <strong>Tip +{studioTipResult.tip} Resort Bucks</strong>
+                  {studioTipResult.earnedStar && <span>⭐ Fashion Star earned</span>}
                 </div>
               )}
               <p className={styles.customerOpinion}>
-                {studioMessage || 'Design the whole outfit, then finish it to see the customer tip.'}
+                {studioMessage || 'Design the whole outfit, then finish it for the customer.'}
               </p>
             </aside>
           </div>
