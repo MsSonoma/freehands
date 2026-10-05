@@ -6881,7 +6881,7 @@
   position: absolute;
   left: calc(50% - var(--party-offset));
   bottom: 0;
-  transform: translateX(-50%) scale(.46);
+  transform: translateX(-50%) scale(var(--cafe-character-scale));
   transform-origin: bottom center;
   opacity: .96;
 }
@@ -6890,7 +6890,7 @@
   position: absolute;
   left: calc(50% - var(--party-offset));
   top: 0;
-  transform: scale(.5);
+  transform: translateX(-50%) scale(.56);
   transform-origin: top center;
   opacity: .96;
 }

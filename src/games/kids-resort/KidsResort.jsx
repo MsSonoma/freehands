@@ -2639,7 +2639,7 @@ export default function KidsResort({ libraryHref = null }) {
         ...wearableFitStyle(displayLook),
         '--character-idle-delay': idlePhaseForName(displayName),
         '--party-index': partyIndex ?? 0,
-        '--party-offset': partyIndex === null ? '0px' : `${50 + partyIndex * 44}px`,
+        '--party-offset': partyIndex === null ? '0px' : `${82 + partyIndex * 72}px`,
         '--outfit-shirt': displayLook.shirt.swatch,
         '--outfit-bottoms': displayLook.bottoms.swatch,
         '--outfit-shoes': displayLook.shoes.swatch,
