@@ -599,8 +599,8 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.cafeWindow} aria-hidden="true"><span className={styles.cafeSky} /><span className={styles.cafeSea} /><span className={styles.cafePalm}>🌴</span><span className={styles.cafeUmbrella}>⛱️</span></div>
           <div className={styles.cafePendantRow} aria-hidden="true"><span>💡</span><span>💡</span><span>💡</span></div>
           <div className={styles.cafeDining}>
-            <div className={styles.cafeBooth}><span className={styles.cafePlant}>🪴</span><div className={styles.cafeTable}><span>🌼</span></div><div className={styles.cafeBench} /></div>
-            <div className={styles.cafeTables}><span>🪑　🍽️　🪑</span><span>🪑　🍽️　🪑</span></div>
+            <div className={styles.cafeBooth}><span className={styles.cafePlant}>🪴</span><div className={styles.cafeBench} /><div className={styles.cafeTable}><span>🌼</span></div></div>
+            <div className={styles.cafeTables}><div className={styles.cafeTableGroup}><span className={styles.cafeChair}>🪑</span><div className={styles.cafeSmallTable}><span>🍽️</span></div><span className={styles.cafeChair}>🪑</span></div><div className={styles.cafeTableGroup}><span className={styles.cafeChair}>🪑</span><div className={styles.cafeSmallTable}><span>🍽️</span></div><span className={styles.cafeChair}>🪑</span></div></div>
             <button className={styles.cafeModeButton} type="button" onClick={() => setScreen('cafe-food')}>🍽️ Eat Here</button>
           </div>
           <div className={styles.cafeCounter}>
