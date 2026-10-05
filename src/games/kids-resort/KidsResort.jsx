@@ -667,6 +667,8 @@ export default function KidsResort({ libraryHref = null }) {
   const [inventory, setInventory] = useState({});
   const [meals, setMeals] = useState([]);
   const [message, setMessage] = useState('');
+  const [houseActivity, setHouseActivity] = useState(null);
+  const [houseClosetCategory, setHouseClosetCategory] = useState('shirt');
   const [position, setPosition] = useState({ x: 50, y: 82 });
   const [isWalking, setIsWalking] = useState(false);
   const [walkFrame, setWalkFrame] = useState(0);
@@ -4308,68 +4310,289 @@ export default function KidsResort({ libraryHref = null }) {
   }
 
   if (screen === 'suite') {
-    return interiorShell(
-      `${characterName}'s House`,
-      '\u{1F6CF}\u{FE0F}',
-      'HOME BASE',
-      <div className={styles.suiteLayout}>
-        <section className={styles.roomCard}>
-          <div className={styles.roomTitle}>Kitchen</div>
-          <p>Cook with groceries you bought on Market Street.</p>
-          <div className={styles.recipeList}>
-            {RECIPES.map((recipe) => (
-              <button
-                key={recipe.id}
-                type="button"
-                className={styles.recipeButton}
-                data-ready={canCook(recipe) ? 'true' : 'false'}
-                onClick={() => cookRecipe(recipe)}
-              >
-                <span>{recipe.icon}</span>
-                <span>
-                  <strong>{recipe.name}</strong>
-                  <small>{Object.keys(recipe.ingredients).map(ingredientLabel).join(' + ')}</small>
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
+    const ownedClosetOptions = (() => {
+      const options = new Map();
+      LOOK_OPTIONS[houseClosetCategory].forEach((option) => {
+        const key = fashionKey(houseClosetCategory, option);
+        if ((option.price || 0) === 0 || ownedLooks.has(key)) options.set(key, option);
+      });
+      ownedLooks.forEach((key) => {
+        const [category, id, color] = key.split(':');
+        if (category !== houseClosetCategory) return;
+        const base = LOOK_OPTIONS[category]?.find((option) => option.id === id);
+        if (!base) return;
+        options.set(key, {
+          ...base,
+          ...(id === 'none' || !color ? {} : { swatch: color }),
+        });
+      });
+      return [...options.values()];
+    })();
 
-        <section className={styles.roomCard}>
-          <div className={styles.roomTitle}>Closet</div>
-          <div className={styles.closetPreview}>
-            {renderCharacter(true)}
-            <div>
-              <strong>{look.shirt.name}</strong>
-              <span>{look.bottoms.name}</span>
-              <span>{look.shoes.name}</span>
-              <span>{look.hair.name}</span>
-              <span>{look.glasses.name}</span>
-              <span>{look.headwear.name}</span>
-            </div>
-          </div>
-          <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
-            Go to Design Studio
+    const useHouseObject = (activity, activityMessage) => {
+      setHouseActivity((current) => (current === activity ? null : activity));
+      setMessage(activityMessage);
+    };
+
+    const wearOwnedLook = (category, option) => {
+      setLook((current) => ({
+        ...current,
+        [category]: carryWearableFit(category, option, current[category]),
+      }));
+      setMessage(`${characterName} changed into ${option.name}.`);
+    };
+
+    return (
+      <main className={[styles.gameShell, styles.houseGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.houseTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>
+            Resort Map
           </button>
+          <div className={styles.brand}>{characterName}'s House</div>
+          <div className={styles.wallet}>{bucks} Resort Bucks</div>
         </section>
 
-        <section className={styles.roomCard}>
-          <div className={styles.roomTitle}>Pantry & Storage</div>
-          <div className={styles.inventoryList}>
-            {MARKET_ITEMS.map((item) => (
-              <span key={item.id}>{item.icon} {item.name}: {inventory[item.id] || 0}</span>
-            ))}
+        <section className={styles.houseScene}>
+          <div className={styles.houseWall} aria-hidden="true">
+            <div className={styles.houseWindow}>
+              <span className={styles.houseWindowSky} />
+              <span className={styles.houseWindowHill} />
+            </div>
+            <div className={styles.houseWallPicture}>HOME</div>
           </div>
-          <div className={styles.mealHistory}>
-            <strong>Recent food</strong>
-            <span>{meals.length ? meals.slice(-4).join(' - ') : 'Nothing yet'}</span>
+          <div className={styles.houseFloor} aria-hidden="true" />
+          <div className={styles.houseRug} aria-hidden="true" />
+
+          <button
+            className={[styles.houseObject, styles.houseKitchen].join(' ')}
+            type="button"
+            data-active={houseActivity === 'kitchen' ? 'true' : 'false'}
+            onClick={() => useHouseObject('kitchen', 'Pick something to cook with groceries from Market Street.')}
+            aria-label="Kitchen"
+          >
+            <span className={styles.houseKitchenCabinets} />
+            <span className={styles.houseKitchenCounter} />
+            <span className={styles.houseKitchenSink} />
+            <span className={styles.houseKitchenStove}>o o</span>
+            <strong>Kitchen</strong>
+          </button>
+
+          <button
+            className={[styles.houseObject, styles.housePantry].join(' ')}
+            type="button"
+            data-active={houseActivity === 'pantry' ? 'true' : 'false'}
+            onClick={() => useHouseObject('pantry', 'These are the groceries currently in the house.')}
+            aria-label="Pantry and refrigerator"
+          >
+            <span className={styles.houseFridgeHandle} />
+            <span className={styles.houseFridgeLine} />
+            <strong>Pantry</strong>
+          </button>
+
+          <button
+            className={[styles.houseObject, styles.houseCloset].join(' ')}
+            type="button"
+            data-active={houseActivity === 'closet' ? 'true' : 'false'}
+            onClick={() => useHouseObject('closet', 'Choose from clothes you already own.')}
+            aria-label="Closet"
+          >
+            <span className={styles.houseClosetDoorLeft} />
+            <span className={styles.houseClosetDoorRight} />
+            <span className={styles.houseClosetKnob} />
+            <strong>Closet</strong>
+          </button>
+
+          <button
+            className={[styles.houseObject, styles.houseTv].join(' ')}
+            type="button"
+            data-active={houseActivity === 'tv' ? 'true' : 'false'}
+            onClick={() => useHouseObject('tv', `${characterName} is relaxing and watching TV.`)}
+            aria-label="Television"
+          >
+            <span className={styles.houseTvScreen}>KIDS RESORT</span>
+            <span className={styles.houseTvStand} />
+            <strong>TV</strong>
+          </button>
+
+          <button
+            className={[styles.houseObject, styles.houseDesk].join(' ')}
+            type="button"
+            data-active={houseActivity === 'computer' ? 'true' : 'false'}
+            onClick={() => useHouseObject('computer', `${characterName} is studying at the computer.`)}
+            aria-label="Study computer"
+          >
+            <span className={styles.houseMonitor}>ABC</span>
+            <span className={styles.houseKeyboard} />
+            <span className={styles.houseDeskTop} />
+            <strong>Study</strong>
+          </button>
+
+          <button
+            className={[styles.houseObject, styles.houseBed].join(' ')}
+            type="button"
+            data-active={houseActivity === 'bed' ? 'true' : 'false'}
+            onClick={() => useHouseObject('bed', `${characterName} is resting in bed.`)}
+            aria-label="Bed"
+          >
+            <span className={styles.houseHeadboard} />
+            <span className={styles.housePillow} />
+            <span className={styles.houseBlanket} />
+            <strong>Sleep</strong>
+          </button>
+
+          <button
+            className={[styles.houseObject, styles.houseBath].join(' ')}
+            type="button"
+            data-active={houseActivity === 'bath' ? 'true' : 'false'}
+            onClick={() => useHouseObject('bath', `${characterName} is taking a bath.`)}
+            aria-label="Bathtub"
+          >
+            <span className={styles.houseBathRim} />
+            <span className={styles.houseBathWater} />
+            <span className={styles.houseBathFaucet} />
+            <strong>Bath</strong>
+          </button>
+
+          <div className={styles.houseEmily}>
+            {renderCharacter(false)}
+          </div>
+
+          {activeCompanions.length > 0 && (
+            <div className={styles.houseCompanions} aria-label="Friends in the house">
+              {activeCompanions.map((person, index) => (
+                <div key={person.id} style={{ '--house-friend-index': index }}>
+                  {renderCharacter(false, person.look, person.character, person.name, 'standing', index)}
+                </div>
+              ))}
+            </div>
+          )}
+
+          {houseActivity && (
+            <div className={styles.houseInteractionPanel}>
+              <button
+                className={styles.housePanelClose}
+                type="button"
+                onClick={() => setHouseActivity(null)}
+                aria-label="Close interaction"
+              >
+                Close
+              </button>
+
+              {houseActivity === 'kitchen' && (
+                <>
+                  <div className={styles.housePanelTitle}>Kitchen</div>
+                  <div className={styles.houseRecipeShelf}>
+                    {RECIPES.map((recipe) => (
+                      <button
+                        key={recipe.id}
+                        type="button"
+                        data-ready={canCook(recipe) ? 'true' : 'false'}
+                        onClick={() => cookRecipe(recipe)}
+                      >
+                        <span>{recipe.icon}</span>
+                        <strong>{recipe.name}</strong>
+                        <small>{Object.keys(recipe.ingredients).map(ingredientLabel).join(' + ')}</small>
+                      </button>
+                    ))}
+                  </div>
+                </>
+              )}
+
+              {houseActivity === 'pantry' && (
+                <>
+                  <div className={styles.housePanelTitle}>Pantry & Fridge</div>
+                  <div className={styles.houseInventoryShelf}>
+                    {MARKET_ITEMS.map((item) => (
+                      <span key={item.id}>
+                        <b>{item.icon}</b>
+                        <strong>{item.name}</strong>
+                        <small>{inventory[item.id] || 0} owned</small>
+                      </span>
+                    ))}
+                  </div>
+                  <div className={styles.houseRecentMeals}>
+                    <strong>Recent food</strong>
+                    <span>{meals.length ? meals.slice(-4).join(' / ') : 'Nothing cooked yet'}</span>
+                  </div>
+                </>
+              )}
+
+              {houseActivity === 'closet' && (
+                <>
+                  <div className={styles.housePanelTitle}>Closet</div>
+                  <div className={styles.houseClosetTabs}>
+                    {FASHION_CATEGORIES.map((category) => (
+                      <button
+                        key={category.id}
+                        type="button"
+                        data-active={houseClosetCategory === category.id ? 'true' : 'false'}
+                        onClick={() => setHouseClosetCategory(category.id)}
+                      >
+                        {category.label}
+                      </button>
+                    ))}
+                  </div>
+                  <div className={styles.houseOwnedClothes}>
+                    {ownedClosetOptions.map((option) => {
+                      const wearing =
+                        fashionAppearanceKey(houseClosetCategory, look[houseClosetCategory]) ===
+                        fashionAppearanceKey(houseClosetCategory, option);
+                      return (
+                        <button
+                          key={fashionKey(houseClosetCategory, option)}
+                          type="button"
+                          data-wearing={wearing ? 'true' : 'false'}
+                          onClick={() => wearOwnedLook(houseClosetCategory, option)}
+                        >
+                          <i style={{ background: option.swatch || '#f5f1e8' }} />
+                          <strong>{option.name}</strong>
+                          <small>{wearing ? 'Wearing' : 'Put on'}</small>
+                        </button>
+                      );
+                    })}
+                  </div>
+                </>
+              )}
+
+              {houseActivity === 'tv' && (
+                <div className={styles.houseSimpleActivity}>
+                  <span>{'TV'}</span>
+                  <strong>Watching TV</strong>
+                  <small>The television is part of the room, so Emily stays right here while she watches.</small>
+                </div>
+              )}
+
+              {houseActivity === 'computer' && (
+                <div className={styles.houseSimpleActivity}>
+                  <span>{'PC'}</span>
+                  <strong>Study Time</strong>
+                  <small>Emily is using her computer to read, practice, and work on things at home.</small>
+                </div>
+              )}
+
+              {houseActivity === 'bed' && (
+                <div className={styles.houseSimpleActivity}>
+                  <span>{'Zzz'}</span>
+                  <strong>Resting</strong>
+                  <small>Emily can lie down and rest without leaving the house scene.</small>
+                </div>
+              )}
+
+              {houseActivity === 'bath' && (
+                <div className={styles.houseSimpleActivity}>
+                  <span>{'Bath'}</span>
+                  <strong>Bath Time</strong>
+                  <small>The bathroom is part of the same house room instead of opening a separate game.</small>
+                </div>
+              )}
+            </div>
+          )}
+
+          <div className={styles.houseMessage} aria-live="polite">
+            {message || `This is ${characterName}'s private space at the resort.`}
           </div>
         </section>
-
-        <div className={styles.fullMessage} aria-live="polite">
-          {message || `This is ${characterName}'s private space at the resort.`}
-        </div>
-      </div>,
+      </main>
     );
   }
 

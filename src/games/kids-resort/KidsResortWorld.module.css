@@ -761,6 +761,864 @@
   background: #57301f;
 }
 
+
+/* Emily's House: the room itself is the interface. */
+.houseGameShell {
+  height: 100dvh;
+  min-height: 100dvh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #d7c2a7;
+}
+
+.topBar.houseTopBar {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 0;
+  background: rgba(255, 255, 255, .96);
+  box-shadow: 0 2px 8px rgba(73, 55, 43, .14);
+  position: relative;
+  z-index: 80;
+}
+
+.houseTopBar .backButton {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: .72rem;
+}
+
+.houseTopBar .brand {
+  font-size: 1rem;
+  letter-spacing: -.025em;
+}
+
+.houseTopBar .wallet {
+  padding: 5px 9px;
+  font-size: .72rem;
+}
+
+.houseScene {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  isolation: isolate;
+  background: #ead8bd;
+}
+
+.houseWall {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 41% 0;
+  overflow: hidden;
+  border-bottom: 9px solid #b88d67;
+  background:
+    linear-gradient(90deg, rgba(168, 126, 91, .08) 1px, transparent 1px) 0 0 / 56px 100%,
+    linear-gradient(180deg, #f6e7d1 0%, #ead4b5 100%);
+}
+
+.houseFloor {
+  position: absolute;
+  z-index: 0;
+  inset: 59% 0 0;
+  background:
+    linear-gradient(90deg, transparent 0 49%, rgba(117, 84, 59, .13) 50% 51%, transparent 52%) 0 0 / 120px 100%,
+    linear-gradient(180deg, #c89667 0%, #aa744f 100%);
+}
+
+.houseFloor::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: repeating-linear-gradient(8deg, transparent 0 24px, rgba(255,255,255,.055) 25px 27px);
+  pointer-events: none;
+}
+
+.houseRug {
+  position: absolute;
+  z-index: 1;
+  left: 43%;
+  bottom: 3%;
+  width: 31%;
+  height: 23%;
+  border: 7px solid #f2c765;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at center, rgba(255,255,255,.18) 0 28%, transparent 29%),
+    #68aaa3;
+  box-shadow: inset 0 0 0 6px rgba(255,255,255,.22), 0 9px 18px rgba(74,47,31,.18);
+}
+
+.houseWindow {
+  position: absolute;
+  left: 55%;
+  top: 9%;
+  width: 13%;
+  height: 42%;
+  overflow: hidden;
+  border: 8px solid #f9f4ea;
+  border-bottom-width: 12px;
+  border-radius: 5px;
+  background: #91d6f3;
+  box-shadow: 0 6px 12px rgba(89,63,43,.13);
+}
+
+.houseWindow::before,
+.houseWindow::after {
+  content: "";
+  position: absolute;
+  z-index: 4;
+  background: #f9f4ea;
+}
+
+.houseWindow::before {
+  left: calc(50% - 3px);
+  top: 0;
+  width: 6px;
+  height: 100%;
+}
+
+.houseWindow::after {
+  left: 0;
+  top: calc(52% - 3px);
+  width: 100%;
+  height: 6px;
+}
+
+.houseWindowSky {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(#8fd9fb 0 64%, #b9dc83 65% 100%);
+}
+
+.houseWindowHill {
+  position: absolute;
+  left: -20%;
+  right: -20%;
+  bottom: -10%;
+  height: 42%;
+  border-radius: 50% 50% 0 0;
+  background: #75bd68;
+}
+
+.houseWallPicture {
+  position: absolute;
+  left: 46%;
+  top: 9%;
+  min-width: 82px;
+  padding: 10px 8px;
+  border: 7px solid #8a5d3d;
+  border-radius: 4px;
+  background: #fff8e8;
+  color: #c66f78;
+  box-shadow: 0 5px 8px rgba(81,54,38,.13);
+  font-size: clamp(.52rem, .8vw, .72rem);
+  font-weight: 1000;
+  letter-spacing: .16em;
+  text-align: center;
+}
+
+.houseObject {
+  position: absolute;
+  z-index: 5;
+  margin: 0;
+  border: 0;
+  padding: 0;
+  color: #49362a;
+  background: transparent;
+  cursor: pointer;
+  font: inherit;
+  text-align: center;
+  filter: drop-shadow(0 7px 7px rgba(68,45,31,.16));
+}
+
+.houseObject::after {
+  content: "";
+  position: absolute;
+  inset: -6px;
+  border: 4px solid transparent;
+  border-radius: 12px;
+  pointer-events: none;
+}
+
+.houseObject:hover::after,
+.houseObject[data-active="true"]::after {
+  border-color: rgba(255, 216, 91, .92);
+}
+
+.houseObject > strong {
+  position: absolute;
+  z-index: 20;
+  left: 50%;
+  bottom: -19px;
+  transform: translateX(-50%);
+  min-width: max-content;
+  padding: 3px 8px;
+  border-radius: 999px;
+  background: rgba(255,255,255,.93);
+  box-shadow: 0 2px 5px rgba(65,44,31,.13);
+  color: #594136;
+  font-size: clamp(.48rem, .75vw, .64rem);
+  font-weight: 950;
+}
+
+.houseKitchen {
+  left: 2%;
+  top: 18%;
+  width: 27%;
+  height: 34%;
+  border-bottom: 13px solid #744b32;
+  background: linear-gradient(180deg, transparent 0 35%, #c18a5c 36% 100%);
+}
+
+.houseKitchenCabinets {
+  position: absolute;
+  left: 3%;
+  right: 3%;
+  top: 0;
+  height: 35%;
+  border: 5px solid #8c5b3a;
+  background:
+    linear-gradient(90deg, #ba7c4f 0 31%, #875334 32% 34%, #ba7c4f 35% 65%, #875334 66% 68%, #ba7c4f 69% 100%);
+  box-shadow: inset 0 0 0 4px rgba(255,210,160,.17);
+}
+
+.houseKitchenCabinets::after {
+  content: "";
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  top: 48%;
+  height: 4px;
+  background: #e9c08d;
+}
+
+.houseKitchenCounter {
+  position: absolute;
+  left: -2%;
+  right: -2%;
+  top: 36%;
+  height: 12%;
+  border-radius: 3px;
+  background: linear-gradient(#efe7de, #cfc4b8);
+  border-bottom: 5px solid #76503a;
+}
+
+.houseKitchenSink {
+  position: absolute;
+  left: 15%;
+  top: 38%;
+  width: 23%;
+  height: 10%;
+  border: 3px solid #828e91;
+  border-radius: 50%;
+  background: #cbd5d6;
+}
+
+.houseKitchenSink::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -13px;
+  width: 16px;
+  height: 13px;
+  border: 4px solid #727e80;
+  border-bottom: 0;
+  border-radius: 9px 9px 0 0;
+}
+
+.houseKitchenStove {
+  position: absolute;
+  right: 7%;
+  top: 40%;
+  width: 31%;
+  height: 48%;
+  padding-top: 6px;
+  border: 5px solid #555b5e;
+  border-radius: 5px;
+  background: linear-gradient(180deg, #aeb4b6 0 22%, #444a4d 23% 100%);
+  color: #25292b;
+  font-size: clamp(.55rem, 1vw, .9rem);
+  letter-spacing: .35em;
+}
+
+.houseKitchenStove::after {
+  content: "";
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 7%;
+  height: 52%;
+  border: 4px solid #262a2c;
+  background: #384044;
+}
+
+.housePantry {
+  left: 30%;
+  top: 18%;
+  width: 9%;
+  height: 34%;
+  border: 5px solid #9ca9ac;
+  border-radius: 7px;
+  background: linear-gradient(135deg, #f5f9f9, #c5d0d2);
+}
+
+.houseFridgeLine {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 34%;
+  height: 4px;
+  background: #9aa7aa;
+}
+
+.houseFridgeHandle {
+  position: absolute;
+  right: 13%;
+  top: 12%;
+  width: 5px;
+  height: 36%;
+  border-radius: 999px;
+  background: #77878b;
+}
+
+.houseCloset {
+  left: 40%;
+  top: 17%;
+  width: 13%;
+  height: 36%;
+  border: 8px solid #8c603f;
+  border-radius: 4px 4px 2px 2px;
+  background: #bd8456;
+}
+
+.houseClosetDoorLeft,
+.houseClosetDoorRight {
+  position: absolute;
+  top: 2%;
+  bottom: 2%;
+  width: 47%;
+  border: 3px solid #9d6843;
+  background: linear-gradient(90deg, #c99262, #b7794f);
+}
+
+.houseClosetDoorLeft { left: 2%; }
+.houseClosetDoorRight { right: 2%; }
+
+.houseClosetKnob {
+  position: absolute;
+  z-index: 3;
+  left: calc(50% - 4px);
+  top: 49%;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #f0c46c;
+  box-shadow: 0 0 0 2px #895a37;
+}
+
+.houseTv {
+  right: 4%;
+  top: 30%;
+  width: 18%;
+  height: 20%;
+}
+
+.houseTvScreen {
+  position: absolute;
+  left: 6%;
+  right: 6%;
+  top: 0;
+  height: 72%;
+  display: grid;
+  place-items: center;
+  border: 8px solid #3c3c42;
+  border-radius: 9px;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,.45), transparent 20%),
+    linear-gradient(145deg, #83d8ef, #6b88ca);
+  color: #fff8cc;
+  text-shadow: 0 2px 0 rgba(48,66,102,.35);
+  font-size: clamp(.45rem, .8vw, .66rem);
+  font-weight: 1000;
+  letter-spacing: .08em;
+}
+
+.houseTvStand {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 0;
+  height: 25%;
+  border-top: 8px solid #8c5c40;
+  background: #a9704d;
+  box-shadow: inset 0 -6px 0 #85573d;
+}
+
+.houseDesk {
+  right: 23%;
+  top: 32%;
+  width: 14%;
+  height: 18%;
+}
+
+.houseMonitor {
+  position: absolute;
+  left: 20%;
+  top: 0;
+  width: 60%;
+  height: 49%;
+  display: grid;
+  place-items: center;
+  border: 6px solid #4f565e;
+  border-radius: 5px;
+  background: linear-gradient(#90d6f1, #e5f7fd);
+  color: #486b8b;
+  font-size: clamp(.48rem, .8vw, .66rem);
+  font-weight: 1000;
+}
+
+.houseMonitor::after {
+  content: "";
+  position: absolute;
+  left: 43%;
+  top: 100%;
+  width: 14%;
+  height: 24%;
+  background: #5b6268;
+}
+
+.houseKeyboard {
+  position: absolute;
+  left: 24%;
+  top: 55%;
+  width: 52%;
+  height: 11%;
+  transform: perspective(30px) rotateX(12deg);
+  border-radius: 3px;
+  background: #e9eceb;
+  border: 2px solid #a9b1b2;
+}
+
+.houseDeskTop {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 68%;
+  height: 10%;
+  border-radius: 4px;
+  background: #9b6544;
+  box-shadow: 0 8px 0 #7d5039;
+}
+
+.houseDeskTop::before,
+.houseDeskTop::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  width: 8%;
+  height: 95px;
+  background: #71472f;
+}
+
+.houseDeskTop::before { left: 8%; }
+.houseDeskTop::after { right: 8%; }
+
+.houseBed {
+  left: 12%;
+  bottom: 7%;
+  width: 32%;
+  height: 22%;
+}
+
+.houseHeadboard {
+  position: absolute;
+  left: 0;
+  bottom: 12%;
+  width: 12%;
+  height: 78%;
+  border: 6px solid #7f5439;
+  border-radius: 16px 16px 3px 3px;
+  background: #a9724e;
+}
+
+.houseBlanket {
+  position: absolute;
+  left: 8%;
+  right: 0;
+  bottom: 9%;
+  height: 55%;
+  border: 5px solid #d77f9b;
+  border-radius: 16px 20px 7px 7px;
+  background:
+    repeating-linear-gradient(90deg, transparent 0 24px, rgba(255,255,255,.15) 25px 28px),
+    #ef9db4;
+  box-shadow: 0 12px 0 #8f5b45;
+}
+
+.housePillow {
+  position: absolute;
+  z-index: 3;
+  left: 12%;
+  bottom: 47%;
+  width: 25%;
+  height: 28%;
+  border: 3px solid #d7d0c4;
+  border-radius: 45%;
+  background: #fffdf4;
+}
+
+.houseBath {
+  right: 3%;
+  bottom: 6%;
+  width: 21%;
+  height: 17%;
+}
+
+.houseBathRim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 6%;
+  height: 68%;
+  border: 7px solid #e7e5dc;
+  border-radius: 16px 16px 36px 36px;
+  background: #fbfaf5;
+  box-shadow: 0 9px 0 #c4c0b7;
+}
+
+.houseBathWater {
+  position: absolute;
+  z-index: 2;
+  left: 9%;
+  right: 9%;
+  top: 33%;
+  height: 18%;
+  border-radius: 50%;
+  background: #8ed9e8;
+}
+
+.houseBathFaucet {
+  position: absolute;
+  z-index: 4;
+  right: 13%;
+  top: 8%;
+  width: 23%;
+  height: 30%;
+  border: 6px solid #7d8c90;
+  border-bottom: 0;
+  border-left-color: transparent;
+  border-radius: 0 18px 0 0;
+}
+
+.houseEmily {
+  position: absolute;
+  z-index: 10;
+  left: 54%;
+  bottom: 7%;
+  width: 126px;
+  height: 262px;
+  transform: translateX(-50%) scale(.64);
+  transform-origin: bottom center;
+  pointer-events: none;
+}
+
+.houseCompanions {
+  position: absolute;
+  z-index: 9;
+  left: 61%;
+  bottom: 8%;
+  width: 20%;
+  height: 200px;
+  pointer-events: none;
+}
+
+.houseCompanions > div {
+  position: absolute;
+  left: calc(var(--house-friend-index) * 62px);
+  bottom: 0;
+  transform: scale(.48);
+  transform-origin: bottom left;
+}
+
+.houseInteractionPanel {
+  position: absolute;
+  z-index: 30;
+  left: 50%;
+  bottom: 4%;
+  width: min(560px, 46vw);
+  max-height: 44%;
+  overflow: auto;
+  transform: translateX(-50%);
+  padding: 13px;
+  border: 5px solid #fff9ec;
+  border-radius: 20px;
+  background: rgba(255, 249, 237, .97);
+  box-shadow: 0 16px 34px rgba(65,42,29,.25);
+}
+
+.housePanelClose {
+  position: absolute;
+  z-index: 4;
+  right: 9px;
+  top: 8px;
+  border: 0;
+  border-radius: 999px;
+  padding: 5px 9px;
+  background: #ead7bf;
+  color: #614b3d;
+  cursor: pointer;
+  font: inherit;
+  font-size: .62rem;
+  font-weight: 900;
+}
+
+.housePanelTitle {
+  padding-right: 58px;
+  margin-bottom: 8px;
+  color: #654838;
+  font-size: clamp(.9rem, 1.5vw, 1.2rem);
+  font-weight: 1000;
+}
+
+.houseRecipeShelf,
+.houseInventoryShelf,
+.houseOwnedClothes {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.houseRecipeShelf button,
+.houseOwnedClothes button {
+  min-width: 0;
+  border: 2px solid #e1d2bf;
+  border-radius: 12px;
+  background: #fff;
+  color: #584338;
+  cursor: pointer;
+  padding: 7px;
+  font: inherit;
+}
+
+.houseRecipeShelf button[data-ready="true"] {
+  border-color: #6fbd89;
+  background: #f0fff3;
+}
+
+.houseRecipeShelf button span {
+  display: block;
+  margin-bottom: 2px;
+  font-size: 1.5rem;
+}
+
+.houseRecipeShelf strong,
+.houseRecipeShelf small,
+.houseOwnedClothes strong,
+.houseOwnedClothes small,
+.houseInventoryShelf strong,
+.houseInventoryShelf small {
+  display: block;
+}
+
+.houseRecipeShelf strong,
+.houseOwnedClothes strong,
+.houseInventoryShelf strong {
+  font-size: .65rem;
+  font-weight: 950;
+}
+
+.houseRecipeShelf small,
+.houseOwnedClothes small,
+.houseInventoryShelf small {
+  margin-top: 2px;
+  color: #806c5f;
+  font-size: .52rem;
+  line-height: 1.2;
+}
+
+.houseInventoryShelf > span {
+  min-width: 0;
+  padding: 7px;
+  border: 2px solid #e3d6c5;
+  border-radius: 11px;
+  background: #fff;
+  text-align: center;
+}
+
+.houseInventoryShelf b {
+  display: block;
+  font-size: 1.35rem;
+}
+
+.houseRecentMeals {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 10px;
+  background: #efe1cc;
+  color: #654d3e;
+  font-size: .58rem;
+}
+
+.houseClosetTabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-bottom: 8px;
+}
+
+.houseClosetTabs button {
+  border: 2px solid #dcc7ad;
+  border-radius: 999px;
+  padding: 5px 8px;
+  background: #fff;
+  color: #654b3c;
+  cursor: pointer;
+  font: inherit;
+  font-size: .54rem;
+  font-weight: 900;
+}
+
+.houseClosetTabs button[data-active="true"] {
+  border-color: #d96c93;
+  background: #fff0f5;
+}
+
+.houseOwnedClothes button {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  gap: 1px 6px;
+  text-align: left;
+}
+
+.houseOwnedClothes button[data-wearing="true"] {
+  border-color: #d96c93;
+  background: #fff0f5;
+}
+
+.houseOwnedClothes i {
+  grid-row: 1 / 3;
+  width: 26px;
+  height: 26px;
+  align-self: center;
+  border: 2px solid rgba(85,62,48,.2);
+  border-radius: 8px;
+}
+
+.houseSimpleActivity {
+  min-height: 90px;
+  display: grid;
+  grid-template-columns: 74px minmax(0, 1fr);
+  grid-template-rows: auto auto;
+  align-items: center;
+  column-gap: 12px;
+  padding: 8px;
+}
+
+.houseSimpleActivity > span {
+  grid-row: 1 / 3;
+  display: grid;
+  place-items: center;
+  min-height: 66px;
+  border-radius: 16px;
+  background: #ead7bf;
+  color: #6f5543;
+  font-size: 1rem;
+  font-weight: 1000;
+}
+
+.houseSimpleActivity > strong {
+  align-self: end;
+  font-size: 1rem;
+}
+
+.houseSimpleActivity > small {
+  align-self: start;
+  color: #7a6658;
+  line-height: 1.35;
+}
+
+.houseMessage {
+  position: absolute;
+  z-index: 25;
+  left: 50%;
+  top: 2%;
+  max-width: min(520px, 58vw);
+  transform: translateX(-50%);
+  padding: 7px 12px;
+  border: 3px solid rgba(255,255,255,.75);
+  border-radius: 999px;
+  background: rgba(255,255,255,.89);
+  color: #654c3d;
+  box-shadow: 0 4px 12px rgba(73,49,33,.12);
+  font-size: clamp(.55rem, .9vw, .72rem);
+  font-weight: 850;
+  text-align: center;
+}
+
+@media (max-width: 800px) {
+  .houseKitchen { left: 1%; width: 29%; }
+  .housePantry { left: 31%; width: 10%; }
+  .houseCloset { left: 42%; width: 14%; }
+  .houseWindow { left: 58%; width: 15%; }
+  .houseWallPicture { display: none; }
+  .houseTv { right: 2%; width: 20%; }
+  .houseDesk { right: 23%; width: 16%; }
+  .houseBed { left: 5%; width: 36%; }
+  .houseBath { right: 2%; width: 24%; }
+  .houseEmily { left: 54%; transform: translateX(-50%) scale(.55); }
+  .houseInteractionPanel { width: min(590px, 72vw); max-height: 42%; }
+  .houseMessage { max-width: 72vw; }
+}
+
+@media (max-width: 560px) {
+  .houseWall { bottom: 44%; }
+  .houseFloor { top: 56%; }
+  .houseKitchen { top: 16%; width: 27%; height: 29%; }
+  .housePantry { left: 29%; top: 16%; width: 11%; height: 29%; }
+  .houseCloset { left: 41%; top: 15%; width: 15%; height: 31%; border-width: 5px; }
+  .houseWindow { left: 58%; top: 8%; width: 16%; height: 34%; border-width: 5px; }
+  .houseTv { right: 1%; top: 24%; width: 22%; height: 18%; }
+  .houseDesk { right: 24%; top: 29%; width: 18%; height: 15%; }
+  .houseBed { left: 2%; bottom: 7%; width: 39%; height: 18%; }
+  .houseBath { right: 1%; bottom: 7%; width: 27%; height: 15%; }
+  .houseEmily { left: 53%; bottom: 6%; transform: translateX(-50%) scale(.43); }
+  .houseCompanions { left: 59%; transform: scale(.85); transform-origin: bottom left; }
+  .houseInteractionPanel { bottom: 3%; width: 88vw; max-height: 43%; padding: 10px; }
+  .houseRecipeShelf,
+  .houseInventoryShelf,
+  .houseOwnedClothes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .houseMessage { top: 1%; max-width: 82vw; padding: 5px 9px; }
+  .houseObject > strong { bottom: -16px; font-size: .44rem; }
+  .houseDeskTop::before,
+  .houseDeskTop::after { height: 60px; }
+}
+
+@media (max-height: 620px) {
+  .houseKitchen,
+  .housePantry,
+  .houseCloset { top: 13%; height: 31%; }
+  .houseWindow { top: 5%; height: 36%; }
+  .houseTv { top: 24%; }
+  .houseDesk { top: 27%; }
+  .houseBed { bottom: 4%; height: 18%; }
+  .houseBath { bottom: 4%; height: 14%; }
+  .houseEmily { bottom: 3%; transform: translateX(-50%) scale(.48); }
+  .houseInteractionPanel { max-height: 48%; bottom: 2%; }
+  .houseMessage { top: 1%; }
+}
+
 @media (max-width: 840px) {
   .suiteLayout {
     grid-template-columns: 1fr;
