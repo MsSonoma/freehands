@@ -3002,7 +3002,49 @@ export default function KidsResort({ libraryHref = null }) {
   if (screen === 'cafe-work') {
     const fridgeItems = Object.entries(CAFE_INGREDIENTS).filter(([, item]) => item.source === 'fridge');
     const cabinetItems = Object.entries(CAFE_INGREDIENTS).filter(([, item]) => item.source === 'cabinet');
-    const openStorageItems = cafeStorage === 'fridge' ? fridgeItems : cabinetItems;
+    const renderCafeStorage = (storage, label, items) => {
+      const open = cafeStorage === storage;
+      return (
+        <div
+          className={[
+            styles.cafeStorageStation,
+            open ? styles.cafeStorageOpen : '',
+            cafeDrag?.from === 'plate' ? styles.cafeStorageReturn : '',
+          ].join(' ')}
+          data-cafe-drop="storage"
+          data-storage={storage}
+          data-open={open ? 'true' : 'false'}
+        >
+          <button
+            type="button"
+            className={styles.cafeStorageToggle}
+            aria-expanded={open}
+            onClick={() => setCafeStorage(open ? null : storage)}
+          >
+            <strong>{label}</strong>
+            <small>{open ? 'Close' : 'Open'}</small>
+          </button>
+          {open && (
+            <div className={styles.cafeStorageInventory} aria-label={`${label} ingredients`}>
+              {items.map(([id, ingredient]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={[styles.cafeDraggableIngredient, styles.cafeStorageIngredient].join(' ')}
+                  data-ingredient-id={id}
+                  title={ingredient.name}
+                  {...cafeDragHandlers({ from: 'storage', storage, ingredientId: id })}
+                >
+                  <span>{ingredient.icon}</span>
+                  <small>{ingredient.name}</small>
+                  {ingredient.cook && <em>Grill</em>}
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      );
+    };
 
     return (
       <main className={[styles.gameShell, styles.cafeWorkGameShell].join(' ')}>
@@ -3117,15 +3159,7 @@ export default function KidsResort({ libraryHref = null }) {
           </section>
 
           <section className={[styles.kitchenStations, styles.cafeKitchenStations].join(' ')}>
-            <button
-              type="button"
-              className={[styles.cafeStorageStation, cafeDrag?.from === 'plate' ? styles.cafeStorageReturn : ''].join(' ')}
-              data-cafe-drop="storage"
-              data-storage="fridge"
-              onClick={() => setCafeStorage(cafeStorage === 'fridge' ? null : 'fridge')}
-            >
-              🧊<strong>Refrigerator</strong><small>Drop returns here</small>
-            </button>
+            {renderCafeStorage('fridge', 'Refrigerator', fridgeItems)}
             <div
               className={[styles.grillStation, cafeDrag?.from === 'storage' ? styles.cafeGrillDrop : ''].join(' ')}
               data-cafe-drop="grill"
@@ -3152,35 +3186,9 @@ export default function KidsResort({ libraryHref = null }) {
                 })}
               </div>
             </div>
-            <button
-              type="button"
-              className={[styles.cafeStorageStation, cafeDrag?.from === 'plate' ? styles.cafeStorageReturn : ''].join(' ')}
-              data-cafe-drop="storage"
-              data-storage="cabinet"
-              onClick={() => setCafeStorage(cafeStorage === 'cabinet' ? null : 'cabinet')}
-            >
-              🥫<strong>Cabinet</strong><small>Drop returns here</small>
-            </button>
+            {renderCafeStorage('cabinet', 'Cabinet', cabinetItems)}
           </section>
 
-          {cafeStorage && (
-            <section className={[styles.ingredientDrawer, styles.cafeIngredientDrawer].join(' ')}>
-              <strong className={styles.cafeDrawerTitle}>Drag an ingredient</strong>
-              {openStorageItems.map(([id, ingredient]) => (
-                <button
-                  key={id}
-                  type="button"
-                  className={styles.cafeDraggableIngredient}
-                  data-ingredient-id={id}
-                  {...cafeDragHandlers({ from: 'storage', storage: cafeStorage, ingredientId: id })}
-                >
-                  <span>{ingredient.icon}</span>
-                  <small>{ingredient.name}</small>
-                  {ingredient.cook && <em>Grill first</em>}
-                </button>
-              ))}
-            </section>
-          )}
 
           <div className={styles.cafeFeedback}>{cafeMessage}</div>
           {cafeDrag && (
