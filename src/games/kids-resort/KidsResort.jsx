@@ -135,36 +135,137 @@ const CHARACTER_OPTIONS = {
 
 const LOOK_OPTIONS = {
   shirt: [
-    { id: 'pink', name: 'Pink Tee', swatch: '#ff4f9a', sleeve: 'short', price: 0 },
-    { id: 'sunshine', name: 'Sunshine Tank', swatch: '#f1be38', sleeve: 'none', price: 6 },
-    { id: 'ocean', name: 'Ocean Long Sleeve', swatch: '#43aee5', sleeve: 'long', price: 8 },
-    { id: 'mint', name: 'Mint Puff Sleeve', swatch: '#54c79c', sleeve: 'puff', price: 8 },
+    { id: 'tee', name: 'Classic Tee', swatch: '#ff4f9a', sleeve: 'short', price: 6 },
+    { id: 'tank', name: 'Tank Top', swatch: '#f1be38', sleeve: 'none', price: 6 },
+    { id: 'long-sleeve', name: 'Long Sleeve', swatch: '#43aee5', sleeve: 'long', price: 8 },
+    { id: 'puff-sleeve', name: 'Puff Sleeve', swatch: '#54c79c', sleeve: 'puff', price: 8 },
   ],
   bottoms: [
-    { id: 'denim', name: 'Cuffed Jeans', swatch: '#3b78ba', leg: 'straight', price: 0 },
-    { id: 'navy', name: 'Navy Shorts', swatch: '#334d78', leg: 'short', price: 6 },
-    { id: 'lavender', name: 'Lavender Wide Legs', swatch: '#9a73c9', leg: 'wide', price: 8 },
-    { id: 'coral', name: 'Coral Flares', swatch: '#dc6b63', leg: 'flare', price: 8 },
+    { id: 'straight', name: 'Straight Pants', swatch: '#3b78ba', leg: 'straight', price: 7 },
+    { id: 'shorts', name: 'Shorts', swatch: '#334d78', leg: 'short', price: 6 },
+    { id: 'wide-leg', name: 'Wide-Leg Pants', swatch: '#9a73c9', leg: 'wide', price: 8 },
+    { id: 'flares', name: 'Flared Pants', swatch: '#dc6b63', leg: 'flare', price: 8 },
   ],
   shoes: [
-    { id: 'pink-sneakers', name: 'Pink Sneakers', swatch: '#f05d9b', price: 0 },
-    { id: 'white-trainers', name: 'White Trainers', swatch: '#f4f4f0', price: 5 },
-    { id: 'yellow-high-tops', name: 'Yellow High-Tops', swatch: '#efc33f', price: 7 },
-    { id: 'blue-slip-ons', name: 'Blue Slip-Ons', swatch: '#448fcc', price: 5 },
+    { id: 'sneakers', name: 'Sneakers', swatch: '#f05d9b', shoe: 'sneakers', price: 5 },
+    { id: 'trainers', name: 'Trainers', swatch: '#f4f4f0', shoe: 'trainers', price: 5 },
+    { id: 'high-tops', name: 'High-Tops', swatch: '#efc33f', shoe: 'high-tops', price: 7 },
+    { id: 'slip-ons', name: 'Slip-Ons', swatch: '#448fcc', shoe: 'slip-ons', price: 5 },
+  ],
+  glasses: [
+    { id: 'none', name: 'No Glasses', swatch: '#6f4b3e', price: 0 },
+    { id: 'round', name: 'Round Glasses', swatch: '#6f4b3e', price: 4 },
+    { id: 'square', name: 'Square Glasses', swatch: '#35516d', price: 4 },
+    { id: 'cat-eye', name: 'Cat-Eye Glasses', swatch: '#a73e78', price: 5 },
+    { id: 'sunglasses', name: 'Sunglasses', swatch: '#252c38', price: 5 },
+  ],
+  headwear: [
+    { id: 'none', name: 'No Hat', swatch: '#ff4f9a', price: 0 },
+    { id: 'cap', name: 'Baseball Cap', swatch: '#43aee5', price: 5 },
+    { id: 'beanie', name: 'Beanie', swatch: '#9a73c9', price: 5 },
+    { id: 'headband', name: 'Headband', swatch: '#54c79c', price: 4 },
+    { id: 'bow', name: 'Hair Bow', swatch: '#ff4f9a', price: 4 },
   ],
   hair: [
     { id: 'waves', name: 'Loose Waves', icon: '~' },
     { id: 'ponytail', name: 'Ponytail', icon: '\u{1F380}' },
     { id: 'bun', name: 'High Bun', icon: '\u{1F7E4}' },
   ],
-  accessory: [
-    { id: 'none', name: 'No Accessory', icon: '\u{2728}' },
-    { id: 'sunglasses', name: 'Sunglasses', icon: '\u{1F60E}' },
-    { id: 'headband', name: 'Headband', icon: '\u{1F380}' },
-    { id: 'backpack', name: 'Mini Backpack', icon: '\u{1F392}' },
-    { id: 'necklace', name: 'Necklace', icon: '\u{1F4FF}' },
-  ],
 };
+
+const FASHION_CATEGORIES = [
+  { id: 'shirt', label: 'Tops' },
+  { id: 'bottoms', label: 'Bottoms' },
+  { id: 'shoes', label: 'Shoes' },
+  { id: 'glasses', label: 'Glasses & Sunglasses' },
+  { id: 'headwear', label: 'Hats & Hair Accessories' },
+];
+
+function fashionKey(category, option) {
+  if (!option) return '';
+  const color = option.id === 'none' ? 'none' : (option.swatch || '').toLowerCase();
+  return category + ':' + option.id + ':' + color;
+}
+
+const FASHION_CUSTOMERS = [
+  {
+    id: 'maya',
+    name: 'Maya',
+    emoji: '😊',
+    pickiness: 'easygoing',
+    category: 'shirt',
+    type: 'puff-sleeve',
+    color: '#8d66bd',
+    colorName: 'purple',
+    reward: 5,
+    request: 'I want a fun puff-sleeve top. Purple would be amazing.',
+  },
+  {
+    id: 'leo',
+    name: 'Leo',
+    emoji: '😄',
+    pickiness: 'particular',
+    category: 'shoes',
+    type: 'high-tops',
+    color: '#438fd0',
+    colorName: 'blue',
+    reward: 6,
+    request: 'I really want high-tops. Blue is my favorite.',
+  },
+  {
+    id: 'zoe',
+    name: 'Zoe',
+    emoji: '🧐',
+    pickiness: 'picky',
+    category: 'glasses',
+    type: 'cat-eye',
+    color: '#ff4f9a',
+    colorName: 'pink',
+    reward: 7,
+    request: 'Cat-eye glasses, and I want them pink. I know exactly what I like.',
+  },
+  {
+    id: 'kai',
+    name: 'Kai',
+    emoji: '🙂',
+    pickiness: 'easygoing',
+    category: 'bottoms',
+    type: 'wide-leg',
+    color: '#54c79c',
+    colorName: 'mint',
+    reward: 5,
+    request: 'Could you make me wide-leg pants? Mint sounds cool, but surprise me.',
+  },
+  {
+    id: 'nina',
+    name: 'Nina',
+    emoji: '🤨',
+    pickiness: 'picky',
+    category: 'headwear',
+    type: 'bow',
+    color: '#f1be38',
+    colorName: 'yellow',
+    reward: 7,
+    request: 'I want a yellow hair bow. Not a hat. A bow.',
+  },
+];
+
+function hexToRgb(hex) {
+  const value = String(hex || '').replace('#', '');
+  if (!/^[0-9a-f]{6}$/i.test(value)) return null;
+  return {
+    r: parseInt(value.slice(0, 2), 16),
+    g: parseInt(value.slice(2, 4), 16),
+    b: parseInt(value.slice(4, 6), 16),
+  };
+}
+
+function colorDistance(first, second) {
+  const a = hexToRgb(first);
+  const b = hexToRgb(second);
+  if (!a || !b) return Infinity;
+  return Math.hypot(a.r - b.r, a.g - b.g, a.b - b.b);
+}
 
 function ingredientLabel(id) {
   return MARKET_ITEMS.find((item) => item.id === id)?.name ?? id;
@@ -203,27 +304,27 @@ export default function KidsResort({ libraryHref = null }) {
     shirt: LOOK_OPTIONS.shirt[0],
     bottoms: LOOK_OPTIONS.bottoms[0],
     shoes: LOOK_OPTIONS.shoes[0],
+    glasses: LOOK_OPTIONS.glasses[0],
+    headwear: LOOK_OPTIONS.headwear[0],
     hair: LOOK_OPTIONS.hair[0],
-    accessory: LOOK_OPTIONS.accessory[0],
   });
 
   const [studioMessage, setStudioMessage] = useState('');
   const [studioCreations, setStudioCreations] = useState(0);
-  const [studioTool, setStudioTool] = useState('art');
+  const [studioCategory, setStudioCategory] = useState('shirt');
+  const [studioWorkTool, setStudioWorkTool] = useState('fashion');
+  const [studioCustomerIndex, setStudioCustomerIndex] = useState(0);
+  const [studioCustomerDone, setStudioCustomerDone] = useState(false);
   const [artColor, setArtColor] = useState('#ff4f9a');
   const artCanvasRef = useRef(null);
   const artDrawingRef = useRef(false);
-  const [fashionDraft, setFashionDraft] = useState({
-    shirt: '#7ec8f5',
-    bottoms: '#8c73c7',
-    sleeve: 'short',
-    leg: 'straight',
-  });
-  const [studioTryLook, setStudioTryLook] = useState(null);
+  const [studioDraftLook, setStudioDraftLook] = useState(null);
   const [ownedLooks, setOwnedLooks] = useState(() => new Set([
-    'shirt:pink',
-    'bottoms:denim',
-    'shoes:pink-sneakers',
+    fashionKey('shirt', LOOK_OPTIONS.shirt[0]),
+    fashionKey('bottoms', LOOK_OPTIONS.bottoms[0]),
+    fashionKey('shoes', LOOK_OPTIONS.shoes[0]),
+    fashionKey('glasses', LOOK_OPTIONS.glasses[0]),
+    fashionKey('headwear', LOOK_OPTIONS.headwear[0]),
   ]));
 
   const [cafeMessage, setCafeMessage] = useState('');
@@ -503,25 +604,21 @@ export default function KidsResort({ libraryHref = null }) {
       setLook((current) => ({
         ...current,
         shirt: {
-          id: `base-${option.id}`,
-          name: `${option.name} Top`,
+          ...current.shirt,
           swatch: option.color,
         },
       }));
     }
   };
 
-  const chooseLook = (category, option) => {
-    setLook((current) => ({ ...current, [category]: option }));
-    setMessage(`${option.name} selected.`);
-  };
-
   const makeStudioCreation = (kind) => {
     const reward = 5;
     const label = kind === 'fashion' ? 'fashion design' : 'artwork';
+    const badge = kind === 'fashion' ? 'Design Studio Fashion Star' : 'Design Studio Art Star';
     setStudioCreations((value) => value + 1);
     setBucks((value) => value + reward);
-    setStudioMessage('Your customer loves your ' + label + '! +' + reward + ' Resort Bucks');
+    setBadges((items) => (items.includes(badge) ? items : [...items, badge]));
+    setStudioMessage('Your customer loves your ' + label + '! +' + reward + ' Resort Bucks · ⭐ badge earned');
   };
 
   const artPoint = (event) => {
@@ -570,32 +667,113 @@ export default function KidsResort({ libraryHref = null }) {
     setStudioMessage('Fresh canvas ready.');
   };
 
-  const tryStudioLook = (category, option) => {
-    setStudioTryLook({ ...look, [category]: option });
-    setStudioMessage('Trying on ' + option.name + '.');
+  const updateStudioType = (category, option) => {
+    const base = studioDraftLook || look;
+    const current = base[category];
+    const nextOption = {
+      ...option,
+      swatch: current?.swatch || option.swatch,
+    };
+    setStudioDraftLook({ ...base, [category]: nextOption });
+    setStudioMessage('Trying on ' + nextOption.name + '.');
+  };
+
+  const updateStudioColor = (category, swatch) => {
+    const base = studioDraftLook || look;
+    const current = base[category];
+    if (!current || current.id === 'none') return;
+    setStudioDraftLook({
+      ...base,
+      [category]: { ...current, swatch },
+    });
+    setStudioMessage('Color changed. Keep designing.');
   };
 
   const buyStudioLook = (category, option) => {
-    const key = category + ':' + option.id;
-    if (ownedLooks.has(key)) {
-      setLook((current) => ({ ...current, [category]: option }));
-      setStudioTryLook(null);
-      setStudioMessage(option.name + ' is already yours.');
+    const key = fashionKey(category, option);
+    const owned = ownedLooks.has(key) || (option.price || 0) === 0;
+
+    if (!owned && bucks < option.price) {
+      setStudioMessage('You need ' + option.price + ' Resort Bucks for this ' + option.name + '.');
       return;
     }
-    if (bucks < option.price) {
-      setStudioMessage('You need ' + option.price + ' Resort Bucks for ' + option.name + '.');
-      return;
+
+    if (!owned) {
+      setBucks((value) => value - option.price);
+      setOwnedLooks((current) => {
+        const next = new Set(current);
+        next.add(key);
+        return next;
+      });
+      setBadges((items) => (
+        items.includes('Design Studio Personal Style Star')
+          ? items
+          : [...items, 'Design Studio Personal Style Star']
+      ));
     }
-    setBucks((value) => value - option.price);
-    setOwnedLooks((current) => {
-      const next = new Set(current);
-      next.add(key);
-      return next;
-    });
+
     setLook((current) => ({ ...current, [category]: option }));
-    setStudioTryLook(null);
-    setStudioMessage(option.name + ' is yours!');
+    setStudioDraftLook((current) => current ? { ...current, [category]: option } : current);
+    setStudioMessage(
+      owned
+        ? option.name + ' is on!'
+        : option.name + ' is yours and on! · ⭐ Personal Style badge earned'
+    );
+  };
+
+  const showFashionToCustomer = () => {
+    const customer = FASHION_CUSTOMERS[studioCustomerIndex % FASHION_CUSTOMERS.length];
+    const draft = studioDraftLook || look;
+    const item = draft[customer.category];
+    const wanted = LOOK_OPTIONS[customer.category].find((option) => option.id === customer.type);
+    const typeMatch = item?.id === customer.type;
+    const colorGap = colorDistance(item?.swatch, customer.color);
+    const colorMatch = colorGap <= 72;
+    const pickyColorMatch = colorGap <= 42;
+
+    let accepted = true;
+    if (customer.pickiness === 'particular') accepted = typeMatch || colorMatch;
+    if (customer.pickiness === 'picky') accepted = typeMatch && pickyColorMatch;
+
+    if (!accepted) {
+      const typeNote = typeMatch ? '' : 'I really wanted ' + wanted.name + '. ';
+      const colorNote = pickyColorMatch ? '' : 'I was hoping for ' + customer.colorName + '. ';
+      setStudioMessage(customer.name + ': ' + typeNote + colorNote + 'Can we try again?');
+      return;
+    }
+
+    let opinion = 'I love it!';
+    if (typeMatch && colorMatch) {
+      opinion = 'That is exactly what I pictured!';
+    } else if (typeMatch) {
+      opinion = 'The style is perfect. I did not expect that color, but I like it!';
+    } else if (colorMatch) {
+      opinion = 'That ' + customer.colorName + ' is great. The different style works for me!';
+    } else {
+      opinion = 'That is not what I pictured at all, but I really like what you made!';
+    }
+
+    setStudioCreations((value) => value + 1);
+    setBucks((value) => value + customer.reward);
+    setBadges((items) => (
+      items.includes('Design Studio Fashion Star')
+        ? items
+        : [...items, 'Design Studio Fashion Star']
+    ));
+    setStudioCustomerDone(true);
+    setStudioMessage(
+      customer.name + ': ' + opinion + ' +' + customer.reward + ' Resort Bucks · ⭐ Fashion Star earned'
+    );
+  };
+
+  const nextFashionCustomer = () => {
+    const nextIndex = (studioCustomerIndex + 1) % FASHION_CUSTOMERS.length;
+    const nextCustomer = FASHION_CUSTOMERS[nextIndex];
+    setStudioCustomerIndex(nextIndex);
+    setStudioCustomerDone(false);
+    setStudioCategory(nextCustomer.category);
+    setStudioDraftLook({ ...look });
+    setStudioMessage(nextCustomer.name + ' has a new fashion request.');
   };
 
   const renderCharacter = (large = false, displayLook = look) => (
@@ -605,14 +783,21 @@ export default function KidsResort({ libraryHref = null }) {
       data-gender={character.gender}
       data-sleeve={displayLook.shirt.sleeve || 'short'}
       data-leg={displayLook.bottoms.leg || 'straight'}
+      data-shoe={displayLook.shoes.shoe || 'sneakers'}
+      data-glasses={displayLook.glasses?.id || 'none'}
+      data-headwear={displayLook.headwear?.id || 'none'}
       style={{
         ...characterStyle,
         '--outfit-shirt': displayLook.shirt.swatch,
         '--outfit-bottoms': displayLook.bottoms.swatch,
+        '--outfit-shoes': displayLook.shoes.swatch,
+        '--outfit-glasses': displayLook.glasses?.swatch || '#6f4b3e',
+        '--outfit-headwear': displayLook.headwear?.swatch || '#ff4f9a',
       }}
       aria-label={characterName + ' preview'}
     >
       <div className={styles.avatarHair} />
+      <span className={styles.avatarHeadwear} aria-hidden="true" />
       <span className={[styles.avatarEar, styles.avatarEarLeft].join(' ')} />
       <span className={[styles.avatarEar, styles.avatarEarRight].join(' ')} />
       <div className={styles.avatarHead}>
@@ -624,6 +809,7 @@ export default function KidsResort({ libraryHref = null }) {
         <span className={styles.avatarSmile} />
       </div>
       <div className={styles.avatarHairFront} />
+      <span className={styles.avatarGlasses} aria-hidden="true" />
       <div className={styles.avatarNeck} />
       <div className={styles.avatarBody} style={{ background: displayLook.shirt.swatch }} />
       <div className={styles.avatarPelvis} style={{ background: displayLook.bottoms.swatch }} />
@@ -665,9 +851,6 @@ export default function KidsResort({ libraryHref = null }) {
         <span className={styles.avatarShin} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
         <span className={styles.avatarShoe} style={{ background: displayLook.shoes.swatch }} />
       </div>
-      {displayLook.accessory.id !== 'none' && (
-        <div className={styles.avatarAccessory} aria-hidden="true">{displayLook.accessory.icon}</div>
-      )}
     </div>
   );
 
@@ -794,143 +977,336 @@ export default function KidsResort({ libraryHref = null }) {
       '\u{1F457}',
       'CREATE OR SHOP',
       <div className={styles.studioChoiceGrid}>
-        <button className={styles.studioChoiceCard} type="button" onClick={() => { setStudioMessage(''); setScreen('studio-work'); }}>
+        <button
+          className={styles.studioChoiceCard}
+          type="button"
+          onClick={() => {
+            const customer = FASHION_CUSTOMERS[studioCustomerIndex % FASHION_CUSTOMERS.length];
+            setStudioMessage('');
+            setStudioWorkTool('fashion');
+            setStudioCustomerDone(false);
+            setStudioCategory(customer.category);
+            setStudioDraftLook({ ...look });
+            setScreen('studio-work');
+          }}
+        >
           <span className={styles.studioChoiceIcon}>🎨</span>
           <strong>Work Here</strong>
-          <span>Make art or design fashion. Creativity is the job.</span>
+          <span>Make art or design fashion for customers and earn Resort Bucks.</span>
         </button>
-        <button className={styles.studioChoiceCard} type="button" onClick={() => { setStudioMessage(''); setStudioTryLook(null); setScreen('studio-shop'); }}>
+        <button
+          className={styles.studioChoiceCard}
+          type="button"
+          onClick={() => {
+            setStudioMessage('');
+            setStudioCategory('shirt');
+            setStudioDraftLook({ ...look });
+            setScreen('studio-shop');
+          }}
+        >
           <span className={styles.studioChoiceIcon}>🛍️</span>
           <strong>Shop & Try On</strong>
-          <span>Try clothes on, buy favorites, and wear them around the resort.</span>
+          <span>Design custom pieces for yourself, try them on, and buy the ones you want.</span>
         </button>
       </div>,
     );
   }
 
   if (screen === 'studio-work') {
-    const fashionLook = {
-      ...look,
-      shirt: { ...look.shirt, name: 'My Design Top', swatch: fashionDraft.shirt, sleeve: fashionDraft.sleeve },
-      bottoms: { ...look.bottoms, name: 'My Design Bottoms', swatch: fashionDraft.bottoms, leg: fashionDraft.leg },
-    };
+    const customer = FASHION_CUSTOMERS[studioCustomerIndex % FASHION_CUSTOMERS.length];
+    const previewLook = studioDraftLook || look;
+    const customerItem = previewLook[customer.category];
+    const customerOptions = LOOK_OPTIONS[customer.category];
+    const wanted = customerOptions.find((option) => option.id === customer.type);
+    const customerCategoryLabel =
+      FASHION_CATEGORIES.find((category) => category.id === customer.category)?.label || 'Fashion';
+
     return interiorShell(
       'Design Studio',
       '🎨',
-      'CREATIVE WORK',
-      <div className={styles.studioWorkLayout}>
-        <section className={styles.studioWorkbench}>
-          <div className={styles.studioToolTabs}>
-            <button type="button" data-active={studioTool === 'art'} onClick={() => setStudioTool('art')}>🖌️ Art Studio</button>
-            <button type="button" data-active={studioTool === 'fashion'} onClick={() => setStudioTool('fashion')}>✂️ Fashion Desk</button>
-          </div>
+      'WORK HERE',
+      <div className={styles.studioWorkPage}>
+        <div className={styles.studioToolTabs}>
+          <button
+            type="button"
+            data-active={studioWorkTool === 'fashion'}
+            onClick={() => {
+              setStudioWorkTool('fashion');
+              setStudioCategory(customer.category);
+              setStudioDraftLook({ ...look });
+              setStudioMessage('');
+            }}
+          >
+            👗 Fashion Customers
+          </button>
+          <button
+            type="button"
+            data-active={studioWorkTool === 'art'}
+            onClick={() => {
+              setStudioWorkTool('art');
+              setStudioMessage('');
+            }}
+          >
+            🖌️ Art Commissions
+          </button>
+        </div>
 
-          {studioTool === 'art' ? (
-            <div className={styles.artStudio}>
-              <canvas
-                ref={artCanvasRef}
-                className={styles.artCanvas}
-                width="720"
-                height="420"
-                onPointerDown={beginArt}
-                onPointerMove={drawArt}
-                onPointerUp={endArt}
-                onPointerCancel={endArt}
-                onPointerLeave={endArt}
-                aria-label="Drawing canvas"
-              />
-              <div className={styles.artToolbar}>
-                <label>Color <input type="color" value={artColor} onChange={(event) => setArtColor(event.target.value)} /></label>
-                <button type="button" onClick={clearArt}>Clear</button>
-                <button type="button" onClick={() => makeStudioCreation('art')}>Finish Artwork +5</button>
+        {studioWorkTool === 'fashion' ? (
+          <div className={styles.studioFashionWorkLayout}>
+            <section className={styles.characterStage}>
+              {renderCharacter(true, previewLook)}
+              <div className={styles.tryOnBadge}>CUSTOMER DESIGN</div>
+            </section>
+
+            <section className={styles.customizer}>
+              <div className={styles.fashionEditorCard}>
+                <div className={styles.fashionEditorHeading}>
+                  <div>
+                    <small>{customerCategoryLabel}</small>
+                    <h3>{customerItem.name}</h3>
+                  </div>
+                  {customerItem.id !== 'none' && (
+                    <label className={styles.fashionColorControl}>
+                      Any color
+                      <input
+                        type="color"
+                        value={customerItem.swatch || '#777777'}
+                        onChange={(event) => updateStudioColor(customer.category, event.target.value)}
+                      />
+                    </label>
+                  )}
+                </div>
+
+                <div className={styles.fashionTypeGrid}>
+                  {customerOptions.map((option) => (
+                    <button
+                      key={option.id}
+                      type="button"
+                      data-selected={customerItem.id === option.id ? 'true' : 'false'}
+                      onClick={() => updateStudioType(customer.category, option)}
+                    >
+                      <span
+                        className={styles.fashionTypeSwatch}
+                        style={{
+                          background:
+                            customerItem.id === option.id && option.id !== 'none'
+                              ? customerItem.swatch
+                              : option.swatch,
+                        }}
+                      />
+                      <strong>{option.name}</strong>
+                      <small>Design option</small>
+                    </button>
+                  ))}
+                </div>
+
+                <div className={styles.fashionActionRow}>
+                  {studioCustomerDone ? (
+                    <button type="button" onClick={nextFashionCustomer}>Next Customer</button>
+                  ) : (
+                    <button type="button" onClick={showFashionToCustomer}>Show Customer</button>
+                  )}
+                </div>
               </div>
-            </div>
-          ) : (
-            <div className={styles.fashionDesk}>
-              <div className={styles.fashionPreview}>{renderCharacter(true, fashionLook)}</div>
-              <div className={styles.fashionControls}>
-                <label>Top color <input type="color" value={fashionDraft.shirt} onChange={(event) => setFashionDraft((draft) => ({ ...draft, shirt: event.target.value }))} /></label>
-                <label>Bottom color <input type="color" value={fashionDraft.bottoms} onChange={(event) => setFashionDraft((draft) => ({ ...draft, bottoms: event.target.value }))} /></label>
-                <label>Sleeves
-                  <select value={fashionDraft.sleeve} onChange={(event) => setFashionDraft((draft) => ({ ...draft, sleeve: event.target.value }))}>
-                    <option value="none">Tank</option>
-                    <option value="short">Short</option>
-                    <option value="puff">Puff</option>
-                    <option value="long">Long</option>
-                  </select>
-                </label>
-                <label>Pant legs
-                  <select value={fashionDraft.leg} onChange={(event) => setFashionDraft((draft) => ({ ...draft, leg: event.target.value }))}>
-                    <option value="straight">Straight</option>
-                    <option value="short">Shorts</option>
-                    <option value="wide">Wide</option>
-                    <option value="flare">Flare</option>
-                  </select>
-                </label>
-                <button type="button" onClick={() => makeStudioCreation('fashion')}>Finish Fashion Design +5</button>
+            </section>
+
+            <aside className={styles.studioCustomerCard}>
+              <div className={styles.studioCustomerFace}>{customer.emoji}</div>
+              <strong>{customer.name}</strong>
+              <span className={styles.customerPickiness} data-level={customer.pickiness}>
+                {customer.pickiness}
+              </span>
+              <p className={styles.customerRequest}>{customer.request}</p>
+              <div className={styles.customerWantRow}>
+                <span style={{ background: customer.color }} />
+                <div>
+                  <small>Hoping for</small>
+                  <strong>{wanted.name} · {customer.colorName}</strong>
+                </div>
               </div>
-            </div>
-          )}
-        </section>
-        <aside className={styles.studioCustomerCard}>
-          <div className={styles.studioCustomerFace}>😊</div>
-          <strong>Happy Customer</strong>
-          <p>{studioMessage || 'Make whatever you want. Your customer is excited to see it.'}</p>
-          <div className={styles.studioCreationCount}>{studioCreations} creations made</div>
-          <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>Studio Lobby</button>
-        </aside>
+              <button
+                className={styles.secondaryButton}
+                type="button"
+                onClick={() => updateStudioColor(customer.category, customer.color)}
+              >
+                Use requested color
+              </button>
+              <div className={styles.studioCreationCount}>
+                Pays {customer.reward} Resort Bucks if accepted
+              </div>
+              <p className={styles.customerOpinion}>
+                {studioMessage || 'Design it, then show the customer what you made.'}
+              </p>
+            </aside>
+          </div>
+        ) : (
+          <div className={styles.studioWorkLayout}>
+            <section className={styles.studioWorkbench}>
+              <div className={styles.artStudio}>
+                <canvas
+                  ref={artCanvasRef}
+                  className={styles.artCanvas}
+                  width="720"
+                  height="420"
+                  onPointerDown={beginArt}
+                  onPointerMove={drawArt}
+                  onPointerUp={endArt}
+                  onPointerCancel={endArt}
+                  onPointerLeave={endArt}
+                  aria-label="Drawing canvas"
+                />
+                <div className={styles.artToolbar}>
+                  <label>
+                    Color
+                    <input
+                      type="color"
+                      value={artColor}
+                      onChange={(event) => setArtColor(event.target.value)}
+                    />
+                  </label>
+                  <button type="button" onClick={clearArt}>Clear</button>
+                  <button type="button" onClick={() => makeStudioCreation('art')}>
+                    Finish Artwork +5
+                  </button>
+                </div>
+              </div>
+            </section>
+            <aside className={styles.studioCustomerCard}>
+              <div className={styles.studioCustomerFace}>😊</div>
+              <strong>Art Customer</strong>
+              <p>{studioMessage || 'For artwork, the customer is happy to see your own creative idea.'}</p>
+              <div className={styles.studioCreationCount}>{studioCreations} creations made</div>
+            </aside>
+          </div>
+        )}
+
+        <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
+          Studio Lobby
+        </button>
       </div>,
     );
   }
 
   if (screen === 'studio-shop') {
-    const previewLook = studioTryLook || look;
-    const shopCategories = ['shirt', 'bottoms', 'shoes'];
+    const previewLook = studioDraftLook || look;
+    const activeItem = previewLook[studioCategory];
+    const activeOptions = LOOK_OPTIONS[studioCategory];
+    const activeKey = fashionKey(studioCategory, activeItem);
+    const owned = ownedLooks.has(activeKey) || (activeItem?.price || 0) === 0;
+    const worn = fashionKey(studioCategory, look[studioCategory]) === activeKey;
+    const activeLabel = FASHION_CATEGORIES.find((category) => category.id === studioCategory)?.label || 'Fashion';
+    const tryOnItems = FASHION_CATEGORIES
+      .map((category) => ({
+        ...category,
+        item: previewLook[category.id],
+        changed:
+          fashionKey(category.id, previewLook[category.id]) !==
+          fashionKey(category.id, look[category.id]),
+      }))
+      .filter((category) => category.changed);
+
     return interiorShell(
       'Design Studio',
-      '🛍️',
-      'CLOTHING SHOP',
+      '👗',
+      'SHOP & TRY ON',
       <div className={styles.studioLayout}>
         <section className={styles.characterStage}>
           {renderCharacter(true, previewLook)}
           <div className={styles.lookSummary}>
             <strong>{characterName}</strong>
-            <span>{previewLook.shirt.name} - {previewLook.bottoms.name}</span>
+            <span>{previewLook.shirt.name} · {previewLook.bottoms.name}</span>
             <span>{previewLook.shoes.name}</span>
+            <span>{previewLook.glasses.name} · {previewLook.headwear.name}</span>
           </div>
-          {studioTryLook && <div className={styles.tryOnBadge}>TRYING ON</div>}
+          <div className={styles.tryOnBadge}>LIVE TRY-ON</div>
+          <div className={styles.tryOnTray}>
+            <strong>Trying on together</strong>
+            <div className={styles.tryOnTrayItems}>
+              {tryOnItems.length > 0 ? (
+                tryOnItems.map((category) => (
+                  <span key={category.id}>
+                    <i style={{ background: category.item.swatch }} />
+                    {category.item.name}
+                  </span>
+                ))
+              ) : (
+                <span>Your current outfit</span>
+              )}
+            </div>
+            {tryOnItems.length > 0 && (
+              <button type="button" onClick={() => setStudioDraftLook({ ...look })}>
+                Reset try-on
+              </button>
+            )}
+          </div>
         </section>
 
         <section className={styles.customizer}>
-          {shopCategories.map((category) => (
-            <div key={category} className={styles.optionGroup}>
-              <h3>{category === 'bottoms' ? 'Bottoms' : category.charAt(0).toUpperCase() + category.slice(1)}</h3>
-              <div className={styles.studioShopGrid}>
-                {LOOK_OPTIONS[category].map((option) => {
-                  const key = category + ':' + option.id;
-                  const owned = ownedLooks.has(key);
-                  const worn = look[category].id === option.id;
-                  return (
-                    <div key={option.id} className={styles.studioShopItem} data-owned={owned ? 'true' : 'false'}>
-                      <span className={styles.swatch} style={{ background: option.swatch }} />
-                      <strong>{option.name}</strong>
-                      <small>{owned ? 'Owned' : option.price + ' Resort Bucks'}</small>
-                      <div>
-                        <button type="button" onClick={() => tryStudioLook(category, option)}>Try On</button>
-                        <button type="button" disabled={worn} onClick={() => buyStudioLook(category, option)}>
-                          {worn ? 'Wearing' : owned ? 'Wear' : 'Buy'}
-                        </button>
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          ))}
-          <div className={styles.fullMessage} aria-live="polite">
-            {studioMessage || 'Try anything on before you buy it.'}
+          <div className={styles.fashionCategoryTabs}>
+            {FASHION_CATEGORIES.map((category) => (
+              <button
+                key={category.id}
+                type="button"
+                data-active={studioCategory === category.id ? 'true' : 'false'}
+                onClick={() => setStudioCategory(category.id)}
+              >
+                {category.label}
+              </button>
+            ))}
           </div>
-          <button className={styles.secondaryButton} type="button" onClick={() => { setStudioTryLook(null); setScreen('studio'); }}>Studio Lobby</button>
+
+          <div className={styles.fashionEditorCard}>
+            <div className={styles.fashionEditorHeading}>
+              <div>
+                <small>{activeLabel}</small>
+                <h3>{activeItem.name}</h3>
+              </div>
+              {activeItem.id !== 'none' && (
+                <label className={styles.fashionColorControl}>
+                  Any color
+                  <input
+                    type="color"
+                    value={activeItem.swatch || '#777777'}
+                    onChange={(event) => updateStudioColor(studioCategory, event.target.value)}
+                  />
+                </label>
+              )}
+            </div>
+
+            <div className={styles.fashionTypeGrid}>
+              {activeOptions.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  data-selected={activeItem.id === option.id ? 'true' : 'false'}
+                  onClick={() => updateStudioType(studioCategory, option)}
+                >
+                  <span
+                    className={styles.fashionTypeSwatch}
+                    style={{ background: activeItem.id === option.id && option.id !== 'none' ? activeItem.swatch : option.swatch }}
+                  />
+                  <strong>{option.name}</strong>
+                  <small>{option.price === 0 ? 'Free' : option.price + ' Resort Bucks'}</small>
+                </button>
+              ))}
+            </div>
+
+            <div className={styles.fashionActionRow}>
+              <button
+                className={styles.primaryButton}
+                type="button"
+                disabled={worn}
+                onClick={() => buyStudioLook(studioCategory, activeItem)}
+              >
+                {worn ? 'Wearing This' : owned ? 'Wear This' : 'Buy & Wear · ' + activeItem.price}
+              </button>
+            </div>
+          </div>
+
+          <div className={styles.fullMessage} aria-live="polite">
+            {studioMessage || 'Choose a type and any color. Trying it on is free; keeping the custom design costs Resort Bucks.'}
+          </div>
+          <button className={styles.secondaryButton} type="button" onClick={() => { setStudioDraftLook(null); setScreen('studio'); }}>Studio Lobby</button>
         </section>
       </div>,
     );
@@ -973,7 +1349,8 @@ export default function KidsResort({ libraryHref = null }) {
               <span>{look.bottoms.name}</span>
               <span>{look.shoes.name}</span>
               <span>{look.hair.name}</span>
-              <span>{look.accessory.name}</span>
+              <span>{look.glasses.name}</span>
+              <span>{look.headwear.name}</span>
             </div>
           </div>
           <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
@@ -1118,12 +1495,18 @@ export default function KidsResort({ libraryHref = null }) {
               ...characterStyle,
               '--outfit-shirt': look.shirt.swatch,
               '--outfit-bottoms': look.bottoms.swatch,
+              '--outfit-shoes': look.shoes.swatch,
+              '--outfit-glasses': look.glasses.swatch,
+              '--outfit-headwear': look.headwear.swatch,
             }}
             data-frame={walkFrame}
             data-shirt={look.shirt.id}
             data-bottoms={look.bottoms.id}
             data-sleeve={look.shirt.sleeve || 'short'}
             data-leg={look.bottoms.leg || 'straight'}
+            data-shoe={look.shoes.shoe || 'sneakers'}
+            data-glasses={look.glasses.id}
+            data-headwear={look.headwear.id}
             data-hair={look.hair.id}
             data-gender={character.gender}
             data-facing={facing}
@@ -1133,6 +1516,7 @@ export default function KidsResort({ libraryHref = null }) {
           >
             <div className={styles.playerSprite} style={playerView === 'front' ? { transform: 'none' } : undefined}>
               <div className={[styles.playerHair, styles.playerHairDetail].join(' ')} style={playerView === 'front' ? { left: 7, top: 0, width: 48, height: 48, borderRadius: '50% 50% 45% 45%' } : undefined} />
+              <span className={styles.playerHeadwear} aria-hidden="true" />
               <span className={[styles.playerEar, styles.playerEarLeft].join(' ')} />
               <span className={[styles.playerEar, styles.playerEarRight].join(' ')} />
               <div className={[styles.playerHead, styles.playerHeadDetail].join(' ')} style={playerView === 'front' ? { left: 16, top: 9, width: 31, height: 35, borderRadius: '48% 48% 45% 45%' } : undefined}>
@@ -1144,6 +1528,7 @@ export default function KidsResort({ libraryHref = null }) {
                 <span className={styles.playerSmile} />
               </div>
               <div className={styles.playerHairFront} />
+              <span className={styles.playerGlasses} aria-hidden="true" />
               <div className={styles.playerNeck} />
               <div className={[styles.playerBody, styles.playerBodyDetail].join(' ')} style={{ background: look.shirt.swatch }} />
               <div className={styles.playerPelvis} style={{ background: look.bottoms.swatch }} />
