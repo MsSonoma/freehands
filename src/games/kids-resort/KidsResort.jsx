@@ -652,12 +652,14 @@ export default function KidsResort({ libraryHref = null }) {
       </div>
 
       <div className={styles.avatarLegRigLeft}>
+        <span className={styles.avatarSkinLeg} />
         <span className={styles.avatarThigh} style={{ background: displayLook.bottoms.swatch }} />
         <span className={styles.avatarKnee} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
         <span className={styles.avatarShin} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
         <span className={styles.avatarShoe} style={{ background: displayLook.shoes.swatch }} />
       </div>
       <div className={styles.avatarLegRigRight}>
+        <span className={styles.avatarSkinLeg} />
         <span className={styles.avatarThigh} style={{ background: displayLook.bottoms.swatch }} />
         <span className={styles.avatarKnee} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
         <span className={styles.avatarShin} style={{ background: displayLook.bottoms.leg === 'short' ? 'var(--character-skin)' : displayLook.bottoms.swatch }} />
@@ -1170,12 +1172,14 @@ export default function KidsResort({ libraryHref = null }) {
               </div>
 
               <div className={styles.playerLegRigLeft} style={playerView === 'front' ? { transform: isWalking && walkFrame < 3 ? 'translateY(-4px)' : 'none', scale: isWalking && walkFrame < 3 ? 1.05 : 0.95 } : undefined}>
+                <span className={styles.playerSkinLeg} />
                 <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerKnee} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
                 <span className={styles.playerShin} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
                 <span className={styles.playerShoe} style={{ background: look.shoes.swatch }} />
               </div>
               <div className={styles.playerLegRigRight} style={playerView === 'front' ? { transform: isWalking && walkFrame >= 3 ? 'translateY(-4px)' : 'none', scale: isWalking && walkFrame >= 3 ? 1.05 : 0.95 } : undefined}>
+                <span className={styles.playerSkinLeg} />
                 <span className={styles.playerThigh} style={{ background: look.bottoms.swatch }} />
                 <span className={styles.playerKnee} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
                 <span className={styles.playerShin} style={{ background: look.bottoms.leg === 'short' ? 'var(--character-skin)' : look.bottoms.swatch }} />
