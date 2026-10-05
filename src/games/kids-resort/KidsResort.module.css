@@ -6323,3 +6323,127 @@
     width: 57%;
   }
 }
+
+
+/* Palm Court dining tabletop controls: food and glass are the interface. */
+.palmDiningPlate {
+  position: absolute;
+  z-index: 3;
+  left: 50%;
+  top: 26%;
+  transform: translateX(-50%);
+  font-size: clamp(1.7rem, 4vw, 3rem);
+  line-height: 1;
+  pointer-events: none;
+}
+
+.palmDiningFood {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 25%;
+  transform: translateX(-50%);
+  width: clamp(44px, 6vw, 72px);
+  height: clamp(40px, 8dvh, 64px);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  overflow: visible;
+  cursor: pointer;
+  font: inherit;
+}
+
+.palmDiningFoodIcon {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  font-size: clamp(1.7rem, 4vw, 3rem);
+  line-height: 1;
+  clip-path: inset(0 0 0 0);
+  transition: clip-path .22s ease;
+  filter: drop-shadow(0 3px 2px rgba(82, 54, 36, .12));
+}
+
+.palmDiningFood[data-bites="1"] .palmDiningFoodIcon {
+  clip-path: inset(0 33.333% 0 0);
+}
+
+.palmDiningFood[data-bites="2"] .palmDiningFoodIcon {
+  clip-path: inset(0 66.666% 0 0);
+}
+
+.palmDiningGlass {
+  position: absolute;
+  z-index: 4;
+  right: 18%;
+  top: 27%;
+  width: clamp(28px, 3.6vw, 42px);
+  height: clamp(42px, 7dvh, 60px);
+  border: 0;
+  background: transparent;
+  padding: 0;
+  cursor: pointer;
+}
+
+.palmDiningGlass::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: 3px;
+  transform: translateX(-50%);
+  width: 58%;
+  height: 76%;
+  border: 3px solid rgba(92, 126, 139, .72);
+  border-top-width: 2px;
+  border-radius: 3px 3px 7px 7px;
+  background:
+    linear-gradient(180deg, transparent 0 38%, rgba(157, 221, 235, .78) 39% 100%);
+  box-shadow:
+    inset 3px 0 0 rgba(255,255,255,.52),
+    0 3px 4px rgba(65, 77, 80, .12);
+}
+
+.palmDiningGlass::after {
+  content: "";
+  position: absolute;
+  left: 41%;
+  top: 24%;
+  width: 3px;
+  height: 49%;
+  border-radius: 999px;
+  background: rgba(255,255,255,.7);
+  transform: rotate(4deg);
+}
+
+.palmDiningGlass:hover::before,
+.palmDiningFood:hover {
+  filter: brightness(1.06);
+}
+
+.palmDiningGlass:active {
+  top: 29%;
+}
+
+.palmDiningFood:active {
+  top: 27%;
+}
+
+.palmDiningGame .palmCourtGuestTable .palmDiningPlate {
+  font-size: clamp(1.2rem, 2.6vw, 2rem);
+}
+
+@media (max-width: 520px) {
+  .palmDiningGlass {
+    right: 14%;
+    top: 29%;
+  }
+
+  .palmDiningFood {
+    top: 27%;
+  }
+
+  .palmDiningPlate {
+    top: 28%;
+  }
+}

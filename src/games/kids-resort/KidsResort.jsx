@@ -1744,7 +1744,7 @@ export default function KidsResort({ libraryHref = null }) {
     setDiningBites(0);
     setDiningAction('order');
     setDiningActionTick((value) => value + 1);
-    setMessage(`${meal.name} is on the table. Take three bites to enjoy the meal.`);
+    setMessage(`${meal.name} is on the table. Click the food to take a bite.`);
   };
 
   const takeDiningBite = () => {
@@ -3134,7 +3134,6 @@ export default function KidsResort({ libraryHref = null }) {
 
   if (screen === 'lobby-restaurant-dine') {
     const diningMeal = LOBBY_MENU.find((item) => item.id === diningMealId) || null;
-    const diningDrink = DINING_DRINKS.find((item) => item.id === diningDrinkId) || DINING_DRINKS[0];
     const diningMotionClass = diningAction === 'bite'
       ? styles.diningActionBite
       : diningAction === 'sip'
@@ -3164,11 +3163,28 @@ export default function KidsResort({ libraryHref = null }) {
             {renderCharacter(false, look, character, characterName, 'seated')}
           </div>
           <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining at a separate Palm Court table`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name, 'seated')}</div>
-          <div className={[styles.palmCourtDiningTable, styles.palmCourtEmilyTable].join(' ')} aria-hidden="true">
-            <span>{diningMeal?.icon || '\u{1F37D}\u{FE0F}'}</span>
+          <div className={[styles.palmCourtDiningTable, styles.palmCourtEmilyTable].join(' ')}>
+            <div className={styles.palmDiningPlate} aria-hidden="true">{'\u{1F37D}\u{FE0F}'}</div>
+            {diningMeal && diningBites < 3 && (
+              <button
+                className={styles.palmDiningFood}
+                type="button"
+                data-bites={diningBites}
+                onClick={takeDiningBite}
+                aria-label={`Take a bite of ${diningMeal.name}. ${3 - diningBites} bites remaining.`}
+              >
+                <div className={styles.palmDiningFoodIcon}>{diningMeal.icon}</div>
+              </button>
+            )}
+            <button
+              className={styles.palmDiningGlass}
+              type="button"
+              onClick={() => sipDiningDrink(diningDrinkId)}
+              aria-label="Take a drink"
+            />
           </div>
           <div className={[styles.palmCourtDiningTable, styles.palmCourtGuestTable].join(' ')} aria-hidden="true">
-            <span>{'\u{1F37D}\u{FE0F}'}</span>
+            <div className={styles.palmDiningPlate}>{'\u{1F37D}\u{FE0F}'}</div>
           </div>
 
           <div className={styles.palmCourtMenuStand}>
@@ -3184,34 +3200,8 @@ export default function KidsResort({ libraryHref = null }) {
             </div>
           </div>
 
-          <div className={styles.palmDiningControls}>
-            <div className={styles.palmDiningCourse}>
-              <strong>{diningMeal ? diningMeal.name : 'Choose an entree'}</strong>
-              <span className={styles.palmDiningBites} aria-label={`${diningBites} of 3 bites`}>
-                {[0, 1, 2].map((index) => <i key={index} data-done={index < diningBites} />)}
-              </span>
-              <button type="button" disabled={!diningMeal || diningBites >= 3} onClick={takeDiningBite}>
-                {diningBites >= 3 ? 'Meal Finished' : 'Take a Bite'}
-              </button>
-            </div>
-            <div className={styles.palmDiningDrinks}>
-              <strong>Drink</strong>
-              {DINING_DRINKS.map((drink) => (
-                <button
-                  key={drink.id}
-                  type="button"
-                  data-active={diningDrink.id === drink.id}
-                  onClick={() => sipDiningDrink(drink.id)}
-                >
-                  <span>{drink.icon}</span>
-                  <small>{drink.name}</small>
-                </button>
-              ))}
-            </div>
-          </div>
-
           <div className={styles.lobbySceneMessage} aria-live="polite">
-            {message || `${characterName} has a table at Palm Court. Order a meal, enjoy it, and choose a drink.`}
+            {message || `${characterName} has a table at Palm Court. Order a meal, then click the food or glass on the table.`}
           </div>
         </section>
       </main>
