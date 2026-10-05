@@ -2996,10 +2996,10 @@ export default function KidsResort({ libraryHref = null }) {
           </div>
           <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining at a separate Palm Court table`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name, 'seated')}</div>
           <div className={[styles.palmCourtDiningTable, styles.palmCourtEmilyTable].join(' ')} aria-hidden="true">
-            <span>{diningMeal?.icon || '???'}</span>
+            <span>{diningMeal?.icon || '\u{1F37D}\u{FE0F}'}</span>
           </div>
           <div className={[styles.palmCourtDiningTable, styles.palmCourtGuestTable].join(' ')} aria-hidden="true">
-            <span>???</span>
+            <span>{'\u{1F37D}\u{FE0F}'}</span>
           </div>
 
           <div className={styles.palmCourtMenuStand}>
