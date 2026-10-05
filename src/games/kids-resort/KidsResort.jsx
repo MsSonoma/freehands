@@ -3697,9 +3697,13 @@ export default function KidsResort({ libraryHref = null }) {
                 </div>
               </div>
 
+              <div className={styles.palmKitchenServiceWindow} aria-hidden="true">
+                <strong>Service Window</strong>
+              </div>
               <button className={styles.palmKitchenPass} type="button" onClick={servePalmKitchenOrder}>
-                <strong>Service Pass</strong>
-                <small>Serve the completed plate</small>
+                <span className={styles.palmKitchenPassPlateStack} aria-hidden="true"><i /><i /><i /></span>
+                <strong>Pass Counter</strong>
+                <small>Serve completed plate</small>
               </button>
 
               {palmKitchenDrag && (
