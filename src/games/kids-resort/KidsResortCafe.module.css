@@ -693,3 +693,48 @@
   .cafeIngredientDrawer button small { display: none; }
   .cafeDrawerTitle { font-size: .38rem; padding: 1px; }
 }
+/* Emily belongs on the kitchen side: large, low, and grounded behind the work surfaces. */
+.cafeWorkViewport > .cafeWorkCharacter {
+  position: absolute;
+  z-index: 1;
+  left: clamp(270px, 27vw, 370px);
+  right: auto;
+  top: auto;
+  bottom: clamp(4px, 1.2dvh, 12px);
+  width: 176px;
+  height: 318px;
+  --cafe-character-scale: .62;
+}
+
+.cafeWorkViewport > .cafeWorkCharacter::after {
+  bottom: 2px;
+  width: 74px;
+  height: 14px;
+}
+
+@media (max-width: 760px) {
+  .cafeWorkViewport > .cafeWorkCharacter {
+    left: 4px;
+    right: auto;
+    top: auto;
+    bottom: 4px;
+    width: 138px;
+    height: 252px;
+    --cafe-character-scale: .47;
+  }
+
+  .cafeWorkViewport > .cafeWorkCharacter::after {
+    width: 58px;
+    height: 11px;
+  }
+}
+
+@media (max-height: 440px) {
+  .cafeWorkViewport > .cafeWorkCharacter {
+    left: clamp(112px, 21vw, 210px);
+    bottom: 2px;
+    width: 132px;
+    height: 218px;
+    --cafe-character-scale: .43;
+  }
+}
