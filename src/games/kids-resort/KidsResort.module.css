@@ -6250,6 +6250,11 @@
   z-index: 8;
 }
 
+
+.restaurantDiningCompanion {
+  bottom: 14%;
+  z-index: 7;
+}
 .palmDiningGame .restaurantDiningGuest {
   right: 9%;
   bottom: 32%;
@@ -6868,4 +6873,39 @@
     margin: -24px 0 0 -24px;
     font-size: 1.65rem;
   }
+}
+
+
+/* Walking-together companions share Emily's scene staging during activities. */
+.cafeSceneCharacter > [data-party-member="true"] {
+  position: absolute;
+  left: calc(50% - var(--party-offset));
+  bottom: 0;
+  transform: translateX(-50%) scale(.46);
+  transform-origin: bottom center;
+  opacity: .96;
+}
+
+.lobbyCharacter > [data-party-member="true"] {
+  position: absolute;
+  left: calc(50% - var(--party-offset));
+  top: 0;
+  transform: scale(.5);
+  transform-origin: top center;
+  opacity: .96;
+}
+
+.studioExperienceActors .studioSceneActor[data-role="companion"] {
+  left: var(--party-left);
+  bottom: 12%;
+  transform: scale(.9);
+  transform-origin: bottom center;
+}
+
+.studioRoomPeople .studioSceneActor[data-role="companion"] {
+  left: var(--party-left);
+  right: auto;
+  bottom: 20%;
+  transform: scale(.9);
+  transform-origin: bottom center;
 }

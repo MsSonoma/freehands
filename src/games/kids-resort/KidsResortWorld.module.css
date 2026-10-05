@@ -3153,3 +3153,50 @@
   color: #17304f;
   font-size: .68rem;
 }
+
+
+.interiorCompanionGroup {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  min-height: 118px;
+  margin: -8px 0 10px;
+  pointer-events: none;
+}
+
+.interiorCompanion {
+  position: relative;
+  width: 76px;
+  height: 116px;
+  flex: 0 0 76px;
+  text-align: center;
+}
+
+.interiorCompanion > [data-hair] {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  transform: translateX(-50%) scale(.4);
+  transform-origin: top center;
+}
+
+.interiorCompanion > span {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  max-width: 76px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.9);
+  padding: 3px 7px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .58rem;
+  font-weight: 900;
+}
+
+.conversationCustomizeButton[data-active="true"] {
+  background: #dff7e8;
+  box-shadow: inset 0 0 0 2px #69b98b, 0 3px 10px rgba(24,45,71,.16);
+}
