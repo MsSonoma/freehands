@@ -140,6 +140,16 @@ const CUSTODIAN_TOOLS = [
   { id: 'bag', name: 'Trash Bag', icon: '\u{1F6CD}' },
 ];
 
+const BANK_REQUESTS = [
+  { action: 'deposit', answer: 24, words: 'Please deposit twenty-four Resort Bucks into my account.' },
+  { action: 'withdrawal', answer: 18, words: 'I would like to withdraw eighteen Resort Bucks, please.' },
+  { action: 'deposit', answer: 37, words: 'Please deposit thirty-seven Resort Bucks for me.' },
+  { action: 'withdrawal', answer: 45, words: 'I need to withdraw forty-five Resort Bucks.' },
+  { action: 'deposit', answer: 20, words: 'I earned twelve Resort Bucks at the cafe and eight at the studio. Please deposit all of it.' },
+  { action: 'withdrawal', answer: 26, words: 'I have forty Resort Bucks saved. Please withdraw fourteen less than that.' },
+  { action: 'deposit', answer: 33, words: 'I have fifty Resort Bucks and want to keep seventeen with me. Please deposit the rest.' },
+  { action: 'withdrawal', answer: 28, words: 'Please withdraw twice fourteen Resort Bucks from my account.' },
+];
 const CAFE_MENU = CAFE_RECIPES.map(({ id, name, icon, price }) => ({ id, name, icon, price }));
 
 const MARKET_ITEMS = [
@@ -776,6 +786,14 @@ export default function KidsResort({ libraryHref = null }) {
   const [poolAction, setPoolAction] = useState('');
   const [poolActionTick, setPoolActionTick] = useState(0);
   const [poolFun, setPoolFun] = useState(0);
+  const [bankBucks, setBankBucks] = useState(0);
+  const [bankChestOpen, setBankChestOpen] = useState(false);
+  const [bankRequestIndex, setBankRequestIndex] = useState(0);
+  const [bankInput, setBankInput] = useState('');
+  const [bankServed, setBankServed] = useState(0);
+  const [bankMessage, setBankMessage] = useState('');
+  const [bankCustomer, setBankCustomer] = useState(() => makeCharacterPerson('random'));
+
 
   const selectedPlace = useMemo(
     () => PLACES.find((place) => place.id === selectedPlaceId) ?? PLACES[0],
@@ -1689,6 +1707,78 @@ export default function KidsResort({ libraryHref = null }) {
       startPalmKitchenShift();
     }
     setScreen(nextScreen);
+  };
+
+  const moveBankMoney = (amount) => {
+    const value = Math.abs(Number(amount) || 0);
+    if (!value) return;
+
+    if (bucks < value) {
+      setBankMessage('You only have ' + bucks + ' Resort Bucks with you.');
+      return;
+    }
+
+    setBucks((current) => current - value);
+    setBankBucks((current) => current + value);
+    setBankMessage(value + ' Resort Buck' + (value === 1 ? '' : 's') + ' stored in your bank chest.');
+  };
+
+  const takeBankMoney = (amount) => {
+    const value = Math.abs(Number(amount) || 0);
+    if (!value) return;
+
+    if (bankBucks < value) {
+      setBankMessage('There are only ' + bankBucks + ' Resort Bucks in your bank chest.');
+      return;
+    }
+
+    setBankBucks((current) => current - value);
+    setBucks((current) => current + value);
+    setBankMessage(value + ' Resort Buck' + (value === 1 ? '' : 's') + ' moved back to your wallet.');
+  };
+
+  const startBankShift = () => {
+    setBankRequestIndex(0);
+    setBankInput('');
+    setBankServed(0);
+    setBankMessage('Listen to the customer, type the amount in numbers, then choose Deposit or Withdrawal.');
+    setBankCustomer(makeCharacterPerson('random'));
+    setScreen('bank-work');
+  };
+
+  const submitBankRequest = (action) => {
+    const request = BANK_REQUESTS[bankRequestIndex % BANK_REQUESTS.length];
+    const entered = Number(bankInput);
+
+    if (!bankInput.trim() || !Number.isFinite(entered)) {
+      setBankMessage('Type the amount as a number first.');
+      return;
+    }
+
+    if (action !== request.action || entered !== request.answer) {
+      setBankMessage(action !== request.action
+        ? 'Check the request again. Is this a deposit or a withdrawal?'
+        : "That amount does not match the customer's request yet.");
+      return;
+    }
+
+    const nextServed = bankServed + 1;
+    setBankServed(nextServed);
+    setBucks((current) => current + 2);
+    setBankInput('');
+    setBankRequestIndex((current) => (current + 1) % BANK_REQUESTS.length);
+    setBankCustomer(makeCharacterPerson('random'));
+
+    if (nextServed >= 5) {
+      setBadges((items) => (
+        items.includes('Resort Bank Teller')
+          ? items
+          : [...items, 'Resort Bank Teller']
+      ));
+      setBankMessage('Correct! Shift complete. You earned 2 Resort Bucks and the Resort Bank Teller badge.');
+    } else {
+      setBankMessage('Correct! You earned 2 Resort Bucks. Customer ' + (nextServed + 1) + ' is ready.');
+    }
   };
 
   const makeCafeOrder = (number, born = Date.now()) => {
@@ -3834,6 +3924,155 @@ export default function KidsResort({ libraryHref = null }) {
 
           <div className={styles.lobbySceneMessage} aria-live="polite">
             {message || 'Choose a pool object and watch Emily play. Try different activities to fill the fun meter.'}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'bank') {
+    return (
+      <main className={[styles.gameShell, styles.bankGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.bankTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>Resort Map</button>
+          <div className={styles.brand}>Resort Bank</div>
+          <div className={styles.wallet}>{bucks} Resort Bucks</div>
+        </section>
+
+        <section className={styles.bankRoom}>
+          <div className={styles.bankWallSeal} aria-hidden="true">
+            <span>RB</span>
+            <strong>RESORT BANK</strong>
+            <small>Save. Count. Help.</small>
+          </div>
+          <div className={styles.bankWallTrim} aria-hidden="true" />
+          <div className={styles.bankFloorLine} aria-hidden="true" />
+
+          <button
+            className={styles.bankTellerWindow}
+            type="button"
+            onClick={() => {
+              setBankChestOpen((open) => !open);
+              setBankMessage('');
+            }}
+            aria-expanded={bankChestOpen}
+          >
+            <span className={styles.bankWindowGlass} aria-hidden="true">
+              <i /><i /><i />
+            </span>
+            <span className={styles.bankWindowCounter} aria-hidden="true" />
+            <strong>Bank Chest</strong>
+            <small>Money & badges</small>
+          </button>
+
+          <button className={styles.bankDeskStation} type="button" onClick={startBankShift}>
+            <span className={styles.bankDeskLamp} aria-hidden="true"><i /><b /></span>
+            <span className={styles.bankDeskComputer} aria-hidden="true"><i /></span>
+            <span className={styles.bankDeskTop} aria-hidden="true" />
+            <span className={styles.bankDeskFront} aria-hidden="true" />
+            <strong>Teller Desk</strong>
+            <small>Start a bank shift</small>
+          </button>
+
+          <div className={styles.bankMainCharacter} aria-label={characterName + ' in Resort Bank'}>
+            {renderPlayerParty()}
+          </div>
+
+          {bankChestOpen && (
+            <div className={styles.bankChestPanel} aria-label="Bank chest">
+              <div className={styles.bankChestBox}>
+                <span className={styles.bankChestLid} aria-hidden="true" />
+                <span className={styles.bankChestBody} aria-hidden="true" />
+                <strong>{bankBucks} Resort Bucks</strong>
+                <small>Wallet: {bucks}</small>
+              </div>
+              <div className={styles.bankChestActions}>
+                <button type="button" onClick={() => moveBankMoney(1)}>Store 1</button>
+                <button type="button" onClick={() => moveBankMoney(5)}>Store 5</button>
+                <button type="button" onClick={() => takeBankMoney(1)}>Take 1</button>
+                <button type="button" onClick={() => takeBankMoney(5)}>Take 5</button>
+              </div>
+              <div className={styles.bankBadgeTray}>
+                <strong>Badge Chest</strong>
+                <div>
+                  {badges.length === 0
+                    ? <small>No badges yet</small>
+                    : badges.map((badge) => <span key={badge}>{badge}</span>)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          <div className={styles.bankSceneMessage} aria-live="polite">
+            {bankMessage || 'Use the teller window for your bank chest or sit at the desk to work as a teller.'}
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'bank-work') {
+    const request = BANK_REQUESTS[bankRequestIndex % BANK_REQUESTS.length];
+    return (
+      <main className={[styles.gameShell, styles.bankGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.bankTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('bank')}>Resort Bank</button>
+          <div className={styles.brand}>Teller Shift</div>
+          <div className={styles.wallet}>{bucks} Resort Bucks</div>
+        </section>
+
+        <section className={[styles.bankRoom, styles.bankWorkRoom].join(' ')}>
+          <div className={styles.bankWallSeal} aria-hidden="true">
+            <span>RB</span>
+            <strong>TELLER DESK</strong>
+            <small>Customer Service</small>
+          </div>
+          <div className={styles.bankWallTrim} aria-hidden="true" />
+          <div className={styles.bankFloorLine} aria-hidden="true" />
+
+          <div className={styles.bankCustomerArea}>
+            <div className={styles.bankCustomerFigure} aria-label={bankCustomer.name + ' at the bank'}>
+              {renderCharacter(false, bankCustomer.look, bankCustomer.character, bankCustomer.name)}
+            </div>
+            <div className={styles.bankRequestBubble}>
+              <small>{bankCustomer.name} says:</small>
+              <strong>{request.words}</strong>
+            </div>
+          </div>
+
+          <div className={styles.bankWorkCharacter} aria-label={characterName + ' working as a teller'}>
+            {renderPlayerParty()}
+          </div>
+
+          <div className={styles.bankWorkDesk}>
+            <div className={styles.bankWorkMonitor} aria-hidden="true"><span>RESORT BANK</span></div>
+            <div className={styles.bankCashDrawer} aria-hidden="true"><i /><i /><i /><i /></div>
+            <label className={styles.bankAmountEntry}>
+              <span>Amount</span>
+              <input
+                type="number"
+                inputMode="numeric"
+                min="0"
+                step="1"
+                value={bankInput}
+                onChange={(event) => setBankInput(event.target.value)}
+                placeholder="Type numbers"
+                aria-label="Customer transaction amount"
+              />
+            </label>
+            <div className={styles.bankTransactionButtons}>
+              <button type="button" onClick={() => submitBankRequest('deposit')}>Deposit</button>
+              <button type="button" onClick={() => submitBankRequest('withdrawal')}>Withdrawal</button>
+            </div>
+          </div>
+
+          <div className={styles.bankShiftProgress}>
+            <strong>Customers helped: {bankServed}</strong>
+            <span>2 Resort Bucks per correct transaction</span>
+          </div>
+
+          <div className={styles.bankSceneMessage} aria-live="polite">
+            {bankMessage || 'Type the amount in numbers, then choose the transaction the customer requested.'}
           </div>
         </section>
       </main>

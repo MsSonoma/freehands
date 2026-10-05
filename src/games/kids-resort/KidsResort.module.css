@@ -7338,3 +7338,645 @@
     left: 43%;
   }
 }
+/* Resort Bank */
+.bankGameShell {
+  --bank-wall: #d9e4df;
+  --bank-wall-deep: #b9ccc4;
+  --bank-ink: #24473f;
+  --bank-brass: #c89c44;
+  --bank-wood: #744b34;
+  --bank-wood-dark: #4c3023;
+  --bank-floor: #d7c2a5;
+  min-height: 100dvh;
+  height: 100dvh;
+  overflow: hidden;
+  background: var(--bank-wall);
+}
+
+.bankTopBar {
+  position: relative;
+  z-index: 50;
+  background: #173f39;
+  color: #fffdf6;
+  border-bottom: 3px solid #c89c44;
+}
+
+.bankRoom {
+  position: relative;
+  height: calc(100dvh - 64px);
+  min-height: 0;
+  overflow: hidden;
+  isolation: isolate;
+  background:
+    linear-gradient(to bottom, rgba(255,255,255,.22), transparent 32%),
+    linear-gradient(to bottom, var(--bank-wall) 0 58%, var(--bank-floor) 58% 100%);
+}
+
+.bankRoom::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -4;
+  background:
+    linear-gradient(90deg, transparent 0 8%, rgba(255,255,255,.16) 8% 8.2%, transparent 8.2% 92%, rgba(255,255,255,.16) 92% 92.2%, transparent 92.2%),
+    repeating-linear-gradient(0deg, transparent 0 27px, rgba(36,71,63,.035) 27px 28px);
+}
+
+.bankWallTrim {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 55%;
+  height: 8px;
+  background: linear-gradient(#f7f2e8, #c4b39d);
+  box-shadow: 0 5px 0 rgba(76,48,35,.12);
+}
+
+.bankFloorLine {
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  top: 58%;
+  height: 42%;
+  z-index: -2;
+  background:
+    linear-gradient(105deg, transparent 49.6%, rgba(98,70,47,.12) 50%, transparent 50.4%) 0 0 / 18% 100%,
+    linear-gradient(75deg, transparent 49.6%, rgba(98,70,47,.10) 50%, transparent 50.4%) 0 0 / 18% 100%;
+  transform-origin: top center;
+}
+
+.bankWallSeal {
+  position: absolute;
+  top: 5.5%;
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  color: var(--bank-ink);
+  letter-spacing: .08em;
+  text-align: center;
+}
+
+.bankWallSeal > span {
+  display: grid;
+  place-items: center;
+  width: clamp(44px, 6vw, 68px);
+  aspect-ratio: 1;
+  border: 4px double var(--bank-brass);
+  border-radius: 50%;
+  background: #f7f3e8;
+  font-weight: 900;
+  box-shadow: 0 4px 10px rgba(28,55,49,.18);
+}
+
+.bankWallSeal strong {
+  font-size: clamp(.86rem, 1.7vw, 1.35rem);
+}
+
+.bankWallSeal small {
+  font-size: clamp(.55rem, .9vw, .72rem);
+  opacity: .72;
+}
+
+.bankTellerWindow,
+.bankDeskStation {
+  position: absolute;
+  border: 0;
+  color: var(--bank-ink);
+  cursor: pointer;
+  font: inherit;
+  background: transparent;
+}
+
+.bankTellerWindow {
+  left: 8%;
+  top: 19%;
+  width: min(35vw, 410px);
+  height: 44%;
+  border: 10px solid #365d55;
+  border-bottom-width: 18px;
+  border-radius: 8px 8px 2px 2px;
+  background: #eef5f2;
+  box-shadow: inset 0 0 0 3px #d1b46c, 0 12px 18px rgba(53,46,38,.18);
+}
+
+.bankWindowGlass {
+  position: absolute;
+  inset: 8% 7% 20%;
+  overflow: hidden;
+  border: 4px solid #9fb9b1;
+  background: linear-gradient(135deg, rgba(255,255,255,.8), rgba(180,214,210,.35));
+}
+
+.bankWindowGlass::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: #8fa9a2;
+}
+
+.bankWindowGlass i {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  height: 3px;
+  background: rgba(54,93,85,.35);
+}
+
+.bankWindowGlass i:nth-child(1) { top: 25%; }
+.bankWindowGlass i:nth-child(2) { top: 50%; }
+.bankWindowGlass i:nth-child(3) { top: 75%; }
+
+.bankWindowCounter {
+  position: absolute;
+  left: -5%;
+  right: -5%;
+  bottom: 14%;
+  height: 10%;
+  border-radius: 4px;
+  background: linear-gradient(#8d654a, var(--bank-wood-dark));
+  box-shadow: 0 6px 0 rgba(50,31,22,.18);
+}
+
+.bankTellerWindow > strong,
+.bankTellerWindow > small,
+.bankDeskStation > strong,
+.bankDeskStation > small {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.bankTellerWindow > strong { bottom: 6.5%; font-size: clamp(.8rem, 1.6vw, 1.1rem); }
+.bankTellerWindow > small { bottom: 1.5%; font-size: clamp(.55rem, 1vw, .75rem); }
+
+.bankDeskStation {
+  right: 8%;
+  top: 28%;
+  width: min(36vw, 430px);
+  height: 38%;
+}
+
+.bankDeskTop {
+  position: absolute;
+  left: 2%;
+  right: 2%;
+  top: 47%;
+  height: 10%;
+  border-radius: 5px;
+  background: linear-gradient(#8e6548, #67422f);
+  box-shadow: 0 7px 0 #43291d;
+}
+
+.bankDeskFront {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 56%;
+  bottom: 6%;
+  border-radius: 0 0 7px 7px;
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.06), transparent 35% 65%, rgba(0,0,0,.08)),
+    var(--bank-wood);
+  border: 4px solid var(--bank-wood-dark);
+}
+
+.bankDeskComputer {
+  position: absolute;
+  left: 36%;
+  top: 13%;
+  width: 31%;
+  height: 30%;
+  border: 6px solid #36443f;
+  border-radius: 5px;
+  background: #afcbc5;
+  box-shadow: 0 6px 0 #59665f;
+}
+
+.bankDeskComputer::after {
+  content: "";
+  position: absolute;
+  left: 42%;
+  top: 100%;
+  width: 16%;
+  height: 18%;
+  background: #59665f;
+}
+
+.bankDeskComputer i {
+  position: absolute;
+  inset: 16%;
+  border-radius: 2px;
+  background: linear-gradient(160deg, #e8f5ef, #8bb5ad);
+}
+
+.bankDeskLamp {
+  position: absolute;
+  right: 12%;
+  top: 12%;
+  width: 13%;
+  height: 32%;
+}
+
+.bankDeskLamp i {
+  position: absolute;
+  left: 48%;
+  top: 21%;
+  width: 6%;
+  height: 68%;
+  background: #a17b32;
+}
+
+.bankDeskLamp b {
+  position: absolute;
+  left: 18%;
+  top: 0;
+  width: 70%;
+  height: 26%;
+  border-radius: 50% 50% 20% 20%;
+  background: #e1b85f;
+}
+
+.bankDeskStation > strong { bottom: 9%; color: #fff8e8; font-size: clamp(.8rem, 1.5vw, 1.1rem); }
+.bankDeskStation > small { bottom: 3.5%; color: #f1ddbe; font-size: clamp(.55rem, .95vw, .75rem); }
+
+.bankMainCharacter {
+  position: absolute;
+  left: 48%;
+  bottom: 5%;
+  z-index: 8;
+  transform: translateX(-50%) scale(.82);
+  transform-origin: bottom center;
+}
+
+.bankChestPanel {
+  position: absolute;
+  left: 10%;
+  top: 27%;
+  z-index: 20;
+  width: min(31vw, 355px);
+  min-height: 31%;
+  padding: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+  border: 4px solid #365d55;
+  border-radius: 10px;
+  background: rgba(248,246,237,.97);
+  box-shadow: 0 14px 30px rgba(29,49,44,.25);
+}
+
+.bankChestBox {
+  position: relative;
+  min-height: 82px;
+  padding: 50px 12px 8px;
+  text-align: center;
+}
+
+.bankChestLid,
+.bankChestBody {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 118px;
+  background: #8a5a39;
+  border: 4px solid #55361f;
+}
+
+.bankChestLid {
+  top: 2px;
+  height: 29px;
+  border-radius: 28px 28px 3px 3px;
+  border-bottom-width: 2px;
+}
+
+.bankChestBody {
+  top: 28px;
+  height: 35px;
+  border-radius: 2px 2px 6px 6px;
+}
+
+.bankChestBody::after {
+  content: "";
+  position: absolute;
+  left: 44%;
+  top: 6px;
+  width: 12%;
+  height: 17px;
+  border-radius: 2px;
+  background: var(--bank-brass);
+}
+
+.bankChestBox strong,
+.bankChestBox small { display: block; }
+.bankChestBox strong { color: var(--bank-ink); }
+.bankChestBox small { opacity: .7; }
+
+.bankChestActions {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 5px;
+}
+
+.bankChestActions button,
+.bankTransactionButtons button {
+  min-height: 34px;
+  border: 2px solid #365d55;
+  border-radius: 7px;
+  background: #f8f0d9;
+  color: #24473f;
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.bankBadgeTray {
+  padding-top: 8px;
+  border-top: 2px solid #d8c7aa;
+}
+
+.bankBadgeTray > strong {
+  color: var(--bank-ink);
+  font-size: .8rem;
+}
+
+.bankBadgeTray > div {
+  display: flex;
+  gap: 5px;
+  overflow-x: auto;
+  padding-top: 5px;
+}
+
+.bankBadgeTray span,
+.bankBadgeTray small {
+  flex: 0 0 auto;
+  padding: 4px 7px;
+  border-radius: 999px;
+  background: #e8d7a8;
+  font-size: .62rem;
+}
+
+.bankSceneMessage {
+  position: absolute;
+  left: 50%;
+  bottom: 1.6%;
+  z-index: 25;
+  transform: translateX(-50%);
+  width: min(72vw, 760px);
+  padding: 7px 14px;
+  border-radius: 999px;
+  background: rgba(23,63,57,.94);
+  color: #fff;
+  text-align: center;
+  font-size: clamp(.65rem, 1.2vw, .88rem);
+  box-shadow: 0 4px 12px rgba(0,0,0,.15);
+}
+
+.bankWorkRoom .bankWallSeal {
+  left: 77%;
+  top: 5%;
+}
+
+.bankCustomerArea {
+  position: absolute;
+  left: 7%;
+  top: 13%;
+  width: 35%;
+  height: 68%;
+}
+
+.bankCustomerFigure {
+  position: absolute;
+  left: 5%;
+  bottom: 0;
+  transform: scale(.9);
+  transform-origin: bottom center;
+}
+
+.bankRequestBubble {
+  position: absolute;
+  left: 30%;
+  top: 2%;
+  width: min(29vw, 340px);
+  padding: 13px 15px;
+  border: 3px solid #365d55;
+  border-radius: 18px 18px 18px 5px;
+  background: #fffdf5;
+  color: #24473f;
+  box-shadow: 0 7px 18px rgba(35,55,48,.16);
+}
+
+.bankRequestBubble small,
+.bankRequestBubble strong { display: block; }
+.bankRequestBubble small { margin-bottom: 5px; opacity: .7; font-size: .68rem; }
+.bankRequestBubble strong { font-size: clamp(.78rem, 1.5vw, 1.05rem); line-height: 1.3; }
+
+.bankWorkCharacter {
+  position: absolute;
+  left: 63%;
+  bottom: 18%;
+  z-index: 5;
+  transform: translateX(-50%) scale(.8);
+  transform-origin: bottom center;
+}
+
+.bankWorkDesk {
+  position: absolute;
+  left: 42%;
+  right: 7%;
+  bottom: 10%;
+  height: 44%;
+  z-index: 9;
+}
+
+.bankWorkDesk::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 48%;
+  border: 5px solid #4c3023;
+  border-radius: 8px 8px 2px 2px;
+  background: linear-gradient(90deg, #80563c, #6b442f 48%, #7b5239);
+  box-shadow: 0 10px 14px rgba(59,39,28,.2);
+}
+
+.bankWorkDesk::after {
+  content: "";
+  position: absolute;
+  left: -3%;
+  right: -3%;
+  top: 46%;
+  height: 8%;
+  border-radius: 5px;
+  background: linear-gradient(#94694c, #5e3a28);
+  box-shadow: 0 5px 0 #43291d;
+}
+
+.bankWorkMonitor {
+  position: absolute;
+  left: 7%;
+  top: 4%;
+  z-index: 4;
+  width: 28%;
+  height: 35%;
+  display: grid;
+  place-items: center;
+  border: 7px solid #384842;
+  border-radius: 6px;
+  background: #a9cbc3;
+  color: #31594f;
+  font-size: clamp(.45rem, .8vw, .65rem);
+  font-weight: 900;
+}
+
+.bankCashDrawer {
+  position: absolute;
+  right: 4%;
+  top: 28%;
+  z-index: 5;
+  width: 31%;
+  height: 18%;
+  padding: 5px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 3px;
+  border: 4px solid #414b46;
+  background: #66746d;
+}
+
+.bankCashDrawer i {
+  background: #d8c47d;
+  border: 1px solid #7b6b38;
+}
+
+.bankAmountEntry {
+  position: absolute;
+  left: 6%;
+  bottom: 13%;
+  z-index: 12;
+  width: 41%;
+  display: grid;
+  gap: 4px;
+  color: #fff9ea;
+  font-size: .68rem;
+  font-weight: 800;
+}
+
+.bankAmountEntry input {
+  width: 100%;
+  min-height: 38px;
+  box-sizing: border-box;
+  border: 3px solid #d0ad62;
+  border-radius: 7px;
+  padding: 6px 9px;
+  background: #fffdf5;
+  color: #24473f;
+  font: inherit;
+  font-size: 1rem;
+}
+
+.bankTransactionButtons {
+  position: absolute;
+  right: 5%;
+  bottom: 12%;
+  z-index: 12;
+  width: 44%;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.bankTransactionButtons button {
+  min-height: 42px;
+  background: #e8d7a8;
+  font-size: clamp(.65rem, 1vw, .8rem);
+}
+
+.bankShiftProgress {
+  position: absolute;
+  right: 7%;
+  top: 12%;
+  width: 25%;
+  padding: 8px 11px;
+  border: 2px solid #9fb9b1;
+  border-radius: 8px;
+  background: rgba(247,250,247,.86);
+  color: #24473f;
+  text-align: center;
+}
+
+.bankShiftProgress strong,
+.bankShiftProgress span { display: block; }
+.bankShiftProgress strong { font-size: clamp(.7rem, 1.1vw, .86rem); }
+.bankShiftProgress span { margin-top: 2px; font-size: clamp(.5rem, .8vw, .64rem); opacity: .72; }
+
+@media (max-width: 760px), (max-height: 620px) {
+  .bankTellerWindow {
+    left: 4%;
+    width: 38vw;
+  }
+
+  .bankDeskStation {
+    right: 4%;
+    width: 39vw;
+  }
+
+  .bankMainCharacter {
+    left: 50%;
+    transform: translateX(-50%) scale(.68);
+  }
+
+  .bankChestPanel {
+    left: 5%;
+    top: 24%;
+    width: 35vw;
+    padding: 8px;
+  }
+
+  .bankChestActions {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .bankCustomerArea {
+    left: 3%;
+    width: 39%;
+  }
+
+  .bankCustomerFigure {
+    transform: scale(.72);
+  }
+
+  .bankRequestBubble {
+    left: 22%;
+    width: 31vw;
+    padding: 9px 10px;
+  }
+
+  .bankWorkDesk {
+    left: 43%;
+    right: 3%;
+    height: 45%;
+  }
+
+  .bankWorkCharacter {
+    left: 64%;
+    transform: translateX(-50%) scale(.66);
+  }
+
+  .bankShiftProgress {
+    right: 3%;
+    width: 27%;
+  }
+
+  .bankSceneMessage {
+    width: 86vw;
+  }
+}
