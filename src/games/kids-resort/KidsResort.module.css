@@ -1745,35 +1745,3 @@
 .cafeSmallTable::after { content:""; position:absolute; z-index:-1; left:54px; top:17px; width:10px; height:54px; border-radius:3px; background:#795039; }
 .cafeSmallTable span { position:relative; z-index:4; margin-top:-17px; font-size:1.55rem; filter:drop-shadow(0 2px 0 rgba(0,0,0,.08)); }
 @media(max-width:600px){.cafeTables{grid-template-columns:1fr;}.cafeTableGroup:nth-child(2){display:none}}
-/* Pedestal legs belong behind the tabletop layers */
-.cafeBooth::after {
-  content:"";
-  position:absolute;
-  z-index:2;
-  left:50%;
-  bottom:-64px;
-  width:14px;
-  height:74px;
-  transform:translateX(-50%);
-  border-radius:4px;
-  background:#795039;
-}
-.cafeTable { z-index:4; }
-.cafeTable::after { content:none; }
-.cafeTable span { z-index:5; }
-.cafeTableGroup::before {
-  content:"";
-  position:absolute;
-  z-index:1;
-  left:50%;
-  bottom:0;
-  width:14px;
-  height:72px;
-  transform:translateX(-50%);
-  border-radius:4px;
-  background:#795039;
-}
-.cafeSmallTable { z-index:3; }
-.cafeSmallTable::after { content:none; }
-.cafeSmallTable span { z-index:4; }
-.cafeChair { z-index:4; }
