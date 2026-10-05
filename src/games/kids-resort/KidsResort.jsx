@@ -1864,7 +1864,7 @@ export default function KidsResort({ libraryHref = null }) {
       setPeople((items) => items.map((item) => (item.id === personDraft.id ? personDraft : item)));
     }
     setPersonEditorOpen(false);
-    setPeopleOpen(true);
+    if (screen === 'map') setPeopleOpen(true);
   };
 
   const updatePersonCharacter = (key, value) => {
@@ -2455,7 +2455,7 @@ export default function KidsResort({ libraryHref = null }) {
 
   const playerView = isWalking ? walkView : 'front';
 
-  if (screen === 'conversation') {
+  if (screen === 'conversation' && !personEditorOpen) {
     const conversationPerson = people.find((person) => person.id === conversationPersonId);
     const latestPlayerLine = [...conversationMessages].reverse().find((entry) => entry.role === 'user')?.content || '';
     const latestCharacterLine = [...conversationMessages].reverse().find((entry) => entry.role === 'assistant')?.content || '';
@@ -2476,8 +2476,17 @@ export default function KidsResort({ libraryHref = null }) {
         <section className={[styles.topBar, styles.conversationTopBar].join(' ')}>
           <button className={styles.backButton} type="button" onClick={endConversation}>Back</button>
           <div className={styles.brand}>Talking with {conversationPerson.name}</div>
-          <div className={styles.conversationActivity}>
-            {personLocationLabel(conversationPerson)} - {conversationPerson.activity?.label || 'exploring'}
+          <div className={styles.conversationTopActions}>
+            <button
+              type="button"
+              className={styles.conversationCustomizeButton}
+              onClick={() => openPersonEditor(conversationPerson, 'edit')}
+            >
+              Customize
+            </button>
+            <div className={styles.conversationActivity}>
+              {personLocationLabel(conversationPerson)} - {conversationPerson.activity?.label || 'exploring'}
+            </div>
           </div>
         </section>
 
@@ -4390,14 +4399,14 @@ export default function KidsResort({ libraryHref = null }) {
                         />
                       </label>
                       <small className={styles.personalityFutureNote}>
-                        These personality settings are stored for the future conversation system. AI dialogue is not connected yet.
+                        These settings shape how this character behaves and talks in conversations.
                       </small>
                     </div>
                   </div>
                 </div>
 
                 <footer className={styles.personEditorFooter}>
-                  {personEditorMode !== 'create' && (
+                  {personEditorMode !== 'create' && screen !== 'conversation' && (
                     <button
                       type="button"
                       className={styles.personDeleteButton}
@@ -4419,6 +4428,8 @@ export default function KidsResort({ libraryHref = null }) {
                         name: current.name,
                         source: current.source,
                         spawn: current.spawn,
+                        location: current.location,
+                        activity: current.activity,
                       }));
                     }}
                   >
