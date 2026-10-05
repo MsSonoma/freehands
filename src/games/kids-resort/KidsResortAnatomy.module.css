@@ -1660,3 +1660,97 @@
 .playerDetailed .playerBodyDetail {
   transform: scaleX(var(--character-weight-scale, 1));
 }
+
+/* Map-player idle motion mirrors the full-size resort characters without disturbing walk frames. */
+.playerDetailed[data-moving="false"] .playerHair,
+.playerDetailed[data-moving="false"] .playerHeadwear,
+.playerDetailed[data-moving="false"] .playerEar,
+.playerDetailed[data-moving="false"] .playerHead,
+.playerDetailed[data-moving="false"] .playerHairFront,
+.playerDetailed[data-moving="false"] .playerGlasses {
+  animation: playerIdleHead 11.2s ease-in-out infinite;
+  animation-delay: var(--character-idle-delay, 0s);
+  will-change: translate, rotate;
+}
+
+.playerDetailed[data-moving="false"] .playerEye {
+  animation:
+    playerIdleBlink 6.4s linear infinite,
+    playerIdleGaze 10.7s ease-in-out infinite;
+  animation-delay:
+    var(--character-idle-delay, 0s),
+    calc(var(--character-idle-delay, 0s) - 1.1s);
+  transform-origin: center;
+  will-change: scale, translate;
+}
+
+.playerDetailed[data-moving="false"] .playerBodyDetail {
+  animation: playerIdleBreath 3.9s ease-in-out infinite;
+  animation-delay: var(--character-idle-delay, 0s);
+  transform-origin: 50% 100%;
+  will-change: scale;
+}
+
+.playerDetailed[data-moving="false"] .playerNeck {
+  animation: playerIdleNeck 3.9s ease-in-out infinite;
+  animation-delay: var(--character-idle-delay, 0s);
+  will-change: translate;
+}
+
+.playerDetailed[data-moving="false"] .playerArmRigLeft {
+  animation: playerIdleArmLeft 5.3s ease-in-out infinite;
+  animation-delay: var(--character-idle-delay, 0s);
+  will-change: rotate;
+}
+
+.playerDetailed[data-moving="false"] .playerArmRigRight {
+  animation: playerIdleArmRight 5.3s ease-in-out infinite;
+  animation-delay: var(--character-idle-delay, 0s);
+  will-change: rotate;
+}
+
+@keyframes playerIdleBlink {
+  0%, 8%, 10%, 46%, 48%, 92%, 100% { scale: 1 1; }
+  9%, 47%, 93% { scale: 1 .08; }
+}
+
+@keyframes playerIdleGaze {
+  0%, 16%, 43%, 68%, 100% { translate: 0 0; }
+  22%, 34% { translate: .55px 0; }
+  51%, 61% { translate: -.55px .08px; }
+  79%, 88% { translate: .3px -.08px; }
+}
+
+@keyframes playerIdleHead {
+  0%, 18%, 42%, 66%, 100% { translate: 0 0; rotate: 0deg; }
+  24%, 34% { translate: .4px -.22px; rotate: .35deg; }
+  50%, 59% { translate: -.32px .08px; rotate: -.28deg; }
+  76%, 86% { translate: .14px -.24px; rotate: .16deg; }
+}
+
+@keyframes playerIdleBreath {
+  0%, 100% { scale: 1 1; }
+  50% { scale: 1.012 1.025; }
+}
+
+@keyframes playerIdleNeck {
+  0%, 100% { translate: 0 0; }
+  50% { translate: 0 -.25px; }
+}
+
+@keyframes playerIdleArmLeft {
+  0%, 100% { rotate: 0deg; }
+  50% { rotate: 1.1deg; }
+}
+
+@keyframes playerIdleArmRight {
+  0%, 100% { rotate: 0deg; }
+  50% { rotate: -1.1deg; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .playerDetailed *,
+  .playerDetailed {
+    animation: none !important;
+  }
+}

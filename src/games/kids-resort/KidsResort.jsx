@@ -237,6 +237,15 @@ const FACE_SLIDERS = [
   ['mouthWidth', 'Mouth width'],
 ];
 
+function idlePhaseForName(name = '') {
+  const source = String(name || 'guest');
+  let hash = 0;
+  for (let index = 0; index < source.length; index += 1) {
+    hash = (hash * 31 + source.charCodeAt(index)) % 997;
+  }
+  return `${-((hash % 61) / 10)}s`;
+}
+
 function randomChoice(items) {
   return items[Math.floor(Math.random() * items.length)];
 }
@@ -1272,6 +1281,7 @@ export default function KidsResort({ libraryHref = null }) {
       data-pose={pose}
       style={{
         ...characterStyleFor(displayCharacter),
+        '--character-idle-delay': idlePhaseForName(displayName),
         '--outfit-shirt': displayLook.shirt.swatch,
         '--outfit-bottoms': displayLook.bottoms.swatch,
         '--outfit-shoes': displayLook.shoes.swatch,
@@ -2487,6 +2497,7 @@ export default function KidsResort({ libraryHref = null }) {
               top: `${position.y}%`,
               '--player-depth-scale': (0.24 + position.y * 0.0043).toFixed(3),
               ...characterStyle,
+              '--character-idle-delay': idlePhaseForName(characterName),
               '--outfit-shirt': look.shirt.swatch,
               '--outfit-bottoms': look.bottoms.swatch,
               '--outfit-shoes': look.shoes.swatch,
