@@ -4084,3 +4084,172 @@
 .mapNpc[data-companion="true"] {
   transition: left 80ms linear;
 }
+
+/* Four-person conversation crew: Emily plus up to three walking companions. */
+.conversationCrewCount {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(23, 48, 79, .08);
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.conversationCustomizeButton:disabled {
+  opacity: .5;
+  cursor: default;
+  transform: none;
+}
+
+.conversationCustomizeButton[data-stop="true"] {
+  background: #fff0f3;
+  color: #8a2742;
+  box-shadow: inset 0 0 0 2px rgba(181, 61, 91, .34), 0 3px 10px rgba(24,45,71,.12);
+}
+
+.conversationCrew {
+  position: absolute;
+  left: 34%;
+  right: clamp(245px, 29vw, 310px);
+  bottom: 112px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(3px, .8vw, 12px);
+  min-width: 0;
+}
+
+.conversationCrewMember {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 76px;
+  max-width: 150px;
+  text-align: center;
+}
+
+.conversationCrewMember[data-primary="true"] {
+  z-index: 2;
+}
+
+.conversationCrewMember > strong {
+  display: inline-block;
+  position: relative;
+  z-index: 3;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.88);
+  padding: 5px 10px;
+  box-shadow: 0 4px 12px rgba(40,45,63,.16);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversationCrewMember[data-primary="true"] > strong {
+  box-shadow: inset 0 0 0 2px rgba(76,123,217,.3), 0 4px 12px rgba(40,45,63,.16);
+}
+
+.conversationCrew .conversationFigure {
+  width: 100%;
+  height: 218px;
+  margin-bottom: -10px;
+}
+
+.conversationCrew[data-crew-size="1"] .conversationFigure .avatarFigure {
+  transform: scale(.82);
+}
+
+.conversationCrew[data-crew-size="2"] .conversationFigure .avatarFigure {
+  transform: scale(.72);
+}
+
+.conversationCrew[data-crew-size="3"] .conversationFigure .avatarFigure {
+  transform: scale(.62);
+}
+
+.conversationCrew[data-crew-size="4"] .conversationFigure .avatarFigure {
+  transform: scale(.54);
+}
+
+.conversationCrew .conversationWorldBubble {
+  width: min(180px, 15vw);
+  max-height: 112px;
+  overflow-y: auto;
+  padding: 9px 10px;
+  font-size: 12px;
+}
+
+.conversationCrew[data-crew-size="4"] .conversationWorldBubble {
+  width: min(145px, 12vw);
+  font-size: 11px;
+}
+
+.conversationTranscript p[data-chime="true"] {
+  padding-left: 7px;
+  border-left: 3px solid rgba(76,123,217,.35);
+}
+
+@media (max-width: 760px) {
+  .conversationTopActions {
+    gap: 5px;
+  }
+
+  .conversationCrewCount {
+    display: none;
+  }
+
+  .conversationCustomizeButton {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  .conversationActorPlayer {
+    left: 1%;
+    width: 29vw;
+  }
+
+  .conversationCrew {
+    left: 29%;
+    right: 6px;
+    bottom: 235px;
+    gap: 1px;
+  }
+
+  .conversationCrewMember {
+    min-width: 54px;
+    max-width: 88px;
+  }
+
+  .conversationCrew .conversationFigure {
+    height: 150px;
+  }
+
+  .conversationCrew[data-crew-size="1"] .conversationFigure .avatarFigure {
+    transform: scale(.58);
+  }
+
+  .conversationCrew[data-crew-size="2"] .conversationFigure .avatarFigure {
+    transform: scale(.5);
+  }
+
+  .conversationCrew[data-crew-size="3"] .conversationFigure .avatarFigure,
+  .conversationCrew[data-crew-size="4"] .conversationFigure .avatarFigure {
+    transform: scale(.43);
+  }
+
+  .conversationCrew .conversationWorldBubble,
+  .conversationCrew[data-crew-size="4"] .conversationWorldBubble {
+    width: min(116px, 24vw);
+    max-height: 82px;
+    font-size: 10px;
+    padding: 6px 7px;
+  }
+
+  .conversationCrewMember > strong {
+    max-width: 78px;
+    padding: 3px 6px;
+    font-size: 9px;
+  }
+}
