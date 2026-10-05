@@ -2595,16 +2595,19 @@
   transform:rotate(-62deg);
 }
 .avatarFigure[data-pose="seated"] .avatarShoe {
-  top:63px;
-  left:31px;
-  transform:rotate(-66deg);
+  width:44px;
+  height:20px;
   transform-origin:center;
 }
 .avatarFigure[data-pose="seated"] .avatarLegRigLeft .avatarShoe {
-  transform:translate(-3px,7px) rotate(-68deg);
+  left:26px;
+  top:40px;
+  transform:rotate(-68deg);
 }
 .avatarFigure[data-pose="seated"] .avatarLegRigRight .avatarShoe {
-  transform:translate(-1px,6px) rotate(-62deg);
+  left:25px;
+  top:43px;
+  transform:rotate(-62deg);
 }
 .avatarFigure[data-pose="seated"] .avatarArmRigLeft {
   transform:rotate(34deg);

@@ -3577,7 +3577,7 @@
 }
 .cafeDinerFigure {
   z-index:2;
-  bottom:6px;
+  bottom:-10px;
   width:126px;
   height:150px;
   overflow:visible;
