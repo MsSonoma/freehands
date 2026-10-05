@@ -354,7 +354,8 @@ const FASHION_CUSTOMERS = [
     color: '#8d66bd',
     colorName: 'purple',
     reward: 5,
-    request: 'I want a fun puff-sleeve top. Purple would be amazing.',
+    feeling: 'playful and creative',
+    request: 'I want to feel playful and creative, like my outfit matches my imagination.',
   },
   {
     id: 'leo',
@@ -405,6 +406,18 @@ const FASHION_CUSTOMERS = [
     request: 'I want a yellow hair bow. Not a hat. A bow.',
   },
 ];
+
+const FASHION_FEELINGS = {
+  maya: { label: 'playful and creative', request: 'I want to feel playful and creative, like my outfit matches my imagination.' },
+  leo: { label: 'confident and comfortable', request: 'I want to feel confident and comfortable, like I can relax and still feel cool.' },
+  zoe: { label: 'stylish and dramatic', request: 'I want to feel stylish and dramatic, with a look that feels bold and expressive.' },
+  kai: { label: 'comfortable and free', request: 'I want to feel comfortable and free, with a look that feels easy and a little unexpected.' },
+  nina: { label: 'cheerful and put-together', request: 'I want to feel cheerful and put-together, like today is a little bit special.' },
+};
+
+function fashionFeeling(customer) {
+  return FASHION_FEELINGS[customer.id] || { label: 'good in my clothes', request: 'I want these clothes to feel like me.' };
+}
 
 function hexToRgb(hex) {
   const value = String(hex || '').replace('#', '');
@@ -1044,7 +1057,6 @@ export default function KidsResort({ libraryHref = null }) {
 
     const draft = studioDraftLook || person.look;
     const item = draft[customer.category];
-    const wanted = LOOK_OPTIONS[customer.category].find((option) => option.id === customer.type);
     const typeMatch = item?.id === customer.type;
     const colorGap = colorDistance(item?.swatch, customer.color);
     const colorMatch = colorGap <= 72;
@@ -1055,22 +1067,11 @@ export default function KidsResort({ libraryHref = null }) {
     if (customer.pickiness === 'picky') accepted = typeMatch && pickyColorMatch;
 
     if (!accepted) {
-      const typeNote = typeMatch ? '' : 'I really wanted ' + wanted.name + '. ';
-      const colorNote = pickyColorMatch ? '' : 'I was hoping for ' + customer.colorName + '. ';
-      setStudioMessage(person.name + ': ' + typeNote + colorNote + 'Can we try again?');
+      setStudioMessage(person.name + ': Not quite yet. Can we try again?');
       return;
     }
 
-    let opinion = 'I love it!';
-    if (typeMatch && colorMatch) {
-      opinion = 'That is exactly what I pictured!';
-    } else if (typeMatch) {
-      opinion = 'The style is perfect. I did not expect that color, but I like it!';
-    } else if (colorMatch) {
-      opinion = 'That ' + customer.colorName + ' is great. The different style works for me!';
-    } else {
-      opinion = 'That is not what I pictured at all, but I really like what you made!';
-    }
+    const opinion = 'Yes! This makes me feel ' + fashionFeeling(customer).label + '.';
 
     const completedLook = cloneLook(draft);
     setStudioCustomerPerson((current) => (
@@ -1448,21 +1449,7 @@ export default function KidsResort({ libraryHref = null }) {
               <span className={styles.customerPickiness} data-level={customer.pickiness}>
                 {customer.pickiness}
               </span>
-              <p className={styles.customerRequest}>{customer.request}</p>
-              <div className={styles.customerWantRow}>
-                <span style={{ background: customer.color }} />
-                <div>
-                  <small>Hoping for</small>
-                  <strong>{wanted.name} · {customer.colorName}</strong>
-                </div>
-              </div>
-              <button
-                className={styles.secondaryButton}
-                type="button"
-                onClick={() => updateStudioColor(customer.category, customer.color)}
-              >
-                Use requested color
-              </button>
+              <p className={styles.customerRequest}>{fashionFeeling(customer).request}</p>
               <div className={styles.studioCreationCount}>
                 Pays {customer.reward} Resort Bucks if accepted
               </div>
