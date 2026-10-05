@@ -478,6 +478,23 @@ function makeCharacterPerson(mode = 'random') {
   };
 }
 
+function makeCafeOrderCustomer(number, guestName) {
+  const customer = makeCharacterPerson('random');
+  const palette = CHARACTER_COLOR_PALETTE;
+  return {
+    ...customer,
+    name: guestName,
+    look: {
+      ...customer.look,
+      shirt: { ...LOOK_OPTIONS.shirt[number % LOOK_OPTIONS.shirt.length], swatch: palette[(number * 2 + 1) % palette.length] },
+      bottoms: { ...LOOK_OPTIONS.bottoms[(number + 1) % LOOK_OPTIONS.bottoms.length], swatch: palette[(number * 3 + 4) % palette.length] },
+      shoes: { ...LOOK_OPTIONS.shoes[(number + 2) % LOOK_OPTIONS.shoes.length], swatch: palette[(number * 4 + 6) % palette.length] },
+      glasses: { ...LOOK_OPTIONS.glasses[number % LOOK_OPTIONS.glasses.length], swatch: palette[(number * 5 + 2) % palette.length] },
+      headwear: { ...LOOK_OPTIONS.headwear[(number + 2) % LOOK_OPTIONS.headwear.length], swatch: palette[(number * 3 + 8) % palette.length] },
+      hair: { ...LOOK_OPTIONS.hair[(number * 2 + 3) % LOOK_OPTIONS.hair.length] },
+    },
+  };
+}
 const FASHION_CATEGORIES = [
   { id: 'shirt', label: 'Tops' },
   { id: 'bottoms', label: 'Bottoms' },
@@ -1399,13 +1416,17 @@ export default function KidsResort({ libraryHref = null }) {
     setScreen(nextScreen);
   };
 
-  const makeCafeOrder = (number, born = Date.now()) => ({
-    id: `${born}-${number}`,
-    guest: CAFE_GUESTS[number % CAFE_GUESTS.length],
-    recipeId: CAFE_RECIPES[number % CAFE_RECIPES.length].id,
-    born,
-    plate: [],
-  });
+  const makeCafeOrder = (number, born = Date.now()) => {
+    const guest = CAFE_GUESTS[number % CAFE_GUESTS.length];
+    return {
+      id: `${born}-${number}`,
+      guest,
+      customer: makeCafeOrderCustomer(number, guest),
+      recipeId: CAFE_RECIPES[number % CAFE_RECIPES.length].id,
+      born,
+      plate: [],
+    };
+  };
 
   const startCafeShift = () => {
     const now = Date.now();
@@ -2596,6 +2617,23 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={[styles.cafeSceneCharacter, styles.cafeWorkCharacter].join(' ')} aria-label={`${characterName} working in the cafe kitchen`}>
             {renderCharacter(false)}
           </div>
+
+          {cafeOrders.map((order, index) => {
+            const customer = order.customer || cafeAmbientPeople[index % cafeAmbientPeople.length];
+            return (
+              <div
+                key={`pass-${order.id}`}
+                className={[
+                  styles.cafeSceneCharacter,
+                  styles.cafePassGuest,
+                  styles[`cafePassGuestSlot${Math.min(index, 2)}`],
+                ].join(' ')}
+                aria-label={`${order.guest} waiting at the cafe pass`}
+              >
+                {renderCharacter(false, customer.look, customer.character, order.guest)}
+              </div>
+            );
+          })}
 
           <aside className={styles.recipeWall}>
             <h2>Recipe Wall</h2>

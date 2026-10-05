@@ -788,3 +788,59 @@
     font-size: .43rem;
   }
 }
+/* One visible customer walks to the pass for every active cafe order. */
+.cafeWorkViewport > .cafePassGuest {
+  position: absolute;
+  z-index: 44;
+  top: clamp(8px, 1.5dvh, 20px);
+  bottom: auto;
+  width: 92px;
+  height: 128px;
+  --cafe-character-scale: .36;
+  animation: cafePassGuestWalkIn .95s ease-out both;
+}
+
+.cafePassGuestSlot0 { right: 332px; animation-delay: 0ms; }
+.cafePassGuestSlot1 { right: 250px; animation-delay: 80ms; }
+.cafePassGuestSlot2 { right: 168px; animation-delay: 160ms; }
+
+.cafeWorkViewport > .cafePassGuest::after {
+  bottom: 1px;
+  width: 44px;
+  height: 8px;
+}
+
+@keyframes cafePassGuestWalkIn {
+  0% { opacity: 0; transform: translate(220px, 3px); }
+  18% { opacity: 1; transform: translate(176px, -2px); }
+  36% { transform: translate(132px, 2px); }
+  54% { transform: translate(88px, -2px); }
+  72% { transform: translate(46px, 2px); }
+  88% { transform: translate(16px, -1px); }
+  100% { opacity: 1; transform: translate(0, 0); }
+}
+
+@media (max-width: 900px) {
+  .cafeWorkViewport > .cafePassGuest { top: 12px; width: 80px; height: 112px; --cafe-character-scale: .32; }
+  .cafePassGuestSlot0 { right: 250px; }
+  .cafePassGuestSlot1 { right: 180px; }
+  .cafePassGuestSlot2 { right: 110px; }
+}
+
+@media (max-width: 650px) {
+  .cafeWorkViewport > .cafePassGuest { top: 7px; width: 66px; height: 94px; --cafe-character-scale: .27; }
+  .cafePassGuestSlot0 { right: 116px; }
+  .cafePassGuestSlot1 { right: 60px; }
+  .cafePassGuestSlot2 { right: 4px; }
+}
+
+@media (max-height: 440px) {
+  .cafeWorkViewport > .cafePassGuest { top: 1px; width: 60px; height: 78px; --cafe-character-scale: .23; }
+  .cafePassGuestSlot0 { right: 172px; }
+  .cafePassGuestSlot1 { right: 112px; }
+  .cafePassGuestSlot2 { right: 52px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cafeWorkViewport > .cafePassGuest { animation: none; }
+}
