@@ -1668,6 +1668,8 @@ export default function KidsResort({ libraryHref = null }) {
       openScreen('market');
     } else if (place.id === 'studio') {
       openScreen('studio');
+    } else if (place.id === 'bank') {
+      openScreen('bank');
     }
   };
 
