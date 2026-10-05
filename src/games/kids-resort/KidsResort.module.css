@@ -6909,3 +6909,28 @@
   transform: scale(.9);
   transform-origin: bottom center;
 }
+
+
+/* Palm Court kitchen wall alignment: fixtures sit on the wall-floor seam. */
+.palmKitchenGame .palmKitchenStorageRow,
+.palmKitchenGame .palmKitchenStove,
+.palmKitchenGame .palmKitchenPlate,
+.palmKitchenGame .palmKitchenPass {
+  bottom: 39%;
+}
+
+.palmKitchenGame .palmKitchenIngredientShelf {
+  bottom: calc(39% + clamp(100px, 19dvh, 145px));
+}
+
+@media (max-width: 760px) {
+  .palmKitchenGame .palmKitchenIngredientShelf {
+    bottom: calc(39% + 88px);
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenGame .palmKitchenIngredientShelf {
+    bottom: calc(39% + 72px);
+  }
+}

@@ -1582,6 +1582,9 @@ export default function KidsResort({ libraryHref = null }) {
 
   const openScreen = (nextScreen) => {
     setMessage('');
+    if (nextScreen === 'lobby-restaurant-work' && (!palmKitchenActive || palmKitchenFinished)) {
+      startPalmKitchenShift();
+    }
     setScreen(nextScreen);
   };
 
@@ -3322,12 +3325,6 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={[styles.lobbyCharacter, styles.restaurantWorkerCharacter].join(' ')} aria-label={`${characterName} working in the Palm Court kitchen`}>{renderPlayerParty()}</div>
           <div className={[styles.lobbyCharacter, styles.restaurantGuestCharacter].join(' ')} aria-label={`${lobbyAmbientPeople[0].name} waiting for a Palm Court meal`}>{renderCharacter(false, lobbyAmbientPeople[0].look, lobbyAmbientPeople[0].character, lobbyAmbientPeople[0].name, 'seated')}</div>
 
-          {!palmKitchenActive ? (
-            <button className={styles.palmKitchenStart} type="button" onClick={startPalmKitchenShift}>
-              <strong>Start Dinner Shift</strong>
-              <span>Cook 5 plated meals for Palm Court guests.</span>
-            </button>
-          ) : (
             <>
               <aside className={styles.palmKitchenTicket}>
                 <small>ORDER {Math.min(palmKitchenServed + 1, 5)} / 5</small>
@@ -3451,7 +3448,6 @@ export default function KidsResort({ libraryHref = null }) {
                 </div>
               )}
             </>
-          )}
           <div className={styles.lobbySceneMessage} aria-live="polite">
             {palmKitchenMessage || 'Read the ticket, drag ingredients from storage, cook the hot items, and build the plate.'}
           </div>
