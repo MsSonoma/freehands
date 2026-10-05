@@ -719,6 +719,7 @@ export default function KidsResort({ libraryHref = null }) {
   const [conversationError, setConversationError] = useState('');
   const [conversationOrigin, setConversationOrigin] = useState({ screen: 'map', placeId: 'suite' });
   const [companionIds, setCompanionIds] = useState([]);
+  const [companionFootOffsets, setCompanionFootOffsets] = useState({});
 
   const [studioMessage, setStudioMessage] = useState('');
   const [studioCreations, setStudioCreations] = useState(0);
@@ -936,28 +937,41 @@ export default function KidsResort({ libraryHref = null }) {
       const panelRect = panel.getBoundingClientRect();
       if (!panelRect.height) return;
 
-      const toDepth = (node, fallback) => {
-        if (!node) return fallback;
+      const footBottom = (node) => {
+        if (!node) return null;
         const footElements = Array.from(node.querySelectorAll('[data-depth-foot="true"]'));
-        const bottom = footElements.length
+        return footElements.length
           ? Math.max(...footElements.map((foot) => foot.getBoundingClientRect().bottom))
           : node.getBoundingClientRect().bottom;
-        return Math.max(
-          0,
-          Math.min(100, ((bottom - panelRect.top) / panelRect.height) * 100),
-        );
       };
 
-      const nextDepths = {
-        player: toDepth(mapActorRefs.current.player, position.y),
-      };
+      const depthFromBottom = (bottom, fallback) => (
+        bottom === null
+          ? fallback
+          : Math.max(
+              0,
+              Math.min(100, ((bottom - panelRect.top) / panelRect.height) * 100),
+            )
+      );
+
+      const playerFootBottom = footBottom(mapActorRefs.current.player);
+      const playerDepth = depthFromBottom(playerFootBottom, position.y);
+      const nextDepths = { player: playerDepth };
+      const footCorrections = {};
 
       people.filter((person) => (person.location || 'map') === 'map').forEach((person) => {
         const key = `person:${person.id}`;
-        nextDepths[key] = toDepth(
-          mapActorRefs.current[key],
-          person.spawn?.y ?? 60,
-        );
+        const personFootBottom = footBottom(mapActorRefs.current[key]);
+        const isCompanion = companionIds.includes(person.id);
+
+        nextDepths[key] = isCompanion
+          ? playerDepth
+          : depthFromBottom(personFootBottom, person.spawn?.y ?? 60);
+
+        if (isCompanion && playerFootBottom !== null && personFootBottom !== null) {
+          const correction = playerFootBottom - personFootBottom;
+          if (Math.abs(correction) > 0.35) footCorrections[person.id] = correction;
+        }
       });
 
       setActorFootDepths((current) => {
@@ -966,6 +980,26 @@ export default function KidsResort({ libraryHref = null }) {
         const changed = currentKeys.length !== nextKeys.length
           || nextKeys.some((key) => Math.abs((current[key] ?? -1) - nextDepths[key]) > 0.02);
         return changed ? nextDepths : current;
+      });
+
+      setCompanionFootOffsets((current) => {
+        let changed = false;
+        const next = { ...current };
+        const activeIds = new Set(companionIds);
+
+        Object.keys(next).forEach((id) => {
+          if (!activeIds.has(id)) {
+            delete next[id];
+            changed = true;
+          }
+        });
+
+        Object.entries(footCorrections).forEach(([id, correction]) => {
+          next[id] = (current[id] || 0) + correction;
+          changed = true;
+        });
+
+        return changed ? next : current;
       });
     };
 
@@ -978,7 +1012,7 @@ export default function KidsResort({ libraryHref = null }) {
       window.cancelAnimationFrame(firstFrame);
       if (secondFrame) window.cancelAnimationFrame(secondFrame);
     };
-  }, [people, position.x, position.y, screen]);
+  }, [companionFootOffsets, companionIds, people, position.x, position.y, screen]);
 
   useEffect(() => {
     if (companionIds.length === 0) return;
@@ -1143,7 +1177,9 @@ export default function KidsResort({ libraryHref = null }) {
       })),
       ...people.filter((person) => (person.location || 'map') === 'map').map((person) => ({
         key: `person:${person.id}`,
-        depth: actorFootDepths[`person:${person.id}`] ?? person.spawn?.y ?? 60,
+        depth: companionIds.includes(person.id)
+          ? (actorFootDepths.player ?? position.y)
+          : (actorFootDepths[`person:${person.id}`] ?? person.spawn?.y ?? 60),
         building: false,
       })),
       {
@@ -1161,7 +1197,7 @@ export default function KidsResort({ libraryHref = null }) {
     });
 
     return Object.fromEntries(entries.map((entry, index) => [entry.key, 5 + index]));
-  }, [actorFootDepths, buildingDepths, people, position.y]);
+  }, [actorFootDepths, buildingDepths, companionIds, people, position.y]);
 
   useEffect(() => {
     if (screen !== 'cafe-work') return;
@@ -4740,8 +4776,12 @@ export default function KidsResort({ libraryHref = null }) {
               style={{
                 left: person.spawn.x + '%',
                 top: person.spawn.y + '%',
+                translate: companionIds.includes(person.id)
+                  ? `0 ${companionFootOffsets[person.id] || 0}px`
+                  : undefined,
                 zIndex: mapDepthRanks[`person:${person.id}`] ?? 12,
               }}
+              data-companion={companionIds.includes(person.id) ? 'true' : 'false'}
               data-moving={person.isRoaming ? 'true' : 'false'}
               data-direction={person.walkDirection || 'front'}
               data-selected={selectedPersonId === person.id ? 'true' : 'false'}
