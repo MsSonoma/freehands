@@ -254,7 +254,7 @@ function cloneFashionOption(option, randomColor = false) {
 }
 
 function makeCharacterPerson(mode = 'random') {
-  const random = mode === 'random';
+  const random = mode === 'random' || mode === 'custom';
   const gender = random ? randomChoice(CHARACTER_OPTIONS.gender).id : 'girl';
   const eye = random ? randomChoice(CHARACTER_OPTIONS.eye).id : 'brown';
   const hair = random ? randomChoice(CHARACTER_OPTIONS.hair).id : 'brown';
