@@ -2760,3 +2760,300 @@
     animation: none !important;
   }
 }
+
+.mapNpc[data-selected="true"] {
+  filter: drop-shadow(0 0 7px rgba(255, 255, 255, .95));
+}
+
+.mapNpcTalkPrompt {
+  position: absolute;
+  left: 50%;
+  top: -24px;
+  z-index: 20;
+  transform: translateX(-50%);
+  border: 2px solid rgba(74, 43, 25, .72);
+  border-radius: 999px;
+  background: #fff8d8;
+  color: #52331d;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 900;
+  line-height: 1;
+  box-shadow: 0 5px 12px rgba(35, 38, 52, .22);
+  white-space: nowrap;
+}
+
+.conversationShell {
+  min-height: 100dvh;
+  overflow: hidden;
+}
+
+.conversationTopBar {
+  position: relative;
+  z-index: 10;
+}
+
+.conversationActivity {
+  max-width: 38vw;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 12px;
+  font-weight: 800;
+  opacity: .78;
+}
+
+.conversationScene {
+  position: relative;
+  min-height: calc(100dvh - 68px);
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 22% 28%, rgba(255,255,255,.5) 0 2px, transparent 3px),
+    linear-gradient(180deg, #9bdcf1 0 44%, #7bcf8c 44% 100%);
+  background-size: 34px 34px, auto;
+}
+
+.conversationScene[data-origin="suite"] {
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px),
+    linear-gradient(#f8d9e6 0 56%, #d8b48d 56% 100%);
+  background-size: 26px 26px, auto;
+}
+
+.conversationScene[data-origin="lobby"] {
+  background:
+    radial-gradient(circle at 50% 0, rgba(255,255,255,.55), transparent 45%),
+    linear-gradient(#f3dfbc 0 55%, #caa477 55% 100%);
+}
+
+.conversationScene[data-origin="cafe"] {
+  background:
+    linear-gradient(90deg, rgba(255,255,255,.18) 1px, transparent 1px),
+    linear-gradient(#ffe6a8 0 56%, #c97855 56% 100%);
+  background-size: 32px 32px, auto;
+}
+
+.conversationScene[data-origin="market"] {
+  background: linear-gradient(#d8efe0 0 55%, #c8a97d 55% 100%);
+}
+
+.conversationScene[data-origin="studio"] {
+  background:
+    radial-gradient(circle at 20% 20%, rgba(255,255,255,.32) 0 3px, transparent 4px),
+    linear-gradient(#eee4ff 0 56%, #d0b5d5 56% 100%);
+  background-size: 38px 38px, auto;
+}
+
+.conversationActor {
+  position: absolute;
+  bottom: 112px;
+  width: min(32vw, 270px);
+  min-width: 180px;
+  text-align: center;
+}
+
+.conversationActorPlayer {
+  left: 10%;
+}
+
+.conversationActorNpc {
+  right: 10%;
+}
+
+.conversationFigure {
+  position: relative;
+  width: 150px;
+  height: 245px;
+  margin: 0 auto -12px;
+}
+
+.conversationFigure .avatarFigure {
+  transform: scale(.82);
+  transform-origin: bottom center;
+}
+
+.conversationActor > strong {
+  display: inline-block;
+  position: relative;
+  z-index: 3;
+  border-radius: 999px;
+  background: rgba(255,255,255,.88);
+  padding: 5px 12px;
+  box-shadow: 0 4px 12px rgba(40, 45, 63, .16);
+}
+
+.conversationWorldBubble {
+  position: relative;
+  z-index: 4;
+  width: min(260px, 29vw);
+  margin: 0 auto 6px;
+  border: 2px solid rgba(72, 54, 40, .22);
+  border-radius: 22px;
+  background: rgba(255,255,255,.96);
+  padding: 12px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.35;
+  text-align: left;
+  box-shadow: 0 8px 18px rgba(42, 45, 62, .18);
+}
+
+.conversationWorldBubble::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  width: 16px;
+  height: 16px;
+  background: inherit;
+  border-right: 2px solid rgba(72, 54, 40, .22);
+  border-bottom: 2px solid rgba(72, 54, 40, .22);
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.conversationTranscript {
+  position: absolute;
+  top: 18px;
+  right: 18px;
+  z-index: 6;
+  width: min(260px, 28vw);
+  max-height: 35vh;
+  border: 2px solid rgba(52, 52, 65, .16);
+  border-radius: 16px;
+  background: rgba(255,255,255,.88);
+  padding: 10px;
+  box-shadow: 0 7px 20px rgba(40, 45, 63, .15);
+  backdrop-filter: blur(5px);
+}
+
+.conversationTranscript > strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+}
+
+.conversationTranscriptScroll {
+  max-height: 27vh;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.conversationTranscript p,
+.conversationTranscript span {
+  display: block;
+  margin: 0 0 7px;
+  font-size: 11px;
+  line-height: 1.35;
+}
+
+.conversationTranscript p[data-speaker="user"] {
+  text-align: right;
+}
+
+.conversationThinking {
+  opacity: .62;
+  font-style: italic;
+}
+
+.conversationComposer {
+  position: absolute;
+  left: 50%;
+  bottom: 24px;
+  z-index: 8;
+  display: flex;
+  gap: 8px;
+  width: min(720px, calc(100% - 32px));
+  transform: translateX(-50%);
+  border-radius: 18px;
+  background: rgba(255,255,255,.94);
+  padding: 9px;
+  box-shadow: 0 9px 24px rgba(41, 44, 60, .22);
+}
+
+.conversationComposer input {
+  flex: 1;
+  min-width: 0;
+  border: 2px solid #d8d8e2;
+  border-radius: 12px;
+  background: #fff;
+  padding: 11px 13px;
+  font: inherit;
+}
+
+.conversationComposer button {
+  border: 0;
+  border-radius: 12px;
+  background: #4c7bd9;
+  color: #fff;
+  padding: 0 18px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.conversationComposer button:disabled {
+  opacity: .5;
+  cursor: default;
+}
+
+.conversationError {
+  position: absolute;
+  left: 50%;
+  bottom: 86px;
+  z-index: 9;
+  transform: translateX(-50%);
+  border-radius: 10px;
+  background: rgba(122, 35, 35, .92);
+  color: #fff;
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+@media (max-width: 760px) {
+  .conversationActivity {
+    display: none;
+  }
+
+  .conversationActor {
+    bottom: 126px;
+    width: 42vw;
+    min-width: 0;
+  }
+
+  .conversationActorPlayer {
+    left: 3%;
+  }
+
+  .conversationActorNpc {
+    right: 3%;
+  }
+
+  .conversationFigure {
+    width: 110px;
+    height: 190px;
+  }
+
+  .conversationFigure .avatarFigure {
+    transform: scale(.62);
+  }
+
+  .conversationWorldBubble {
+    width: 39vw;
+    max-height: 104px;
+    overflow-y: auto;
+    font-size: 12px;
+    padding: 9px 10px;
+  }
+
+  .conversationTranscript {
+    top: 12px;
+    right: 10px;
+    width: min(210px, 46vw);
+    max-height: 24vh;
+  }
+
+  .conversationTranscriptScroll {
+    max-height: 16vh;
+  }
+}
