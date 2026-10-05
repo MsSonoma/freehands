@@ -6934,3 +6934,78 @@
     bottom: calc(39% + 72px);
   }
 }
+
+/* Palm Court kitchen proportion refinement: taller storage, shorter range. */
+.palmKitchenGame .palmKitchenStorageRow button {
+  min-height: clamp(145px, 29dvh, 220px);
+  padding: clamp(103px, 20dvh, 164px) 4px 7px;
+}
+
+.palmKitchenGame .palmKitchenStove {
+  min-height: clamp(88px, 15dvh, 118px);
+  padding: 32px 8px 7px;
+}
+
+.palmKitchenGame .palmKitchenStove::before {
+  top: 7px;
+  height: 34px;
+}
+
+.palmKitchenGame .palmKitchenStove::after {
+  bottom: 7px;
+  height: 34%;
+}
+
+.palmKitchenGame .palmKitchenStove > div {
+  top: 19px;
+  min-height: 34px;
+}
+
+.palmKitchenGame .palmKitchenStove button {
+  min-height: 34px;
+}
+
+.palmKitchenGame .palmKitchenIngredientShelf {
+  bottom: calc(39% + clamp(153px, 30dvh, 228px));
+}
+
+@media (max-width: 760px) {
+  .palmKitchenGame .palmKitchenStorageRow button {
+    min-height: 125px;
+    padding-top: 86px;
+  }
+
+  .palmKitchenGame .palmKitchenStove {
+    min-height: 82px;
+    padding-top: 29px;
+  }
+
+  .palmKitchenGame .palmKitchenStove::before {
+    height: 31px;
+  }
+
+  .palmKitchenGame .palmKitchenIngredientShelf {
+    bottom: calc(39% + 132px);
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenGame .palmKitchenStorageRow button {
+    min-height: 100px;
+    padding: 68px 2px 4px;
+  }
+
+  .palmKitchenGame .palmKitchenStove {
+    min-height: 68px;
+    padding: 25px 4px 4px;
+  }
+
+  .palmKitchenGame .palmKitchenStove::before {
+    top: 5px;
+    height: 27px;
+  }
+
+  .palmKitchenGame .palmKitchenIngredientShelf {
+    bottom: calc(39% + 106px);
+  }
+}
