@@ -3357,9 +3357,6 @@ export default function KidsResort({ libraryHref = null }) {
 
   if (screen === 'lobby-restaurant-work') {
     const kitchenRecipe = palmKitchenRecipeFor(palmKitchenServed);
-    const kitchenStorageItems = palmKitchenStorage
-      ? Object.entries(PALM_KITCHEN_INGREDIENTS).filter(([, item]) => item.source === palmKitchenStorage)
-      : [];
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
@@ -3387,45 +3384,64 @@ export default function KidsResort({ libraryHref = null }) {
                   ['pantry', 'Pantry Cabinet'],
                   ['freezer', 'Freezer'],
                 ].map(([id, label]) => {
+                  const open = palmKitchenStorage === id;
+                  const storageItems = Object.entries(PALM_KITCHEN_INGREDIENTS).filter(([, item]) => item.source === id);
                   const returningHome = palmKitchenDrag?.from === 'plate'
                     && PALM_KITCHEN_INGREDIENTS[palmKitchenDrag.ingredientId]?.source === id;
                   return (
-                    <button
+                    <section
                       key={id}
-                      type="button"
+                      className={[
+                        styles.palmKitchenStoragePane,
+                        open ? styles.palmKitchenStoragePaneOpen : '',
+                        returningHome ? styles.palmKitchenStorageReturn : '',
+                      ].join(' ')}
                       data-storage={id}
+                      data-open={open ? 'true' : 'false'}
                       data-palm-kitchen-drop="storage"
-                      data-active={palmKitchenStorage === id}
-                      data-return-home={returningHome}
-                      onClick={() => setPalmKitchenStorage((value) => value === id ? null : id)}
                     >
-                      <strong>{label}</strong>
-                    </button>
+                      {open ? (
+                        <>
+                          <button
+                            type="button"
+                            className={styles.palmKitchenStorageOpenButton}
+                            onClick={() => setPalmKitchenStorage(null)}
+                          >
+                            <strong>{label}</strong>
+                            <small>Close</small>
+                          </button>
+                          <div className={styles.palmKitchenStorageInventory} aria-label={`${label} ingredients`}>
+                            {storageItems.map(([ingredientId, item]) => (
+                              <button
+                                key={ingredientId}
+                                type="button"
+                                className={[styles.palmKitchenDraggableIngredient, styles.palmKitchenStorageInventoryItem].join(' ')}
+                                data-ingredient-id={ingredientId}
+                                title={item.name}
+                                {...palmKitchenDragHandlers({ from: 'storage', storage: id, ingredientId })}
+                              >
+                                <span>{item.icon}</span>
+                                <small>{item.name}</small>
+                                {item.cook && <em>Cook</em>}
+                              </button>
+                            ))}
+                          </div>
+                        </>
+                      ) : (
+                        <button
+                          type="button"
+                          className={styles.palmKitchenStorageDoor}
+                          data-storage={id}
+                          onClick={() => setPalmKitchenStorage(id)}
+                        >
+                          <strong>{label}</strong>
+                          <small>Open</small>
+                        </button>
+                      )}
+                    </section>
                   );
                 })}
               </div>
-
-              {palmKitchenStorage && (
-                <div className={styles.palmKitchenIngredientShelf}>
-                  <strong>{palmKitchenStorage === 'fridge' ? 'Refrigerator' : palmKitchenStorage === 'freezer' ? 'Freezer' : 'Pantry Cabinet'}</strong>
-                  <div>
-                    {kitchenStorageItems.map(([id, item]) => (
-                      <button
-                        key={id}
-                        type="button"
-                        className={styles.palmKitchenDraggableIngredient}
-                        data-ingredient-id={id}
-                        aria-label={`Drag ${item.name}`}
-                        {...palmKitchenDragHandlers({ from: 'storage', storage: palmKitchenStorage, ingredientId: id })}
-                      >
-                        <span>{item.icon}</span>
-                        <small>{item.name}</small>
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              )}
-
               <div
                 className={[styles.palmKitchenStove, palmKitchenDrag?.from === 'storage' ? styles.palmKitchenDropTarget : ''].join(' ')}
                 data-palm-kitchen-drop="stove"
