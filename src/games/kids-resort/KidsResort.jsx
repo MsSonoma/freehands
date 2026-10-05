@@ -252,15 +252,22 @@ export default function KidsResort({ libraryHref = null }) {
 
   useEffect(() => {
     if (screen !== 'cafe-work' || cafeFinished) return undefined;
-    const delay=Math.max(4500,14000-cafeServed*1000);
-    const timer=window.setInterval(()=>setCafeOrders((items)=>items.length<3?[...items,makeCafeOrder(cafeServed+items.length)]:items),delay);
-    return ()=>window.clearInterval(timer);
-  }, [screen,cafeFinished,cafeServed]);
+    const delay = Math.max(11000, 19000 - cafeServed * 900);
+    const maxOrders = cafeServed < 4 ? 2 : 3;
+    const timer = window.setInterval(() => {
+      setCafeOrders((items) =>
+        items.length < maxOrders
+          ? [...items, makeCafeOrder(cafeServed + items.length)]
+          : items,
+      );
+    }, delay);
+    return () => window.clearInterval(timer);
+  }, [screen, cafeFinished, cafeServed]);
 
   useEffect(() => {
     if (screen !== 'cafe-work') return;
-    setCafeOrders((items)=>items.filter((order)=>cafeNow-order.born<30000));
-  }, [cafeNow,screen]);
+    setCafeOrders((items) => items.filter((order) => cafeNow - order.born < 45000));
+  }, [cafeNow, screen]);
 
   const travelTo = (nextPlace) => {
     if (!nextPlace || isWalking) return;
@@ -412,19 +419,13 @@ export default function KidsResort({ libraryHref = null }) {
   const openScreen = (nextScreen) => {
     setMessage('');
     setScreen(nextScreen);
-    if (nextScreen === 'cafe-work') {
-      setOrderIndex(0);
-      setCafeCorrect(0);
-      setCafeMessage('');
-      setCafeFinished(false);
-    }
   };
 
   const makeCafeOrder=(number,born=Date.now())=>({id:`${born}-${number}`,guest:CAFE_GUESTS[number%CAFE_GUESTS.length],recipeId:CAFE_RECIPES[number%CAFE_RECIPES.length].id,born});
   const startCafeShift=()=>{const now=Date.now();setCafeOrders([makeCafeOrder(0,now)]);setCafePlate([]);setCafeGrill([]);setCafeStorage(null);setCafeServed(0);setCafeMessage('First customer! Check the recipe wall, then build the order.');setCafeNow(now);setCafeFinished(false);setScreen('cafe-work');};
   const takeCafeIngredient=(id)=>{const item=CAFE_INGREDIENTS[id];if(!item)return;if(item.cook){if(cafeGrill.length>=3){setCafeMessage('The grill is full.');return;}setCafeGrill((items)=>[...items,{id:`${Date.now()}-${id}`,ingredientId:id,started:Date.now()}]);setCafeMessage(`${item.name} is cooking. Remember to come back for it!`);return;}setCafePlate((items)=>[...items,id]);setCafeMessage(`${item.name} added to the plate.`);};
   const pullFromGrill=(g)=>{const item=CAFE_INGREDIENTS[g.ingredientId],elapsed=Date.now()-g.started;if(elapsed<item.cook){setCafeMessage(`${item.name} isn't ready yet.`);return;}if(elapsed>item.cook+4500){setCafeGrill((items)=>items.filter((x)=>x.id!==g.id));setCafeMessage(`${item.name} burned! Start that part again.`);return;}setCafeGrill((items)=>items.filter((x)=>x.id!==g.id));setCafePlate((items)=>[...items,g.ingredientId]);setCafeMessage(`${item.name} is ready and on the plate.`);};
-  const serveCafeOrder=(order)=>{const recipe=CAFE_RECIPES.find((x)=>x.id===order.recipeId);if([...recipe.ingredients].sort().join('|')!==[...cafePlate].sort().join('|')){setCafeMessage(`That plate isn't ${recipe.icon} yet. Check the recipe wall.`);return;}const served=cafeServed+1;setCafeOrders((items)=>items.filter((x)=>x.id!==order.id));setCafePlate([]);setCafeServed(served);setBucks((v)=>v+4);setCafeMessage(`${order.guest} loved it! +4 Resort Bucks`);if(served>=8){setCafeFinished(true);setBucks((v)=>v+8);setBadges((items)=>items.includes('Sunshine Cafe Shift')?items:[...items,'Sunshine Cafe Shift']);}else{window.setTimeout(()=>setCafeOrders((items)=>items.length<3?[...items,makeCafeOrder(served)]:items),Math.max(2500,8000-served*650));}};
+  const serveCafeOrder=(order)=>{const recipe=CAFE_RECIPES.find((x)=>x.id===order.recipeId);if([...recipe.ingredients].sort().join('|')!==[...cafePlate].sort().join('|')){setCafeMessage(`That plate isn't ${recipe.icon} yet. Check the recipe wall.`);return;}const served=cafeServed+1;setCafeOrders((items)=>items.filter((x)=>x.id!==order.id));setCafePlate([]);setCafeServed(served);setBucks((v)=>v+4);setCafeMessage(`${order.guest} loved it! +4 Resort Bucks`);if(served>=8){setCafeFinished(true);setBucks((v)=>v+8);setBadges((items)=>items.includes('Sunshine Cafe Shift')?items:[...items,'Sunshine Cafe Shift']);}};
 
   const buyMeal = (meal) => {
     if (bucks < meal.price) {
@@ -586,15 +587,40 @@ export default function KidsResort({ libraryHref = null }) {
   const playerView = isWalking ? walkView : 'front';
 
   if (screen === 'cafe') {
-    return <main className={styles.gameShell}><section className={styles.topBar}><button className={styles.backButton} type="button" onClick={()=>setScreen('map')}>← Resort Map</button><div className={styles.brand}>Kids Resort</div><div className={styles.wallet}>🪙 {bucks} Resort Bucks</div></section><section className={styles.cafeInterior}><div className={styles.cafeDining}><div className={styles.cafeLogo}>☀️ <strong>Sunshine Café</strong></div><div className={styles.cafeTables}><span>🪑　🍽️　🪑</span><span>🪑　🍽️　🪑</span></div><button className={styles.cafeModeButton} type="button" onClick={()=>setScreen('cafe-food')}>🍽️ Eat Here</button></div><div className={styles.cafeCounter}><div className={styles.counterTop}>🥤　🧾　🔔</div><div className={styles.counterFront}>SUNSHINE CAFÉ</div><button className={styles.cafeModeButton} type="button" onClick={startCafeShift}>🧑‍🍳 Start Shift</button></div></section></main>;
+    return (
+      <main className={styles.gameShell}>
+        <section className={styles.topBar}>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>← Resort Map</button>
+          <div className={styles.brand}>Kids Resort</div>
+          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+        </section>
+        <section className={styles.cafeInterior}>
+          <div className={styles.cafeWallArt}><span>☀️</span><strong>Sunshine Café</strong><small>Good food. Bright days.</small></div>
+          <div className={styles.cafeWindow} aria-hidden="true"><span className={styles.cafeSky} /><span className={styles.cafeSea} /><span className={styles.cafePalm}>🌴</span><span className={styles.cafeUmbrella}>⛱️</span></div>
+          <div className={styles.cafePendantRow} aria-hidden="true"><span>💡</span><span>💡</span><span>💡</span></div>
+          <div className={styles.cafeDining}>
+            <div className={styles.cafeBooth}><span className={styles.cafePlant}>🪴</span><div className={styles.cafeTable}><span>🌼</span></div><div className={styles.cafeBench} /></div>
+            <div className={styles.cafeTables}><span>🪑　🍽️　🪑</span><span>🪑　🍽️　🪑</span></div>
+            <button className={styles.cafeModeButton} type="button" onClick={() => setScreen('cafe-food')}>🍽️ Eat Here</button>
+          </div>
+          <div className={styles.cafeCounter}>
+            <div className={styles.counterShelf}><span>🥤</span><span>🧁</span><span>🍪</span><span>☕</span></div>
+            <div className={styles.counterTop}>🧾　🔔　🥤</div>
+            <div className={styles.counterFront}><span>SUNSHINE CAFÉ</span><i /><i /><i /></div>
+            <button className={styles.cafeModeButton} type="button" onClick={startCafeShift}>🧑‍🍳 Start Shift</button>
+          </div>
+          <div className={styles.cafeFloorLine} aria-hidden="true" />
+        </section>
+      </main>
+    );
   }
 
   if (screen === 'cafe-work') {
     const fridgeItems=Object.entries(CAFE_INGREDIENTS).filter(([,x])=>x.source==='fridge');
     const cabinetItems=Object.entries(CAFE_INGREDIENTS).filter(([,x])=>x.source==='cabinet');
-    return <main className={styles.gameShell}><section className={styles.topBar}><button className={styles.backButton} type="button" onClick={()=>setScreen('cafe')}>← Café</button><div className={styles.brand}>Sunshine Café Shift</div><div className={styles.wallet}>🪙 {bucks} Resort Bucks</div></section><section className={styles.cafeWorkScene}>
+    return <main className={styles.gameShell}><section className={styles.topBar}><button className={styles.backButton} type="button" onClick={()=>setScreen('cafe')}>← Café</button><div className={styles.brand}>Sunshine Café Shift</div><div className={styles.wallet}>🪙 {bucks} Resort Bucks</div></section><section className={styles.cafeWorkScene}><div className={styles.cafeWorkBackdrop} aria-hidden="true"><div className={styles.workWindow}><span>🌴</span><span>☀️</span></div><div className={styles.workWallSign}>SUNSHINE CAFÉ</div><div className={styles.workPendantRow}><span>💡</span><span>💡</span><span>💡</span></div><div className={styles.workServiceCounter}><span>🥤</span><span>🔔</span><span>🧁</span></div></div>
       <aside className={styles.recipeWall}><h2>Recipe Wall</h2>{CAFE_RECIPES.map((r)=><div key={r.id} className={styles.wallRecipe}><strong>{r.name}</strong><span>{r.formula}</span></div>)}</aside>
-      <section className={styles.orderRail}><b>Orders · {cafeServed}/8</b>{cafeOrders.map((o)=>{const r=CAFE_RECIPES.find((x)=>x.id===o.recipeId),age=cafeNow-o.born,mood=age<8000?'🙂':age<16000?'😐':age<23000?'☹️':'😡';return <button key={o.id} type="button" className={styles.orderTicket} onClick={()=>serveCafeOrder(o)}><span>{mood}</span><strong>{o.guest}</strong><span>{r.icon}</span><small>{Math.max(0,Math.ceil((30000-age)/1000))}s</small></button>})}</section>
+      <section className={styles.orderRail}><b>Orders · {cafeServed}/8</b>{cafeOrders.map((o)=>{const r=CAFE_RECIPES.find((x)=>x.id===o.recipeId),age=cafeNow-o.born,mood=age<12000?'🙂':age<24000?'😐':age<35000?'☹️':'😡';return <button key={o.id} type="button" className={styles.orderTicket} onClick={()=>serveCafeOrder(o)}><span>{mood}</span><strong>{o.guest}</strong><span>{r.icon}</span><small>{Math.max(0,Math.ceil((45000-age)/1000))}s</small></button>})}</section>
       <section className={styles.kitchenStations}><button type="button" onClick={()=>setCafeStorage(cafeStorage==='fridge'?null:'fridge')}>🧊<strong>Refrigerator</strong></button><div className={styles.grillStation}><b>🔥 Grill</b><div>{cafeGrill.map((g)=>{const x=CAFE_INGREDIENTS[g.ingredientId],age=cafeNow-g.started,state=age<x.cook?'Cooking…':age<=x.cook+4500?'READY!':'BURNT';return <button key={g.id} type="button" data-state={state} onClick={()=>pullFromGrill(g)}><span>{x.icon}</span><strong>{state}</strong></button>})}</div></div><button type="button" onClick={()=>setCafeStorage(cafeStorage==='cabinet'?null:'cabinet')}>🥫<strong>Cabinet</strong></button></section>
       {cafeStorage&&<section className={styles.ingredientDrawer}>{(cafeStorage==='fridge'?fridgeItems:cabinetItems).map(([id,x])=><button key={id} type="button" onClick={()=>takeCafeIngredient(id)}><span>{x.icon}</span><small>{x.name}</small></button>)}</section>}
       <section className={styles.plateStation}><strong>🍽️ Plate</strong><div>{cafePlate.map((id,i)=><span key={`${id}-${i}`}>{CAFE_INGREDIENTS[id]?.icon}</span>)}</div><button type="button" onClick={()=>setCafePlate([])}>Clear</button></section><div className={styles.cafeFeedback}>{cafeMessage}</div>{cafeFinished&&<div className={styles.cafeWin}><div>⭐</div><h2>Shift complete!</h2><p>8 Resort Buck bonus earned.</p><button className={styles.primaryButton} type="button" onClick={()=>setScreen('cafe')}>Back to Café</button></div>}
