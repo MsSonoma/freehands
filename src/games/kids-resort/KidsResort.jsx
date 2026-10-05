@@ -253,6 +253,18 @@ function cloneFashionOption(option, randomColor = false) {
   };
 }
 
+function cloneLook(source) {
+  return {
+    ...source,
+    shirt: { ...source.shirt },
+    bottoms: { ...source.bottoms },
+    shoes: { ...source.shoes },
+    glasses: { ...source.glasses },
+    headwear: { ...source.headwear },
+    hair: { ...source.hair },
+  };
+}
+
 function makeCharacterPerson(mode = 'random') {
   const random = mode === 'random' || mode === 'custom';
   const gender = random ? randomChoice(CHARACTER_OPTIONS.gender).id : 'girl';
@@ -465,6 +477,7 @@ export default function KidsResort({ libraryHref = null }) {
   const [studioCategory, setStudioCategory] = useState('shirt');
   const [studioWorkTool, setStudioWorkTool] = useState('fashion');
   const [studioCustomerIndex, setStudioCustomerIndex] = useState(0);
+  const [studioCustomerPerson, setStudioCustomerPerson] = useState(null);
   const [studioCustomerDone, setStudioCustomerDone] = useState(false);
   const [artColor, setArtColor] = useState('#ff4f9a');
   const artCanvasRef = useRef(null);
@@ -942,7 +955,12 @@ export default function KidsResort({ libraryHref = null }) {
   };
 
   const updateStudioType = (category, option) => {
-    const base = studioDraftLook || look;
+    const base =
+      studioDraftLook ||
+      (screen === 'studio-work' && studioWorkTool === 'fashion'
+        ? studioCustomerPerson?.look
+        : look);
+    if (!base) return;
     const current = base[category];
     const nextOption = {
       ...option,
@@ -953,7 +971,12 @@ export default function KidsResort({ libraryHref = null }) {
   };
 
   const updateStudioColor = (category, swatch) => {
-    const base = studioDraftLook || look;
+    const base =
+      studioDraftLook ||
+      (screen === 'studio-work' && studioWorkTool === 'fashion'
+        ? studioCustomerPerson?.look
+        : look);
+    if (!base) return;
     const current = base[category];
     if (!current || current.id === 'none') return;
     setStudioDraftLook({
@@ -995,9 +1018,31 @@ export default function KidsResort({ libraryHref = null }) {
     );
   };
 
+  const prepareFashionCustomer = (index = studioCustomerIndex) => {
+    const customer = FASHION_CUSTOMERS[index % FASHION_CUSTOMERS.length];
+    const sourcePerson =
+      people.length > 0
+        ? people[index % people.length]
+        : makeCharacterPerson('random');
+    const person = {
+      ...sourcePerson,
+      look: cloneLook(sourcePerson.look),
+    };
+
+    setStudioCustomerIndex(index);
+    setStudioCustomerPerson(person);
+    setStudioCustomerDone(false);
+    setStudioCategory(customer.category);
+    setStudioDraftLook(cloneLook(person.look));
+    return person;
+  };
+
   const showFashionToCustomer = () => {
     const customer = FASHION_CUSTOMERS[studioCustomerIndex % FASHION_CUSTOMERS.length];
-    const draft = studioDraftLook || look;
+    const person = studioCustomerPerson;
+    if (!person) return;
+
+    const draft = studioDraftLook || person.look;
     const item = draft[customer.category];
     const wanted = LOOK_OPTIONS[customer.category].find((option) => option.id === customer.type);
     const typeMatch = item?.id === customer.type;
@@ -1012,7 +1057,7 @@ export default function KidsResort({ libraryHref = null }) {
     if (!accepted) {
       const typeNote = typeMatch ? '' : 'I really wanted ' + wanted.name + '. ';
       const colorNote = pickyColorMatch ? '' : 'I was hoping for ' + customer.colorName + '. ';
-      setStudioMessage(customer.name + ': ' + typeNote + colorNote + 'Can we try again?');
+      setStudioMessage(person.name + ': ' + typeNote + colorNote + 'Can we try again?');
       return;
     }
 
@@ -1027,6 +1072,16 @@ export default function KidsResort({ libraryHref = null }) {
       opinion = 'That is not what I pictured at all, but I really like what you made!';
     }
 
+    const completedLook = cloneLook(draft);
+    setStudioCustomerPerson((current) => (
+      current ? { ...current, look: cloneLook(completedLook) } : current
+    ));
+    setPeople((items) => items.map((itemPerson) => (
+      itemPerson.id === person.id
+        ? { ...itemPerson, look: cloneLook(completedLook) }
+        : itemPerson
+    )));
+
     setStudioCreations((value) => value + 1);
     setBucks((value) => value + customer.reward);
     setBadges((items) => (
@@ -1036,18 +1091,14 @@ export default function KidsResort({ libraryHref = null }) {
     ));
     setStudioCustomerDone(true);
     setStudioMessage(
-      customer.name + ': ' + opinion + ' +' + customer.reward + ' Resort Bucks · ⭐ Fashion Star earned'
+      person.name + ': ' + opinion + ' +' + customer.reward + ' Resort Bucks · ⭐ Fashion Star earned'
     );
   };
 
   const nextFashionCustomer = () => {
     const nextIndex = (studioCustomerIndex + 1) % FASHION_CUSTOMERS.length;
-    const nextCustomer = FASHION_CUSTOMERS[nextIndex];
-    setStudioCustomerIndex(nextIndex);
-    setStudioCustomerDone(false);
-    setStudioCategory(nextCustomer.category);
-    setStudioDraftLook({ ...look });
-    setStudioMessage(nextCustomer.name + ' has a new fashion request.');
+    const nextPerson = prepareFashionCustomer(nextIndex);
+    setStudioMessage(nextPerson.name + ' is ready for a fashion design.');
   };
 
   const renderCharacter = (
@@ -1262,12 +1313,9 @@ export default function KidsResort({ libraryHref = null }) {
           className={styles.studioChoiceCard}
           type="button"
           onClick={() => {
-            const customer = FASHION_CUSTOMERS[studioCustomerIndex % FASHION_CUSTOMERS.length];
             setStudioMessage('');
             setStudioWorkTool('fashion');
-            setStudioCustomerDone(false);
-            setStudioCategory(customer.category);
-            setStudioDraftLook({ ...look });
+            prepareFashionCustomer(studioCustomerIndex);
             setScreen('studio-work');
           }}
         >
@@ -1295,8 +1343,9 @@ export default function KidsResort({ libraryHref = null }) {
 
   if (screen === 'studio-work') {
     const customer = FASHION_CUSTOMERS[studioCustomerIndex % FASHION_CUSTOMERS.length];
-    const previewLook = studioDraftLook || look;
-    const customerItem = previewLook[customer.category];
+    const customerPerson = studioCustomerPerson;
+    const previewLook = studioDraftLook || customerPerson?.look || null;
+    const customerItem = previewLook?.[customer.category] || LOOK_OPTIONS[customer.category][0];
     const customerOptions = LOOK_OPTIONS[customer.category];
     const wanted = customerOptions.find((option) => option.id === customer.type);
     const customerCategoryLabel =
@@ -1313,8 +1362,12 @@ export default function KidsResort({ libraryHref = null }) {
             data-active={studioWorkTool === 'fashion'}
             onClick={() => {
               setStudioWorkTool('fashion');
-              setStudioCategory(customer.category);
-              setStudioDraftLook({ ...look });
+              if (studioCustomerPerson) {
+                setStudioCategory(customer.category);
+                setStudioDraftLook(cloneLook(studioCustomerPerson.look));
+              } else {
+                prepareFashionCustomer(studioCustomerIndex);
+              }
               setStudioMessage('');
             }}
           >
@@ -1335,7 +1388,15 @@ export default function KidsResort({ libraryHref = null }) {
         {studioWorkTool === 'fashion' ? (
           <div className={styles.studioFashionWorkLayout}>
             <section className={styles.characterStage}>
-              {renderCharacter(true, previewLook)}
+              {customerPerson && previewLook && (
+                <>
+                  {renderCharacter(true, previewLook, customerPerson.character, customerPerson.name)}
+                  <div className={styles.lookSummary}>
+                    <strong>{customerPerson.name}</strong>
+                    <span>Fashion customer</span>
+                  </div>
+                </>
+              )}
               <div className={styles.tryOnBadge}>CUSTOMER DESIGN</div>
             </section>
 
@@ -1383,8 +1444,7 @@ export default function KidsResort({ libraryHref = null }) {
             </section>
 
             <aside className={styles.studioCustomerCard}>
-              <div className={styles.studioCustomerFace}>{customer.emoji}</div>
-              <strong>{customer.name}</strong>
+              <strong>{customerPerson?.name || 'Customer'}</strong>
               <span className={styles.customerPickiness} data-level={customer.pickiness}>
                 {customer.pickiness}
               </span>
