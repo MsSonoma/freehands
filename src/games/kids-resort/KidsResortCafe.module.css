@@ -1,0 +1,210 @@
+.cafeOrderBoard {
+  min-width: 0;
+  padding: 10px;
+  border-radius: 18px;
+  background: #d9f1ef;
+  box-shadow: 0 6px 0 rgba(82,112,109,.14);
+}
+
+.cafeOrderBoardHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 8px;
+  color: #17304f;
+}
+
+.cafeOrderBoardHeader b { font-size: .82rem; }
+.cafeOrderBoardHeader span { font-size: .62rem; font-weight: 800; color: #52716f; }
+
+.cafeOrderStations {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+}
+
+.cafeOrderStation {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 88px minmax(92px, 1fr);
+  grid-template-rows: 78px 30px;
+  gap: 6px 8px;
+  align-items: center;
+  padding: 7px;
+  border: 2px solid #b8d9d5;
+  border-radius: 13px;
+  background: rgba(255,255,255,.76);
+}
+
+.cafeTicket {
+  height: 78px;
+  padding: 5px;
+  border: 2px solid #ddcda9;
+  border-radius: 9px;
+  background: #fffdf3;
+  color: #17304f;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  place-items: center;
+  text-align: center;
+}
+
+.cafeTicket > span:first-child { font-size: 1.45rem; }
+.cafeTicketFood { font-size: 1.6rem; }
+.cafeTicket strong,
+.cafeTicket small { font-size: .6rem; line-height: 1.05; }
+
+.cafeOrderPlate {
+  position: relative;
+  min-width: 0;
+  height: 78px;
+  padding: 7px 10px;
+  border: 3px solid #d8e0e2;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, #fff 0 57%, #eef2f3 59% 73%, #d5dcde 75% 100%);
+  box-shadow: 0 5px 0 rgba(92,68,48,.13);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  overflow: visible;
+  transition: border-color .12s ease, transform .12s ease;
+}
+
+.cafeDropTarget {
+  border-color: #55b6ac;
+  transform: translateY(-1px);
+}
+
+.cafePlateHint {
+  max-width: 88px;
+  color: #78908f;
+  font-size: .52rem;
+  font-weight: 900;
+  text-align: center;
+  line-height: 1.05;
+}
+
+.cafeFinishedDish {
+  display: grid;
+  place-items: center;
+  line-height: 1;
+}
+
+.cafeFinishedDish span { font-size: 2.25rem; }
+.cafeFinishedDish small {
+  margin-top: 2px;
+  max-width: 86px;
+  color: #245d59;
+  font-size: .48rem;
+  font-weight: 950;
+  text-align: center;
+}
+
+.cafePlateIngredient {
+  touch-action: none;
+  cursor: grab;
+  border: 0;
+  border-radius: 10px;
+  background: rgba(255,255,255,.86);
+  padding: 3px;
+  line-height: 1;
+  box-shadow: 0 2px 4px rgba(23,48,79,.12);
+}
+
+.cafePlateIngredient:active,
+.cafeDraggableIngredient:active { cursor: grabbing; }
+.cafePlateIngredient span { font-size: 1.35rem; }
+
+.cafeExtraIngredient {
+  border: 2px solid #e48566;
+  background: #fff0e8;
+}
+
+.cafeServePlate {
+  grid-column: 1 / -1;
+  min-height: 30px;
+  border: 0;
+  border-radius: 9px;
+  background: #17304f;
+  color: #fff;
+  font: inherit;
+  font-size: .6rem;
+  font-weight: 950;
+  cursor: pointer;
+}
+
+.cafeServePlate:disabled {
+  cursor: default;
+  background: #b9c5c8;
+  color: #f7f9f9;
+}
+
+.cafeDraggableIngredient {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.cafeStorageStation small {
+  display: block;
+  margin-top: 3px;
+  font-size: .52rem;
+  font-weight: 800;
+  color: #61747a;
+}
+.cafeStorageReturn {
+  outline: 4px solid #62bcae;
+  outline-offset: -5px;
+}
+
+.cafeGrillDrop {
+  outline: 4px solid #f0b34a;
+  outline-offset: -6px;
+}
+
+.cafeDrawerTitle {
+  display: grid;
+  place-items: center;
+  padding: 5px 8px;
+  color: #52716f;
+  font-size: .65rem;
+  font-weight: 950;
+}
+
+.cafeDragGhost {
+  position: fixed !important;
+  z-index: 9999 !important;
+  width: 54px;
+  height: 54px;
+  margin: -27px 0 0 -27px;
+  border: 3px solid rgba(255,255,255,.9);
+  border-radius: 50%;
+  background: rgba(23,48,79,.88);
+  box-shadow: 0 8px 18px rgba(23,48,79,.24);
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  pointer-events: none;
+}
+
+@media (max-width: 980px) {
+  .cafeOrderStations { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .cafeOrderStation:nth-child(3) { grid-column: 1 / -1; max-width: 50%; }
+}
+
+@media (max-width: 800px) {
+  .cafeOrderStations { grid-template-columns: repeat(3, minmax(175px, 1fr)); overflow-x: auto; }
+  .cafeOrderStation:nth-child(3) { grid-column: auto; max-width: none; }
+  .cafeOrderBoardHeader span { display: none; }
+}
+
+@media (max-width: 600px) {
+  .cafeOrderStations { grid-template-columns: repeat(3, minmax(160px, 1fr)); }
+  .cafeOrderStation { grid-template-columns: 72px minmax(80px, 1fr); }
+  .cafeTicket { height: 72px; }
+  .cafeOrderPlate { height: 72px; }
+  .cafeFinishedDish span { font-size: 2rem; }
+}
