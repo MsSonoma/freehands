@@ -1050,3 +1050,163 @@
   .cafeStorageInventoryItem small,
   .cafeStorageInventoryItem em { display: none; }
 }
+/* Make the cafe cook surface read as a real stainless grill without changing its footprint. */
+.grillStation {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-color: #626d72 !important;
+  border-radius: 14px !important;
+  background:
+    linear-gradient(145deg, #c9d0d2 0 12%, #8f999d 13% 72%, #687277 73% 100%) !important;
+  box-shadow:
+    inset 0 2px 0 rgba(255,255,255,.72),
+    inset 0 -10px 0 rgba(43,52,56,.28),
+    0 4px 0 rgba(78,63,49,.12) !important;
+}
+
+.grillStation > b {
+  position: relative;
+  z-index: 4;
+  min-height: 27px;
+  padding: 4px 64px 4px 8px;
+  border: 1px solid rgba(52,61,65,.46);
+  border-radius: 7px;
+  background: linear-gradient(#dce1e2, #a9b2b5);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,.72);
+  color: #26343a;
+  display: flex;
+  align-items: center;
+  text-align: left;
+  font-size: clamp(.48rem, 1.25dvh, .68rem);
+  line-height: 1.05;
+}
+
+.grillStation > b::after {
+  content: "";
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  transform: translateY(-50%);
+  border: 2px solid #48545a;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 35%, #f5f7f7 0 18%, #6c777c 20% 58%, #303a3f 60% 100%);
+  box-shadow: -18px 0 0 -2px #7b8589, -36px 0 0 -2px #7b8589;
+}
+
+.grillStation::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: clamp(6px, 1vw, 12px);
+  right: clamp(6px, 1vw, 12px);
+  top: 43px;
+  bottom: 10px;
+  border: 3px solid #343d41;
+  border-radius: 9px;
+  background:
+    repeating-linear-gradient(90deg, #252d31 0 3px, transparent 3px 13px),
+    repeating-linear-gradient(0deg, #252d31 0 2px, #535d61 2px 11px);
+  box-shadow:
+    inset 0 0 0 3px #697277,
+    inset 0 -7px 12px rgba(0,0,0,.34),
+    0 2px 0 rgba(255,255,255,.22);
+  pointer-events: none;
+}
+
+.grillStation::after {
+  content: "";
+  position: absolute;
+  z-index: 2;
+  left: 10%;
+  right: 10%;
+  bottom: 12px;
+  height: 24%;
+  border-radius: 50%;
+  background: radial-gradient(ellipse at center, rgba(255,126,46,.2), transparent 68%);
+  filter: blur(3px);
+  pointer-events: none;
+}
+
+.grillStation > div {
+  position: relative;
+  z-index: 3;
+  height: calc(100% - 32px) !important;
+  margin-top: 5px !important;
+  padding: 8px 7px 6px;
+  align-items: stretch;
+  background: transparent;
+}
+
+.grillStation > div > button {
+  position: relative;
+  z-index: 4;
+  min-height: 0 !important;
+  border: 0 !important;
+  border-radius: 8px !important;
+  background: rgba(18,23,25,.42) !important;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.08), 0 2px 4px rgba(0,0,0,.16);
+  color: #fff;
+}
+
+.grillStation > div > button[data-state="READY!"] {
+  background: rgba(35,109,69,.72) !important;
+  box-shadow: inset 0 0 0 2px rgba(113,240,164,.35), 0 2px 4px rgba(0,0,0,.16);
+}
+
+.grillStation > div > button[data-state="BURNT"] {
+  background: rgba(87,43,35,.8) !important;
+  box-shadow: inset 0 0 0 2px rgba(174,84,62,.35), 0 2px 4px rgba(0,0,0,.18);
+}
+
+.grillStation > div > button span {
+  position: relative;
+  z-index: 2;
+  filter: drop-shadow(0 2px 1px rgba(0,0,0,.42));
+}
+
+.grillStation > div > button strong,
+.grillStation > div > button small {
+  position: relative;
+  z-index: 2;
+  text-shadow: 0 1px 1px rgba(0,0,0,.5);
+}
+
+@media (max-width: 760px) {
+  .grillStation > b {
+    min-height: 22px;
+    padding: 3px 50px 3px 6px;
+    font-size: .44rem;
+  }
+
+  .grillStation > b::after {
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    box-shadow: -14px 0 0 -2px #7b8589, -28px 0 0 -2px #7b8589;
+  }
+
+  .grillStation::before { top: 35px; bottom: 7px; }
+  .grillStation > div { height: calc(100% - 26px) !important; padding: 5px 4px 4px; }
+}
+
+@media (max-height: 440px) {
+  .grillStation > b {
+    min-height: 18px;
+    padding: 2px 42px 2px 5px;
+    font-size: .37rem;
+  }
+
+  .grillStation > b::after {
+    right: 5px;
+    width: 7px;
+    height: 7px;
+    border-width: 1px;
+    box-shadow: -12px 0 0 -2px #7b8589, -24px 0 0 -2px #7b8589;
+  }
+
+  .grillStation::before { top: 29px; bottom: 5px; border-width: 2px; }
+  .grillStation > div { height: calc(100% - 21px) !important; padding: 3px; }
+}
