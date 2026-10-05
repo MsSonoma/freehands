@@ -7980,3 +7980,20 @@
     width: 86vw;
   }
 }
+
+/* Palm Court range clearance: keep freezer fully visible. */
+.palmKitchenGame .palmKitchenStove {
+  left: 45%;
+}
+
+@media (max-width: 760px) {
+  .palmKitchenGame .palmKitchenStove {
+    left: 46%;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenGame .palmKitchenStove {
+    left: 48%;
+  }
+}
