@@ -1868,3 +1868,689 @@
 }
 .cafePendantRow span::after { font-size: 2rem; }
 .workPendantRow span::after { font-size: 1.5rem; }
+
+/* Design Studio room: five play modes entered through objects in one flat interior. */
+.studioGameShell {
+  height: 100dvh;
+  min-height: 100dvh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f5e8df;
+}
+
+.topBar.studioTopBar {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(23,48,79,.12);
+  background: rgba(255,255,255,.96);
+}
+
+.studioTopBar .backButton {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: .72rem;
+}
+
+.studioTopBar .brand {
+  font-size: 1rem;
+  letter-spacing: -.025em;
+}
+
+.studioTopBar .wallet {
+  padding: 5px 9px;
+  font-size: .72rem;
+}
+
+.studioRoomInterior {
+  position: relative;
+  width: 100%;
+  height: calc(100dvh - 44px);
+  min-height: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  isolation: isolate;
+  background: #f6e7df;
+}
+
+.studioRoomInterior::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 38% 0;
+  background:
+    radial-gradient(circle at 18% 24%, rgba(255,255,255,.45) 0 2px, transparent 3px),
+    radial-gradient(circle at 78% 48%, rgba(194,142,137,.12) 0 1px, transparent 2px),
+    repeating-linear-gradient(90deg, rgba(180,127,125,.045) 0 1px, transparent 1px 34px),
+    linear-gradient(180deg, #f8eee9 0%, #edd8cf 100%);
+  background-size: 54px 54px, 42px 42px, auto, auto;
+}
+
+.studioRoomInterior::after {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: 62% 0 0 0;
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgba(107,75,56,.14) 0 2px,
+      transparent 2px 86px
+    ),
+    repeating-linear-gradient(
+      0deg,
+      rgba(255,255,255,.18) 0 2px,
+      transparent 2px 42px
+    ),
+    linear-gradient(180deg, #d8b58e 0%, #be9068 100%);
+}
+
+.studioRoomFloorLine {
+  position: absolute;
+  z-index: 1;
+  left: 0;
+  right: 0;
+  top: 62%;
+  height: 7px;
+  background: #9f765e;
+  box-shadow: 0 -3px 0 rgba(255,255,255,.55), 0 4px 8px rgba(83,53,38,.16);
+}
+
+.studioRoomWallLogo {
+  position: absolute;
+  z-index: 2;
+  top: clamp(18px, 4dvh, 42px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: grid;
+  justify-items: center;
+  gap: 3px;
+  color: #744a59;
+  text-align: center;
+  letter-spacing: .08em;
+  pointer-events: none;
+}
+
+.studioRoomWallLogo strong {
+  font-size: clamp(1rem, 2.5vw, 1.85rem);
+  letter-spacing: .16em;
+}
+
+.studioRoomWallLogo span {
+  font-size: clamp(.55rem, 1.3vw, .75rem);
+  font-weight: 850;
+  text-transform: uppercase;
+}
+
+.studioRoomShelf {
+  position: absolute;
+  z-index: 2;
+  top: clamp(76px, 13dvh, 116px);
+  right: max(18px, calc((100vw - 1160px) / 2 + 18px));
+  width: clamp(112px, 14vw, 170px);
+  height: 54px;
+  border-bottom: 8px solid #9f725a;
+  pointer-events: none;
+}
+
+.studioRoomShelf span,
+.studioRoomShelf i,
+.studioRoomShelf b,
+.studioRoomShelf em {
+  position: absolute;
+  bottom: 8px;
+  display: block;
+  border-radius: 5px 5px 2px 2px;
+}
+
+.studioRoomShelf span {
+  left: 8%;
+  width: 18%;
+  height: 30px;
+  background: #df789f;
+}
+
+.studioRoomShelf i {
+  left: 34%;
+  width: 16%;
+  height: 42px;
+  background: #79b2c8;
+}
+
+.studioRoomShelf b {
+  left: 56%;
+  width: 14%;
+  height: 26px;
+  background: #e3b854;
+}
+
+.studioRoomShelf em {
+  left: 76%;
+  width: 17%;
+  height: 36px;
+  background: #83b88f;
+}
+
+.studioRoomStage {
+  --studio-room-gutter: max(14px, calc((100vw - 1180px) / 2 + 20px));
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  height: 100%;
+  padding:
+    clamp(110px, 18dvh, 150px)
+    var(--studio-room-gutter)
+    clamp(10px, 2.5dvh, 28px);
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  align-items: end;
+  gap: clamp(8px, 1.5vw, 22px);
+}
+
+.studioRoomStation {
+  position: relative;
+  min-width: 0;
+  min-height: clamp(190px, 36dvh, 310px);
+  border: 0;
+  background: transparent;
+  color: #17304f;
+  cursor: pointer;
+  display: grid;
+  grid-template-rows: 1fr auto auto;
+  align-items: end;
+  justify-items: center;
+  gap: 3px;
+  padding: 0 3px 8px;
+  font: inherit;
+  text-align: center;
+  transition: transform .16s ease;
+}
+
+.studioRoomStation:hover,
+.studioRoomStation:focus-visible {
+  transform: translateY(-5px);
+}
+
+.studioRoomStation:focus-visible {
+  outline: 3px solid #17304f;
+  outline-offset: 2px;
+  border-radius: 16px;
+}
+
+.studioRoomStation strong {
+  position: relative;
+  z-index: 7;
+  min-width: 76%;
+  max-width: 100%;
+  border: 2px solid rgba(23,48,79,.13);
+  border-radius: 999px;
+  background: rgba(255,255,255,.94);
+  padding: 6px 9px;
+  font-size: clamp(.68rem, 1.15vw, .86rem);
+  box-shadow: 0 4px 10px rgba(45,36,45,.12);
+}
+
+.studioRoomStation small {
+  position: relative;
+  z-index: 7;
+  color: #6c7480;
+  font-size: clamp(.5rem, .88vw, .65rem);
+  font-weight: 800;
+}
+
+.studioVanityObject,
+.studioSalonObject,
+.studioArtObject,
+.studioSewingObject,
+.studioRackObject {
+  position: relative;
+  width: min(100%, 180px);
+  height: clamp(112px, 24dvh, 188px);
+  display: block;
+  filter: drop-shadow(0 8px 7px rgba(62,43,37,.14));
+}
+
+.studioVanityMirror {
+  position: absolute;
+  left: 50%;
+  top: 3%;
+  width: 46%;
+  height: 52%;
+  transform: translateX(-50%);
+  border: 7px solid #dba17f;
+  border-radius: 50% 50% 44% 44%;
+  background: linear-gradient(145deg, #dff6ff, #f8fdff 48%, #c8e2eb);
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.75);
+}
+
+.studioVanityMirror::before,
+.studioVanityMirror::after {
+  content: "";
+  position: absolute;
+  top: 40%;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #fff3b0;
+  box-shadow: 0 0 7px #fff1a0;
+}
+
+.studioVanityMirror::before { left: -12px; }
+.studioVanityMirror::after { right: -12px; }
+
+.studioVanityTable {
+  position: absolute;
+  left: 12%;
+  right: 12%;
+  bottom: 25%;
+  height: 21%;
+  border-radius: 8px 8px 3px 3px;
+  background: #d58e72;
+  box-shadow: inset 0 -8px 0 #b8735d;
+}
+
+.studioVanityTable::before,
+.studioVanityTable::after {
+  content: "";
+  position: absolute;
+  top: 95%;
+  width: 8%;
+  height: 45%;
+  background: #925c4c;
+}
+
+.studioVanityTable::before { left: 8%; }
+.studioVanityTable::after { right: 8%; }
+
+.studioVanityStool {
+  position: absolute;
+  left: 50%;
+  bottom: 2%;
+  width: 37%;
+  height: 20%;
+  transform: translateX(-50%);
+  border-radius: 50% 50% 8px 8px;
+  background: #d77b9f;
+  box-shadow: inset 0 -7px 0 #af5c7d;
+}
+
+.studioSalonChair {
+  position: absolute;
+  left: 19%;
+  bottom: 7%;
+  width: 54%;
+  height: 57%;
+  border-radius: 24px 24px 12px 12px;
+  background: #86b8b3;
+  box-shadow: inset 0 -14px 0 #67938f;
+}
+
+.studioSalonChair::before {
+  content: "";
+  position: absolute;
+  left: 14%;
+  right: 14%;
+  top: -31%;
+  height: 44%;
+  border-radius: 22px 22px 8px 8px;
+  background: #6faaa4;
+}
+
+.studioSalonChair::after {
+  content: "";
+  position: absolute;
+  left: 42%;
+  top: 100%;
+  width: 16%;
+  height: 26%;
+  background: #8a7c76;
+  box-shadow: 0 26px 0 8px #756963;
+}
+
+.studioSalonCart {
+  position: absolute;
+  right: 0;
+  bottom: 8%;
+  width: 27%;
+  height: 48%;
+  border-radius: 7px;
+  background:
+    linear-gradient(#fff 0 28%, transparent 28% 36%, #fff 36% 64%, transparent 64% 72%, #fff 72%);
+  border: 4px solid #a2a8ae;
+}
+
+.studioSalonCart::before,
+.studioSalonCart::after {
+  content: "";
+  position: absolute;
+  bottom: -8px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #59646d;
+}
+
+.studioSalonCart::before { left: 3px; }
+.studioSalonCart::after { right: 3px; }
+
+.studioCanvas {
+  position: absolute;
+  left: 50%;
+  top: 5%;
+  width: 64%;
+  height: 60%;
+  transform: translateX(-50%) rotate(-1deg);
+  border: 7px solid #9a6e4d;
+  background:
+    radial-gradient(circle at 70% 30%, #f0b84f 0 13%, transparent 14%),
+    linear-gradient(145deg, transparent 0 36%, #7fc0b7 37% 49%, transparent 50%),
+    linear-gradient(#fdf7e8, #f7e7c9);
+}
+
+.studioEaselLeg {
+  position: absolute;
+  left: 50%;
+  top: 55%;
+  width: 10px;
+  height: 43%;
+  transform: translateX(-50%);
+  background: #8b6042;
+  box-shadow: -42px 18px 0 -2px #8b6042, 42px 18px 0 -2px #8b6042;
+}
+
+.studioPaintTray {
+  position: absolute;
+  left: 17%;
+  right: 17%;
+  top: 63%;
+  height: 9%;
+  border-radius: 999px;
+  background: #a87854;
+  box-shadow: inset 0 4px 0 rgba(255,255,255,.24);
+}
+
+.studioMannequin {
+  position: absolute;
+  left: 8%;
+  top: 1%;
+  width: 34%;
+  height: 72%;
+}
+
+.studioMannequin::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 24%;
+  height: 13%;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: #e7c29f;
+}
+
+.studioMannequin::after {
+  content: "";
+  position: absolute;
+  left: 17%;
+  top: 13%;
+  width: 66%;
+  height: 62%;
+  clip-path: polygon(24% 0, 76% 0, 100% 100%, 0 100%);
+  background: linear-gradient(145deg, #ba7da7, #8d5f8a);
+  box-shadow: 0 56px 0 -27px #7b674e;
+}
+
+.studioSewingTable {
+  position: absolute;
+  left: 38%;
+  right: 2%;
+  bottom: 10%;
+  height: 29%;
+  border-radius: 7px 7px 2px 2px;
+  background: #bc825f;
+  box-shadow: inset 0 -10px 0 #9c694f;
+}
+
+.studioSewingTable::before,
+.studioSewingTable::after {
+  content: "";
+  position: absolute;
+  top: 100%;
+  width: 9%;
+  height: 55%;
+  background: #815542;
+}
+
+.studioSewingTable::before { left: 8%; }
+.studioSewingTable::after { right: 8%; }
+
+.studioSewingMachine {
+  position: absolute;
+  right: 12%;
+  bottom: 38%;
+  width: 38%;
+  height: 24%;
+  border-radius: 9px 18px 6px 6px;
+  background: #f4eee7;
+  border-bottom: 6px solid #7ca6a3;
+}
+
+.studioSewingMachine::before {
+  content: "";
+  position: absolute;
+  left: 17%;
+  bottom: -22%;
+  width: 10%;
+  height: 45%;
+  background: #565d65;
+}
+
+.studioRackBar {
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: 18%;
+  height: 8px;
+  border-radius: 999px;
+  background: #626a73;
+  box-shadow: -2px 74px 0 -1px #626a73, 2px 74px 0 -1px #626a73;
+}
+
+.studioRackBar::before,
+.studioRackBar::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  width: 8px;
+  height: 83px;
+  background: #626a73;
+}
+
+.studioRackBar::before { left: 0; }
+.studioRackBar::after { right: 0; }
+
+.studioRackClothes {
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  top: 23%;
+  height: 48%;
+  background:
+    linear-gradient(90deg,
+      #e0739a 0 19%,
+      transparent 19% 22%,
+      #6fa9c0 22% 42%,
+      transparent 42% 45%,
+      #d4af58 45% 65%,
+      transparent 65% 68%,
+      #7eb38e 68% 88%,
+      transparent 88%);
+  clip-path: polygon(4% 0, 96% 0, 88% 100%, 12% 100%);
+}
+
+.studioRackBase {
+  position: absolute;
+  left: 5%;
+  right: 5%;
+  bottom: 8%;
+  height: 8px;
+  border-radius: 999px;
+  background: #626a73;
+}
+
+.studioModeTitle {
+  color: #17304f;
+  font-size: 1.05rem;
+  font-weight: 1000;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+}
+
+.beautyStudioLayout {
+  display: grid;
+  grid-template-columns: minmax(280px, 390px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.beautyStudioLayout > .secondaryButton {
+  grid-column: 1 / -1;
+  justify-self: start;
+}
+
+.beautyControlPanel {
+  border: 2px solid #e3eaf0;
+  border-radius: 22px;
+  background: #fff;
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+}
+
+.beautyControlGroup {
+  display: grid;
+  gap: 9px;
+  border-bottom: 1px solid #e8eef2;
+  padding-bottom: 13px;
+}
+
+.beautyControlGroup:last-of-type {
+  border-bottom: 0;
+}
+
+.beautyControlGroup h3 {
+  margin: 0;
+  color: #17304f;
+  font-size: .9rem;
+}
+
+@media (max-width: 900px) {
+  .studioRoomStage {
+    padding-top: clamp(90px, 16dvh, 118px);
+    gap: 5px;
+  }
+
+  .studioRoomStation {
+    min-height: clamp(150px, 32dvh, 230px);
+  }
+
+  .studioVanityObject,
+  .studioSalonObject,
+  .studioArtObject,
+  .studioSewingObject,
+  .studioRackObject {
+    height: clamp(82px, 19dvh, 130px);
+  }
+
+  .studioRoomStation strong {
+    min-width: 90%;
+    padding: 4px 5px;
+    font-size: clamp(.58rem, 1.5vw, .72rem);
+  }
+
+  .studioRoomStation small {
+    font-size: clamp(.45rem, 1vw, .57rem);
+  }
+
+  .beautyStudioLayout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 560px) {
+  .studioRoomWallLogo {
+    top: 10px;
+  }
+
+  .studioRoomShelf {
+    display: none;
+  }
+
+  .studioRoomStage {
+    padding: 68px 5px 6px;
+    gap: 2px;
+  }
+
+  .studioRoomStation {
+    min-height: clamp(128px, 29dvh, 190px);
+    padding: 0 1px 3px;
+  }
+
+  .studioVanityObject,
+  .studioSalonObject,
+  .studioArtObject,
+  .studioSewingObject,
+  .studioRackObject {
+    width: 100%;
+    height: clamp(68px, 16dvh, 102px);
+  }
+
+  .studioRoomStation strong {
+    min-width: 96%;
+    font-size: .52rem;
+    padding: 3px 2px;
+    letter-spacing: -.02em;
+  }
+
+  .studioRoomStation small {
+    display: none;
+  }
+}
+
+@media (max-height: 610px) {
+  .studioRoomWallLogo {
+    top: 7px;
+    transform: translateX(-50%) scale(.82);
+    transform-origin: top center;
+  }
+
+  .studioRoomShelf {
+    top: 48px;
+    transform: scale(.8);
+    transform-origin: top right;
+  }
+
+  .studioRoomStage {
+    padding-top: 54px;
+    padding-bottom: 4px;
+  }
+
+  .studioRoomStation {
+    min-height: 0;
+  }
+
+  .studioVanityObject,
+  .studioSalonObject,
+  .studioArtObject,
+  .studioSewingObject,
+  .studioRackObject {
+    height: clamp(62px, 18dvh, 105px);
+  }
+}

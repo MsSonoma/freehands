@@ -496,6 +496,7 @@ export default function KidsResort({ libraryHref = null }) {
   const [studioCustomerPerson, setStudioCustomerPerson] = useState(null);
   const [studioCustomerDone, setStudioCustomerDone] = useState(false);
   const [studioTipResult, setStudioTipResult] = useState(null);
+  const [studioBeautyDraft, setStudioBeautyDraft] = useState(null);
   const [artColor, setArtColor] = useState('#ff4f9a');
   const artCanvasRef = useRef(null);
   const artDrawingRef = useRef(false);
@@ -1121,6 +1122,90 @@ export default function KidsResort({ libraryHref = null }) {
     setStudioMessage(nextPerson.name + ' is ready for a fashion design.');
   };
 
+  const beginBeautyWork = () => {
+    const person = prepareFashionCustomer(studioCustomerIndex);
+    setStudioMessage('');
+    setStudioCustomerDone(false);
+    setStudioBeautyDraft(null);
+    setScreen('studio-beauty-work');
+    return person;
+  };
+
+  const beginBeautyService = () => {
+    setStudioMessage('');
+    setStudioCustomerDone(false);
+    setStudioBeautyDraft({
+      character: { ...character },
+      look: cloneLook(look),
+    });
+    setScreen('studio-beauty-shop');
+  };
+
+  const updateBeautyCustomerCharacter = (key, value) => {
+    setStudioCustomerPerson((current) => current ? {
+      ...current,
+      character: { ...current.character, [key]: value },
+    } : current);
+  };
+
+  const updateBeautyCustomerHair = (option) => {
+    setStudioCustomerPerson((current) => current ? {
+      ...current,
+      look: { ...current.look, hair: option },
+    } : current);
+  };
+
+  const finishBeautyWork = () => {
+    if (!studioCustomerPerson) return;
+    const finished = studioCustomerPerson;
+    setPeople((items) => items.map((itemPerson) => (
+      itemPerson.id === finished.id
+        ? {
+            ...itemPerson,
+            character: { ...finished.character },
+            look: cloneLook(finished.look),
+          }
+        : itemPerson
+    )));
+    setBucks((value) => value + 3);
+    setStudioCustomerDone(true);
+    setStudioMessage(finished.name + ': Thanks! I love getting a fresh look. +3 Resort Bucks');
+  };
+
+  const nextBeautyCustomer = () => {
+    const nextIndex = (studioCustomerIndex + 1) % FASHION_CUSTOMERS.length;
+    const nextPerson = prepareFashionCustomer(nextIndex);
+    setStudioCustomerDone(false);
+    setStudioMessage(nextPerson.name + ' is ready for a beauty appointment.');
+  };
+
+  const updateBeautyDraftCharacter = (key, value) => {
+    setStudioBeautyDraft((current) => current ? {
+      ...current,
+      character: { ...current.character, [key]: value },
+    } : current);
+  };
+
+  const updateBeautyDraftHair = (option) => {
+    setStudioBeautyDraft((current) => current ? {
+      ...current,
+      look: { ...current.look, hair: option },
+    } : current);
+  };
+
+  const finishBeautyService = () => {
+    if (!studioBeautyDraft) return;
+    if (bucks < 3) {
+      setStudioMessage('You need 3 Resort Bucks for the beauty service.');
+      return;
+    }
+    setBucks((value) => value - 3);
+    setCharacter({ ...studioBeautyDraft.character });
+    setLook(cloneLook(studioBeautyDraft.look));
+    setStudioCustomerDone(true);
+    setStudioMessage('Fresh look finished! -3 Resort Bucks');
+  };
+
   const renderCharacter = (
     large = false,
     displayLook = look,
@@ -1324,38 +1409,327 @@ export default function KidsResort({ libraryHref = null }) {
   }
 
   if (screen === 'studio') {
+    return (
+      <main className={[styles.gameShell, styles.studioGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.studioTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>
+            ← Resort Map
+          </button>
+          <div className={styles.brand}>Design Studio</div>
+          <div className={styles.wallet}>💵 {bucks} Resort Bucks</div>
+        </section>
+
+        <section className={styles.studioRoomInterior}>
+          <div className={styles.studioRoomWallLogo}>
+            <strong>DESIGN STUDIO</strong>
+            <span>style · beauty · art</span>
+          </div>
+          <div className={styles.studioRoomShelf} aria-hidden="true">
+            <span />
+            <i />
+            <b />
+            <em />
+          </div>
+          <div className={styles.studioRoomFloorLine} aria-hidden="true" />
+
+          <div className={styles.studioRoomStage}>
+            <button
+              className={styles.studioRoomStation}
+              data-station="beauty-shop"
+              type="button"
+              onClick={beginBeautyService}
+            >
+              <span className={styles.studioVanityObject} aria-hidden="true">
+                <i className={styles.studioVanityMirror} />
+                <i className={styles.studioVanityTable} />
+                <i className={styles.studioVanityStool} />
+              </span>
+              <strong>Beauty Bar</strong>
+              <small>Get hair & makeup done</small>
+            </button>
+
+            <button
+              className={styles.studioRoomStation}
+              data-station="beauty-work"
+              type="button"
+              onClick={beginBeautyWork}
+            >
+              <span className={styles.studioSalonObject} aria-hidden="true">
+                <i className={styles.studioSalonChair} />
+                <i className={styles.studioSalonCart} />
+              </span>
+              <strong>Beauty Station</strong>
+              <small>Work hair & makeup</small>
+            </button>
+
+            <button
+              className={styles.studioRoomStation}
+              data-station="art"
+              type="button"
+              onClick={() => {
+                setStudioMessage('');
+                setStudioWorkTool('art');
+                setScreen('studio-work');
+              }}
+            >
+              <span className={styles.studioArtObject} aria-hidden="true">
+                <i className={styles.studioCanvas} />
+                <i className={styles.studioEaselLeg} />
+                <i className={styles.studioPaintTray} />
+              </span>
+              <strong>Art Easel</strong>
+              <small>Take an art job</small>
+            </button>
+
+            <button
+              className={styles.studioRoomStation}
+              data-station="fashion-work"
+              type="button"
+              onClick={() => {
+                setStudioMessage('');
+                setStudioWorkTool('fashion');
+                prepareFashionCustomer(studioCustomerIndex);
+                setScreen('studio-work');
+              }}
+            >
+              <span className={styles.studioSewingObject} aria-hidden="true">
+                <i className={styles.studioMannequin} />
+                <i className={styles.studioSewingTable} />
+                <i className={styles.studioSewingMachine} />
+              </span>
+              <strong>Fashion Desk</strong>
+              <small>Design for customers</small>
+            </button>
+
+            <button
+              className={styles.studioRoomStation}
+              data-station="fashion-shop"
+              type="button"
+              onClick={() => {
+                setStudioMessage('');
+                setStudioCategory('shirt');
+                setStudioDraftLook(cloneLook(look));
+                setScreen('studio-shop');
+              }}
+            >
+              <span className={styles.studioRackObject} aria-hidden="true">
+                <i className={styles.studioRackBar} />
+                <i className={styles.studioRackClothes} />
+                <i className={styles.studioRackBase} />
+              </span>
+              <strong>Fashion Rack</strong>
+              <small>Shop & try on</small>
+            </button>
+          </div>
+        </section>
+      </main>
+    );
+  }
+
+  if (screen === 'studio-beauty-work') {
+    const person = studioCustomerPerson;
+    if (!person) {
+      return interiorShell('Beauty Station', '💇', 'WORK HERE', (
+        <button className={styles.primaryButton} type="button" onClick={beginBeautyWork}>Start Appointment</button>
+      ));
+    }
+
     return interiorShell(
-      'Design Studio',
-      '\u{1F457}',
-      'CREATE OR SHOP',
-      <div className={styles.studioChoiceGrid}>
-        <button
-          className={styles.studioChoiceCard}
-          type="button"
-          onClick={() => {
-            setStudioMessage('');
-            setStudioWorkTool('fashion');
-            prepareFashionCustomer(studioCustomerIndex);
-            setScreen('studio-work');
-          }}
-        >
-          <span className={styles.studioChoiceIcon}>🎨</span>
-          <strong>Work Here</strong>
-          <span>Make art or design fashion for customers and earn Resort Bucks.</span>
+      'Beauty Station',
+      '💇',
+      'WORK HERE',
+      <div className={styles.beautyStudioLayout}>
+        <section className={styles.characterStage}>
+          {renderCharacter(true, person.look, person.character, person.name)}
+          <div className={styles.lookSummary}>
+            <strong>{person.name}</strong>
+            <span>Beauty customer</span>
+          </div>
+        </section>
+
+        <section className={styles.beautyControlPanel}>
+          <div className={styles.beautyControlGroup}>
+            <h3>Hair Style</h3>
+            <div className={styles.creatorChoiceWrap}>
+              {LOOK_OPTIONS.hair.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={styles.creatorTextChoice}
+                  data-selected={person.look.hair.id === option.id ? 'true' : 'false'}
+                  onClick={() => updateBeautyCustomerHair(option)}
+                >
+                  {option.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.beautyControlGroup}>
+            <h3>Hair Color</h3>
+            <div className={styles.creatorSwatches}>
+              {CHARACTER_OPTIONS.hair.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={styles.creatorSwatch}
+                  data-selected={person.character.hair === option.id ? 'true' : 'false'}
+                  style={{ '--swatch-color': option.color }}
+                  aria-label={option.name}
+                  title={option.name}
+                  onClick={() => updateBeautyCustomerCharacter('hair', option.id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.beautyControlGroup}>
+            <h3>Makeup & Face Details</h3>
+            <div className={styles.creatorChoiceWrap}>
+              {[
+                ['none', 'None'],
+                ['blush', 'Blush'],
+                ['freckles', 'Freckles'],
+                ['lashes', 'Lashes'],
+                ['lip', 'Lip Color'],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={styles.creatorTextChoice}
+                  data-selected={person.character.makeup === id ? 'true' : 'false'}
+                  onClick={() => updateBeautyCustomerCharacter('makeup', id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {person.character.makeup !== 'none' && (
+              <label className={styles.creatorColorInput}>
+                <span>Detail color</span>
+                <input
+                  type="color"
+                  value={person.character.makeupColor}
+                  onChange={(event) => updateBeautyCustomerCharacter('makeupColor', event.target.value)}
+                />
+              </label>
+            )}
+          </div>
+
+          <div className={styles.fashionActionRow}>
+            {studioCustomerDone ? (
+              <button type="button" onClick={nextBeautyCustomer}>Next Customer</button>
+            ) : (
+              <button type="button" onClick={finishBeautyWork}>Finish Service</button>
+            )}
+          </div>
+          <p className={styles.customerOpinion}>{studioMessage}</p>
+        </section>
+
+        <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
+          Design Studio
         </button>
-        <button
-          className={styles.studioChoiceCard}
-          type="button"
-          onClick={() => {
-            setStudioMessage('');
-            setStudioCategory('shirt');
-            setStudioDraftLook({ ...look });
-            setScreen('studio-shop');
-          }}
-        >
-          <span className={styles.studioChoiceIcon}>🛍️</span>
-          <strong>Shop & Try On</strong>
-          <span>Design custom pieces for yourself, try them on, and buy the ones you want.</span>
+      </div>,
+    );
+  }
+
+  if (screen === 'studio-beauty-shop') {
+    const draft = studioBeautyDraft || { character, look };
+
+    return interiorShell(
+      'Beauty Bar',
+      '💄',
+      'HAIR & MAKEUP',
+      <div className={styles.beautyStudioLayout}>
+        <section className={styles.characterStage}>
+          {renderCharacter(true, draft.look, draft.character, characterName)}
+          <div className={styles.lookSummary}>
+            <strong>{characterName}</strong>
+            <span>Your beauty appointment</span>
+          </div>
+        </section>
+
+        <section className={styles.beautyControlPanel}>
+          <div className={styles.beautyControlGroup}>
+            <h3>Hair Style</h3>
+            <div className={styles.creatorChoiceWrap}>
+              {LOOK_OPTIONS.hair.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={styles.creatorTextChoice}
+                  data-selected={draft.look.hair.id === option.id ? 'true' : 'false'}
+                  onClick={() => updateBeautyDraftHair(option)}
+                >
+                  {option.name}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.beautyControlGroup}>
+            <h3>Hair Color</h3>
+            <div className={styles.creatorSwatches}>
+              {CHARACTER_OPTIONS.hair.map((option) => (
+                <button
+                  key={option.id}
+                  type="button"
+                  className={styles.creatorSwatch}
+                  data-selected={draft.character.hair === option.id ? 'true' : 'false'}
+                  style={{ '--swatch-color': option.color }}
+                  aria-label={option.name}
+                  title={option.name}
+                  onClick={() => updateBeautyDraftCharacter('hair', option.id)}
+                />
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.beautyControlGroup}>
+            <h3>Makeup & Face Details</h3>
+            <div className={styles.creatorChoiceWrap}>
+              {[
+                ['none', 'None'],
+                ['blush', 'Blush'],
+                ['freckles', 'Freckles'],
+                ['lashes', 'Lashes'],
+                ['lip', 'Lip Color'],
+              ].map(([id, label]) => (
+                <button
+                  key={id}
+                  type="button"
+                  className={styles.creatorTextChoice}
+                  data-selected={draft.character.makeup === id ? 'true' : 'false'}
+                  onClick={() => updateBeautyDraftCharacter('makeup', id)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+            {draft.character.makeup !== 'none' && (
+              <label className={styles.creatorColorInput}>
+                <span>Detail color</span>
+                <input
+                  type="color"
+                  value={draft.character.makeupColor}
+                  onChange={(event) => updateBeautyDraftCharacter('makeupColor', event.target.value)}
+                />
+              </label>
+            )}
+          </div>
+
+          <div className={styles.fashionActionRow}>
+            {studioCustomerDone ? (
+              <button type="button" onClick={() => setScreen('studio')}>Done</button>
+            ) : (
+              <button type="button" onClick={finishBeautyService}>Finish Service · 3 Resort Bucks</button>
+            )}
+          </div>
+          <p className={styles.customerOpinion}>{studioMessage}</p>
+        </section>
+
+        <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
+          Design Studio
         </button>
       </div>,
     );
@@ -1375,35 +1749,8 @@ export default function KidsResort({ libraryHref = null }) {
       '🎨',
       'WORK HERE',
       <div className={styles.studioWorkPage}>
-        <div className={styles.studioToolTabs}>
-          <button
-            type="button"
-            data-active={studioWorkTool === 'fashion'}
-            onClick={() => {
-              setStudioWorkTool('fashion');
-              if (studioCustomerPerson) {
-                setStudioCategory('shirt');
-                setStudioDraftLook(cloneLook(studioCustomerPerson.look));
-                setStudioTipResult(null);
-                setStudioCustomerDone(false);
-              } else {
-                prepareFashionCustomer(studioCustomerIndex);
-              }
-              setStudioMessage('');
-            }}
-          >
-            👗 Fashion Customers
-          </button>
-          <button
-            type="button"
-            data-active={studioWorkTool === 'art'}
-            onClick={() => {
-              setStudioWorkTool('art');
-              setStudioMessage('');
-            }}
-          >
-            🖌️ Art Commissions
-          </button>
+        <div className={styles.studioModeTitle}>
+          {studioWorkTool === 'fashion' ? 'Fashion Work' : 'Art Work'}
         </div>
 
         {studioWorkTool === 'fashion' ? (
@@ -1533,7 +1880,7 @@ export default function KidsResort({ libraryHref = null }) {
         )}
 
         <button className={styles.secondaryButton} type="button" onClick={() => setScreen('studio')}>
-          Studio Lobby
+          Design Studio
         </button>
       </div>,
     );
@@ -1654,7 +2001,7 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.fullMessage} aria-live="polite">
             {studioMessage || 'Choose a type and any color. Trying it on is free; keeping the custom design costs Resort Bucks.'}
           </div>
-          <button className={styles.secondaryButton} type="button" onClick={() => { setStudioDraftLook(null); setScreen('studio'); }}>Studio Lobby</button>
+          <button className={styles.secondaryButton} type="button" onClick={() => { setStudioDraftLook(null); setScreen('studio'); }}>Design Studio</button>
         </section>
       </div>,
     );
