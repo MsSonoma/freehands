@@ -588,8 +588,8 @@ export default function KidsResort({ libraryHref = null }) {
 
   if (screen === 'cafe') {
     return (
-      <main className={styles.gameShell}>
-        <section className={styles.topBar}>
+      <main className={[styles.gameShell, styles.cafeGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.cafeTopBar].join(' ')}>
           <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>← Resort Map</button>
           <div className={styles.brand}>Kids Resort</div>
           <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>

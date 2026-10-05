@@ -1746,3 +1746,48 @@
 .cafeSmallTable span { position:relative; z-index:4; margin-top:-17px; font-size:1.55rem; filter:drop-shadow(0 2px 0 rgba(0,0,0,.08)); }
 .cafeBooth::after { content:""; position:absolute; z-index:2; left:50%; top:136px; width:9px; height:62px; transform:translateX(-50%); border-radius:3px; background:#795039; }
 .cafeTableGroup::after { content:""; position:absolute; z-index:1; left:50%; top:74px; width:10px; height:54px; transform:translateX(-50%); border-radius:3px; background:#795039; }@media(max-width:600px){.cafeTables{grid-template-columns:1fr;}.cafeTableGroup:nth-child(2){display:none}}
+/* Cafe entry uses the same edge-to-edge shell as the resort map */
+.cafeGameShell {
+  height: 100dvh;
+  min-height: 100dvh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff2cf;
+}
+.topBar.cafeTopBar {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(23,48,79,.12);
+  background: rgba(255,255,255,.95);
+}
+.cafeTopBar .backButton {
+  min-height: 32px;
+  padding: 5px 10px;
+  font-size: .72rem;
+}
+.cafeTopBar .brand {
+  font-size: 1rem;
+  letter-spacing: -.025em;
+}
+.cafeTopBar .wallet {
+  padding: 5px 9px;
+  font-size: .72rem;
+}
+.cafeGameShell .cafeInterior {
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  flex: 1 1 auto;
+  border: 0;
+  border-radius: 0;
+  box-shadow: none;
+}
