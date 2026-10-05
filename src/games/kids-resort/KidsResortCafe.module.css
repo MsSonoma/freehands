@@ -208,3 +208,488 @@
   .cafeOrderPlate { height: 72px; }
   .cafeFinishedDish span { font-size: 2rem; }
 }
+
+/* Full-viewport cooking layout: keep the complete work surface visible. */
+.cafeWorkGameShell {
+  height: 100dvh;
+  min-height: 100dvh;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #f3d7a8;
+}
+
+.cafeWorkTopBar {
+  width: 100%;
+  min-height: 44px;
+  margin: 0;
+  flex: 0 0 44px;
+  padding: 4px 10px;
+  border: 0;
+  border-radius: 0;
+  box-shadow: 0 2px 8px rgba(23,48,79,.12);
+  background: rgba(255,255,255,.96);
+}
+
+.cafeWorkViewport {
+  --cafe-work-wall-top: clamp(108px, 18dvh, 145px);
+  width: 100%;
+  max-width: none;
+  min-height: 0;
+  height: auto;
+  margin: 0;
+  flex: 1 1 auto;
+  overflow: hidden;
+  padding: var(--cafe-work-wall-top) clamp(8px, 1.35vw, 18px) clamp(7px, 1.25dvh, 14px);
+  border-radius: 0;
+  grid-template-columns: clamp(150px, 20vw, 235px) minmax(0, 1fr);
+  grid-template-rows: minmax(104px, 1fr) minmax(122px, 1.25fr) auto minmax(34px, auto);
+  gap: clamp(4px, 1dvh, 10px);
+  align-content: stretch;
+}
+
+.cafeWorkResponsiveBackdrop {
+  height: calc(var(--cafe-work-wall-top) - 3px);
+  overflow: hidden;
+}
+
+.cafeWorkViewport > :global(aside) {
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  padding: clamp(5px, .9dvh, 12px);
+  border-width: clamp(4px, .65vw, 8px);
+  display: grid;
+  grid-template-rows: auto repeat(4, minmax(0, 1fr));
+  align-content: stretch;
+}
+
+.cafeWorkViewport > :global(aside) h2 {
+  margin: 0 0 3px;
+  font-size: clamp(.72rem, 1.6dvh, 1.1rem);
+  line-height: 1;
+}
+
+.cafeWorkViewport > :global(aside) > div {
+  min-height: 0;
+  padding: clamp(3px, .65dvh, 8px) 2px;
+  align-content: center;
+}
+
+.cafeWorkViewport > :global(aside) strong {
+  font-size: clamp(.54rem, 1.25dvh, .78rem);
+  line-height: 1;
+}
+
+.cafeWorkViewport > :global(aside) span {
+  font-size: clamp(.72rem, 2.15dvh, 1.1rem);
+  line-height: 1;
+}
+
+.cafeOrderBoard {
+  min-height: 0;
+  height: 100%;
+  padding: clamp(5px, .8dvh, 10px);
+  overflow: hidden;
+}
+
+.cafeOrderStations {
+  height: calc(100% - 24px);
+  min-height: 0;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: clamp(4px, .7vw, 9px);
+  overflow: visible;
+}
+
+.cafeOrderStation {
+  height: 100%;
+  min-height: 0;
+  grid-template-columns: minmax(52px, .72fr) minmax(68px, 1fr);
+  grid-template-rows: minmax(52px, 1fr) 27px;
+  gap: 4px 6px;
+  padding: clamp(4px, .65dvh, 7px);
+}
+
+.cafeTicket,
+.cafeOrderPlate {
+  height: 100%;
+  min-height: 0;
+}
+
+.cafeKitchenStations {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: clamp(5px, .8dvh, 10px);
+  grid-template-columns: clamp(82px, 12vw, 136px) minmax(0, 1fr) clamp(82px, 12vw, 136px);
+  gap: clamp(5px, .8vw, 10px);
+  overflow: hidden;
+}
+
+.cafeKitchenStations > :global(div) {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: clamp(5px, .8dvh, 10px);
+  overflow: hidden;
+}
+
+.cafeKitchenStations > :global(div) > div {
+  min-height: 0;
+  height: calc(100% - 24px);
+  margin-top: 5px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.cafeKitchenStations > :global(div) button {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 3px;
+}
+
+.cafeKitchenStations > :global(div) button span {
+  font-size: clamp(1.25rem, 4dvh, 2rem);
+}
+
+.cafeKitchenStations > :global(div) button strong,
+.cafeKitchenStations > :global(div) button small {
+  font-size: clamp(.48rem, 1.25dvh, .68rem);
+}
+
+.cafeIngredientDrawer {
+  min-width: 0;
+  min-height: 0;
+  max-height: clamp(52px, 10dvh, 84px);
+  padding: clamp(4px, .7dvh, 8px);
+  display: grid;
+  grid-template-columns: auto repeat(auto-fit, minmax(46px, 1fr));
+  gap: 4px;
+  overflow: hidden;
+}
+
+.cafeIngredientDrawer button {
+  min-width: 0;
+  min-height: 0;
+  padding: 3px 2px;
+  line-height: 1;
+}
+
+.cafeIngredientDrawer button span { font-size: clamp(1rem, 3dvh, 1.5rem); }
+.cafeIngredientDrawer button small { font-size: clamp(.42rem, 1.1dvh, .58rem); }
+.cafeIngredientDrawer button em { font-size: clamp(.36rem, .95dvh, .5rem); }
+
+/* Make storage look like actual kitchen fixtures instead of large emoji buttons. */
+.cafeStorageStation {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  font-size: 0 !important;
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-end !important;
+  padding: 6px 5px 7px !important;
+}
+
+.cafeStorageStation strong,
+.cafeStorageStation small {
+  position: relative;
+  z-index: 3;
+  width: 100%;
+  display: block;
+  margin: 0;
+  line-height: 1.05;
+  text-align: center;
+}
+
+.cafeStorageStation strong {
+  font-size: clamp(.56rem, 1.55dvh, .76rem) !important;
+}
+
+.cafeStorageStation small {
+  margin-top: 2px;
+  font-size: clamp(.39rem, 1.05dvh, .52rem) !important;
+}
+
+.cafeStorageStation::before,
+.cafeStorageStation::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.cafeStorageStation[data-storage="fridge"] {
+  border-color: #9daeb4 !important;
+  background: linear-gradient(145deg, #eef4f5, #cbd7da) !important;
+  box-shadow: inset 0 0 0 3px rgba(255,255,255,.55), inset 0 -8px 0 rgba(93,111,117,.12);
+}
+
+.cafeStorageStation[data-storage="fridge"]::before {
+  z-index: 1;
+  left: 50%;
+  top: 7%;
+  width: 58%;
+  height: 61%;
+  transform: translateX(-50%);
+  border: 2px solid #93a5aa;
+  border-radius: 7px;
+  background:
+    linear-gradient(to bottom, transparent 0 34%, #8fa1a6 34% 37%, transparent 37% 100%),
+    linear-gradient(135deg, #fafcfc, #dce6e8 62%, #c5d2d5);
+  box-shadow: inset 3px 0 0 rgba(255,255,255,.7), 0 2px 4px rgba(58,75,81,.16);
+}
+
+.cafeStorageStation[data-storage="fridge"]::after {
+  z-index: 2;
+  left: 62%;
+  top: 17%;
+  width: 4px;
+  height: 31%;
+  border-radius: 4px;
+  background: #768a90;
+  box-shadow: 0 24px 0 #768a90;
+}
+
+.cafeStorageStation[data-storage="cabinet"] {
+  border-color: #8d5a34 !important;
+  background: linear-gradient(#c98a53, #a86a3e) !important;
+  box-shadow: inset 0 0 0 3px rgba(255,236,207,.22), inset 0 -8px 0 rgba(83,48,27,.12);
+}
+
+.cafeStorageStation[data-storage="cabinet"]::before {
+  z-index: 1;
+  left: 50%;
+  top: 10%;
+  width: 70%;
+  height: 54%;
+  transform: translateX(-50%);
+  border: 4px solid #84502e;
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, #b87544 0 47%, #7c492b 48% 52%, #b87544 53% 100%),
+    repeating-linear-gradient(0deg, transparent 0 9px, rgba(255,255,255,.04) 9px 10px);
+  box-shadow: inset 0 0 0 3px rgba(235,174,113,.36), 0 2px 4px rgba(79,45,26,.18);
+}
+
+.cafeStorageStation[data-storage="cabinet"]::after {
+  z-index: 2;
+  left: calc(50% - 13px);
+  top: 35%;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f0d29c;
+  box-shadow: 26px 0 0 #f0d29c;
+}
+
+/* A custom flat tortilla symbol: round, pale, and toasted instead of a taco emoji. */
+.cafeDraggableIngredient[data-ingredient-id="tortilla"] > span,
+.cafePlateIngredient[data-ingredient-id="tortilla"] > span {
+  display: inline-block;
+  width: 1.55rem;
+  height: 1.55rem;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  font-size: 0 !important;
+  background:
+    radial-gradient(circle at 29% 31%, #a87343 0 2px, transparent 2.4px),
+    radial-gradient(circle at 67% 27%, #b9864f 0 1.7px, transparent 2.1px),
+    radial-gradient(circle at 61% 67%, #9f6a3d 0 2px, transparent 2.4px),
+    radial-gradient(circle at 35% 72%, #bb8d57 0 1.5px, transparent 2px),
+    #efd69a;
+  box-shadow: inset 0 0 0 2px #d5b16e, 0 1px 2px rgba(80,53,32,.18);
+}
+
+.cafeDragGhost[data-ingredient-id="tortilla"] {
+  font-size: 0;
+}
+
+.cafeDragGhost[data-ingredient-id="tortilla"]::before {
+  content: "";
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 29% 31%, #a87343 0 2.6px, transparent 3px),
+    radial-gradient(circle at 67% 27%, #b9864f 0 2.2px, transparent 2.7px),
+    radial-gradient(circle at 61% 67%, #9f6a3d 0 2.6px, transparent 3px),
+    radial-gradient(circle at 35% 72%, #bb8d57 0 2px, transparent 2.5px),
+    #efd69a;
+  box-shadow: inset 0 0 0 3px #d5b16e;
+}
+
+@media (max-width: 760px) {
+  .cafeWorkViewport {
+    --cafe-work-wall-top: clamp(76px, 13dvh, 98px);
+    padding-right: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    grid-template-columns: 1fr;
+    grid-template-rows: clamp(58px, 10dvh, 76px) minmax(126px, 1fr) minmax(112px, 1fr) auto minmax(30px, 5dvh);
+    gap: 4px;
+  }
+
+  .cafeWorkViewport > :global(aside) {
+    grid-row: auto;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: auto minmax(0, 1fr);
+    gap: 2px;
+    padding: 3px;
+    border-width: 4px;
+  }
+
+  .cafeWorkViewport > :global(aside) h2 {
+    grid-column: 1 / -1;
+    margin: 0;
+    font-size: .58rem;
+  }
+
+  .cafeWorkViewport > :global(aside) > div {
+    padding: 2px 1px;
+    border-top-width: 1px;
+  }
+
+  .cafeWorkViewport > :global(aside) strong { font-size: .43rem; }
+  .cafeWorkViewport > :global(aside) span { font-size: .63rem; }
+
+  .cafeOrderBoardHeader {
+    min-height: 16px;
+    margin-bottom: 3px;
+  }
+
+  .cafeOrderBoardHeader b { font-size: .58rem; }
+  .cafeOrderBoardHeader span { display: none; }
+  .cafeOrderStations {
+    height: calc(100% - 19px);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 3px;
+    overflow: visible;
+  }
+
+  .cafeOrderStation {
+    grid-template-columns: 1fr;
+    grid-template-rows: 32px minmax(48px, 1fr) 23px;
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .cafeTicket {
+    height: 32px;
+    padding: 2px;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 2px;
+  }
+
+  .cafeTicket > span:first-child,
+  .cafeTicketFood { font-size: .8rem; }
+  .cafeTicket strong,
+  .cafeTicket small { font-size: .42rem; }
+  .cafeOrderPlate { min-height: 48px; padding: 3px; border-width: 2px; }
+  .cafePlateHint { font-size: .39rem; }
+  .cafeFinishedDish span { font-size: 1.35rem; }
+  .cafeFinishedDish small { font-size: .36rem; }
+  .cafeServePlate { min-height: 23px; font-size: .45rem; }
+
+  .cafeKitchenStations {
+    grid-template-columns: minmax(58px, .7fr) minmax(128px, 1.6fr) minmax(58px, .7fr);
+    gap: 4px;
+    padding: 4px;
+  }
+
+  .cafeStorageStation strong { font-size: .5rem !important; }
+  .cafeStorageStation small { font-size: .34rem !important; }
+  .cafeKitchenStations > :global(div) { padding: 4px; }
+  .cafeKitchenStations > :global(div) > b { font-size: .52rem; }
+  .cafeKitchenStations > :global(div) > div { height: calc(100% - 18px); margin-top: 3px; gap: 2px; }
+  .cafeKitchenStations > :global(div) button span { font-size: 1rem; }
+  .cafeKitchenStations > :global(div) button strong,
+  .cafeKitchenStations > :global(div) button small { font-size: .38rem; }
+
+  .cafeIngredientDrawer {
+    max-height: 58px;
+    grid-template-columns: 58px repeat(auto-fit, minmax(34px, 1fr));
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .cafeDrawerTitle { padding: 2px; font-size: .45rem; }
+  .cafeIngredientDrawer button span { font-size: .95rem; }
+  .cafeIngredientDrawer button small { font-size: .35rem; }
+  .cafeIngredientDrawer button em { display: none; }
+}
+
+@media (max-height: 620px) and (min-width: 761px) {
+  .cafeWorkViewport {
+    --cafe-work-wall-top: 88px;
+    grid-template-rows: minmax(82px, 1fr) minmax(94px, 1.05fr) auto 30px;
+    gap: 4px;
+    padding-right: 8px;
+    padding-bottom: 5px;
+    padding-left: 8px;
+  }
+
+  .cafeWorkResponsiveBackdrop { height: 86px; }
+  .cafeOrderBoardHeader { margin-bottom: 3px; }
+  .cafeOrderStations { height: calc(100% - 20px); }
+  .cafeOrderStation { grid-template-rows: minmax(42px, 1fr) 24px; gap: 3px; padding: 3px; }
+  .cafeTicket { padding: 2px; }
+  .cafeServePlate { min-height: 24px; }
+  .cafeIngredientDrawer { max-height: 48px; }
+  .cafeKitchenStations { padding: 4px; }
+  .cafeKitchenStations > :global(div) { padding: 4px; }
+  .cafeKitchenStations > :global(div) > div { height: calc(100% - 18px); margin-top: 2px; }
+}
+
+@media (max-height: 440px) {
+  .cafeWorkTopBar {
+    min-height: 38px;
+    flex-basis: 38px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+  }
+
+  .cafeWorkViewport {
+    --cafe-work-wall-top: 52px;
+    grid-template-rows: minmax(62px, 1fr) minmax(72px, 1fr) auto 24px;
+    gap: 3px;
+    padding-right: 5px;
+    padding-bottom: 3px;
+    padding-left: 5px;
+  }
+
+  .cafeWorkResponsiveBackdrop { height: 50px; }
+  .cafeWorkViewport > :global(aside) { padding: 3px; border-width: 4px; }
+  .cafeWorkViewport > :global(aside) h2 { font-size: .55rem; }
+  .cafeWorkViewport > :global(aside) strong { font-size: .42rem; }
+  .cafeWorkViewport > :global(aside) span { font-size: .56rem; }
+  .cafeOrderBoard { padding: 3px; }
+  .cafeOrderBoardHeader { min-height: 13px; margin-bottom: 2px; }
+  .cafeOrderBoardHeader b { font-size: .5rem; }
+  .cafeOrderStations { height: calc(100% - 15px); }
+  .cafeOrderStation { grid-template-rows: minmax(34px, 1fr) 20px; gap: 2px; padding: 2px; }
+  .cafeTicket { padding: 1px; }
+  .cafeTicket > span:first-child,
+  .cafeTicketFood { font-size: .8rem; }
+  .cafeTicket strong,
+  .cafeTicket small { font-size: .38rem; }
+  .cafeOrderPlate { border-width: 2px; padding: 2px; }
+  .cafeServePlate { min-height: 20px; font-size: .42rem; }
+  .cafeKitchenStations { padding: 3px; gap: 3px; }
+  .cafeStorageStation { padding: 3px !important; }
+  .cafeStorageStation strong { font-size: .43rem !important; }
+  .cafeStorageStation small { display: none; }
+  .cafeKitchenStations > :global(div) { padding: 3px; }
+  .cafeKitchenStations > :global(div) > b { font-size: .44rem; }
+  .cafeKitchenStations > :global(div) > div { height: calc(100% - 14px); margin-top: 1px; }
+  .cafeKitchenStations > :global(div) button span { font-size: .9rem; }
+  .cafeKitchenStations > :global(div) button strong,
+  .cafeKitchenStations > :global(div) button small { font-size: .34rem; }
+  .cafeIngredientDrawer { max-height: 34px; padding: 2px; gap: 2px; }
+  .cafeIngredientDrawer button { padding: 1px; }
+  .cafeIngredientDrawer button span { font-size: .75rem; }
+  .cafeIngredientDrawer button small { display: none; }
+  .cafeDrawerTitle { font-size: .38rem; padding: 1px; }
+}

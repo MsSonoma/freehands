@@ -68,10 +68,10 @@ const PLACES = [
 const CAFE_RECIPES = [
   { id:'burger', name:'Sunshine Burger', icon:'🍔', price:6, ingredients:['bun','patty','lettuce','tomato'], formula:'🍔 = 🫓 + 🍖 + 🥬 + 🍅' },
   { id:'toastie', name:'Grilled Cheese', icon:'🥪', price:4, ingredients:['bread','cheese','tomato'], formula:'🥪 = 🍞 + 🧀 + 🍅' },
-  { id:'taco', name:'Sunshine Taco', icon:'🌮', price:5, ingredients:['tortilla','taco-meat','cheese','lettuce'], formula:'🌮 = 🌮 + 🍖 + 🧀 + 🥬' },
+  { id:'taco', name:'Sunshine Taco', icon:'🌮', price:5, ingredients:['tortilla','taco-meat','cheese','lettuce'], formula:'🌮 = ○ + 🍖 + 🧀 + 🥬' },
   { id:'breakfast', name:'Cafe Breakfast', icon:'🍳', price:6, ingredients:['egg','bacon','toast'], formula:'🍳 = 🥚 + 🥓 + 🍞' },
 ];
-const CAFE_INGREDIENTS={bun:{icon:'🫓',name:'Bun',source:'cabinet'},patty:{icon:'🍖',name:'Patty',source:'fridge',cook:6500},lettuce:{icon:'🥬',name:'Lettuce',source:'fridge'},tomato:{icon:'🍅',name:'Tomato',source:'fridge'},bread:{icon:'🍞',name:'Bread',source:'cabinet',cook:5500},cheese:{icon:'🧀',name:'Cheese',source:'fridge'},tortilla:{icon:'🌮',name:'Tortilla',source:'cabinet'},'taco-meat':{icon:'🍖',name:'Taco Meat',source:'fridge',cook:6000},egg:{icon:'🥚',name:'Egg',source:'fridge',cook:5000},bacon:{icon:'🥓',name:'Bacon',source:'fridge',cook:7000},toast:{icon:'🍞',name:'Toast',source:'cabinet'}};
+const CAFE_INGREDIENTS={bun:{icon:'🫓',name:'Bun',source:'cabinet'},patty:{icon:'🍖',name:'Patty',source:'fridge',cook:6500},lettuce:{icon:'🥬',name:'Lettuce',source:'fridge'},tomato:{icon:'🍅',name:'Tomato',source:'fridge'},bread:{icon:'🍞',name:'Bread',source:'cabinet',cook:5500},cheese:{icon:'🧀',name:'Cheese',source:'fridge'},tortilla:{icon:'○',name:'Tortilla',source:'cabinet'},'taco-meat':{icon:'🍖',name:'Taco Meat',source:'fridge',cook:6000},egg:{icon:'🥚',name:'Egg',source:'fridge',cook:5000},bacon:{icon:'🥓',name:'Bacon',source:'fridge',cook:7000},toast:{icon:'🍞',name:'Toast',source:'cabinet'}};
 const CAFE_GUESTS=['Maya','Noah','Avery','Leo','Zoe','Kai'];
 
 function summarizeCafePlate(recipe, plate = []) {
@@ -2255,14 +2255,14 @@ export default function KidsResort({ libraryHref = null }) {
     const openStorageItems = cafeStorage === 'fridge' ? fridgeItems : cabinetItems;
 
     return (
-      <main className={styles.gameShell}>
-        <section className={styles.topBar}>
+      <main className={[styles.gameShell, styles.cafeWorkGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.cafeWorkTopBar].join(' ')}>
           <button className={styles.backButton} type="button" onClick={() => setScreen('cafe')}>← Café</button>
           <div className={styles.brand}>Sunshine Café Shift</div>
           <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
         </section>
-        <section className={styles.cafeWorkScene}>
-          <div className={styles.cafeWorkBackdrop} aria-hidden="true">
+        <section className={[styles.cafeWorkScene, styles.cafeWorkViewport].join(' ')}>
+          <div className={[styles.cafeWorkBackdrop, styles.cafeWorkResponsiveBackdrop].join(' ')} aria-hidden="true">
             <div className={styles.workWindow}><span>🌴</span><span>☀️</span></div>
             <div className={styles.workWallSign}>SUNSHINE CAFÉ</div>
             <div className={styles.workPendantRow}><span>💡</span><span>💡</span><span>💡</span></div>
@@ -2326,6 +2326,7 @@ export default function KidsResort({ libraryHref = null }) {
                             type="button"
                             className={[styles.cafePlateIngredient, plateState.complete ? styles.cafeExtraIngredient : ''].join(' ')}
                             aria-label={`Move ${ingredient.name}`}
+                            data-ingredient-id={ingredientId}
                             {...cafeDragHandlers({ from: 'plate', orderId: order.id, index, ingredientId })}
                           >
                             <span>{ingredient.icon}</span>
@@ -2348,7 +2349,7 @@ export default function KidsResort({ libraryHref = null }) {
             </div>
           </section>
 
-          <section className={styles.kitchenStations}>
+          <section className={[styles.kitchenStations, styles.cafeKitchenStations].join(' ')}>
             <button
               type="button"
               className={[styles.cafeStorageStation, cafeDrag?.from === 'plate' ? styles.cafeStorageReturn : ''].join(' ')}
@@ -2396,13 +2397,14 @@ export default function KidsResort({ libraryHref = null }) {
           </section>
 
           {cafeStorage && (
-            <section className={styles.ingredientDrawer}>
+            <section className={[styles.ingredientDrawer, styles.cafeIngredientDrawer].join(' ')}>
               <strong className={styles.cafeDrawerTitle}>Drag an ingredient</strong>
               {openStorageItems.map(([id, ingredient]) => (
                 <button
                   key={id}
                   type="button"
                   className={styles.cafeDraggableIngredient}
+                  data-ingredient-id={id}
                   {...cafeDragHandlers({ from: 'storage', storage: cafeStorage, ingredientId: id })}
                 >
                   <span>{ingredient.icon}</span>
@@ -2415,7 +2417,7 @@ export default function KidsResort({ libraryHref = null }) {
 
           <div className={styles.cafeFeedback}>{cafeMessage}</div>
           {cafeDrag && (
-            <div className={styles.cafeDragGhost} style={{ left: cafeDrag.x, top: cafeDrag.y }} aria-hidden="true">
+            <div className={styles.cafeDragGhost} data-ingredient-id={cafeDrag.ingredientId} style={{ left: cafeDrag.x, top: cafeDrag.y }} aria-hidden="true">
               {CAFE_INGREDIENTS[cafeDrag.ingredientId]?.icon}
             </div>
           )}
