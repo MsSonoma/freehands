@@ -6447,3 +6447,425 @@
     top: 28%;
   }
 }
+
+
+/* Palm Court kitchen: realistic fixtures and pointer drag-and-drop. */
+.palmKitchenStorageRow {
+  align-items: end;
+  gap: clamp(5px, .7vw, 9px);
+}
+
+.palmKitchenStorageRow button {
+  position: relative;
+  isolation: isolate;
+  min-height: clamp(92px, 18dvh, 138px);
+  overflow: hidden;
+  padding: clamp(64px, 11dvh, 88px) 4px 7px;
+  border-width: 4px;
+  color: #33454b;
+  text-shadow: 0 1px 0 rgba(255,255,255,.7);
+}
+
+.palmKitchenStorageRow button strong {
+  position: relative;
+  z-index: 4;
+  display: block;
+  font-size: clamp(.46rem, .76vw, .62rem);
+}
+
+.palmKitchenStorageRow button::before,
+.palmKitchenStorageRow button::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+}
+
+.palmKitchenStorageRow button[data-storage="fridge"],
+.palmKitchenStorageRow button[data-storage="freezer"] {
+  border-color: #8c9da2;
+  background: linear-gradient(135deg, #f9fcfc 0%, #dde7e9 52%, #c4d0d3 100%);
+  box-shadow:
+    inset 3px 0 0 rgba(255,255,255,.75),
+    inset -3px 0 0 rgba(111,132,138,.18),
+    0 8px 12px rgba(54,64,67,.14);
+}
+
+.palmKitchenStorageRow button[data-storage="fridge"]::before,
+.palmKitchenStorageRow button[data-storage="freezer"]::before {
+  z-index: 1;
+  left: 14%;
+  right: 14%;
+  top: 8%;
+  height: 58%;
+  border: 2px solid #93a4a9;
+  border-radius: 7px;
+  background:
+    linear-gradient(to bottom, transparent 0 43%, #9aaaae 43% 46%, transparent 46% 100%),
+    linear-gradient(135deg, rgba(255,255,255,.82), rgba(200,215,219,.72));
+  box-shadow: inset 3px 0 0 rgba(255,255,255,.65);
+}
+
+.palmKitchenStorageRow button[data-storage="fridge"]::after,
+.palmKitchenStorageRow button[data-storage="freezer"]::after {
+  z-index: 2;
+  top: 19%;
+  left: 64%;
+  width: 4px;
+  height: 26%;
+  border-radius: 999px;
+  background: #75888e;
+  box-shadow: 0 24px 0 #75888e;
+}
+
+.palmKitchenStorageRow button[data-storage="freezer"] {
+  background: linear-gradient(135deg, #f7fbff 0%, #dceaf2 50%, #bdced8 100%);
+}
+
+.palmKitchenStorageRow button[data-storage="freezer"]::before {
+  background:
+    linear-gradient(to bottom, transparent 0 36%, #91a8b4 36% 39%, transparent 39% 100%),
+    linear-gradient(135deg, rgba(255,255,255,.9), rgba(187,211,224,.76));
+}
+
+.palmKitchenStorageRow button[data-storage="pantry"] {
+  border-color: #855332;
+  background: linear-gradient(180deg, #c68a56, #9e6039);
+  color: #fff5e6;
+  text-shadow: 0 1px 1px rgba(74,40,20,.45);
+  box-shadow:
+    inset 0 0 0 3px rgba(255,225,188,.18),
+    inset 0 -9px 0 rgba(77,42,23,.13),
+    0 8px 12px rgba(74,42,24,.15);
+}
+
+.palmKitchenStorageRow button[data-storage="pantry"]::before {
+  z-index: 1;
+  left: 12%;
+  right: 12%;
+  top: 9%;
+  height: 57%;
+  border: 4px solid #7f4b2b;
+  border-radius: 5px;
+  background:
+    linear-gradient(90deg, #b97443 0 47%, #744329 48% 52%, #b97443 53% 100%);
+  box-shadow: inset 0 0 0 3px rgba(234,171,110,.35);
+}
+
+.palmKitchenStorageRow button[data-storage="pantry"]::after {
+  z-index: 2;
+  top: 37%;
+  left: calc(50% - 13px);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #edd09c;
+  box-shadow: 26px 0 0 #edd09c;
+}
+
+.palmKitchenStorageRow button[data-active="true"] {
+  outline: 4px solid #f5c45d;
+  outline-offset: 2px;
+}
+
+.palmKitchenStorageRow button[data-return-home="true"] {
+  outline: 4px solid #62bcae;
+  outline-offset: 2px;
+}
+
+.palmKitchenIngredientShelf {
+  padding: 0;
+  overflow: hidden;
+  border-color: #7f5638;
+  background:
+    linear-gradient(90deg, rgba(105,63,32,.08) 0 1px, transparent 1px 33%),
+    #f2dfc5;
+}
+
+.palmKitchenIngredientShelf > strong {
+  display: block;
+  padding: 6px 8px;
+  border-bottom: 4px solid #8b6545;
+  background: linear-gradient(#c69b6f, #a97a51);
+  color: #fff7e9;
+  font-size: clamp(.5rem, .82vw, .64rem);
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.palmKitchenIngredientShelf > div {
+  max-height: 100%;
+  overflow: auto;
+  padding: 7px;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.palmKitchenDraggableIngredient,
+.palmKitchenPlateIngredient {
+  touch-action: none;
+  user-select: none;
+  -webkit-user-select: none;
+  cursor: grab;
+}
+
+.palmKitchenDraggableIngredient:active,
+.palmKitchenPlateIngredient:active,
+.palmKitchenReadyIngredient:active {
+  cursor: grabbing;
+}
+
+.palmKitchenIngredientShelf .palmKitchenDraggableIngredient {
+  min-width: 0;
+  border: 1px solid #d8b891;
+  border-radius: 8px;
+  background: #fff9ee;
+  color: #5f4634;
+  padding: 5px 2px;
+  display: grid;
+  justify-items: center;
+  gap: 2px;
+  font: inherit;
+}
+
+.palmKitchenIngredientShelf .palmKitchenDraggableIngredient span {
+  font-size: clamp(1.1rem, 2.4vw, 1.8rem);
+}
+
+.palmKitchenIngredientShelf .palmKitchenDraggableIngredient small {
+  font-size: clamp(.43rem, .72vw, .56rem);
+  font-weight: 850;
+  text-align: center;
+}
+
+.palmKitchenStove {
+  position: absolute;
+  min-height: clamp(128px, 24dvh, 184px);
+  overflow: hidden;
+  border-color: #3f4548;
+  border-radius: 7px 7px 3px 3px;
+  background: linear-gradient(180deg, #afb5b7 0 18%, #747b7e 18% 61%, #42484b 61% 100%);
+  box-shadow:
+    inset 0 4px 0 rgba(255,255,255,.38),
+    inset 0 -10px 0 rgba(26,29,30,.18),
+    0 10px 14px rgba(44,35,29,.14);
+  padding: 42px 8px 8px;
+}
+
+.palmKitchenStove::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 7%;
+  right: 7%;
+  top: 10px;
+  height: 48px;
+  border: 3px solid #41474a;
+  border-radius: 7px;
+  background:
+    radial-gradient(circle at 20% 50%, #1f2426 0 10px, #697174 11px 14px, transparent 15px),
+    radial-gradient(circle at 48% 50%, #1f2426 0 10px, #697174 11px 14px, transparent 15px),
+    radial-gradient(circle at 76% 50%, #1f2426 0 10px, #697174 11px 14px, transparent 15px),
+    linear-gradient(#939b9e, #747c7f);
+}
+
+.palmKitchenStove::after {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  left: 12%;
+  right: 12%;
+  bottom: 10px;
+  height: 43%;
+  border: 4px solid #2f3436;
+  border-radius: 5px;
+  background:
+    linear-gradient(180deg, #202527, #394145 58%, #1d2224);
+  box-shadow:
+    inset 0 0 0 3px #687174,
+    inset 0 8px 18px rgba(255,255,255,.06);
+}
+
+.palmKitchenStove > strong {
+  position: absolute;
+  z-index: 4;
+  left: 50%;
+  top: 4px;
+  transform: translateX(-50%);
+  margin: 0;
+  white-space: nowrap;
+  font-size: clamp(.48rem, .8vw, .64rem);
+}
+
+.palmKitchenStove > div {
+  position: absolute;
+  z-index: 5;
+  left: 8%;
+  right: 8%;
+  top: 24px;
+  min-height: 46px;
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  justify-content: center;
+}
+
+.palmKitchenStove > div > small {
+  padding: 4px 6px;
+  border-radius: 7px;
+  background: rgba(31,36,38,.76);
+  color: #fff;
+}
+
+.palmKitchenStove button {
+  min-height: 43px;
+  border: 2px solid #d4d8d8;
+  background: rgba(248,246,239,.94);
+  touch-action: none;
+}
+
+.palmKitchenStove button[data-state="READY"] {
+  box-shadow: 0 0 0 4px rgba(93,190,111,.78);
+  cursor: grab;
+}
+
+.palmKitchenStove button[data-state="Overcooked"] {
+  box-shadow: 0 0 0 4px rgba(184,85,71,.72);
+}
+
+.palmKitchenPlate {
+  border: 9px solid #d8d5cf;
+  background:
+    radial-gradient(ellipse at center, #fff 0 48%, #eee9df 49% 58%, #faf7f0 59% 100%);
+  box-shadow:
+    inset 0 0 0 3px #f8f6f1,
+    0 10px 0 -4px #8c8177,
+    0 13px 18px rgba(63,48,38,.14);
+}
+
+.palmKitchenPlate > div {
+  min-width: 82%;
+  min-height: 44px;
+}
+
+.palmKitchenPlateIngredient {
+  border: 0;
+  border-radius: 9px;
+  background: rgba(255,255,255,.84);
+  padding: 3px;
+  line-height: 1;
+  box-shadow: 0 2px 4px rgba(62,47,37,.12);
+  font: inherit;
+}
+
+.palmKitchenPlateIngredient span {
+  font-size: clamp(1rem, 2.4vw, 1.65rem);
+}
+
+.palmKitchenPass {
+  border-color: #75523d;
+  border-top-width: 16px;
+  background:
+    linear-gradient(180deg, #d8b38d 0 22%, #b2825e 22% 100%);
+  box-shadow:
+    inset 0 -15px 0 rgba(83,48,28,.16),
+    0 9px 13px rgba(55,35,22,.14);
+}
+
+.palmKitchenPass::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  top: -11px;
+  height: 7px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #dbdfe0, #8e999c, #edf0f0);
+}
+
+.palmKitchenDropTarget {
+  outline: 4px solid rgba(245,196,93,.9);
+  outline-offset: 3px;
+}
+
+.palmKitchenDragGhost {
+  position: fixed !important;
+  z-index: 9999 !important;
+  width: 56px;
+  height: 56px;
+  margin: -28px 0 0 -28px;
+  border: 3px solid rgba(255,255,255,.92);
+  border-radius: 50%;
+  background: rgba(80,63,49,.9);
+  box-shadow: 0 9px 20px rgba(45,35,27,.26);
+  display: grid;
+  place-items: center;
+  font-size: 2rem;
+  pointer-events: none;
+}
+
+@media (max-width: 760px) {
+  .palmKitchenStorageRow button {
+    min-height: 82px;
+    padding-top: 56px;
+  }
+
+  .palmKitchenIngredientShelf > div {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .palmKitchenStove {
+    min-height: 112px;
+    padding-top: 36px;
+  }
+
+  .palmKitchenStove::before {
+    height: 40px;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenStorageRow button {
+    min-height: 66px;
+    padding: 43px 2px 4px;
+    border-width: 3px;
+  }
+
+  .palmKitchenStorageRow button[data-storage="fridge"]::after,
+  .palmKitchenStorageRow button[data-storage="freezer"]::after {
+    box-shadow: 0 17px 0 #75888e;
+  }
+
+  .palmKitchenIngredientShelf > div {
+    padding: 4px;
+    gap: 3px;
+  }
+
+  .palmKitchenStove {
+    min-height: 90px;
+    padding: 31px 4px 4px;
+    border-width: 5px;
+  }
+
+  .palmKitchenStove::before {
+    top: 7px;
+    height: 34px;
+  }
+
+  .palmKitchenStove::after {
+    bottom: 6px;
+  }
+
+  .palmKitchenPlate {
+    min-height: 70px;
+    border-width: 5px;
+    padding: 5px;
+  }
+
+  .palmKitchenDragGhost {
+    width: 48px;
+    height: 48px;
+    margin: -24px 0 0 -24px;
+    font-size: 1.65rem;
+  }
+}
