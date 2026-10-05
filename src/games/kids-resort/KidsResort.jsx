@@ -1714,13 +1714,6 @@ export default function KidsResort({ libraryHref = null }) {
           'player',
           studioCustomerDone ? 'I love my new look!' : '',
         )}
-        {renderStudioActor(
-          studioAmbientPerson.look,
-          studioAmbientPerson.character,
-          studioAmbientPerson.name,
-          'stylist',
-          'Let’s find a look you like.',
-        )}
       </>,
       <div className={styles.studioExperienceControls}>
         <div className={styles.beautyControlGroup}>
@@ -1979,13 +1972,6 @@ export default function KidsResort({ libraryHref = null }) {
           characterName,
           'player',
           tryOnItems.length > 0 ? 'How does this look?' : '',
-        )}
-        {renderStudioActor(
-          studioAmbientPerson.look,
-          studioAmbientPerson.character,
-          studioAmbientPerson.name,
-          'stylist',
-          'Try anything you like.',
         )}
       </>,
       <div className={styles.studioExperienceControls}>
