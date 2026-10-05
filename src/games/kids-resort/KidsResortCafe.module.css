@@ -883,3 +883,170 @@
     font-size: .38rem;
   }
 }
+/* Refrigerator and cabinet are the inventory panes: closed shows the door, open shows shelves in-place. */
+.cafeStoragePane {
+  position: relative;
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  overflow: hidden;
+  border-radius: 18px;
+}
+
+.cafeStoragePane > .cafeStorageStation {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  border: 4px solid #b7c6cb;
+  border-radius: 18px;
+  color: #17304f;
+  cursor: pointer;
+}
+
+.cafeStoragePaneOpen {
+  padding: 4px;
+  border: 4px solid #aab9bd;
+  display: grid;
+  grid-template-rows: 24px minmax(0, 1fr);
+  gap: 3px;
+  background: #e7eef0;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.55);
+}
+
+.cafeStoragePaneOpen[data-storage="fridge"] {
+  border-color: #9daeb4;
+  background: linear-gradient(145deg, #f2f7f8, #d3dfe2);
+}
+
+.cafeStoragePaneOpen[data-storage="cabinet"] {
+  border-color: #8d5a34;
+  background: linear-gradient(145deg, #d19a68, #ac6e42);
+  box-shadow: inset 0 0 0 2px rgba(255,234,203,.3);
+}
+
+.cafeStorageOpenButton {
+  min-width: 0;
+  min-height: 0;
+  padding: 2px 5px;
+  border: 0;
+  border-radius: 7px;
+  background: rgba(255,255,255,.86);
+  color: #17304f;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px;
+  cursor: pointer;
+  font: inherit;
+  line-height: 1;
+}
+
+.cafeStorageOpenButton strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: clamp(.48rem, 1.2dvh, .66rem);
+  white-space: nowrap;
+}
+
+.cafeStorageOpenButton small {
+  flex: 0 0 auto;
+  color: #607276;
+  font-size: clamp(.34rem, .9dvh, .46rem);
+  font-weight: 850;
+}
+
+.cafeStorageInventory {
+  min-width: 0;
+  min-height: 0;
+  padding: 3px;
+  border-radius: 8px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 3px;
+  overflow: hidden;
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 calc(25% - 2px), rgba(119,138,143,.24) calc(25% - 2px) 25%),
+    rgba(255,255,255,.78);
+  box-shadow: inset 0 0 0 2px rgba(91,111,116,.14);
+}
+
+.cafeStoragePaneOpen[data-storage="cabinet"] .cafeStorageInventory {
+  background:
+    repeating-linear-gradient(to bottom, transparent 0 calc(33.333% - 2px), rgba(111,67,39,.22) calc(33.333% - 2px) 33.333%),
+    rgba(255,239,214,.88);
+  box-shadow: inset 0 0 0 2px rgba(104,61,35,.18);
+}
+
+.cafeStorageInventoryItem {
+  min-width: 0;
+  min-height: 0;
+  padding: 2px 1px;
+  border: 1px solid rgba(83,104,109,.16);
+  border-radius: 6px;
+  background: rgba(255,255,255,.9);
+  display: grid;
+  grid-template-rows: auto auto auto;
+  place-items: center;
+  align-content: center;
+  overflow: hidden;
+  line-height: 1;
+}
+
+.cafeStorageInventoryItem span {
+  font-size: clamp(.9rem, 2.5dvh, 1.3rem);
+  line-height: 1;
+}
+
+.cafeStorageInventoryItem small {
+  width: 100%;
+  margin-top: 1px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: #314b50;
+  font-size: clamp(.31rem, .78dvh, .43rem);
+  font-weight: 850;
+  white-space: nowrap;
+}
+
+.cafeStorageInventoryItem em {
+  color: #a94d2c;
+  font-size: clamp(.27rem, .68dvh, .37rem);
+  font-style: normal;
+  font-weight: 950;
+}
+
+@media (max-width: 760px) {
+  .cafeStoragePaneOpen {
+    padding: 3px;
+    grid-template-rows: 19px minmax(0, 1fr);
+    gap: 2px;
+  }
+
+  .cafeStorageOpenButton { padding: 1px 3px; }
+  .cafeStorageOpenButton strong { font-size: .42rem; }
+  .cafeStorageOpenButton small { font-size: .3rem; }
+  .cafeStorageInventory { padding: 2px; gap: 2px; }
+  .cafeStorageInventoryItem { padding: 1px; border-radius: 4px; }
+  .cafeStorageInventoryItem span { font-size: .82rem; }
+  .cafeStorageInventoryItem small { font-size: .28rem; }
+  .cafeStorageInventoryItem em { font-size: .24rem; }
+}
+
+@media (max-height: 440px) {
+  .cafeStoragePaneOpen {
+    padding: 2px;
+    grid-template-rows: 15px minmax(0, 1fr);
+    gap: 1px;
+  }
+
+  .cafeStorageOpenButton { padding: 0 2px; }
+  .cafeStorageOpenButton strong { font-size: .34rem; }
+  .cafeStorageOpenButton small { font-size: .25rem; }
+  .cafeStorageInventory { padding: 1px; gap: 1px; }
+  .cafeStorageInventoryItem { padding: 0; border-radius: 3px; }
+  .cafeStorageInventoryItem span { font-size: .68rem; }
+  .cafeStorageInventoryItem small,
+  .cafeStorageInventoryItem em { display: none; }
+}
