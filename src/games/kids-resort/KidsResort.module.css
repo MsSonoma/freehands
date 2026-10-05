@@ -1852,3 +1852,19 @@
     padding-bottom: 0;
   }
 }
+/* Flip cafe bulb glyphs while leaving the hanging cords in place */
+.cafePendantRow span,
+.workPendantRow span {
+  font-size: 0;
+  line-height: 1;
+}
+.cafePendantRow span::after,
+.workPendantRow span::after {
+  content: "💡";
+  display: inline-block;
+  transform: rotate(180deg);
+  transform-origin: center;
+  font-style: normal;
+}
+.cafePendantRow span::after { font-size: 2rem; }
+.workPendantRow span::after { font-size: 1.5rem; }
