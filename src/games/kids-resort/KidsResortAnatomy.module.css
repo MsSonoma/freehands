@@ -1412,3 +1412,251 @@
 .playerDetailed[data-view="side"][data-headwear="bow"] .playerHeadwear::after {
   display: none;
 }
+
+
+/* Mii-like player geometry and facial details. */
+.playerDetailed .playerHeadDetail {
+  transform: scaleX(var(--character-face-width, 1)) scaleY(var(--character-face-height, 1));
+  transform-origin: 50% 50%;
+}
+
+.playerDetailed[data-view="front"] .playerEye {
+  transform: scale(var(--character-eye-size, 1));
+}
+
+.playerDetailed[data-view="front"] .playerEyeLeft {
+  margin-left: calc(var(--character-eye-spacing, 0) * -1px);
+}
+
+.playerDetailed[data-view="front"] .playerEyeRight {
+  margin-right: calc(var(--character-eye-spacing, 0) * -1px);
+}
+
+.playerDetailed .playerNose {
+  transform:
+    translate(
+      calc(var(--character-nose-x, 0) * 1px),
+      calc(var(--character-nose-y, 0) * 1px)
+    )
+    scale(var(--character-nose-size, 1));
+  transform-origin: center;
+}
+
+.playerDetailed .playerSmile {
+  transform: scaleX(var(--character-mouth-width, 1));
+  transform-origin: center;
+}
+
+.playerDetailed .playerBodyDetail {
+  transform:
+    scaleX(var(--character-weight-scale, 1))
+    scaleY(var(--character-height-scale, 1));
+  transform-origin: 50% 0;
+}
+
+.playerDetailed .playerPelvis {
+  transform: scaleX(var(--character-weight-scale, 1));
+  transform-origin: center;
+}
+
+.playerDetailed .playerUpperArm,
+.playerDetailed .playerForearm {
+  scale: var(--character-strength-scale, 1) 1;
+  transform-origin: center;
+}
+
+.playerMakeup {
+  display: none;
+  position: absolute;
+  z-index: 9;
+  inset: 0;
+  color: var(--character-makeup-color, #d85f83);
+  pointer-events: none;
+}
+
+.playerDetailed[data-makeup="blush"] .playerMakeup {
+  display: block;
+  background:
+    radial-gradient(circle at 24% 62%, currentColor 0 7%, transparent 10%),
+    radial-gradient(circle at 76% 62%, currentColor 0 7%, transparent 10%);
+  opacity: .35;
+}
+
+.playerDetailed[data-makeup="freckles"] .playerMakeup {
+  display: block;
+  background:
+    radial-gradient(circle at 36% 55%, currentColor 0 2%, transparent 3%),
+    radial-gradient(circle at 44% 59%, currentColor 0 2%, transparent 3%),
+    radial-gradient(circle at 57% 59%, currentColor 0 2%, transparent 3%),
+    radial-gradient(circle at 65% 55%, currentColor 0 2%, transparent 3%);
+  opacity: .65;
+}
+
+.playerDetailed[data-makeup="lashes"] .playerMakeup {
+  display: block;
+  background:
+    linear-gradient(25deg, transparent 44%, currentColor 48% 54%, transparent 57%) 5px 9px / 8px 7px no-repeat,
+    linear-gradient(-25deg, transparent 44%, currentColor 48% 54%, transparent 57%) 18px 9px / 8px 7px no-repeat;
+}
+
+.playerDetailed[data-makeup="lip"] .playerSmile {
+  border-bottom-color: var(--character-makeup-color, #d85f83);
+  border-bottom-width: 2.5px;
+}
+
+/* Expanded hairstyle library for the articulated map character. */
+.playerDetailed[data-hair="bob"] .playerHairDetail {
+  height: 45px;
+  border-radius: 50% 50% 34% 34%;
+}
+
+.playerDetailed[data-hair="bob"] .playerHairFront {
+  height: 29px;
+}
+
+.playerDetailed[data-hair="curls"] .playerHairDetail {
+  left: 5px;
+  width: 52px;
+  height: 46px;
+  border-radius: 46%;
+  box-shadow:
+    -5px 6px 0 var(--character-hair-dark),
+    5px 7px 0 var(--character-hair-dark),
+    -2px -3px 0 var(--character-hair),
+    4px -2px 0 var(--character-hair);
+}
+
+.playerDetailed[data-hair="braids"] .playerHairDetail::before,
+.playerDetailed[data-hair="braids"] .playerHairDetail::after {
+  content: "";
+  position: absolute;
+  top: 25px;
+  width: 7px;
+  height: 45px;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      var(--character-hair-dark) 0 5px,
+      var(--character-hair) 5px 10px
+    );
+}
+
+.playerDetailed[data-hair="braids"] .playerHairDetail::before {
+  left: -2px;
+  transform: rotate(4deg);
+}
+
+.playerDetailed[data-hair="braids"] .playerHairDetail::after {
+  right: -2px;
+  transform: rotate(-4deg);
+}
+
+.playerDetailed[data-hair="pigtails"] .playerHairDetail::before,
+.playerDetailed[data-hair="pigtails"] .playerHairDetail::after {
+  content: "";
+  position: absolute;
+  top: 15px;
+  width: 18px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--character-hair-dark);
+}
+
+.playerDetailed[data-hair="pigtails"] .playerHairDetail::before {
+  left: -13px;
+}
+
+.playerDetailed[data-hair="pigtails"] .playerHairDetail::after {
+  right: -13px;
+}
+
+.playerDetailed[data-hair="short"] .playerHairDetail {
+  top: 3px;
+  height: 33px;
+  border-radius: 55% 45% 28% 28%;
+}
+
+.playerDetailed[data-hair="short"] .playerHairFront {
+  height: 20px;
+}
+
+.playerDetailed[data-hair="buzz"] .playerHairDetail {
+  left: 14px;
+  top: 7px;
+  width: 35px;
+  height: 25px;
+  border-radius: 50% 50% 26% 26%;
+}
+
+.playerDetailed[data-hair="buzz"] .playerHairFront {
+  left: 20px;
+  top: 8px;
+  width: 25px;
+  height: 11px;
+}
+
+.playerDetailed[data-hair="swoop"] .playerHairFront {
+  left: 16px;
+  top: 4px;
+  width: 34px;
+  height: 23px;
+  clip-path: polygon(0 0, 100% 0, 92% 48%, 55% 78%, 18% 56%);
+  transform: rotate(-5deg);
+}
+
+.playerDetailed[data-hair="mohawk"] .playerHairDetail {
+  left: 24px;
+  top: -5px;
+  width: 16px;
+  height: 41px;
+  border-radius: 70% 35% 30% 30%;
+  transform: skewX(-5deg);
+}
+
+.playerDetailed[data-hair="mohawk"] .playerHairFront {
+  left: 25px;
+  top: 3px;
+  width: 14px;
+  height: 18px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+/* Keep custom hairstyles sensible in profile. */
+.playerDetailed[data-view="side"][data-hair="bob"] .playerHairDetail {
+  left: 7px;
+  width: 39px;
+  height: 44px;
+}
+
+.playerDetailed[data-view="side"][data-hair="short"] .playerHairDetail {
+  left: 10px;
+  width: 37px;
+  height: 32px;
+}
+
+.playerDetailed[data-view="side"][data-hair="buzz"] .playerHairDetail {
+  left: 16px;
+  width: 30px;
+  height: 25px;
+}
+
+.playerDetailed[data-view="side"][data-hair="mohawk"] .playerHairDetail {
+  left: 25px;
+  width: 14px;
+  height: 40px;
+}
+
+.playerDetailed[data-view="side"][data-hair="braids"] .playerHairDetail::after,
+.playerDetailed[data-view="side"][data-hair="pigtails"] .playerHairDetail::after {
+  display: none;
+}
+
+
+.playerDetailed .playerSprite {
+  scale: 1 var(--character-height-scale, 1);
+}
+
+.playerDetailed .playerBodyDetail {
+  transform: scaleX(var(--character-weight-scale, 1));
+}

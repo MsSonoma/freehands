@@ -1856,3 +1856,681 @@
 .fashionActionRow {
   grid-template-columns: 1fr;
 }
+
+
+/* Character-system foundation: shared creator controls, NPC roster, and Mii-like appearance variables. */
+.creatorChoiceWrap {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.creatorSliderStack {
+  display: grid;
+  gap: 8px;
+}
+
+.creatorSliderRow {
+  display: grid !important;
+  grid-template-columns: 110px minmax(0, 1fr);
+  align-items: center;
+  gap: 8px;
+  margin: 0 !important;
+}
+
+.creatorSliderRow > span {
+  color: #5f758a;
+  font-size: .68rem;
+  font-weight: 900;
+}
+
+.creatorSliderRow input[type="range"] {
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  accent-color: #17304f;
+}
+
+.creatorColorInput {
+  display: grid !important;
+  grid-template-columns: 1fr 42px;
+  align-items: center;
+  gap: 8px;
+  margin: 0 !important;
+}
+
+.creatorColorInput input[type="color"] {
+  width: 42px;
+  height: 34px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.mapNpc {
+  position: absolute;
+  z-index: 18;
+  width: 52px;
+  height: 92px;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  transform: translate(-50%, -82%);
+  cursor: pointer;
+}
+
+.mapNpcFigure {
+  position: absolute;
+  left: 50%;
+  top: 0;
+  width: 38px;
+  height: 78px;
+  transform: translateX(-50%);
+  pointer-events: none;
+}
+
+.mapNpcFigure .avatarFigure {
+  transform: scale(.29);
+  transform-origin: top center;
+}
+
+.mapNpcName {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  transform: translateX(-50%);
+  min-width: 48px;
+  max-width: 82px;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.9);
+  color: #17304f;
+  padding: 3px 6px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .58rem;
+  font-weight: 950;
+  box-shadow: 0 3px 8px rgba(23,48,79,.15);
+}
+
+.mapNpc:hover .mapNpcName {
+  background: #fff;
+  box-shadow: 0 4px 12px rgba(23,48,79,.22);
+}
+
+.peoplePanel {
+  position: absolute;
+  z-index: 90;
+  left: 16px;
+  bottom: 72px;
+  width: min(390px, calc(100vw - 32px));
+  max-height: min(650px, calc(100dvh - 120px));
+  overflow-y: auto;
+  border-radius: 20px;
+  background: rgba(255,255,255,.98);
+  box-shadow: 0 12px 30px rgba(23,48,79,.28);
+  padding: 14px;
+}
+
+.peoplePanelHeader,
+.personEditorHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.peoplePanelHeader > div,
+.personEditorHeader > div {
+  display: grid;
+  gap: 2px;
+}
+
+.peoplePanelHeader strong,
+.personEditorHeader strong {
+  color: #17304f;
+  font-size: 1rem;
+  font-weight: 1000;
+}
+
+.peoplePanelHeader span,
+.personEditorHeader span {
+  color: #71869b;
+  font-size: .7rem;
+  font-weight: 750;
+}
+
+.peoplePanelHeader > button,
+.personEditorHeader > button {
+  width: 30px;
+  height: 30px;
+  border: 0;
+  border-radius: 50%;
+  background: #eef4f8;
+  color: #17304f;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 1000;
+}
+
+.peoplePanelActions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+  margin: 12px 0;
+}
+
+.peoplePanelActions button {
+  border: 0;
+  border-radius: 12px;
+  background: #17304f;
+  color: #fff;
+  cursor: pointer;
+  padding: 10px;
+  font: inherit;
+  font-size: .75rem;
+  font-weight: 950;
+}
+
+.peoplePanelActions button:last-child {
+  background: #ffedf5;
+  color: #8f3f66;
+}
+
+.peopleRoster {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.peopleCard {
+  min-width: 0;
+  min-height: 118px;
+  border: 2px solid #e2eaf0;
+  border-radius: 15px;
+  background: #fafdff;
+  color: #17304f;
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 64px 1fr;
+  align-items: center;
+  gap: 6px;
+  padding: 8px;
+  text-align: left;
+  font: inherit;
+}
+
+.peopleCardPreview {
+  position: relative;
+  display: block;
+  width: 58px;
+  height: 100px;
+  overflow: hidden;
+}
+
+.peopleCardPreview .avatarFigure {
+  transform: scale(.36);
+  transform-origin: top left;
+}
+
+.peopleCard > span:last-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.peopleCard strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: .8rem;
+}
+
+.peopleCard small {
+  color: #71869b;
+  font-size: .62rem;
+  font-weight: 800;
+}
+
+.personEditorBackdrop {
+  position: fixed;
+  z-index: 250;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(17,37,57,.55);
+  backdrop-filter: blur(4px);
+}
+
+.personEditor {
+  width: min(1060px, 96vw);
+  max-height: 92dvh;
+  overflow: hidden;
+  border-radius: 24px;
+  background: #fff;
+  box-shadow: 0 24px 60px rgba(11,31,50,.35);
+  display: grid;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+}
+
+.personEditorHeader {
+  padding: 16px 18px;
+  border-bottom: 1px solid #e4ebf0;
+}
+
+.personEditorBody {
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 290px minmax(0, 1fr);
+}
+
+.personEditorPreview {
+  position: relative;
+  min-height: 470px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 10px;
+  padding: 20px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #eef9ff 0%, #fff3f8 100%);
+}
+
+.personEditorPreviewName {
+  border-radius: 999px;
+  background: rgba(255,255,255,.9);
+  color: #17304f;
+  padding: 6px 12px;
+  font-size: .8rem;
+  font-weight: 950;
+}
+
+.personEditorControls {
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+  align-content: start;
+}
+
+.personEditorSection {
+  border: 1px solid #e2eaf0;
+  border-radius: 17px;
+  background: #fbfdff;
+  display: grid;
+  gap: 10px;
+  padding: 13px;
+}
+
+.personEditorSection h3 {
+  margin: 0;
+  color: #17304f;
+  font-size: .88rem;
+}
+
+.personTextField {
+  display: grid;
+  gap: 5px;
+  color: #5f758a;
+  font-size: .68rem;
+  font-weight: 900;
+}
+
+.personTextField input,
+.personTextField textarea {
+  width: 100%;
+  border: 2px solid #dbe6ee;
+  border-radius: 10px;
+  background: #fff;
+  color: #17304f;
+  padding: 8px 9px;
+  font: inherit;
+  font-size: .8rem;
+  font-weight: 750;
+  resize: vertical;
+}
+
+.personOptionRow {
+  display: grid;
+  grid-template-columns: 70px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.personOptionRow > span {
+  color: #62788d;
+  font-size: .68rem;
+  font-weight: 900;
+}
+
+.personFashionRow {
+  display: grid;
+  gap: 7px;
+  padding-top: 9px;
+  border-top: 1px solid #e3ebf1;
+}
+
+.personFashionRow:first-of-type {
+  border-top: 0;
+  padding-top: 0;
+}
+
+.personFashionHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: #17304f;
+  font-size: .7rem;
+  font-weight: 950;
+}
+
+.personFashionHeading input[type="color"] {
+  width: 40px;
+  height: 30px;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+
+.personalityFutureNote {
+  color: #788b9d;
+  font-size: .64rem;
+  line-height: 1.4;
+  font-weight: 750;
+}
+
+.personEditorFooter {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 12px 16px;
+  border-top: 1px solid #e4ebf0;
+  background: #fbfdff;
+}
+
+.personEditorFooter button {
+  border: 0;
+  border-radius: 11px;
+  background: #eef4f8;
+  color: #17304f;
+  cursor: pointer;
+  padding: 9px 12px;
+  font: inherit;
+  font-size: .72rem;
+  font-weight: 950;
+}
+
+.personEditorFooter .primaryButton {
+  background: #17304f;
+  color: #fff;
+}
+
+.personEditorFooter .personDeleteButton {
+  margin-right: auto;
+  background: #fff0f0;
+  color: #9b4850;
+}
+
+/* Mii-like preview geometry. */
+.avatarFigure .avatarHead {
+  transform: scaleX(var(--character-face-width, 1)) scaleY(var(--character-face-height, 1));
+  transform-origin: 50% 50%;
+}
+
+.avatarFigure .avatarEye {
+  transform: scale(var(--character-eye-size, 1));
+}
+
+.avatarFigure .avatarEyeLeft {
+  margin-left: calc(var(--character-eye-spacing, 0) * -2px);
+}
+
+.avatarFigure .avatarEyeRight {
+  margin-right: calc(var(--character-eye-spacing, 0) * -2px);
+}
+
+.avatarFigure .avatarNose {
+  transform:
+    translate(
+      calc(var(--character-nose-x, 0) * 2px),
+      calc(var(--character-nose-y, 0) * 2px)
+    )
+    scale(var(--character-nose-size, 1));
+  transform-origin: center;
+}
+
+.avatarFigure .avatarSmile {
+  transform: scaleX(var(--character-mouth-width, 1));
+  transform-origin: center;
+}
+
+.avatarFigure .avatarBody {
+  transform:
+    scaleX(var(--character-weight-scale, 1))
+    scaleY(var(--character-height-scale, 1));
+  transform-origin: 50% 0;
+}
+
+.avatarFigure .avatarPelvis {
+  transform: scaleX(var(--character-weight-scale, 1));
+  transform-origin: center;
+}
+
+.avatarFigure .avatarLegRigLeft,
+.avatarFigure .avatarLegRigRight {
+  transform: scaleY(var(--character-height-scale, 1));
+  transform-origin: 50% 0;
+}
+
+.avatarFigure .avatarUpperArm,
+.avatarFigure .avatarForearm {
+  transform: scaleX(var(--character-strength-scale, 1));
+  transform-origin: center;
+}
+
+.avatarMakeup {
+  display: none;
+  position: absolute;
+  z-index: 8;
+  inset: 0;
+  pointer-events: none;
+  color: var(--character-makeup-color, #d85f83);
+}
+
+.avatarFigure[data-makeup="blush"] .avatarMakeup {
+  display: block;
+  background:
+    radial-gradient(circle at 24% 62%, color-mix(in srgb, currentColor 60%, transparent) 0 8%, transparent 11%),
+    radial-gradient(circle at 76% 62%, color-mix(in srgb, currentColor 60%, transparent) 0 8%, transparent 11%);
+}
+
+.avatarFigure[data-makeup="freckles"] .avatarMakeup {
+  display: block;
+  background:
+    radial-gradient(circle at 36% 56%, currentColor 0 2%, transparent 3%),
+    radial-gradient(circle at 43% 59%, currentColor 0 2%, transparent 3%),
+    radial-gradient(circle at 57% 59%, currentColor 0 2%, transparent 3%),
+    radial-gradient(circle at 64% 56%, currentColor 0 2%, transparent 3%);
+  opacity: .65;
+}
+
+.avatarFigure[data-makeup="lashes"] .avatarMakeup {
+  display: block;
+  background:
+    linear-gradient(25deg, transparent 47%, currentColor 49% 52%, transparent 54%) 10px 20px / 12px 9px no-repeat,
+    linear-gradient(-25deg, transparent 47%, currentColor 49% 52%, transparent 54%) 34px 20px / 12px 9px no-repeat;
+}
+
+.avatarFigure[data-makeup="lip"] .avatarMakeup {
+  display: block;
+}
+
+.avatarFigure[data-makeup="lip"] .avatarSmile {
+  border-bottom-color: var(--character-makeup-color, #d85f83);
+  border-bottom-width: 4px;
+}
+
+/* Expanded hairstyle library for creator previews. */
+.avatarFigure[data-hair="bob"] .avatarHair {
+  height: 78px;
+  border-radius: 50% 50% 34% 34%;
+}
+
+.avatarFigure[data-hair="bob"] .avatarHairFront {
+  height: 29px;
+}
+
+.avatarFigure[data-hair="curls"] .avatarHair {
+  left: 17px;
+  width: 92px;
+  height: 82px;
+  border-radius: 46%;
+  box-shadow:
+    -8px 10px 0 var(--character-hair-dark),
+    8px 12px 0 var(--character-hair-dark),
+    -4px -5px 0 var(--character-hair),
+    7px -4px 0 var(--character-hair);
+}
+
+.avatarFigure[data-hair="braids"] .avatarHair::before,
+.avatarFigure[data-hair="braids"] .avatarHair::after {
+  content: "";
+  position: absolute;
+  top: 45px;
+  width: 13px;
+  height: 78px;
+  border-radius: 999px;
+  background:
+    repeating-linear-gradient(
+      180deg,
+      var(--character-hair-dark) 0 9px,
+      var(--character-hair) 9px 18px
+    );
+}
+
+.avatarFigure[data-hair="braids"] .avatarHair::before {
+  left: -5px;
+  transform: rotate(4deg);
+}
+
+.avatarFigure[data-hair="braids"] .avatarHair::after {
+  right: -5px;
+  transform: rotate(-4deg);
+}
+
+.avatarFigure[data-hair="pigtails"] .avatarHair::before,
+.avatarFigure[data-hair="pigtails"] .avatarHair::after {
+  content: "";
+  position: absolute;
+  top: 28px;
+  width: 34px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--character-hair-dark);
+}
+
+.avatarFigure[data-hair="pigtails"] .avatarHair::before {
+  left: -24px;
+}
+
+.avatarFigure[data-hair="pigtails"] .avatarHair::after {
+  right: -24px;
+}
+
+.avatarFigure[data-hair="short"] .avatarHair {
+  top: 5px;
+  height: 58px;
+  border-radius: 55% 45% 28% 28%;
+}
+
+.avatarFigure[data-hair="short"] .avatarHairFront {
+  height: 24px;
+}
+
+.avatarFigure[data-hair="buzz"] .avatarHair {
+  left: 29px;
+  top: 13px;
+  width: 68px;
+  height: 46px;
+  border-radius: 50% 50% 26% 26%;
+}
+
+.avatarFigure[data-hair="buzz"] .avatarHairFront {
+  left: 38px;
+  top: 17px;
+  width: 50px;
+  height: 17px;
+}
+
+.avatarFigure[data-hair="swoop"] .avatarHairFront {
+  left: 34px;
+  top: 9px;
+  width: 63px;
+  height: 38px;
+  clip-path: polygon(0 0, 100% 0, 92% 48%, 55% 78%, 18% 56%);
+  transform: rotate(-5deg);
+}
+
+.avatarFigure[data-hair="mohawk"] .avatarHair {
+  left: 50px;
+  top: -8px;
+  width: 28px;
+  height: 72px;
+  border-radius: 70% 35% 30% 30%;
+  transform: skewX(-5deg);
+}
+
+.avatarFigure[data-hair="mohawk"] .avatarHairFront {
+  left: 52px;
+  top: 6px;
+  width: 25px;
+  height: 31px;
+  clip-path: polygon(50% 0, 100% 100%, 0 100%);
+}
+
+@media (max-width: 760px) {
+  .peopleRoster {
+    grid-template-columns: 1fr;
+  }
+
+  .personEditorBody {
+    grid-template-columns: 1fr;
+    overflow-y: auto;
+  }
+
+  .personEditorPreview {
+    min-height: 330px;
+  }
+
+  .personEditorControls {
+    overflow: visible;
+  }
+
+  .personEditorFooter {
+    flex-wrap: wrap;
+  }
+
+  .personEditorFooter .personDeleteButton {
+    width: 100%;
+    margin-right: 0;
+  }
+}
+
+
+/* Height is an overall stylized proportion; weight/strength remain local body controls. */
+.avatarFigure {
+  scale: 1 var(--character-height-scale, 1);
+  transform-origin: 50% 100%;
+}
+
+.avatarFigure .avatarBody {
+  transform: scaleX(var(--character-weight-scale, 1));
+}
+
+.avatarFigure .avatarLegRigLeft,
+.avatarFigure .avatarLegRigRight {
+  transform: none;
+}

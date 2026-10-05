@@ -167,11 +167,155 @@ const LOOK_OPTIONS = {
     { id: 'bow', name: 'Hair Bow', swatch: '#ff4f9a', price: 4 },
   ],
   hair: [
-    { id: 'waves', name: 'Loose Waves', icon: '~' },
-    { id: 'ponytail', name: 'Ponytail', icon: '\u{1F380}' },
-    { id: 'bun', name: 'High Bun', icon: '\u{1F7E4}' },
+    { id: 'waves', name: 'Loose Waves' },
+    { id: 'ponytail', name: 'Ponytail' },
+    { id: 'bun', name: 'High Bun' },
+    { id: 'bob', name: 'Bob' },
+    { id: 'curls', name: 'Curls' },
+    { id: 'braids', name: 'Braids' },
+    { id: 'pigtails', name: 'Pigtails' },
+    { id: 'short', name: 'Short Cut' },
+    { id: 'buzz', name: 'Buzz Cut' },
+    { id: 'swoop', name: 'Side Swoop' },
+    { id: 'mohawk', name: 'Mohawk' },
   ],
 };
+
+const CHARACTER_NAMES = [
+  'Avery', 'Jordan', 'Mia', 'Leo', 'Nina', 'Kai', 'Zoe', 'Maya',
+  'Eli', 'Sam', 'Riley', 'Noah', 'Lily', 'Max', 'Ruby', 'Theo',
+];
+
+const CHARACTER_COLOR_PALETTE = [
+  '#ff4f9a', '#db5656', '#ed8a43', '#e5b93e', '#54b879',
+  '#438fd0', '#8d66bd', '#43aee5', '#54c79c', '#334d78',
+  '#9a73c9', '#dc6b63', '#252c38', '#f4f4f0',
+];
+
+const DEFAULT_FACE_BUILD = {
+  height: 3,
+  weight: 3,
+  strength: 3,
+  faceWidth: 3,
+  faceHeight: 3,
+  noseX: 3,
+  noseY: 3,
+  noseSize: 3,
+  eyeSpacing: 3,
+  eyeSize: 3,
+  mouthWidth: 3,
+  makeup: 'none',
+  makeupColor: '#d85f83',
+};
+
+const DEFAULT_PERSONALITY = {
+  friendliness: 3,
+  confidence: 3,
+  curiosity: 3,
+  energy: 3,
+  note: '',
+};
+
+const PERSONALITY_STATS = [
+  ['friendliness', 'Friendliness'],
+  ['confidence', 'Confidence'],
+  ['curiosity', 'Curiosity'],
+  ['energy', 'Energy'],
+];
+
+const FACE_SLIDERS = [
+  ['faceWidth', 'Face width'],
+  ['faceHeight', 'Face height'],
+  ['noseX', 'Nose left / right'],
+  ['noseY', 'Nose up / down'],
+  ['noseSize', 'Nose size'],
+  ['eyeSpacing', 'Eye spacing'],
+  ['eyeSize', 'Eye size'],
+  ['mouthWidth', 'Mouth width'],
+];
+
+function randomChoice(items) {
+  return items[Math.floor(Math.random() * items.length)];
+}
+
+function randomLevel() {
+  return 1 + Math.floor(Math.random() * 5);
+}
+
+function randomSwatch() {
+  return randomChoice(CHARACTER_COLOR_PALETTE);
+}
+
+function cloneFashionOption(option, randomColor = false) {
+  return {
+    ...option,
+    swatch: randomColor && option.id !== 'none' ? randomSwatch() : option.swatch,
+  };
+}
+
+function makeCharacterPerson(mode = 'random') {
+  const random = mode === 'random';
+  const gender = random ? randomChoice(CHARACTER_OPTIONS.gender).id : 'girl';
+  const eye = random ? randomChoice(CHARACTER_OPTIONS.eye).id : 'brown';
+  const hair = random ? randomChoice(CHARACTER_OPTIONS.hair).id : 'brown';
+  const skin = random ? randomChoice(CHARACTER_OPTIONS.skin).id : 'warm';
+  const base = random ? randomChoice(CHARACTER_OPTIONS.base).id : 'pink';
+  const hairStyle = random ? randomChoice(LOOK_OPTIONS.hair) : LOOK_OPTIONS.hair[0];
+
+  return {
+    id: 'person-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7),
+    name: random ? randomChoice(CHARACTER_NAMES) : 'New Friend',
+    source: mode,
+    character: {
+      gender,
+      eye,
+      hair,
+      skin,
+      base,
+      ...DEFAULT_FACE_BUILD,
+      ...(random
+        ? {
+            height: randomLevel(),
+            weight: randomLevel(),
+            strength: randomLevel(),
+            faceWidth: randomLevel(),
+            faceHeight: randomLevel(),
+            noseX: randomLevel(),
+            noseY: randomLevel(),
+            noseSize: randomLevel(),
+            eyeSpacing: randomLevel(),
+            eyeSize: randomLevel(),
+            mouthWidth: randomLevel(),
+            makeup: randomChoice(['none', 'blush', 'freckles', 'lashes', 'lip']),
+            makeupColor: randomSwatch(),
+          }
+        : {}),
+    },
+    look: {
+      shirt: cloneFashionOption(random ? randomChoice(LOOK_OPTIONS.shirt) : LOOK_OPTIONS.shirt[0], random),
+      bottoms: cloneFashionOption(random ? randomChoice(LOOK_OPTIONS.bottoms) : LOOK_OPTIONS.bottoms[0], random),
+      shoes: cloneFashionOption(random ? randomChoice(LOOK_OPTIONS.shoes) : LOOK_OPTIONS.shoes[0], random),
+      glasses: cloneFashionOption(random ? randomChoice(LOOK_OPTIONS.glasses) : LOOK_OPTIONS.glasses[0], random),
+      headwear: cloneFashionOption(random ? randomChoice(LOOK_OPTIONS.headwear) : LOOK_OPTIONS.headwear[0], random),
+      hair: hairStyle,
+    },
+    personality: {
+      ...DEFAULT_PERSONALITY,
+      ...(random
+        ? {
+            friendliness: randomLevel(),
+            confidence: randomLevel(),
+            curiosity: randomLevel(),
+            energy: randomLevel(),
+          }
+        : {}),
+    },
+    spawn: {
+      x: 20 + Math.round(Math.random() * 60),
+      y: 54 + Math.round(Math.random() * 25),
+    },
+  };
+}
 
 const FASHION_CATEGORIES = [
   { id: 'shirt', label: 'Tops' },
@@ -298,6 +442,7 @@ export default function KidsResort({ libraryHref = null }) {
     hair: 'brown',
     skin: 'warm',
     base: 'pink',
+    ...DEFAULT_FACE_BUILD,
   });
   const walkTokenRef = useRef(0);
   const [look, setLook] = useState({
@@ -308,6 +453,13 @@ export default function KidsResort({ libraryHref = null }) {
     headwear: LOOK_OPTIONS.headwear[0],
     hair: LOOK_OPTIONS.hair[0],
   });
+
+  const [people, setPeople] = useState([]);
+  const [peopleOpen, setPeopleOpen] = useState(false);
+  const [personEditorOpen, setPersonEditorOpen] = useState(false);
+  const [personDraft, setPersonDraft] = useState(null);
+  const [personEditorMode, setPersonEditorMode] = useState('edit');
+  const peopleSeededRef = useRef(false);
 
   const [studioMessage, setStudioMessage] = useState('');
   const [studioCreations, setStudioCreations] = useState(0);
@@ -344,24 +496,58 @@ export default function KidsResort({ libraryHref = null }) {
   const placeDisplayName = (place) =>
     place?.id === 'suite' ? `${characterName}’s House` : place?.name;
 
-  const eyeChoice = CHARACTER_OPTIONS.eye.find((option) => option.id === character.eye) ?? CHARACTER_OPTIONS.eye[0];
-  const hairChoice = CHARACTER_OPTIONS.hair.find((option) => option.id === character.hair) ?? CHARACTER_OPTIONS.hair[0];
-  const skinChoice = CHARACTER_OPTIONS.skin.find((option) => option.id === character.skin) ?? CHARACTER_OPTIONS.skin[0];
-  const baseChoice = CHARACTER_OPTIONS.base.find((option) => option.id === character.base) ?? CHARACTER_OPTIONS.base[0];
+  const characterStyleFor = (appearance = character) => {
+    const eyeChoice =
+      CHARACTER_OPTIONS.eye.find((option) => option.id === appearance.eye) ??
+      CHARACTER_OPTIONS.eye[0];
+    const hairChoice =
+      CHARACTER_OPTIONS.hair.find((option) => option.id === appearance.hair) ??
+      CHARACTER_OPTIONS.hair[0];
+    const skinChoice =
+      CHARACTER_OPTIONS.skin.find((option) => option.id === appearance.skin) ??
+      CHARACTER_OPTIONS.skin[0];
+    const baseChoice =
+      CHARACTER_OPTIONS.base.find((option) => option.id === appearance.base) ??
+      CHARACTER_OPTIONS.base[0];
 
-  const characterStyle = {
-    '--character-eye': eyeChoice.color,
-    '--character-hair': hairChoice.color,
-    '--character-hair-dark': hairChoice.dark,
-    '--character-skin': skinChoice.color,
-    '--character-skin-shadow': skinChoice.shadow,
-    '--character-base': baseChoice.color,
+    const level = (value) => Math.max(1, Math.min(5, Number(value) || 3));
+    const centered = (value) => level(value) - 3;
+
+    return {
+      '--character-eye': eyeChoice.color,
+      '--character-hair': hairChoice.color,
+      '--character-hair-dark': hairChoice.dark,
+      '--character-skin': skinChoice.color,
+      '--character-skin-shadow': skinChoice.shadow,
+      '--character-base': baseChoice.color,
+      '--character-height-scale': 1 + centered(appearance.height) * 0.055,
+      '--character-weight-scale': 1 + centered(appearance.weight) * 0.075,
+      '--character-strength-scale': 1 + centered(appearance.strength) * 0.09,
+      '--character-face-width': 1 + centered(appearance.faceWidth) * 0.075,
+      '--character-face-height': 1 + centered(appearance.faceHeight) * 0.07,
+      '--character-nose-x': centered(appearance.noseX),
+      '--character-nose-y': centered(appearance.noseY),
+      '--character-nose-size': 1 + centered(appearance.noseSize) * 0.14,
+      '--character-eye-spacing': centered(appearance.eyeSpacing),
+      '--character-eye-size': 1 + centered(appearance.eyeSize) * 0.12,
+      '--character-mouth-width': 1 + centered(appearance.mouthWidth) * 0.14,
+      '--character-makeup': appearance.makeup || 'none',
+      '--character-makeup-color': appearance.makeupColor || '#d85f83',
+    };
   };
+
+  const characterStyle = characterStyleFor(character);
 
   useEffect(() => {
     return () => {
       walkTokenRef.current += 1;
     };
+  }, []);
+
+  useEffect(() => {
+    if (peopleSeededRef.current) return;
+    peopleSeededRef.current = true;
+    setPeople([makeCharacterPerson('random'), makeCharacterPerson('random')]);
   }, []);
 
   useEffect(() => {
@@ -611,6 +797,93 @@ export default function KidsResort({ libraryHref = null }) {
     }
   };
 
+  const updateMainCharacterLevel = (key, value) => {
+    setCharacter((current) => ({ ...current, [key]: Number(value) }));
+  };
+
+  const openPersonEditor = (person, mode = 'edit') => {
+    setPersonEditorMode(mode);
+    setPersonDraft({
+      ...person,
+      character: { ...person.character },
+      look: {
+        ...person.look,
+        shirt: { ...person.look.shirt },
+        bottoms: { ...person.look.bottoms },
+        shoes: { ...person.look.shoes },
+        glasses: { ...person.look.glasses },
+        headwear: { ...person.look.headwear },
+        hair: { ...person.look.hair },
+      },
+      personality: { ...person.personality },
+      spawn: { ...person.spawn },
+    });
+    setPersonEditorOpen(true);
+  };
+
+  const spawnRandomPerson = () => {
+    const person = makeCharacterPerson('random');
+    setPeople((items) => [...items, person]);
+    setPeopleOpen(true);
+    openPersonEditor(person, 'edit');
+  };
+
+  const createCustomPerson = () => {
+    openPersonEditor(makeCharacterPerson('custom'), 'create');
+  };
+
+  const savePersonDraft = () => {
+    if (!personDraft) return;
+    if (personEditorMode === 'create') {
+      setPeople((items) => [...items, personDraft]);
+    } else {
+      setPeople((items) => items.map((item) => (item.id === personDraft.id ? personDraft : item)));
+    }
+    setPersonEditorOpen(false);
+    setPeopleOpen(true);
+  };
+
+  const updatePersonCharacter = (key, value) => {
+    setPersonDraft((current) => current ? {
+      ...current,
+      character: { ...current.character, [key]: value },
+    } : current);
+  };
+
+  const updatePersonLookType = (category, option) => {
+    setPersonDraft((current) => {
+      if (!current) return current;
+      const currentItem = current.look[category];
+      return {
+        ...current,
+        look: {
+          ...current.look,
+          [category]: {
+            ...option,
+            swatch: currentItem?.swatch || option.swatch,
+          },
+        },
+      };
+    });
+  };
+
+  const updatePersonLookColor = (category, swatch) => {
+    setPersonDraft((current) => current ? {
+      ...current,
+      look: {
+        ...current.look,
+        [category]: { ...current.look[category], swatch },
+      },
+    } : current);
+  };
+
+  const updatePersonPersonality = (key, value) => {
+    setPersonDraft((current) => current ? {
+      ...current,
+      personality: { ...current.personality, [key]: value },
+    } : current);
+  };
+
   const makeStudioCreation = (kind) => {
     const reward = 5;
     const label = kind === 'fashion' ? 'fashion design' : 'artwork';
@@ -776,25 +1049,31 @@ export default function KidsResort({ libraryHref = null }) {
     setStudioMessage(nextCustomer.name + ' has a new fashion request.');
   };
 
-  const renderCharacter = (large = false, displayLook = look) => (
+  const renderCharacter = (
+    large = false,
+    displayLook = look,
+    displayCharacter = character,
+    displayName = characterName,
+  ) => (
     <div
       className={[styles.avatarFigure, large ? styles.avatarFigureLarge : ''].join(' ')}
       data-hair={displayLook.hair.id}
-      data-gender={character.gender}
+      data-gender={displayCharacter.gender}
+      data-makeup={displayCharacter.makeup || 'none'}
       data-sleeve={displayLook.shirt.sleeve || 'short'}
       data-leg={displayLook.bottoms.leg || 'straight'}
       data-shoe={displayLook.shoes.shoe || 'sneakers'}
       data-glasses={displayLook.glasses?.id || 'none'}
       data-headwear={displayLook.headwear?.id || 'none'}
       style={{
-        ...characterStyle,
+        ...characterStyleFor(displayCharacter),
         '--outfit-shirt': displayLook.shirt.swatch,
         '--outfit-bottoms': displayLook.bottoms.swatch,
         '--outfit-shoes': displayLook.shoes.swatch,
         '--outfit-glasses': displayLook.glasses?.swatch || '#6f4b3e',
         '--outfit-headwear': displayLook.headwear?.swatch || '#ff4f9a',
       }}
-      aria-label={characterName + ' preview'}
+      aria-label={displayName + ' preview'}
     >
       <div className={styles.avatarHair} />
       <span className={styles.avatarHeadwear} aria-hidden="true" />
@@ -807,6 +1086,7 @@ export default function KidsResort({ libraryHref = null }) {
         <span className={[styles.avatarEye, styles.avatarEyeRight].join(' ')} />
         <span className={styles.avatarNose} />
         <span className={styles.avatarSmile} />
+        <span className={styles.avatarMakeup} aria-hidden="true" />
       </div>
       <div className={styles.avatarHairFront} />
       <span className={styles.avatarGlasses} aria-hidden="true" />
@@ -1473,6 +1753,28 @@ export default function KidsResort({ libraryHref = null }) {
             </button>
           ))}
 
+          {people.map((person) => (
+            <button
+              key={person.id}
+              type="button"
+              className={styles.mapNpc}
+              style={{
+                left: person.spawn.x + '%',
+                top: person.spawn.y + '%',
+              }}
+              onClick={() => {
+                setPeopleOpen(true);
+                openPersonEditor(person, 'edit');
+              }}
+              aria-label={'Edit ' + person.name}
+            >
+              <span className={styles.mapNpcFigure}>
+                {renderCharacter(false, person.look, person.character, person.name)}
+              </span>
+              <span className={styles.mapNpcName}>{person.name}</span>
+            </button>
+          ))}
+
           <div
             className={[styles.player, styles.playerDetailed, isWalking ? styles.playerWalking : ''].join(' ')}
             style={{
@@ -1496,6 +1798,7 @@ export default function KidsResort({ libraryHref = null }) {
             data-headwear={look.headwear.id}
             data-hair={look.hair.id}
             data-gender={character.gender}
+            data-makeup={character.makeup || 'none'}
             data-facing={facing}
             data-view={isWalking ? walkView : 'front'}
             data-moving={isWalking ? 'true' : 'false'}
@@ -1513,6 +1816,7 @@ export default function KidsResort({ libraryHref = null }) {
                 <span className={[styles.playerEye, styles.playerEyeRight].join(' ')} />
                 <span className={styles.playerNose} />
                 <span className={styles.playerSmile} />
+                <span className={styles.playerMakeup} aria-hidden="true" />
               </div>
               <div className={styles.playerHairFront} />
               <span className={styles.playerGlasses} aria-hidden="true" />
@@ -1563,12 +1867,331 @@ export default function KidsResort({ libraryHref = null }) {
           <button
             type="button"
             className={[styles.mapCornerButton, styles.addCharacterButton].join(' ')}
-            aria-label="Add another character"
-            title="Add another character later"
-            disabled
+            aria-label="People"
+            title="People"
+            onClick={() => {
+              setPeopleOpen(true);
+              setPersonEditorOpen(false);
+            }}
           >
             +
           </button>
+
+          {peopleOpen && (
+            <div className={styles.peoplePanel}>
+              <div className={styles.peoplePanelHeader}>
+                <div>
+                  <strong>People</strong>
+                  <span>Visitors and characters in this resort session.</span>
+                </div>
+                <button type="button" onClick={() => setPeopleOpen(false)}>×</button>
+              </div>
+
+              <div className={styles.peoplePanelActions}>
+                <button type="button" onClick={spawnRandomPerson}>Random Visitor</button>
+                <button type="button" onClick={createCustomPerson}>Create Character</button>
+              </div>
+
+              <div className={styles.peopleRoster}>
+                {people.map((person) => (
+                  <button
+                    key={person.id}
+                    type="button"
+                    className={styles.peopleCard}
+                    onClick={() => openPersonEditor(person, 'edit')}
+                  >
+                    <span className={styles.peopleCardPreview}>
+                      {renderCharacter(false, person.look, person.character, person.name)}
+                    </span>
+                    <span>
+                      <strong>{person.name}</strong>
+                      <small>
+                        {person.source === 'random' ? 'Random visitor' : 'Created character'}
+                      </small>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {personEditorOpen && personDraft && (
+            <div className={styles.personEditorBackdrop}>
+              <section className={styles.personEditor} aria-label="Character builder">
+                <header className={styles.personEditorHeader}>
+                  <div>
+                    <strong>
+                      {personEditorMode === 'create' ? 'Create Character' : 'Customize ' + personDraft.name}
+                    </strong>
+                    <span>Everything here can be changed later.</span>
+                  </div>
+                  <button type="button" onClick={() => setPersonEditorOpen(false)}>×</button>
+                </header>
+
+                <div className={styles.personEditorBody}>
+                  <aside className={styles.personEditorPreview}>
+                    {renderCharacter(true, personDraft.look, personDraft.character, personDraft.name)}
+                    <div className={styles.personEditorPreviewName}>{personDraft.name}</div>
+                  </aside>
+
+                  <div className={styles.personEditorControls}>
+                    <div className={styles.personEditorSection}>
+                      <h3>Identity</h3>
+                      <label className={styles.personTextField}>
+                        <span>Name</span>
+                        <input
+                          type="text"
+                          maxLength={18}
+                          value={personDraft.name}
+                          onChange={(event) => setPersonDraft((current) => ({
+                            ...current,
+                            name: event.target.value || 'Friend',
+                          }))}
+                        />
+                      </label>
+                      <div className={styles.creatorChoiceWrap}>
+                        {CHARACTER_OPTIONS.gender.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className={styles.creatorTextChoice}
+                            data-selected={personDraft.character.gender === option.id ? 'true' : 'false'}
+                            onClick={() => updatePersonCharacter('gender', option.id)}
+                          >
+                            {option.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.personEditorSection}>
+                      <h3>Colors</h3>
+                      {[
+                        ['eye', 'Eyes'],
+                        ['hair', 'Hair'],
+                        ['skin', 'Skin'],
+                        ['base', 'Favorite'],
+                      ].map(([category, label]) => (
+                        <div key={category} className={styles.personOptionRow}>
+                          <span>{label}</span>
+                          <div className={styles.creatorSwatches}>
+                            {CHARACTER_OPTIONS[category].map((option) => (
+                              <button
+                                key={option.id}
+                                type="button"
+                                className={styles.creatorSwatch}
+                                data-selected={personDraft.character[category] === option.id ? 'true' : 'false'}
+                                style={{ '--swatch-color': option.color }}
+                                aria-label={option.name}
+                                title={option.name}
+                                onClick={() => updatePersonCharacter(category, option.id)}
+                              />
+                            ))}
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+
+                    <div className={styles.personEditorSection}>
+                      <h3>Hair</h3>
+                      <div className={styles.creatorChoiceWrap}>
+                        {LOOK_OPTIONS.hair.map((option) => (
+                          <button
+                            key={option.id}
+                            type="button"
+                            className={styles.creatorTextChoice}
+                            data-selected={personDraft.look.hair.id === option.id ? 'true' : 'false'}
+                            onClick={() => setPersonDraft((current) => ({
+                              ...current,
+                              look: { ...current.look, hair: option },
+                            }))}
+                          >
+                            {option.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.personEditorSection}>
+                      <h3>Body</h3>
+                      <div className={styles.creatorSliderStack}>
+                        {[
+                          ['height', 'Height'],
+                          ['weight', 'Weight'],
+                          ['strength', 'Strength'],
+                        ].map(([key, label]) => (
+                          <label key={key} className={styles.creatorSliderRow}>
+                            <span>{label}</span>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              step="1"
+                              value={personDraft.character[key]}
+                              onChange={(event) => updatePersonCharacter(key, Number(event.target.value))}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.personEditorSection}>
+                      <h3>Face Builder</h3>
+                      <div className={styles.creatorSliderStack}>
+                        {FACE_SLIDERS.map(([key, label]) => (
+                          <label key={key} className={styles.creatorSliderRow}>
+                            <span>{label}</span>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              step="1"
+                              value={personDraft.character[key]}
+                              onChange={(event) => updatePersonCharacter(key, Number(event.target.value))}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    <div className={styles.personEditorSection}>
+                      <h3>Face Details</h3>
+                      <div className={styles.creatorChoiceWrap}>
+                        {[
+                          ['none', 'None'],
+                          ['blush', 'Blush'],
+                          ['freckles', 'Freckles'],
+                          ['lashes', 'Lashes'],
+                          ['lip', 'Lip color'],
+                        ].map(([id, label]) => (
+                          <button
+                            key={id}
+                            type="button"
+                            className={styles.creatorTextChoice}
+                            data-selected={personDraft.character.makeup === id ? 'true' : 'false'}
+                            onClick={() => updatePersonCharacter('makeup', id)}
+                          >
+                            {label}
+                          </button>
+                        ))}
+                      </div>
+                      {personDraft.character.makeup !== 'none' && (
+                        <label className={styles.creatorColorInput}>
+                          <span>Detail color</span>
+                          <input
+                            type="color"
+                            value={personDraft.character.makeupColor}
+                            onChange={(event) => updatePersonCharacter('makeupColor', event.target.value)}
+                          />
+                        </label>
+                      )}
+                    </div>
+
+                    <div className={styles.personEditorSection}>
+                      <h3>Clothes & Accessories</h3>
+                      {FASHION_CATEGORIES.map((category) => {
+                        const item = personDraft.look[category.id];
+                        return (
+                          <div key={category.id} className={styles.personFashionRow}>
+                            <div className={styles.personFashionHeading}>
+                              <span>{category.label}</span>
+                              {item.id !== 'none' && (
+                                <input
+                                  type="color"
+                                  value={item.swatch}
+                                  aria-label={category.label + ' color'}
+                                  onChange={(event) => updatePersonLookColor(category.id, event.target.value)}
+                                />
+                              )}
+                            </div>
+                            <div className={styles.creatorChoiceWrap}>
+                              {LOOK_OPTIONS[category.id].map((option) => (
+                                <button
+                                  key={option.id}
+                                  type="button"
+                                  className={styles.creatorTextChoice}
+                                  data-selected={item.id === option.id ? 'true' : 'false'}
+                                  onClick={() => updatePersonLookType(category.id, option)}
+                                >
+                                  {option.name}
+                                </button>
+                              ))}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+
+                    <div className={styles.personEditorSection}>
+                      <h3>Personality</h3>
+                      <div className={styles.creatorSliderStack}>
+                        {PERSONALITY_STATS.map(([key, label]) => (
+                          <label key={key} className={styles.creatorSliderRow}>
+                            <span>{label}</span>
+                            <input
+                              type="range"
+                              min="1"
+                              max="5"
+                              step="1"
+                              value={personDraft.personality[key]}
+                              onChange={(event) => updatePersonPersonality(key, Number(event.target.value))}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                      <label className={styles.personTextField}>
+                        <span>Personality note</span>
+                        <textarea
+                          rows="3"
+                          maxLength={180}
+                          value={personDraft.personality.note}
+                          placeholder="Example: Loves dinosaurs, shy at first, very silly once comfortable."
+                          onChange={(event) => updatePersonPersonality('note', event.target.value)}
+                        />
+                      </label>
+                      <small className={styles.personalityFutureNote}>
+                        These personality settings are stored for the future conversation system. AI dialogue is not connected yet.
+                      </small>
+                    </div>
+                  </div>
+                </div>
+
+                <footer className={styles.personEditorFooter}>
+                  {personEditorMode !== 'create' && (
+                    <button
+                      type="button"
+                      className={styles.personDeleteButton}
+                      onClick={() => {
+                        setPeople((items) => items.filter((item) => item.id !== personDraft.id));
+                        setPersonEditorOpen(false);
+                      }}
+                    >
+                      Remove Character
+                    </button>
+                  )}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const fresh = makeCharacterPerson('random');
+                      setPersonDraft((current) => ({
+                        ...fresh,
+                        id: current.id,
+                        name: current.name,
+                        source: current.source,
+                        spawn: current.spawn,
+                      }));
+                    }}
+                  >
+                    Randomize
+                  </button>
+                  <button type="button" onClick={() => setPersonEditorOpen(false)}>Cancel</button>
+                  <button type="button" className={styles.primaryButton} onClick={savePersonDraft}>
+                    Save Character
+                  </button>
+                </footer>
+              </section>
+            </div>
+          )}
 
           <div className={styles.settingsDock}>
             {settingsOpen && (
@@ -1630,6 +2253,101 @@ export default function KidsResort({ libraryHref = null }) {
                     </div>
                   </div>
                 ))}
+
+                <div className={styles.creatorSection}>
+                  <span className={styles.creatorLabel}>Hair style</span>
+                  <div className={styles.creatorChoiceWrap}>
+                    {LOOK_OPTIONS.hair.map((option) => (
+                      <button
+                        key={option.id}
+                        type="button"
+                        className={styles.creatorTextChoice}
+                        data-selected={look.hair.id === option.id ? 'true' : 'false'}
+                        onClick={() => setLook((current) => ({ ...current, hair: option }))}
+                      >
+                        {option.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.creatorSection}>
+                  <span className={styles.creatorLabel}>Body</span>
+                  <div className={styles.creatorSliderStack}>
+                    {[
+                      ['height', 'Height'],
+                      ['weight', 'Weight'],
+                      ['strength', 'Strength'],
+                    ].map(([key, label]) => (
+                      <label key={key} className={styles.creatorSliderRow}>
+                        <span>{label}</span>
+                        <input
+                          type="range"
+                          min="1"
+                          max="5"
+                          step="1"
+                          value={character[key]}
+                          onChange={(event) => updateMainCharacterLevel(key, event.target.value)}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.creatorSection}>
+                  <span className={styles.creatorLabel}>Face builder</span>
+                  <div className={styles.creatorSliderStack}>
+                    {FACE_SLIDERS.map(([key, label]) => (
+                      <label key={key} className={styles.creatorSliderRow}>
+                        <span>{label}</span>
+                        <input
+                          type="range"
+                          min="1"
+                          max="5"
+                          step="1"
+                          value={character[key]}
+                          onChange={(event) => updateMainCharacterLevel(key, event.target.value)}
+                        />
+                      </label>
+                    ))}
+                  </div>
+                </div>
+
+                <div className={styles.creatorSection}>
+                  <span className={styles.creatorLabel}>Face details</span>
+                  <div className={styles.creatorChoiceWrap}>
+                    {[
+                      ['none', 'None'],
+                      ['blush', 'Blush'],
+                      ['freckles', 'Freckles'],
+                      ['lashes', 'Lashes'],
+                      ['lip', 'Lip color'],
+                    ].map(([id, label]) => (
+                      <button
+                        key={id}
+                        type="button"
+                        className={styles.creatorTextChoice}
+                        data-selected={character.makeup === id ? 'true' : 'false'}
+                        onClick={() => setCharacter((current) => ({ ...current, makeup: id }))}
+                      >
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+                  {character.makeup !== 'none' && (
+                    <label className={styles.creatorColorInput}>
+                      <span>Detail color</span>
+                      <input
+                        type="color"
+                        value={character.makeupColor}
+                        onChange={(event) => setCharacter((current) => ({
+                          ...current,
+                          makeupColor: event.target.value,
+                        }))}
+                      />
+                    </label>
+                  )}
+                </div>
               </div>
             )}
             <button
