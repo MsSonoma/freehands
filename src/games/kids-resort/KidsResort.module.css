@@ -4845,14 +4845,15 @@
 .lobbyDoorRow {
   position: absolute;
   z-index: 4;
-  top: clamp(108px, 18dvh, 150px);
+  top: auto;
+  bottom: 39%;
   right: max(7%, calc((100vw - 1180px) / 2 + 7%));
-  width: clamp(330px, 39vw, 500px);
-  height: clamp(150px, 33dvh, 230px);
+  width: clamp(255px, 30vw, 350px);
+  height: clamp(145px, 30dvh, 210px);
   display: grid;
-  grid-template-columns: repeat(3, minmax(88px, 1fr));
+  grid-template-columns: repeat(3, minmax(70px, 1fr));
   align-items: end;
-  gap: clamp(10px, 1.5vw, 18px);
+  gap: clamp(8px, 1vw, 12px);
   pointer-events: none;
 }
 
@@ -5007,11 +5008,12 @@
 
 @media (max-width: 760px) {
   .lobbyDoorRow {
-    top: 76px;
+    top: auto;
+    bottom: 39%;
     right: 3%;
-    width: min(58vw, 390px);
-    height: clamp(118px, 29dvh, 185px);
-    gap: 7px;
+    width: min(48vw, 300px);
+    height: clamp(115px, 27dvh, 170px);
+    gap: 6px;
   }
 
   .lobbyDoor {
@@ -5077,10 +5079,11 @@
 
 @media (max-width: 520px) {
   .lobbyDoorRow {
-    top: 58px;
+    top: auto;
+    bottom: 39%;
     right: 2%;
-    width: 64vw;
-    height: clamp(96px, 25dvh, 145px);
+    width: 55vw;
+    height: clamp(92px, 24dvh, 130px);
     gap: 4px;
   }
 
@@ -5138,8 +5141,9 @@
 
 @media (max-height: 610px) {
   .lobbyDoorRow {
-    top: 52px;
-    height: clamp(82px, 27dvh, 135px);
+    top: auto;
+    bottom: 39%;
+    height: clamp(80px, 25dvh, 120px);
   }
 
   .lobbyDoor {
