@@ -4890,3 +4890,215 @@
     font-size: .52rem;
   }
 }
+
+/* Vertical side-panel controls for the four non-art Design Studio activities. */
+.fashionCategoryTabs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.fashionCategoryTabs button {
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 9px;
+  font-size: .64rem;
+  text-align: left;
+}
+
+.fashionEditorCard {
+  gap: 7px;
+  padding: 9px;
+  border-radius: 15px;
+}
+
+.fashionEditorHeading {
+  gap: 7px;
+}
+
+.fashionEditorHeading h3 {
+  margin: 1px 0 0;
+}
+
+.fashionTypeGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.fashionTypeGrid button {
+  padding: 6px 7px;
+  border-radius: 10px;
+}
+
+.fashionTypeGrid strong {
+  font-size: .68rem;
+}
+
+.fashionTypeGrid small {
+  font-size: .56rem;
+}
+
+.fashionActionRow {
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+
+.fashionActionRow > button {
+  min-height: 30px;
+  padding: 6px 8px;
+}
+
+.tryOnTray {
+  gap: 4px;
+  padding: 6px 7px;
+  border-radius: 11px;
+}
+
+.tryOnTrayItems {
+  gap: 3px;
+}
+
+.tryOnTrayItems > span {
+  padding: 3px 6px;
+  font-size: .57rem;
+}
+
+.wearableFitControls {
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px 7px;
+}
+
+.wearableFitControls label {
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 5px;
+}
+
+.wearableFitControls label > span {
+  font-size: .58rem;
+}
+
+.beautyControlPanel,
+.beautyControlGroup {
+  min-width: 0;
+}
+
+.beautyControlGroup {
+  gap: 5px;
+  padding-bottom: 6px;
+}
+
+.beautyControlGroup h3 {
+  font-size: .76rem;
+}
+
+.beautyControlGroup .creatorChoiceWrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.beautyControlGroup .creatorTextChoice {
+  min-width: 0;
+  padding: 5px 6px;
+  font-size: .58rem;
+}
+
+.beautyControlGroup .creatorSwatches {
+  gap: 4px;
+}
+
+.studioSceneMessage,
+.customerOpinion,
+.fullMessage {
+  font-size: .62rem;
+}
+
+/* Art keeps a compact vertical tool rail but gives almost all remaining area to the canvas. */
+.paintStudioShell {
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 5px;
+}
+
+.paintToolRail {
+  gap: 2px;
+  padding: 4px;
+}
+
+.paintToolRail button {
+  min-height: 0;
+  font-size: .47rem;
+  padding: 2px 1px;
+}
+
+.paintCanvasFrame {
+  border-width: 6px;
+  padding: 3px;
+}
+
+.paintControlDeck {
+  padding: 4px 5px;
+  gap: 5px;
+}
+
+.paintActions button {
+  padding: 4px 6px;
+  font-size: .52rem;
+}
+
+@media (max-width: 560px) {
+  .fashionCategoryTabs button {
+    padding: 4px 6px;
+    font-size: .56rem;
+  }
+
+  .fashionEditorCard {
+    padding: 6px;
+    gap: 5px;
+  }
+
+  .fashionTypeGrid button {
+    padding: 4px 5px;
+  }
+
+  .beautyControlGroup .creatorTextChoice {
+    padding: 4px 5px;
+    font-size: .53rem;
+  }
+
+  .paintStudioShell {
+    grid-template-columns: 43px minmax(0, 1fr);
+  }
+}
+
+@media (max-height: 620px) {
+  .fashionCategoryTabs {
+    gap: 2px;
+  }
+
+  .fashionCategoryTabs button {
+    padding: 3px 6px;
+  }
+
+  .fashionEditorCard {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .fashionTypeGrid {
+    gap: 3px;
+  }
+
+  .fashionTypeGrid button {
+    padding: 3px 5px;
+  }
+
+  .beautyControlGroup {
+    gap: 3px;
+    padding-bottom: 4px;
+  }
+
+  .beautyControlGroup .creatorTextChoice {
+    padding: 3px 5px;
+  }
+}
