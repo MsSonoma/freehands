@@ -5837,10 +5837,10 @@ export default function KidsResort({ libraryHref = null }) {
             </div>
           </div>
         </div>
-        <div className={styles.studioSceneMessage}>
+        <div className={styles.artCustomerStatus}>
           <strong>{studioAmbientPerson.name}</strong>
           <span>{studioMessage || 'Make your own creative idea for the customer.'}</span>
-          <small>{studioCreations} creations made</small>
+          <small>{studioCreations} made</small>
         </div>
       </div>,
     );
