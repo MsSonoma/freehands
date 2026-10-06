@@ -8238,3 +8238,19 @@
     right: 13%;
   }
 }
+/* Palm Court pass alignment: order plate sits on the counter. */
+.palmKitchenGame .palmKitchenPass {
+  right: calc(23% + 10px);
+}
+
+@media (max-width: 760px) {
+  .palmKitchenGame .palmKitchenPass {
+    right: calc(20% + 8px);
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenGame .palmKitchenPass {
+    right: calc(19% + 6px);
+  }
+}
