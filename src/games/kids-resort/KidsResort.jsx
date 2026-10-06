@@ -151,6 +151,58 @@ const BANK_REQUESTS = [
   { action: 'withdrawal', answer: 28, words: 'Please withdraw twice fourteen Resort Bucks from my account.' },
 ];
 const CAFE_MENU = CAFE_RECIPES.map(({ id, name, icon, price }) => ({ id, name, icon, price }));
+const CREW_WORK_SCREENS = new Set([
+  'cafe-work',
+  'lobby-restaurant-work',
+  'lobby-custodian',
+  'bank-work',
+  'studio-beauty-work',
+  'studio-work',
+]);
+
+function crewWaitingActivity(screen, crewIndex = 0, playerName = 'Emily') {
+  if (screen === 'cafe-work') {
+    return {
+      placeId: 'cafe',
+      label: crewIndex % 2 === 0
+        ? 'sitting at a Sunshine Cafe table while ' + playerName + ' works'
+        : 'having a snack at Sunshine Cafe while ' + playerName + ' works',
+    };
+  }
+  if (screen === 'lobby-restaurant-work') {
+    return {
+      placeId: 'lobby',
+      label: crewIndex === 0
+        ? 'dining in Palm Court while ' + playerName + ' works'
+        : 'waiting in the Resort Lobby while ' + playerName + ' works',
+    };
+  }
+  if (screen === 'lobby-custodian') {
+    return {
+      placeId: 'lobby',
+      label: 'hanging out in the Resort Lobby while ' + playerName + ' works',
+    };
+  }
+  if (screen === 'bank-work') {
+    return {
+      placeId: 'bank',
+      label: 'waiting in the Resort Bank lobby while ' + playerName + ' works',
+    };
+  }
+  if (screen === 'studio-beauty-work') {
+    return {
+      placeId: 'studio',
+      label: 'browsing the Design Studio while ' + playerName + ' works at the Beauty Bar',
+    };
+  }
+  if (screen === 'studio-work') {
+    return {
+      placeId: 'studio',
+      label: 'hanging out in the Design Studio while ' + playerName + ' works',
+    };
+  }
+  return null;
+}
 
 const MARKET_ITEMS = [
   { id: 'eggs', name: 'Eggs', icon: '\u{1F95A}', price: 3 },
@@ -848,6 +900,8 @@ export default function KidsResort({ libraryHref = null }) {
     () => companionIds.map((id) => people.find((person) => person.id === id)).filter(Boolean),
     [companionIds, people],
   );
+  const crewWaitingForWork = CREW_WORK_SCREENS.has(screen);
+  const sceneCompanions = crewWaitingForWork ? [] : activeCompanions;
 
   useEffect(() => {
     return () => {
@@ -1035,19 +1089,23 @@ export default function KidsResort({ libraryHref = null }) {
   useEffect(() => {
     if (companionIds.length === 0) return;
 
-    const togetherLocation = screen === 'map' || screen === 'conversation' ? 'map' : placeId;
-    const togetherLabel = screen === 'map'
-      ? 'walking around the resort with ' + characterName
-      : 'doing activities with ' + characterName;
-
     setPeople((items) => items.map((person) => {
-      if (!companionIds.includes(person.id)) return person;
+      const crewIndex = companionIds.indexOf(person.id);
+      if (crewIndex < 0) return person;
+
+      const waiting = crewWaitingActivity(screen, crewIndex, characterName);
+      const togetherLocation = waiting?.placeId
+        || (screen === 'map' || screen === 'conversation' ? 'map' : placeId);
+      const togetherLabel = waiting?.label
+        || (screen === 'map'
+          ? 'walking around the resort with ' + characterName
+          : 'doing activities with ' + characterName);
 
       const nextActivity = {
-        id: 'walk-together',
+        id: waiting ? 'crew-waiting-for-work' : 'walk-together',
         placeId: togetherLocation === 'map' ? placeId : togetherLocation,
         label: togetherLabel,
-        phase: screen === 'map' ? 'traveling' : 'inside',
+        phase: waiting ? 'waiting' : (screen === 'map' ? 'traveling' : 'inside'),
         durationMs: null,
         endsAt: null,
       };
@@ -1059,8 +1117,7 @@ export default function KidsResort({ libraryHref = null }) {
         isRoaming: false,
       };
     }));
-  }, [companionIds, screen]);
-
+  }, [characterName, companionIds, placeId, screen]);
   useEffect(() => {
     if (people.length === 0) return undefined;
 
@@ -2870,7 +2927,7 @@ export default function KidsResort({ libraryHref = null }) {
   const renderPlayerParty = (pose = 'standing') => (
     <>
       {renderCharacter(false, look, character, characterName, pose)}
-      {activeCompanions.map((person, index) => (
+      {sceneCompanions.map((person, index) => (
         renderCharacter(false, person.look, person.character, person.name, pose, index)
       ))}
     </>
@@ -3026,7 +3083,7 @@ export default function KidsResort({ libraryHref = null }) {
         </div>
         <div className={styles.studioExperienceActors}>
           {actors}
-          {activeCompanions.map((person, index) => (
+          {sceneCompanions.map((person, index) => (
             renderStudioActor(person.look, person.character, person.name, 'companion', '', index)
           ))}
         </div>
@@ -3053,9 +3110,9 @@ export default function KidsResort({ libraryHref = null }) {
             <h1>{title}</h1>
           </div>
         </header>
-        {activeCompanions.length > 0 && (
+        {sceneCompanions.length > 0 && (
           <div className={styles.interiorCompanionGroup} aria-label="Friends walking together">
-            {activeCompanions.map((person, index) => (
+            {sceneCompanions.map((person, index) => (
               <div key={person.id} className={styles.interiorCompanion} style={{ '--party-index': index }}>
                 {renderCharacter(false, person.look, person.character, person.name)}
                 <span>{person.name}</span>
