@@ -2234,29 +2234,44 @@ export default function KidsResort({ libraryHref = null }) {
     return homeRecipe;
   };
 
-  const serveCafeOrder = (order) => {
-    const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
-    const plateState = summarizeCafePlate(recipe, order.plate || []);
-    if (!plateState.complete) {
-      setCafeMessage(`That plate isn't ${recipe.icon} yet. It is still missing ingredients.`);
-      return;
+  useEffect(() => {
+    if (screen !== 'cafe-work' || cafeFinished) return;
+
+    const readyOrder = cafeOrders.find((order) => {
+      if (cafeNow - order.born >= 45000) return false;
+      const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
+      if (!recipe) return false;
+      const plateState = summarizeCafePlate(recipe, order.plate || []);
+      return plateState.complete && plateState.extras.length === 0;
+    });
+    if (!readyOrder) return;
+
+    const recipe = CAFE_RECIPES.find((item) => item.id === readyOrder.recipeId);
+    const homeRecipe = RECIPES.find(
+      (item) => item.learnedFrom?.place === 'cafe' && item.learnedFrom.recipeId === recipe.id,
+    );
+    const learnedRecipe = homeRecipe && !learnedRecipeIds.has(homeRecipe.id) ? homeRecipe : null;
+    if (learnedRecipe) {
+      setLearnedRecipeIds((current) => {
+        if (current.has(learnedRecipe.id)) return current;
+        const next = new Set(current);
+        next.add(learnedRecipe.id);
+        return next;
+      });
     }
-    if (plateState.extras.length > 0) {
-      setCafeMessage('That plate has an extra ingredient. Move it to another plate or put it back in storage.');
-      return;
-    }
-    const learnedRecipe = learnRestaurantRecipe('cafe', recipe.id);
+
     const served = cafeServed + 1;
-    setCafeOrders((items) => items.filter((item) => item.id !== order.id));
+    setCafeOrders((items) => items.filter((item) => item.id !== readyOrder.id));
     setCafeServed(served);
     setBucks((value) => value + 4);
-    setCafeMessage(`${order.guest} loved it! +4 Resort Bucks${learnedRecipe ? ` · Recipe learned: ${learnedRecipe.name}!` : ''}`);
+    setCafeMessage(`${readyOrder.guest} loved it! +4 Resort Bucks${learnedRecipe ? ` · Recipe learned: ${learnedRecipe.name}!` : ''}`);
     if (served >= 8) {
       setCafeFinished(true);
       setBucks((value) => value + 8);
       setBadges((items) => items.includes('Sunshine Cafe Shift') ? items : [...items, 'Sunshine Cafe Shift']);
     }
-  };
+  }, [cafeFinished, cafeNow, cafeOrders, cafeServed, learnedRecipeIds, screen]);
+
   const palmKitchenRecipeFor = (number) => PALM_KITCHEN_RECIPES[number % PALM_KITCHEN_RECIPES.length];
 
   const makePalmKitchenOrder = (number, born = Date.now()) => {
@@ -4180,24 +4195,10 @@ export default function KidsResort({ libraryHref = null }) {
                     const visibleItems = plateState.complete
                       ? plateState.extras
                       : plate.map((ingredientId, index) => ({ ingredientId, index }));
-                    const readyToServe = plateState.complete && plateState.extras.length === 0;
                     return (
                       <article key={order.id} className={styles.cafeOrderStation}>
                         <div className={styles.cafeTicket}>
-                          <button
-                            type="button"
-                            className={[styles.cafeOrderFace, readyToServe ? styles.cafeOrderFaceReady : ''].join(' ')}
-                            aria-disabled={!readyToServe}
-                            aria-label={readyToServe ? `Serve ${recipe.name} to ${order.guest}` : `${order.guest} is waiting for ${recipe.name}`}
-                            title={readyToServe ? 'Serve this order' : 'Finish the plate first'}
-                            onClick={() => {
-                              if (readyToServe) serveCafeOrder(order);
-                              else if (plateState.extras.length) setCafeMessage(`Remove the extra ingredient before serving ${order.guest}.`);
-                              else setCafeMessage(`Finish ${order.guest}'s plate before serving.`);
-                            }}
-                          >
-                            {mood}
-                          </button>
+                          <span className={styles.cafeOrderFace} aria-hidden="true">{mood}</span>
                           <strong>{order.guest}</strong>
                           <span className={styles.cafeTicketFood}>{recipe.icon}</span>
                           <small>{Math.max(0, Math.ceil((45000 - age) / 1000))}s</small>
