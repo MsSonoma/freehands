@@ -793,8 +793,16 @@ export default function KidsResort({ libraryHref = null }) {
   const [studioTipResult, setStudioTipResult] = useState(null);
   const [studioBeautyDraft, setStudioBeautyDraft] = useState(null);
   const [artColor, setArtColor] = useState('#ff4f9a');
+  const [artTool, setArtTool] = useState('brush');
+  const [artSize, setArtSize] = useState(18);
+  const [artOpacity, setArtOpacity] = useState(1);
+  const [artPaper, setArtPaper] = useState('#fffaf3');
+  const [artHistoryVersion, setArtHistoryVersion] = useState(0);
   const artCanvasRef = useRef(null);
   const artDrawingRef = useRef(false);
+  const artGestureRef = useRef(null);
+  const artUndoRef = useRef([]);
+  const artRedoRef = useRef([]);
   const [studioDraftLook, setStudioDraftLook] = useState(null);
   const [ownedLooks, setOwnedLooks] = useState(() => new Set([
     fashionKey('shirt', LOOK_OPTIONS.shirt[0]),
@@ -2536,24 +2544,246 @@ export default function KidsResort({ libraryHref = null }) {
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     return {
-      x: (event.clientX - rect.left) * (canvas.width / rect.width),
-      y: (event.clientY - rect.top) * (canvas.height / rect.height),
+      x: Math.max(0, Math.min(canvas.width, (event.clientX - rect.left) * (canvas.width / rect.width))),
+      y: Math.max(0, Math.min(canvas.height, (event.clientY - rect.top) * (canvas.height / rect.height))),
     };
+  };
+
+  const artSnapshot = () => {
+    const canvas = artCanvasRef.current;
+    if (!canvas) return null;
+    return canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
+  };
+
+  const restoreArtSnapshot = (snapshot) => {
+    const canvas = artCanvasRef.current;
+    if (!canvas || !snapshot) return;
+    const ctx = canvas.getContext('2d');
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.putImageData(snapshot, 0, 0);
+  };
+
+  const rememberArtState = () => {
+    const snapshot = artSnapshot();
+    if (!snapshot) return null;
+    artUndoRef.current = [...artUndoRef.current.slice(-19), snapshot];
+    artRedoRef.current = [];
+    setArtHistoryVersion((value) => value + 1);
+    return snapshot;
+  };
+
+  const undoArt = () => {
+    if (artUndoRef.current.length === 0) return;
+    const current = artSnapshot();
+    const previous = artUndoRef.current[artUndoRef.current.length - 1];
+    artUndoRef.current = artUndoRef.current.slice(0, -1);
+    if (current) artRedoRef.current = [...artRedoRef.current.slice(-19), current];
+    restoreArtSnapshot(previous);
+    setArtHistoryVersion((value) => value + 1);
+  };
+
+  const redoArt = () => {
+    if (artRedoRef.current.length === 0) return;
+    const current = artSnapshot();
+    const next = artRedoRef.current[artRedoRef.current.length - 1];
+    artRedoRef.current = artRedoRef.current.slice(0, -1);
+    if (current) artUndoRef.current = [...artUndoRef.current.slice(-19), current];
+    restoreArtSnapshot(next);
+    setArtHistoryVersion((value) => value + 1);
+  };
+
+  const artHexToRgba = (hex, alpha = 1) => {
+    const value = hex.replace('#', '');
+    const normalized = value.length === 3
+      ? value.split('').map((part) => part + part).join('')
+      : value.padEnd(6, '0').slice(0, 6);
+    return [
+      parseInt(normalized.slice(0, 2), 16),
+      parseInt(normalized.slice(2, 4), 16),
+      parseInt(normalized.slice(4, 6), 16),
+      Math.round(Math.max(0, Math.min(1, alpha)) * 255),
+    ];
+  };
+
+  const colorToHex = (red, green, blue) =>
+    '#' + [red, green, blue].map((value) => value.toString(16).padStart(2, '0')).join('');
+
+  const configureArtContext = (ctx, tool = artTool) => {
+    ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
+    ctx.globalAlpha = tool === 'marker' ? Math.min(.42, artOpacity) : artOpacity;
+    ctx.strokeStyle = artColor;
+    ctx.fillStyle = artColor;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.lineWidth =
+      tool === 'pencil'
+        ? Math.max(1, artSize * .28)
+        : tool === 'marker'
+          ? artSize * 1.8
+          : tool === 'eraser'
+            ? artSize * 1.55
+            : artSize;
+  };
+
+  const drawArtShape = (ctx, tool, start, end) => {
+    configureArtContext(ctx, tool);
+    ctx.beginPath();
+    if (tool === 'line') {
+      ctx.moveTo(start.x, start.y);
+      ctx.lineTo(end.x, end.y);
+      ctx.stroke();
+      return;
+    }
+    const left = Math.min(start.x, end.x);
+    const top = Math.min(start.y, end.y);
+    const width = Math.abs(end.x - start.x);
+    const height = Math.abs(end.y - start.y);
+    if (tool === 'rectangle') {
+      ctx.strokeRect(left, top, width, height);
+      return;
+    }
+    if (tool === 'ellipse') {
+      ctx.ellipse(
+        left + width / 2,
+        top + height / 2,
+        Math.max(.5, width / 2),
+        Math.max(.5, height / 2),
+        0,
+        0,
+        Math.PI * 2,
+      );
+      ctx.stroke();
+    }
+  };
+
+  const floodFillArt = (point) => {
+    const canvas = artCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
+    const data = image.data;
+    const width = canvas.width;
+    const height = canvas.height;
+    const startX = Math.max(0, Math.min(width - 1, Math.floor(point.x)));
+    const startY = Math.max(0, Math.min(height - 1, Math.floor(point.y)));
+    const startPixel = (startY * width + startX) * 4;
+    const target = [
+      data[startPixel],
+      data[startPixel + 1],
+      data[startPixel + 2],
+      data[startPixel + 3],
+    ];
+    const replacement = artHexToRgba(artColor, artOpacity);
+    if (target.every((value, index) => value === replacement[index])) return;
+
+    const matchesTarget = (pixelIndex) => {
+      const offset = pixelIndex * 4;
+      return (
+        Math.abs(data[offset] - target[0]) <= 8 &&
+        Math.abs(data[offset + 1] - target[1]) <= 8 &&
+        Math.abs(data[offset + 2] - target[2]) <= 8 &&
+        Math.abs(data[offset + 3] - target[3]) <= 8
+      );
+    };
+    const paintPixel = (pixelIndex) => {
+      const offset = pixelIndex * 4;
+      data[offset] = replacement[0];
+      data[offset + 1] = replacement[1];
+      data[offset + 2] = replacement[2];
+      data[offset + 3] = replacement[3];
+    };
+
+    const startIndex = startY * width + startX;
+    const queue = new Int32Array(width * height);
+    let head = 0;
+    let tail = 0;
+    queue[tail++] = startIndex;
+    paintPixel(startIndex);
+
+    while (head < tail) {
+      const index = queue[head++];
+      const x = index % width;
+      const y = Math.floor(index / width);
+      if (x > 0) {
+        const neighbor = index - 1;
+        if (matchesTarget(neighbor)) {
+          paintPixel(neighbor);
+          queue[tail++] = neighbor;
+        }
+      }
+      if (x < width - 1) {
+        const neighbor = index + 1;
+        if (matchesTarget(neighbor)) {
+          paintPixel(neighbor);
+          queue[tail++] = neighbor;
+        }
+      }
+      if (y > 0) {
+        const neighbor = index - width;
+        if (matchesTarget(neighbor)) {
+          paintPixel(neighbor);
+          queue[tail++] = neighbor;
+        }
+      }
+      if (y < height - 1) {
+        const neighbor = index + width;
+        if (matchesTarget(neighbor)) {
+          paintPixel(neighbor);
+          queue[tail++] = neighbor;
+        }
+      }
+    }
+
+    ctx.putImageData(image, 0, 0);
+  };
+
+  const pickArtColor = (point) => {
+    const canvas = artCanvasRef.current;
+    if (!canvas) return;
+    const ctx = canvas.getContext('2d');
+    const pixel = ctx.getImageData(
+      Math.max(0, Math.min(canvas.width - 1, Math.floor(point.x))),
+      Math.max(0, Math.min(canvas.height - 1, Math.floor(point.y))),
+      1,
+      1,
+    ).data;
+    if (pixel[3] === 0) {
+      setArtColor(artPaper);
+    } else {
+      setArtColor(colorToHex(pixel[0], pixel[1], pixel[2]));
+    }
+    setArtTool('brush');
   };
 
   const beginArt = (event) => {
     const canvas = artCanvasRef.current;
     const point = artPoint(event);
     if (!canvas || !point) return;
+
+    if (artTool === 'picker') {
+      pickArtColor(point);
+      return;
+    }
+
+    const before = rememberArtState();
+
+    if (artTool === 'fill') {
+      floodFillArt(point);
+      return;
+    }
+
     artDrawingRef.current = true;
     canvas.setPointerCapture?.(event.pointerId);
+    artGestureRef.current = { start: point, before };
     const ctx = canvas.getContext('2d');
-    ctx.strokeStyle = artColor;
-    ctx.lineWidth = 12;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
+
+    if (['line', 'rectangle', 'ellipse'].includes(artTool)) return;
+
+    configureArtContext(ctx);
     ctx.beginPath();
     ctx.moveTo(point.x, point.y);
+    ctx.lineTo(point.x + .01, point.y + .01);
+    ctx.stroke();
   };
 
   const drawArt = (event) => {
@@ -2562,17 +2792,46 @@ export default function KidsResort({ libraryHref = null }) {
     const point = artPoint(event);
     if (!canvas || !point) return;
     const ctx = canvas.getContext('2d');
+
+    if (['line', 'rectangle', 'ellipse'].includes(artTool)) {
+      const gesture = artGestureRef.current;
+      if (!gesture) return;
+      restoreArtSnapshot(gesture.before);
+      drawArtShape(ctx, artTool, gesture.start, point);
+      return;
+    }
+
+    configureArtContext(ctx);
     ctx.lineTo(point.x, point.y);
     ctx.stroke();
   };
 
-  const endArt = () => {
+  const endArt = (event) => {
+    if (!artDrawingRef.current) return;
+    const canvas = artCanvasRef.current;
+    const point = event ? artPoint(event) : null;
+    const gesture = artGestureRef.current;
+
+    if (
+      canvas &&
+      point &&
+      gesture &&
+      ['line', 'rectangle', 'ellipse'].includes(artTool)
+    ) {
+      const ctx = canvas.getContext('2d');
+      restoreArtSnapshot(gesture.before);
+      drawArtShape(ctx, artTool, gesture.start, point);
+    }
+
     artDrawingRef.current = false;
+    artGestureRef.current = null;
+    if (event?.pointerId != null) canvas?.releasePointerCapture?.(event.pointerId);
   };
 
   const clearArt = () => {
     const canvas = artCanvasRef.current;
     if (!canvas) return;
+    rememberArtState();
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     setStudioMessage('Fresh canvas ready.');
   };
@@ -4636,32 +4895,141 @@ export default function KidsResort({ libraryHref = null }) {
         )}
       </>,
       <div className={styles.studioExperienceControls}>
-        <div className={[styles.artStudio, styles.studioExperienceArtStudio].join(' ')}>
-          <canvas
-            ref={artCanvasRef}
-            className={[styles.artCanvas, styles.studioExperienceArtCanvas].join(' ')}
-            width="720"
-            height="420"
-            onPointerDown={beginArt}
-            onPointerMove={drawArt}
-            onPointerUp={endArt}
-            onPointerCancel={endArt}
-            onPointerLeave={endArt}
-            aria-label="Drawing canvas"
-          />
-          <div className={styles.artToolbar}>
-            <label>
-              Color
-              <input
-                type="color"
-                value={artColor}
-                onChange={(event) => setArtColor(event.target.value)}
-              />
-            </label>
-            <button type="button" onClick={clearArt}>Clear</button>
-            <button type="button" onClick={() => makeStudioCreation('art')}>
-              Finish Artwork +5
-            </button>
+        <div className={[styles.artStudio, styles.studioExperienceArtStudio, styles.paintStudioShell].join(' ')}>
+          <div className={styles.paintToolRail} aria-label="Paint tools">
+            {[
+              ['brush', 'Brush'],
+              ['pencil', 'Pencil'],
+              ['marker', 'Marker'],
+              ['eraser', 'Eraser'],
+              ['line', 'Line'],
+              ['rectangle', 'Box'],
+              ['ellipse', 'Oval'],
+              ['fill', 'Fill'],
+              ['picker', 'Pick'],
+            ].map(([id, label]) => (
+              <button
+                key={id}
+                type="button"
+                data-active={artTool === id ? 'true' : 'false'}
+                onClick={() => setArtTool(id)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+
+          <div className={styles.paintCanvasFrame} style={{ '--paint-paper': artPaper }}>
+            <canvas
+              ref={artCanvasRef}
+              className={[styles.artCanvas, styles.studioExperienceArtCanvas, styles.paintCanvas].join(' ')}
+              width="960"
+              height="560"
+              onPointerDown={beginArt}
+              onPointerMove={drawArt}
+              onPointerUp={endArt}
+              onPointerCancel={endArt}
+              onPointerLeave={endArt}
+              aria-label="Painting canvas"
+            />
+          </div>
+
+          <div className={styles.paintControlDeck}>
+            <div className={styles.paintPalette} aria-label="Paint colors">
+              {[
+                '#191919',
+                '#ffffff',
+                '#e54848',
+                '#f28c38',
+                '#f2c84b',
+                '#55ad68',
+                '#3e9fa8',
+                '#4285d4',
+                '#6c5bc7',
+                '#a954b2',
+                '#e05f9c',
+                '#8b5d3b',
+              ].map((color) => (
+                <button
+                  key={color}
+                  type="button"
+                  data-selected={artColor.toLowerCase() === color ? 'true' : 'false'}
+                  style={{ '--paint-swatch': color }}
+                  aria-label={'Use ' + color}
+                  onClick={() => setArtColor(color)}
+                />
+              ))}
+              <label className={styles.paintCustomColor}>
+                <span>Custom</span>
+                <input
+                  type="color"
+                  value={artColor}
+                  onChange={(event) => setArtColor(event.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className={styles.paintSliders}>
+              <label>
+                <span>Brush size</span>
+                <input
+                  type="range"
+                  min="2"
+                  max="72"
+                  step="2"
+                  value={artSize}
+                  onChange={(event) => setArtSize(Number(event.target.value))}
+                />
+                <b>{artSize}</b>
+              </label>
+              <label>
+                <span>Opacity</span>
+                <input
+                  type="range"
+                  min="15"
+                  max="100"
+                  step="5"
+                  value={Math.round(artOpacity * 100)}
+                  onChange={(event) => setArtOpacity(Number(event.target.value) / 100)}
+                />
+                <b>{Math.round(artOpacity * 100)}%</b>
+              </label>
+              <label className={styles.paintPaperControl}>
+                <span>Paper</span>
+                <input
+                  type="color"
+                  value={artPaper}
+                  onChange={(event) => setArtPaper(event.target.value)}
+                />
+              </label>
+            </div>
+
+            <div className={styles.paintActions}>
+              <button
+                type="button"
+                disabled={artUndoRef.current.length === 0}
+                onClick={undoArt}
+                data-history={artHistoryVersion}
+              >
+                Undo
+              </button>
+              <button
+                type="button"
+                disabled={artRedoRef.current.length === 0}
+                onClick={redoArt}
+                data-history={artHistoryVersion}
+              >
+                Redo
+              </button>
+              <button type="button" onClick={clearArt}>Clear</button>
+              <button
+                type="button"
+                className={styles.paintFinishButton}
+                onClick={() => makeStudioCreation('art')}
+              >
+                Finish Artwork +5
+              </button>
+            </div>
           </div>
         </div>
         <div className={styles.studioSceneMessage}>
