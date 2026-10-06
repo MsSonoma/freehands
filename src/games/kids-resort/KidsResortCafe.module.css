@@ -1465,3 +1465,206 @@
   .cafeKitchenLeftStack .cafePlateHint,
   .cafeKitchenLeftStack .cafeServePlate { font-size: .25rem; }
 }
+/* Ten-position order pass: two rows of five compact order cards. */
+.cafeKitchenLeftStack {
+  grid-template-rows: minmax(154px, 55%) minmax(0, 1fr);
+}
+
+.cafeKitchenLeftStack > .cafeOrderBoard {
+  padding: 5px;
+}
+
+.cafeKitchenLeftStack .cafeOrderBoardHeader {
+  min-height: 18px;
+  margin-bottom: 3px;
+}
+
+.cafeKitchenLeftStack .cafeOrderStations {
+  height: calc(100% - 21px);
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-rows: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: row;
+  grid-auto-rows: minmax(0, 1fr);
+  gap: 4px;
+  overflow: hidden;
+}
+
+.cafeKitchenLeftStack .cafeOrderStation {
+  min-width: 0;
+  min-height: 0;
+  height: 100%;
+  padding: 3px;
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-rows: 25px minmax(0, 1fr);
+  gap: 3px;
+  align-items: center;
+  justify-items: center;
+  border-radius: 9px;
+}
+
+.cafeKitchenLeftStack .cafeTicket {
+  grid-column: 1;
+  grid-row: 1;
+  width: 100%;
+  height: 25px;
+  min-height: 25px;
+  padding: 1px 2px;
+  display: grid;
+  grid-template-columns: 25px minmax(0, 1fr) 20px 25px;
+  grid-template-rows: 1fr;
+  gap: 1px;
+  align-items: center;
+  border-width: 1px;
+  border-radius: 6px;
+}
+
+.cafeOrderFace {
+  width: 23px;
+  height: 23px;
+  min-width: 23px;
+  padding: 0;
+  border: 1px solid #d7c79f;
+  border-radius: 50%;
+  background: #fffdf3;
+  display: grid;
+  place-items: center;
+  color: inherit;
+  font: inherit;
+  font-size: .9rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cafeOrderFace[aria-disabled="true"] {
+  cursor: default;
+}
+
+.cafeOrderFaceReady {
+  border-color: #43a96a;
+  background: #e8f9ee;
+  box-shadow: 0 0 0 2px rgba(67,169,106,.24);
+  cursor: pointer !important;
+}
+
+.cafeKitchenLeftStack .cafeTicket strong {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: clamp(.34rem, .78dvh, .45rem);
+}
+
+.cafeKitchenLeftStack .cafeTicketFood {
+  font-size: clamp(.68rem, 1.6dvh, .88rem);
+}
+
+.cafeKitchenLeftStack .cafeTicket small {
+  font-size: clamp(.3rem, .68dvh, .4rem);
+  white-space: nowrap;
+}
+
+.cafeKitchenLeftStack .cafeOrderPlate {
+  grid-column: 1;
+  grid-row: 2;
+  justify-self: center;
+  align-self: center;
+  width: min(64px, 92%);
+  height: auto;
+  max-height: 100%;
+  aspect-ratio: 1;
+  min-width: 0;
+  min-height: 0;
+  padding: 3px;
+  border-width: 2px;
+  border-radius: 50%;
+  display: flex;
+  flex-wrap: wrap;
+  align-content: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.cafeKitchenLeftStack .cafePlateHint {
+  padding: 0 2px;
+  font-size: clamp(.27rem, .62dvh, .36rem);
+  line-height: 1.05;
+}
+
+.cafeKitchenLeftStack .cafePlateIngredient {
+  width: clamp(17px, 2.25dvh, 23px);
+  height: clamp(17px, 2.25dvh, 23px);
+}
+
+.cafeKitchenLeftStack .cafePlateIngredient span {
+  font-size: clamp(.64rem, 1.55dvh, .88rem);
+}
+
+.cafeKitchenLeftStack .cafeFinishedDish span {
+  font-size: clamp(.82rem, 2dvh, 1.12rem);
+}
+
+.cafeKitchenLeftStack .cafeFinishedDish small {
+  font-size: clamp(.24rem, .55dvh, .32rem);
+}
+
+@media (max-width: 760px) {
+  .cafeKitchenLeftStack {
+    grid-template-rows: minmax(126px, 56%) minmax(0, 1fr);
+  }
+
+  .cafeKitchenLeftStack > .cafeOrderBoard { padding: 3px; }
+  .cafeKitchenLeftStack .cafeOrderBoardHeader { min-height: 14px; margin-bottom: 2px; }
+  .cafeKitchenLeftStack .cafeOrderStations {
+    height: calc(100% - 16px);
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(0, 1fr));
+    gap: 2px;
+  }
+  .cafeKitchenLeftStack .cafeOrderStation {
+    padding: 2px;
+    grid-template-rows: 20px minmax(0, 1fr);
+    gap: 2px;
+  }
+  .cafeKitchenLeftStack .cafeTicket {
+    height: 20px;
+    min-height: 20px;
+    grid-template-columns: 19px minmax(0, 1fr) 15px 20px;
+  }
+  .cafeOrderFace { width: 18px; height: 18px; min-width: 18px; font-size: .7rem; }
+  .cafeKitchenLeftStack .cafeTicket strong { font-size: .28rem; }
+  .cafeKitchenLeftStack .cafeTicketFood { font-size: .58rem; }
+  .cafeKitchenLeftStack .cafeTicket small { font-size: .25rem; }
+  .cafeKitchenLeftStack .cafeOrderPlate { width: min(54px, 94%); padding: 2px; }
+  .cafeKitchenLeftStack .cafePlateIngredient { width: 16px; height: 16px; }
+  .cafeKitchenLeftStack .cafePlateIngredient span { font-size: .58rem; }
+}
+
+@media (max-height: 440px) {
+  .cafeKitchenLeftStack {
+    grid-template-rows: minmax(96px, 57%) minmax(0, 1fr);
+  }
+
+  .cafeKitchenLeftStack .cafeOrderBoardHeader { min-height: 11px; margin-bottom: 1px; }
+  .cafeKitchenLeftStack .cafeOrderStations { height: calc(100% - 12px); gap: 1px; }
+  .cafeKitchenLeftStack .cafeOrderStation {
+    padding: 1px;
+    grid-template-rows: 16px minmax(0, 1fr);
+    gap: 1px;
+  }
+  .cafeKitchenLeftStack .cafeTicket {
+    height: 16px;
+    min-height: 16px;
+    grid-template-columns: 15px minmax(0, 1fr) 13px 17px;
+    padding: 0 1px;
+  }
+  .cafeOrderFace { width: 14px; height: 14px; min-width: 14px; font-size: .55rem; }
+  .cafeKitchenLeftStack .cafeTicket strong { font-size: .22rem; }
+  .cafeKitchenLeftStack .cafeTicketFood { font-size: .46rem; }
+  .cafeKitchenLeftStack .cafeTicket small { font-size: .2rem; }
+  .cafeKitchenLeftStack .cafeOrderPlate { width: min(44px, 92%); padding: 1px; }
+  .cafeKitchenLeftStack .cafePlateIngredient { width: 13px; height: 13px; }
+  .cafeKitchenLeftStack .cafePlateIngredient span { font-size: .47rem; }
+}

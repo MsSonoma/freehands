@@ -3424,7 +3424,20 @@ export default function KidsResort({ libraryHref = null }) {
                     return (
                       <article key={order.id} className={styles.cafeOrderStation}>
                         <div className={styles.cafeTicket}>
-                          <span>{mood}</span>
+                          <button
+                            type="button"
+                            className={[styles.cafeOrderFace, readyToServe ? styles.cafeOrderFaceReady : ''].join(' ')}
+                            aria-disabled={!readyToServe}
+                            aria-label={readyToServe ? `Serve ${recipe.name} to ${order.guest}` : `${order.guest} is waiting for ${recipe.name}`}
+                            title={readyToServe ? 'Serve this order' : 'Finish the plate first'}
+                            onClick={() => {
+                              if (readyToServe) serveCafeOrder(order);
+                              else if (plateState.extras.length) setCafeMessage(`Remove the extra ingredient before serving ${order.guest}.`);
+                              else setCafeMessage(`Finish ${order.guest}'s plate before serving.`);
+                            }}
+                          >
+                            {mood}
+                          </button>
                           <strong>{order.guest}</strong>
                           <span className={styles.cafeTicketFood}>{recipe.icon}</span>
                           <small>{Math.max(0, Math.ceil((45000 - age) / 1000))}s</small>
@@ -3457,14 +3470,6 @@ export default function KidsResort({ libraryHref = null }) {
                           })}
                           {!plateState.complete && plate.length === 0 && <span className={styles.cafePlateHint}>Drop ingredients here</span>}
                         </div>
-                        <button
-                          type="button"
-                          className={styles.cafeServePlate}
-                          disabled={!readyToServe}
-                          onClick={() => serveCafeOrder(order)}
-                        >
-                          {readyToServe ? `Serve ${recipe.icon}` : plateState.extras.length ? 'Remove extra' : 'Build order'}
-                        </button>
                       </article>
                     );
                   })}
