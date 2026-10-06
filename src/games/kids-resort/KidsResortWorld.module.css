@@ -4747,3 +4747,146 @@
     padding: 5px;
   }
 }
+
+/* Fit the complete paint station into its room without nested scrolling. */
+.paintStudioShell {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.paintToolRail {
+  min-height: 0;
+  grid-template-rows: repeat(9, minmax(0, 1fr));
+  align-content: stretch;
+  overflow: hidden;
+  gap: 3px;
+  padding: 5px;
+}
+
+.paintToolRail button {
+  min-height: 0;
+  padding: 3px 2px;
+}
+
+.paintCanvasFrame {
+  min-height: 0;
+  overflow: visible;
+  border-width: 7px;
+  padding: 4px;
+}
+
+.paintCanvas {
+  min-height: 0;
+}
+
+.paintControlDeck {
+  min-height: 0;
+  padding: 6px;
+  gap: 6px;
+}
+
+.paintPalette {
+  gap: 4px;
+}
+
+.paintPalette > button {
+  width: 24px;
+  height: 24px;
+}
+
+.paintActions button {
+  padding: 6px 8px;
+}
+
+@media (max-width: 720px) {
+  .paintStudioShell {
+    grid-template-columns: 54px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 5px;
+  }
+
+  .paintToolRail {
+    grid-row: 1 / 3;
+  }
+
+  .paintToolRail button {
+    min-height: 0;
+    font-size: .47rem;
+    padding: 2px 1px;
+  }
+
+  .paintControlDeck {
+    grid-template-columns: minmax(0, 1fr) minmax(140px, .8fr);
+    align-items: start;
+    padding: 5px;
+  }
+
+  .paintActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .paintPalette > button {
+    width: 20px;
+    height: 20px;
+  }
+
+  .paintSliders label {
+    grid-template-columns: 58px minmax(60px, 1fr) 34px;
+  }
+}
+
+@media (max-width: 480px) {
+  .paintStudioShell {
+    grid-template-columns: 47px minmax(0, 1fr);
+  }
+
+  .paintControlDeck {
+    grid-template-columns: 1fr;
+  }
+
+  .paintActions {
+    grid-column: 1;
+  }
+
+  .paintPalette > button {
+    width: 18px;
+    height: 18px;
+  }
+
+  .paintCustomColor span,
+  .paintPaperControl span {
+    font-size: .5rem;
+  }
+}
+
+@media (max-height: 620px) {
+  .paintToolRail {
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .paintToolRail button {
+    min-height: 0;
+    font-size: .46rem;
+  }
+
+  .paintCanvasFrame {
+    border-width: 5px;
+    padding: 3px;
+  }
+
+  .paintControlDeck {
+    padding: 4px;
+  }
+
+  .paintPalette > button {
+    width: 19px;
+    height: 19px;
+  }
+
+  .paintActions button {
+    padding: 4px 6px;
+    font-size: .52rem;
+  }
+}

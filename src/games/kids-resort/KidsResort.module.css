@@ -9396,3 +9396,57 @@
 .marketStockCart {
   touch-action: none;
 }
+
+/* Keep the complete Art Easel visible as one room element rather than a scroll panel. */
+.studioExperienceRoom[data-mode="art-work"] .studioExperienceWorkspace {
+  top: 8%;
+  left: var(--studio-exp-gutter);
+  right: min(27vw, 340px);
+  bottom: 3%;
+  width: auto;
+  max-height: none;
+  overflow: hidden;
+  padding: 8px;
+}
+
+.studioExperienceRoom[data-mode="art-work"] .studioExperienceControls {
+  height: 100%;
+  min-height: 0;
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 6px;
+}
+
+@media (max-width: 820px) {
+  .studioExperienceRoom[data-mode="art-work"] .studioExperienceWorkspace {
+    top: 9%;
+    left: 6px;
+    right: 6px;
+    bottom: 4px;
+    width: auto;
+    max-height: none;
+    padding: 6px;
+  }
+
+  .studioExperienceRoom[data-mode="art-work"] .studioSceneActor[data-role="player"] {
+    right: 17%;
+    bottom: 46%;
+    opacity: .82;
+  }
+
+  .studioExperienceRoom[data-mode="art-work"] .studioSceneActor[data-role="customer"] {
+    right: 3%;
+    bottom: 46%;
+    opacity: .82;
+  }
+}
+
+@media (max-width: 560px) {
+  .studioExperienceRoom[data-mode="art-work"] .studioExperienceWorkspace {
+    top: 7%;
+    bottom: 3px;
+  }
+
+  .studioExperienceRoom[data-mode="art-work"] .studioSceneActor {
+    opacity: .5;
+  }
+}
