@@ -233,7 +233,50 @@ const MARKET_ITEMS = [
   { id: 'ravioli', name: 'Ravioli', icon: '\u{1F95F}', price: 4 },
   { id: 'ice-cream', name: 'Ice Cream', icon: '\u{1F368}', price: 3 },
   { id: 'wafer', name: 'Wafer Cookies', icon: '\u{1F36A}', price: 2 },
+  { id: 'soap', name: 'Soap', icon: '\u{1F9FC}', price: 2 },
+  { id: 'paper-towels', name: 'Paper Towels', icon: '\u{1F9FB}', price: 3 },
+  { id: 'sunscreen', name: 'Sunscreen', icon: '\u{1F9F4}', price: 4 }
 ];
+
+const MARKET_ITEM_SHELF = {
+  eggs: 'cold',
+  milk: 'cold',
+  berries: 'produce',
+  bread: 'pantry',
+  cheese: 'cold',
+  apples: 'produce',
+  buns: 'pantry',
+  'burger-patty': 'cold',
+  lettuce: 'produce',
+  tomatoes: 'produce',
+  tortillas: 'pantry',
+  'taco-meat': 'cold',
+  bacon: 'cold',
+  pasta: 'top',
+  'tomato-sauce': 'top',
+  herbs: 'produce',
+  chicken: 'cold',
+  potatoes: 'produce',
+  salmon: 'cold',
+  lemon: 'produce',
+  vegetables: 'produce',
+  ravioli: 'cold',
+  'ice-cream': 'cold',
+  wafer: 'top',
+  soap: 'household',
+  'paper-towels': 'household',
+  sunscreen: 'household',
+};
+
+const MARKET_SHELVES = [
+  { id: 'produce', label: 'Fresh Produce', icon: '\u{1F96C}' },
+  { id: 'pantry', label: 'Groceries', icon: '\u{1F96B}' },
+  { id: 'cold', label: 'Cold Case', icon: '\u{2744}' },
+  { id: 'household', label: 'Household', icon: '\u{1F9FD}' },
+];
+
+const marketShelfForItem = (item) => MARKET_ITEM_SHELF[item.id] || 'pantry';
+
 
 const RECIPES = [
   {
@@ -959,6 +1002,23 @@ export default function KidsResort({ libraryHref = null }) {
   const [bankCustomer, setBankCustomer] = useState(() => makeCharacterPerson('random'));
 
 
+  const [marketWorking, setMarketWorking] = useState(false);
+  const [marketBasket, setMarketBasket] = useState([]);
+  const [marketDrag, setMarketDrag] = useState(null);
+  const [marketStock, setMarketStock] = useState(() => Object.fromEntries(MARKET_ITEMS.map((item) => [item.id, 3])));
+  const [marketShelfStock, setMarketShelfStock] = useState(() => Object.fromEntries(MARKET_ITEMS.map((item) => [item.id, 2])));
+  const [marketStocked, setMarketStocked] = useState(0);
+  const [marketCustomersHelped, setMarketCustomersHelped] = useState(0);
+  const [marketCustomerIndex, setMarketCustomerIndex] = useState(0);
+  const [marketCustomer, setMarketCustomer] = useState(() => makeCharacterPerson('random'));
+  const [marketSpillClean, setMarketSpillClean] = useState(false);
+  const [marketTopShelfReady, setMarketTopShelfReady] = useState(false);
+  const [marketStockCartSpot, setMarketStockCartSpot] = useState({ x: 55, y: 72 });
+  const [marketShoppingCartSpot, setMarketShoppingCartSpot] = useState({ x: 24, y: 75 });
+  const [marketMessage, setMarketMessage] = useState('Drag groceries into your cart, or clock in to work a Market Street shift.');
+  const marketRoomRef = useRef(null);
+
+
   const selectedPlace = useMemo(
     () => PLACES.find((place) => place.id === selectedPlaceId) ?? PLACES[0],
     [selectedPlaceId],
@@ -1012,7 +1072,7 @@ export default function KidsResort({ libraryHref = null }) {
     () => companionIds.map((id) => people.find((person) => person.id === id)).filter(Boolean),
     [companionIds, people],
   );
-  const crewWaitingForWork = CREW_WORK_SCREENS.has(screen);
+  const crewWaitingForWork = CREW_WORK_SCREENS.has(screen) || (screen === 'market' && marketWorking);
   const sceneCompanions = crewWaitingForWork ? [] : activeCompanions;
 
   useEffect(() => {
@@ -1205,7 +1265,12 @@ export default function KidsResort({ libraryHref = null }) {
       const crewIndex = companionIds.indexOf(person.id);
       if (crewIndex < 0) return person;
 
-      const waiting = crewWaitingActivity(screen, crewIndex, characterName);
+      const waiting = screen === 'market' && marketWorking
+        ? {
+            placeId: 'market',
+            label: 'browsing Market Street while ' + characterName + ' works',
+          }
+        : crewWaitingActivity(screen, crewIndex, characterName);
       const togetherLocation = waiting?.placeId
         || (screen === 'map' || screen === 'conversation' ? 'map' : placeId);
       const togetherLabel = waiting?.label
@@ -1229,7 +1294,7 @@ export default function KidsResort({ libraryHref = null }) {
         isRoaming: false,
       };
     }));
-  }, [characterName, companionIds, placeId, screen]);
+  }, [characterName, companionIds, marketWorking, placeId, screen]);
   useEffect(() => {
     if (people.length === 0) return undefined;
 
@@ -2525,6 +2590,219 @@ export default function KidsResort({ libraryHref = null }) {
       [item.id]: (items[item.id] || 0) + 1,
     }));
     setMessage(`${item.name} went into your house pantry.`);
+  };
+
+  const marketWantedItem = MARKET_ITEMS[marketCustomerIndex % MARKET_ITEMS.length];
+
+  const startMarketDrag = (event, payload) => {
+    setMarketDrag(payload);
+    if (event?.dataTransfer) {
+      event.dataTransfer.effectAllowed = 'move';
+      event.dataTransfer.setData('text/plain', JSON.stringify(payload));
+    }
+  };
+
+  const marketDropPayload = (event, explicitPayload = null) => {
+    if (explicitPayload) return explicitPayload;
+    if (marketDrag) return marketDrag;
+    try {
+      return JSON.parse(event?.dataTransfer?.getData('text/plain') || 'null');
+    } catch {
+      return null;
+    }
+  };
+
+  const moveMarketCart = (event, explicitPayload = null) => {
+    const payload = marketDropPayload(event, explicitPayload);
+    if (!['stock-cart', 'shopping-cart'].includes(payload?.type)) return;
+    const room = marketRoomRef.current;
+    if (!room) return;
+    const rect = room.getBoundingClientRect();
+    const x = Math.max(12, Math.min(88, ((event.clientX - rect.left) / rect.width) * 100));
+    const y = Math.max(58, Math.min(86, ((event.clientY - rect.top) / rect.height) * 100));
+    if (payload.type === 'stock-cart') {
+      setMarketStockCartSpot({ x, y });
+      setMarketMessage('Stock cart moved. Drag boxes from it to the matching shelf.');
+    } else {
+      setMarketShoppingCartSpot({ x, y });
+      setMarketMessage('Shopping cart moved. Drag groceries into it while you shop.');
+    }
+    setMarketDrag(null);
+  };
+
+  const dropMarketStockOnShelf = (event, shelfId, explicitPayload = null) => {
+    event.preventDefault();
+    const payload = marketDropPayload(event, explicitPayload);
+    if (!marketWorking || payload?.type !== 'stock-item') return;
+    const item = MARKET_ITEMS.find((entry) => entry.id === payload.itemId);
+    if (!item) return;
+    const targetShelf = marketShelfForItem(item);
+    if (targetShelf !== shelfId) {
+      setMarketMessage(item.name + ' belongs in ' + (targetShelf === 'cold' ? 'the cold case' : targetShelf === 'top' ? 'the top shelf' : targetShelf) + '.');
+      return;
+    }
+    if (shelfId === 'top' && !marketTopShelfReady) {
+      setMarketMessage('Move the step ladder to the top shelf before stocking up high.');
+      return;
+    }
+    if ((marketStock[item.id] || 0) <= 0) {
+      setMarketMessage('The stock cart is out of ' + item.name + '.');
+      return;
+    }
+    setMarketStock((current) => ({ ...current, [item.id]: Math.max(0, (current[item.id] || 0) - 1) }));
+    setMarketShelfStock((current) => ({ ...current, [item.id]: (current[item.id] || 0) + 1 }));
+    setMarketStocked((value) => value + 1);
+    setBucks((value) => value + 1);
+    setMarketDrag(null);
+    setMarketMessage(item.name + ' stocked. +1 Resort Buck');
+  };
+
+  const dropMarketLadder = (event, explicitPayload = null) => {
+    event.preventDefault();
+    const payload = marketDropPayload(event, explicitPayload);
+    if (payload?.type !== 'ladder') return;
+    setMarketTopShelfReady(true);
+    setMarketDrag(null);
+    setMarketMessage('Step ladder is in place. You can reach the top shelf now.');
+  };
+
+  const addMarketItemToCart = (event, explicitPayload = null) => {
+    event.preventDefault();
+    const payload = marketDropPayload(event, explicitPayload);
+    if (marketWorking || payload?.type !== 'product') return;
+    const item = MARKET_ITEMS.find((entry) => entry.id === payload.itemId);
+    if (!item) return;
+    if (marketShelfForItem(item) === 'top' && !marketTopShelfReady) {
+      setMarketMessage('Use the step ladder to reach ' + item.name + ' on the top shelf.');
+      return;
+    }
+    if ((marketShelfStock[item.id] || 0) <= 0) {
+      setMarketMessage(item.name + ' is sold out on the shelf right now.');
+      return;
+    }
+    setMarketShelfStock((current) => ({ ...current, [item.id]: Math.max(0, (current[item.id] || 0) - 1) }));
+    setMarketBasket((items) => [...items, item.id]);
+    setMarketDrag(null);
+    setMarketMessage(item.name + ' added to your shopping cart.');
+  };
+
+  const checkoutMarketBasket = () => {
+    if (marketWorking) {
+      setMarketMessage('Clock out before shopping for yourself.');
+      return;
+    }
+    if (!marketBasket.length) {
+      setMarketMessage('Your cart is empty. Drag groceries from the shelves into it.');
+      return;
+    }
+    const total = marketBasket.reduce((sum, id) => sum + (MARKET_ITEMS.find((item) => item.id === id)?.price || 0), 0);
+    if (bucks < total) {
+      setMarketMessage('You need ' + total + ' Resort Bucks to buy everything in your cart.');
+      return;
+    }
+    setBucks((value) => value - total);
+    setInventory((items) => {
+      const next = { ...items };
+      marketBasket.forEach((id) => {
+        next[id] = (next[id] || 0) + 1;
+      });
+      return next;
+    });
+    setMarketBasket([]);
+    setMarketMessage('Checkout complete. ' + total + ' Resort Bucks spent. Your purchases were sent home.');
+  };
+
+  const helpMarketCustomer = (event, explicitPayload = null) => {
+    event.preventDefault();
+    const payload = marketDropPayload(event, explicitPayload);
+    if (!marketWorking || payload?.type !== 'product') return;
+    const item = MARKET_ITEMS.find((entry) => entry.id === payload.itemId);
+    if (!item) return;
+    if (item.id !== marketWantedItem.id) {
+      setMarketMessage(marketCustomer.name + ' is looking for ' + marketWantedItem.name + ', not ' + item.name + '.');
+      return;
+    }
+    if (marketShelfForItem(item) === 'top' && !marketTopShelfReady) {
+      setMarketMessage(marketWantedItem.name + ' is up high. Bring the step ladder to the top shelf first.');
+      return;
+    }
+    if ((marketShelfStock[item.id] || 0) <= 0) {
+      setMarketMessage('That shelf is empty. Restock ' + item.name + ' before helping the customer.');
+      return;
+    }
+    setMarketShelfStock((current) => ({ ...current, [item.id]: Math.max(0, (current[item.id] || 0) - 1) }));
+    setMarketCustomersHelped((value) => value + 1);
+    setBucks((value) => value + 3);
+    setMarketCustomerIndex((value) => value + 1);
+    setMarketCustomer(makeCharacterPerson('random'));
+    setMarketDrag(null);
+    setMarketMessage('Customer helped! +3 Resort Bucks. The next shopper needs help too.');
+  };
+
+  const cleanMarketSpill = (event, explicitPayload = null) => {
+    event.preventDefault();
+    const payload = marketDropPayload(event, explicitPayload);
+    if (!marketWorking || payload?.type !== 'mop' || marketSpillClean) return;
+    setMarketSpillClean(true);
+    setBucks((value) => value + 2);
+    setMarketDrag(null);
+    setMarketMessage('Spill cleaned! +2 Resort Bucks');
+  };
+
+  const finishMarketPointerDrop = (clientX, clientY, payload) => {
+    const dropTarget = document.elementFromPoint(clientX, clientY)?.closest('[data-market-drop]');
+    if (!dropTarget) {
+      setMarketDrag(null);
+      return;
+    }
+    const fakeEvent = { preventDefault() {}, clientX, clientY };
+    const dropType = dropTarget.dataset.marketDrop;
+    if (dropType === 'room' && ['stock-cart', 'shopping-cart'].includes(payload.type)) moveMarketCart(fakeEvent, payload);
+    else if (dropType === 'cart') addMarketItemToCart(fakeEvent, payload);
+    else if (dropType === 'customer') helpMarketCustomer(fakeEvent, payload);
+    else if (dropType === 'spill') cleanMarketSpill(fakeEvent, payload);
+    else if (dropType === 'top') {
+      if (payload.type === 'ladder') dropMarketLadder(fakeEvent, payload);
+      else dropMarketStockOnShelf(fakeEvent, 'top', payload);
+    } else if (dropType === 'shelf') {
+      dropMarketStockOnShelf(fakeEvent, dropTarget.dataset.marketShelf, payload);
+    }
+    setMarketDrag(null);
+  };
+
+  const marketPointerDragHandlers = (payload) => ({
+    onPointerDown: (event) => {
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      event.preventDefault();
+      event.stopPropagation();
+      event.currentTarget.setPointerCapture?.(event.pointerId);
+      setMarketDrag({ ...payload, x: event.clientX, y: event.clientY });
+    },
+    onPointerMove: (event) => {
+      if (!event.currentTarget.hasPointerCapture?.(event.pointerId)) return;
+      event.preventDefault();
+      setMarketDrag({ ...payload, x: event.clientX, y: event.clientY });
+    },
+    onPointerUp: (event) => {
+      if (!event.currentTarget.hasPointerCapture?.(event.pointerId)) return;
+      event.preventDefault();
+      finishMarketPointerDrop(event.clientX, event.clientY, payload);
+      event.currentTarget.releasePointerCapture?.(event.pointerId);
+    },
+    onPointerCancel: () => setMarketDrag(null),
+  });
+
+  const toggleMarketShift = () => {
+    setMarketWorking((working) => {
+      const next = !working;
+      if (next) {
+        setMarketSpillClean(false);
+        setMarketMessage('Shift started. Stock shelves, help customers, reach the top shelf, and clean the spill.');
+      } else {
+        setMarketMessage('Shift ended. You can shop for your own house again.');
+      }
+      return next;
+    });
   };
 
   const canCook = (recipe) =>
@@ -4672,27 +4950,282 @@ export default function KidsResort({ libraryHref = null }) {
   }
 
   if (screen === 'market') {
-    return interiorShell(
-      'Market Street',
-      '\u{1F6D2}',
-      'SHOP FOR YOUR HOUSE',
-      <div className={styles.shopGrid}>
-        {MARKET_ITEMS.map((item) => (
-          <button
-            key={item.id}
-            type="button"
-            className={styles.shopCard}
-            onClick={() => buyMarketItem(item)}
-          >
-            <span className={styles.shopIcon}>{item.icon}</span>
-            <strong>{item.name}</strong>
-            <span>{item.price} Resort Bucks - owned {inventory[item.id] || 0}</span>
+    const basketTotal = marketBasket.reduce(
+      (sum, id) => sum + (MARKET_ITEMS.find((item) => item.id === id)?.price || 0),
+      0,
+    );
+
+    const dragGhostIcon = (() => {
+      if (!marketDrag?.x || !marketDrag?.y) return null;
+      if (marketDrag.type === 'product' || marketDrag.type === 'stock-item') {
+        return MARKET_ITEMS.find((item) => item.id === marketDrag.itemId)?.icon || '\u{1F4E6}';
+      }
+      if (marketDrag.type === 'ladder') return '\u{1FA9C}';
+      if (marketDrag.type === 'mop') return '\u{1F9F9}';
+      return marketDrag.type === 'stock-cart' ? '\u{1F4E6}' : '\u{1F6D2}';
+    })();
+
+    return (
+      <main className={[styles.gameShell, styles.marketGameShell].join(' ')}>
+        <section className={[styles.topBar, styles.marketTopBar].join(' ')}>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>
+            {'\u2190'} Resort Map
           </button>
-        ))}
-        <div className={styles.fullMessage} aria-live="polite">
-          {message || 'Groceries go straight to your house pantry.'}
-        </div>
-      </div>,
+          <div className={styles.brand}>Market Street</div>
+          <div className={styles.wallet}>{'\u{1FA99}'} {bucks} Resort Bucks</div>
+        </section>
+
+        <section
+          ref={marketRoomRef}
+          className={styles.marketRoom}
+          data-market-drop="room"
+          data-working={marketWorking ? 'true' : 'false'}
+          onDragOver={(event) => event.preventDefault()}
+          onDrop={moveMarketCart}
+        >
+          <div className={styles.marketWall} aria-hidden="true" />
+          <div className={styles.marketFloor} aria-hidden="true" />
+          <div className={styles.marketLogo}>
+            <strong>MARKET STREET</strong>
+            <span>groceries - home goods - resort essentials</span>
+          </div>
+
+          <button
+            type="button"
+            className={styles.marketTimeClock}
+            onClick={toggleMarketShift}
+            aria-pressed={marketWorking}
+          >
+            <span>{marketWorking ? 'CLOCK OUT' : 'CLOCK IN'}</span>
+            <small>{marketWorking ? 'Working shift' : 'Start work'}</small>
+          </button>
+
+          <div className={styles.marketCheckout}>
+            <div className={styles.marketRegister} aria-hidden="true">
+              <span className={styles.marketRegisterScreen}>MARKET</span>
+              <span className={styles.marketScanner} />
+            </div>
+            <button type="button" className={styles.marketCheckoutButton} onClick={checkoutMarketBasket}>
+              {'Checkout' + (marketBasket.length ? ' (' + marketBasket.length + ')' : '')}
+            </button>
+            <div className={styles.marketCheckoutTotal}>{basketTotal} Resort Bucks</div>
+          </div>
+
+          <div
+            className={styles.marketTopShelf}
+            data-market-drop="top"
+            data-ready={marketTopShelfReady ? 'true' : 'false'}
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={(event) => {
+              const payload = marketDropPayload(event);
+              if (payload?.type === 'ladder') dropMarketLadder(event);
+              else dropMarketStockOnShelf(event, 'top');
+            }}
+          >
+            <span className={styles.marketShelfTitle}>TOP SHELF</span>
+            <div className={styles.marketProductRow}>
+              {MARKET_ITEMS.filter((item) => marketShelfForItem(item) === 'top').map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  draggable
+                  className={styles.marketProduct}
+                  {...marketPointerDragHandlers({ type: 'product', itemId: item.id })}
+                  onDragStart={(event) => startMarketDrag(event, { type: 'product', itemId: item.id })}
+                  onClick={() => setMarketMessage(
+                    marketTopShelfReady
+                      ? 'Drag ' + item.name + ' where you need it.'
+                      : item.name + ' is too high. Move the step ladder here first.',
+                  )}
+                >
+                  <span>{item.icon}</span>
+                  <small>{item.name}</small>
+                  <em>{marketShelfStock[item.id] || 0}</em>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className={styles.marketShelfBank}>
+            {MARKET_SHELVES.map((shelf) => (
+              <div
+                key={shelf.id}
+                className={styles.marketShelf}
+                data-market-drop="shelf"
+                data-market-shelf={shelf.id}
+                data-shelf={shelf.id}
+                onDragOver={(event) => event.preventDefault()}
+                onDrop={(event) => dropMarketStockOnShelf(event, shelf.id)}
+              >
+                <span className={styles.marketShelfTitle}>{shelf.icon} {shelf.label}</span>
+                <div className={styles.marketProductGrid}>
+                  {MARKET_ITEMS.filter((item) => marketShelfForItem(item) === shelf.id).map((item) => (
+                    <button
+                      key={item.id}
+                      type="button"
+                      draggable
+                      className={styles.marketProduct}
+                      {...marketPointerDragHandlers({ type: 'product', itemId: item.id })}
+                      onDragStart={(event) => startMarketDrag(event, { type: 'product', itemId: item.id })}
+                      onClick={() => setMarketMessage(
+                        'Drag ' + item.name + ' to your cart' + (marketWorking ? ' or to the customer who asks for it.' : '.'),
+                      )}
+                    >
+                      <span>{item.icon}</span>
+                      <small>{item.name}</small>
+                      <em>{marketShelfStock[item.id] || 0}</em>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div
+            className={styles.marketShoppingCart}
+            style={{ left: marketShoppingCartSpot.x + '%', top: marketShoppingCartSpot.y + '%' }}
+            data-market-drop="cart"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={addMarketItemToCart}
+            draggable
+            {...marketPointerDragHandlers({ type: 'shopping-cart' })}
+            onDragStart={(event) => startMarketDrag(event, { type: 'shopping-cart' })}
+          >
+            <span className={styles.marketCartHandle} />
+            <div className={styles.marketCartBasket}>
+              {marketBasket.length === 0 ? (
+                <span className={styles.marketCartEmpty}>shopping cart</span>
+              ) : (
+                marketBasket.slice(-8).map((id, index) => {
+                  const item = MARKET_ITEMS.find((entry) => entry.id === id);
+                  return <i key={id + '-' + index}>{item?.icon}</i>;
+                })
+              )}
+            </div>
+            <span className={styles.marketCartWheels}><i /><i /></span>
+          </div>
+
+          <div
+            className={styles.marketStockCart}
+            style={{ left: marketStockCartSpot.x + '%', top: marketStockCartSpot.y + '%' }}
+            draggable
+            {...marketPointerDragHandlers({ type: 'stock-cart' })}
+            onDragStart={(event) => startMarketDrag(event, { type: 'stock-cart' })}
+          >
+            <strong>STOCK CART</strong>
+            <div className={styles.marketStockBoxes}>
+              {MARKET_ITEMS.map((item) => (
+                <button
+                  key={item.id}
+                  type="button"
+                  draggable
+                  disabled={!marketWorking || (marketStock[item.id] || 0) <= 0}
+                  {...marketPointerDragHandlers({ type: 'stock-item', itemId: item.id })}
+                  onDragStart={(event) => {
+                    event.stopPropagation();
+                    startMarketDrag(event, { type: 'stock-item', itemId: item.id });
+                  }}
+                  onClick={() => setMarketMessage(
+                    marketWorking
+                      ? 'Drag ' + item.name + ' from the stock cart to its shelf.'
+                      : 'Clock in before stocking shelves.',
+                  )}
+                >
+                  <span>{item.icon}</span>
+                  <small>{marketStock[item.id] || 0}</small>
+                </button>
+              ))}
+            </div>
+            <span className={styles.marketStockCartWheels}><i /><i /></span>
+          </div>
+
+          <div
+            className={styles.marketStepLadder}
+            draggable
+            {...marketPointerDragHandlers({ type: 'ladder' })}
+            onDragStart={(event) => startMarketDrag(event, { type: 'ladder' })}
+            data-placed={marketTopShelfReady ? 'true' : 'false'}
+            title="Drag to the top shelf"
+          >
+            <span /><span /><span />
+            <small>STEP</small>
+          </div>
+
+          <div
+            className={styles.marketMop}
+            draggable
+            {...marketPointerDragHandlers({ type: 'mop' })}
+            onDragStart={(event) => startMarketDrag(event, { type: 'mop' })}
+            title="Drag to a spill"
+          >
+            <span className={styles.marketMopHandle} />
+            <span className={styles.marketMopHead}>{'\u{1F9F9}'}</span>
+          </div>
+
+          {!marketSpillClean && (
+            <div
+              className={styles.marketSpill}
+              data-market-drop="spill"
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={cleanMarketSpill}
+            >
+              <span>{'\u{1F4A7}'}</span>
+              <small>SPILL</small>
+            </div>
+          )}
+
+          <div
+            className={styles.marketCustomerStation}
+            data-market-drop="customer"
+            onDragOver={(event) => event.preventDefault()}
+            onDrop={helpMarketCustomer}
+            data-active={marketWorking ? 'true' : 'false'}
+          >
+            <div className={styles.marketCustomerBubble}>
+              {marketWorking
+                ? <>Could you help me find <strong>{marketWantedItem.name}</strong>?</>
+                : <>I'm shopping around.</>}
+            </div>
+            <div className={styles.marketCustomerFigure}>
+              {renderCharacter(false, marketCustomer.look, marketCustomer.character, marketCustomer.name)}
+            </div>
+          </div>
+
+          <div className={styles.marketPlayer}>
+            <div className={styles.marketPlayerFigure}>{renderPlayerParty()}</div>
+          </div>
+
+          <div className={styles.marketShiftBoard}>
+            <strong>{marketWorking ? 'ON SHIFT' : 'SHOPPING'}</strong>
+            {marketWorking ? (
+              <>
+                <span>Stocked: {marketStocked}</span>
+                <span>Customers: {marketCustomersHelped}</span>
+                <span>Spill: {marketSpillClean ? 'clean' : 'needs cleaning'}</span>
+                <span>Top shelf: {marketTopShelfReady ? 'reachable' : 'needs step'}</span>
+              </>
+            ) : (
+              <>
+                <span>Cart items: {marketBasket.length}</span>
+                <span>Cart total: {basketTotal}</span>
+                <span>Drag products into the cart</span>
+              </>
+            )}
+          </div>
+
+          {dragGhostIcon && !['stock-cart', 'shopping-cart'].includes(marketDrag.type) && (
+            <div
+              className={styles.marketDragGhost}
+              style={{ left: marketDrag.x + 'px', top: marketDrag.y + 'px' }}
+              aria-hidden="true"
+            >
+              {dragGhostIcon}
+            </div>
+          )}
+
+          <div className={styles.marketMessage} aria-live="polite">{marketMessage}</div>
+        </section>
+      </main>
     );
   }
 
