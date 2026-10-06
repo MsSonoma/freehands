@@ -3369,11 +3369,28 @@ export default function KidsResort({ libraryHref = null }) {
             <div className={styles.workWindow}><span>🌴</span><span>☀️</span></div>
             <div className={styles.workWallSign}>SUNSHINE CAFÉ</div>
             <div className={styles.workPendantRow}><span>💡</span><span>💡</span><span>💡</span></div>
+            <div className={styles.workServiceCounter}><span>🥤</span><span>🔔</span><span>🧁</span></div>
           </div>
 
           <div className={[styles.cafeSceneCharacter, styles.cafeWorkCharacter].join(' ')} aria-label={`${characterName} working in the cafe kitchen`}>
             {renderPlayerParty()}
           </div>
+          {cafeOrders.map((order, index) => {
+            const customer = order.customer || cafeAmbientPeople[index % cafeAmbientPeople.length];
+            return (
+              <div
+                key={`pass-${order.id}`}
+                className={[
+                  styles.cafeSceneCharacter,
+                  styles.cafePassGuest,
+                  styles[`cafePassGuestSlot${Math.min(index, 2)}`],
+                ].join(' ')}
+                aria-label={`${order.guest} waiting at the cafe pass`}
+              >
+                {renderCharacter(false, customer.look, customer.character, order.guest)}
+              </div>
+            );
+          })}
 
 
           <aside className={styles.recipeWall}>
@@ -3386,97 +3403,73 @@ export default function KidsResort({ libraryHref = null }) {
             ))}
           </aside>
 
-          <section className={styles.cafeOrderBoard}>
-            <div className={styles.cafeOrderBoardHeader}>
-              <b>Orders · {cafeServed}/8</b>
-              <span>Each order gets its own plate</span>
-            </div>
-            <div className={styles.cafeOrderStations}>
-              {cafeOrders.map((order) => {
-                const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
-                const age = cafeNow - order.born;
-                const mood = age < 12000 ? '🙂' : age < 24000 ? '😐' : age < 35000 ? '☹️' : '😡';
-                const plate = order.plate || [];
-                const plateState = summarizeCafePlate(recipe, plate);
-                const visibleItems = plateState.complete
-                  ? plateState.extras
-                  : plate.map((ingredientId, index) => ({ ingredientId, index }));
-                const readyToServe = plateState.complete && plateState.extras.length === 0;
-                return (
-                  <article key={order.id} className={styles.cafeOrderStation}>
-                    <div className={styles.cafeTicket}>
-                      <span>{mood}</span>
-                      <strong>{order.guest}</strong>
-                      <span className={styles.cafeTicketFood}>{recipe.icon}</span>
-                      <small>{Math.max(0, Math.ceil((45000 - age) / 1000))}s</small>
-                    </div>
-                    <div
-                      className={[styles.cafeOrderPlate, cafeDrag ? styles.cafeDropTarget : ''].join(' ')}
-                      data-cafe-drop="plate"
-                      data-order-id={order.id}
-                    >
-                      {plateState.complete && (
-                        <div className={styles.cafeFinishedDish} aria-label={`${recipe.name} assembled`}>
-                          <span>{recipe.icon}</span>
-                          <small>{recipe.name}</small>
-                        </div>
-                      )}
-                      {visibleItems.map(({ ingredientId, index }) => {
-                        const ingredient = CAFE_INGREDIENTS[ingredientId];
-                        return (
-                          <button
-                            key={`${order.id}-${ingredientId}-${index}`}
-                            type="button"
-                            className={[styles.cafePlateIngredient, plateState.complete ? styles.cafeExtraIngredient : ''].join(' ')}
-                            aria-label={`Move ${ingredient.name}`}
-                            data-ingredient-id={ingredientId}
-                            {...cafeDragHandlers({ from: 'plate', orderId: order.id, index, ingredientId })}
-                          >
-                            <span>{ingredient.icon}</span>
-                          </button>
-                        );
-                      })}
-                      {!plateState.complete && plate.length === 0 && <span className={styles.cafePlateHint}>Drop ingredients here</span>}
-                    </div>
-                    <button
-                      type="button"
-                      className={styles.cafeServePlate}
-                      disabled={!readyToServe}
-                      onClick={() => serveCafeOrder(order)}
-                    >
-                      {readyToServe ? `Serve ${recipe.icon}` : plateState.extras.length ? 'Remove extra' : 'Build order'}
-                    </button>
-                  </article>
-                );
-              })}
-            </div>
-          </section>
-
           <section className={[styles.kitchenStations, styles.cafeKitchenStations].join(' ')}>
             <div className={styles.cafeKitchenLeftStack}>
-              <div className={styles.cafeKitchenPass} aria-label="Cafe service pass">
-                <div className={styles.cafePassCustomers}>
-                  {cafeOrders.map((order, index) => {
-                    const customer = order.customer || cafeAmbientPeople[index % cafeAmbientPeople.length];
+              <section className={styles.cafeOrderBoard}>
+                <div className={styles.cafeOrderBoardHeader}>
+                  <b>Orders · {cafeServed}/8</b>
+                  <span>Each order gets its own plate</span>
+                </div>
+                <div className={styles.cafeOrderStations}>
+                  {cafeOrders.map((order) => {
+                    const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
+                    const age = cafeNow - order.born;
+                    const mood = age < 12000 ? '🙂' : age < 24000 ? '😐' : age < 35000 ? '☹️' : '😡';
+                    const plate = order.plate || [];
+                    const plateState = summarizeCafePlate(recipe, plate);
+                    const visibleItems = plateState.complete
+                      ? plateState.extras
+                      : plate.map((ingredientId, index) => ({ ingredientId, index }));
+                    const readyToServe = plateState.complete && plateState.extras.length === 0;
                     return (
-                      <div
-                        key={`pass-${order.id}`}
-                        className={[
-                          styles.cafeSceneCharacter,
-                          styles.cafePassGuest,
-                          styles[`cafePassGuestSlot${Math.min(index, 2)}`],
-                        ].join(' ')}
-                        aria-label={`${order.guest} waiting at the cafe pass`}
-                      >
-                        {renderCharacter(false, customer.look, customer.character, order.guest)}
-                      </div>
+                      <article key={order.id} className={styles.cafeOrderStation}>
+                        <div className={styles.cafeTicket}>
+                          <span>{mood}</span>
+                          <strong>{order.guest}</strong>
+                          <span className={styles.cafeTicketFood}>{recipe.icon}</span>
+                          <small>{Math.max(0, Math.ceil((45000 - age) / 1000))}s</small>
+                        </div>
+                        <div
+                          className={[styles.cafeOrderPlate, cafeDrag ? styles.cafeDropTarget : ''].join(' ')}
+                          data-cafe-drop="plate"
+                          data-order-id={order.id}
+                        >
+                          {plateState.complete && (
+                            <div className={styles.cafeFinishedDish} aria-label={`${recipe.name} assembled`}>
+                              <span>{recipe.icon}</span>
+                              <small>{recipe.name}</small>
+                            </div>
+                          )}
+                          {visibleItems.map(({ ingredientId, index }) => {
+                            const ingredient = CAFE_INGREDIENTS[ingredientId];
+                            return (
+                              <button
+                                key={`${order.id}-${ingredientId}-${index}`}
+                                type="button"
+                                className={[styles.cafePlateIngredient, plateState.complete ? styles.cafeExtraIngredient : ''].join(' ')}
+                                aria-label={`Move ${ingredient.name}`}
+                                data-ingredient-id={ingredientId}
+                                {...cafeDragHandlers({ from: 'plate', orderId: order.id, index, ingredientId })}
+                              >
+                                <span>{ingredient.icon}</span>
+                              </button>
+                            );
+                          })}
+                          {!plateState.complete && plate.length === 0 && <span className={styles.cafePlateHint}>Drop ingredients here</span>}
+                        </div>
+                        <button
+                          type="button"
+                          className={styles.cafeServePlate}
+                          disabled={!readyToServe}
+                          onClick={() => serveCafeOrder(order)}
+                        >
+                          {readyToServe ? `Serve ${recipe.icon}` : plateState.extras.length ? 'Remove extra' : 'Build order'}
+                        </button>
+                      </article>
                     );
                   })}
                 </div>
-                <div className={styles.cafePassCounter} aria-hidden="true">
-                  <span>🥤</span><span>🔔</span><span>🧁</span>
-                </div>
-              </div>
+              </section>
 
               <div
                 className={[styles.grillStation, cafeDrag?.from === 'storage' ? styles.cafeGrillDrop : ''].join(' ')}
