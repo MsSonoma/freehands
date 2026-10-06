@@ -209,34 +209,36 @@ function crewWaitingActivity(screen, crewIndex = 0, playerName = 'Emily') {
 }
 
 const MARKET_ITEMS = [
-  { id: 'eggs', name: 'Eggs', icon: '\u{1F95A}', price: 3 },
+  { id: 'eggs', name: 'Eggs', icon: CAFE_INGREDIENTS.egg.icon, price: 3 },
   { id: 'milk', name: 'Milk', icon: '\u{1F95B}', price: 3 },
-  { id: 'berries', name: 'Berries', icon: '\u{1F353}', price: 3 },
-  { id: 'bread', name: 'Bread', icon: '\u{1F35E}', price: 2 },
-  { id: 'cheese', name: 'Cheese', icon: '\u{1F9C0}', price: 3 },
+  { id: 'berries', name: 'Berries', icon: PALM_KITCHEN_INGREDIENTS.berries.icon, price: 3 },
+  { id: 'bread', name: 'Bread', icon: CAFE_INGREDIENTS.bread.icon, price: 2 },
+  { id: 'cheese', name: 'Cheese', icon: CAFE_INGREDIENTS.cheese.icon, price: 3 },
   { id: 'apples', name: 'Apples', icon: '\u{1F34E}', price: 2 },
-  { id: 'buns', name: 'Burger Buns', icon: '\u{1F35E}', price: 2 },
-  { id: 'burger-patty', name: 'Burger Patty', icon: '\u{1F969}', price: 4 },
-  { id: 'lettuce', name: 'Lettuce', icon: '\u{1F96C}', price: 2 },
-  { id: 'tomatoes', name: 'Tomatoes', icon: '\u{1F345}', price: 2 },
-  { id: 'tortillas', name: 'Tortillas', icon: '\u{1FAD3}', price: 2 },
-  { id: 'taco-meat', name: 'Taco Meat', icon: '\u{1F969}', price: 4 },
-  { id: 'bacon', name: 'Bacon', icon: '\u{1F953}', price: 3 },
-  { id: 'pasta', name: 'Pasta', icon: '\u{1F35D}', price: 3 },
-  { id: 'tomato-sauce', name: 'Tomato Sauce', icon: '\u{1F345}', price: 2 },
-  { id: 'herbs', name: 'Fresh Herbs', icon: '\u{1F33F}', price: 2 },
-  { id: 'chicken', name: 'Chicken', icon: '\u{1F357}', price: 4 },
-  { id: 'potatoes', name: 'Potatoes', icon: '\u{1F954}', price: 2 },
-  { id: 'salmon', name: 'Salmon', icon: '\u{1F41F}', price: 5 },
-  { id: 'lemon', name: 'Lemon', icon: '\u{1F34B}', price: 2 },
-  { id: 'vegetables', name: 'Vegetables', icon: '\u{1F966}', price: 3 },
-  { id: 'ravioli', name: 'Ravioli', icon: '\u{1F95F}', price: 4 },
-  { id: 'ice-cream', name: 'Ice Cream', icon: '\u{1F368}', price: 3 },
-  { id: 'wafer', name: 'Wafer Cookies', icon: '\u{1F36A}', price: 2 },
+  { id: 'buns', name: 'Burger Buns', icon: CAFE_INGREDIENTS.bun.icon, price: 2 },
+  { id: 'burger-patty', name: 'Burger Patty', icon: CAFE_INGREDIENTS.patty.icon, price: 4 },
+  { id: 'lettuce', name: 'Lettuce', icon: CAFE_INGREDIENTS.lettuce.icon, price: 2 },
+  { id: 'tomatoes', name: 'Tomatoes', icon: CAFE_INGREDIENTS.tomato.icon, price: 2 },
+  { id: 'tortillas', name: 'Tortillas', icon: CAFE_INGREDIENTS.tortilla.icon, price: 2 },
+  { id: 'taco-meat', name: 'Taco Meat', icon: CAFE_INGREDIENTS['taco-meat'].icon, price: 4 },
+  { id: 'bacon', name: 'Bacon', icon: CAFE_INGREDIENTS.bacon.icon, price: 3 },
+  { id: 'pasta', name: 'Pasta', icon: PALM_KITCHEN_INGREDIENTS.pasta.icon, price: 3 },
+  { id: 'tomato-sauce', name: 'Tomato Sauce', icon: PALM_KITCHEN_INGREDIENTS.sauce.icon, price: 2 },
+  { id: 'herbs', name: 'Fresh Herbs', icon: PALM_KITCHEN_INGREDIENTS.herbs.icon, price: 2 },
+  { id: 'chicken', name: 'Chicken', icon: PALM_KITCHEN_INGREDIENTS.chicken.icon, price: 4 },
+  { id: 'potatoes', name: 'Potatoes', icon: PALM_KITCHEN_INGREDIENTS.potatoes.icon, price: 2 },
+  { id: 'salmon', name: 'Salmon', icon: PALM_KITCHEN_INGREDIENTS.salmon.icon, price: 5 },
+  { id: 'lemon', name: 'Lemon', icon: PALM_KITCHEN_INGREDIENTS.lemon.icon, price: 2 },
+  { id: 'vegetables', name: 'Vegetables', icon: PALM_KITCHEN_INGREDIENTS.vegetables.icon, price: 3 },
+  { id: 'ravioli', name: 'Ravioli', icon: PALM_KITCHEN_INGREDIENTS.ravioli.icon, price: 4 },
+  { id: 'ice-cream', name: 'Ice Cream', icon: PALM_KITCHEN_INGREDIENTS.cream.icon, price: 3 },
+  { id: 'wafer', name: 'Wafer Cookies', icon: PALM_KITCHEN_INGREDIENTS.wafer.icon, price: 2 },
   { id: 'soap', name: 'Soap', icon: '\u{1F9FC}', price: 2 },
   { id: 'paper-towels', name: 'Paper Towels', icon: '\u{1F9FB}', price: 3 },
-  { id: 'sunscreen', name: 'Sunscreen', icon: '\u{1F9F4}', price: 4 }
+  { id: 'sunscreen', name: 'Sunscreen', icon: '\u{1F9F4}', price: 4 },
 ];
+
+const MARKET_MAX_LOOSE_PER_ITEM = 3;
 
 const MARKET_ITEM_SHELF = {
   eggs: 'cold',
@@ -1006,7 +1008,6 @@ export default function KidsResort({ libraryHref = null }) {
   const [marketWorking, setMarketWorking] = useState(false);
   const [marketBasket, setMarketBasket] = useState([]);
   const [marketDrag, setMarketDrag] = useState(null);
-  const [marketStock, setMarketStock] = useState(() => Object.fromEntries(MARKET_ITEMS.map((item) => [item.id, 3])));
   const [marketShelfStock, setMarketShelfStock] = useState(() => Object.fromEntries(MARKET_ITEMS.map((item) => [item.id, 2])));
   const [marketStocked, setMarketStocked] = useState(0);
   const [marketCustomersHelped, setMarketCustomersHelped] = useState(0);
@@ -2676,12 +2677,14 @@ export default function KidsResort({ libraryHref = null }) {
       setMarketMessage('Move the step ladder to the top shelf before stocking up high.');
       return;
     }
-    if ((marketStock[item.id] || 0) <= 0) {
-      setMarketMessage('The stock cart is out of ' + item.name + '.');
+    if ((marketShelfStock[item.id] || 0) >= MARKET_MAX_LOOSE_PER_ITEM) {
+      setMarketMessage(item.name + ' already has 3 items out. Move one into a cart before pulling out another.');
       return;
     }
-    setMarketStock((current) => ({ ...current, [item.id]: Math.max(0, (current[item.id] || 0) - 1) }));
-    setMarketShelfStock((current) => ({ ...current, [item.id]: (current[item.id] || 0) + 1 }));
+    setMarketShelfStock((current) => ({
+      ...current,
+      [item.id]: Math.min(MARKET_MAX_LOOSE_PER_ITEM, (current[item.id] || 0) + 1),
+    }));
     setMarketStocked((value) => value + 1);
     setBucks((value) => value + 1);
     setMarketDrag(null);
@@ -5033,25 +5036,34 @@ export default function KidsResort({ libraryHref = null }) {
           >
             <span className={styles.marketShelfTitle}>TOP SHELF</span>
             <div className={styles.marketProductRow}>
-              {MARKET_ITEMS.filter((item) => marketShelfForItem(item) === 'top').map((item) => (
-                <button
-                  key={item.id}
-                  type="button"
-                  draggable
-                  className={styles.marketProduct}
-                  {...marketPointerDragHandlers({ type: 'product', itemId: item.id })}
-                  onDragStart={(event) => startMarketDrag(event, { type: 'product', itemId: item.id })}
-                  onClick={() => setMarketMessage(
-                    marketTopShelfReady
-                      ? 'Drag ' + item.name + ' where you need it.'
-                      : item.name + ' is too high. Move the step ladder here first.',
-                  )}
-                >
-                  <span>{item.icon}</span>
-                  <small>{item.name}</small>
-                  <em>{marketShelfStock[item.id] || 0}</em>
-                </button>
-              ))}
+              {MARKET_ITEMS.filter((item) => marketShelfForItem(item) === 'top').map((item) => {
+                const visibleCount = Math.min(MARKET_MAX_LOOSE_PER_ITEM, marketShelfStock[item.id] || 0);
+                return (
+                  <div key={item.id} className={styles.marketProductGroup}>
+                    <div className={styles.marketProductCopies}>
+                      {Array.from({ length: visibleCount }, (_, copyIndex) => (
+                        <button
+                          key={item.id + '-' + copyIndex}
+                          type="button"
+                          draggable
+                          className={styles.marketProductUnit}
+                          aria-label={item.name}
+                          {...marketPointerDragHandlers({ type: 'product', itemId: item.id })}
+                          onDragStart={(event) => startMarketDrag(event, { type: 'product', itemId: item.id })}
+                          onClick={() => setMarketMessage(
+                            marketTopShelfReady
+                              ? 'Drag ' + item.name + ' where you need it.'
+                              : item.name + ' is too high. Move the step ladder here first.',
+                          )}
+                        >
+                          <span>{item.icon}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <small>{item.name}</small>
+                  </div>
+                );
+              })}
             </div>
           </div>
 
@@ -5068,23 +5080,32 @@ export default function KidsResort({ libraryHref = null }) {
               >
                 <span className={styles.marketShelfTitle}>{shelf.icon} {shelf.label}</span>
                 <div className={styles.marketProductGrid}>
-                  {MARKET_ITEMS.filter((item) => marketShelfForItem(item) === shelf.id).map((item) => (
-                    <button
-                      key={item.id}
-                      type="button"
-                      draggable
-                      className={styles.marketProduct}
-                      {...marketPointerDragHandlers({ type: 'product', itemId: item.id })}
-                      onDragStart={(event) => startMarketDrag(event, { type: 'product', itemId: item.id })}
-                      onClick={() => setMarketMessage(
-                        'Drag ' + item.name + ' to your cart' + (marketWorking ? ' or to the customer who asks for it.' : '.'),
-                      )}
-                    >
-                      <span>{item.icon}</span>
-                      <small>{item.name}</small>
-                      <em>{marketShelfStock[item.id] || 0}</em>
-                    </button>
-                  ))}
+                  {MARKET_ITEMS.filter((item) => marketShelfForItem(item) === shelf.id).map((item) => {
+                    const visibleCount = Math.min(MARKET_MAX_LOOSE_PER_ITEM, marketShelfStock[item.id] || 0);
+                    return (
+                      <div key={item.id} className={styles.marketProductGroup}>
+                        <div className={styles.marketProductCopies}>
+                          {Array.from({ length: visibleCount }, (_, copyIndex) => (
+                            <button
+                              key={item.id + '-' + copyIndex}
+                              type="button"
+                              draggable
+                              className={styles.marketProductUnit}
+                              aria-label={item.name}
+                              {...marketPointerDragHandlers({ type: 'product', itemId: item.id })}
+                              onDragStart={(event) => startMarketDrag(event, { type: 'product', itemId: item.id })}
+                              onClick={() => setMarketMessage(
+                                'Drag ' + item.name + ' to your cart' + (marketWorking ? ' or to the customer who asks for it.' : '.'),
+                              )}
+                            >
+                              <span>{item.icon}</span>
+                            </button>
+                          ))}
+                        </div>
+                        <small>{item.name}</small>
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             ))}
@@ -5128,7 +5149,7 @@ export default function KidsResort({ libraryHref = null }) {
                   key={item.id}
                   type="button"
                   draggable
-                  disabled={!marketWorking || (marketStock[item.id] || 0) <= 0}
+                  aria-label={'Pull ' + item.name + ' from the stock cart'}
                   {...marketPointerDragHandlers({ type: 'stock-item', itemId: item.id })}
                   onDragStart={(event) => {
                     event.stopPropagation();
@@ -5141,7 +5162,6 @@ export default function KidsResort({ libraryHref = null }) {
                   )}
                 >
                   <span>{item.icon}</span>
-                  <small>{marketStock[item.id] || 0}</small>
                 </button>
               ))}
             </div>
