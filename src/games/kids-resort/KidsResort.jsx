@@ -120,6 +120,10 @@ const PALM_KITCHEN_RECIPES = [
   { id: 'dessert', name: 'Berry Sundae', icon: '\u{1F368}', ingredients: ['berries', 'cream', 'wafer'] },
 ];
 
+const PALM_KITCHEN_ORDER_MS = 50000;
+const PALM_KITCHEN_MAX_ORDERS = 3;
+const PALM_KITCHEN_TARGET_SERVES = 5;
+
 const DINING_DRINKS = [
   { id: 'water', name: 'Ice Water', icon: '\u{1F4A7}' },
   { id: 'lemonade', name: 'Lemonade', icon: '\u{1F34B}' },
@@ -826,13 +830,14 @@ export default function KidsResort({ libraryHref = null }) {
 
   const [palmKitchenActive, setPalmKitchenActive] = useState(false);
   const [palmKitchenServed, setPalmKitchenServed] = useState(0);
-  const [palmKitchenPlate, setPalmKitchenPlate] = useState([]);
+  const [palmKitchenOrders, setPalmKitchenOrders] = useState([]);
   const [palmKitchenStove, setPalmKitchenStove] = useState([]);
   const [palmKitchenStorage, setPalmKitchenStorage] = useState(null);
   const [palmKitchenDrag, setPalmKitchenDrag] = useState(null);
   const [palmKitchenNow, setPalmKitchenNow] = useState(Date.now());
   const [palmKitchenMessage, setPalmKitchenMessage] = useState('');
   const [palmKitchenFinished, setPalmKitchenFinished] = useState(false);
+  const palmKitchenOrderSequence = useRef(1);
 
   const [diningMealId, setDiningMealId] = useState(null);
   const [diningDrinkId, setDiningDrinkId] = useState('water');
@@ -1295,6 +1300,32 @@ export default function KidsResort({ libraryHref = null }) {
     const timer = window.setInterval(() => setPalmKitchenNow(Date.now()), 250);
     return () => window.clearInterval(timer);
   }, [screen, palmKitchenActive, palmKitchenFinished]);
+
+  useEffect(() => {
+    if (screen !== 'lobby-restaurant-work' || !palmKitchenActive || palmKitchenFinished) return undefined;
+    const delay = Math.max(9000, 14000 - palmKitchenServed * 700);
+    const timer = window.setInterval(() => {
+      setPalmKitchenOrders((items) => {
+        if (items.length >= PALM_KITCHEN_MAX_ORDERS) return items;
+        const orderNumber = palmKitchenOrderSequence.current;
+        palmKitchenOrderSequence.current += 1;
+        return [...items, makePalmKitchenOrder(orderNumber)];
+      });
+    }, delay);
+    return () => window.clearInterval(timer);
+  }, [screen, palmKitchenActive, palmKitchenFinished, palmKitchenServed]);
+
+  useEffect(() => {
+    if (screen !== 'lobby-restaurant-work' || !palmKitchenActive || palmKitchenFinished) return;
+    setPalmKitchenOrders((items) => {
+      const fresh = items.filter((order) => palmKitchenNow - order.born < PALM_KITCHEN_ORDER_MS);
+      if (fresh.length === items.length) return items;
+      if (fresh.length > 0) return fresh;
+      const orderNumber = palmKitchenOrderSequence.current;
+      palmKitchenOrderSequence.current += 1;
+      return [makePalmKitchenOrder(orderNumber, palmKitchenNow)];
+    });
+  }, [palmKitchenNow, screen, palmKitchenActive, palmKitchenFinished]);
 
   const placeCompanionsBehind = (playerPoint, dx, dy, moving = true) => {
     if (companionIds.length === 0) return;
@@ -2049,27 +2080,45 @@ export default function KidsResort({ libraryHref = null }) {
       setBadges((items) => items.includes('Sunshine Cafe Shift') ? items : [...items, 'Sunshine Cafe Shift']);
     }
   };
-  const palmKitchenRecipeFor = (served) => PALM_KITCHEN_RECIPES[served % PALM_KITCHEN_RECIPES.length];
+  const palmKitchenRecipeFor = (number) => PALM_KITCHEN_RECIPES[number % PALM_KITCHEN_RECIPES.length];
+
+  const makePalmKitchenOrder = (number, born = Date.now()) => {
+    const recipe = palmKitchenRecipeFor(number);
+    return {
+      id: String(born) + '-palm-' + number,
+      number,
+      recipeId: recipe.id,
+      born,
+      plate: [],
+    };
+  };
 
   const startPalmKitchenShift = () => {
+    const now = Date.now();
+    palmKitchenOrderSequence.current = 1;
     setPalmKitchenActive(true);
     setPalmKitchenServed(0);
-    setPalmKitchenPlate([]);
+    setPalmKitchenOrders([makePalmKitchenOrder(0, now)]);
     setPalmKitchenStove([]);
     setPalmKitchenStorage(null);
     setPalmKitchenDrag(null);
-    setPalmKitchenNow(Date.now());
+    setPalmKitchenNow(now);
     setPalmKitchenFinished(false);
-    setPalmKitchenMessage('First dinner ticket is in. Drag ingredients from storage. Cook hot ingredients on the stove, then drag everything onto the plate.');
+    setPalmKitchenMessage('First dinner ticket is in. More orders will arrive during the rush, so watch the clocks.');
   };
 
-  const removePalmKitchenPlateIngredient = (index) => {
-    setPalmKitchenPlate((items) => items.filter((_, itemIndex) => itemIndex !== index));
+  const removePalmKitchenPlateIngredient = (orderId, index) => {
+    setPalmKitchenOrders((items) => items.map((order) => {
+      if (order.id !== orderId) return order;
+      const plate = [...(order.plate || [])];
+      plate.splice(index, 1);
+      return { ...order, plate };
+    }));
   };
 
   const dropPalmKitchenOnStorage = (storage, payload) => {
     if (payload.from !== 'plate') {
-      setPalmKitchenMessage('Ingredients come out of storage. Drag them to the stove or plate.');
+      setPalmKitchenMessage('Ingredients come out of storage. Drag them to the stove or a plate.');
       return;
     }
     const ingredient = PALM_KITCHEN_INGREDIENTS[payload.ingredientId];
@@ -2080,12 +2129,12 @@ export default function KidsResort({ libraryHref = null }) {
         : ingredient.source === 'freezer'
           ? 'freezer'
           : 'pantry cabinet';
-      setPalmKitchenMessage(`${ingredient.name} belongs in the ${home}.`);
+      setPalmKitchenMessage(ingredient.name + ' belongs in the ' + home + '.');
       return;
     }
-    removePalmKitchenPlateIngredient(payload.index);
+    removePalmKitchenPlateIngredient(payload.orderId, payload.index);
     const home = storage === 'fridge' ? 'refrigerator' : storage === 'freezer' ? 'freezer' : 'pantry cabinet';
-    setPalmKitchenMessage(`${ingredient.name} put back in the ${home}.`);
+    setPalmKitchenMessage(ingredient.name + ' put back in the ' + home + '.');
   };
 
   const dropPalmKitchenOnStove = (payload) => {
@@ -2096,7 +2145,7 @@ export default function KidsResort({ libraryHref = null }) {
       return;
     }
     if (!ingredient.cook) {
-      setPalmKitchenMessage(`${ingredient.name} does not need cooking. Drag it straight to the plate.`);
+      setPalmKitchenMessage(ingredient.name + ' does not need cooking. Drag it straight to a plate.');
       return;
     }
     if (palmKitchenStove.length >= 3) {
@@ -2104,19 +2153,20 @@ export default function KidsResort({ libraryHref = null }) {
       return;
     }
     setPalmKitchenStove((items) => [...items, {
-      id: `${Date.now()}-${payload.ingredientId}`,
+      id: String(Date.now()) + '-' + payload.ingredientId,
       ingredientId: payload.ingredientId,
       started: Date.now(),
     }]);
-    setPalmKitchenMessage(`${ingredient.name} is cooking. Drag it to the plate when it turns READY.`);
+    setPalmKitchenMessage(ingredient.name + ' is cooking. Drag it to a plate when it turns READY.');
   };
 
-  const dropPalmKitchenOnPlate = (payload) => {
+  const dropPalmKitchenOnPlate = (orderId, payload) => {
     const ingredient = PALM_KITCHEN_INGREDIENTS[payload.ingredientId];
-    if (!ingredient) return;
+    const targetOrder = palmKitchenOrders.find((order) => order.id === orderId);
+    if (!ingredient || !targetOrder) return;
 
     if (payload.from === 'storage' && ingredient.cook) {
-      setPalmKitchenMessage(`${ingredient.name} needs to be cooked on the stove first.`);
+      setPalmKitchenMessage(ingredient.name + ' needs to be cooked on the stove first.');
       return;
     }
 
@@ -2125,31 +2175,37 @@ export default function KidsResort({ libraryHref = null }) {
       if (!stoveItem) return;
       const elapsed = Date.now() - stoveItem.started;
       if (elapsed < ingredient.cook) {
-        setPalmKitchenMessage(`${ingredient.name} still needs a little more time.`);
+        setPalmKitchenMessage(ingredient.name + ' still needs a little more time.');
         return;
       }
       if (elapsed > ingredient.cook + 5500) {
         setPalmKitchenStove((items) => items.filter((item) => item.id !== stoveItem.id));
-        setPalmKitchenMessage(`${ingredient.name} overcooked. Start that ingredient again.`);
+        setPalmKitchenMessage(ingredient.name + ' overcooked. Start that ingredient again.');
         return;
       }
       setPalmKitchenStove((items) => items.filter((item) => item.id !== stoveItem.id));
     }
 
-    if (payload.from === 'plate') return;
+    if (payload.from === 'plate' && payload.orderId === orderId) return;
 
-    setPalmKitchenPlate((items) => [...items, payload.ingredientId]);
-    setPalmKitchenMessage(`${ingredient.name} moved to the plate.`);
+    setPalmKitchenOrders((items) => items.map((order) => {
+      const plate = [...(order.plate || [])];
+      if (payload.from === 'plate' && order.id === payload.orderId) plate.splice(payload.index, 1);
+      if (order.id === orderId) plate.push(payload.ingredientId);
+      return { ...order, plate };
+    }));
+
+    setPalmKitchenMessage(ingredient.name + ' moved to ticket #' + (targetOrder.number + 1) + '.');
   };
 
   const finishPalmKitchenDrop = (clientX, clientY, payload) => {
     const dropTarget = document.elementFromPoint(clientX, clientY)?.closest('[data-palm-kitchen-drop]');
     if (!dropTarget) {
-      setPalmKitchenMessage('Drop ingredients on the plate, stove, refrigerator, freezer, or pantry cabinet.');
+      setPalmKitchenMessage('Drop ingredients on a pass plate, stove, refrigerator, freezer, or pantry cabinet.');
       return;
     }
     const dropType = dropTarget.dataset.palmKitchenDrop;
-    if (dropType === 'plate') dropPalmKitchenOnPlate(payload);
+    if (dropType === 'plate') dropPalmKitchenOnPlate(dropTarget.dataset.orderId, payload);
     else if (dropType === 'stove') dropPalmKitchenOnStove(payload);
     else if (dropType === 'storage') dropPalmKitchenOnStorage(dropTarget.dataset.storage, payload);
   };
@@ -2190,39 +2246,48 @@ export default function KidsResort({ libraryHref = null }) {
         const ingredient = PALM_KITCHEN_INGREDIENTS[stoveItem.ingredientId];
         if (state === 'Overcooked') {
           setPalmKitchenStove((items) => items.filter((item) => item.id !== stoveItem.id));
-          setPalmKitchenMessage(`${ingredient.name} overcooked. It was cleared from the stove.`);
+          setPalmKitchenMessage(ingredient.name + ' overcooked. It was cleared from the stove.');
         } else {
-          setPalmKitchenMessage(`${ingredient.name} is still cooking.`);
+          setPalmKitchenMessage(ingredient.name + ' is still cooking.');
         }
       },
     };
   };
 
-  const servePalmKitchenOrder = () => {
-    if (!palmKitchenActive || palmKitchenFinished) return;
-    const recipe = palmKitchenRecipeFor(palmKitchenServed);
+  const servePalmKitchenOrder = (order) => {
+    if (!palmKitchenActive || palmKitchenFinished || !order) return;
+    const recipe = PALM_KITCHEN_RECIPES.find((item) => item.id === order.recipeId);
+    if (!recipe) return;
     const expected = [...recipe.ingredients].sort().join('|');
-    const actual = [...palmKitchenPlate].sort().join('|');
+    const actual = [...(order.plate || [])].sort().join('|');
     if (expected !== actual) {
-      setPalmKitchenMessage(`That plate is not ${recipe.name} yet. Check the ticket and fix the plate.`);
+      setPalmKitchenMessage('Ticket #' + (order.number + 1) + ' is not ' + recipe.name + ' yet. Check the ticket and fix the plate.');
       return;
     }
+
     const served = palmKitchenServed + 1;
-    setPalmKitchenPlate([]);
     setPalmKitchenStorage(null);
     setPalmKitchenServed(served);
     setBucks((value) => value + 6);
-    if (served >= 5) {
+
+    if (served >= PALM_KITCHEN_TARGET_SERVES) {
+      setPalmKitchenOrders([]);
       setPalmKitchenFinished(true);
       setBucks((value) => value + 10);
       setBadges((items) => (items.includes('Palm Court Kitchen Shift') ? items : [...items, 'Palm Court Kitchen Shift']));
       setPalmKitchenMessage('Dinner rush complete! +10 Resort Buck shift bonus.');
       return;
     }
-    const nextRecipe = palmKitchenRecipeFor(served);
-    setPalmKitchenMessage(`${recipe.name} sent out! +6 Resort Bucks. Next ticket: ${nextRecipe.name}.`);
-  };
 
+    setPalmKitchenOrders((items) => {
+      const remaining = items.filter((item) => item.id !== order.id);
+      if (remaining.length > 0) return remaining;
+      const orderNumber = palmKitchenOrderSequence.current;
+      palmKitchenOrderSequence.current += 1;
+      return [makePalmKitchenOrder(orderNumber)];
+    });
+    setPalmKitchenMessage(recipe.name + ' sent out from ticket #' + (order.number + 1) + '! +6 Resort Bucks.');
+  };
   const orderPalmCourtMeal = (meal) => {
     if (diningMealId && diningBites < 3) {
       setMessage('Finish the meal already at the table before ordering another entree.');
@@ -3923,7 +3988,6 @@ export default function KidsResort({ libraryHref = null }) {
   }
 
   if (screen === 'lobby-restaurant-work') {
-    const kitchenRecipe = palmKitchenRecipeFor(palmKitchenServed);
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
@@ -3939,11 +4003,28 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={[styles.lobbyCharacter, styles.restaurantGuestCharacter].join(' ')} aria-label={`${lobbyAmbientPeople[0].name} waiting for a Palm Court meal`}>{renderCharacter(false, lobbyAmbientPeople[0].look, lobbyAmbientPeople[0].character, lobbyAmbientPeople[0].name, 'seated')}</div>
 
             <>
-              <aside className={styles.palmKitchenTicket}>
-                <small>ORDER {Math.min(palmKitchenServed + 1, 5)} / 5</small>
-                <strong>{kitchenRecipe.icon} {kitchenRecipe.name}</strong>
-                <span>{kitchenRecipe.ingredients.map((id) => PALM_KITCHEN_INGREDIENTS[id].name).join(' + ')}</span>
-              </aside>
+              <div className={styles.palmKitchenTicketRail} aria-label="Palm Court order queue">
+                {palmKitchenOrders.map((order) => {
+                  const recipe = PALM_KITCHEN_RECIPES.find((item) => item.id === order.recipeId);
+                  const seconds = Math.max(0, Math.ceil((PALM_KITCHEN_ORDER_MS - (palmKitchenNow - order.born)) / 1000));
+                  return (
+                    <aside
+                      key={order.id}
+                      className={styles.palmKitchenTicket}
+                      data-urgent={seconds <= 10 ? 'true' : 'false'}
+                    >
+                      <div className={styles.palmKitchenTicketTop}>
+                        <b>#{order.number + 1}</b>
+                        <time>{seconds}s</time>
+                      </div>
+                      <strong>{recipe ? recipe.icon : ''} {recipe ? recipe.name : ''}</strong>
+                      <span className={styles.palmKitchenTicketIngredients}>
+                        {recipe ? recipe.ingredients.map((id) => PALM_KITCHEN_INGREDIENTS[id].name).join(' · ') : ''}
+                      </span>
+                    </aside>
+                  );
+                })}
+              </div>
 
               <div className={styles.palmKitchenStorageRow}>
                 {[
@@ -4038,38 +4119,62 @@ export default function KidsResort({ libraryHref = null }) {
                 </div>
               </div>
 
-              <div
-                className={[styles.palmKitchenPlate, palmKitchenDrag ? styles.palmKitchenDropTarget : ''].join(' ')}
-                data-palm-kitchen-drop="plate"
-              >
-                <strong>Order Plate</strong>
-                <div>
-                  {palmKitchenPlate.length === 0
-                    ? <small>Drop the ordered ingredients here.</small>
-                    : palmKitchenPlate.map((id, index) => {
-                      const item = PALM_KITCHEN_INGREDIENTS[id];
-                      return (
+              <div className={styles.palmKitchenPass} aria-label="Palm Court pass counter">
+                <div className={styles.palmKitchenPassPlates}>
+                  {palmKitchenOrders.map((order) => {
+                    const recipe = PALM_KITCHEN_RECIPES.find((item) => item.id === order.recipeId);
+                    const expected = [...(recipe ? recipe.ingredients : [])].sort().join('|');
+                    const actual = [...(order.plate || [])].sort().join('|');
+                    const ready = Boolean(expected) && expected === actual;
+                    return (
+                      <article
+                        key={order.id}
+                        className={[
+                          styles.palmKitchenOrderPlate,
+                          palmKitchenDrag ? styles.palmKitchenDropTarget : '',
+                        ].join(' ')}
+                        data-ready={ready ? 'true' : 'false'}
+                        data-palm-kitchen-drop="plate"
+                        data-order-id={order.id}
+                      >
+                        <span className={styles.palmKitchenPlateNumber}>#{order.number + 1}</span>
+                        <div className={styles.palmKitchenOrderPlateContents}>
+                          {(order.plate || []).length === 0
+                            ? <small>Drop</small>
+                            : order.plate.map((id, index) => {
+                              const item = PALM_KITCHEN_INGREDIENTS[id];
+                              return (
+                                <button
+                                  key={order.id + '-' + id + '-' + index}
+                                  type="button"
+                                  className={styles.palmKitchenPlateIngredient}
+                                  data-ingredient-id={id}
+                                  aria-label={'Move ' + (item?.name || 'ingredient')}
+                                  {...palmKitchenDragHandlers({
+                                    from: 'plate',
+                                    orderId: order.id,
+                                    index,
+                                    ingredientId: id,
+                                  })}
+                                >
+                                  <span>{item?.icon}</span>
+                                </button>
+                              );
+                            })}
+                        </div>
                         <button
-                          key={`${id}-${index}`}
                           type="button"
-                          className={styles.palmKitchenPlateIngredient}
-                          data-ingredient-id={id}
-                          aria-label={`Move ${item?.name || 'ingredient'}`}
-                          {...palmKitchenDragHandlers({ from: 'plate', index, ingredientId: id })}
+                          className={styles.palmKitchenServePlate}
+                          disabled={!ready}
+                          onClick={() => servePalmKitchenOrder(order)}
                         >
-                          <span>{item?.icon}</span>
+                          Serve
                         </button>
-                      );
-                    })}
+                      </article>
+                    );
+                  })}
                 </div>
               </div>
-
-              <button className={styles.palmKitchenPass} type="button" onClick={servePalmKitchenOrder}>
-                <span className={styles.palmKitchenPassPlateStack} aria-hidden="true"><i /><i /><i /></span>
-                <strong>Pass Counter</strong>
-                <small>Serve completed plate</small>
-              </button>
-
               {palmKitchenDrag && (
                 <div
                   className={styles.palmKitchenDragGhost}

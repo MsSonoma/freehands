@@ -8254,3 +8254,270 @@
     right: calc(19% + 6px);
   }
 }
+/* Palm Court timed dinner rush: compact ticket queue and pass plates. */
+.palmKitchenTicketRail {
+  position: absolute;
+  z-index: 12;
+  top: clamp(58px, 9dvh, 78px);
+  left: max(1.5%, calc((100vw - 1180px) / 2 + 1.5%));
+  width: clamp(390px, 49vw, 680px);
+  display: flex;
+  align-items: flex-start;
+  gap: clamp(5px, .55vw, 9px);
+  overflow: visible;
+}
+
+.palmKitchenTicketRail .palmKitchenTicket {
+  position: relative;
+  inset: auto;
+  width: clamp(112px, 12vw, 152px);
+  min-height: 0;
+  border-width: 3px;
+  border-radius: 5px;
+  padding: 4px 6px 5px;
+  box-shadow: 0 4px 8px rgba(58,40,27,.1);
+  display: grid;
+  gap: 2px;
+}
+
+.palmKitchenTicketRail .palmKitchenTicket::before {
+  left: 22%;
+  right: 22%;
+  top: -6px;
+  height: 6px;
+}
+
+.palmKitchenTicketTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 5px;
+}
+
+.palmKitchenTicketTop b,
+.palmKitchenTicketTop time {
+  font-size: clamp(.42rem, .64vw, .54rem);
+  font-weight: 1000;
+  line-height: 1;
+}
+
+.palmKitchenTicketTop time {
+  min-width: 29px;
+  padding: 2px 4px;
+  border-radius: 999px;
+  background: #e9eee9;
+  color: #3d5e4c;
+  text-align: center;
+}
+
+.palmKitchenTicketRail .palmKitchenTicket[data-urgent="true"] {
+  border-color: #c85d48;
+  box-shadow: 0 0 0 2px rgba(200,93,72,.16), 0 4px 8px rgba(58,40,27,.1);
+}
+
+.palmKitchenTicketRail .palmKitchenTicket[data-urgent="true"] .palmKitchenTicketTop time {
+  background: #f6d7cf;
+  color: #8e3327;
+}
+
+.palmKitchenTicketRail .palmKitchenTicket > strong {
+  overflow: hidden;
+  font-size: clamp(.57rem, .88vw, .72rem);
+  line-height: 1.05;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.palmKitchenTicketIngredients {
+  overflow: hidden;
+  font-size: clamp(.36rem, .55vw, .46rem) !important;
+  line-height: 1.05 !important;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The pass is now a physical counter only. Actual order plates line up on its top. */
+.palmKitchenGame .palmKitchenPass {
+  padding: 0;
+  display: block;
+  overflow: visible;
+  cursor: default;
+}
+
+.palmKitchenPassPlates {
+  position: absolute;
+  z-index: 15;
+  top: -62px;
+  left: 50%;
+  width: clamp(190px, 18vw, 260px);
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(3px, .4vw, 6px);
+  pointer-events: none;
+}
+
+.palmKitchenOrderPlate {
+  position: relative;
+  width: clamp(56px, 5.2vw, 74px);
+  height: clamp(40px, 6.8dvh, 52px);
+  flex: 0 0 auto;
+  border: 4px solid #d8d3c8;
+  border-radius: 50%;
+  background:
+    radial-gradient(ellipse at center, #fffef9 0 48%, #eee9df 49% 68%, #fffdf8 69% 100%);
+  box-shadow: 0 5px 4px rgba(72,53,39,.16);
+  pointer-events: auto;
+  display: grid;
+  place-items: center;
+}
+
+.palmKitchenOrderPlate[data-ready="true"] {
+  outline: 3px solid #68b78b;
+  outline-offset: 2px;
+}
+
+.palmKitchenPlateNumber {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  transform: translateX(-50%);
+  min-width: 22px;
+  padding: 1px 4px;
+  border-radius: 999px;
+  background: #5f4939;
+  color: #fffdf6;
+  font-size: clamp(.31rem, .5vw, .4rem);
+  font-weight: 1000;
+  line-height: 1.1;
+  text-align: center;
+}
+
+.palmKitchenOrderPlateContents {
+  width: 76%;
+  min-height: 21px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+}
+
+.palmKitchenOrderPlateContents > small {
+  color: #8a7565;
+  font-size: clamp(.3rem, .45vw, .38rem);
+  font-weight: 900;
+}
+
+.palmKitchenOrderPlateContents .palmKitchenPlateIngredient {
+  min-width: 0;
+  width: auto;
+  min-height: 0;
+  height: auto;
+  border: 0;
+  background: transparent;
+  padding: 0;
+  box-shadow: none;
+  font: inherit;
+}
+
+.palmKitchenOrderPlateContents .palmKitchenPlateIngredient span {
+  font-size: clamp(.72rem, 1.3vw, 1rem);
+  line-height: 1;
+}
+
+.palmKitchenServePlate {
+  position: absolute;
+  left: 50%;
+  bottom: -17px;
+  transform: translateX(-50%);
+  min-width: 40px;
+  min-height: 0;
+  border: 2px solid #6e4a32;
+  border-radius: 999px;
+  background: #8e6040;
+  color: #fff;
+  padding: 2px 5px;
+  font: inherit;
+  font-size: clamp(.3rem, .48vw, .4rem);
+  font-weight: 1000;
+  line-height: 1;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+.palmKitchenServePlate:disabled {
+  opacity: .32;
+  cursor: default;
+}
+
+@media (max-width: 760px) {
+  .palmKitchenTicketRail {
+    top: 42px;
+    width: 52%;
+    gap: 3px;
+  }
+
+  .palmKitchenTicketRail .palmKitchenTicket {
+    width: 31%;
+    padding: 3px 4px;
+    border-width: 2px;
+  }
+
+  .palmKitchenTicketIngredients {
+    display: none;
+  }
+
+  .palmKitchenPassPlates {
+    top: -50px;
+    width: 170px;
+    gap: 2px;
+  }
+
+  .palmKitchenOrderPlate {
+    width: 52px;
+    height: 38px;
+    border-width: 3px;
+  }
+
+  .palmKitchenServePlate {
+    bottom: -15px;
+    min-width: 34px;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenTicketRail {
+    top: 34px;
+    width: 57%;
+  }
+
+  .palmKitchenTicketRail .palmKitchenTicket {
+    width: 32%;
+  }
+
+  .palmKitchenTicketRail .palmKitchenTicket > strong {
+    font-size: .46rem;
+  }
+
+  .palmKitchenPassPlates {
+    top: -44px;
+    width: 145px;
+  }
+
+  .palmKitchenOrderPlate {
+    width: 44px;
+    height: 34px;
+  }
+
+  .palmKitchenOrderPlateContents .palmKitchenPlateIngredient span {
+    font-size: .72rem;
+  }
+
+  .palmKitchenServePlate {
+    bottom: -13px;
+    min-width: 30px;
+    padding: 1px 3px;
+    font-size: .3rem;
+  }
+}
