@@ -9450,3 +9450,128 @@
     opacity: .5;
   }
 }
+
+/* Design Studio mode panes should size to their content instead of becoming nested scroll windows. */
+.studioExperienceWorkspace,
+.studioExperienceRoom[data-mode="beauty-work"] .studioExperienceWorkspace,
+.studioExperienceRoom[data-mode="beauty-shop"] .studioExperienceWorkspace,
+.studioExperienceRoom[data-mode="fashion-work"] .studioExperienceWorkspace,
+.studioExperienceRoom[data-mode="fashion-shop"] .studioExperienceWorkspace,
+.studioExperienceRoom[data-mode="art-work"] .studioExperienceWorkspace {
+  overflow: visible;
+  max-height: none;
+}
+
+.studioExperienceRoom[data-mode="beauty-work"] .studioExperienceWorkspace,
+.studioExperienceRoom[data-mode="beauty-shop"] .studioExperienceWorkspace {
+  top: auto;
+  bottom: 3%;
+  height: auto;
+}
+
+.studioExperienceRoom[data-mode="fashion-work"] .studioExperienceWorkspace,
+.studioExperienceRoom[data-mode="fashion-shop"] .studioExperienceWorkspace {
+  top: auto;
+  bottom: 2.5%;
+  height: auto;
+}
+
+.studioExperienceRoom[data-mode="beauty-work"] .studioExperienceControls,
+.studioExperienceRoom[data-mode="beauty-shop"] .studioExperienceControls,
+.studioExperienceRoom[data-mode="fashion-work"] .studioExperienceControls,
+.studioExperienceRoom[data-mode="fashion-shop"] .studioExperienceControls {
+  overflow: visible;
+}
+
+/* Compact the controls enough that the full pane remains visible without inner scrolling. */
+.studioExperienceRoom[data-mode="beauty-work"] .beautyControlGroup,
+.studioExperienceRoom[data-mode="beauty-shop"] .beautyControlGroup {
+  gap: 6px;
+  padding-bottom: 8px;
+}
+
+.studioExperienceRoom[data-mode="fashion-work"] .fashionEditorCard,
+.studioExperienceRoom[data-mode="fashion-shop"] .fashionEditorCard {
+  gap: 8px;
+  padding: 10px;
+}
+
+.studioExperienceRoom[data-mode="fashion-work"] .tryOnTray,
+.studioExperienceRoom[data-mode="fashion-shop"] .tryOnTray {
+  gap: 4px;
+  padding: 7px;
+}
+
+@media (max-width: 820px) {
+  .studioExperienceRoom[data-mode="beauty-work"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="beauty-shop"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="fashion-work"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="fashion-shop"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="art-work"] .studioExperienceWorkspace {
+    top: auto;
+    bottom: 4px;
+    max-height: none;
+    height: auto;
+    overflow: visible;
+  }
+
+  .studioExperienceRoom[data-mode="beauty-work"] .studioExperienceControls,
+  .studioExperienceRoom[data-mode="beauty-shop"] .studioExperienceControls,
+  .studioExperienceRoom[data-mode="fashion-work"] .studioExperienceControls,
+  .studioExperienceRoom[data-mode="fashion-shop"] .studioExperienceControls {
+    gap: 6px;
+  }
+
+  .studioExperienceRoom[data-mode="fashion-work"] .fashionEditorCard,
+  .studioExperienceRoom[data-mode="fashion-shop"] .fashionEditorCard,
+  .studioExperienceRoom[data-mode="beauty-work"] .beautyControlPanel,
+  .studioExperienceRoom[data-mode="beauty-shop"] .beautyControlPanel {
+    padding: 8px;
+    gap: 7px;
+  }
+}
+
+@media (max-width: 560px) {
+  .studioExperienceRoom[data-mode="beauty-work"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="beauty-shop"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="fashion-work"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="fashion-shop"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="art-work"] .studioExperienceWorkspace {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .studioExperienceRoom[data-mode="beauty-work"] .creatorChoiceWrap,
+  .studioExperienceRoom[data-mode="beauty-shop"] .creatorChoiceWrap {
+    gap: 4px;
+  }
+
+  .studioExperienceRoom[data-mode="beauty-work"] .creatorTextChoice,
+  .studioExperienceRoom[data-mode="beauty-shop"] .creatorTextChoice {
+    padding: 4px 6px;
+    font-size: .58rem;
+  }
+}
+
+@media (max-height: 620px) {
+  .studioExperienceRoom[data-mode="beauty-work"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="beauty-shop"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="fashion-work"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="fashion-shop"] .studioExperienceWorkspace,
+  .studioExperienceRoom[data-mode="art-work"] .studioExperienceWorkspace {
+    max-height: none;
+    overflow: visible;
+  }
+
+  .studioExperienceRoom[data-mode="beauty-work"] .beautyControlGroup,
+  .studioExperienceRoom[data-mode="beauty-shop"] .beautyControlGroup {
+    gap: 4px;
+    padding-bottom: 5px;
+  }
+
+  .studioExperienceRoom[data-mode="fashion-work"] .fashionEditorCard,
+  .studioExperienceRoom[data-mode="fashion-shop"] .fashionEditorCard {
+    gap: 5px;
+    padding: 7px;
+  }
+}
