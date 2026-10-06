@@ -8191,3 +8191,21 @@
     height: 24px;
   }
 }
+
+
+/* Palm Court pass placement: divider left of diners. */
+.palmKitchenGame .palmKitchenPass {
+  right: 15%;
+}
+
+@media (max-width: 760px) {
+  .palmKitchenGame .palmKitchenPass {
+    right: 13%;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenGame .palmKitchenPass {
+    right: 12%;
+  }
+}
