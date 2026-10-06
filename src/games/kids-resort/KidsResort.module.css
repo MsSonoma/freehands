@@ -8426,30 +8426,6 @@
   line-height: 1;
 }
 
-.palmKitchenServePlate {
-  position: absolute;
-  left: 50%;
-  bottom: -17px;
-  transform: translateX(-50%);
-  min-width: 40px;
-  min-height: 0;
-  border: 2px solid #6e4a32;
-  border-radius: 999px;
-  background: #8e6040;
-  color: #fff;
-  padding: 2px 5px;
-  font: inherit;
-  font-size: clamp(.3rem, .48vw, .4rem);
-  font-weight: 1000;
-  line-height: 1;
-  cursor: pointer;
-  pointer-events: auto;
-}
-
-.palmKitchenServePlate:disabled {
-  opacity: .32;
-  cursor: default;
-}
 
 @media (max-width: 760px) {
   .palmKitchenTicketRail {
@@ -8480,10 +8456,6 @@
     border-width: 3px;
   }
 
-  .palmKitchenServePlate {
-    bottom: -15px;
-    min-width: 34px;
-  }
 }
 
 @media (max-width: 520px) {
@@ -8514,12 +8486,6 @@
     font-size: .72rem;
   }
 
-  .palmKitchenServePlate {
-    bottom: -13px;
-    min-width: 30px;
-    padding: 1px 3px;
-    font-size: .3rem;
-  }
 }
 /* Palm Court storage enlargement: more room for larger inventory items. */
 .palmKitchenGame .palmKitchenStorageRow {

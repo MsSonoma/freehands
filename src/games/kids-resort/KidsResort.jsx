@@ -977,6 +977,7 @@ export default function KidsResort({ libraryHref = null }) {
   const [palmKitchenMessage, setPalmKitchenMessage] = useState('');
   const [palmKitchenFinished, setPalmKitchenFinished] = useState(false);
   const palmKitchenOrderSequence = useRef(1);
+  const palmKitchenAutoServing = useRef(new Set());
 
   const [diningMealId, setDiningMealId] = useState(null);
   const [diningDrinkId, setDiningDrinkId] = useState('water');
@@ -2288,6 +2289,7 @@ export default function KidsResort({ libraryHref = null }) {
   const startPalmKitchenShift = () => {
     const now = Date.now();
     palmKitchenOrderSequence.current = 1;
+    palmKitchenAutoServing.current.clear();
     setPalmKitchenActive(true);
     setPalmKitchenServed(0);
     setPalmKitchenOrders([makePalmKitchenOrder(0, now)]);
@@ -2482,6 +2484,20 @@ export default function KidsResort({ libraryHref = null }) {
       `${recipe.name} sent out from ticket #${order.number + 1}! +6 Resort Bucks.${learnedRecipe ? ` Recipe learned: ${learnedRecipe.name}!` : ''}`,
     );
   };
+  useEffect(() => {
+    if (screen !== 'lobby-restaurant-work' || !palmKitchenActive || palmKitchenFinished) return;
+    const readyOrder = palmKitchenOrders.find((order) => {
+      if (Date.now() - order.born >= PALM_KITCHEN_ORDER_MS) return false;
+      const recipe = PALM_KITCHEN_RECIPES.find((item) => item.id === order.recipeId);
+      if (!recipe) return false;
+      const expected = [...recipe.ingredients].sort().join('|');
+      const actual = [...(order.plate || [])].sort().join('|');
+      return expected === actual;
+    });
+    if (!readyOrder || palmKitchenAutoServing.current.has(readyOrder.id)) return;
+    palmKitchenAutoServing.current.add(readyOrder.id);
+    servePalmKitchenOrder(readyOrder);
+  }, [screen, palmKitchenActive, palmKitchenFinished, palmKitchenOrders]);
   const orderPalmCourtMeal = (meal) => {
     if (diningMealId && diningBites < 3) {
       setMessage('Finish the meal already at the table before ordering another entree.');
@@ -4560,14 +4576,6 @@ export default function KidsResort({ libraryHref = null }) {
                               );
                             })}
                         </div>
-                        <button
-                          type="button"
-                          className={styles.palmKitchenServePlate}
-                          disabled={!ready}
-                          onClick={() => servePalmKitchenOrder(order)}
-                        >
-                          Serve
-                        </button>
                       </article>
                     );
                   })}
