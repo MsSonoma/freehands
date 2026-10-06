@@ -8521,3 +8521,86 @@
     font-size: .3rem;
   }
 }
+/* Palm Court storage enlargement: more room for larger inventory items. */
+.palmKitchenGame .palmKitchenStorageRow {
+  width: clamp(340px, 32vw, 455px);
+}
+
+.palmKitchenStoragePane {
+  height: clamp(175px, 34dvh, 255px);
+}
+
+.palmKitchenStoragePaneOpen {
+  padding: 6px;
+  grid-template-rows: 32px minmax(0, 1fr);
+  gap: 5px;
+}
+
+.palmKitchenStorageInventory {
+  padding: 6px;
+  gap: 5px;
+}
+
+.palmKitchenStorageOpenButton strong {
+  font-size: clamp(.52rem, .92vw, .72rem);
+}
+
+.palmKitchenStorageOpenButton small {
+  font-size: clamp(.38rem, .72vw, .52rem);
+}
+
+.palmKitchenStorageInventoryItem {
+  padding: 4px 2px;
+  gap: 2px;
+}
+
+.palmKitchenStorageInventoryItem span {
+  font-size: clamp(1.25rem, 3.7dvh, 2rem);
+}
+
+.palmKitchenStorageInventoryItem small {
+  font-size: clamp(.38rem, 1dvh, .56rem);
+}
+
+.palmKitchenStorageInventoryItem em {
+  font-size: clamp(.32rem, .82dvh, .46rem);
+}
+
+@media (max-width: 760px) {
+  .palmKitchenGame .palmKitchenStorageRow {
+    width: 34%;
+  }
+
+  .palmKitchenStoragePane {
+    height: 145px;
+  }
+
+  .palmKitchenStoragePaneOpen {
+    grid-template-rows: 26px minmax(0, 1fr);
+    padding: 4px;
+    gap: 3px;
+  }
+
+  .palmKitchenStorageInventory {
+    padding: 3px;
+    gap: 3px;
+  }
+
+  .palmKitchenStorageInventoryItem span {
+    font-size: 1.35rem;
+  }
+}
+
+@media (max-width: 520px) {
+  .palmKitchenGame .palmKitchenStorageRow {
+    width: 37%;
+  }
+
+  .palmKitchenStoragePane {
+    height: 118px;
+  }
+
+  .palmKitchenStorageInventoryItem span {
+    font-size: 1.2rem;
+  }
+}
