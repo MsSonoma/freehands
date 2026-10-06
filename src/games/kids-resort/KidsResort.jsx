@@ -731,6 +731,9 @@ export default function KidsResort({ libraryHref = null }) {
   const [message, setMessage] = useState('');
   const [houseActivity, setHouseActivity] = useState(null);
   const [houseClosetCategory, setHouseClosetCategory] = useState('shirt');
+  const [houseMealId, setHouseMealId] = useState(null);
+  const [houseMealBites, setHouseMealBites] = useState(0);
+  const [houseWaterSipTick, setHouseWaterSipTick] = useState(0);
   const [position, setPosition] = useState({ x: 50, y: 82 });
   const [isWalking, setIsWalking] = useState(false);
   const [walkFrame, setWalkFrame] = useState(0);
@@ -2349,6 +2352,11 @@ export default function KidsResort({ libraryHref = null }) {
     Object.entries(recipe.ingredients).every(([id, count]) => (inventory[id] || 0) >= count);
 
   const cookRecipe = (recipe) => {
+    if (houseMealId) {
+      setMessage('Finish the meal on the dining table before cooking another one.');
+      return;
+    }
+
     if (!canCook(recipe)) {
       const missing = Object.entries(recipe.ingredients)
         .filter(([id, count]) => (inventory[id] || 0) < count)
@@ -2366,8 +2374,39 @@ export default function KidsResort({ libraryHref = null }) {
       return next;
     });
     setMeals((items) => [...items, recipe.name]);
-    setMessage(`${characterName} cooked ${recipe.name} in her house kitchen!`);
+    setHouseMealId(recipe.id);
+    setHouseMealBites(0);
+    setHouseWaterSipTick(0);
+    setHouseActivity(null);
+    setMessage(`${recipe.name} is on the dining table. Click the food to eat it.`);
     setBadges((items) => (items.includes('House Cook') ? items : [...items, 'House Cook']));
+  };
+
+  const takeHouseMealBite = () => {
+    const meal = RECIPES.find((recipe) => recipe.id === houseMealId);
+    if (!meal) {
+      setMessage('Cook something in the kitchen first.');
+      return;
+    }
+
+    const bites = houseMealBites + 1;
+    if (bites >= 3) {
+      setHouseMealId(null);
+      setHouseMealBites(0);
+      setBadges((items) => (
+        items.includes('House Dining Star') ? items : [...items, 'House Dining Star']
+      ));
+      setMessage(`${characterName} finished ${meal.name}. ⭐ House Dining Star badge earned!`);
+      return;
+    }
+
+    setHouseMealBites(bites);
+    setMessage(`Bite ${bites} of 3. Keep clicking the food to finish ${meal.name}.`);
+  };
+
+  const sipHouseWater = () => {
+    setHouseWaterSipTick((value) => value + 1);
+    setMessage(`${characterName} takes a sip of ice water.`);
   };
 
   const chooseCharacterOption = (category, option) => {
@@ -5168,6 +5207,7 @@ export default function KidsResort({ libraryHref = null }) {
   }
 
   if (screen === 'suite') {
+    const houseMeal = RECIPES.find((recipe) => recipe.id === houseMealId) || null;
     const ownedClosetOptions = (() => {
       const options = new Map();
       LOOK_OPTIONS[houseClosetCategory].forEach((option) => {
@@ -5220,6 +5260,33 @@ export default function KidsResort({ libraryHref = null }) {
           </div>
           <div className={styles.houseFloor} aria-hidden="true" />
           <div className={styles.houseRug} aria-hidden="true" />
+
+          <div className={styles.houseDiningSet} aria-label="Dining table">
+            <span className={styles.houseDiningChair} aria-hidden="true" />
+            <div className={styles.houseDiningTable}>
+              <span className={styles.houseDiningPlate} aria-hidden="true" />
+              {houseMeal && (
+                <button
+                  className={styles.houseDiningFood}
+                  type="button"
+                  data-bites={houseMealBites}
+                  onClick={takeHouseMealBite}
+                  aria-label={`Eat ${houseMeal.name}. ${3 - houseMealBites} bites left.`}
+                >
+                  <span className={styles.houseDiningFoodIcon}>{houseMeal.icon}</span>
+                </button>
+              )}
+              <button
+                key={`house-water-${houseWaterSipTick}`}
+                className={styles.houseWaterCup}
+                type="button"
+                onClick={sipHouseWater}
+                aria-label="Drink ice water"
+              >
+                <span className={styles.houseWaterFill} aria-hidden="true" />
+              </button>
+            </div>
+          </div>
 
           <button
             className={[styles.houseObject, styles.houseKitchen].join(' ')}
