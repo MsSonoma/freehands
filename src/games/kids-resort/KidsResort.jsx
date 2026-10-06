@@ -122,7 +122,7 @@ const PALM_KITCHEN_RECIPES = [
 
 const PALM_KITCHEN_ORDER_MS = 50000;
 const PALM_KITCHEN_MAX_ORDERS = 3;
-const PALM_KITCHEN_TARGET_SERVES = 5;
+const PALM_KITCHEN_TARGET_SERVES = PALM_KITCHEN_RECIPES.length;
 
 const DINING_DRINKS = [
   { id: 'water', name: 'Ice Water', icon: '\u{1F4A7}' },
@@ -211,16 +211,111 @@ function crewWaitingActivity(screen, crewIndex = 0, playerName = 'Emily') {
 const MARKET_ITEMS = [
   { id: 'eggs', name: 'Eggs', icon: '\u{1F95A}', price: 3 },
   { id: 'milk', name: 'Milk', icon: '\u{1F95B}', price: 3 },
-  { id: 'berries', name: 'Berries', icon: '\u{1FAD0}', price: 3 },
+  { id: 'berries', name: 'Berries', icon: '\u{1F353}', price: 3 },
   { id: 'bread', name: 'Bread', icon: '\u{1F35E}', price: 2 },
   { id: 'cheese', name: 'Cheese', icon: '\u{1F9C0}', price: 3 },
   { id: 'apples', name: 'Apples', icon: '\u{1F34E}', price: 2 },
+  { id: 'buns', name: 'Burger Buns', icon: '\u{1F35E}', price: 2 },
+  { id: 'burger-patty', name: 'Burger Patty', icon: '\u{1F969}', price: 4 },
+  { id: 'lettuce', name: 'Lettuce', icon: '\u{1F96C}', price: 2 },
+  { id: 'tomatoes', name: 'Tomatoes', icon: '\u{1F345}', price: 2 },
+  { id: 'tortillas', name: 'Tortillas', icon: '\u{1FAD3}', price: 2 },
+  { id: 'taco-meat', name: 'Taco Meat', icon: '\u{1F969}', price: 4 },
+  { id: 'bacon', name: 'Bacon', icon: '\u{1F953}', price: 3 },
+  { id: 'pasta', name: 'Pasta', icon: '\u{1F35D}', price: 3 },
+  { id: 'tomato-sauce', name: 'Tomato Sauce', icon: '\u{1F345}', price: 2 },
+  { id: 'herbs', name: 'Fresh Herbs', icon: '\u{1F33F}', price: 2 },
+  { id: 'chicken', name: 'Chicken', icon: '\u{1F357}', price: 4 },
+  { id: 'potatoes', name: 'Potatoes', icon: '\u{1F954}', price: 2 },
+  { id: 'salmon', name: 'Salmon', icon: '\u{1F41F}', price: 5 },
+  { id: 'lemon', name: 'Lemon', icon: '\u{1F34B}', price: 2 },
+  { id: 'vegetables', name: 'Vegetables', icon: '\u{1F966}', price: 3 },
+  { id: 'ravioli', name: 'Ravioli', icon: '\u{1F95F}', price: 4 },
+  { id: 'ice-cream', name: 'Ice Cream', icon: '\u{1F368}', price: 3 },
+  { id: 'wafer', name: 'Wafer Cookies', icon: '\u{1F36A}', price: 2 },
 ];
 
 const RECIPES = [
-  { id: 'berry-breakfast', name: 'Berry Breakfast', icon: '\u{1F95E}', ingredients: { eggs: 1, milk: 1, berries: 1 } },
-  { id: 'grilled-cheese', name: 'Grilled Cheese', icon: '\u{1F96A}', ingredients: { bread: 1, cheese: 1 } },
-  { id: 'fruit-bowl', name: 'Fruit Bowl', icon: '\u{1F963}', ingredients: { berries: 1, apples: 1 } },
+  {
+    id: 'grilled-cheese',
+    name: 'Grilled Cheese',
+    icon: '\u{1F96A}',
+    source: 'Known at Start',
+    learnedFrom: { place: 'cafe', recipeId: 'toastie' },
+    ingredients: { bread: 1, cheese: 1 },
+  },
+  {
+    id: 'sunshine-burger',
+    name: 'Sunshine Burger',
+    icon: '\u{1F354}',
+    source: 'Sunshine Cafe',
+    learnedFrom: { place: 'cafe', recipeId: 'burger' },
+    ingredients: { buns: 1, 'burger-patty': 1, lettuce: 1, tomatoes: 1 },
+  },
+  {
+    id: 'sunshine-taco',
+    name: 'Sunshine Taco',
+    icon: '\u{1F32E}',
+    source: 'Sunshine Cafe',
+    learnedFrom: { place: 'cafe', recipeId: 'taco' },
+    ingredients: { tortillas: 1, 'taco-meat': 1, cheese: 1, lettuce: 1 },
+  },
+  {
+    id: 'cafe-breakfast',
+    name: 'Cafe Breakfast',
+    icon: '\u{1F373}',
+    source: 'Sunshine Cafe',
+    learnedFrom: { place: 'cafe', recipeId: 'breakfast' },
+    ingredients: { eggs: 1, bacon: 1, bread: 1 },
+  },
+  {
+    id: 'garden-pasta',
+    name: 'Garden Pasta',
+    icon: '\u{1F35D}',
+    source: 'Palm Court',
+    learnedFrom: { place: 'palm', recipeId: 'pasta' },
+    ingredients: { pasta: 1, 'tomato-sauce': 1, herbs: 1 },
+  },
+  {
+    id: 'herb-chicken',
+    name: 'Herb Chicken Plate',
+    icon: '\u{1F357}',
+    source: 'Palm Court',
+    learnedFrom: { place: 'palm', recipeId: 'chicken' },
+    ingredients: { chicken: 1, potatoes: 1, herbs: 1 },
+  },
+  {
+    id: 'lemon-salmon',
+    name: 'Lemon Salmon Dinner',
+    icon: '\u{1F41F}',
+    source: 'Palm Court',
+    learnedFrom: { place: 'palm', recipeId: 'salmon' },
+    ingredients: { salmon: 1, lemon: 1, vegetables: 1 },
+  },
+  {
+    id: 'vegetable-ravioli',
+    name: 'Vegetable Ravioli',
+    icon: '\u{1F95F}',
+    source: 'Palm Court',
+    learnedFrom: { place: 'palm', recipeId: 'ravioli' },
+    ingredients: { ravioli: 1, 'tomato-sauce': 1, vegetables: 1 },
+  },
+  {
+    id: 'palm-breakfast',
+    name: 'Palm Court Breakfast',
+    icon: '\u{1F373}',
+    source: 'Palm Court',
+    learnedFrom: { place: 'palm', recipeId: 'breakfast' },
+    ingredients: { eggs: 1, bread: 1, berries: 1 },
+  },
+  {
+    id: 'berry-sundae',
+    name: 'Berry Sundae',
+    icon: '\u{1F368}',
+    source: 'Palm Court',
+    learnedFrom: { place: 'palm', recipeId: 'dessert' },
+    ingredients: { berries: 1, 'ice-cream': 1, wafer: 1 },
+  },
 ];
 
 const CHARACTER_OPTIONS = {
@@ -735,6 +830,7 @@ export default function KidsResort({ libraryHref = null }) {
   const [message, setMessage] = useState('');
   const [houseActivity, setHouseActivity] = useState(null);
   const [houseClosetCategory, setHouseClosetCategory] = useState('shirt');
+  const [learnedRecipeIds, setLearnedRecipeIds] = useState(() => new Set(['grilled-cheese']));
   const [houseMealId, setHouseMealId] = useState(null);
   const [houseMealBites, setHouseMealBites] = useState(0);
   const [houseWaterSipTick, setHouseWaterSipTick] = useState(0);
@@ -2058,6 +2154,21 @@ export default function KidsResort({ libraryHref = null }) {
     };
   };
 
+  const learnRestaurantRecipe = (place, recipeId) => {
+    const homeRecipe = RECIPES.find(
+      (recipe) => recipe.learnedFrom?.place === place && recipe.learnedFrom.recipeId === recipeId,
+    );
+    if (!homeRecipe || learnedRecipeIds.has(homeRecipe.id)) return null;
+
+    setLearnedRecipeIds((current) => {
+      if (current.has(homeRecipe.id)) return current;
+      const next = new Set(current);
+      next.add(homeRecipe.id);
+      return next;
+    });
+    return homeRecipe;
+  };
+
   const serveCafeOrder = (order) => {
     const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
     const plateState = summarizeCafePlate(recipe, order.plate || []);
@@ -2069,11 +2180,12 @@ export default function KidsResort({ libraryHref = null }) {
       setCafeMessage('That plate has an extra ingredient. Move it to another plate or put it back in storage.');
       return;
     }
+    const learnedRecipe = learnRestaurantRecipe('cafe', recipe.id);
     const served = cafeServed + 1;
     setCafeOrders((items) => items.filter((item) => item.id !== order.id));
     setCafeServed(served);
     setBucks((value) => value + 4);
-    setCafeMessage(`${order.guest} loved it! +4 Resort Bucks`);
+    setCafeMessage(`${order.guest} loved it! +4 Resort Bucks${learnedRecipe ? ` · Recipe learned: ${learnedRecipe.name}!` : ''}`);
     if (served >= 8) {
       setCafeFinished(true);
       setBucks((value) => value + 8);
@@ -2264,7 +2376,7 @@ export default function KidsResort({ libraryHref = null }) {
       setPalmKitchenMessage('Ticket #' + (order.number + 1) + ' is not ' + recipe.name + ' yet. Check the ticket and fix the plate.');
       return;
     }
-
+    const learnedRecipe = learnRestaurantRecipe('palm', recipe.id);
     const served = palmKitchenServed + 1;
     setPalmKitchenStorage(null);
     setPalmKitchenServed(served);
@@ -2275,7 +2387,7 @@ export default function KidsResort({ libraryHref = null }) {
       setPalmKitchenFinished(true);
       setBucks((value) => value + 10);
       setBadges((items) => (items.includes('Palm Court Kitchen Shift') ? items : [...items, 'Palm Court Kitchen Shift']));
-      setPalmKitchenMessage('Dinner rush complete! +10 Resort Buck shift bonus.');
+      setPalmKitchenMessage(`Dinner rush complete! +10 Resort Buck shift bonus.${learnedRecipe ? ` Recipe learned: ${learnedRecipe.name}!` : ''}`);
       return;
     }
 
@@ -2286,7 +2398,9 @@ export default function KidsResort({ libraryHref = null }) {
       palmKitchenOrderSequence.current += 1;
       return [makePalmKitchenOrder(orderNumber)];
     });
-    setPalmKitchenMessage(recipe.name + ' sent out from ticket #' + (order.number + 1) + '! +6 Resort Bucks.');
+    setPalmKitchenMessage(
+      `${recipe.name} sent out from ticket #${order.number + 1}! +6 Resort Bucks.${learnedRecipe ? ` Recipe learned: ${learnedRecipe.name}!` : ''}`,
+    );
   };
   const orderPalmCourtMeal = (meal) => {
     if (diningMealId && diningBites < 3) {
@@ -2414,9 +2528,15 @@ export default function KidsResort({ libraryHref = null }) {
   };
 
   const canCook = (recipe) =>
-    Object.entries(recipe.ingredients).every(([id, count]) => (inventory[id] || 0) >= count);
+    learnedRecipeIds.has(recipe.id)
+    && Object.entries(recipe.ingredients).every(([id, count]) => (inventory[id] || 0) >= count);
 
   const cookRecipe = (recipe) => {
+    if (!learnedRecipeIds.has(recipe.id)) {
+      setMessage(`${characterName} has not learned ${recipe.name} yet. Work a restaurant kitchen to learn it.`);
+      return;
+    }
+
     if (houseMealId) {
       setMessage('Finish the meal on the dining table before cooking another one.');
       return;
@@ -2458,10 +2578,9 @@ export default function KidsResort({ libraryHref = null }) {
     if (bites >= 3) {
       setHouseMealId(null);
       setHouseMealBites(0);
-      setBadges((items) => (
-        items.includes('House Dining Star') ? items : [...items, 'House Dining Star']
-      ));
-      setMessage(`${characterName} finished ${meal.name}. ⭐ House Dining Star badge earned!`);
+      const recipeStar = `Recipe Star: ${meal.name}`;
+      setBadges((items) => (items.includes(recipeStar) ? items : [...items, recipeStar]));
+      setMessage(`${characterName} finished ${meal.name}. ⭐ ${meal.name} Recipe Star earned!`);
       return;
     }
 
@@ -4193,7 +4312,7 @@ export default function KidsResort({ libraryHref = null }) {
           {palmKitchenFinished && (
             <div className={styles.lobbyGameComplete}>
               <strong>Kitchen Shift Complete!</strong>
-              <span>5 dinner orders served · 40 Resort Bucks earned</span>
+              <span>{PALM_KITCHEN_RECIPES.length} dinner orders served · {PALM_KITCHEN_RECIPES.length * 6 + 10} Resort Bucks earned</span>
               <button type="button" onClick={startPalmKitchenShift}>Work Another Shift</button>
             </div>
           )}
@@ -5510,9 +5629,9 @@ export default function KidsResort({ libraryHref = null }) {
 
               {houseActivity === 'kitchen' && (
                 <>
-                  <div className={styles.housePanelTitle}>Kitchen</div>
+                  <div className={styles.housePanelTitle}>Kitchen · {learnedRecipeIds.size}/{RECIPES.length} recipes learned</div>
                   <div className={styles.houseRecipeShelf}>
-                    {RECIPES.map((recipe) => (
+                    {RECIPES.filter((recipe) => learnedRecipeIds.has(recipe.id)).map((recipe) => (
                       <button
                         key={recipe.id}
                         type="button"
@@ -5521,6 +5640,7 @@ export default function KidsResort({ libraryHref = null }) {
                       >
                         <span>{recipe.icon}</span>
                         <strong>{recipe.name}</strong>
+                        <small>{recipe.source}</small>
                         <small>{Object.keys(recipe.ingredients).map(ingredientLabel).join(' + ')}</small>
                       </button>
                     ))}
