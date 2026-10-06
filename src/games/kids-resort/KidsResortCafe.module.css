@@ -1668,3 +1668,49 @@
   .cafeKitchenLeftStack .cafePlateIngredient { width: 13px; height: 13px; }
   .cafeKitchenLeftStack .cafePlateIngredient span { font-size: .47rem; }
 }
+/* Readable order-card typography without changing the 2x5 card geometry. */
+.cafeKitchenLeftStack .cafeOrderBoardHeader b {
+  font-size: clamp(.68rem, 1.55dvh, .88rem);
+}
+
+.cafeKitchenLeftStack .cafeTicket strong {
+  font-size: clamp(.5rem, 1.08dvh, .66rem);
+  line-height: 1;
+}
+
+.cafeKitchenLeftStack .cafeTicket small {
+  font-size: clamp(.42rem, .9dvh, .54rem);
+  line-height: 1;
+}
+
+.cafeKitchenLeftStack .cafeTicketFood {
+  font-size: clamp(.84rem, 1.9dvh, 1.08rem);
+}
+
+.cafeKitchenLeftStack .cafePlateHint {
+  font-size: clamp(.36rem, .82dvh, .48rem);
+  line-height: 1.08;
+}
+
+.cafeKitchenLeftStack .cafeFinishedDish small {
+  font-size: clamp(.34rem, .76dvh, .44rem);
+  line-height: 1;
+}
+
+@media (max-width: 760px) {
+  .cafeKitchenLeftStack .cafeOrderBoardHeader b { font-size: .58rem; }
+  .cafeKitchenLeftStack .cafeTicket strong { font-size: .4rem; }
+  .cafeKitchenLeftStack .cafeTicket small { font-size: .34rem; }
+  .cafeKitchenLeftStack .cafeTicketFood { font-size: .72rem; }
+  .cafeKitchenLeftStack .cafePlateHint { font-size: .33rem; }
+  .cafeKitchenLeftStack .cafeFinishedDish small { font-size: .3rem; }
+}
+
+@media (max-height: 440px) {
+  .cafeKitchenLeftStack .cafeOrderBoardHeader b { font-size: .48rem; }
+  .cafeKitchenLeftStack .cafeTicket strong { font-size: .31rem; }
+  .cafeKitchenLeftStack .cafeTicket small { font-size: .27rem; }
+  .cafeKitchenLeftStack .cafeTicketFood { font-size: .58rem; }
+  .cafeKitchenLeftStack .cafePlateHint { font-size: .28rem; }
+  .cafeKitchenLeftStack .cafeFinishedDish small { font-size: .26rem; }
+}
