@@ -5597,7 +5597,7 @@ export default function KidsResort({ libraryHref = null }) {
     if (studioWorkTool === 'fashion') {
       return studioExperienceShell(
         'fashion-work',
-        'Fashion Atelier',
+        'Fashion Work',
         'DESIGN FOR CUSTOMERS',
         <>
           {renderStudioActor(look, character, characterName, 'player')}
