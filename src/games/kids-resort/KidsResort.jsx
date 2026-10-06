@@ -3312,29 +3312,12 @@ export default function KidsResort({ libraryHref = null }) {
             <div className={styles.workWindow}><span>🌴</span><span>☀️</span></div>
             <div className={styles.workWallSign}>SUNSHINE CAFÉ</div>
             <div className={styles.workPendantRow}><span>💡</span><span>💡</span><span>💡</span></div>
-            <div className={styles.workServiceCounter}><span>🥤</span><span>🔔</span><span>🧁</span></div>
           </div>
 
           <div className={[styles.cafeSceneCharacter, styles.cafeWorkCharacter].join(' ')} aria-label={`${characterName} working in the cafe kitchen`}>
             {renderPlayerParty()}
           </div>
 
-          {cafeOrders.map((order, index) => {
-            const customer = order.customer || cafeAmbientPeople[index % cafeAmbientPeople.length];
-            return (
-              <div
-                key={`pass-${order.id}`}
-                className={[
-                  styles.cafeSceneCharacter,
-                  styles.cafePassGuest,
-                  styles[`cafePassGuestSlot${Math.min(index, 2)}`],
-                ].join(' ')}
-                aria-label={`${order.guest} waiting at the cafe pass`}
-              >
-                {renderCharacter(false, customer.look, customer.character, order.guest)}
-              </div>
-            );
-          })}
 
           <aside className={styles.recipeWall}>
             <h2>Recipe Wall</h2>
@@ -3413,34 +3396,63 @@ export default function KidsResort({ libraryHref = null }) {
           </section>
 
           <section className={[styles.kitchenStations, styles.cafeKitchenStations].join(' ')}>
-            {renderCafeStorage('fridge', 'Refrigerator', fridgeItems)}
-            <div
-              className={[styles.grillStation, cafeDrag?.from === 'storage' ? styles.cafeGrillDrop : ''].join(' ')}
-              data-cafe-drop="grill"
-            >
-              <b>🔥 Grill · drop cooking items here</b>
-              <div>
-                {cafeGrill.map((grillItem) => {
-                  const ingredient = CAFE_INGREDIENTS[grillItem.ingredientId];
-                  const age = cafeNow - grillItem.started;
-                  const state = age < ingredient.cook ? 'Cooking…' : age <= ingredient.cook + 4500 ? 'READY!' : 'BURNT';
-                  return (
-                    <button
-                      key={grillItem.id}
-                      type="button"
-                      data-state={state}
-                      className={state === 'READY!' ? styles.cafeDraggableIngredient : ''}
-                      {...cafeGrillDragHandlers(grillItem, state)}
-                    >
-                      <span>{ingredient.icon}</span>
-                      <strong>{state}</strong>
-                      {state === 'READY!' && <small>Drag to a plate</small>}
-                    </button>
-                  );
-                })}
+            <div className={styles.cafeKitchenLeftStack}>
+              <div className={styles.cafeKitchenPass} aria-label="Cafe service pass">
+                <div className={styles.cafePassCustomers}>
+                  {cafeOrders.map((order, index) => {
+                    const customer = order.customer || cafeAmbientPeople[index % cafeAmbientPeople.length];
+                    return (
+                      <div
+                        key={`pass-${order.id}`}
+                        className={[
+                          styles.cafeSceneCharacter,
+                          styles.cafePassGuest,
+                          styles[`cafePassGuestSlot${Math.min(index, 2)}`],
+                        ].join(' ')}
+                        aria-label={`${order.guest} waiting at the cafe pass`}
+                      >
+                        {renderCharacter(false, customer.look, customer.character, order.guest)}
+                      </div>
+                    );
+                  })}
+                </div>
+                <div className={styles.cafePassCounter} aria-hidden="true">
+                  <span>🥤</span><span>🔔</span><span>🧁</span>
+                </div>
+              </div>
+
+              <div
+                className={[styles.grillStation, cafeDrag?.from === 'storage' ? styles.cafeGrillDrop : ''].join(' ')}
+                data-cafe-drop="grill"
+              >
+                <b>🔥 Grill · drop cooking items here</b>
+                <div>
+                  {cafeGrill.map((grillItem) => {
+                    const ingredient = CAFE_INGREDIENTS[grillItem.ingredientId];
+                    const age = cafeNow - grillItem.started;
+                    const state = age < ingredient.cook ? 'Cooking…' : age <= ingredient.cook + 4500 ? 'READY!' : 'BURNT';
+                    return (
+                      <button
+                        key={grillItem.id}
+                        type="button"
+                        data-state={state}
+                        className={state === 'READY!' ? styles.cafeDraggableIngredient : ''}
+                        {...cafeGrillDragHandlers(grillItem, state)}
+                      >
+                        <span>{ingredient.icon}</span>
+                        <strong>{state}</strong>
+                        {state === 'READY!' && <small>Drag to a plate</small>}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
-            {renderCafeStorage('cabinet', 'Cabinet', cabinetItems)}
+
+            <div className={styles.cafeStorageGroup}>
+              {renderCafeStorage('fridge', 'Refrigerator', fridgeItems)}
+              {renderCafeStorage('cabinet', 'Cabinet', cabinetItems)}
+            </div>
           </section>
 
 
