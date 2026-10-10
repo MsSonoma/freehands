@@ -11,8 +11,8 @@ const styles = { ...worldStyles, ...anatomyStyles, ...baseStyles, ...cafeStyles 
 const PLACES = [
   {
     id: 'suite',
-    name: 'Emily’s House',
-    icon: '🛏️',
+    name: 'Emilyâ€™s House',
+    icon: 'ðŸ›ï¸',
     x: 50,
     y: 82,
     role: 'Home Base',
@@ -21,7 +21,7 @@ const PLACES = [
   {
     id: 'lobby',
     name: 'Resort Lobby',
-    icon: '🏨',
+    icon: 'ðŸ¨',
     x: 50,
     y: 48,
     role: 'Hotel Guest',
@@ -29,17 +29,17 @@ const PLACES = [
   },
   {
     id: 'cafe',
-    name: 'Sunshine Café',
-    icon: '🥪',
+    name: 'Sunshine CafÃ©',
+    icon: 'ðŸ¥ª',
     x: 16,
     y: 38,
-    role: 'Café',
-    description: 'Grab a casual bite or work a café shift serving other resort guests.',
+    role: 'CafÃ©',
+    description: 'Grab a casual bite or work a cafÃ© shift serving other resort guests.',
   },
   {
     id: 'bank',
     name: 'Resort Bank',
-    icon: '🏦',
+    icon: 'ðŸ¦',
     x: 82,
     y: 37,
     role: 'Banker',
@@ -48,7 +48,7 @@ const PLACES = [
   {
     id: 'market',
     name: 'Market Street',
-    icon: '🛒',
+    icon: 'ðŸ›’',
     x: 81,
     y: 66,
     role: 'Shopping',
@@ -57,21 +57,21 @@ const PLACES = [
   {
     id: 'studio',
     name: 'Design Studio',
-    icon: '👗',
+    icon: 'ðŸ‘—',
     x: 19,
     y: 66,
     role: 'Character Design',
-    description: 'Design Emily’s look with clothes, shoes, hair styles, and accessories.',
+    description: 'Design Emilyâ€™s look with clothes, shoes, hair styles, and accessories.',
   },
 ];
 
 const CAFE_RECIPES = [
-  { id:'burger', name:'Sunshine Burger', icon:'🍔', price:6, ingredients:['bun','patty','lettuce','tomato'], formula:'🍔 = 🫓 + 🍖 + 🥬 + 🍅' },
-  { id:'toastie', name:'Grilled Cheese', icon:'🥪', price:4, ingredients:['bread','cheese','tomato'], formula:'🥪 = 🍞 + 🧀 + 🍅' },
-  { id:'taco', name:'Sunshine Taco', icon:'🌮', price:5, ingredients:['tortilla','taco-meat','cheese','lettuce'], formula:'🌮 = ○ + 🍖 + 🧀 + 🥬' },
-  { id:'breakfast', name:'Cafe Breakfast', icon:'🍳', price:6, ingredients:['egg','bacon','toast'], formula:'🍳 = 🥚 + 🥓 + 🍞' },
+  { id:'burger', name:'Sunshine Burger', icon:'ðŸ”', price:6, ingredients:['bun','patty','lettuce','tomato'], formula:'ðŸ” = ðŸ«“ + ðŸ– + ðŸ¥¬ + ðŸ…' },
+  { id:'toastie', name:'Grilled Cheese', icon:'ðŸ¥ª', price:4, ingredients:['bread','cheese','tomato'], formula:'ðŸ¥ª = ðŸž + ðŸ§€ + ðŸ…' },
+  { id:'taco', name:'Sunshine Taco', icon:'ðŸŒ®', price:5, ingredients:['tortilla','taco-meat','cheese','lettuce'], formula:'ðŸŒ® = â—‹ + ðŸ– + ðŸ§€ + ðŸ¥¬' },
+  { id:'breakfast', name:'Cafe Breakfast', icon:'ðŸ³', price:6, ingredients:['egg','bacon','toast'], formula:'ðŸ³ = ðŸ¥š + ðŸ¥“ + ðŸž' },
 ];
-const CAFE_INGREDIENTS={bun:{icon:'🫓',name:'Bun',source:'cabinet'},patty:{icon:'🍖',name:'Patty',source:'fridge',cook:6500},lettuce:{icon:'🥬',name:'Lettuce',source:'fridge'},tomato:{icon:'🍅',name:'Tomato',source:'fridge'},bread:{icon:'🍞',name:'Bread',source:'cabinet',cook:5500},cheese:{icon:'🧀',name:'Cheese',source:'fridge'},tortilla:{icon:'○',name:'Tortilla',source:'cabinet'},'taco-meat':{icon:'🍖',name:'Taco Meat',source:'fridge',cook:6000},egg:{icon:'🥚',name:'Egg',source:'fridge',cook:5000},bacon:{icon:'🥓',name:'Bacon',source:'fridge',cook:7000},toast:{icon:'🍞',name:'Toast',source:'cabinet'}};
+const CAFE_INGREDIENTS={bun:{icon:'ðŸ«“',name:'Bun',source:'cabinet'},patty:{icon:'ðŸ–',name:'Patty',source:'fridge',cook:6500},lettuce:{icon:'ðŸ¥¬',name:'Lettuce',source:'fridge'},tomato:{icon:'ðŸ…',name:'Tomato',source:'fridge'},bread:{icon:'ðŸž',name:'Bread',source:'cabinet',cook:5500},cheese:{icon:'ðŸ§€',name:'Cheese',source:'fridge'},tortilla:{icon:'â—‹',name:'Tortilla',source:'cabinet'},'taco-meat':{icon:'ðŸ–',name:'Taco Meat',source:'fridge',cook:6000},egg:{icon:'ðŸ¥š',name:'Egg',source:'fridge',cook:5000},bacon:{icon:'ðŸ¥“',name:'Bacon',source:'fridge',cook:7000},toast:{icon:'ðŸž',name:'Toast',source:'cabinet'}};
 const CAFE_GUESTS=['Maya','Noah','Avery','Leo','Zoe','Kai'];
 
 function summarizeCafePlate(recipe, plate = []) {
@@ -120,10 +120,6 @@ const PALM_KITCHEN_RECIPES = [
   { id: 'dessert', name: 'Berry Sundae', icon: '\u{1F368}', ingredients: ['berries', 'cream', 'wafer'] },
 ];
 
-const PALM_KITCHEN_ORDER_MS = 50000;
-const PALM_KITCHEN_MAX_ORDERS = 3;
-const PALM_KITCHEN_TARGET_SERVES = PALM_KITCHEN_RECIPES.length;
-
 const DINING_DRINKS = [
   { id: 'water', name: 'Ice Water', icon: '\u{1F4A7}' },
   { id: 'lemonade', name: 'Lemonade', icon: '\u{1F34B}' },
@@ -155,210 +151,33 @@ const BANK_REQUESTS = [
   { action: 'withdrawal', answer: 28, words: 'Please withdraw twice fourteen Resort Bucks from my account.' },
 ];
 const CAFE_MENU = CAFE_RECIPES.map(({ id, name, icon, price }) => ({ id, name, icon, price }));
-const CREW_WORK_SCREENS = new Set([
-  'cafe-work',
-  'lobby-restaurant-work',
-  'lobby-custodian',
-  'bank-work',
-  'studio-beauty-work',
-  'studio-work',
-]);
-
-function crewWaitingActivity(screen, crewIndex = 0, playerName = 'Emily') {
-  if (screen === 'cafe-work') {
-    return {
-      placeId: 'cafe',
-      label: crewIndex % 2 === 0
-        ? 'sitting at a Sunshine Cafe table while ' + playerName + ' works'
-        : 'having a snack at Sunshine Cafe while ' + playerName + ' works',
-    };
-  }
-  if (screen === 'lobby-restaurant-work') {
-    return {
-      placeId: 'lobby',
-      label: crewIndex === 0
-        ? 'dining in Palm Court while ' + playerName + ' works'
-        : 'waiting in the Resort Lobby while ' + playerName + ' works',
-    };
-  }
-  if (screen === 'lobby-custodian') {
-    return {
-      placeId: 'lobby',
-      label: 'hanging out in the Resort Lobby while ' + playerName + ' works',
-    };
-  }
-  if (screen === 'bank-work') {
-    return {
-      placeId: 'bank',
-      label: 'waiting in the Resort Bank lobby while ' + playerName + ' works',
-    };
-  }
-  if (screen === 'studio-beauty-work') {
-    return {
-      placeId: 'studio',
-      label: 'browsing the Design Studio while ' + playerName + ' works at the Beauty Bar',
-    };
-  }
-  if (screen === 'studio-work') {
-    return {
-      placeId: 'studio',
-      label: 'hanging out in the Design Studio while ' + playerName + ' works',
-    };
-  }
-  return null;
-}
 
 const MARKET_ITEMS = [
-  { id: 'eggs', name: 'Eggs', icon: '\u{1F95A}', price: 3 },
-  { id: 'milk', name: 'Milk', icon: '\u{1F95B}', price: 3 },
-  { id: 'berries', name: 'Berries', icon: '\u{1F353}', price: 3 },
-  { id: 'bread', name: 'Bread', icon: '\u{1F35E}', price: 2 },
-  { id: 'cheese', name: 'Cheese', icon: '\u{1F9C0}', price: 3 },
-  { id: 'apples', name: 'Apples', icon: '\u{1F34E}', price: 2 },
-  { id: 'buns', name: 'Burger Buns', icon: '\u{1F35E}', price: 2 },
-  { id: 'burger-patty', name: 'Burger Patty', icon: '\u{1F969}', price: 4 },
-  { id: 'lettuce', name: 'Lettuce', icon: '\u{1F96C}', price: 2 },
-  { id: 'tomatoes', name: 'Tomatoes', icon: '\u{1F345}', price: 2 },
-  { id: 'tortillas', name: 'Tortillas', icon: '\u{1FAD3}', price: 2 },
-  { id: 'taco-meat', name: 'Taco Meat', icon: '\u{1F969}', price: 4 },
-  { id: 'bacon', name: 'Bacon', icon: '\u{1F953}', price: 3 },
-  { id: 'pasta', name: 'Pasta', icon: '\u{1F35D}', price: 3 },
-  { id: 'tomato-sauce', name: 'Tomato Sauce', icon: '\u{1F345}', price: 2 },
-  { id: 'herbs', name: 'Fresh Herbs', icon: '\u{1F33F}', price: 2 },
-  { id: 'chicken', name: 'Chicken', icon: '\u{1F357}', price: 4 },
-  { id: 'potatoes', name: 'Potatoes', icon: '\u{1F954}', price: 2 },
-  { id: 'salmon', name: 'Salmon', icon: '\u{1F41F}', price: 5 },
-  { id: 'lemon', name: 'Lemon', icon: '\u{1F34B}', price: 2 },
-  { id: 'vegetables', name: 'Vegetables', icon: '\u{1F966}', price: 3 },
-  { id: 'ravioli', name: 'Ravioli', icon: '\u{1F95F}', price: 4 },
-  { id: 'ice-cream', name: 'Ice Cream', icon: '\u{1F368}', price: 3 },
-  { id: 'wafer', name: 'Wafer Cookies', icon: '\u{1F36A}', price: 2 },
-  { id: 'soap', name: 'Soap', icon: '\u{1F9FC}', price: 2 },
-  { id: 'paper-towels', name: 'Paper Towels', icon: '\u{1F9FB}', price: 3 },
-  { id: 'sunscreen', name: 'Sunscreen', icon: '\u{1F9F4}', price: 4 }
+  { id: 'eggs', name: 'Eggs', icon: '\u{1F95A}', price: 3, shelf: 'cold' },
+  { id: 'milk', name: 'Milk', icon: '\u{1F95B}', price: 3, shelf: 'cold' },
+  { id: 'berries', name: 'Berries', icon: '\u{1FAD0}', price: 3, shelf: 'produce' },
+  { id: 'bread', name: 'Bread', icon: '\u{1F35E}', price: 2, shelf: 'pantry' },
+  { id: 'cheese', name: 'Cheese', icon: '\u{1F9C0}', price: 3, shelf: 'cold' },
+  { id: 'apples', name: 'Apples', icon: '\u{1F34E}', price: 2, shelf: 'top' },
+  { id: 'bananas', name: 'Bananas', icon: '\u{1F34C}', price: 2, shelf: 'produce' },
+  { id: 'carrots', name: 'Carrots', icon: '\u{1F955}', price: 2, shelf: 'produce' },
+  { id: 'cereal', name: 'Cereal', icon: '\u{1F963}', price: 4, shelf: 'pantry' },
+  { id: 'pasta', name: 'Pasta', icon: '\u{1F35D}', price: 3, shelf: 'pantry' },
+  { id: 'juice', name: 'Juice', icon: '\u{1F9C3}', price: 3, shelf: 'top' },
+  { id: 'soap', name: 'Soap', icon: '\u{1F9FC}', price: 2, shelf: 'household' },
 ];
-
-const MARKET_ITEM_SHELF = {
-  eggs: 'cold',
-  milk: 'cold',
-  berries: 'produce',
-  bread: 'pantry',
-  cheese: 'cold',
-  apples: 'produce',
-  buns: 'pantry',
-  'burger-patty': 'cold',
-  lettuce: 'produce',
-  tomatoes: 'produce',
-  tortillas: 'pantry',
-  'taco-meat': 'cold',
-  bacon: 'cold',
-  pasta: 'top',
-  'tomato-sauce': 'top',
-  herbs: 'produce',
-  chicken: 'cold',
-  potatoes: 'produce',
-  salmon: 'cold',
-  lemon: 'produce',
-  vegetables: 'produce',
-  ravioli: 'cold',
-  'ice-cream': 'cold',
-  wafer: 'top',
-  soap: 'household',
-  'paper-towels': 'household',
-  sunscreen: 'household',
-};
 
 const MARKET_SHELVES = [
   { id: 'produce', label: 'Fresh Produce', icon: '\u{1F96C}' },
   { id: 'pantry', label: 'Groceries', icon: '\u{1F96B}' },
-  { id: 'cold', label: 'Cold Case', icon: '\u{2744}' },
   { id: 'household', label: 'Household', icon: '\u{1F9FD}' },
+  { id: 'cold', label: 'Cold Case', icon: '\u{2744}' },
 ];
 
-const marketShelfForItem = (item) => MARKET_ITEM_SHELF[item.id] || 'pantry';
-
-
 const RECIPES = [
-  {
-    id: 'grilled-cheese',
-    name: 'Grilled Cheese',
-    icon: '\u{1F96A}',
-    source: 'Known at Start',
-    learnedFrom: { place: 'cafe', recipeId: 'toastie' },
-    ingredients: { bread: 1, cheese: 1 },
-  },
-  {
-    id: 'sunshine-burger',
-    name: 'Sunshine Burger',
-    icon: '\u{1F354}',
-    source: 'Sunshine Cafe',
-    learnedFrom: { place: 'cafe', recipeId: 'burger' },
-    ingredients: { buns: 1, 'burger-patty': 1, lettuce: 1, tomatoes: 1 },
-  },
-  {
-    id: 'sunshine-taco',
-    name: 'Sunshine Taco',
-    icon: '\u{1F32E}',
-    source: 'Sunshine Cafe',
-    learnedFrom: { place: 'cafe', recipeId: 'taco' },
-    ingredients: { tortillas: 1, 'taco-meat': 1, cheese: 1, lettuce: 1 },
-  },
-  {
-    id: 'cafe-breakfast',
-    name: 'Cafe Breakfast',
-    icon: '\u{1F373}',
-    source: 'Sunshine Cafe',
-    learnedFrom: { place: 'cafe', recipeId: 'breakfast' },
-    ingredients: { eggs: 1, bacon: 1, bread: 1 },
-  },
-  {
-    id: 'garden-pasta',
-    name: 'Garden Pasta',
-    icon: '\u{1F35D}',
-    source: 'Palm Court',
-    learnedFrom: { place: 'palm', recipeId: 'pasta' },
-    ingredients: { pasta: 1, 'tomato-sauce': 1, herbs: 1 },
-  },
-  {
-    id: 'herb-chicken',
-    name: 'Herb Chicken Plate',
-    icon: '\u{1F357}',
-    source: 'Palm Court',
-    learnedFrom: { place: 'palm', recipeId: 'chicken' },
-    ingredients: { chicken: 1, potatoes: 1, herbs: 1 },
-  },
-  {
-    id: 'lemon-salmon',
-    name: 'Lemon Salmon Dinner',
-    icon: '\u{1F41F}',
-    source: 'Palm Court',
-    learnedFrom: { place: 'palm', recipeId: 'salmon' },
-    ingredients: { salmon: 1, lemon: 1, vegetables: 1 },
-  },
-  {
-    id: 'vegetable-ravioli',
-    name: 'Vegetable Ravioli',
-    icon: '\u{1F95F}',
-    source: 'Palm Court',
-    learnedFrom: { place: 'palm', recipeId: 'ravioli' },
-    ingredients: { ravioli: 1, 'tomato-sauce': 1, vegetables: 1 },
-  },
-  {
-    id: 'palm-breakfast',
-    name: 'Palm Court Breakfast',
-    icon: '\u{1F373}',
-    source: 'Palm Court',
-    learnedFrom: { place: 'palm', recipeId: 'breakfast' },
-    ingredients: { eggs: 1, bread: 1, berries: 1 },
-  },
-  {
-    id: 'berry-sundae',
-    name: 'Berry Sundae',
-    icon: '\u{1F368}',
-    source: 'Palm Court',
-    learnedFrom: { place: 'palm', recipeId: 'dessert' },
-    ingredients: { berries: 1, 'ice-cream': 1, wafer: 1 },
-  },
+  { id: 'berry-breakfast', name: 'Berry Breakfast', icon: '\u{1F95E}', ingredients: { eggs: 1, milk: 1, berries: 1 } },
+  { id: 'grilled-cheese', name: 'Grilled Cheese', icon: '\u{1F96A}', ingredients: { bread: 1, cheese: 1 } },
+  { id: 'fruit-bowl', name: 'Fruit Bowl', icon: '\u{1F963}', ingredients: { berries: 1, apples: 1 } },
 ];
 
 const CHARACTER_OPTIONS = {
@@ -699,6 +518,7 @@ function makeCafeOrderCustomer(number, guestName) {
     },
   };
 }
+
 const FASHION_CATEGORIES = [
   { id: 'shirt', label: 'Tops' },
   { id: 'bottoms', label: 'Bottoms' },
@@ -873,7 +693,6 @@ export default function KidsResort({ libraryHref = null }) {
   const [message, setMessage] = useState('');
   const [houseActivity, setHouseActivity] = useState(null);
   const [houseClosetCategory, setHouseClosetCategory] = useState('shirt');
-  const [learnedRecipeIds, setLearnedRecipeIds] = useState(() => new Set(['grilled-cheese']));
   const [houseMealId, setHouseMealId] = useState(null);
   const [houseMealBites, setHouseMealBites] = useState(0);
   const [houseWaterSipTick, setHouseWaterSipTick] = useState(0);
@@ -927,7 +746,6 @@ export default function KidsResort({ libraryHref = null }) {
   const [conversationError, setConversationError] = useState('');
   const [conversationOrigin, setConversationOrigin] = useState({ screen: 'map', placeId: 'suite' });
   const [companionIds, setCompanionIds] = useState([]);
-  const [companionFootOffsets, setCompanionFootOffsets] = useState({});
 
   const [studioMessage, setStudioMessage] = useState('');
   const [studioCreations, setStudioCreations] = useState(0);
@@ -939,16 +757,8 @@ export default function KidsResort({ libraryHref = null }) {
   const [studioTipResult, setStudioTipResult] = useState(null);
   const [studioBeautyDraft, setStudioBeautyDraft] = useState(null);
   const [artColor, setArtColor] = useState('#ff4f9a');
-  const [artTool, setArtTool] = useState('brush');
-  const [artSize, setArtSize] = useState(18);
-  const [artOpacity, setArtOpacity] = useState(1);
-  const [artPaper, setArtPaper] = useState('#fffaf3');
-  const [artHistoryVersion, setArtHistoryVersion] = useState(0);
   const artCanvasRef = useRef(null);
   const artDrawingRef = useRef(false);
-  const artGestureRef = useRef(null);
-  const artUndoRef = useRef([]);
-  const artRedoRef = useRef([]);
   const [studioDraftLook, setStudioDraftLook] = useState(null);
   const [ownedLooks, setOwnedLooks] = useState(() => new Set([
     fashionKey('shirt', LOOK_OPTIONS.shirt[0]),
@@ -969,14 +779,13 @@ export default function KidsResort({ libraryHref = null }) {
 
   const [palmKitchenActive, setPalmKitchenActive] = useState(false);
   const [palmKitchenServed, setPalmKitchenServed] = useState(0);
-  const [palmKitchenOrders, setPalmKitchenOrders] = useState([]);
+  const [palmKitchenPlate, setPalmKitchenPlate] = useState([]);
   const [palmKitchenStove, setPalmKitchenStove] = useState([]);
   const [palmKitchenStorage, setPalmKitchenStorage] = useState(null);
   const [palmKitchenDrag, setPalmKitchenDrag] = useState(null);
   const [palmKitchenNow, setPalmKitchenNow] = useState(Date.now());
   const [palmKitchenMessage, setPalmKitchenMessage] = useState('');
   const [palmKitchenFinished, setPalmKitchenFinished] = useState(false);
-  const palmKitchenOrderSequence = useRef(1);
 
   const [diningMealId, setDiningMealId] = useState(null);
   const [diningDrinkId, setDiningDrinkId] = useState('water');
@@ -1001,7 +810,6 @@ export default function KidsResort({ libraryHref = null }) {
   const [bankMessage, setBankMessage] = useState('');
   const [bankCustomer, setBankCustomer] = useState(() => makeCharacterPerson('random'));
 
-
   const [marketWorking, setMarketWorking] = useState(false);
   const [marketBasket, setMarketBasket] = useState([]);
   const [marketDrag, setMarketDrag] = useState(null);
@@ -1013,8 +821,8 @@ export default function KidsResort({ libraryHref = null }) {
   const [marketCustomer, setMarketCustomer] = useState(() => makeCharacterPerson('random'));
   const [marketSpillClean, setMarketSpillClean] = useState(false);
   const [marketTopShelfReady, setMarketTopShelfReady] = useState(false);
-  const [marketStockCartSpot, setMarketStockCartSpot] = useState({ x: 55, y: 72 });
-  const [marketShoppingCartSpot, setMarketShoppingCartSpot] = useState({ x: 24, y: 75 });
+  const [marketStockCartSpot, setMarketStockCartSpot] = useState({ x: 53, y: 72 });
+  const [marketShoppingCartSpot, setMarketShoppingCartSpot] = useState({ x: 23, y: 73 });
   const [marketMessage, setMarketMessage] = useState('Drag groceries into your cart, or clock in to work a Market Street shift.');
   const marketRoomRef = useRef(null);
 
@@ -1025,7 +833,7 @@ export default function KidsResort({ libraryHref = null }) {
   );
 
   const placeDisplayName = (place) =>
-    place?.id === 'suite' ? `${characterName}’s House` : place?.name;
+    place?.id === 'suite' ? `${characterName}â€™s House` : place?.name;
 
   const characterStyleFor = (appearance = character) => {
     const eyeChoice =
@@ -1072,35 +880,41 @@ export default function KidsResort({ libraryHref = null }) {
     () => companionIds.map((id) => people.find((person) => person.id === id)).filter(Boolean),
     [companionIds, people],
   );
-  const crewWaitingForWork = CREW_WORK_SCREENS.has(screen) || (screen === 'market' && marketWorking);
-  const sceneCompanions = crewWaitingForWork ? [] : activeCompanions;
+
+  const mapDepthRanks = useMemo(() => {
+    const entries = [
+      ...PLACES.map((place) => ({
+        key: `place:${place.id}`,
+        depth: buildingDepths[place.id] ?? place.y,
+        building: true,
+      })),
+      ...people.filter((person) => (person.location || 'map') === 'map').map((person) => ({
+        key: `person:${person.id}`,
+        depth: actorFootDepths[`person:${person.id}`] ?? person.spawn?.y ?? 60,
+        building: false,
+      })),
+      {
+        key: 'player',
+        depth: actorFootDepths.player ?? position.y,
+        building: false,
+      },
+    ];
+
+    entries.sort((first, second) => {
+      const depthDifference = first.depth - second.depth;
+      if (Math.abs(depthDifference) > 0.001) return depthDifference;
+      if (first.building === second.building) return first.key.localeCompare(second.key);
+      return first.building ? -1 : 1;
+    });
+
+    return Object.fromEntries(entries.map((entry, index) => [entry.key, 5 + index]));
+  }, [actorFootDepths, buildingDepths, people, position.y]);
 
   useEffect(() => {
     return () => {
       walkTokenRef.current += 1;
     };
   }, []);
-
-  useEffect(() => {
-    if (screen !== 'map' || people.length > 0) return undefined;
-
-    const delay = 120000 + Math.round(Math.random() * 180000);
-    const timer = window.setTimeout(() => {
-      setPeople((items) => (
-        items.length === 0
-          ? [makeCharacterPerson('random')]
-          : items
-      ));
-    }, delay);
-
-    return () => window.clearTimeout(timer);
-  }, [screen, people.length]);
-
-  useEffect(() => {
-    if (screen !== 'cafe-work' || cafeFinished) return undefined;
-    const timer=window.setInterval(()=>setCafeNow(Date.now()),250);
-    return ()=>window.clearInterval(timer);
-  }, [screen,cafeFinished]);
 
   useEffect(() => {
     if (screen !== 'map') return undefined;
@@ -1181,41 +995,28 @@ export default function KidsResort({ libraryHref = null }) {
       const panelRect = panel.getBoundingClientRect();
       if (!panelRect.height) return;
 
-      const footBottom = (node) => {
-        if (!node) return null;
+      const toDepth = (node, fallback) => {
+        if (!node) return fallback;
         const footElements = Array.from(node.querySelectorAll('[data-depth-foot="true"]'));
-        return footElements.length
+        const bottom = footElements.length
           ? Math.max(...footElements.map((foot) => foot.getBoundingClientRect().bottom))
           : node.getBoundingClientRect().bottom;
+        return Math.max(
+          0,
+          Math.min(100, ((bottom - panelRect.top) / panelRect.height) * 100),
+        );
       };
 
-      const depthFromBottom = (bottom, fallback) => (
-        bottom === null
-          ? fallback
-          : Math.max(
-              0,
-              Math.min(100, ((bottom - panelRect.top) / panelRect.height) * 100),
-            )
-      );
-
-      const playerFootBottom = footBottom(mapActorRefs.current.player);
-      const playerDepth = depthFromBottom(playerFootBottom, position.y);
-      const nextDepths = { player: playerDepth };
-      const footCorrections = {};
+      const nextDepths = {
+        player: toDepth(mapActorRefs.current.player, position.y),
+      };
 
       people.filter((person) => (person.location || 'map') === 'map').forEach((person) => {
         const key = `person:${person.id}`;
-        const personFootBottom = footBottom(mapActorRefs.current[key]);
-        const isCompanion = companionIds.includes(person.id);
-
-        nextDepths[key] = isCompanion
-          ? playerDepth
-          : depthFromBottom(personFootBottom, person.spawn?.y ?? 60);
-
-        if (isCompanion && playerFootBottom !== null && personFootBottom !== null) {
-          const correction = playerFootBottom - personFootBottom;
-          if (Math.abs(correction) > 0.35) footCorrections[person.id] = correction;
-        }
+        nextDepths[key] = toDepth(
+          mapActorRefs.current[key],
+          person.spawn?.y ?? 60,
+        );
       });
 
       setActorFootDepths((current) => {
@@ -1224,26 +1025,6 @@ export default function KidsResort({ libraryHref = null }) {
         const changed = currentKeys.length !== nextKeys.length
           || nextKeys.some((key) => Math.abs((current[key] ?? -1) - nextDepths[key]) > 0.02);
         return changed ? nextDepths : current;
-      });
-
-      setCompanionFootOffsets((current) => {
-        let changed = false;
-        const next = { ...current };
-        const activeIds = new Set(companionIds);
-
-        Object.keys(next).forEach((id) => {
-          if (!activeIds.has(id)) {
-            delete next[id];
-            changed = true;
-          }
-        });
-
-        Object.entries(footCorrections).forEach(([id, correction]) => {
-          next[id] = (current[id] || 0) + correction;
-          changed = true;
-        });
-
-        return changed ? next : current;
       });
     };
 
@@ -1256,33 +1037,24 @@ export default function KidsResort({ libraryHref = null }) {
       window.cancelAnimationFrame(firstFrame);
       if (secondFrame) window.cancelAnimationFrame(secondFrame);
     };
-  }, [companionFootOffsets, companionIds, people, position.x, position.y, screen]);
+  }, [people, position.x, position.y, screen]);
 
   useEffect(() => {
     if (companionIds.length === 0) return;
 
-    setPeople((items) => items.map((person) => {
-      const crewIndex = companionIds.indexOf(person.id);
-      if (crewIndex < 0) return person;
+    const togetherLocation = screen === 'map' || screen === 'conversation' ? 'map' : placeId;
+    const togetherLabel = screen === 'map'
+      ? 'walking around the resort with ' + characterName
+      : 'doing activities with ' + characterName;
 
-      const waiting = screen === 'market' && marketWorking
-        ? {
-            placeId: 'market',
-            label: 'browsing Market Street while ' + characterName + ' works',
-          }
-        : crewWaitingActivity(screen, crewIndex, characterName);
-      const togetherLocation = waiting?.placeId
-        || (screen === 'map' || screen === 'conversation' ? 'map' : placeId);
-      const togetherLabel = waiting?.label
-        || (screen === 'map'
-          ? 'walking around the resort with ' + characterName
-          : 'doing activities with ' + characterName);
+    setPeople((items) => items.map((person) => {
+      if (!companionIds.includes(person.id)) return person;
 
       const nextActivity = {
-        id: waiting ? 'crew-waiting-for-work' : 'walk-together',
+        id: 'walk-together',
         placeId: togetherLocation === 'map' ? placeId : togetherLocation,
         label: togetherLabel,
-        phase: waiting ? 'waiting' : (screen === 'map' ? 'traveling' : 'inside'),
+        phase: screen === 'map' ? 'traveling' : 'inside',
         durationMs: null,
         endsAt: null,
       };
@@ -1294,7 +1066,8 @@ export default function KidsResort({ libraryHref = null }) {
         isRoaming: false,
       };
     }));
-  }, [characterName, companionIds, marketWorking, placeId, screen]);
+  }, [companionIds, screen]);
+
   useEffect(() => {
     if (people.length === 0) return undefined;
 
@@ -1407,6 +1180,27 @@ export default function KidsResort({ libraryHref = null }) {
   }, [companionIds, conversationPersonId, people.length, screen, selectedPersonId]);
 
   useEffect(() => {
+    if (screen !== 'map' || people.length > 0) return undefined;
+
+    const delay = 120000 + Math.round(Math.random() * 180000);
+    const timer = window.setTimeout(() => {
+      setPeople((items) => (
+        items.length === 0
+          ? [makeCharacterPerson('random')]
+          : items
+      ));
+    }, delay);
+
+    return () => window.clearTimeout(timer);
+  }, [screen, people.length]);
+
+  useEffect(() => {
+    if (screen !== 'cafe-work' || cafeFinished) return undefined;
+    const timer=window.setInterval(()=>setCafeNow(Date.now()),250);
+    return ()=>window.clearInterval(timer);
+  }, [screen,cafeFinished]);
+
+  useEffect(() => {
     if (screen !== 'cafe-work' || cafeFinished) return undefined;
     const delay = Math.max(11000, 19000 - cafeServed * 900);
     const maxOrders = cafeServed < 4 ? 2 : 3;
@@ -1420,37 +1214,6 @@ export default function KidsResort({ libraryHref = null }) {
     return () => window.clearInterval(timer);
   }, [screen, cafeFinished, cafeServed]);
 
-  const mapDepthRanks = useMemo(() => {
-    const entries = [
-      ...PLACES.map((place) => ({
-        key: `place:${place.id}`,
-        depth: buildingDepths[place.id] ?? place.y,
-        building: true,
-      })),
-      ...people.filter((person) => (person.location || 'map') === 'map').map((person) => ({
-        key: `person:${person.id}`,
-        depth: companionIds.includes(person.id)
-          ? (actorFootDepths.player ?? position.y)
-          : (actorFootDepths[`person:${person.id}`] ?? person.spawn?.y ?? 60),
-        building: false,
-      })),
-      {
-        key: 'player',
-        depth: actorFootDepths.player ?? position.y,
-        building: false,
-      },
-    ];
-
-    entries.sort((first, second) => {
-      const depthDifference = first.depth - second.depth;
-      if (Math.abs(depthDifference) > 0.001) return depthDifference;
-      if (first.building === second.building) return first.key.localeCompare(second.key);
-      return first.building ? -1 : 1;
-    });
-
-    return Object.fromEntries(entries.map((entry, index) => [entry.key, 5 + index]));
-  }, [actorFootDepths, buildingDepths, companionIds, people, position.y]);
-
   useEffect(() => {
     if (screen !== 'cafe-work') return;
     setCafeOrders((items) => items.filter((order) => cafeNow - order.born < 45000));
@@ -1462,35 +1225,12 @@ export default function KidsResort({ libraryHref = null }) {
     return () => window.clearInterval(timer);
   }, [screen, palmKitchenActive, palmKitchenFinished]);
 
-  useEffect(() => {
-    if (screen !== 'lobby-restaurant-work' || !palmKitchenActive || palmKitchenFinished) return undefined;
-    const delay = Math.max(9000, 14000 - palmKitchenServed * 700);
-    const timer = window.setInterval(() => {
-      setPalmKitchenOrders((items) => {
-        if (items.length >= PALM_KITCHEN_MAX_ORDERS) return items;
-        const orderNumber = palmKitchenOrderSequence.current;
-        palmKitchenOrderSequence.current += 1;
-        return [...items, makePalmKitchenOrder(orderNumber)];
-      });
-    }, delay);
-    return () => window.clearInterval(timer);
-  }, [screen, palmKitchenActive, palmKitchenFinished, palmKitchenServed]);
-
-  useEffect(() => {
-    if (screen !== 'lobby-restaurant-work' || !palmKitchenActive || palmKitchenFinished) return;
-    setPalmKitchenOrders((items) => {
-      const fresh = items.filter((order) => palmKitchenNow - order.born < PALM_KITCHEN_ORDER_MS);
-      if (fresh.length === items.length) return items;
-      if (fresh.length > 0) return fresh;
-      const orderNumber = palmKitchenOrderSequence.current;
-      palmKitchenOrderSequence.current += 1;
-      return [makePalmKitchenOrder(orderNumber, palmKitchenNow)];
-    });
-  }, [palmKitchenNow, screen, palmKitchenActive, palmKitchenFinished]);
-
   const placeCompanionsBehind = (playerPoint, dx, dy, moving = true) => {
     if (companionIds.length === 0) return;
 
+    const distance = Math.hypot(dx, dy) || 1;
+    const unitX = dx / distance;
+    const unitY = dy / distance;
     const walkDirection = Math.abs(dx) > Math.abs(dy)
       ? (dx < 0 ? 'left' : 'right')
       : (dy < 0 ? 'back' : 'front');
@@ -1500,7 +1240,7 @@ export default function KidsResort({ libraryHref = null }) {
       if (partyIndex < 0) return person;
 
       const followGap = 4.2 + partyIndex * 2.7;
-      const horizontalDirection = Math.abs(dx) > 0.05 ? Math.sign(dx) : (partyIndex % 2 === 0 ? 1 : -1);
+      const sideOffset = partyIndex % 2 === 0 ? 0 : 1.1;
 
       return {
         ...person,
@@ -1516,8 +1256,8 @@ export default function KidsResort({ libraryHref = null }) {
           endsAt: null,
         },
         spawn: {
-          x: clamp(playerPoint.x - horizontalDirection * followGap, 4, 96),
-          y: clamp(playerPoint.y, 7, 91),
+          x: clamp(playerPoint.x - unitX * followGap + unitY * sideOffset, 4, 96),
+          y: clamp(playerPoint.y - unitY * followGap - unitX * sideOffset, 7, 91),
         },
       };
     }));
@@ -1733,7 +1473,33 @@ export default function KidsResort({ libraryHref = null }) {
         : item
     )));
 
-    return true;
+      if (!joining) {
+        return {
+          ...item,
+          location: 'map',
+          isRoaming: false,
+          activity: makeCharacterActivity(item.activity?.id),
+        };
+      }
+
+      return {
+        ...item,
+        location: 'map',
+        isRoaming: false,
+        spawn: {
+          x: clamp(position.x - 4, 4, 96),
+          y: clamp(position.y + 1.5, 7, 91),
+        },
+        activity: {
+          id: 'walk-together',
+          placeId,
+          label: 'walking around the resort with ' + characterName,
+          phase: 'traveling',
+          durationMs: null,
+          endsAt: null,
+        },
+      };
+    }));
   };
 
   const stopWalkTogether = (person) => {
@@ -1965,9 +1731,6 @@ export default function KidsResort({ libraryHref = null }) {
 
   const openScreen = (nextScreen) => {
     setMessage('');
-    if (nextScreen === 'lobby-restaurant-work' && (!palmKitchenActive || palmKitchenFinished)) {
-      startPalmKitchenShift();
-    }
     setScreen(nextScreen);
   };
 
@@ -2219,98 +1982,49 @@ export default function KidsResort({ libraryHref = null }) {
     };
   };
 
-  const learnRestaurantRecipe = (place, recipeId) => {
-    const homeRecipe = RECIPES.find(
-      (recipe) => recipe.learnedFrom?.place === place && recipe.learnedFrom.recipeId === recipeId,
-    );
-    if (!homeRecipe || learnedRecipeIds.has(homeRecipe.id)) return null;
-
-    setLearnedRecipeIds((current) => {
-      if (current.has(homeRecipe.id)) return current;
-      const next = new Set(current);
-      next.add(homeRecipe.id);
-      return next;
-    });
-    return homeRecipe;
-  };
-
-  useEffect(() => {
-    if (screen !== 'cafe-work' || cafeFinished) return;
-
-    const readyOrder = cafeOrders.find((order) => {
-      if (cafeNow - order.born >= 45000) return false;
-      const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
-      if (!recipe) return false;
-      const plateState = summarizeCafePlate(recipe, order.plate || []);
-      return plateState.complete && plateState.extras.length === 0;
-    });
-    if (!readyOrder) return;
-
-    const recipe = CAFE_RECIPES.find((item) => item.id === readyOrder.recipeId);
-    const homeRecipe = RECIPES.find(
-      (item) => item.learnedFrom?.place === 'cafe' && item.learnedFrom.recipeId === recipe.id,
-    );
-    const learnedRecipe = homeRecipe && !learnedRecipeIds.has(homeRecipe.id) ? homeRecipe : null;
-    if (learnedRecipe) {
-      setLearnedRecipeIds((current) => {
-        if (current.has(learnedRecipe.id)) return current;
-        const next = new Set(current);
-        next.add(learnedRecipe.id);
-        return next;
-      });
+  const serveCafeOrder = (order) => {
+    const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
+    const plateState = summarizeCafePlate(recipe, order.plate || []);
+    if (!plateState.complete) {
+      setCafeMessage(`That plate isn't ${recipe.icon} yet. It is still missing ingredients.`);
+      return;
     }
-
+    if (plateState.extras.length > 0) {
+      setCafeMessage('That plate has an extra ingredient. Move it to another plate or put it back in storage.');
+      return;
+    }
     const served = cafeServed + 1;
-    setCafeOrders((items) => items.filter((item) => item.id !== readyOrder.id));
+    setCafeOrders((items) => items.filter((item) => item.id !== order.id));
     setCafeServed(served);
     setBucks((value) => value + 4);
-    setCafeMessage(`${readyOrder.guest} loved it! +4 Resort Bucks${learnedRecipe ? ` · Recipe learned: ${learnedRecipe.name}!` : ''}`);
+    setCafeMessage(`${order.guest} loved it! +4 Resort Bucks`);
     if (served >= 8) {
       setCafeFinished(true);
       setBucks((value) => value + 8);
       setBadges((items) => items.includes('Sunshine Cafe Shift') ? items : [...items, 'Sunshine Cafe Shift']);
     }
-  }, [cafeFinished, cafeNow, cafeOrders, cafeServed, learnedRecipeIds, screen]);
-
-  const palmKitchenRecipeFor = (number) => PALM_KITCHEN_RECIPES[number % PALM_KITCHEN_RECIPES.length];
-
-  const makePalmKitchenOrder = (number, born = Date.now()) => {
-    const recipe = palmKitchenRecipeFor(number);
-    return {
-      id: String(born) + '-palm-' + number,
-      number,
-      recipeId: recipe.id,
-      born,
-      plate: [],
-    };
   };
+  const palmKitchenRecipeFor = (served) => PALM_KITCHEN_RECIPES[served % PALM_KITCHEN_RECIPES.length];
 
   const startPalmKitchenShift = () => {
-    const now = Date.now();
-    palmKitchenOrderSequence.current = 1;
     setPalmKitchenActive(true);
     setPalmKitchenServed(0);
-    setPalmKitchenOrders([makePalmKitchenOrder(0, now)]);
+    setPalmKitchenPlate([]);
     setPalmKitchenStove([]);
     setPalmKitchenStorage(null);
     setPalmKitchenDrag(null);
-    setPalmKitchenNow(now);
+    setPalmKitchenNow(Date.now());
     setPalmKitchenFinished(false);
-    setPalmKitchenMessage('First dinner ticket is in. More orders will arrive during the rush, so watch the clocks.');
+    setPalmKitchenMessage('First dinner ticket is in. Drag ingredients from storage. Cook hot ingredients on the stove, then drag everything onto the plate.');
   };
 
-  const removePalmKitchenPlateIngredient = (orderId, index) => {
-    setPalmKitchenOrders((items) => items.map((order) => {
-      if (order.id !== orderId) return order;
-      const plate = [...(order.plate || [])];
-      plate.splice(index, 1);
-      return { ...order, plate };
-    }));
+  const removePalmKitchenPlateIngredient = (index) => {
+    setPalmKitchenPlate((items) => items.filter((_, itemIndex) => itemIndex !== index));
   };
 
   const dropPalmKitchenOnStorage = (storage, payload) => {
     if (payload.from !== 'plate') {
-      setPalmKitchenMessage('Ingredients come out of storage. Drag them to the stove or a plate.');
+      setPalmKitchenMessage('Ingredients come out of storage. Drag them to the stove or plate.');
       return;
     }
     const ingredient = PALM_KITCHEN_INGREDIENTS[payload.ingredientId];
@@ -2321,12 +2035,12 @@ export default function KidsResort({ libraryHref = null }) {
         : ingredient.source === 'freezer'
           ? 'freezer'
           : 'pantry cabinet';
-      setPalmKitchenMessage(ingredient.name + ' belongs in the ' + home + '.');
+      setPalmKitchenMessage(`${ingredient.name} belongs in the ${home}.`);
       return;
     }
-    removePalmKitchenPlateIngredient(payload.orderId, payload.index);
+    removePalmKitchenPlateIngredient(payload.index);
     const home = storage === 'fridge' ? 'refrigerator' : storage === 'freezer' ? 'freezer' : 'pantry cabinet';
-    setPalmKitchenMessage(ingredient.name + ' put back in the ' + home + '.');
+    setPalmKitchenMessage(`${ingredient.name} put back in the ${home}.`);
   };
 
   const dropPalmKitchenOnStove = (payload) => {
@@ -2337,7 +2051,7 @@ export default function KidsResort({ libraryHref = null }) {
       return;
     }
     if (!ingredient.cook) {
-      setPalmKitchenMessage(ingredient.name + ' does not need cooking. Drag it straight to a plate.');
+      setPalmKitchenMessage(`${ingredient.name} does not need cooking. Drag it straight to the plate.`);
       return;
     }
     if (palmKitchenStove.length >= 3) {
@@ -2345,20 +2059,19 @@ export default function KidsResort({ libraryHref = null }) {
       return;
     }
     setPalmKitchenStove((items) => [...items, {
-      id: String(Date.now()) + '-' + payload.ingredientId,
+      id: `${Date.now()}-${payload.ingredientId}`,
       ingredientId: payload.ingredientId,
       started: Date.now(),
     }]);
-    setPalmKitchenMessage(ingredient.name + ' is cooking. Drag it to a plate when it turns READY.');
+    setPalmKitchenMessage(`${ingredient.name} is cooking. Drag it to the plate when it turns READY.`);
   };
 
-  const dropPalmKitchenOnPlate = (orderId, payload) => {
+  const dropPalmKitchenOnPlate = (payload) => {
     const ingredient = PALM_KITCHEN_INGREDIENTS[payload.ingredientId];
-    const targetOrder = palmKitchenOrders.find((order) => order.id === orderId);
-    if (!ingredient || !targetOrder) return;
+    if (!ingredient) return;
 
     if (payload.from === 'storage' && ingredient.cook) {
-      setPalmKitchenMessage(ingredient.name + ' needs to be cooked on the stove first.');
+      setPalmKitchenMessage(`${ingredient.name} needs to be cooked on the stove first.`);
       return;
     }
 
@@ -2367,37 +2080,31 @@ export default function KidsResort({ libraryHref = null }) {
       if (!stoveItem) return;
       const elapsed = Date.now() - stoveItem.started;
       if (elapsed < ingredient.cook) {
-        setPalmKitchenMessage(ingredient.name + ' still needs a little more time.');
+        setPalmKitchenMessage(`${ingredient.name} still needs a little more time.`);
         return;
       }
       if (elapsed > ingredient.cook + 5500) {
         setPalmKitchenStove((items) => items.filter((item) => item.id !== stoveItem.id));
-        setPalmKitchenMessage(ingredient.name + ' overcooked. Start that ingredient again.');
+        setPalmKitchenMessage(`${ingredient.name} overcooked. Start that ingredient again.`);
         return;
       }
       setPalmKitchenStove((items) => items.filter((item) => item.id !== stoveItem.id));
     }
 
-    if (payload.from === 'plate' && payload.orderId === orderId) return;
+    if (payload.from === 'plate') return;
 
-    setPalmKitchenOrders((items) => items.map((order) => {
-      const plate = [...(order.plate || [])];
-      if (payload.from === 'plate' && order.id === payload.orderId) plate.splice(payload.index, 1);
-      if (order.id === orderId) plate.push(payload.ingredientId);
-      return { ...order, plate };
-    }));
-
-    setPalmKitchenMessage(ingredient.name + ' moved to ticket #' + (targetOrder.number + 1) + '.');
+    setPalmKitchenPlate((items) => [...items, payload.ingredientId]);
+    setPalmKitchenMessage(`${ingredient.name} moved to the plate.`);
   };
 
   const finishPalmKitchenDrop = (clientX, clientY, payload) => {
     const dropTarget = document.elementFromPoint(clientX, clientY)?.closest('[data-palm-kitchen-drop]');
     if (!dropTarget) {
-      setPalmKitchenMessage('Drop ingredients on a pass plate, stove, refrigerator, freezer, or pantry cabinet.');
+      setPalmKitchenMessage('Drop ingredients on the plate, stove, refrigerator, freezer, or pantry cabinet.');
       return;
     }
     const dropType = dropTarget.dataset.palmKitchenDrop;
-    if (dropType === 'plate') dropPalmKitchenOnPlate(dropTarget.dataset.orderId, payload);
+    if (dropType === 'plate') dropPalmKitchenOnPlate(payload);
     else if (dropType === 'stove') dropPalmKitchenOnStove(payload);
     else if (dropType === 'storage') dropPalmKitchenOnStorage(dropTarget.dataset.storage, payload);
   };
@@ -2438,50 +2145,39 @@ export default function KidsResort({ libraryHref = null }) {
         const ingredient = PALM_KITCHEN_INGREDIENTS[stoveItem.ingredientId];
         if (state === 'Overcooked') {
           setPalmKitchenStove((items) => items.filter((item) => item.id !== stoveItem.id));
-          setPalmKitchenMessage(ingredient.name + ' overcooked. It was cleared from the stove.');
+          setPalmKitchenMessage(`${ingredient.name} overcooked. It was cleared from the stove.`);
         } else {
-          setPalmKitchenMessage(ingredient.name + ' is still cooking.');
+          setPalmKitchenMessage(`${ingredient.name} is still cooking.`);
         }
       },
     };
   };
 
-  const servePalmKitchenOrder = (order) => {
-    if (!palmKitchenActive || palmKitchenFinished || !order) return;
-    const recipe = PALM_KITCHEN_RECIPES.find((item) => item.id === order.recipeId);
-    if (!recipe) return;
+  const servePalmKitchenOrder = () => {
+    if (!palmKitchenActive || palmKitchenFinished) return;
+    const recipe = palmKitchenRecipeFor(palmKitchenServed);
     const expected = [...recipe.ingredients].sort().join('|');
-    const actual = [...(order.plate || [])].sort().join('|');
+    const actual = [...palmKitchenPlate].sort().join('|');
     if (expected !== actual) {
-      setPalmKitchenMessage('Ticket #' + (order.number + 1) + ' is not ' + recipe.name + ' yet. Check the ticket and fix the plate.');
+      setPalmKitchenMessage(`That plate is not ${recipe.name} yet. Check the ticket and fix the plate.`);
       return;
     }
-    const learnedRecipe = learnRestaurantRecipe('palm', recipe.id);
     const served = palmKitchenServed + 1;
+    setPalmKitchenPlate([]);
     setPalmKitchenStorage(null);
     setPalmKitchenServed(served);
     setBucks((value) => value + 6);
-
-    if (served >= PALM_KITCHEN_TARGET_SERVES) {
-      setPalmKitchenOrders([]);
+    if (served >= 5) {
       setPalmKitchenFinished(true);
       setBucks((value) => value + 10);
       setBadges((items) => (items.includes('Palm Court Kitchen Shift') ? items : [...items, 'Palm Court Kitchen Shift']));
-      setPalmKitchenMessage(`Dinner rush complete! +10 Resort Buck shift bonus.${learnedRecipe ? ` Recipe learned: ${learnedRecipe.name}!` : ''}`);
+      setPalmKitchenMessage('Dinner rush complete! +10 Resort Buck shift bonus.');
       return;
     }
-
-    setPalmKitchenOrders((items) => {
-      const remaining = items.filter((item) => item.id !== order.id);
-      if (remaining.length > 0) return remaining;
-      const orderNumber = palmKitchenOrderSequence.current;
-      palmKitchenOrderSequence.current += 1;
-      return [makePalmKitchenOrder(orderNumber)];
-    });
-    setPalmKitchenMessage(
-      `${recipe.name} sent out from ticket #${order.number + 1}! +6 Resort Bucks.${learnedRecipe ? ` Recipe learned: ${learnedRecipe.name}!` : ''}`,
-    );
+    const nextRecipe = palmKitchenRecipeFor(served);
+    setPalmKitchenMessage(`${recipe.name} sent out! +6 Resort Bucks. Next ticket: ${nextRecipe.name}.`);
   };
+
   const orderPalmCourtMeal = (meal) => {
     if (diningMealId && diningBites < 3) {
       setMessage('Finish the meal already at the table before ordering another entree.');
@@ -2496,7 +2192,7 @@ export default function KidsResort({ libraryHref = null }) {
     setDiningBites(0);
     setDiningAction('order');
     setDiningActionTick((value) => value + 1);
-    setMessage(`${meal.name} is on the table. Click the food to take a bite.`);
+    setMessage(`${meal.name} is on the table. Take three bites to enjoy the meal.`);
   };
 
   const takeDiningBite = () => {
@@ -2591,7 +2287,7 @@ export default function KidsResort({ libraryHref = null }) {
     setMeals((items) => [...items, meal.name]);
     const foodBadge = `Tried ${meal.name}`;
     setBadges((items) => (items.includes(foodBadge) ? items : [...items, foodBadge]));
-    setMessage(`${characterName} enjoyed ${meal.name}. ⭐ Food badge earned!`);
+    setMessage(`${characterName} enjoyed ${meal.name}. â­ Food badge earned!`);
   };
 
   const buyMarketItem = (item) => {
@@ -2627,14 +2323,14 @@ export default function KidsResort({ libraryHref = null }) {
     }
   };
 
-  const moveMarketCart = (event, explicitPayload = null) => {
+  const moveMarketStockCart = (event, explicitPayload = null) => {
     const payload = marketDropPayload(event, explicitPayload);
     if (!['stock-cart', 'shopping-cart'].includes(payload?.type)) return;
     const room = marketRoomRef.current;
     if (!room) return;
     const rect = room.getBoundingClientRect();
     const x = Math.max(12, Math.min(88, ((event.clientX - rect.left) / rect.width) * 100));
-    const y = Math.max(58, Math.min(86, ((event.clientY - rect.top) / rect.height) * 100));
+    const y = Math.max(54, Math.min(84, ((event.clientY - rect.top) / rect.height) * 100));
     if (payload.type === 'stock-cart') {
       setMarketStockCartSpot({ x, y });
       setMarketMessage('Stock cart moved. Drag boxes from it to the matching shelf.');
@@ -2651,9 +2347,9 @@ export default function KidsResort({ libraryHref = null }) {
     if (!marketWorking || payload?.type !== 'stock-item') return;
     const item = MARKET_ITEMS.find((entry) => entry.id === payload.itemId);
     if (!item) return;
-    const targetShelf = marketShelfForItem(item);
+    const targetShelf = item.shelf === 'top' ? 'top' : item.shelf;
     if (targetShelf !== shelfId) {
-      setMarketMessage(item.name + ' belongs in ' + (targetShelf === 'cold' ? 'the cold case' : targetShelf === 'top' ? 'the top shelf' : targetShelf) + '.');
+      setMarketMessage(`${item.name} belongs in ${targetShelf === 'cold' ? 'the cold case' : targetShelf === 'top' ? 'the top shelf' : targetShelf}.`);
       return;
     }
     if (shelfId === 'top' && !marketTopShelfReady) {
@@ -2661,7 +2357,7 @@ export default function KidsResort({ libraryHref = null }) {
       return;
     }
     if ((marketStock[item.id] || 0) <= 0) {
-      setMarketMessage('The stock cart is out of ' + item.name + '.');
+      setMarketMessage(`The stock cart is out of ${item.name}.`);
       return;
     }
     setMarketStock((current) => ({ ...current, [item.id]: Math.max(0, (current[item.id] || 0) - 1) }));
@@ -2669,7 +2365,7 @@ export default function KidsResort({ libraryHref = null }) {
     setMarketStocked((value) => value + 1);
     setBucks((value) => value + 1);
     setMarketDrag(null);
-    setMarketMessage(item.name + ' stocked. +1 Resort Buck');
+    setMarketMessage(`${item.name} stocked. +1 Resort Buck`);
   };
 
   const dropMarketLadder = (event, explicitPayload = null) => {
@@ -2687,18 +2383,13 @@ export default function KidsResort({ libraryHref = null }) {
     if (marketWorking || payload?.type !== 'product') return;
     const item = MARKET_ITEMS.find((entry) => entry.id === payload.itemId);
     if (!item) return;
-    if (marketShelfForItem(item) === 'top' && !marketTopShelfReady) {
-      setMarketMessage('Use the step ladder to reach ' + item.name + ' on the top shelf.');
+    if (item.shelf === 'top' && !marketTopShelfReady) {
+      setMarketMessage(`Use the step ladder to reach ${item.name} on the top shelf.`);
       return;
     }
-    if ((marketShelfStock[item.id] || 0) <= 0) {
-      setMarketMessage(item.name + ' is sold out on the shelf right now.');
-      return;
-    }
-    setMarketShelfStock((current) => ({ ...current, [item.id]: Math.max(0, (current[item.id] || 0) - 1) }));
     setMarketBasket((items) => [...items, item.id]);
     setMarketDrag(null);
-    setMarketMessage(item.name + ' added to your shopping cart.');
+    setMarketMessage(`${item.name} added to your shopping cart.`);
   };
 
   const checkoutMarketBasket = () => {
@@ -2712,7 +2403,7 @@ export default function KidsResort({ libraryHref = null }) {
     }
     const total = marketBasket.reduce((sum, id) => sum + (MARKET_ITEMS.find((item) => item.id === id)?.price || 0), 0);
     if (bucks < total) {
-      setMarketMessage('You need ' + total + ' Resort Bucks to buy everything in your cart.');
+      setMarketMessage(`You need ${total} Resort Bucks to buy everything in your cart.`);
       return;
     }
     setBucks((value) => value - total);
@@ -2724,7 +2415,7 @@ export default function KidsResort({ libraryHref = null }) {
       return next;
     });
     setMarketBasket([]);
-    setMarketMessage('Checkout complete. ' + total + ' Resort Bucks spent. Your purchases were sent home.');
+    setMarketMessage(`Checkout complete. ${total} Resort Bucks spent. Groceries were sent home.`);
   };
 
   const helpMarketCustomer = (event, explicitPayload = null) => {
@@ -2734,18 +2425,13 @@ export default function KidsResort({ libraryHref = null }) {
     const item = MARKET_ITEMS.find((entry) => entry.id === payload.itemId);
     if (!item) return;
     if (item.id !== marketWantedItem.id) {
-      setMarketMessage(marketCustomer.name + ' is looking for ' + marketWantedItem.name + ', not ' + item.name + '.');
+      setMarketMessage(`${marketCustomer.name} is looking for ${marketWantedItem.name}, not ${item.name}.`);
       return;
     }
-    if (marketShelfForItem(item) === 'top' && !marketTopShelfReady) {
-      setMarketMessage(marketWantedItem.name + ' is up high. Bring the step ladder to the top shelf first.');
+    if (item.shelf === 'top' && !marketTopShelfReady) {
+      setMarketMessage(`${marketWantedItem.name} is up high. Bring the step ladder to the top shelf first.`);
       return;
     }
-    if ((marketShelfStock[item.id] || 0) <= 0) {
-      setMarketMessage('That shelf is empty. Restock ' + item.name + ' before helping the customer.');
-      return;
-    }
-    setMarketShelfStock((current) => ({ ...current, [item.id]: Math.max(0, (current[item.id] || 0) - 1) }));
     setMarketCustomersHelped((value) => value + 1);
     setBucks((value) => value + 3);
     setMarketCustomerIndex((value) => value + 1);
@@ -2772,7 +2458,7 @@ export default function KidsResort({ libraryHref = null }) {
     }
     const fakeEvent = { preventDefault() {}, clientX, clientY };
     const dropType = dropTarget.dataset.marketDrop;
-    if (dropType === 'room' && ['stock-cart', 'shopping-cart'].includes(payload.type)) moveMarketCart(fakeEvent, payload);
+    if (dropType === 'room' && ['stock-cart', 'shopping-cart'].includes(payload.type)) moveMarketStockCart(fakeEvent, payload);
     else if (dropType === 'cart') addMarketItemToCart(fakeEvent, payload);
     else if (dropType === 'customer') helpMarketCustomer(fakeEvent, payload);
     else if (dropType === 'spill') cleanMarketSpill(fakeEvent, payload);
@@ -2810,26 +2496,17 @@ export default function KidsResort({ libraryHref = null }) {
   const toggleMarketShift = () => {
     setMarketWorking((working) => {
       const next = !working;
-      if (next) {
-        setMarketSpillClean(false);
-        setMarketMessage('Shift started. Stock shelves, help customers, reach the top shelf, and clean the spill.');
-      } else {
-        setMarketMessage('Shift ended. You can shop for your own house again.');
-      }
+      setMarketMessage(next
+        ? 'Shift started. Stock shelves, help customers, reach the top shelf, and clean the spill.'
+        : 'Shift ended. You can shop for your own house again.');
       return next;
     });
   };
 
   const canCook = (recipe) =>
-    learnedRecipeIds.has(recipe.id)
-    && Object.entries(recipe.ingredients).every(([id, count]) => (inventory[id] || 0) >= count);
+    Object.entries(recipe.ingredients).every(([id, count]) => (inventory[id] || 0) >= count);
 
   const cookRecipe = (recipe) => {
-    if (!learnedRecipeIds.has(recipe.id)) {
-      setMessage(`${characterName} has not learned ${recipe.name} yet. Work a restaurant kitchen to learn it.`);
-      return;
-    }
-
     if (houseMealId) {
       setMessage('Finish the meal on the dining table before cooking another one.');
       return;
@@ -2871,9 +2548,10 @@ export default function KidsResort({ libraryHref = null }) {
     if (bites >= 3) {
       setHouseMealId(null);
       setHouseMealBites(0);
-      const recipeStar = `Recipe Star: ${meal.name}`;
-      setBadges((items) => (items.includes(recipeStar) ? items : [...items, recipeStar]));
-      setMessage(`${characterName} finished ${meal.name}. ⭐ ${meal.name} Recipe Star earned!`);
+      setBadges((items) => (
+        items.includes('House Dining Star') ? items : [...items, 'House Dining Star']
+      ));
+      setMessage(`${characterName} finished ${meal.name}. ⭐ House Dining Star badge earned!`);
       return;
     }
 
@@ -3052,7 +2730,7 @@ export default function KidsResort({ libraryHref = null }) {
     setStudioCreations((value) => value + 1);
     setBucks((value) => value + reward);
     setBadges((items) => (items.includes(badge) ? items : [...items, badge]));
-    setStudioMessage('Your customer loves your ' + label + '! +' + reward + ' Resort Bucks · ⭐ badge earned');
+    setStudioMessage('Your customer loves your ' + label + '! +' + reward + ' Resort Bucks Â· â­ badge earned');
   };
 
   const artPoint = (event) => {
@@ -3060,246 +2738,24 @@ export default function KidsResort({ libraryHref = null }) {
     if (!canvas) return null;
     const rect = canvas.getBoundingClientRect();
     return {
-      x: Math.max(0, Math.min(canvas.width, (event.clientX - rect.left) * (canvas.width / rect.width))),
-      y: Math.max(0, Math.min(canvas.height, (event.clientY - rect.top) * (canvas.height / rect.height))),
+      x: (event.clientX - rect.left) * (canvas.width / rect.width),
+      y: (event.clientY - rect.top) * (canvas.height / rect.height),
     };
-  };
-
-  const artSnapshot = () => {
-    const canvas = artCanvasRef.current;
-    if (!canvas) return null;
-    return canvas.getContext('2d').getImageData(0, 0, canvas.width, canvas.height);
-  };
-
-  const restoreArtSnapshot = (snapshot) => {
-    const canvas = artCanvasRef.current;
-    if (!canvas || !snapshot) return;
-    const ctx = canvas.getContext('2d');
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.putImageData(snapshot, 0, 0);
-  };
-
-  const rememberArtState = () => {
-    const snapshot = artSnapshot();
-    if (!snapshot) return null;
-    artUndoRef.current = [...artUndoRef.current.slice(-19), snapshot];
-    artRedoRef.current = [];
-    setArtHistoryVersion((value) => value + 1);
-    return snapshot;
-  };
-
-  const undoArt = () => {
-    if (artUndoRef.current.length === 0) return;
-    const current = artSnapshot();
-    const previous = artUndoRef.current[artUndoRef.current.length - 1];
-    artUndoRef.current = artUndoRef.current.slice(0, -1);
-    if (current) artRedoRef.current = [...artRedoRef.current.slice(-19), current];
-    restoreArtSnapshot(previous);
-    setArtHistoryVersion((value) => value + 1);
-  };
-
-  const redoArt = () => {
-    if (artRedoRef.current.length === 0) return;
-    const current = artSnapshot();
-    const next = artRedoRef.current[artRedoRef.current.length - 1];
-    artRedoRef.current = artRedoRef.current.slice(0, -1);
-    if (current) artUndoRef.current = [...artUndoRef.current.slice(-19), current];
-    restoreArtSnapshot(next);
-    setArtHistoryVersion((value) => value + 1);
-  };
-
-  const artHexToRgba = (hex, alpha = 1) => {
-    const value = hex.replace('#', '');
-    const normalized = value.length === 3
-      ? value.split('').map((part) => part + part).join('')
-      : value.padEnd(6, '0').slice(0, 6);
-    return [
-      parseInt(normalized.slice(0, 2), 16),
-      parseInt(normalized.slice(2, 4), 16),
-      parseInt(normalized.slice(4, 6), 16),
-      Math.round(Math.max(0, Math.min(1, alpha)) * 255),
-    ];
-  };
-
-  const colorToHex = (red, green, blue) =>
-    '#' + [red, green, blue].map((value) => value.toString(16).padStart(2, '0')).join('');
-
-  const configureArtContext = (ctx, tool = artTool) => {
-    ctx.globalCompositeOperation = tool === 'eraser' ? 'destination-out' : 'source-over';
-    ctx.globalAlpha = tool === 'marker' ? Math.min(.42, artOpacity) : artOpacity;
-    ctx.strokeStyle = artColor;
-    ctx.fillStyle = artColor;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.lineWidth =
-      tool === 'pencil'
-        ? Math.max(1, artSize * .28)
-        : tool === 'marker'
-          ? artSize * 1.8
-          : tool === 'eraser'
-            ? artSize * 1.55
-            : artSize;
-  };
-
-  const drawArtShape = (ctx, tool, start, end) => {
-    configureArtContext(ctx, tool);
-    ctx.beginPath();
-    if (tool === 'line') {
-      ctx.moveTo(start.x, start.y);
-      ctx.lineTo(end.x, end.y);
-      ctx.stroke();
-      return;
-    }
-    const left = Math.min(start.x, end.x);
-    const top = Math.min(start.y, end.y);
-    const width = Math.abs(end.x - start.x);
-    const height = Math.abs(end.y - start.y);
-    if (tool === 'rectangle') {
-      ctx.strokeRect(left, top, width, height);
-      return;
-    }
-    if (tool === 'ellipse') {
-      ctx.ellipse(
-        left + width / 2,
-        top + height / 2,
-        Math.max(.5, width / 2),
-        Math.max(.5, height / 2),
-        0,
-        0,
-        Math.PI * 2,
-      );
-      ctx.stroke();
-    }
-  };
-
-  const floodFillArt = (point) => {
-    const canvas = artCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const image = ctx.getImageData(0, 0, canvas.width, canvas.height);
-    const data = image.data;
-    const width = canvas.width;
-    const height = canvas.height;
-    const startX = Math.max(0, Math.min(width - 1, Math.floor(point.x)));
-    const startY = Math.max(0, Math.min(height - 1, Math.floor(point.y)));
-    const startPixel = (startY * width + startX) * 4;
-    const target = [
-      data[startPixel],
-      data[startPixel + 1],
-      data[startPixel + 2],
-      data[startPixel + 3],
-    ];
-    const replacement = artHexToRgba(artColor, artOpacity);
-    if (target.every((value, index) => value === replacement[index])) return;
-
-    const matchesTarget = (pixelIndex) => {
-      const offset = pixelIndex * 4;
-      return (
-        Math.abs(data[offset] - target[0]) <= 8 &&
-        Math.abs(data[offset + 1] - target[1]) <= 8 &&
-        Math.abs(data[offset + 2] - target[2]) <= 8 &&
-        Math.abs(data[offset + 3] - target[3]) <= 8
-      );
-    };
-    const paintPixel = (pixelIndex) => {
-      const offset = pixelIndex * 4;
-      data[offset] = replacement[0];
-      data[offset + 1] = replacement[1];
-      data[offset + 2] = replacement[2];
-      data[offset + 3] = replacement[3];
-    };
-
-    const startIndex = startY * width + startX;
-    const queue = new Int32Array(width * height);
-    let head = 0;
-    let tail = 0;
-    queue[tail++] = startIndex;
-    paintPixel(startIndex);
-
-    while (head < tail) {
-      const index = queue[head++];
-      const x = index % width;
-      const y = Math.floor(index / width);
-      if (x > 0) {
-        const neighbor = index - 1;
-        if (matchesTarget(neighbor)) {
-          paintPixel(neighbor);
-          queue[tail++] = neighbor;
-        }
-      }
-      if (x < width - 1) {
-        const neighbor = index + 1;
-        if (matchesTarget(neighbor)) {
-          paintPixel(neighbor);
-          queue[tail++] = neighbor;
-        }
-      }
-      if (y > 0) {
-        const neighbor = index - width;
-        if (matchesTarget(neighbor)) {
-          paintPixel(neighbor);
-          queue[tail++] = neighbor;
-        }
-      }
-      if (y < height - 1) {
-        const neighbor = index + width;
-        if (matchesTarget(neighbor)) {
-          paintPixel(neighbor);
-          queue[tail++] = neighbor;
-        }
-      }
-    }
-
-    ctx.putImageData(image, 0, 0);
-  };
-
-  const pickArtColor = (point) => {
-    const canvas = artCanvasRef.current;
-    if (!canvas) return;
-    const ctx = canvas.getContext('2d');
-    const pixel = ctx.getImageData(
-      Math.max(0, Math.min(canvas.width - 1, Math.floor(point.x))),
-      Math.max(0, Math.min(canvas.height - 1, Math.floor(point.y))),
-      1,
-      1,
-    ).data;
-    if (pixel[3] === 0) {
-      setArtColor(artPaper);
-    } else {
-      setArtColor(colorToHex(pixel[0], pixel[1], pixel[2]));
-    }
-    setArtTool('brush');
   };
 
   const beginArt = (event) => {
     const canvas = artCanvasRef.current;
     const point = artPoint(event);
     if (!canvas || !point) return;
-
-    if (artTool === 'picker') {
-      pickArtColor(point);
-      return;
-    }
-
-    const before = rememberArtState();
-
-    if (artTool === 'fill') {
-      floodFillArt(point);
-      return;
-    }
-
     artDrawingRef.current = true;
     canvas.setPointerCapture?.(event.pointerId);
-    artGestureRef.current = { start: point, before };
     const ctx = canvas.getContext('2d');
-
-    if (['line', 'rectangle', 'ellipse'].includes(artTool)) return;
-
-    configureArtContext(ctx);
+    ctx.strokeStyle = artColor;
+    ctx.lineWidth = 12;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
     ctx.beginPath();
     ctx.moveTo(point.x, point.y);
-    ctx.lineTo(point.x + .01, point.y + .01);
-    ctx.stroke();
   };
 
   const drawArt = (event) => {
@@ -3308,46 +2764,17 @@ export default function KidsResort({ libraryHref = null }) {
     const point = artPoint(event);
     if (!canvas || !point) return;
     const ctx = canvas.getContext('2d');
-
-    if (['line', 'rectangle', 'ellipse'].includes(artTool)) {
-      const gesture = artGestureRef.current;
-      if (!gesture) return;
-      restoreArtSnapshot(gesture.before);
-      drawArtShape(ctx, artTool, gesture.start, point);
-      return;
-    }
-
-    configureArtContext(ctx);
     ctx.lineTo(point.x, point.y);
     ctx.stroke();
   };
 
-  const endArt = (event) => {
-    if (!artDrawingRef.current) return;
-    const canvas = artCanvasRef.current;
-    const point = event ? artPoint(event) : null;
-    const gesture = artGestureRef.current;
-
-    if (
-      canvas &&
-      point &&
-      gesture &&
-      ['line', 'rectangle', 'ellipse'].includes(artTool)
-    ) {
-      const ctx = canvas.getContext('2d');
-      restoreArtSnapshot(gesture.before);
-      drawArtShape(ctx, artTool, gesture.start, point);
-    }
-
+  const endArt = () => {
     artDrawingRef.current = false;
-    artGestureRef.current = null;
-    if (event?.pointerId != null) canvas?.releasePointerCapture?.(event.pointerId);
   };
 
   const clearArt = () => {
     const canvas = artCanvasRef.current;
     if (!canvas) return;
-    rememberArtState();
     canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
     setStudioMessage('Fresh canvas ready.');
   };
@@ -3431,7 +2858,7 @@ export default function KidsResort({ libraryHref = null }) {
     setStudioMessage(
       owned
         ? option.name + ' is on!'
-        : option.name + ' is yours and on! · ⭐ Personal Style badge earned'
+        : option.name + ' is yours and on! Â· â­ Personal Style badge earned'
     );
   };
 
@@ -3702,7 +3129,7 @@ export default function KidsResort({ libraryHref = null }) {
   const renderPlayerParty = (pose = 'standing') => (
     <>
       {renderCharacter(false, look, character, characterName, pose)}
-      {sceneCompanions.map((person, index) => (
+      {activeCompanions.map((person, index) => (
         renderCharacter(false, person.look, person.character, person.name, pose, index)
       ))}
     </>
@@ -3840,10 +3267,10 @@ export default function KidsResort({ libraryHref = null }) {
     <main className={[styles.gameShell, styles.studioModeGameShell].join(' ')}>
       <section className={[styles.topBar, styles.studioTopBar].join(' ')}>
         <button className={styles.backButton} type="button" onClick={() => setScreen('studio')}>
-          ← Design Studio
+          â† Design Studio
         </button>
         <div className={styles.brand}>{title}</div>
-        <div className={styles.wallet}>💵 {bucks} Resort Bucks</div>
+        <div className={styles.wallet}>ðŸ’µ {bucks} Resort Bucks</div>
       </section>
 
       <section className={styles.studioExperienceRoom} data-mode={mode}>
@@ -3858,7 +3285,7 @@ export default function KidsResort({ libraryHref = null }) {
         </div>
         <div className={styles.studioExperienceActors}>
           {actors}
-          {sceneCompanions.map((person, index) => (
+          {activeCompanions.map((person, index) => (
             renderStudioActor(person.look, person.character, person.name, 'companion', '', index)
           ))}
         </div>
@@ -3872,10 +3299,10 @@ export default function KidsResort({ libraryHref = null }) {
     <main className={styles.gameShell}>
       <section className={styles.topBar}>
         <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>
-          ← Resort Map
+          â† Resort Map
         </button>
         <div className={styles.brand}>Kids Resort</div>
-        <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+        <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
       </section>
       <section className={styles.interiorScene}>
         <header className={styles.interiorHeader}>
@@ -3885,9 +3312,9 @@ export default function KidsResort({ libraryHref = null }) {
             <h1>{title}</h1>
           </div>
         </header>
-        {sceneCompanions.length > 0 && (
+        {activeCompanions.length > 0 && (
           <div className={styles.interiorCompanionGroup} aria-label="Friends walking together">
-            {sceneCompanions.map((person, index) => (
+            {activeCompanions.map((person, index) => (
               <div key={person.id} className={styles.interiorCompanion} style={{ '--party-index': index }}>
                 {renderCharacter(false, person.look, person.character, person.name)}
                 <span>{person.name}</span>
@@ -3938,31 +3365,15 @@ export default function KidsResort({ libraryHref = null }) {
           <button className={styles.backButton} type="button" onClick={endConversation}>Back</button>
           <div className={styles.brand}>Talking with {conversationPerson.name}</div>
           <div className={styles.conversationTopActions}>
-            {conversationPersonFollowing ? (
-              <button
-                type="button"
-                className={styles.conversationCustomizeButton}
-                data-active="true"
-                data-stop="true"
-                onClick={() => {
-                  stopWalkTogether(conversationPerson);
-                  endConversation();
-                }}
-              >
-                Stop walking together
-              </button>
-            ) : (
-              <button
-                type="button"
-                className={styles.conversationCustomizeButton}
-                disabled={crewFull}
-                onClick={() => {
-                  if (startWalkTogether(conversationPerson)) endConversation();
-                }}
-              >
-                {crewFull ? 'Crew full' : 'Walk together'}
-              </button>
-            )}
+            <button
+              type="button"
+              className={styles.conversationCustomizeButton}
+              data-active={companionIds.includes(conversationPerson.id) ? 'true' : 'false'}
+              aria-pressed={companionIds.includes(conversationPerson.id)}
+              onClick={() => toggleWalkTogether(conversationPerson)}
+            >
+              Walk together
+            </button>
             <button
               type="button"
               className={styles.conversationCustomizeButton}
@@ -4048,9 +3459,9 @@ export default function KidsResort({ libraryHref = null }) {
     return (
       <main className={[styles.gameShell, styles.cafeGameShell].join(' ')}>
         <section className={[styles.topBar, styles.cafeTopBar].join(' ')}>
-          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>← Resort Map</button>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>â† Resort Map</button>
           <div className={styles.brand}>Kids Resort</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
         </section>
         <section className={styles.cafeInterior}>
           <div className={styles.cafeWallArt}><span>☀️</span><strong>Sunshine Café</strong><small>Good food. Bright days.</small></div>
@@ -4058,15 +3469,15 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={styles.cafePendantRow} aria-hidden="true"><span>💡</span><span>💡</span><span>💡</span></div>
           <div className={[styles.cafeSceneCharacter, styles.cafeWaitingCharacter].join(' ')} aria-label={`${characterName} waiting in the cafe`}>{renderPlayerParty()}</div>
           <div className={styles.cafeDining}>
-            <div className={styles.cafeBooth}><span className={styles.cafePlant}>🪴</span><div className={styles.cafeBench} /><div className={styles.cafeTable}><span>🌼</span></div></div>
-            <div className={styles.cafeTables}><div className={styles.cafeTableGroup}><span className={styles.cafeChair}>🪑</span><div className={styles.cafeSmallTable}><span>🍽️</span></div><span className={styles.cafeChair}>🪑</span></div><div className={styles.cafeTableGroup}><span className={styles.cafeChair}>🪑</span><div className={styles.cafeSmallTable}><span>🍽️</span></div><span className={styles.cafeChair}>🪑</span></div></div>
-            <button className={styles.cafeModeButton} type="button" onClick={() => setScreen('cafe-food')}>🍽️ Eat Here</button>
+            <div className={styles.cafeBooth}><span className={styles.cafePlant}>ðŸª´</span><div className={styles.cafeBench} /><div className={styles.cafeTable}><span>ðŸŒ¼</span></div></div>
+            <div className={styles.cafeTables}><div className={styles.cafeTableGroup}><span className={styles.cafeChair}>ðŸª‘</span><div className={styles.cafeSmallTable}><span>ðŸ½ï¸</span></div><span className={styles.cafeChair}>ðŸª‘</span></div><div className={styles.cafeTableGroup}><span className={styles.cafeChair}>ðŸª‘</span><div className={styles.cafeSmallTable}><span>ðŸ½ï¸</span></div><span className={styles.cafeChair}>ðŸª‘</span></div></div>
+            <button className={styles.cafeModeButton} type="button" onClick={() => setScreen('cafe-food')}>ðŸ½ï¸ Eat Here</button>
           </div>
           <div className={styles.cafeCounter}>
-            <div className={styles.counterShelf}><span>🥤</span><span>🧁</span><span>🍪</span><span>☕</span></div>
-            <div className={styles.counterTop}>🧾　🔔　🥤</div>
-            <div className={styles.counterFront}><span>SUNSHINE CAFÉ</span><i /><i /><i /></div>
-            <button className={styles.cafeModeButton} type="button" onClick={startCafeShift}>🧑‍🍳 Start Shift</button>
+            <div className={styles.counterShelf}><span>ðŸ¥¤</span><span>ðŸ§</span><span>ðŸª</span><span>â˜•</span></div>
+            <div className={styles.counterTop}>ðŸ§¾ã€€ðŸ””ã€€ðŸ¥¤</div>
+            <div className={styles.counterFront}><span>SUNSHINE CAFÃ‰</span><i /><i /><i /></div>
+            <button className={styles.cafeModeButton} type="button" onClick={startCafeShift}>ðŸ§‘â€ðŸ³ Start Shift</button>
           </div>
           <div className={styles.cafeFloorLine} aria-hidden="true" />
         </section>
@@ -4135,16 +3546,16 @@ export default function KidsResort({ libraryHref = null }) {
     return (
       <main className={[styles.gameShell, styles.cafeWorkGameShell].join(' ')}>
         <section className={[styles.topBar, styles.cafeWorkTopBar].join(' ')}>
-          <button className={styles.backButton} type="button" onClick={() => setScreen('cafe')}>← Café</button>
-          <div className={styles.brand}>Sunshine Café Shift</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('cafe')}>â† CafÃ©</button>
+          <div className={styles.brand}>Sunshine CafÃ© Shift</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
         </section>
         <section className={[styles.cafeWorkScene, styles.cafeWorkViewport].join(' ')}>
           <div className={[styles.cafeWorkBackdrop, styles.cafeWorkResponsiveBackdrop].join(' ')} aria-hidden="true">
-            <div className={styles.workWindow}><span>🌴</span><span>☀️</span></div>
-            <div className={styles.workWallSign}>SUNSHINE CAFÉ</div>
-            <div className={styles.workPendantRow}><span>💡</span><span>💡</span><span>💡</span></div>
-            <div className={styles.workServiceCounter}><span>🥤</span><span>🔔</span><span>🧁</span></div>
+            <div className={styles.workWindow}><span>ðŸŒ´</span><span>â˜€ï¸</span></div>
+            <div className={styles.workWallSign}>SUNSHINE CAFÃ‰</div>
+            <div className={styles.workPendantRow}><span>ðŸ’¡</span><span>ðŸ’¡</span><span>ðŸ’¡</span></div>
+            <div className={styles.workServiceCounter}><span>ðŸ¥¤</span><span>ðŸ””</span><span>ðŸ§</span></div>
           </div>
 
           <div className={[styles.cafeSceneCharacter, styles.cafeWorkCharacter].join(' ')} aria-label={`${characterName} working in the cafe kitchen`}>
@@ -4182,23 +3593,37 @@ export default function KidsResort({ libraryHref = null }) {
             <div className={styles.cafeKitchenLeftStack}>
               <section className={styles.cafeOrderBoard}>
                 <div className={styles.cafeOrderBoardHeader}>
-                  <b>Orders · {cafeServed}/8</b>
+                  <b>Orders Â· {cafeServed}/8</b>
                   <span>Each order gets its own plate</span>
                 </div>
                 <div className={styles.cafeOrderStations}>
                   {cafeOrders.map((order) => {
                     const recipe = CAFE_RECIPES.find((item) => item.id === order.recipeId);
                     const age = cafeNow - order.born;
-                    const mood = age < 12000 ? '🙂' : age < 24000 ? '😐' : age < 35000 ? '☹️' : '😡';
+                    const mood = age < 12000 ? 'ðŸ™‚' : age < 24000 ? 'ðŸ˜' : age < 35000 ? 'â˜¹ï¸' : 'ðŸ˜¡';
                     const plate = order.plate || [];
                     const plateState = summarizeCafePlate(recipe, plate);
                     const visibleItems = plateState.complete
                       ? plateState.extras
                       : plate.map((ingredientId, index) => ({ ingredientId, index }));
+                    const readyToServe = plateState.complete && plateState.extras.length === 0;
                     return (
                       <article key={order.id} className={styles.cafeOrderStation}>
                         <div className={styles.cafeTicket}>
-                          <span className={styles.cafeOrderFace} aria-hidden="true">{mood}</span>
+                          <button
+                            type="button"
+                            className={[styles.cafeOrderFace, readyToServe ? styles.cafeOrderFaceReady : ''].join(' ')}
+                            aria-disabled={!readyToServe}
+                            aria-label={readyToServe ? `Serve ${recipe.name} to ${order.guest}` : `${order.guest} is waiting for ${recipe.name}`}
+                            title={readyToServe ? 'Serve this order' : 'Finish the plate first'}
+                            onClick={() => {
+                              if (readyToServe) serveCafeOrder(order);
+                              else if (plateState.extras.length) setCafeMessage(`Remove the extra ingredient before serving ${order.guest}.`);
+                              else setCafeMessage(`Finish ${order.guest}'s plate before serving.`);
+                            }}
+                          >
+                            {mood}
+                          </button>
                           <strong>{order.guest}</strong>
                           <span className={styles.cafeTicketFood}>{recipe.icon}</span>
                           <small>{Math.max(0, Math.ceil((45000 - age) / 1000))}s</small>
@@ -4280,10 +3705,10 @@ export default function KidsResort({ libraryHref = null }) {
           )}
           {cafeFinished && (
             <div className={styles.cafeWin}>
-              <div>⭐</div>
+              <div>â­</div>
               <h2>Shift complete!</h2>
               <p>8 Resort Buck bonus earned.</p>
-              <button className={styles.primaryButton} type="button" onClick={() => setScreen('cafe')}>Back to Café</button>
+              <button className={styles.primaryButton} type="button" onClick={() => setScreen('cafe')}>Back to CafÃ©</button>
             </div>
           )}
         </section>
@@ -4295,9 +3720,9 @@ export default function KidsResort({ libraryHref = null }) {
     return (
       <main className={[styles.gameShell, styles.cafeGameShell].join(' ')}>
         <section className={[styles.topBar, styles.cafeTopBar].join(' ')}>
-          <button className={styles.backButton} type="button" onClick={() => setScreen('cafe')}>← Café</button>
-          <div className={styles.brand}>Sunshine Café Dining</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('cafe')}>â† CafÃ©</button>
+          <div className={styles.brand}>Sunshine CafÃ© Dining</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
         </section>
         <section className={styles.cafeDiningRoom}>
           <div className={styles.cafeDiningWallSign}><span>☀️</span><strong>Sunshine Dining</strong><small>Take a table and enjoy.</small></div>
@@ -4307,12 +3732,12 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={[styles.cafeDiner, styles.cafeDinerOne].join(' ')}>
             <div className={styles.cafeDinerChair} aria-hidden="true" />
             <div className={styles.cafeDinerFigure}>{renderCharacter(false, cafeAmbientPeople[0].look, cafeAmbientPeople[0].character, cafeAmbientPeople[0].name, 'seated')}</div>
-            <div className={styles.cafeDinerTable}><span>🥪</span><span>🥤</span></div>
+            <div className={styles.cafeDinerTable}><span>ðŸ¥ª</span><span>ðŸ¥¤</span></div>
           </div>
           <div className={[styles.cafeDiner, styles.cafeDinerTwo].join(' ')}>
             <div className={styles.cafeDinerChair} aria-hidden="true" />
             <div className={styles.cafeDinerFigure}>{renderCharacter(false, cafeAmbientPeople[1].look, cafeAmbientPeople[1].character, cafeAmbientPeople[1].name, 'seated')}</div>
-            <div className={styles.cafeDinerTable}><span>🍔</span><span>🥤</span></div>
+            <div className={styles.cafeDinerTable}><span>ðŸ”</span><span>ðŸ¥¤</span></div>
           </div>
           <div className={styles.cafeDiningMenu}>
             <strong>What would you like?</strong>
@@ -4324,7 +3749,7 @@ export default function KidsResort({ libraryHref = null }) {
               ))}
             </div>
           </div>
-          <div className={styles.cafeDiningPlaceSetting} aria-hidden="true"><span>{diningMeal?.icon || '🍽️'}</span></div>
+          <div className={styles.cafeDiningPlaceSetting} aria-hidden="true"><span>{diningMeal?.icon || 'ðŸ½ï¸'}</span></div>
           <div className={styles.cafeDiningMessage} aria-live="polite">{message || `${characterName} is ready to eat.`}</div>
           <div className={styles.cafeDiningFloorLine} aria-hidden="true" />
         </section>
@@ -4336,9 +3761,9 @@ export default function KidsResort({ libraryHref = null }) {
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
-          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>← Resort Map</button>
+          <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>â† Resort Map</button>
           <div className={styles.brand}>Resort Lobby</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
         </section>
         <section className={styles.lobbyRoom}>
           <div className={styles.lobbyWallMark}><strong>KIDS RESORT</strong><span>Main Lobby</span></div>
@@ -4348,12 +3773,12 @@ export default function KidsResort({ libraryHref = null }) {
             onClick={() => openScreen('lobby-custodian')}
             aria-label="Start resort work from the front desk"
           >
-            <span className={styles.lobbyReceptionBell} aria-hidden="true">🔔</span>
+            <span className={styles.lobbyReceptionBell} aria-hidden="true">ðŸ””</span>
             <i aria-hidden="true" />
             <b>FRONT DESK</b>
             <em>Start Resort Work</em>
           </button>
-          <div className={styles.lobbyPlant} aria-hidden="true">🌴</div>
+          <div className={styles.lobbyPlant} aria-hidden="true">ðŸŒ´</div>
           <div className={styles.lobbyFloorLine} aria-hidden="true" />
 
           <div className={styles.lobbyDoorRow} aria-label="Lobby destinations">
@@ -4386,12 +3811,13 @@ export default function KidsResort({ libraryHref = null }) {
   }
 
   if (screen === 'lobby-restaurant-work') {
+    const kitchenRecipe = palmKitchenRecipeFor(palmKitchenServed);
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
-          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
-          <div className={styles.brand}>Palm Court · Kitchen</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>â† Lobby</button>
+          <div className={styles.brand}>Palm Court Â· Kitchen</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
         </section>
         <section className={[styles.lobbyExperienceRoom, styles.palmCourtWorkRoom, styles.palmKitchenGame].join(' ')}>
           <div className={styles.palmCourtSign}><strong>PALM COURT</strong><span>Kitchen Shift</span></div>
@@ -4400,29 +3826,18 @@ export default function KidsResort({ libraryHref = null }) {
           <div className={[styles.lobbyCharacter, styles.restaurantWorkerCharacter].join(' ')} aria-label={`${characterName} working in the Palm Court kitchen`}>{renderPlayerParty()}</div>
           <div className={[styles.lobbyCharacter, styles.restaurantGuestCharacter].join(' ')} aria-label={`${lobbyAmbientPeople[0].name} waiting for a Palm Court meal`}>{renderCharacter(false, lobbyAmbientPeople[0].look, lobbyAmbientPeople[0].character, lobbyAmbientPeople[0].name, 'seated')}</div>
 
+          {!palmKitchenActive ? (
+            <button className={styles.palmKitchenStart} type="button" onClick={startPalmKitchenShift}>
+              <strong>Start Dinner Shift</strong>
+              <span>Cook 5 plated meals for Palm Court guests.</span>
+            </button>
+          ) : (
             <>
-              <div className={styles.palmKitchenTicketRail} aria-label="Palm Court order queue">
-                {palmKitchenOrders.map((order) => {
-                  const recipe = PALM_KITCHEN_RECIPES.find((item) => item.id === order.recipeId);
-                  const seconds = Math.max(0, Math.ceil((PALM_KITCHEN_ORDER_MS - (palmKitchenNow - order.born)) / 1000));
-                  return (
-                    <aside
-                      key={order.id}
-                      className={styles.palmKitchenTicket}
-                      data-urgent={seconds <= 10 ? 'true' : 'false'}
-                    >
-                      <div className={styles.palmKitchenTicketTop}>
-                        <b>#{order.number + 1}</b>
-                        <time>{seconds}s</time>
-                      </div>
-                      <strong>{recipe ? recipe.icon : ''} {recipe ? recipe.name : ''}</strong>
-                      <span className={styles.palmKitchenTicketIngredients}>
-                        {recipe ? recipe.ingredients.map((id) => PALM_KITCHEN_INGREDIENTS[id].name).join(' · ') : ''}
-                      </span>
-                    </aside>
-                  );
-                })}
-              </div>
+              <aside className={styles.palmKitchenTicket}>
+                <small>ORDER {Math.min(palmKitchenServed + 1, 5)} / 5</small>
+                <strong>{kitchenRecipe.icon} {kitchenRecipe.name}</strong>
+                <span>{kitchenRecipe.ingredients.map((id) => PALM_KITCHEN_INGREDIENTS[id].name).join(' + ')}</span>
+              </aside>
 
               <div className={styles.palmKitchenStorageRow}>
                 {[
@@ -4517,62 +3932,37 @@ export default function KidsResort({ libraryHref = null }) {
                 </div>
               </div>
 
-              <div className={styles.palmKitchenPass} aria-label="Palm Court pass counter">
-                <div className={styles.palmKitchenPassPlates}>
-                  {palmKitchenOrders.map((order) => {
-                    const recipe = PALM_KITCHEN_RECIPES.find((item) => item.id === order.recipeId);
-                    const expected = [...(recipe ? recipe.ingredients : [])].sort().join('|');
-                    const actual = [...(order.plate || [])].sort().join('|');
-                    const ready = Boolean(expected) && expected === actual;
-                    return (
-                      <article
-                        key={order.id}
-                        className={[
-                          styles.palmKitchenOrderPlate,
-                          palmKitchenDrag ? styles.palmKitchenDropTarget : '',
-                        ].join(' ')}
-                        data-ready={ready ? 'true' : 'false'}
-                        data-palm-kitchen-drop="plate"
-                        data-order-id={order.id}
-                      >
-                        <span className={styles.palmKitchenPlateNumber}>#{order.number + 1}</span>
-                        <div className={styles.palmKitchenOrderPlateContents}>
-                          {(order.plate || []).length === 0
-                            ? <small>Drop</small>
-                            : order.plate.map((id, index) => {
-                              const item = PALM_KITCHEN_INGREDIENTS[id];
-                              return (
-                                <button
-                                  key={order.id + '-' + id + '-' + index}
-                                  type="button"
-                                  className={styles.palmKitchenPlateIngredient}
-                                  data-ingredient-id={id}
-                                  aria-label={'Move ' + (item?.name || 'ingredient')}
-                                  {...palmKitchenDragHandlers({
-                                    from: 'plate',
-                                    orderId: order.id,
-                                    index,
-                                    ingredientId: id,
-                                  })}
-                                >
-                                  <span>{item?.icon}</span>
-                                </button>
-                              );
-                            })}
-                        </div>
+              <div
+                className={[styles.palmKitchenPlate, palmKitchenDrag ? styles.palmKitchenDropTarget : ''].join(' ')}
+                data-palm-kitchen-drop="plate"
+              >
+                <strong>Order Plate</strong>
+                <div>
+                  {palmKitchenPlate.length === 0
+                    ? <small>Drop the ordered ingredients here.</small>
+                    : palmKitchenPlate.map((id, index) => {
+                      const item = PALM_KITCHEN_INGREDIENTS[id];
+                      return (
                         <button
+                          key={`${id}-${index}`}
                           type="button"
-                          className={styles.palmKitchenServePlate}
-                          disabled={!ready}
-                          onClick={() => servePalmKitchenOrder(order)}
+                          className={styles.palmKitchenPlateIngredient}
+                          data-ingredient-id={id}
+                          aria-label={`Move ${item?.name || 'ingredient'}`}
+                          {...palmKitchenDragHandlers({ from: 'plate', index, ingredientId: id })}
                         >
-                          Serve
+                          <span>{item?.icon}</span>
                         </button>
-                      </article>
-                    );
-                  })}
+                      );
+                    })}
                 </div>
               </div>
+
+              <button className={styles.palmKitchenPass} type="button" onClick={servePalmKitchenOrder}>
+                <strong>Service Pass</strong>
+                <small>Serve the completed plate</small>
+              </button>
+
               {palmKitchenDrag && (
                 <div
                   className={styles.palmKitchenDragGhost}
@@ -4584,6 +3974,7 @@ export default function KidsResort({ libraryHref = null }) {
                 </div>
               )}
             </>
+          )}
           <div className={styles.lobbySceneMessage} aria-live="polite">
             {palmKitchenMessage || 'Read the ticket, drag ingredients from storage, cook the hot items, and build the plate.'}
           </div>
@@ -4591,7 +3982,7 @@ export default function KidsResort({ libraryHref = null }) {
           {palmKitchenFinished && (
             <div className={styles.lobbyGameComplete}>
               <strong>Kitchen Shift Complete!</strong>
-              <span>{PALM_KITCHEN_RECIPES.length} dinner orders served · {PALM_KITCHEN_RECIPES.length * 6 + 10} Resort Bucks earned</span>
+              <span>5 dinner orders served Â· 40 Resort Bucks earned</span>
               <button type="button" onClick={startPalmKitchenShift}>Work Another Shift</button>
             </div>
           )}
@@ -4602,6 +3993,7 @@ export default function KidsResort({ libraryHref = null }) {
 
   if (screen === 'lobby-restaurant-dine') {
     const diningMeal = LOBBY_MENU.find((item) => item.id === diningMealId) || null;
+    const diningDrink = DINING_DRINKS.find((item) => item.id === diningDrinkId) || DINING_DRINKS[0];
     const diningMotionClass = diningAction === 'bite'
       ? styles.diningActionBite
       : diningAction === 'sip'
@@ -4612,9 +4004,9 @@ export default function KidsResort({ libraryHref = null }) {
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
-          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
-          <div className={styles.brand}>Palm Court · Dining</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>â† Lobby</button>
+          <div className={styles.brand}>Palm Court Â· Dining</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
         </section>
         <section className={[styles.lobbyExperienceRoom, styles.palmCourtDiningRoom, styles.palmDiningGame].join(' ')}>
           <div className={styles.palmCourtSign}><strong>PALM COURT</strong><span>Dining Room</span></div>
@@ -4641,28 +4033,11 @@ export default function KidsResort({ libraryHref = null }) {
             </div>
           ))}
           <div className={[styles.lobbyCharacter, styles.restaurantDiningGuest].join(' ')} aria-label={`${lobbyAmbientPeople[1].name} dining at a separate Palm Court table`}>{renderCharacter(false, lobbyAmbientPeople[1].look, lobbyAmbientPeople[1].character, lobbyAmbientPeople[1].name, 'seated')}</div>
-          <div className={[styles.palmCourtDiningTable, styles.palmCourtEmilyTable].join(' ')}>
-            <div className={styles.palmDiningPlate} aria-hidden="true">{'\u{1F37D}\u{FE0F}'}</div>
-            {diningMeal && diningBites < 3 && (
-              <button
-                className={styles.palmDiningFood}
-                type="button"
-                data-bites={diningBites}
-                onClick={takeDiningBite}
-                aria-label={`Take a bite of ${diningMeal.name}. ${3 - diningBites} bites remaining.`}
-              >
-                <div className={styles.palmDiningFoodIcon}>{diningMeal.icon}</div>
-              </button>
-            )}
-            <button
-              className={styles.palmDiningGlass}
-              type="button"
-              onClick={() => sipDiningDrink(diningDrinkId)}
-              aria-label="Take a drink"
-            />
+          <div className={[styles.palmCourtDiningTable, styles.palmCourtEmilyTable].join(' ')} aria-hidden="true">
+            <span>{diningMeal?.icon || 'ðŸ½ï¸'}</span>
           </div>
           <div className={[styles.palmCourtDiningTable, styles.palmCourtGuestTable].join(' ')} aria-hidden="true">
-            <div className={styles.palmDiningPlate}>{'\u{1F37D}\u{FE0F}'}</div>
+            <span>ðŸ½ï¸</span>
           </div>
 
           <div className={styles.palmCourtMenuStand}>
@@ -4678,8 +4053,34 @@ export default function KidsResort({ libraryHref = null }) {
             </div>
           </div>
 
+          <div className={styles.palmDiningControls}>
+            <div className={styles.palmDiningCourse}>
+              <strong>{diningMeal ? diningMeal.name : 'Choose an entree'}</strong>
+              <span className={styles.palmDiningBites} aria-label={`${diningBites} of 3 bites`}>
+                {[0, 1, 2].map((index) => <i key={index} data-done={index < diningBites} />)}
+              </span>
+              <button type="button" disabled={!diningMeal || diningBites >= 3} onClick={takeDiningBite}>
+                {diningBites >= 3 ? 'Meal Finished' : 'Take a Bite'}
+              </button>
+            </div>
+            <div className={styles.palmDiningDrinks}>
+              <strong>Drink</strong>
+              {DINING_DRINKS.map((drink) => (
+                <button
+                  key={drink.id}
+                  type="button"
+                  data-active={diningDrink.id === drink.id}
+                  onClick={() => sipDiningDrink(drink.id)}
+                >
+                  <span>{drink.icon}</span>
+                  <small>{drink.name}</small>
+                </button>
+              ))}
+            </div>
+          </div>
+
           <div className={styles.lobbySceneMessage} aria-live="polite">
-            {message || `${characterName} has a table at Palm Court. Order a meal, then click the food or glass on the table.`}
+            {message || `${characterName} has a table at Palm Court. Order a meal, enjoy it, and choose a drink.`}
           </div>
         </section>
       </main>
@@ -4691,12 +4092,12 @@ export default function KidsResort({ libraryHref = null }) {
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
-          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>â† Lobby</button>
           <div className={styles.brand}>Resort Custodian</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
         </section>
         <section className={[styles.lobbyExperienceRoom, styles.custodianRoom, styles.custodianGame].join(' ')}>
-          <div className={styles.custodianWallSign}><strong>LOBBY CARE</strong><span>Resort Custodian · {custodianCleaned}/6 jobs</span></div>
+          <div className={styles.custodianWallSign}><strong>LOBBY CARE</strong><span>Resort Custodian Â· {custodianCleaned}/6 jobs</span></div>
           <div className={styles.custodianReception} aria-hidden="true"><span>FRONT DESK</span><i /></div>
           <div className={styles.lobbyFloorLine} aria-hidden="true" />
           <div className={[styles.lobbyCharacter, styles.custodianCharacter].join(' ')} aria-label={`${characterName} working as resort custodian`}>{renderPlayerParty()}</div>
@@ -4760,12 +4161,12 @@ export default function KidsResort({ libraryHref = null }) {
     return (
       <main className={[styles.gameShell, styles.lobbyGameShell].join(' ')}>
         <section className={[styles.topBar, styles.lobbyTopBar].join(' ')}>
-          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>← Lobby</button>
+          <button className={styles.backButton} type="button" onClick={() => openScreen('lobby')}>â† Lobby</button>
           <div className={styles.brand}>Indoor Pool</div>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
         </section>
         <section className={[styles.lobbyExperienceRoom, styles.poolRoom, styles.poolGame].join(' ')}>
-          <div className={styles.poolWallSign}><strong>INDOOR POOL</strong><span>Swim · splash · play</span></div>
+          <div className={styles.poolWallSign}><strong>INDOOR POOL</strong><span>Swim Â· splash Â· play</span></div>
           <div className={styles.poolWindows} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.poolWater} aria-hidden="true"><i /><i /><i /></div>
           <div className={styles.poolDeckLine} aria-hidden="true" />
@@ -4956,24 +4357,14 @@ export default function KidsResort({ libraryHref = null }) {
       0,
     );
 
-    const dragGhostIcon = (() => {
-      if (!marketDrag?.x || !marketDrag?.y) return null;
-      if (marketDrag.type === 'product' || marketDrag.type === 'stock-item') {
-        return MARKET_ITEMS.find((item) => item.id === marketDrag.itemId)?.icon || '\u{1F4E6}';
-      }
-      if (marketDrag.type === 'ladder') return '\u{1FA9C}';
-      if (marketDrag.type === 'mop') return '\u{1F9F9}';
-      return marketDrag.type === 'stock-cart' ? '\u{1F4E6}' : '\u{1F6D2}';
-    })();
-
     return (
       <main className={[styles.gameShell, styles.marketGameShell].join(' ')}>
         <section className={[styles.topBar, styles.marketTopBar].join(' ')}>
           <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>
-            {'\u2190'} Resort Map
+            ← Resort Map
           </button>
           <div className={styles.brand}>Market Street</div>
-          <div className={styles.wallet}>{'\u{1FA99}'} {bucks} Resort Bucks</div>
+          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
         </section>
 
         <section
@@ -4982,13 +4373,13 @@ export default function KidsResort({ libraryHref = null }) {
           data-market-drop="room"
           data-working={marketWorking ? 'true' : 'false'}
           onDragOver={(event) => event.preventDefault()}
-          onDrop={moveMarketCart}
+          onDrop={moveMarketStockCart}
         >
           <div className={styles.marketWall} aria-hidden="true" />
           <div className={styles.marketFloor} aria-hidden="true" />
           <div className={styles.marketLogo}>
             <strong>MARKET STREET</strong>
-            <span>groceries - home goods - resort essentials</span>
+            <span>groceries • home goods • resort essentials</span>
           </div>
 
           <button
@@ -5025,7 +4416,7 @@ export default function KidsResort({ libraryHref = null }) {
           >
             <span className={styles.marketShelfTitle}>TOP SHELF</span>
             <div className={styles.marketProductRow}>
-              {MARKET_ITEMS.filter((item) => marketShelfForItem(item) === 'top').map((item) => (
+              {MARKET_ITEMS.filter((item) => item.shelf === 'top').map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -5060,7 +4451,7 @@ export default function KidsResort({ libraryHref = null }) {
               >
                 <span className={styles.marketShelfTitle}>{shelf.icon} {shelf.label}</span>
                 <div className={styles.marketProductGrid}>
-                  {MARKET_ITEMS.filter((item) => marketShelfForItem(item) === shelf.id).map((item) => (
+                  {MARKET_ITEMS.filter((item) => item.shelf === shelf.id).map((item) => (
                     <button
                       key={item.id}
                       type="button"
@@ -5097,7 +4488,7 @@ export default function KidsResort({ libraryHref = null }) {
               {marketBasket.length === 0 ? (
                 <span className={styles.marketCartEmpty}>shopping cart</span>
               ) : (
-                marketBasket.slice(-8).map((id, index) => {
+                marketBasket.slice(-6).map((id, index) => {
                   const item = MARKET_ITEMS.find((entry) => entry.id === id);
                   return <i key={id + '-' + index}>{item?.icon}</i>;
                 })
@@ -5115,7 +4506,7 @@ export default function KidsResort({ libraryHref = null }) {
           >
             <strong>STOCK CART</strong>
             <div className={styles.marketStockBoxes}>
-              {MARKET_ITEMS.map((item) => (
+              {MARKET_ITEMS.slice(0, 8).map((item) => (
                 <button
                   key={item.id}
                   type="button"
@@ -5160,7 +4551,7 @@ export default function KidsResort({ libraryHref = null }) {
             title="Drag to a spill"
           >
             <span className={styles.marketMopHandle} />
-            <span className={styles.marketMopHead}>{'\u{1F9F9}'}</span>
+            <span className={styles.marketMopHead}>🧹</span>
           </div>
 
           {!marketSpillClean && (
@@ -5170,7 +4561,7 @@ export default function KidsResort({ libraryHref = null }) {
               onDragOver={(event) => event.preventDefault()}
               onDrop={cleanMarketSpill}
             >
-              <span>{'\u{1F4A7}'}</span>
+              <span>💧</span>
               <small>SPILL</small>
             </div>
           )}
@@ -5185,7 +4576,7 @@ export default function KidsResort({ libraryHref = null }) {
             <div className={styles.marketCustomerBubble}>
               {marketWorking
                 ? <>Could you help me find <strong>{marketWantedItem.name}</strong>?</>
-                : <>I'm shopping around.</>}
+                : <>I’m shopping around.</>}
             </div>
             <div className={styles.marketCustomerFigure}>
               {renderCharacter(false, marketCustomer.look, marketCustomer.character, marketCustomer.name)}
@@ -5193,7 +4584,7 @@ export default function KidsResort({ libraryHref = null }) {
           </div>
 
           <div className={styles.marketPlayer}>
-            <div className={styles.marketPlayerFigure}>{renderPlayerParty()}</div>
+            <div className={styles.marketPlayerFigure}>{renderCharacter(false, look, character, characterName)}</div>
           </div>
 
           <div className={styles.marketShiftBoard}>
@@ -5214,16 +4605,6 @@ export default function KidsResort({ libraryHref = null }) {
             )}
           </div>
 
-          {dragGhostIcon && !['stock-cart', 'shopping-cart'].includes(marketDrag.type) && (
-            <div
-              className={styles.marketDragGhost}
-              style={{ left: marketDrag.x + 'px', top: marketDrag.y + 'px' }}
-              aria-hidden="true"
-            >
-              {dragGhostIcon}
-            </div>
-          )}
-
           <div className={styles.marketMessage} aria-live="polite">{marketMessage}</div>
         </section>
       </main>
@@ -5235,16 +4616,16 @@ export default function KidsResort({ libraryHref = null }) {
       <main className={[styles.gameShell, styles.studioGameShell].join(' ')}>
         <section className={[styles.topBar, styles.studioTopBar].join(' ')}>
           <button className={styles.backButton} type="button" onClick={() => setScreen('map')}>
-            ← Resort Map
+            â† Resort Map
           </button>
           <div className={styles.brand}>Design Studio</div>
-          <div className={styles.wallet}>💵 {bucks} Resort Bucks</div>
+          <div className={styles.wallet}>ðŸ’µ {bucks} Resort Bucks</div>
         </section>
 
         <section className={styles.studioRoomInterior}>
           <div className={styles.studioRoomWallLogo}>
             <strong>DESIGN STUDIO</strong>
-            <span>style · beauty · art</span>
+            <span>style Â· beauty Â· art</span>
           </div>
           <div className={styles.studioRoomShelf} aria-hidden="true">
             <span />
@@ -5569,7 +4950,7 @@ export default function KidsResort({ libraryHref = null }) {
           {studioCustomerDone ? (
             <button type="button" onClick={() => setScreen('studio')}>Done</button>
           ) : (
-            <button type="button" onClick={finishBeautyService}>Finish Service · 3 Resort Bucks</button>
+            <button type="button" onClick={finishBeautyService}>Finish Service Â· 3 Resort Bucks</button>
           )}
         </div>
         <p className={styles.customerOpinion}>{studioMessage}</p>
@@ -5668,7 +5049,7 @@ export default function KidsResort({ libraryHref = null }) {
             {studioTipResult && (
               <b>
                 Tip +{studioTipResult.tip} Resort Bucks
-                {studioTipResult.earnedStar ? ' · Fashion Star earned' : ''}
+                {studioTipResult.earnedStar ? ' Â· Fashion Star earned' : ''}
               </b>
             )}
             <small>{studioMessage || 'Design the whole outfit, then finish it for the customer.'}</small>
@@ -5692,141 +5073,32 @@ export default function KidsResort({ libraryHref = null }) {
         )}
       </>,
       <div className={styles.studioExperienceControls}>
-        <div className={[styles.artStudio, styles.studioExperienceArtStudio, styles.paintStudioShell].join(' ')}>
-          <div className={styles.paintToolRail} aria-label="Paint tools">
-            {[
-              ['brush', 'Brush'],
-              ['pencil', 'Pencil'],
-              ['marker', 'Marker'],
-              ['eraser', 'Eraser'],
-              ['line', 'Line'],
-              ['rectangle', 'Box'],
-              ['ellipse', 'Oval'],
-              ['fill', 'Fill'],
-              ['picker', 'Pick'],
-            ].map(([id, label]) => (
-              <button
-                key={id}
-                type="button"
-                data-active={artTool === id ? 'true' : 'false'}
-                onClick={() => setArtTool(id)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-
-          <div className={styles.paintCanvasFrame} style={{ '--paint-paper': artPaper }}>
-            <canvas
-              ref={artCanvasRef}
-              className={[styles.artCanvas, styles.studioExperienceArtCanvas, styles.paintCanvas].join(' ')}
-              width="960"
-              height="560"
-              onPointerDown={beginArt}
-              onPointerMove={drawArt}
-              onPointerUp={endArt}
-              onPointerCancel={endArt}
-              onPointerLeave={endArt}
-              aria-label="Painting canvas"
-            />
-          </div>
-
-          <div className={styles.paintControlDeck}>
-            <div className={styles.paintPalette} aria-label="Paint colors">
-              {[
-                '#191919',
-                '#ffffff',
-                '#e54848',
-                '#f28c38',
-                '#f2c84b',
-                '#55ad68',
-                '#3e9fa8',
-                '#4285d4',
-                '#6c5bc7',
-                '#a954b2',
-                '#e05f9c',
-                '#8b5d3b',
-              ].map((color) => (
-                <button
-                  key={color}
-                  type="button"
-                  data-selected={artColor.toLowerCase() === color ? 'true' : 'false'}
-                  style={{ '--paint-swatch': color }}
-                  aria-label={'Use ' + color}
-                  onClick={() => setArtColor(color)}
-                />
-              ))}
-              <label className={styles.paintCustomColor}>
-                <span>Custom</span>
-                <input
-                  type="color"
-                  value={artColor}
-                  onChange={(event) => setArtColor(event.target.value)}
-                />
-              </label>
-            </div>
-
-            <div className={styles.paintSliders}>
-              <label>
-                <span>Brush size</span>
-                <input
-                  type="range"
-                  min="2"
-                  max="72"
-                  step="2"
-                  value={artSize}
-                  onChange={(event) => setArtSize(Number(event.target.value))}
-                />
-                <b>{artSize}</b>
-              </label>
-              <label>
-                <span>Opacity</span>
-                <input
-                  type="range"
-                  min="15"
-                  max="100"
-                  step="5"
-                  value={Math.round(artOpacity * 100)}
-                  onChange={(event) => setArtOpacity(Number(event.target.value) / 100)}
-                />
-                <b>{Math.round(artOpacity * 100)}%</b>
-              </label>
-              <label className={styles.paintPaperControl}>
-                <span>Paper</span>
-                <input
-                  type="color"
-                  value={artPaper}
-                  onChange={(event) => setArtPaper(event.target.value)}
-                />
-              </label>
-            </div>
-
-            <div className={styles.paintActions}>
-              <button
-                type="button"
-                disabled={artUndoRef.current.length === 0}
-                onClick={undoArt}
-                data-history={artHistoryVersion}
-              >
-                Undo
-              </button>
-              <button
-                type="button"
-                disabled={artRedoRef.current.length === 0}
-                onClick={redoArt}
-                data-history={artHistoryVersion}
-              >
-                Redo
-              </button>
-              <button type="button" onClick={clearArt}>Clear</button>
-              <button
-                type="button"
-                className={styles.paintFinishButton}
-                onClick={() => makeStudioCreation('art')}
-              >
-                Finish Artwork +5
-              </button>
-            </div>
+        <div className={[styles.artStudio, styles.studioExperienceArtStudio].join(' ')}>
+          <canvas
+            ref={artCanvasRef}
+            className={[styles.artCanvas, styles.studioExperienceArtCanvas].join(' ')}
+            width="720"
+            height="420"
+            onPointerDown={beginArt}
+            onPointerMove={drawArt}
+            onPointerUp={endArt}
+            onPointerCancel={endArt}
+            onPointerLeave={endArt}
+            aria-label="Drawing canvas"
+          />
+          <div className={styles.artToolbar}>
+            <label>
+              Color
+              <input
+                type="color"
+                value={artColor}
+                onChange={(event) => setArtColor(event.target.value)}
+              />
+            </label>
+            <button type="button" onClick={clearArt}>Clear</button>
+            <button type="button" onClick={() => makeStudioCreation('art')}>
+              Finish Artwork +5
+            </button>
           </div>
         </div>
         <div className={styles.studioSceneMessage}>
@@ -5931,7 +5203,7 @@ export default function KidsResort({ libraryHref = null }) {
               disabled={worn}
               onClick={() => buyStudioLook(studioCategory, activeItem)}
             >
-              {worn ? 'Wearing This' : owned ? 'Wear This' : 'Buy & Wear · ' + activeItem.price}
+              {worn ? 'Wearing This' : owned ? 'Wear This' : 'Buy & Wear Â· ' + activeItem.price}
             </button>
           </div>
         </div>
@@ -6163,9 +5435,9 @@ export default function KidsResort({ libraryHref = null }) {
 
               {houseActivity === 'kitchen' && (
                 <>
-                  <div className={styles.housePanelTitle}>Kitchen · {learnedRecipeIds.size}/{RECIPES.length} recipes learned</div>
+                  <div className={styles.housePanelTitle}>Kitchen</div>
                   <div className={styles.houseRecipeShelf}>
-                    {RECIPES.filter((recipe) => learnedRecipeIds.has(recipe.id)).map((recipe) => (
+                    {RECIPES.map((recipe) => (
                       <button
                         key={recipe.id}
                         type="button"
@@ -6174,7 +5446,6 @@ export default function KidsResort({ libraryHref = null }) {
                       >
                         <span>{recipe.icon}</span>
                         <strong>{recipe.name}</strong>
-                        <small>{recipe.source}</small>
                         <small>{Object.keys(recipe.ingredients).map(ingredientLabel).join(' + ')}</small>
                       </button>
                     ))}
@@ -6286,15 +5557,15 @@ export default function KidsResort({ libraryHref = null }) {
         <div className={styles.mapBrandLine}>
           {libraryHref && (
             <a className={styles.libraryLink} href={libraryHref}>
-              ← Game Library
+              â† Game Library
             </a>
           )}
           <div className={styles.brand}>Kids Resort</div>
           <div className={styles.tagline}>A grown-up world made just for kids.</div>
         </div>
         <div className={styles.profileStrip}>
-          <div className={styles.wallet}>🪙 {bucks} Resort Bucks</div>
-          <div className={styles.badgeCount}>⭐ {badges.length} badges</div>
+          <div className={styles.wallet}>ðŸª™ {bucks} Resort Bucks</div>
+          <div className={styles.badgeCount}>â­ {badges.length} badges</div>
         </div>
       </section>
 
@@ -6405,12 +5676,8 @@ export default function KidsResort({ libraryHref = null }) {
               style={{
                 left: person.spawn.x + '%',
                 top: person.spawn.y + '%',
-                translate: companionIds.includes(person.id)
-                  ? `0 ${companionFootOffsets[person.id] || 0}px`
-                  : undefined,
                 zIndex: mapDepthRanks[`person:${person.id}`] ?? 12,
               }}
-              data-companion={companionIds.includes(person.id) ? 'true' : 'false'}
               data-moving={person.isRoaming ? 'true' : 'false'}
               data-direction={person.walkDirection || 'front'}
               data-selected={selectedPersonId === person.id ? 'true' : 'false'}
@@ -6556,7 +5823,7 @@ export default function KidsResort({ libraryHref = null }) {
                   <strong>People</strong>
                   <span>Visitors and characters in this resort session.</span>
                 </div>
-                <button type="button" onClick={() => setPeopleOpen(false)}>×</button>
+                <button type="button" onClick={() => setPeopleOpen(false)}>Ã—</button>
               </div>
 
               <div className={styles.peoplePanelActions}>
@@ -6596,7 +5863,7 @@ export default function KidsResort({ libraryHref = null }) {
                     </strong>
                     <span>Everything here can be changed later.</span>
                   </div>
-                  <button type="button" onClick={() => setPersonEditorOpen(false)}>×</button>
+                  <button type="button" onClick={() => setPersonEditorOpen(false)}>Ã—</button>
                 </header>
 
                 <div className={styles.personEditorBody}>
@@ -7059,7 +6326,7 @@ export default function KidsResort({ libraryHref = null }) {
               aria-expanded={settingsOpen}
               onClick={() => setSettingsOpen((open) => !open)}
             >
-              ⚙
+              âš™
             </button>
           </div>
         </div>

@@ -1535,7 +1535,7 @@
   font: inherit;
   font-size: .9rem;
   line-height: 1;
-  cursor: default;
+  cursor: pointer;
 }
 
 .cafeOrderFace[aria-disabled="true"] {
