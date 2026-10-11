@@ -60,3 +60,17 @@ public/media/ms-sonoma.mp4
 
 # dev-specific next.js build
 /.next-dev/
+
+# Local QA reports, backups, and working copies (not application source)
+/artifacts/
+/.deploy-webb-timers/
+/modules/structured-generation/
+
+# Local CLI caches and temporary Git/development output
+/supabase/.temp/
+/.kidsresort-*-index
+/.liftoff-dev.*.log
+/.slate-*.log
+/.tmp-*
+/.vercel-*.json
+/.vercel-*.txt
