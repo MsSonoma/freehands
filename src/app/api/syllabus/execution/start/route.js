@@ -52,7 +52,7 @@ export async function POST(request, deps = {}) {
       return NextResponse.json({ error: 'A Syllabus occurrenceId is required', code: 'SYLLABUS_OCCURRENCE_REQUIRED' }, { status: 400 })
     }
     const instructionalTeacher = String(body?.instructionalTeacher || '').trim().toLowerCase()
-    if (!['sonoma', 'webb'].includes(instructionalTeacher)) {
+    if (!['sonoma', 'webb', 'slate'].includes(instructionalTeacher)) {
       return NextResponse.json({ error: 'A valid instructionalTeacher is required', code: 'INSTRUCTIONAL_TEACHER_REQUIRED' }, { status: 400 })
     }
     const now = deps.now || new Date()

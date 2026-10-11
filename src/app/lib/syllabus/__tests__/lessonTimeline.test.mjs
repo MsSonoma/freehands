@@ -1497,7 +1497,7 @@ test('SyllabusDocument keeps rows readable while facilitator controls live in th
   assert.match(overlay, /Assigned teacher<select/)
   assert.match(overlay, /<option value="sonoma">Ms\. Sonoma<\/option>/)
   assert.match(overlay, /<option value="webb">Mrs\. Webb<\/option>/)
-  assert.doesNotMatch(overlay, /<option value="slate">/i)
+  assert.match(overlay, /<option value="slate">Mr\. Slate<\/option>/i)
   assert.match(document, /Daily Review/)
   assert.match(document, /startedOccurrenceIds\.has\(String\(occurrenceKey\)\)/)
   assert.match(overlay, /instructionalCompletionAllowed = item\?\.placement_kind !== 'actual'/)
@@ -1520,7 +1520,12 @@ test('scheduled and on-demand Slate launches preserve exact occurrence and disti
 
 test('learner cards and start action make the server-assigned teacher conspicuous', () => {
   const home = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
+  const available = fs.readFileSync(path.resolve('src/app/api/learner/available-lessons/route.js'), 'utf8')
   assert.match(home, /Your teacher: \{instructionalTeacherLabel\(cardInstructionalTeacher\)\}/)
+  assert.match(home, /const cardInstructionalTeacher = normalizeInstructionalTeacher\(l\.instructional_teacher\)/)
+  assert.match(home, /const recentInstructionalTeacher = normalizeInstructionalTeacher\(meta\.instructional_teacher\)/)
+  assert.match(home, /const ownedInstructionalTeacher = normalizeInstructionalTeacher\(ol\.instructional_teacher\)/)
+  assert.match(available, /normalizeInstructionalTeacher\(row\.instructional_teacher\)/)
   assert.match(home, /Continue with \$\{instructionalTeacherLabel\(assignedInstructionalTeacher\)\}/)
   assert.match(home, /Start with \$\{instructionalTeacherLabel\(assignedInstructionalTeacher\)\}/)
   assert.doesNotMatch(home, /setSelectedTeacher|localStorage\.getItem\('selected_teacher'\)/)

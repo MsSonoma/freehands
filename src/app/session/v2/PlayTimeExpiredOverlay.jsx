@@ -29,9 +29,10 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { playSfx } from '../utils/sfx';
+import { playSfx, stopSfx } from '../utils/sfx';
 
 const WARNING_DURATION = 30; // 30 seconds
+const ALARM_SFX = '/sfx/Alarm.mp3';
 
 export default function PlayTimeExpiredOverlay({
   isOpen,
@@ -49,6 +50,7 @@ export default function PlayTimeExpiredOverlay({
   const intervalRef = useRef(null);
   const hasCalledCompleteRef = useRef(false);
   const hasPlayedAlarmRef = useRef(false);
+
   
   // Storage key for this phase's warning timer
   const storageKey = `play_expired_warning:${lessonKey}:${phase}`;
@@ -65,6 +67,8 @@ export default function PlayTimeExpiredOverlay({
     if (hasCalledCompleteRef.current) return;
     hasCalledCompleteRef.current = true;
     
+    stopSfx(ALARM_SFX, { volume: 0.6 });
+
     // Clear storage since we're done
     clearWarningStorage();
     
@@ -79,6 +83,8 @@ export default function PlayTimeExpiredOverlay({
   
   // Handle "Start Now" button
   const handleStartNow = useCallback(() => {
+    stopSfx(ALARM_SFX, { volume: 0.6 });
+
     // Clear storage since user is manually starting
     clearWarningStorage();
     
@@ -241,7 +247,7 @@ export default function PlayTimeExpiredOverlay({
           fontSize: 'clamp(4rem, 10vw, 6rem)',
           marginBottom: 24
         }}>
-          {isWorkExpired ? '📚' : '⏰'}
+          {isWorkExpired ? '\uD83D\uDCDA' : '\u23F0'}
         </div>
 
         {/* Main message */}
@@ -266,7 +272,7 @@ export default function PlayTimeExpiredOverlay({
         }}>
           {isWorkExpired
             ? `Work time for the ${phaseDisplay} phase ran out, so play time for the next phase is skipped. Next phase work begins shortly!`
-            : `Your play time is up. Don't worry—you'll be able to play again as soon as you finish the ${phaseDisplay} phase!`}
+            : `Your play time is up. Don't worry\u2014you'll be able to play again as soon as you finish the ${phaseDisplay} phase!`}
         </p>
 
         {/* Countdown display */}
@@ -384,15 +390,15 @@ export default function PlayTimeExpiredOverlay({
         }}>
           {isWorkExpired ? (
             <>
-              <span style={{ fontSize: '1.5em' }}>⭐</span>
+              <span style={{ fontSize: '1.5em' }}>{'\u2B50'}</span>
               <span>Keep going!</span>
-              <span style={{ fontSize: '1.5em' }}>⭐</span>
+              <span style={{ fontSize: '1.5em' }}>{'\u2B50'}</span>
             </>
           ) : (
             <>
-              <span style={{ fontSize: '1.5em' }}>✏️</span>
+              <span style={{ fontSize: '1.5em' }}>{'\u270F\uFE0F'}</span>
               <span>You've got this!</span>
-              <span style={{ fontSize: '1.5em' }}>✏️</span>
+              <span style={{ fontSize: '1.5em' }}>{'\u270F\uFE0F'}</span>
             </>
           )}
         </div>

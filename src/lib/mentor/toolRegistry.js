@@ -209,12 +209,12 @@ export const MENTOR_TOOL_REGISTRY = Object.freeze([
   {
     name: 'set_instructional_teacher',
     authority: 'commit',
-    purpose: 'Assign Ms. Sonoma or Mrs. Webb to one exact Syllabus lesson occurrence.',
+    purpose: 'Assign Ms. Sonoma, Mrs. Webb, or Mr. Slate to one exact Syllabus lesson occurrence.',
     whenToUse: 'When the facilitator asks who should teach a specific occurrence or explicitly assigns the teacher.',
     verification: 'association write response',
     requiresLearner: true,
     description: 'Set the instructional teacher for one exact active Syllabus occurrence.',
-    parameters: objectSchema({ ...learnerSelector, lessonKey: { type: 'string' }, occurrenceId: { type: 'string' }, instructionalTeacher: { type: 'string', enum: ['sonoma', 'webb'], description: 'sonoma = Ms. Sonoma; webb = Mrs. Webb.' } }, ['lessonKey', 'occurrenceId', 'instructionalTeacher']),
+    parameters: objectSchema({ ...learnerSelector, lessonKey: { type: 'string' }, occurrenceId: { type: 'string' }, instructionalTeacher: { type: 'string', enum: ['sonoma', 'webb', 'slate'], description: 'sonoma = Ms. Sonoma; webb = Mrs. Webb; slate = Mr. Slate Liftoff instruction.' } }, ['lessonKey', 'occurrenceId', 'instructionalTeacher']),
   },
   {
     name: 'manage_slate_practice',

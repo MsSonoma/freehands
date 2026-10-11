@@ -219,3 +219,43 @@ test('final paragraph coherence check never asks the model to rewrite learner pr
   assert.equal(response.status, 200)
   assert.deepEqual(await response.json(), { coherent: false, problemSlotIndex: 3, reasonCode: 'repetition' })
 })
+
+
+test('Emma October 6 regression: seven approved learner sentences make a complete essay without regrading earlier work', () => {
+  const objectives = [
+    'Maps help people understand a place.',
+    'Physical maps show natural landforms.',
+    'Climate describes usual long-term weather.',
+    'Natural and human-made features are different.',
+    'Regions share some geographic features.',
+    'Settlements often develop near water.',
+    'Migration and population density describe people.',
+  ]
+  const notes = Object.fromEntries(objectives.map((_, index) => [
+    index, { text: 'Learner research note ' + index, provenance: 'learner-message', sourceMessageId: 'note-' + index },
+  ]))
+  const plan = buildWebbCompositionPlan(objectives, notes)
+  const sentences = [
+    "It's important to know about maps, regions, and human settlement.",
+    'a physical map shows natural features such as mountains, rivers, and plains.',
+    'climate is the usual pattern of weather in a place over a long time.',
+    'A house is made by people and a tree is made by nature',
+    'A region can have common features, but it could still be different landforms too',
+    'People may settle near water or coast',
+    "And that's why it's important to know about maps, regions, and human settlement.",
+  ]
+  const approved = Object.fromEntries(sentences.map((sentence, index) => [index, {
+    text: sentence,
+    provenance: 'learner-message',
+    sourceMessageId: 'writing-' + index,
+    accepted: true, accuracy: 'correct', sentenceOk: true, positionFit: true, paragraphFit: true,
+  }]))
+  assert.equal(nextCompositionSlotIndex(plan, approved), -1)
+  assert.equal(assembleWebbCompositionEssay(plan, approved), sentences.join(' '))
+
+  // This was the observed failure: final paragraph regrading deleted an already approved fourth sentence.
+  const afterOldFinalCheck = { ...approved }
+  delete afterOldFinalCheck[3]
+  assert.equal(nextCompositionSlotIndex(plan, afterOldFinalCheck), 3)
+  assert.equal(assembleWebbCompositionEssay(plan, afterOldFinalCheck), '')
+})

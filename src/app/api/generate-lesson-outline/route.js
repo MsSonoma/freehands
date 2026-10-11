@@ -1,7 +1,7 @@
 // API route for generating lightweight lesson outlines (title + description)
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
 const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
@@ -27,7 +27,7 @@ async function callOpenAI(prompt) {
       { role: 'system', content: 'You are an educational content generator. Return only valid JSON with no markdown or code blocks.' },
       { role: 'user', content: prompt }
     ],
-    temperature: 0.7,
+    ...aiModelTemperature(0.7),
     max_completion_tokens: 300
   }
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 
 export const dynamic = 'force-dynamic'
 
@@ -51,7 +51,7 @@ Rewritten description:`
         { role: 'system', content: 'You are an expert educational content writer for elementary students.' },
         { role: 'user', content: prompt }
       ],
-      temperature: 0.7,
+      ...aiModelTemperature(0.7),
       max_tokens: 150
     })
 

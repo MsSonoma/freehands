@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react'
 import GamesOverlay from '../components/games/GamesOverlay'
 import TimerControlOverlay from '../components/TimerControlOverlay'
 import FullscreenPlayTimerOverlay from '../v2/FullscreenPlayTimerOverlay'
+import PlayTimeExpiredOverlay from '../v2/PlayTimeExpiredOverlay'
 import { ensurePinAllowed } from '@/app/lib/pinGate'
 import { formatWebbElapsed, webbPlayRemainingSeconds } from './webbPacing.mjs'
 
@@ -24,12 +25,14 @@ export default function WebbPlayBreakOverlay({
   onPlayWithWebb,
   playActivity = '',
   playActivityBusy = false,
+  muted = false,
 }) {
   const [nowMs, setNowMs] = useState(Date.now())
   const [showGames, setShowGames] = useState(false)
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false)
   const [showTimerControls, setShowTimerControls] = useState(false)
   const [showPlayWithWebbMenu, setShowPlayWithWebbMenu] = useState(false)
+  const [showExpiredCountdown, setShowExpiredCountdown] = useState(false)
   const [notice, setNotice] = useState('')
   const finishedRef = useRef(false)
 
@@ -40,6 +43,7 @@ export default function WebbPlayBreakOverlay({
     setShowFullscreenTimer(false)
     setShowTimerControls(false)
     setShowPlayWithWebbMenu(false)
+    setShowExpiredCountdown(false)
     setNotice('')
     if (!playBreak) return undefined
     const timer = setInterval(() => setNowMs(Date.now()), 500)
@@ -59,7 +63,9 @@ export default function WebbPlayBreakOverlay({
   }
 
   useEffect(() => {
-    if (playBreak && !playBreak.isPaused && remainingSeconds <= 0) finish('expired')
+    if (playBreak && !playBreak.isPaused && remainingSeconds <= 0 && !finishedRef.current) {
+      setShowExpiredCountdown(true)
+    }
   }, [playBreak, remainingSeconds]) // eslint-disable-line react-hooks/exhaustive-deps
 
   if (!playBreak) return null
@@ -263,6 +269,22 @@ export default function WebbPlayBreakOverlay({
   return (
     <>
       {mainSurface}
+
+      <PlayTimeExpiredOverlay
+        isOpen={showExpiredCountdown}
+        phase={playBreak.milestone === 'writing-midpoint' ? 'writing' : 'discussion'}
+        lessonKey={lessonKey || 'webb'}
+        isPaused={!!playBreak.isPaused}
+        muted={muted}
+        onComplete={() => {
+          setShowExpiredCountdown(false)
+          finish('expired')
+        }}
+        onStartNow={() => {
+          setShowExpiredCountdown(false)
+          finish('start-now')
+        }}
+      />
 
       <FullscreenPlayTimerOverlay
         isOpen={showFullscreenTimer}

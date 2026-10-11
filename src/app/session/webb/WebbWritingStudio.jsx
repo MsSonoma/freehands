@@ -446,7 +446,7 @@ export default function WebbWritingStudio({
                   cursor: transitionBusy ? 'wait' : 'pointer', fontFamily: 'inherit',
                 }}
               >
-                {transitionBusy ? 'Play break starting...' : playtimeDue ? 'Playtime' : isLastSentence ? 'Finish essay' : 'Next sentence'}
+                {transitionBusy ? 'Play break starting...' : playtimeDue ? 'Start Play Time' : isLastSentence ? 'Finish essay' : 'Next sentence'}
               </button>
             )}
           </div>

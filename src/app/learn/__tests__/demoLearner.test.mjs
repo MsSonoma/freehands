@@ -70,14 +70,17 @@ test('Demo Learner is pinned to Ms. Sonoma when a lesson launches', () => {
   )
 })
 
-test('real learner routes follow only Sonoma or Webb facilitator assignments', () => {
+test('real learner routes follow Sonoma, Webb, or Slate facilitator assignments', () => {
   assert.equal(buildInstructionalSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', instructionalTeacher: 'sonoma' }), '/session?subject=math&lesson=one.json&learnerId=real')
   assert.equal(buildInstructionalSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', instructionalTeacher: 'webb' }), '/session/webb?subject=math&lesson=one.json&learnerId=real')
   assert.equal(
     buildInstructionalSessionRoute({ learnerId: 'real', subject: 'language-arts', fileName: 'grammar.json', instructionalTeacher: 'webb', occurrenceId: 'syllabus:thursday-grammar' }),
     '/session/webb?subject=language-arts&lesson=grammar.json&learnerId=real&occurrenceId=syllabus%3Athursday-grammar',
   )
-  assert.throws(() => buildInstructionalSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', instructionalTeacher: 'slate' }), /valid instructional teacher/i)
+  assert.equal(
+    buildInstructionalSessionRoute({ learnerId: 'real', subject: 'math', fileName: 'one.json', instructionalTeacher: 'slate', occurrenceId: 'syllabus:monday-math' }),
+    '/session/slate?lessonKey=math%2Fone.json&purpose=instruction&learnerId=real&occurrenceId=syllabus%3Amonday-math',
+  )
 })
 
 test('Demo Learner uses the anonymous demo lesson endpoint only', () => {

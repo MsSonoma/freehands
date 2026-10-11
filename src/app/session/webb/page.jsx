@@ -9,6 +9,7 @@ import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
 import TimerControlOverlay from '../components/TimerControlOverlay'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import FeatureHelpToast from '../components/FeatureHelpToast'
+import WebbBackgroundMusicControl from './WebbBackgroundMusicControl'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
 import {
   emptyWebbObjectiveState, reconcileWebbObjectiveState, mergeWebbObjectiveResult,
@@ -188,6 +189,7 @@ function WebbPageInner() {
 
   // ── Research objectives ──────────────────────────────────────────────
   const [objectives,         setObjectives]        = useState([])  // string[]
+  const [objectiveClues,     setObjectiveClues]    = useState([])  // learner-facing retrieval cues; full objectives reveal only after mastery
   const [learningState, setLearningState] = useState(emptyWebbObjectiveState)
   const { coveredObj, understoodObj, objectiveEvidence, learnerNotes } = learningState
   const learningStateRef = useRef(learningState)
@@ -214,10 +216,12 @@ function WebbPageInner() {
   const [writingAttempts,     setWritingAttempts]    = useState({}) // Record<slot idx, verbatim attempt[]>
   const [acceptedSentences,   setAcceptedSentences]  = useState({}) // Record<slot idx, accepted verbatim attempt>
   const [compositionPlan,     setCompositionPlan]    = useState(null) // topic/body/conclusion plan, separate from mastery objectives
+  const compositionSaveQueueRef = useRef(Promise.resolve()) // draft saves must finish before later final saves
   const [compositionSaveError, setCompositionSaveError] = useState('')
   const [newlySavedNote,  setNewlySavedNote] = useState(null) // {idx, text} — drives tablet toast
   const [expandedObj,        setExpandedObj]       = useState(null) // number|null — accordion open index
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
+  const [showFullObjectives, setShowFullObjectives] = useState(false) // facilitator-only full objective reveal
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
   const [offerResume,        setOfferResume]        = useState(false) // shown after lesson is selected, if a per-lesson snapshot exists
@@ -581,8 +585,12 @@ function WebbPageInner() {
           throw new Error('The saved learning goals are missing. Your writing is preserved; please ask your facilitator to review this session.')
         }
         saved.objectives = await generateObjectives(selectedLesson)
+        saved.objectiveClues = saved.objectives.clues || saved.objectives.map((_, index) => `Goal ${index + 1}`)
       }
       if (run !== runGenerationRef.current) return
+      if (!Array.isArray(saved.objectiveClues) || saved.objectiveClues.length !== saved.objectives.length) {
+        saved.objectiveClues = await generateCluesForObjectives(saved.objectives, selectedLesson)
+      }
       const lessonKey = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
       const tracked = await startProtectedInstructionalSession({
         learnerId: routeLearnerId || learnerId,
@@ -608,6 +616,7 @@ function WebbPageInner() {
       setChatMessages(saved.chatMessages || [])
       setTranscript(saved.transcript || [])
       setObjectives(saved.objectives || [])
+      setObjectiveClues(saved.objectiveClues || (saved.objectives || []).map((_, index) => `Goal ${index + 1}`))
       priorObjectiveExposureRef.current = Object.fromEntries((saved.objectives || []).map((_, index) => [index, true]))
       await loadPriorObjectiveExposure(saved.objectives || [], selectedLesson)
       if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
@@ -615,7 +624,7 @@ function WebbPageInner() {
       commitLearningState(restored)
       announcedNotesRef.current = new Set(Object.entries(rawSaved.learnerNotes || {}).map(([index, note]) => index + ':' + note.text))
       pendingNoteAnnouncementsRef.current = []
-      queueNewNotes(rawSaved, restored)
+      queueNewNotes(rawSaved, restored, saved.objectives)
       const composition = restoreWebbCompositionState({ ...saved, ...restored }, saved.objectives)
       webbStageRef.current = composition.webbStage
       pendingWritingReviewRef.current = composition.pendingWritingReview
@@ -702,7 +711,7 @@ function WebbPageInner() {
   snapshotRef.current = {
     snapshotVersion: WEBB_SNAPSHOT_VERSION,
     webbSessionStartedAt: webbSessionStartRef.current,
-    selectedLesson, chatMessages, transcript, objectives,
+    selectedLesson, chatMessages, transcript, objectives, objectiveClues,
     objectiveTargetIndex: objectiveTargetRef.current,
     ...learningStateRef.current,
     webbStage: webbStageRef.current,
@@ -718,7 +727,7 @@ function WebbPageInner() {
   useEffect(() => {
     if (webbExecutionFencedRef.current || offerResume || phase !== PHASE.CHATTING || !selectedLesson) return
     snapshotSaveRef.current()
-  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, compositionPlan, essay, essayMode, responseTurn, playMilestones, activePlayBreak, webbGoldenKeySuspended])
+  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, objectiveClues, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, compositionPlan, essay, essayMode, responseTurn, playMilestones, activePlayBreak, webbGoldenKeySuspended])
 
   submitWritingAttemptRef.current = submitWritingAttempt
   useEffect(() => {
@@ -1589,7 +1598,7 @@ function WebbPageInner() {
     const threshold = midpointThreshold(writingUnitCount)
     if (!threshold) return
     const acceptedCount = Array.from({ length: writingUnitCount }, (_, index) => index).filter(index => acceptedSentences?.[index]?.provenance === 'learner-message').length
-    if (acceptedCount >= threshold && acceptedCount < writingUnitCount) queueWebbPlayBreak('writing-midpoint')
+    // Mid-writing play is learner-started from the committed-sentence button, after the sentence is written down.
   }, [learnerProfileLoaded, webbPacingSettings.playTimesEnabled, webbPacingSettings.writingMidpointEnabled, phase, writingMode, writingSubphase, chatLoading, writingEvaluating, objectives, compositionPlan, acceptedSentences, activePlayBreak]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -1601,7 +1610,6 @@ function WebbPageInner() {
     if (last?.role !== 'assistant' || ['pacing', 'line_help'].includes(last?.kind) || !expectsLearnerResponse(last?.text)) return undefined
     const signature = `research:${transcript.length}:${last.text}`
     if (responseArmSignatureRef.current === signature) return undefined
-    responseArmSignatureRef.current = signature
     let cancelled = false
     void (async () => {
       await waitForTTSIdle()
@@ -1621,7 +1629,6 @@ function WebbPageInner() {
     const attempts = Array.isArray(writingAttempts?.[writingIndex]) ? writingAttempts[writingIndex].length : 0
     const signature = `writing:${writingIndex}:${writingSubphase}:${attempts}`
     if (responseArmSignatureRef.current === signature) return undefined
-    responseArmSignatureRef.current = signature
     let cancelled = false
     void (async () => {
       await waitForTTSIdle()
@@ -2008,7 +2015,27 @@ function WebbPageInner() {
     if (!Array.isArray(data.objectives) || !data.objectives.length || data.objectives.some(value => typeof value !== 'string' || !value.trim())) {
       throw new Error('Mrs. Webb could not prepare the learning goals for this lesson.')
     }
-    return data.objectives
+    const result = data.objectives
+    result.clues = Array.isArray(data.clues) && data.clues.length === result.length
+      ? data.clues
+      : result.map((_, index) => `Goal ${index + 1}`)
+    return result
+  }, [])
+
+  const generateCluesForObjectives = useCallback(async (objectiveList, lesson) => {
+    const fallback = (objectiveList || []).map((_, index) => `Goal ${index + 1}`)
+    try {
+      const res = await fetch('/api/webb-objectives', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'clues', lesson, objectives: objectiveList }),
+      })
+      if (!res.ok) return fallback
+      const data = await res.json()
+      return Array.isArray(data.clues) && data.clues.length === fallback.length ? data.clues : fallback
+    } catch {
+      return fallback
+    }
   }, [])
 
   async function prepareCompositionPlan() {
@@ -2145,10 +2172,10 @@ function WebbPageInner() {
     }
   }
 
-  function queueNewNotes(prior, next) {
+  function queueNewNotes(prior, next, objectiveList = objectives) {
     for (const [index, note] of Object.entries(next.learnerNotes || {})) {
       if (!isWritingReadyNote(prior.learnerNotes?.[index]) && isWritingReadyNote(note)) {
-        pendingNoteAnnouncementsRef.current.push({ idx: Number(index), text: note.text })
+        pendingNoteAnnouncementsRef.current.push({ idx: Number(index), text: note.text, objective: objectiveList?.[Number(index)] || '' })
       }
     }
   }
@@ -2200,19 +2227,25 @@ function WebbPageInner() {
     const lessonKey = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
     const occurrenceId = tracked?.occurrenceId || routeOccurrenceId
     if (!tracked?.id || !currentLearnerId || currentLearnerId === 'demo' || !lessonKey || !occurrenceId) return false
+    const browserSessionId = getProtectedBrowserSessionId()
+    const savedLearnerNotes = { ...learnerNotesRef.current }
     try {
-      await saveWebbComposition({
+      const save = () => saveWebbComposition({
         learnerId: currentLearnerId,
         lessonKey,
         occurrenceId,
         executionSessionId: tracked.id,
-        browserSessionId: getProtectedBrowserSessionId(),
+        browserSessionId,
         status,
         objectives,
-        learnerNotes: learnerNotesRef.current,
+        learnerNotes: savedLearnerNotes,
         compositionPlan: plan,
         acceptedSentences: accepted,
       })
+      // Preserve write order: a slow draft must never overwrite a later final.
+      const pending = compositionSaveQueueRef.current.then(save, save)
+      compositionSaveQueueRef.current = pending.catch(() => {})
+      await pending
       setCompositionSaveError('')
       return true
     } catch (error) {
@@ -2250,7 +2283,7 @@ function WebbPageInner() {
       const before = learningStateRef.current
       const next = mergeWebbObjectiveResult(currentObjectives, before, data, updatedMessages)
       commitLearningState(next)
-      queueNewNotes(before, next)
+      queueNewNotes(before, next, currentObjectives)
       // Publish a note only with the exact conversation that contains its source.
       // An older queued media check must not trim a newer conversation snapshot.
       const latestHistory = snapshotRef.current.chatMessages || []
@@ -2308,6 +2341,7 @@ function WebbPageInner() {
     setMediaOverlay(null)
     setPageError('')
     setObjectives([])
+    setObjectiveClues([])
     objectiveTargetRef.current = null
     commitLearningState(emptyWebbObjectiveState())
     setNewlySavedNote(null)
@@ -2343,8 +2377,10 @@ function WebbPageInner() {
     webbSessionStartRef.current = new Date().toISOString()
 
     let startupObjectives
+    let startupObjectiveClues
     try {
       startupObjectives = await generateObjectives(lesson)
+      startupObjectiveClues = startupObjectives.clues || startupObjectives.map((_, index) => `Goal ${index + 1}`)
       if (run !== runGenerationRef.current) return
     } catch (cause) {
       if (run !== runGenerationRef.current) return
@@ -2378,6 +2414,7 @@ function WebbPageInner() {
       priorObjectiveExposureRef.current = Object.fromEntries(startupObjectives.map((_, index) => [index, true]))
       objectiveTargetRef.current = startupObjectives.length ? 0 : null
       setObjectives(startupObjectives)
+      setObjectiveClues(startupObjectiveClues)
       await loadPriorObjectiveExposure(startupObjectives, lesson)
     } catch (cause) {
       if (run !== runGenerationRef.current) return
@@ -2518,7 +2555,7 @@ function WebbPageInner() {
           && !playMilestonesRef.current?.['writing-midpoint']
           && acceptedCount >= writingMidpointThreshold
         const reply = writingMidpointPlayDue
-          ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Playtime when you're ready."
+          ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Start Play Time when you're ready."
           : hasNextSentence
             ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Next sentence when you're ready."
             : "That sentence is ready. It's here in your paragraph. Copy it down, then choose Finish essay when you're ready."
@@ -2881,6 +2918,7 @@ function WebbPageInner() {
   // ── Close objectives panel ─────────────────────────────────────────────
   function closeObjectivesPanel() {
     setShowObjectives(false)
+    setShowFullObjectives(false)
   }
 
   // ── Research mode: close overlay, Webb navigates to the best media or teaches directly ──
@@ -3129,62 +3167,18 @@ function WebbPageInner() {
     if (slot?.role === 'conclusion') return "This is your concluding sentence. Its job is to bring your paragraph to a clear ending. Look back at the ideas you already explained, then close that same thought in one complete sentence without adding a brand-new fact."
     return "Use this research note to add one complete, connected sentence in your own words."
   }
-  function paragraphRepairMessage(reasonCode) {
-    if (reasonCode === 'topic_mismatch') return "The paragraph needs a clearer topic sentence before it is finished. Let's go back to the first sentence and make sure it introduces the whole paragraph."
-    if (reasonCode === 'conclusion_mismatch') return "The paragraph needs a stronger ending before it is finished. Let's make the last sentence close what you actually explained."
-    if (reasonCode === 'repetition') return "Two parts of the paragraph are doing almost the same job. Let's revise this sentence so it adds something the paragraph still needs."
-    if (reasonCode === 'contradiction') return "One sentence does not agree with the rest of the paragraph yet. Let's fix that sentence before we call the paragraph finished."
-    return "This sentence is accurate on its own, but the whole paragraph does not connect cleanly here yet. Let's revise this part so the ideas build on each other."
-  }
-
+  // Each sentence has already passed concept, role, and paragraph-fit checks.
+  // A separate final AI review must not revoke accepted learner writing.
   async function finalizeCompositionDraft(activePlan, accepted = acceptedSentences, baseHistory = chatMessages) {
     const finalEssay = activePlan?.slots?.length
       ? assembleWebbCompositionEssay(activePlan, accepted)
       : assembleLearnerEssay(objectives, accepted)
-    if (!finalEssay) return false
+    if (!finalEssay) {
+      setCompositionSaveError('Finish each sentence before completing your essay. Your writing is preserved.')
+      return false
+    }
 
     if (activePlan?.slots?.length) {
-      let coherence
-      try {
-        const response = await fetch('/api/webb-objectives', {
-          method: 'POST', headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ action: 'check-paragraph', lesson: selectedLesson, compositionPlan: activePlan, acceptedSentences: accepted }),
-        })
-        if (!response.ok) throw new Error('Paragraph coherence check failed')
-        coherence = await response.json()
-      } catch {
-        setCompositionSaveError('Mrs. Webb could not finish checking the whole paragraph yet. Your sentences are still saved.')
-        return false
-      }
-      if (!coherence?.coherent) {
-        const problemIndex = Number.isInteger(coherence?.problemSlotIndex) ? coherence.problemSlotIndex : null
-        if (problemIndex === null || !activePlan.slots[problemIndex]) {
-          setCompositionSaveError('Mrs. Webb found that the paragraph still needs revision, but could not safely identify which sentence to reopen. Your writing is preserved.')
-          return false
-        }
-        const nextAccepted = { ...accepted }
-        delete nextAccepted[problemIndex]
-        const reply = paragraphRepairMessage(coherence.reasonCode)
-        const assistantMsg = { role: 'assistant', content: reply, kind: 'writing', id: crypto.randomUUID(), createdAt: new Date().toISOString() }
-        const finalHistory = [...baseHistory, assistantMsg]
-        pendingWritingReviewRef.current = null
-        setAcceptedSentences(nextAccepted)
-        setWritingIndex(problemIndex)
-        setWritingMode(true)
-        setWritingSubphase(WEBB_WRITING_SUBPHASES.REVIEW)
-        setWritingDraft('')
-        setEssay(null)
-        setEssayMode(false)
-        setChatMessages(finalHistory)
-        saveLearningSnapshot({
-          webbStage: WEBB_SESSION_STAGES.WRITING, writingMode: true, writingIndex: problemIndex,
-          writingSubphase: WEBB_WRITING_SUBPHASES.REVIEW, writingDraft: '', acceptedSentences: nextAccepted,
-          compositionPlan: activePlan, essay: null, essayMode: false, chatMessages: finalHistory, pendingWritingReview: null,
-        })
-        void persistCompositionArtifact({ plan: activePlan, accepted: nextAccepted, status: 'draft' })
-        addMsg(reply)
-        return false
-      }
       const persisted = await persistCompositionArtifact({ plan: activePlan, accepted, status: 'final' })
       if (!persisted) return false
     }
@@ -3817,7 +3811,7 @@ function WebbPageInner() {
       ? (writingAllAccepted
         ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Finish essay when you're ready."
         : writingMidpointTransitionDue
-          ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Playtime when you're ready."
+          ? "That sentence is ready. It's here in your paragraph. Copy it down, then choose Start Play Time when you're ready."
           : "That sentence is ready. It's here in your paragraph. Copy it down, then choose Next sentence when you're ready.")
       : writingSubphase === WEBB_WRITING_SUBPHASES.REVIEW
         ? sanitizeWritingGuidance('', {}, { slot: currentWritingSlot })
@@ -3876,6 +3870,7 @@ function WebbPageInner() {
         onPlayWithWebb={handlePlayWithWebb}
         playActivity={webbPlayActivity}
         playActivityBusy={webbPlayActivityBusy}
+        muted={isMuted}
       />
 
       {showWorkTimerControls && responseTurn && (
@@ -4009,7 +4004,7 @@ function WebbPageInner() {
 
             {/* Media overlay: rendered as portal — see createPortal block near end of return */}
 
-            {/* Overlay buttons — bottom right: Skip + Mute (always) */}
+            {/* Overlay buttons — bottom right: Skip + background music + voice mute */}
             <div style={{ position: 'absolute', bottom: keyboardCompact ? 6 : 14, right: keyboardCompact ? 6 : 14, display: 'flex', gap: keyboardCompact ? 4 : 10, zIndex: 10 }}>
               {engineState === 'playing' && (
                 <button type="button" onClick={skipTTS} aria-label="Skip" style={keyboardCompact ? { ...overlayBtnStyle, width: 34, height: 34 } : overlayBtnStyle}>
@@ -4018,6 +4013,7 @@ function WebbPageInner() {
                   </svg>
                 </button>
               )}
+              <WebbBackgroundMusicControl compact={keyboardCompact} />
               <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={keyboardCompact ? { ...overlayBtnStyle, width: 34, height: 34 } : overlayBtnStyle}>
                 {isMuted
                   ? <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
@@ -4679,6 +4675,20 @@ function WebbPageInner() {
               <div>
                 <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
                 <div style={{ color: '#94a3b8', fontSize: 12 }}>{understoodCount} of {objectives.length} understood; {writingReadyCount} notes saved</div>
+                {!showFullObjectives && (
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation()
+                      const pin = await requestFacilitatorPinException({
+                        title: 'Facilitator PIN required',
+                        message: 'Enter the Facilitator PIN to view the full learning objectives.',
+                      })
+                      if (pin) setShowFullObjectives(true)
+                    }}
+                    style={{ marginTop: 6, padding: 0, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}
+                  >Facilitator: show full objectives</button>
+                )}
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 {/* Gear button — settings */}
@@ -4725,6 +4735,7 @@ function WebbPageInner() {
               {objectives.map((obj, i) => {
                 const noteReady = isWritingReadyNote(learnerNotes[i])
                 const done = understoodObj.includes(i)
+                const learnerText = (showFullObjectives || done) ? obj : (objectiveClues[i] || `Goal ${i + 1}`)
                 const open = expandedObj === i
                 return (
                   <div key={i} style={{ borderBottom: '1px solid #1e293b' }}>
@@ -4744,7 +4755,7 @@ function WebbPageInner() {
                         color: done ? '#e2e8f0' : '#64748b',
                         fontSize: 13, lineHeight: 1.5, flex: 1,
                         transition: 'color 0.3s',
-                      }}>{obj}</span>
+                      }}>{learnerText}</span>
                       <span style={{ color: '#475569', fontSize: 11, flexShrink: 0, marginTop: 2 }}>{open ? '▲' : '▼'}</span>
                     </button>
                     {/* Expanded content */}
@@ -4885,7 +4896,7 @@ function WebbPageInner() {
               <p style={{
                 color: '#e2e8f0', fontSize: 13, lineHeight: 1.6,
                 margin: 0, fontStyle: 'italic',
-              }}>“{(newlySavedNote.notes || [newlySavedNote]).map(note => note.text).join(' / ')}”</p>
+              }}>“{(newlySavedNote.notes || [newlySavedNote]).map(note => note.objective || objectives[note.idx] || '').filter(Boolean).join(' / ')}”</p>
               {/* completed tally */}
               <div style={{ marginTop: 12, display: 'flex', gap: 5, flexWrap: 'wrap' }}>
                 {objectives.map((_, i) => (

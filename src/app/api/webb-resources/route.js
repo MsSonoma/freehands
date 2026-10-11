@@ -1,4 +1,4 @@
-﻿/**
+/**
  * /api/webb-resources
  * Generates curated, child-safe media resources for a lesson.
  *
@@ -14,7 +14,7 @@
 import { NextResponse } from 'next/server'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 const YT_SEARCH    = 'https://www.googleapis.com/youtube/v3/search'
 const YT_VIDEOS    = 'https://www.googleapis.com/youtube/v3/videos'
@@ -273,7 +273,7 @@ async function callGPT(apiKey, systemPrompt, userPrompt, maxTokens = 60) {
         { role: 'user',   content: userPrompt   },
       ],
       max_completion_tokens: maxTokens,
-      temperature: 0.3,
+      ...aiModelTemperature(0.3),
     }),
   })
   if (!res.ok) throw new Error('OpenAI error ' + res.status)

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
 import { createClient } from '@supabase/supabase-js'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 import { canonicalizeAiGeneratedChoiceItems } from '@/app/lib/aiGeneratedChoiceOrder.mjs'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 
@@ -215,7 +215,7 @@ Return ONLY a JSON object: {"items": [{"question": "The _____ is...", "expectedA
         { role: 'system', content: prompts[type].system },
         { role: 'user', content: prompts[type].user },
       ],
-      temperature: 0.7,
+      ...aiModelTemperature(0.7),
       response_format: { type: 'json_object' },
     })
 

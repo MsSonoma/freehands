@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { resolveEffectiveTier, featuresForTier } from '@/app/lib/entitlements'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 import { canonicalizeAiGeneratedLessonChoices } from '@/app/lib/aiGeneratedChoiceOrder.mjs'
 import { buildCanonicalLessonIdentity } from '@/app/lib/facilitatorPreparation.mjs'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
@@ -72,7 +72,7 @@ async function callModel(prompt) {
         { role: 'system', content: 'Return only valid JSON. No markdown. No commentary.' },
         { role: 'user', content: prompt },
       ],
-      temperature: 0.6,
+      ...aiModelTemperature(0.6),
     }),
   })
   if (!res.ok) throw new Error(`Model error ${res.status}`)

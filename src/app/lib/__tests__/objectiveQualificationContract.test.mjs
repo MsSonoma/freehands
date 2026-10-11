@@ -7,6 +7,8 @@ const route = fs.readFileSync(new URL('../../api/webb-objectives/route.js', impo
 const discussion = fs.readFileSync(new URL('../../session/v2/DiscussionPhase.jsx', import.meta.url), 'utf8')
 const sonoma = fs.readFileSync(new URL('../../api/sonoma-discussion/route.js', import.meta.url), 'utf8')
 const webb = fs.readFileSync(new URL('../../api/webb-chat/route.js', import.meta.url), 'utf8')
+const sonomaPage = fs.readFileSync(new URL('../../session/v2/SessionPageV2.jsx', import.meta.url), 'utf8')
+const webbPage = fs.readFileSync(new URL('../../session/webb/page.jsx', import.meta.url), 'utf8')
 
 test('generated objectives are atomic rather than bundled clause checklists', () => {
   assert.match(route, /reverse-engineer that hidden essay into 5 to 8 ATOMIC core comprehension objectives/)
@@ -63,4 +65,24 @@ test('both teachers use a transfer question after reproduction instead of inviti
   assert.match(sonoma, /small transfer question/)
   assert.match(webb, /masteryStatus === 'reproduced'/)
   assert.match(webb, /small transfer question/)
+})
+
+test('Luna retries an incomplete objective-evaluator response with a larger completion budget', () => {
+  assert.match(route, /const tokenLimits = isLuna \? \[maxTokens, Math\.max\(maxTokens \* 3, 2400\)\] : \[maxTokens\]/)
+  assert.match(route, /choice\?\.finish_reason !== 'length'/)
+  assert.match(route, /\.\.\.aiModelTemperature\(temperature, OPENAI_MODEL\)/)
+})
+
+test('learner objective viewers use retrieval clues until mastery and reveal the full objective afterward', () => {
+  assert.match(route, /atomic_focus is also the learner-facing retrieval clue/)
+  assert.match(route, /must not state the tested relationship/)
+  assert.match(route, /clues: objectivePlan\.map\(row => row\.atomic_focus\)/)
+  assert.match(discussion, /objectiveClues:\s+\[\.\.\.this\.#objectiveClues\]/)
+  assert.match(discussion, /objectiveText:\s+this\.#objectives\[newlyCompleted\[0\]\]/)
+  assert.match(sonomaPage, /\(showFullDiscussionObjectives \|\| done\) \? obj : \(discussionObjectiveClues\[i\]/)
+  assert.match(webbPage, /\(showFullObjectives \|\| done\) \? obj : \(objectiveClues\[i\]/)
+  assert.match(webbPage, /note\.objective \|\| objectives\[note\.idx\]/)
+  assert.match(webbPage, /saved\.objectiveClues/)
+  assert.match(sonomaPage, /Facilitator: show full objectives/)
+  assert.match(webbPage, /Facilitator: show full objectives/)
 })

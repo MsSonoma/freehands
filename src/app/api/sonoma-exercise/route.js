@@ -11,7 +11,7 @@
  */
 import { NextResponse } from 'next/server'
 import { validateInput } from '@/lib/contentSafety'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs'
 
@@ -177,7 +177,7 @@ export async function POST(request) {
             { role: 'user',   content: `Ask this exercise question: ${questionText}` },
           ],
           max_completion_tokens: 150,
-          temperature: 0.75,
+          ...aiModelTemperature(0.75),
         }),
       })
       const json = await res.json()
@@ -214,7 +214,7 @@ export async function POST(request) {
             { role: 'user',   content: userContent },
           ],
           max_completion_tokens: 120,
-          temperature: 0.8,
+          ...aiModelTemperature(0.8),
         }),
       })
       const json = await res.json()

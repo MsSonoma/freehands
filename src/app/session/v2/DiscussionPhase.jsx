@@ -50,6 +50,7 @@ export class DiscussionPhase {
   // 'idle'|'prefetching'|'ready'|'playing-overview'|'playing-vocab'|'chatting'|'awaiting-response'|'complete'
   #state             = 'idle';
   #objectives        = [];
+  #objectiveClues    = [];
   #completedIndices  = [];
   #chatHistory       = [];   // { role: 'user'|'assistant', content: string }[]
   #audioEndListener  = null;
@@ -414,6 +415,7 @@ export class DiscussionPhase {
       completedObjectives: this.#completedIndices.length,
       totalObjectives:     this.#objectives.length,
       objectives:          [...this.#objectives],
+      objectiveClues:      [...this.#objectiveClues],
       completedIndices:    [...this.#completedIndices],
     });
   }
@@ -430,6 +432,9 @@ export class DiscussionPhase {
           const data = await res.json();
           if (Array.isArray(data.objectives) && data.objectives.length) {
             this.#objectives = data.objectives;
+            this.#objectiveClues = Array.isArray(data.clues) && data.clues.length === data.objectives.length
+              ? data.clues
+              : data.objectives.map((_, index) => `Goal ${index + 1}`);
           }
         }
       }

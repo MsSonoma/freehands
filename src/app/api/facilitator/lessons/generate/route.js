@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server.js'
 import { isMissingStorageObject } from '../../../../lib/syllabus/storageObjectErrors.server.mjs'
 import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitlements.js'
-import { AI_MODEL } from '../../../../lib/aiModel.js'
+import { AI_MODEL, aiModelTemperature } from '../../../../lib/aiModel.js'
 import { canonicalizeAiGeneratedLessonChoices } from '../../../../lib/aiGeneratedChoiceOrder.mjs'
 import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '../../../../lib/facilitatorPreparation.mjs'
 import { requireAssociationLearner, upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
@@ -236,7 +236,7 @@ async function callModel(prompt){
       { role:'system', content:'Return only valid JSON. No markdown. No commentary.' },
       { role:'user', content: prompt }
     ],
-    temperature: 0.6
+    ...aiModelTemperature(0.6)
   }
   
   const controller = new AbortController()

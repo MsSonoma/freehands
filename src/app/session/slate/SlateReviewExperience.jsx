@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation'
 import { actOnFollowUp, getFollowUpRun } from '@/app/lib/followUpsClient'
 import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
 import { reviewTeacherDesign } from '@/app/lib/reviewTeacherDesign.mjs'
+import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
 
 function reviewLabel(reviewType) {
   if (reviewType === 'weekly_review') return 'WEEKLY REVIEW'
@@ -175,7 +176,7 @@ export default function SlateReviewExperience({ runId }) {
       setState(result)
       setFeedback({ text: acknowledgement, complete: result.complete === true })
       setError('')
-      await speakTeacher(acknowledgement)
+      void speakTeacher(acknowledgement)
     } catch (cause) {
       setError(cause?.message || 'Your answer could not be saved.')
     } finally {
@@ -198,7 +199,6 @@ export default function SlateReviewExperience({ runId }) {
     <header style={styles.header}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
         <video
-          ref={videoRef}
           src={teacherConfig.video}
           muted
           playsInline
@@ -213,6 +213,8 @@ export default function SlateReviewExperience({ runId }) {
       </div>
       <button style={styles.headerGhost} onClick={() => router.push('/learn')}>BACK</button>
     </header>
+
+    <ReviewTeacherVideoStage teacher={teacher} ref={videoRef} />
 
     <section style={styles.card}>
       {!state && !error && <p style={styles.muted}>Loading review...</p>}

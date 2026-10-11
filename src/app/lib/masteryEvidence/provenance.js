@@ -1,4 +1,5 @@
-import { AI_MODEL } from '../aiModel.js';
+import { resolveAiModel } from '../aiModel.js';
+import { LIFTOFF_PROTOCOL_VERSION } from '../slateLiftoff.mjs';
 
 export function resolveSonomaProviderProvenance(env = process.env) {
   const provider = String(
@@ -9,7 +10,7 @@ export function resolveSonomaProviderProvenance(env = process.env) {
   if (provider === 'anthropic') {
     model = env.SONOMA_MODEL || env.ANTHROPIC_MODEL || 'claude-4.1-opus';
   } else if (provider === 'openai') {
-    model = env.SONOMA_OPENAI_MODEL || AI_MODEL || null;
+    model = resolveAiModel(env) || null;
   }
 
   return {
@@ -28,7 +29,7 @@ export function resolveSonomaProviderProvenance(env = process.env) {
 export function resolveWebbProviderProvenance(env = process.env) {
   return {
     provider: 'openai',
-    model: env.WEBB_OPENAI_MODEL || AI_MODEL || null,
+    model: resolveAiModel(env) || null,
     app_build_id: env.VERCEL_GIT_COMMIT_SHA || env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || env.VERCEL_GIT_COMMIT_REF || null,
     teaching_protocol_version: 'webb-conversation-v1',
     teaching_protocol_hash: null,
@@ -38,9 +39,19 @@ export function resolveWebbProviderProvenance(env = process.env) {
 export function resolveSlateProviderProvenance(env = process.env) {
   return {
     provider: 'deterministic_app',
-    model: env.SONOMA_OPENAI_MODEL || AI_MODEL || null,
+    model: resolveAiModel(env) || null,
     app_build_id: env.VERCEL_GIT_COMMIT_SHA || env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || env.VERCEL_GIT_COMMIT_REF || null,
     teaching_protocol_version: 'slate-mastery-retention-v1',
+    teaching_protocol_hash: null,
+  };
+}
+
+export function resolveSlateLiftoffProviderProvenance(env = process.env) {
+  return {
+    provider: 'openai',
+    model: resolveAiModel(env) || null,
+    app_build_id: env.VERCEL_GIT_COMMIT_SHA || env.NEXT_PUBLIC_VERCEL_GIT_COMMIT_SHA || env.VERCEL_GIT_COMMIT_REF || null,
+    teaching_protocol_version: LIFTOFF_PROTOCOL_VERSION,
     teaching_protocol_hash: null,
   };
 }
@@ -56,11 +67,13 @@ export const SERVER_OWNED_PROVENANCE_FIELDS = Object.freeze([
 export function resolveEvidenceSessionProvenance(evidenceSession, env = process.env) {
   const sessionId = String(evidenceSession?.session_id || '').trim().toLowerCase();
   const protocol = String(evidenceSession?.teaching_protocol_version || '').trim().toLowerCase();
-  const fallback = sessionId.startsWith('slate:') || protocol.startsWith('slate-')
-    ? resolveSlateProviderProvenance(env)
-    : (protocol.startsWith('webb-')
-      ? resolveWebbProviderProvenance(env)
-      : resolveSonomaProviderProvenance(env));
+  const fallback = protocol === LIFTOFF_PROTOCOL_VERSION
+    ? resolveSlateLiftoffProviderProvenance(env)
+    : (sessionId.startsWith('slate:') || protocol.startsWith('slate-')
+      ? resolveSlateProviderProvenance(env)
+      : (protocol.startsWith('webb-')
+        ? resolveWebbProviderProvenance(env)
+        : resolveSonomaProviderProvenance(env)));
 
   return {
     provider: evidenceSession?.provider || fallback.provider,

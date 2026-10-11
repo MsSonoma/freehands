@@ -11,7 +11,7 @@
 import { NextResponse } from 'next/server'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 
 function stripHtml(html) {
@@ -104,7 +104,7 @@ export async function POST(req) {
           },
         ],
         max_completion_tokens: 900,
-        temperature: 0.2,
+        ...aiModelTemperature(0.2),
       }),
     })
     if (!res.ok) throw new Error('OpenAI error ' + res.status)

@@ -11,7 +11,26 @@ function stripMarkdown(text) {
     .replace(/_([^_]+)_/g, '$1');
 }
 
-function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false }) {
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false, onReplayRequest = null, replayEnabled = true, teacherName = 'Ms. Sonoma', theme = null }) {
+  const panelTheme = {
+    background: '#ffffff',
+    text: '#111111',
+    muted: '#6b7280',
+    userText: '#c7442e',
+    activeBackground: 'rgba(199,68,46,0.08)',
+    activeText: '#111111',
+    controlBackground: '#1f2937',
+    controlDisabledBackground: '#d1d5db',
+    controlText: '#fff',
+    handBorder: '#d97706',
+    handBackground: '#fffbeb',
+    handText: '#92400e',
+    borderRadius: 14,
+    border: undefined,
+    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+    fontFamily: undefined,
+    ...(theme || {}),
+  };
   const [canScroll, setCanScroll] = useState(false);
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
@@ -117,10 +136,11 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
   const containerStyle = {
     width: '100%',
     boxSizing: 'border-box',
-    background: '#ffffff',
-    borderRadius: 14,
+    background: panelTheme.background,
+    borderRadius: panelTheme.borderRadius,
     position: 'relative',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.25)',
+    border: panelTheme.border,
+    boxShadow: panelTheme.boxShadow,
     display: 'flex',
     flexDirection: 'column',
     flex: fullHeight ? '1 1 auto' : undefined,
@@ -137,9 +157,10 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     paddingRight: 12,
     paddingBottom: compact ? 6 : 12,
     paddingLeft: 12,
-    color: '#111111',
+    color: panelTheme.text,
     fontSize: 'clamp(1.125rem, 2.4vw, 1.5rem)',
     lineHeight: 1.5,
+    fontFamily: panelTheme.fontFamily,
   };
 
   return (
@@ -151,8 +172,8 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
           disabled={atTop}
           onClick={() => { if (boxRef.current) boxRef.current.scrollBy({ top: -Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
           style={{
-            background: atTop ? '#d1d5db' : '#1f2937',
-            color: '#fff',
+            background: atTop ? panelTheme.controlDisabledBackground : panelTheme.controlBackground,
+            color: panelTheme.controlText,
             border: 'none',
             borderRadius: 6,
             width: 34,
@@ -175,8 +196,8 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
           disabled={atBottom}
           onClick={() => { if (boxRef.current) boxRef.current.scrollBy({ top: Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
           style={{
-            background: atBottom ? '#d1d5db' : '#1f2937',
-            color: '#fff',
+            background: atBottom ? panelTheme.controlDisabledBackground : panelTheme.controlBackground,
+            color: panelTheme.controlText,
             border: 'none',
             borderRadius: 6,
             width: 34,
@@ -205,11 +226,11 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
             }
             const isActive = idx === displayActiveIndex;
             const containerBase = { margin: '6px 0', transition: 'background-color 160ms ease, color 160ms ease' };
-            const activeContainer = isActive ? { background: 'rgba(199,68,46,0.08)', borderRadius: 8, padding: '4px 6px' } : null;
+            const activeContainer = isActive ? { background: panelTheme.activeBackground, borderRadius: 8, padding: '4px 6px' } : null;
             const textBase = { whiteSpace: 'pre-line' };
-            const activeText = isActive ? { fontWeight: 700, color: '#111111' } : { fontWeight: 500 };
+            const activeText = isActive ? { fontWeight: 700, color: panelTheme.activeText } : { fontWeight: 500 };
             // Style for learner-entered lines
-            const userText = { color: '#c7442e', fontWeight: 600 };
+            const userText = { color: panelTheme.userText, fontWeight: 600 };
             // If this line appears to contain multiple-choice choices, render stacked with nowrap pairs
             const mcMatch = text && /(\s|^)[A-F][\.)]\s+\S/.test(text) && (text.match(/[A-F][\.)]\s+\S/g) || []).length >= 2;
             let mcRender = null;
@@ -275,10 +296,31 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
               && phase !== 'test'
               && ['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(phase)
               && !!String(text || '').trim();
+            const canReplay = typeof onReplayRequest === 'function'
+              && s.role !== 'user'
+              && !!String(text || '').trim();
             return (
               <div key={idx} data-idx={idx} style={{ ...containerBase, ...(activeContainer || {}) }} aria-current={isActive ? 'true' : undefined}>
                 <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8 }}>
-                  <div style={{ flex: 1, minWidth: 0 }}>
+                  <div
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      cursor: canReplay ? (replayEnabled ? 'pointer' : 'not-allowed') : 'default',
+                    }}
+                    role={canReplay ? 'button' : undefined}
+                    tabIndex={canReplay && replayEnabled ? 0 : undefined}
+                    aria-label={canReplay ? `Hear this sentence again: ${text}` : undefined}
+                    aria-disabled={canReplay && !replayEnabled ? true : undefined}
+                    title={canReplay ? (replayEnabled ? 'Click to hear this sentence again' : `${teacherName} is speaking`) : undefined}
+                    onClick={canReplay && replayEnabled ? () => onReplayRequest(s, originalIndex) : undefined}
+                    onKeyDown={canReplay && replayEnabled ? (event) => {
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        onReplayRequest(s, originalIndex);
+                      }
+                    } : undefined}
+                  >
                     {s.role === 'user' ? (
                       <div style={{ ...textBase, ...userText }}>{text}</div>
                     ) : mcRender ? (
@@ -291,9 +333,9 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
                     <button
                       type="button"
                       onClick={() => onStudyRequest(s, originalIndex)}
-                      aria-label="Study this with Ms. Sonoma"
-                      title="Study this"
-                      style={{ flex: '0 0 auto', border: '1px solid #d97706', background: '#fffbeb', color: '#92400e', borderRadius: 8, minWidth: 34, height: 32, padding: '0 8px', cursor: 'pointer', fontSize: 17, lineHeight: 1 }}
+                      aria-label={`Study this with ${teacherName}`}
+                      title={`Study this with ${teacherName}`}
+                      style={{ flex: '0 0 auto', border: `1px solid ${panelTheme.handBorder}`, background: panelTheme.handBackground, color: panelTheme.handText, borderRadius: 8, minWidth: 34, height: 32, padding: '0 8px', cursor: 'pointer', fontSize: 17, lineHeight: 1 }}
                     >
                       {'\u{1F91A}'}
                     </button>
@@ -308,7 +350,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
           </>
         ) : (
           <>
-            <div style={{ color: '#6b7280' }}>No captions yet.</div>
+            <div style={{ color: panelTheme.muted }}>No captions yet.</div>
             {/* Keep consistent tail spacing even when empty */}
             <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
             <div ref={endRef} aria-hidden data-ms-caption-end style={{ height: 1 }} />

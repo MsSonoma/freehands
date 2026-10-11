@@ -9,7 +9,7 @@ import { classifyConversationSafety, buildConversationSafetyContext } from '@/li
 import { buildWritingGuidanceInstructions } from '@/app/lib/webbLearningModel.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 
 function structuredObjectiveReplyInstruction() {
@@ -244,7 +244,7 @@ export async function POST(req) {
               },
             ],
             max_completion_tokens: 80,
-            temperature: 0.4,
+            ...aiModelTemperature(0.4),
           }),
         })
         const j = await r.json()
@@ -274,7 +274,7 @@ export async function POST(req) {
           model: OPENAI_MODEL,
           messages: [{ role: 'system', content: `${sysContent}\n\n${structuredObjectiveReplyInstruction()}` }],
           max_completion_tokens: 180,
-          temperature: 0.7,
+          ...aiModelTemperature(0.7),
           response_format: { type: 'json_object' },
         }),
       })
@@ -311,7 +311,7 @@ export async function POST(req) {
         model: OPENAI_MODEL,
         messages: oaiMessages,
         max_completion_tokens: 160,
-        temperature: 0.75,
+        ...aiModelTemperature(0.75),
         response_format: { type: 'json_object' },
       }),
     })

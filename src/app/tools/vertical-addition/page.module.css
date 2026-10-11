@@ -1,0 +1,90 @@
+.page {
+  min-height: 100vh;
+  box-sizing: border-box;
+  padding: 32px 16px 60px;
+  background: #0c1220;
+  color: #eef3fc;
+  font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.content {
+  max-width: 1000px;
+  margin: 0 auto;
+  display: grid;
+  gap: 22px;
+}
+.header h1 {
+  font-size: clamp(26px, 4vw, 40px);
+  margin: 3px 0 8px;
+}
+.header p { max-width: 70ch; line-height: 1.55; margin: 0; color: #bac8db; }
+.eyebrow {
+  color: #8bc6ff !important;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+.panel {
+  border: 1px solid #2d405a;
+  border-radius: 14px;
+  padding: 20px;
+  background: #131d2d;
+}
+.panel h2, .display h2 { font-size: 18px; margin: 0 0 14px; }
+.inputs { display: grid; gap: 8px; }
+.numberRow { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
+.numberRow label { width: 90px; color: #bac8db; font-size: 14px; }
+.numberRow input {
+  width: 240px;
+  min-width: 0;
+  max-width: 100%;
+  color: #fff;
+  background: #0c1220;
+  padding: 9px 11px;
+  font-size: 16px;
+  border: 1px solid #405575;
+  border-radius: 7px;
+  font-variant-numeric: tabular-nums;
+}
+.panel button {
+  cursor: pointer;
+  color: #ecf4ff;
+  background: #283952;
+  border: 1px solid #47617f;
+  border-radius: 7px;
+  padding: 9px 12px;
+  font-size: 13px;
+  font-weight: 700;
+}
+.panel button:disabled { opacity: .45; cursor: default; }
+.actions { display: flex; flex-wrap: wrap; gap: 9px; margin-top: 14px; align-items: center; }
+.panel .primary {
+  background: #85c9fc;
+  border-color: #85c9fc;
+  color: #0d1b2b;
+}
+.examples { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-top: 14px; font-size: 12px; color: #bac8db; }
+.examples button { padding: 6px 9px; font-size: 12px; }
+.display { min-width: 0; }
+.description { color: #bac8db; max-width: 75ch; line-height: 1.5; font-size: 14px; }
+.panel select {
+  display: block;
+  width: min(100%, 470px);
+  padding: 9px 12px;
+  margin-top: 7px;
+  border: 1px solid #47617f;
+  background: #0c1220;
+  color: #eef3fc;
+  border-radius: 7px;
+  font-family: ui-monospace, monospace;
+  font-size: 14px;
+}
+.error { margin-top: 10px; color: #ffaaa9; }
+.status { margin-top: 12px; font: 13px ui-monospace, monospace; color: #8bc6ff; overflow-wrap: anywhere; }
+.footnote { margin: 0; color: #a7b5c7; font-size: 13px; line-height: 1.5; }
+@media (max-width: 600px) {
+  .page { padding: 22px 10px 45px; }
+  .panel { padding: 14px; }
+  .numberRow label { width: 70px; }
+  .numberRow input { flex: 1; width: 120px; }
+}

@@ -83,7 +83,7 @@ export async function upsertLessonAssociation({
   }
   const normalizedTeacher = normalizeInstructionalTeacher(instructionalTeacher, { allowOmitted: true })
   if (instructionalTeacher !== undefined && !normalizedTeacher) {
-    throw new SyllabusError('Instructional teacher must be sonoma or webb', 400, 'INVALID_INSTRUCTIONAL_TEACHER')
+    throw new SyllabusError('Instructional teacher must be sonoma, webb, or slate', 400, 'INVALID_INSTRUCTIONAL_TEACHER')
   }
   if (verifyLearner) await requireAssociationLearner(admin, facilitatorId, learnerId)
   const existingResult = await admin.from('syllabus_lesson_associations').select('readiness_state,instructional_teacher')

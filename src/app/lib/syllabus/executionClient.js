@@ -73,7 +73,7 @@ export async function authorizeProtectedTakeover({ learnerId, lessonKey, occurre
   return result
 }
 export async function startProtectedInstructionalSession({ learnerId, lessonKey, occurrenceId, instructionalTeacher, requestPin }, deps = {}) {
-  if (!['sonoma', 'webb'].includes(instructionalTeacher)) throw new Error('A valid instructional teacher assignment is required.')
+  if (!['sonoma', 'webb', 'slate'].includes(instructionalTeacher)) throw new Error('A valid instructional teacher assignment is required.')
   const authorize = deps.authorizeProtectedOccurrence || authorizeProtectedOccurrence
   const authorization = await authorize({ learnerId, lessonKey, occurrenceId, instructionalTeacher, requestPin }, deps)
   const browserSessionId = (deps.getProtectedBrowserSessionId || getProtectedBrowserSessionId)()

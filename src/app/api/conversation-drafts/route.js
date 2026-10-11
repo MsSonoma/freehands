@@ -7,7 +7,7 @@ const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
 // OpenAI configuration
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 
 function getSupabaseAdmin() {
@@ -272,7 +272,7 @@ ${conversationTurns.map(t => `${t.role === 'user' ? 'User' : 'Assistant'}: ${t.c
           content: prompt
         }],
         max_completion_tokens: 300,
-        temperature: 0.3
+        ...aiModelTemperature(0.3)
       })
     })
 

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import OpenAI from 'openai'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY
@@ -66,7 +66,7 @@ Output: The Water Cycle`
           content: `User's input: "${userInput}"${contextString}\n\nNormalized title:`
         }
       ],
-      temperature: 0.3,
+      ...aiModelTemperature(0.3),
       max_completion_tokens: 50
     })
     

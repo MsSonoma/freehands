@@ -18,7 +18,7 @@ import { NextResponse }      from 'next/server'
 import { YoutubeTranscript } from 'youtube-transcript'
 
 const OPENAI_URL   = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 const YT_VIDEOS    = 'https://www.googleapis.com/youtube/v3/videos'
 
@@ -32,7 +32,7 @@ async function callGPT(apiKey, system, user, maxTokens) {
       model: OPENAI_MODEL,
       messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
       max_completion_tokens: maxTokens,
-      temperature: 0.3,
+      ...aiModelTemperature(0.3),
     }),
   })
   const j = await r.json()

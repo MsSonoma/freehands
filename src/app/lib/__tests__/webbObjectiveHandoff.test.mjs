@@ -253,6 +253,7 @@ test('objective generation repairs bundled draft rows and exposes only the order
   const data = await response.json()
   assert.equal(calls, 2)
   assert.deepEqual(data.objectives, repaired.objectives.map(row => row.objective))
+  assert.deepEqual(data.clues, repaired.objectives.map(row => row.atomic_focus))
   assert.equal(Object.prototype.hasOwnProperty.call(data, 'roles'), false)
 })
 
@@ -315,6 +316,32 @@ test('objective generation fails cleanly only after generation, repair, and fres
   assert.equal(response.status, 500)
   assert.equal(calls, 3)
   assert.deepEqual(await response.json(), { error: 'Internal error' })
+})
+
+test('objective clue translation returns a retrieval cue without returning the hidden objective', async () => {
+  const hiddenObjective = 'The learner can explain why colonists opposed taxation without representation.'
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'clues', lesson: { title: 'Colonial America', subject: 'history', grade: '4' }, objectives: [hiddenObjective] }),
+  }), { apiKey: 'offline-test', callModel: async (system, user, _maxTokens, _temperature, responseFormat) => {
+    assert.equal(responseFormat?.type, 'json_object')
+    assert.match(system, /must not state the proposition being tested/i)
+    assert.deepEqual(JSON.parse(user).hidden_objectives, [hiddenObjective])
+    return JSON.stringify({ clues: ['Colonial taxation'] })
+  } })
+  assert.equal(response.status, 200)
+  const data = await response.json()
+  assert.deepEqual(data, { clues: ['Colonial taxation'] })
+  assert.equal(JSON.stringify(data).includes(hiddenObjective), false)
+})
+
+test('answer-bearing clue text is rejected in favor of a neutral fallback', async () => {
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'clues', lesson: { title: 'Colonial America' }, objectives: ['The learner can explain why taxation led to colonial protest.'] }),
+  }), { apiKey: 'offline-test', callModel: async () => JSON.stringify({ clues: ['Taxation caused protests'] }) })
+  assert.equal(response.status, 200)
+  assert.deepEqual(await response.json(), { clues: ['Goal 1'] })
 })
 
 test('writing evaluator returns a separate structural-position judgment bound to prior learner prose', async () => {

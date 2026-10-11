@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { OpenAI } from 'openai'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 
 export const dynamic = 'force-dynamic'
 
@@ -152,7 +152,7 @@ Improved text:`
         { role: 'system', content: promptConfig.system },
         { role: 'user', content: promptConfig.user }
       ],
-      temperature: 0.7,
+      ...aiModelTemperature(0.7),
       max_completion_tokens: purpose === 'visual-aid-prompt-from-notes' ? 200 : (purpose === 'generation-prompt' ? 200 : 150)
     })
 

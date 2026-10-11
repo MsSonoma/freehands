@@ -48,10 +48,10 @@ export async function POST(request, deps = {}) {
       ? normalizeInstructionalTeacher(body?.instructionalTeacher)
       : null
     if (activityType === 'instructional_completion' && !teacher) {
-      throw new SyllabusError('Historical instruction must name Ms. Sonoma or Mrs. Webb', 400, 'INVALID_INSTRUCTIONAL_TEACHER')
+      throw new SyllabusError('Historical instruction must name Ms. Sonoma, Mrs. Webb, or Mr. Slate', 400, 'INVALID_INSTRUCTIONAL_TEACHER')
     }
     if (activityType === 'slate_drill_completion' && body?.instructionalTeacher != null) {
-      throw new SyllabusError('Mr. Slate is not an instructional teacher', 400, 'INVALID_INSTRUCTIONAL_TEACHER')
+      throw new SyllabusError('Daily Review history does not carry an instructional teacher', 400, 'INVALID_INSTRUCTIONAL_TEACHER')
     }
     if (provenance === WEBB_IMPORT_PROVENANCE && teacher !== 'webb') {
       throw new SyllabusError('Legacy Webb completion imports must name Mrs. Webb', 400, 'INVALID_HISTORICAL_PROVENANCE')

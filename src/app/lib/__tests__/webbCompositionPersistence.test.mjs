@@ -1,6 +1,7 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { POST } from '../../api/webb-compositions/route.js'
+import { buildWebbCompositionPlan } from '../webbCompositionModel.mjs'
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
 const LEARNER = '22222222-2222-4222-8222-222222222222'
@@ -114,4 +115,41 @@ test('composition persistence rejects a session that is not a verified Mrs. Webb
   }), deps(admin))
   assert.equal(response.status, 409)
   assert.match((await response.json()).error, /could not be verified/i)
+})
+
+
+test('Emma seven-sentence composition persists as final using the already approved learner words', async () => {
+  const objectives = [
+    'Understand maps.', 'Describe physical maps.', 'Explain climate.',
+    'Distinguish human-made features.', 'Explain regions.', 'Explain settlement.', 'Explain migration.',
+  ]
+  const notes = Object.fromEntries(objectives.map((_, index) => [
+    index, { text: 'Emma note ' + index, provenance: 'learner-message', sourceMessageId: 'note-' + index },
+  ]))
+  const plan = buildWebbCompositionPlan(objectives, notes)
+  const sentences = [
+    "It's important to know about maps, regions, and human settlement.",
+    'a physical map shows natural features such as mountains, rivers, and plains.',
+    'climate is the usual pattern of weather in a place over a long time.',
+    'A house is made by people and a tree is made by nature',
+    'A region can have common features, but it could still be different landforms too',
+    'People may settle near water or coast',
+    "And that's why it's important to know about maps, regions, and human settlement.",
+  ]
+  const acceptedSentences = Object.fromEntries(sentences.map((text, index) => [index, {
+    text, provenance: 'learner-message', sourceMessageId: 'writing-' + index,
+    accepted: true, accuracy: 'correct', sentenceOk: true, positionFit: true, paragraphFit: true,
+  }]))
+  let stored = null
+  const response = await POST(new Request('http://localhost/api/webb-compositions', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody({
+      objectives, learnerNotes: notes, compositionPlan: plan, acceptedSentences,
+    })),
+  }), deps(fakeAdmin(row => { stored = row })))
+  assert.equal(response.status, 200)
+  assert.equal(stored.status, 'final')
+  assert.equal(stored.essay, sentences.join(' '))
+  assert.equal(stored.accepted_sentences[3].text, sentences[3])
+  assert.ok(stored.finalized_at)
 })

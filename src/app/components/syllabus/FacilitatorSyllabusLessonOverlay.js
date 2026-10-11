@@ -15,8 +15,10 @@ import { REVIEW_TEACHER_SELECTION_IDS, REVIEW_TEACHERS, normalizeReviewTeacherSe
 import { buildLessonGeneratorReviewHref } from '@/app/lib/facilitatorLessonWorkflow.mjs'
 import { getLearner } from '@/app/facilitator/learners/clientApi'
 import { getStoredAssessments, saveAssessments } from '@/app/session/assessment/assessmentStore'
+import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { buildAssessmentPhaseSets, resolveLearnerAssessmentTargets } from '@/app/session/assessment/assessmentSets'
 import { loadLesson } from '@/app/session/v2/services'
+import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import styles from './FacilitatorSyllabusLessonOverlay.module.css'
 
 function dateOnly(value) {
@@ -34,6 +36,46 @@ function prettyDateTime(value) {
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return prettyDate(value)
   return date.toLocaleString(undefined, { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })
+}
+
+function liftoffOccurrenceId(item) {
+  return String(item?.source_occurrence_id || item?.occurrence_id || item?.id || '').trim()
+}
+
+function liftoffProgressFromSnapshot(snapshot, expectedOccurrenceId = '') {
+  const feature = snapshot?.featureState
+  if (!feature || feature.kind !== 'slate-liftoff-v1') return null
+  if (expectedOccurrenceId && String(feature.occurrenceId || '') !== String(expectedOccurrenceId)) return null
+  const liftoff = feature.liftoff
+  if (!liftoff || typeof liftoff !== 'object') return null
+  return {
+    source: 'live_snapshot',
+    phase: String(feature.phase || 'active'),
+    updated_at: snapshot?.savedAt || null,
+    component_state: Array.isArray(liftoff.components) ? liftoff.components : [],
+    responsibility_trace: Array.isArray(liftoff.trace) ? liftoff.trace : [],
+    integration_confirmed: liftoff.integrationConfirmed === true,
+    variation_confirmed: liftoff.variationConfirmed === true,
+    procedure_released: liftoff.procedureReleased === true,
+    independent_test_percentage: Number.isFinite(Number(feature.finalPercentage)) ? Number(feature.finalPercentage) : null,
+    assessment_index: Math.max(0, Number(feature.assessmentIndex) || 0),
+  }
+}
+
+function liftoffProgressFromRecord(record) {
+  if (!record || typeof record !== 'object') return null
+  return {
+    source: 'completed_record',
+    phase: 'completed',
+    updated_at: record.completed_at || record.created_at || null,
+    component_state: Array.isArray(record.component_state) ? record.component_state : [],
+    responsibility_trace: Array.isArray(record.responsibility_trace) ? record.responsibility_trace : [],
+    integration_confirmed: record.integration_confirmed === true,
+    variation_confirmed: record.variation_confirmed === true,
+    procedure_released: record.procedure_released === true,
+    independent_test_percentage: Number.isFinite(Number(record.independent_test_percentage)) ? Number(record.independent_test_percentage) : null,
+    assessment_index: null,
+  }
 }
 
 function RecordedLessonActivity({ item, teacherName, historyAvailable, onOpenHistory }) {
@@ -82,7 +124,7 @@ function HistoricalActivityControl({ item, legacyWebbCompletion, busy, onRecord 
       activityType: 'instructional_completion', instructionalTeacher: 'webb', occurredAt: new Date(legacyWebbCompletion.completedAt).toISOString(), provenance: 'facilitator_attested_webb_completion_v1_import', legacyCompletion: legacyWebbCompletion,
     })}>Import legacy Webb completion from {prettyDate(legacyWebbCompletion.completedAt)}</button>}
     {instructionalCompletionAllowed ? <label>Activity<select value={activityType} onChange={(event) => setActivityType(event.target.value)}><option value="instructional_completion">Instructional lesson completed</option><option value="slate_drill_completion">Daily Review completed</option></select></label> : <p>Activity: Daily Review completed</p>}
-    {instructionalCompletionAllowed && selectedActivityType === 'instructional_completion' && <label>Teacher<select value={instructionalTeacher} onChange={(event) => setInstructionalTeacher(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
+    {instructionalCompletionAllowed && selectedActivityType === 'instructional_completion' && <label>Teacher<select value={instructionalTeacher} onChange={(event) => setInstructionalTeacher(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option><option value="slate">Mr. Slate</option></select></label>}
     <label>Completed at<input type="datetime-local" value={occurredAt} onChange={(event) => setOccurredAt(event.target.value)} /></label>
     <button type="button" disabled={busy || !occurredAt} onClick={submit}>{busy ? 'Recording...' : 'Add historical record'}</button>
     <small>Historical records do not create transcripts, mastery, retention, or canonical lesson-session evidence.</small>
@@ -149,6 +191,11 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [printOpen, setPrintOpen] = useState(false)
   const [printBusy, setPrintBusy] = useState('')
   const [printError, setPrintError] = useState('')
+  const [liftoffRecord, setLiftoffRecord] = useState(null)
+  const [liftoffRecordLoading, setLiftoffRecordLoading] = useState(false)
+  const [liftoffProgress, setLiftoffProgress] = useState(null)
+  const [liftoffProgressLoading, setLiftoffProgressLoading] = useState(false)
+  const [liftoffRealtimeStatus, setLiftoffRealtimeStatus] = useState('idle')
 
   useEffect(() => acquirePageScrollLock(), [])
 
@@ -200,6 +247,104 @@ export default function FacilitatorSyllabusLessonOverlay({
     return () => { cancelled = true }
   }, [accessToken, item?.lesson_key, learnerId])
 
+  useEffect(() => {
+    setLiftoffRecord(null)
+    setLiftoffRecordLoading(false)
+    if (!learnerId || !accessToken || !item?.lesson_key) return undefined
+    const teacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.instructional_teacher || item.assigned_instructional_teacher || selection?.assignedTeacher)
+    if (teacher !== 'slate') return undefined
+    const sourceId = liftoffOccurrenceId(item)
+    if (!sourceId) return undefined
+    let cancelled = false
+    setLiftoffRecordLoading(true)
+    ;(async () => {
+      try {
+        const params = new URLSearchParams({ learnerId, lessonKey: item.lesson_key, occurrenceId: sourceId })
+        const response = await fetch(`/api/slate-liftoff/records?${params}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        const json = await response.json().catch(() => ({}))
+        if (!cancelled && response.ok) setLiftoffRecord(Array.isArray(json?.records) ? (json.records[0] || null) : null)
+      } catch {
+        if (!cancelled) setLiftoffRecord(null)
+      } finally {
+        if (!cancelled) setLiftoffRecordLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [accessToken, item?.actual_instructional_teacher, item?.assigned_instructional_teacher, item?.id, item?.instructional_teacher, item?.lesson_key, item?.occurrence_id, item?.source_occurrence_id, learnerId, selection?.assignedTeacher])
+
+  useEffect(() => {
+    setLiftoffProgress(null)
+    setLiftoffProgressLoading(false)
+    setLiftoffRealtimeStatus('idle')
+    if (!learnerId || !accessToken || !item?.lesson_key) return undefined
+    const teacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.instructional_teacher || item.assigned_instructional_teacher || selection?.assignedTeacher)
+    if (teacher !== 'slate') return undefined
+    const sourceId = liftoffOccurrenceId(item)
+    if (!sourceId) return undefined
+
+    let cancelled = false
+    let channel = null
+    const supabase = getSupabaseClient()
+
+    const applySnapshot = (snapshot) => {
+      const progress = liftoffProgressFromSnapshot(snapshot, sourceId)
+      if (!cancelled && progress) setLiftoffProgress(progress)
+      return progress
+    }
+
+    setLiftoffProgressLoading(true)
+    ;(async () => {
+      try {
+        const params = new URLSearchParams({ learnerId, lessonKey: item.lesson_key })
+        const response = await fetch(`/api/snapshots?${params}`, {
+          cache: 'no-store',
+          headers: { Authorization: `Bearer ${accessToken}` },
+        })
+        const json = await response.json().catch(() => ({}))
+        if (!cancelled && response.ok) applySnapshot(json?.snapshot || null)
+      } catch {
+        // Realtime can still supply the next snapshot update.
+      } finally {
+        if (!cancelled) setLiftoffProgressLoading(false)
+      }
+
+      if (cancelled || !supabase) return
+      try {
+        await supabase.realtime.setAuth(accessToken)
+      } catch {
+        if (!cancelled) setLiftoffRealtimeStatus('auth_error')
+        return
+      }
+      if (cancelled) return
+
+      channel = supabase
+        .channel(`liftoff-progress:${learnerId}:${item.lesson_key}`)
+        .on('postgres_changes', {
+          event: '*',
+          schema: 'public',
+          table: 'learner_snapshots',
+          filter: `learner_id=eq.${learnerId}`,
+        }, (payload) => {
+          const row = payload?.new && typeof payload.new === 'object' ? payload.new : null
+          if (!row || String(row.lesson_key || '') !== String(item.lesson_key || '')) return
+          const progress = liftoffProgressFromSnapshot(row.data, sourceId)
+          if (progress && row.updated_at) progress.updated_at = row.updated_at
+          if (!cancelled && progress) setLiftoffProgress(progress)
+        })
+        .subscribe((status) => {
+          if (!cancelled) setLiftoffRealtimeStatus(String(status || '').toLowerCase())
+        })
+    })()
+
+    return () => {
+      cancelled = true
+      if (channel && supabase) void supabase.removeChannel(channel)
+    }
+  }, [accessToken, item?.actual_instructional_teacher, item?.assigned_instructional_teacher, item?.id, item?.instructional_teacher, item?.lesson_key, item?.occurrence_id, item?.source_occurrence_id, learnerId, selection?.assignedTeacher])
+
   if (!item) return null
 
   const itemType = item.item_type || 'lesson'
@@ -241,6 +386,15 @@ export default function FacilitatorSyllabusLessonOverlay({
   const headerInstructionalTeacher = isLesson && item.lesson_key ? (isHistorical ? historicalInstructionalTeacher : assignedTeacher) : null
   const displayStatus = repeatDeliveryActive ? 'Retry ready' : actualKind === 'completed' ? 'Completed' : actualKind === 'in_progress' ? 'In progress' : actualKind === 'incomplete' ? 'Incomplete' : (readiness || selection.syllabus_state?.replaceAll('_', ' ') || 'Ready')
   const retentionAnnotation = (item.slate_annotations || []).find((annotation) => annotation?.kind === 'retention') || null
+  const completedLiftoffProgress = liftoffProgressFromRecord(liftoffRecord)
+  const displayedLiftoffProgress = actualKind === 'completed' && completedLiftoffProgress
+    ? completedLiftoffProgress
+    : (liftoffProgress || completedLiftoffProgress)
+  const liftoffComponents = displayedLiftoffProgress?.component_state || []
+  const liftoffEssentialComponents = liftoffComponents.filter((component) => component?.essential !== false)
+  const liftoffIndependentCount = liftoffEssentialComponents.filter((component) => ['independent', 'retained'].includes(String(component?.evidenceState || ''))).length
+  const liftoffEssentialCount = liftoffEssentialComponents.length || liftoffComponents.length
+  const liftoffLive = displayedLiftoffProgress?.source === 'live_snapshot' && actualKind !== 'completed'
 
   async function refreshAfterChange() {
     if (typeof onChanged === 'function') await onChanged()
@@ -489,17 +643,34 @@ export default function FacilitatorSyllabusLessonOverlay({
     return loadLesson(fileName, subject)
   }
 
+  async function loadSlatePrintableLesson() {
+    // Use Mr. Slate's lesson loader, not the other teachers' assessment generator.
+    const response = await fetch('/api/lessons/meta', {
+      method: 'POST',
+      cache: 'no-store',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ keys: [item.lesson_key], learner_id: learnerId }),
+    })
+    const data = await response.json().catch(() => null)
+    const lesson = data?.lessons?.find((entry) => entry.lessonKey === item.lesson_key)
+    if (!response.ok || !lesson) throw new Error('Mr. Slate could not load the independent test for printing.')
+    return lesson
+  }
   async function handlePrintMaterial(kind) {
-    if (!canPrintMaterials || !['worksheet', 'test'].includes(kind)) return
+    if (!canPrintMaterials || !['worksheet', 'test'].includes(kind) || (displayTeacher === 'slate' && kind !== 'test')) return
     const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null
     setPrintBusy(kind)
     setPrintError('')
     try {
-      const stored = await getStoredAssessments(item.lesson_key, { learnerId })
+      const slateTest = displayTeacher === 'slate'
+      const stored = slateTest ? null : await getStoredAssessments(item.lesson_key, { learnerId })
       let source = Array.isArray(stored?.[kind]) && stored[kind].length ? stored[kind] : null
       let lesson = null
 
-      if (!source) {
+      if (slateTest) {
+        lesson = await loadSlatePrintableLesson()
+        source = buildSlateLiftoffTestItems(lesson)
+      } else if (!source) {
         const [loadedLesson, learner] = await Promise.all([
           loadPrintableLesson(),
           getLearner(learnerId),
@@ -519,10 +690,10 @@ export default function FacilitatorSyllabusLessonOverlay({
 
       const { createAssessmentPdf } = await import('@/app/session/assessment/printPdf')
       await createAssessmentPdf({
-        items: source.map((question, index) => ({ ...question, number: question.number || index + 1 })),
+        items: slateTest ? slateLiftoffPrintableTestItems(source) : source.map((question, index) => ({ ...question, number: question.number || index + 1 })),
         label: kind,
         lessonTitle: lesson?.title || item.title || 'Lesson',
-        fileBase: item.lesson_key,
+        fileBase: slateTest ? String(item.lesson_key).replace(/[\\/]/g, '-') : item.lesson_key,
         previewWin,
       })
     } catch (cause) {
@@ -661,10 +832,10 @@ export default function FacilitatorSyllabusLessonOverlay({
         <div className={styles.body}>
           {printOpen ? <section className={styles.detailSection}>
             <h3>Print lesson materials</h3>
-            <p>Open the learner&apos;s worksheet or test in a printable PDF preview. Printing here does not start the lesson.</p>
+            {displayTeacher === 'slate' ? <p>Open Mr. Slate&apos;s independent test in a printable PDF preview. Printing here does not start the lesson.</p> : <p>Open the learner&apos;s worksheet or test in a printable PDF preview. Printing here does not start the lesson.</p>}
             {printError && <div className={styles.errorMessage} role="alert">{printError}</div>}
             <div className={styles.secondaryActions}>
-              <button type="button" className={styles.primary} disabled={Boolean(printBusy)} onClick={() => void handlePrintMaterial('worksheet')}>{printBusy === 'worksheet' ? 'Opening worksheet...' : 'Print Worksheet'}</button>
+              {displayTeacher !== 'slate' && <button type="button" className={styles.primary} disabled={Boolean(printBusy)} onClick={() => void handlePrintMaterial('worksheet')}>{printBusy === 'worksheet' ? 'Opening worksheet...' : 'Print Worksheet'}</button>}
               <button type="button" className={styles.primary} disabled={Boolean(printBusy)} onClick={() => void handlePrintMaterial('test')}>{printBusy === 'test' ? 'Opening test...' : 'Print Test'}</button>
             </div>
           </section> : <>
@@ -682,8 +853,35 @@ export default function FacilitatorSyllabusLessonOverlay({
             {actualKind !== 'completed' && selection.currentLesson?.hasProgress && <div><dt>Progress</dt><dd>In progress</dd></div>}
             {isSlateAssignment && <><div><dt>Type</dt><dd>Daily Review</dd></div><div><dt>Review teacher</dt><dd>{reviewTeacherSelectionIcon(slateTeacher)} {reviewTeacherSelectionLabel(slateTeacher)}</dd></div></>}
           </dl>
-          {isSlateAssignment && <label className={styles.field}>Review teacher<select value={slateTeacher} disabled={coreBusy === 'slate'} onChange={(event) => void updateScheduledReviewTeacher(event.target.value)}>{REVIEW_TEACHER_SELECTION_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label>}
-          {teacherEditable && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy || coreBusy === 'teacher'} onChange={(event) => void handleTeacherChange(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option></select></label>}
+          {displayTeacher === 'slate' && isLesson && item.lesson_key && <section className={styles.detailSection}>
+            <h3>Mr. Slate objectives</h3>
+            {(liftoffProgressLoading || liftoffRecordLoading) && !displayedLiftoffProgress ? <p>Loading objectives...</p> : displayedLiftoffProgress ? <>
+              <p><strong>{liftoffIndependentCount}/{liftoffEssentialCount} complete</strong>{liftoffLive ? ' · Live' : ' · Recorded'}</p>
+              {liftoffComponents.length > 0 && <ul style={{ listStyle: 'none', paddingLeft: 0, margin: '10px 0 14px' }}>{liftoffComponents.map((component) => {
+                const evidenceState = String(component?.evidenceState || 'unobserved')
+                const demonstrated = ['independent', 'retained'].includes(evidenceState)
+                const evidenceLabel = evidenceState.replaceAll('_', ' ').replace(/\b\w/g, (letter) => letter.toUpperCase())
+                return <li key={component.id || component.name} style={{ display: 'flex', alignItems: 'flex-start', gap: 10, padding: '8px 0' }}>
+                  <input type="checkbox" checked={demonstrated} readOnly tabIndex={-1} aria-label={`${component.name || component.id || 'Objective'} ${demonstrated ? 'complete' : 'not complete'}`} style={{ marginTop: 2 }} />
+                  <div style={{ flex: 1 }}>
+                    <strong>{component.name || component.id || 'Objective'}</strong>
+                    <small style={{ display: 'block', marginTop: 2, fontWeight: 800, textTransform: 'uppercase', letterSpacing: '.04em' }}>{evidenceLabel}</small>
+                  </div>
+                </li>
+              })}</ul>}
+              <details>
+                <summary>Instructional details</summary>
+                <p><strong>Phase:</strong> {String(displayedLiftoffProgress.phase || 'active').replaceAll('_', ' ')}{displayedLiftoffProgress.updated_at ? <span> · Updated {prettyDateTime(displayedLiftoffProgress.updated_at)}</span> : null}</p>
+                <p><strong>Integrated use:</strong> {displayedLiftoffProgress.integration_confirmed ? 'Confirmed' : 'Not confirmed'} · <strong>Variation:</strong> {displayedLiftoffProgress.variation_confirmed ? 'Confirmed' : 'Not confirmed'} · <strong>Procedure released:</strong> {displayedLiftoffProgress.procedure_released ? 'Yes' : 'No'}</p>
+                {displayedLiftoffProgress.independent_test_percentage != null && Number.isFinite(Number(displayedLiftoffProgress.independent_test_percentage)) && <p><strong>Independent test:</strong> {Math.round(Number(displayedLiftoffProgress.independent_test_percentage))}%</p>}
+                {liftoffComponents.some((component) => component.description || (Array.isArray(component.dependencies) && component.dependencies.length > 0)) && <ul>{liftoffComponents.map((component) => <li key={`detail-${component.id || component.name}`}><strong>{component.name || component.id || 'Objective'}:</strong> {String(component.evidenceState || 'unobserved').replaceAll('_', ' ')}{component.description ? <div>{component.description}</div> : null}{Array.isArray(component.dependencies) && component.dependencies.length > 0 ? <small>Depends on: {component.dependencies.join(', ')}</small> : null}</li>)}</ul>}
+                {(displayedLiftoffProgress.responsibility_trace || []).length > 0 && <details><summary>Instructional trace</summary><ol>{displayedLiftoffProgress.responsibility_trace.map((entry, index) => <li key={String(entry.turn || index) + '-' + index}><strong>Turn {entry.turn || index + 1}:</strong> {String(entry.diagnosis || 'unknown').replaceAll('_', ' ')}{entry.evidence ? <span> - {entry.evidence}</span> : null}{entry.action?.type ? <div><strong>Next move:</strong> {String(entry.action.type).replaceAll('_', ' ')}{entry.action.reason ? <span> - {entry.action.reason}</span> : null}</div> : null}</li>)}</ol></details>}
+              </details>
+              {liftoffLive && <small>{liftoffRealtimeStatus === 'subscribed' ? 'Live updates connected.' : 'Connecting live updates...'}</small>}
+              {!liftoffLive && <small>This is observed instructional process evidence from Liftoff. It does not by itself establish delayed retention.</small>}
+            </> : <p>No Liftoff objectives yet. They will appear here as soon as the learner begins with Mr. Slate.</p>}
+          </section>}          {isSlateAssignment && <label className={styles.field}>Review teacher<select value={slateTeacher} disabled={coreBusy === 'slate'} onChange={(event) => void updateScheduledReviewTeacher(event.target.value)}>{REVIEW_TEACHER_SELECTION_IDS.map((id) => <option key={id} value={id}>{REVIEW_TEACHERS[id].icon} {REVIEW_TEACHERS[id].label}</option>)}</select></label>}
+          {teacherEditable && <label className={styles.field}>Assigned teacher<select value={assignedTeacher} disabled={teacherBusy || coreBusy === 'teacher'} onChange={(event) => void handleTeacherChange(event.target.value)}><option value="sonoma">Ms. Sonoma</option><option value="webb">Mrs. Webb</option><option value="slate">Mr. Slate</option></select></label>}
           {isConcept && <section className={styles.detailSection}>
             <h3>{generation.label}</h3>
             {actionBlockReason && <p role="status">{actionBlockReason}</p>}

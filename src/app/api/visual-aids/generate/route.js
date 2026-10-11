@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -70,7 +70,7 @@ export async function POST(req) {
                   : `Create an educational illustration prompt for this lesson:\n\nLesson: ${lessonTitle || 'Educational Lesson'}\nConcepts: ${teachingNotes}\n\nDescribe image #${index + 1}: Show a scene with objects, people, or nature that represents a key concept. Use only visual elements - no text, labels, or words anywhere in the image.`
               }
             ],
-            temperature: 0.8,
+            ...aiModelTemperature(0.8),
             max_tokens: 150
           })
         })
@@ -106,7 +106,7 @@ export async function POST(req) {
                   content: `Convert this image prompt into a kid-friendly explanation:\n\n${imagePrompt}\n\nMake it sound warm and encouraging, like you're explaining what's in the picture to help them learn. Make sure to complete all sentences. Use plain text only - no asterisks or special formatting.`
                 }
               ],
-              temperature: 0.7,
+              ...aiModelTemperature(0.7),
               max_tokens: 150
             })
           }),

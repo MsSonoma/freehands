@@ -114,6 +114,15 @@ test('facilitator layout owns refresh authorization and Syllabus no longer adds 
   assert.doesNotMatch(page, /pinChecked/)
 })
 
+test('facilitator Syllabus follows Supabase token refreshes instead of freezing its initial bearer token', () => {
+  const page = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
+  const authSubscription = page.indexOf('supabase.auth.onAuthStateChange')
+  assert.ok(authSubscription >= 0)
+  const tokenUpdate = page.indexOf("setToken(session?.access_token || '')", authSubscription)
+  assert.ok(tokenUpdate > authSubscription)
+  assert.match(page.slice(authSubscription), /data\?\.subscription\?\.unsubscribe\?\.\(\)/)
+})
+
 test('facilitator Syllabus paints a shell, yields, hydrates full contents, then permits automatic forecasting', () => {
   const page = fs.readFileSync(path.resolve('src/app/facilitator/page.js'), 'utf8')
   const route = fs.readFileSync(path.resolve('src/app/api/syllabus/route.js'), 'utf8')

@@ -1,0 +1,360 @@
+.workspace {
+  --addition-surface: var(--math-surface, #141b27);
+  --addition-text: var(--math-text, #f2f5fa);
+  --addition-muted: var(--math-muted, #a9b7ca);
+  --addition-border: var(--math-border, #40506a);
+  --addition-accent: var(--math-accent, #84caff);
+  background: var(--addition-surface);
+  color: var(--addition-text);
+  border: 1px solid var(--addition-border);
+  border-radius: 14px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.scrollArea {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 8px 0 14px;
+}
+.grid {
+  width: max-content;
+  min-width: min-content;
+  margin: 0 auto;
+}
+.rowLabel {
+  width: 76px;
+  min-width: 76px;
+  color: var(--addition-muted);
+  font: 600 11px/1.15 system-ui, sans-serif;
+  text-align: right;
+  padding-right: 8px;
+  box-sizing: border-box;
+}
+.multiplicationGrid .mathRule {
+  margin-left: 111px;
+}
+.mathRow {
+  display: flex;
+  align-items: center;
+  height: 43px;
+  gap: 0;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+.workRow .mathRow {
+  height: 31px;
+}
+.operator {
+  width: 35px;
+  min-width: 35px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--addition-text);
+}
+.operator.given {
+  appearance: none;
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.cellWrapper {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.multiplicationGrid .cellWrapper, .overlayGrid .cellWrapper {
+  position: relative;
+}
+.cell {
+  width: 41px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-align: center;
+  background: transparent;
+  color: var(--addition-text);
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font: 700 26px/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  padding: 0;
+  outline-offset: 2px;
+  appearance: none;
+}
+.workRow .cell {
+  height: 29px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.given {
+  cursor: pointer;
+}
+.given:disabled {
+  cursor: default;
+}
+.given:not(:disabled):hover {
+  background: color-mix(in srgb, var(--addition-accent), transparent 83%);
+}
+.editable {
+  background: color-mix(in srgb, var(--addition-accent), transparent 92%);
+  border: 1px solid var(--addition-border);
+  caret-color: var(--addition-accent);
+}
+.editable:focus {
+  outline: 2px solid var(--addition-accent);
+  border-color: var(--addition-accent);
+}
+.selected {
+  box-shadow: inset 0 0 0 2px var(--addition-accent);
+}
+.highlighted {
+  background: color-mix(in srgb, #f6cf54, transparent 78%);
+}
+.padding {
+  pointer-events: none;
+}
+.decimal, .decimalGhost {
+  width: 12px;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 800;
+  text-align: center;
+}
+.decimalGhost { opacity: 0; }
+.multiplicationDecimal {
+  position: absolute;
+  right: -6px;
+  bottom: 4px;
+  z-index: 1;
+  width: 12px;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 800;
+  text-align: center;
+  pointer-events: none;
+}
+.overlayDecimal {
+  position: absolute;
+  right: -6px;
+  bottom: 4px;
+  z-index: 2;
+  width: 12px;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 800;
+  text-align: center;
+  pointer-events: none;
+}
+.operatorTarget {
+  height: 40px;
+  padding: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--addition-text);
+  font: 800 22px/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  text-align: center;
+}
+.operatorTarget option {
+  color: #07111d;
+}
+.decimalChoiceRow {
+  display: flex;
+  align-items: stretch;
+  min-height: 44px;
+  margin: 2px 0 7px;
+}
+.decimalChoices {
+  display: flex;
+  width: max-content;
+}
+.decimalChoice {
+  width: 41px;
+  min-width: 41px;
+  min-height: 44px;
+  padding: 0;
+  border: 1px solid var(--addition-border);
+  border-right-width: 0;
+  background: color-mix(in srgb, var(--addition-accent), transparent 94%);
+  color: var(--addition-text);
+  font: 700 12px/1 system-ui, sans-serif;
+  cursor: pointer;
+}
+.decimalChoice:first-child { border-radius: 6px 0 0 6px; }
+.decimalChoice:last-child { border-right-width: 1px; border-radius: 0 6px 6px 0; }
+.decimalChoiceSelected {
+  background: var(--addition-accent);
+  color: #07111d;
+}
+.adjustmentNotice {
+  border: 1px solid var(--addition-border);
+  border-radius: 8px;
+  padding: 14px;
+  color: var(--addition-muted);
+  font: 600 13px/1.45 system-ui, sans-serif;
+}
+.mathRule {
+  border-top: 2px solid var(--addition-text);
+  height: 7px;
+  margin-left: 35px;
+}
+.answerRow .mathRow {
+  height: 48px;
+}
+.divisionGrid {
+  padding: 0 112px;
+}
+.divisionAssembly {
+  display: flex;
+  align-items: flex-start;
+  width: max-content;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+.divisionDivisorSpacer, .divisionGrid > .divisionAssembly .divisionLine:first-child {
+  height: 43px;
+}
+.divisionDivisor {
+  flex: none;
+}
+.divisionDivisorRow, .divisionLine {
+  display: flex;
+  position: relative;
+  align-items: center;
+  height: 43px;
+}
+.divisionDivisorRow {
+  justify-content: flex-end;
+  padding-right: 8px;
+}
+.divisionMain {
+  flex: none;
+}
+.divisionMain > .divisionLine {
+  padding-left: 8px;
+}
+.divisionBracket {
+  position: relative;
+  border-left: 3px solid var(--addition-text);
+  padding-left: 5px;
+}
+.divisionBracket::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: 3px solid var(--addition-text);
+}
+.divisionRowLabel {
+  position: absolute;
+  right: calc(100% + 12px);
+  width: 104px;
+  color: var(--addition-muted);
+  font: 600 11px/1.15 system-ui, sans-serif;
+  text-align: right;
+  white-space: nowrap;
+}
+.divisionArrow {
+  display: inline-block;
+  margin-right: 5px;
+  color: var(--addition-accent);
+  font-size: 16px;
+}
+.divisionStep {
+  padding-top: 5px;
+}
+.divisionStep .divisionLine {
+  height: 31px;
+}
+.divisionStep .cell {
+  height: 29px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.divisionProductLine {
+  margin-bottom: 5px;
+}
+.divisionProductLine::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -2px;
+  border-bottom: 1px solid var(--addition-text);
+}
+.divisionBringDownLine {
+  color: var(--addition-muted);
+}
+.bottomArea {
+  border-top: 1px solid var(--addition-border);
+  padding-top: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fullAnswerForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  color: var(--addition-muted);
+  font-size: 13px;
+}
+.fullAnswerControls {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.fullAnswerControls input {
+  background: transparent;
+  color: var(--addition-text);
+  border: 1px solid var(--addition-border);
+  border-radius: 6px;
+  width: 160px;
+  min-width: 0;
+  font: inherit;
+  font-size: 16px;
+  padding: 8px;
+}
+.fullAnswerControls button, .checkButton {
+  cursor: pointer;
+  background: var(--addition-accent);
+  color: #07111d;
+  border: 0;
+  border-radius: 6px;
+  font: 700 13px/1.25 system-ui, sans-serif;
+  padding: 9px 14px;
+}
+.bottomButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.guidance {
+  font-size: 12px;
+  color: var(--addition-muted);
+}
+.message {
+  margin: 0;
+  color: var(--addition-accent);
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .workspace { padding: 10px; }
+  .cell { width: 38px; height: 38px; font-size: 24px; }
+  .operator { width: 28px; min-width: 28px; }
+  .mathRule { margin-left: 28px; }
+  .multiplicationGrid .mathRule { margin-left: 104px; }
+  .decimal, .decimalGhost { width: 11px; }
+  .multiplicationDecimal { right: -5.5px; width: 11px; }
+  .overlayDecimal { right: -5.5px; width: 11px; }
+  .decimalChoice { width: 38px; min-width: 38px; }
+  .divisionGrid .cell { width: 41px; height: 40px; font-size: 26px; }
+  .divisionGrid .divisionStep .cell { height: 29px; font-size: 17px; }
+}
+.replaced { text-decoration: line-through; text-decoration-thickness: 2px; opacity: 0.7; }

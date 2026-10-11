@@ -52,6 +52,7 @@ import {
 import {
   mergeProvenance,
   resolveEvidenceSessionProvenance,
+  resolveSlateLiftoffProviderProvenance,
   resolveSlateProviderProvenance,
   resolveSonomaProviderProvenance,
   resolveWebbProviderProvenance,
@@ -114,13 +115,13 @@ async function verifyLearnerOwnership(admin, userId, learnerId) {
 async function verifyLessonSession(admin, { sessionId, learnerId, browserSessionId = null }) {
   const { data, error } = await admin
     .from('lesson_sessions')
-    .select('id, learner_id, session_id, ended_at, ended_reason')
+    .select('id, learner_id, session_id, instructional_teacher, ended_at, ended_reason')
     .eq('id', sessionId)
     .eq('learner_id', learnerId)
     .maybeSingle();
-  if (error || !data?.id || data.ended_at != null) return false;
-  if (browserSessionId && data.session_id !== browserSessionId) return false;
-  return true;
+  if (error || !data?.id || data.ended_at != null) return null;
+  if (browserSessionId && data.session_id !== browserSessionId) return null;
+  return data;
 }
 
 function isSlateEvidenceSession(session) {
@@ -425,7 +426,7 @@ async function handleCreateSession({ request, body, user, admin, now, proofSecre
   const ownsLearner = await verifyLearnerOwnership(admin, user.id, session.learner_id);
   if (!ownsLearner) return forbidden('Learner not found or unauthorized');
 
-  const hasTrackedSession = await verifyLessonSession(admin, {
+  const trackedSession = await verifyLessonSession(admin, {
     sessionId: session.session_id,
     learnerId: session.learner_id,
     browserSessionId: session.browser_session_id,
@@ -438,11 +439,17 @@ async function handleCreateSession({ request, body, user, admin, now, proofSecre
     now: now || new Date(),
     secret: proofSecret || process.env.SUPABASE_SERVICE_ROLE_KEY,
   });
-  if (!hasTrackedSession && !isSlateActivity) return forbidden('Lesson session not found or unauthorized');
+  if (!trackedSession && !isSlateActivity) return forbidden('Lesson session not found or unauthorized');
 
-  const provider = String(session.teaching_protocol_version || '').startsWith('webb-')
-    ? resolveWebbProviderProvenance()
-    : (isSlateActivity ? resolveSlateProviderProvenance() : resolveSonomaProviderProvenance());
+  const trackedTeacher = String(trackedSession?.instructional_teacher || '').trim().toLowerCase();
+  const protocol = String(session.teaching_protocol_version || '').trim();
+  const provider = trackedTeacher === 'slate' && protocol === 'liftoff-instruction-v1'
+    ? resolveSlateLiftoffProviderProvenance()
+    : (trackedTeacher === 'webb' || protocol.startsWith('webb-')
+      ? resolveWebbProviderProvenance()
+      : ((trackedTeacher === 'slate' || isSlateActivity)
+        ? resolveSlateProviderProvenance()
+        : resolveSonomaProviderProvenance()));
   const row = {
     ...session,
     facilitator_id: user.id,

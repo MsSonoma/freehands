@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js'
 import fs from 'fs'
 import path from 'path'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization'
+import { normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -82,7 +83,7 @@ export async function GET(request) {
       .eq('learner_id', learnerId)
     const instructionalTeacherByLesson = new Map((associationRows || []).map((row) => [
       normalizeLessonKey(row.lesson_key),
-      row.instructional_teacher === 'webb' ? 'webb' : 'sonoma',
+      normalizeInstructionalTeacher(row.instructional_teacher),
     ]))
 
     // Get today's scheduled lessons using local date (not UTC)

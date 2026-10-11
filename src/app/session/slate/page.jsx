@@ -25,6 +25,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { getCanonicalMasteryForLearner } from '@/app/lib/masteryClient'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { recordSlateCompletion } from '@/app/lib/slateCompletionClient'
+import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import { authorizeProtectedOccurrence } from '@/app/lib/syllabus/executionClient'
 import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
@@ -37,6 +38,8 @@ import {
   reviewTeacherRecoveryLine,
 } from '@/app/lib/reviewTeacherTone.mjs'
 import SlateReviewExperience from './SlateReviewExperience'
+import SlateLiftoffExperience from './SlateLiftoffExperience'
+import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { STAGE_6_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js'
 import { buildItemIdentity } from '@/app/lib/masteryEvidence/identity.js'
@@ -61,6 +64,18 @@ const QUESTION_SECONDS = 15
 const SCORE_GOAL = 10
 const FEEDBACK_DELAY_MS = 2000
 const RESHUFFLE_THRESHOLD = 0.2 // reshuffle when only 20% of deck remains
+const SLATE_MUSIC_SRC = '/media/Focus%20Flow.wav'
+const SLATE_MUSIC_DEFAULT_VOLUME = 0.18
+const SLATE_MUSIC_VOLUME_KEY = 'mr_slate_background_music_volume'
+const SLATE_MUSIC_MUTED_KEY = 'mr_slate_background_music_muted'
+const SLATE_MUSIC_LONG_PRESS_MS = 550
+
+function clampSlateMusicVolume(value) {
+  if (value === null || value === undefined || value === '') return SLATE_MUSIC_DEFAULT_VOLUME
+  const number = Number(value)
+  if (!Number.isFinite(number)) return SLATE_MUSIC_DEFAULT_VOLUME
+  return Math.min(1, Math.max(0, number))
+}
 
 const DEFAULT_SLATE_SETTINGS = {
   scoreGoal: 10,
@@ -127,7 +142,9 @@ function checkAnswerLocal(q, raw) {
   const norm = s => String(s || '').trim().toLowerCase().replace(/[^\w\s]/g, '').replace(/\s+/g, ' ').trim()
   const ua = norm(raw)
   if (!ua) return false
-  return (q.expectedAny || []).some(e => {
+  const expectedCandidates = [...(q.expectedAny || []), q.answer, q.expected].filter(Boolean)
+  if (slateMathAnswersEquivalent(raw, expectedCandidates, { question: q.question || q.prompt || '' })) return true
+  return expectedCandidates.some(e => {
     const ne = norm(e)
     return ne.length > 0 && (ua.includes(ne) || ne.includes(ua))
   })
@@ -151,6 +168,8 @@ async function checkAnswer(q, raw) {
   const questionText = String(q.question || q.prompt || '').trim()
   const expectedAny = Array.isArray(q.expectedAny) ? q.expectedAny : []
   const expectedAnswer = String(expectedAny[0] || q.answer || q.expected || '').trim()
+  const expectedCandidates = [expectedAnswer, ...expectedAny, q.answer, q.expected].filter(Boolean)
+  if (slateMathAnswersEquivalent(learnerAnswer, expectedCandidates, { question: questionText })) return true
   const keywords = Array.isArray(q.keywords) ? q.keywords : []
   const minKeywords = Number.isInteger(q.minKeywords) ? q.minKeywords : (keywords.length > 0 ? 1 : 0)
 
@@ -430,6 +449,9 @@ function SlateDrillInner() {
   const [userAnswer, setUserAnswer] = useState('')
   const [lastResult, setLastResult] = useState(null)
   const [soundOn, setSoundOn] = useState(true)
+  const [slateMusicMuted, setSlateMusicMuted] = useState(false)
+  const [slateMusicVolume, setSlateMusicVolume] = useState(SLATE_MUSIC_DEFAULT_VOLUME)
+  const [slateMusicVolumeOpen, setSlateMusicVolumeOpen] = useState(false)
   const [learnerId, setLearnerId] = useState(null)
   const [masteryMap, setMasteryMap] = useState({})
   const [errorMsg, setErrorMsg] = useState('')
@@ -466,6 +488,12 @@ function SlateDrillInner() {
   const poolRef = useRef([])
   const scoreRef = useRef(0)
   const soundRef = useRef(true)
+  const slateMusicAudioRef = useRef(null)
+  const slateMusicMutedRef = useRef(false)
+  const slateMusicVolumeRef = useRef(SLATE_MUSIC_DEFAULT_VOLUME)
+  const slateMusicControlRef = useRef(null)
+  const slateMusicLongPressRef = useRef(null)
+  const slateMusicSuppressClickRef = useRef(false)
   const learnerIdRef = useRef(null)
   const lessonKeyRef = useRef('')
   const lessonDataRef = useRef(null)
@@ -491,6 +519,143 @@ function SlateDrillInner() {
 
   // Keep fast refs in sync
   useEffect(() => { soundRef.current = soundOn }, [soundOn])
+
+  const clearSlateMusicLongPress = useCallback(() => {
+    if (slateMusicLongPressRef.current) {
+      clearTimeout(slateMusicLongPressRef.current)
+      slateMusicLongPressRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    if (reviewTeacherId !== 'slate') {
+      setSlateMusicVolumeOpen(false)
+      return undefined
+    }
+    if (typeof window === 'undefined') return undefined
+
+    let storedVolume = SLATE_MUSIC_DEFAULT_VOLUME
+    let storedMuted = false
+    try {
+      storedVolume = clampSlateMusicVolume(window.localStorage.getItem(SLATE_MUSIC_VOLUME_KEY))
+      const mutedValue = window.localStorage.getItem(SLATE_MUSIC_MUTED_KEY)
+      storedMuted = mutedValue === '1' || mutedValue === 'true'
+    } catch {}
+
+    slateMusicVolumeRef.current = storedVolume
+    slateMusicMutedRef.current = storedMuted
+    setSlateMusicVolume(storedVolume)
+    setSlateMusicMuted(storedMuted)
+
+    const audio = new Audio(SLATE_MUSIC_SRC)
+    audio.loop = true
+    audio.preload = 'auto'
+    audio.volume = storedVolume
+    slateMusicAudioRef.current = audio
+
+    const ensurePlayback = () => {
+      if (slateMusicAudioRef.current !== audio || slateMusicMutedRef.current || !audio.paused) return
+      try {
+        const playPromise = audio.play()
+        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {})
+      } catch {}
+    }
+
+    document.addEventListener('pointerdown', ensurePlayback, true)
+    document.addEventListener('keydown', ensurePlayback, true)
+    ensurePlayback()
+
+    return () => {
+      document.removeEventListener('pointerdown', ensurePlayback, true)
+      document.removeEventListener('keydown', ensurePlayback, true)
+      try { audio.pause() } catch {}
+      try { audio.src = '' } catch {}
+      if (slateMusicAudioRef.current === audio) slateMusicAudioRef.current = null
+    }
+  }, [reviewTeacherId])
+
+  useEffect(() => () => clearSlateMusicLongPress(), [clearSlateMusicLongPress])
+
+  useEffect(() => {
+    if (!slateMusicVolumeOpen) return undefined
+
+    const handleOutsidePointer = event => {
+      if (!slateMusicControlRef.current?.contains(event.target)) setSlateMusicVolumeOpen(false)
+    }
+    const handleEscape = event => {
+      if (event.key === 'Escape') setSlateMusicVolumeOpen(false)
+    }
+
+    document.addEventListener('pointerdown', handleOutsidePointer)
+    document.addEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('pointerdown', handleOutsidePointer)
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [slateMusicVolumeOpen])
+
+  const toggleSlateMusic = useCallback(() => {
+    if (slateMusicSuppressClickRef.current) {
+      slateMusicSuppressClickRef.current = false
+      return
+    }
+
+    const nextMuted = !slateMusicMutedRef.current
+    slateMusicMutedRef.current = nextMuted
+    setSlateMusicMuted(nextMuted)
+    try { window.localStorage.setItem(SLATE_MUSIC_MUTED_KEY, nextMuted ? '1' : '0') } catch {}
+
+    const audio = slateMusicAudioRef.current
+    if (!audio) return
+
+    if (nextMuted) {
+      try { audio.pause() } catch {}
+      return
+    }
+
+    audio.volume = slateMusicVolumeRef.current
+    try {
+      const playPromise = audio.play()
+      if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {})
+    } catch {}
+  }, [])
+
+  const handleSlateMusicVolumeChange = useCallback(event => {
+    const nextVolume = clampSlateMusicVolume(event.target.value)
+    slateMusicVolumeRef.current = nextVolume
+    setSlateMusicVolume(nextVolume)
+    try { window.localStorage.setItem(SLATE_MUSIC_VOLUME_KEY, String(nextVolume)) } catch {}
+
+    const audio = slateMusicAudioRef.current
+    if (!audio) return
+    audio.volume = nextVolume
+
+    if (!slateMusicMutedRef.current && audio.paused) {
+      try {
+        const playPromise = audio.play()
+        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {})
+      } catch {}
+    }
+  }, [])
+
+  const handleSlateMusicContextMenu = useCallback(event => {
+    event.preventDefault()
+    clearSlateMusicLongPress()
+    slateMusicSuppressClickRef.current = false
+    setSlateMusicVolumeOpen(true)
+  }, [clearSlateMusicLongPress])
+
+  const handleSlateMusicPointerDown = useCallback(event => {
+    if (event.button !== 0) return
+    clearSlateMusicLongPress()
+    slateMusicSuppressClickRef.current = false
+    slateMusicLongPressRef.current = setTimeout(() => {
+      slateMusicLongPressRef.current = null
+      slateMusicSuppressClickRef.current = true
+      setSlateMusicVolumeOpen(true)
+    }, SLATE_MUSIC_LONG_PRESS_MS)
+  }, [clearSlateMusicLongPress])
+
   useEffect(() => { learnerIdRef.current = learnerId }, [learnerId])
   useEffect(() => { settingsRef.current = settings }, [settings])
 
@@ -1813,6 +1978,90 @@ ${rows}
         <ScorePips score={score} goal={settings.scoreGoal} />
 
         <div style={{ display: 'flex', gap: 8 }}>
+          {reviewTeacherId === 'slate' && (
+            <div ref={slateMusicControlRef} style={{ position: 'relative', display: 'inline-grid' }}>
+              {slateMusicVolumeOpen && (
+                <div
+                  role="dialog"
+                  aria-label="Mr. Slate background music volume"
+                  onContextMenu={event => event.preventDefault()}
+                  style={{
+                    position: 'absolute',
+                    top: 'calc(100% + 8px)',
+                    right: 0,
+                    width: 210,
+                    padding: '10px 12px',
+                    background: reviewDesign.surface,
+                    color: reviewDesign.text,
+                    border: `1px solid ${reviewDesign.border}`,
+                    borderRadius: 6,
+                    boxShadow: '0 10px 28px rgba(0,0,0,0.4)',
+                    zIndex: 50,
+                    fontFamily: reviewDesign.fontFamily,
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+                    <span style={{ fontSize: 11, fontWeight: 800, letterSpacing: 1 }}>MUSIC VOLUME</span>
+                    <span style={{ fontSize: 11, color: reviewDesign.muted, fontVariantNumeric: 'tabular-nums' }}>
+                      {Math.round(slateMusicVolume * 100)}%
+                    </span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.01"
+                    value={slateMusicVolume}
+                    onChange={handleSlateMusicVolumeChange}
+                    aria-label="Background music volume"
+                    style={{ width: '100%', accentColor: reviewDesign.accent, cursor: 'pointer' }}
+                  />
+                  <div style={{ marginTop: 6, fontSize: 10, lineHeight: 1.4, color: reviewDesign.muted }}>
+                    RIGHT-CLICK OR HOLD FOR VOLUME
+                  </div>
+                </div>
+              )}
+              <button
+                type="button"
+                onClick={toggleSlateMusic}
+                onContextMenu={handleSlateMusicContextMenu}
+                onPointerDown={handleSlateMusicPointerDown}
+                onPointerUp={clearSlateMusicLongPress}
+                onPointerCancel={clearSlateMusicLongPress}
+                onPointerLeave={clearSlateMusicLongPress}
+                aria-pressed={slateMusicMuted}
+                aria-haspopup="dialog"
+                aria-expanded={slateMusicVolumeOpen}
+                aria-label={slateMusicMuted ? 'Turn Mr. Slate background music on' : 'Turn Mr. Slate background music off'}
+                title={slateMusicMuted ? 'Unmute music. Right-click or hold for volume.' : 'Mute music. Right-click or hold for volume.'}
+                style={{
+                  ...themedSoundBtn,
+                  display: 'grid',
+                  placeItems: 'center',
+                  minWidth: 38,
+                  WebkitTouchCallout: 'none',
+                  userSelect: 'none',
+                  touchAction: 'manipulation',
+                }}
+              >
+                <svg
+                  style={{ width: 16, height: 16 }}
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  aria-hidden="true"
+                >
+                  <path d="M9 18V5l10-2v13" />
+                  <circle cx="6" cy="18" r="3" />
+                  <circle cx="16" cy="16" r="3" />
+                  {slateMusicMuted ? <line x1="3" y1="3" x2="21" y2="21" /> : null}
+                </svg>
+              </button>
+            </div>
+          )}
           <button
             onClick={() => setSoundOn(v => {
               const next = !v
@@ -1832,10 +2081,8 @@ ${rows}
       {/* Main drill area */}
       <div style={{ flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
 
-        {/* Mr. Slate video — expands to fill all space above the card */}
-        <div style={isSlateDesign ? { flex: 1, minHeight: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '8px 16px 0' } : { flex: '0 0 auto', height: isSonomaDesign ? '35vh' : '30vh', minHeight: 180, width: isSonomaDesign ? '92%' : '96%', maxWidth: 960, margin: '8px auto 0', overflow: 'hidden', background: reviewDesign.videoBackground, borderRadius: reviewDesign.videoRadius, boxShadow: reviewDesign.videoShadow }}>
-          <SlateVideo teacher={reviewTeacherId} ref={slateVideoRef} style={{ width: '100%', height: '100%', objectFit: reviewDesign.videoObjectFit, objectPosition: reviewDesign.videoObjectPosition, margin: 0 }} />
-        </div>
+        {/* Shared review-teacher video frame stays stable regardless of question-card height. */}
+        <ReviewTeacherVideoStage teacher={reviewTeacherId} ref={slateVideoRef} />
 
         {/* Question card — anchored to bottom, scrolls internally if very tall */}
         <div style={isSlateDesign ? { flexShrink: 0, overflowY: 'auto', maxHeight: '60vh', padding: '12px 16px 56px', width: '100%', maxWidth: 632, margin: '0 auto', boxSizing: 'border-box' } : { flex: '1 1 auto', minHeight: 0, overflowY: 'auto', padding: isWebbDesign ? '16px 12px 72px' : '12px 4% 72px', width: '100%', maxWidth: isWebbDesign ? 720 : 760, margin: '0 auto', boxSizing: 'border-box', background: reviewDesign.content }}>
@@ -1989,5 +2236,14 @@ export default function SlateDrillPage() {
 function SlatePageContent() {
   const searchParams = useSearchParams()
   const reviewRunId = searchParams?.get('reviewRunId')
-  return reviewRunId ? <SlateReviewExperience runId={reviewRunId} /> : <SlateDrillInner />
+  const purpose = String(searchParams?.get('purpose') || '').trim().toLowerCase()
+  if (reviewRunId) return <SlateReviewExperience runId={reviewRunId} />
+  if (purpose === 'instruction') {
+    return <SlateLiftoffExperience
+      learnerId={searchParams?.get('learnerId') || ''}
+      lessonKey={searchParams?.get('lessonKey') || ''}
+      occurrenceId={searchParams?.get('occurrenceId') || ''}
+    />
+  }
+  return <SlateDrillInner />
 }

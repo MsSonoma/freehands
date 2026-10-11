@@ -1,0 +1,176 @@
+.workspace {
+  --addition-surface: var(--math-surface, #141b27);
+  --addition-text: var(--math-text, #f2f5fa);
+  --addition-muted: var(--math-muted, #a9b7ca);
+  --addition-border: var(--math-border, #40506a);
+  --addition-accent: var(--math-accent, #84caff);
+  background: var(--addition-surface);
+  color: var(--addition-text);
+  border: 1px solid var(--addition-border);
+  border-radius: 14px;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
+}
+.scrollArea {
+  width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  padding: 8px 0 14px;
+}
+.grid {
+  width: max-content;
+  min-width: min-content;
+  margin: 0 auto;
+}
+.mathRow {
+  display: flex;
+  align-items: center;
+  height: 43px;
+  gap: 0;
+  font-variant-numeric: tabular-nums;
+  font-family: ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+}
+.carryRow .mathRow {
+  height: 31px;
+}
+.operator {
+  width: 35px;
+  min-width: 35px;
+  text-align: center;
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--addition-text);
+}
+.cellWrapper {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+.cell {
+  width: 41px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  text-align: center;
+  background: transparent;
+  color: var(--addition-text);
+  border: 2px solid transparent;
+  border-radius: 6px;
+  font: 700 26px/1 ui-monospace, SFMono-Regular, Consolas, "Liberation Mono", monospace;
+  padding: 0;
+  outline-offset: 2px;
+  appearance: none;
+}
+.carryRow .cell {
+  height: 29px;
+  font-size: 17px;
+  font-weight: 600;
+}
+.given {
+  cursor: pointer;
+}
+.given:disabled {
+  cursor: default;
+}
+.given:not(:disabled):hover {
+  background: color-mix(in srgb, var(--addition-accent), transparent 83%);
+}
+.editable {
+  background: color-mix(in srgb, var(--addition-accent), transparent 92%);
+  border: 1px solid var(--addition-border);
+  caret-color: var(--addition-accent);
+}
+.editable:focus {
+  outline: 2px solid var(--addition-accent);
+  border-color: var(--addition-accent);
+}
+.selected {
+  box-shadow: inset 0 0 0 2px var(--addition-accent);
+}
+.highlighted {
+  background: color-mix(in srgb, #f6cf54, transparent 78%);
+}
+.padding {
+  pointer-events: none;
+}
+.decimal, .decimalGhost {
+  width: 12px;
+  font-size: 28px;
+  line-height: 1;
+  font-weight: 800;
+  text-align: center;
+}
+.decimalGhost { opacity: 0; }
+.mathRule {
+  border-top: 2px solid var(--addition-text);
+  height: 7px;
+  margin-left: 35px;
+}
+.answerRow .mathRow {
+  height: 48px;
+}
+.bottomArea {
+  border-top: 1px solid var(--addition-border);
+  padding-top: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.fullAnswerForm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  color: var(--addition-muted);
+  font-size: 13px;
+}
+.fullAnswerControls {
+  display: flex;
+  gap: 8px;
+  min-width: 0;
+}
+.fullAnswerControls input {
+  background: transparent;
+  color: var(--addition-text);
+  border: 1px solid var(--addition-border);
+  border-radius: 6px;
+  width: 160px;
+  min-width: 0;
+  font: inherit;
+  font-size: 16px;
+  padding: 8px;
+}
+.fullAnswerControls button, .checkButton {
+  cursor: pointer;
+  background: var(--addition-accent);
+  color: #07111d;
+  border: 0;
+  border-radius: 6px;
+  font: 700 13px/1.25 system-ui, sans-serif;
+  padding: 9px 14px;
+}
+.bottomButtons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  align-items: center;
+}
+.guidance {
+  font-size: 12px;
+  color: var(--addition-muted);
+}
+.message {
+  margin: 0;
+  color: var(--addition-accent);
+  font-size: 13px;
+}
+@media (max-width: 600px) {
+  .workspace { padding: 10px; }
+  .cell { width: 38px; height: 38px; font-size: 24px; }
+  .operator { width: 28px; min-width: 28px; }
+  .mathRule { margin-left: 28px; }
+  .decimal, .decimalGhost { width: 11px; }
+}

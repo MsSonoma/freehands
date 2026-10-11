@@ -134,6 +134,7 @@ export class MasteryEvidenceClient {
     retention = null,
     teachingProtocol = null,
     activityAuthorization = null,
+    eventSource = 'session-v2',
     startedAt,
   } = {}) {
     if (!this.enabled) {
@@ -164,6 +165,7 @@ export class MasteryEvidenceClient {
       retention: retention || null,
       teachingProtocol: teachingProtocol || null,
       activityAuthorization: activityAuthorization || null,
+      eventSource: normalizeText(eventSource) || 'session-v2',
       startedAt: startedAt || this.now(),
     };
     this.assessmentIsolation = assessmentIsolation || null;
@@ -184,7 +186,7 @@ export class MasteryEvidenceClient {
       occurredAt: startedAt,
       phase: initialPhase,
       suffix: STAGE_1_EVIDENCE_EVENT_TYPES.SESSION_STARTED,
-      payload: { source: 'session-v2', initial_phase: initialPhase || null },
+      payload: { source: this.meta?.eventSource || 'session-v2', initial_phase: initialPhase || null },
     }));
   }
 
@@ -202,7 +204,7 @@ export class MasteryEvidenceClient {
       phase,
       suffix,
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         previous_phase: previousPhase || null,
         phase: phase || null,
         sequence: Number.isFinite(Number(sequence)) ? Number(sequence) : 0,
@@ -239,7 +241,7 @@ export class MasteryEvidenceClient {
       assessmentRole,
       evidencePurpose,
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         total_questions: Number.isFinite(Number(totalQuestions)) ? Number(totalQuestions) : null,
@@ -284,7 +286,7 @@ export class MasteryEvidenceClient {
       attemptNumber: normalizedAttempt,
       isFirstResponse: !!isFirstResponse,
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         response_type: responseType,
@@ -335,7 +337,7 @@ export class MasteryEvidenceClient {
         evaluation_mode: evaluationMode,
       },
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         response_value: response == null ? null : String(response),
@@ -377,7 +379,7 @@ export class MasteryEvidenceClient {
       assistanceLevel: 'hinted',
       attemptNumber: normalizedAttempt,
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         hint_source: hintSource,
@@ -418,7 +420,7 @@ export class MasteryEvidenceClient {
       assistanceLevel: 'retry_no_hint',
       attemptNumber: normalizedAttempt,
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         retry_source: retrySource,
@@ -458,7 +460,7 @@ export class MasteryEvidenceClient {
       assistanceLevel: 'answer_revealed',
       attemptNumber,
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         reveal_source: revealSource,
@@ -507,7 +509,7 @@ export class MasteryEvidenceClient {
       evidencePurpose,
       assistanceLevel: answerRevealed ? 'answer_revealed' : 'reteach_or_scaffolded',
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         ask_mode: askMode,
         prompt: prompt == null ? null : String(prompt),
@@ -609,7 +611,7 @@ export class MasteryEvidenceClient {
       assessmentRole,
       evidencePurpose,
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         ...payload,
       },
@@ -627,7 +629,7 @@ export class MasteryEvidenceClient {
       phase: 'complete',
       suffix: STAGE_1_EVIDENCE_EVENT_TYPES.SESSION_ENDED,
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         reason,
         test_percentage: testPercentage,
       },
@@ -754,7 +756,7 @@ export class MasteryEvidenceClient {
         independence_reason: independenceReason || null,
       },
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         response_value: response == null ? null : String(response),
@@ -823,7 +825,7 @@ export class MasteryEvidenceClient {
         retention_qualification_reason: retentionQualificationReason || null,
       },
       payload: {
-        source: 'session-v2',
+        source: this.meta?.eventSource || 'session-v2',
         legacy_item_fingerprint: legacyItemFingerprint || null,
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         response_value: response == null ? null : String(response),

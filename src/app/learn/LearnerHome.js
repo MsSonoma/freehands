@@ -25,7 +25,7 @@ import {
   isDemoLearnerId,
   shouldAutoShowLearnerTutorial,
 } from '@/app/learn/demoLearner.mjs'
-import { buildInstructionalSessionRoute, instructionalTeacherLabel } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { buildInstructionalSessionRoute, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
 import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, isReviewTeacher, normalizeReviewTeacherSelection, reviewTeacherIcon, reviewTeacherLabel, reviewTeacherSelectionIcon, reviewTeacherSelectionLabel } from '@/app/lib/reviewTeacher.js'
 import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '@/app/learn/snapshotProgress.mjs'
 import { resolveLearnerSyllabusPresentation } from '@/app/lib/syllabus/learnerPresentation.mjs'
@@ -39,7 +39,7 @@ const LESSONS_TUTORIAL_STEPS = [
   {
     icon: '🎓',
     title: 'Your Instructional Teacher',
-    body: 'Your facilitator assigns Ms. Sonoma or Mrs. Webb for each lesson and can choose Ms. Sonoma, Mrs. Webb, or Mr. Slate for reviews. Mr. Slate is the default review teacher.',
+    body: 'Your facilitator assigns Ms. Sonoma, Mrs. Webb, or Mr. Slate for each lesson. Reviews can also use Ms. Sonoma, Mrs. Webb, or Mr. Slate, with Mr. Slate as the default review teacher.',
   },
   {
     icon: '📋',
@@ -1517,7 +1517,7 @@ function LessonsPageInner(){
                 const subjectBadge = subject === 'generated' && l.subject
                   ? l.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                   : displaySubject
-                const cardInstructionalTeacher = l.instructional_teacher === 'webb' ? 'webb' : 'sonoma'
+                const cardInstructionalTeacher = normalizeInstructionalTeacher(l.instructional_teacher)
                 return (
                   <button
                     key={`${subject}-${l.file}`}
@@ -1580,7 +1580,7 @@ function LessonsPageInner(){
                   const rSubjectBadge = meta.isGenerated
                     ? (meta.subject && meta.subject !== 'generated' ? meta.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ') : 'Generated')
                     : (meta.subject || 'general').split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
-                  const recentInstructionalTeacher = meta.instructional_teacher === 'webb' ? 'webb' : 'sonoma'
+                  const recentInstructionalTeacher = normalizeInstructionalTeacher(meta.instructional_teacher)
                   return (
                     <button
                       key={rk}
@@ -1674,7 +1674,7 @@ function LessonsPageInner(){
                       const oSubjectBadge = ol.subject && ol.subject !== 'generated'
                         ? ol.subject.split(' ').map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')
                         : 'Generated'
-                      const ownedInstructionalTeacher = ol.instructional_teacher === 'webb' ? 'webb' : 'sonoma'
+                      const ownedInstructionalTeacher = normalizeInstructionalTeacher(ol.instructional_teacher)
                       return (
                         <button
                           key={olk}

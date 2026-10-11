@@ -1,4 +1,4 @@
-import { AI_MODEL } from '../aiModel.js'
+import { AI_MODEL, aiModelTemperature } from '../aiModel.js'
 
 const PLANNING_MOVES = new Set(['branch', 'continue', 'return', 'facilitator_goal'])
 const STOP_WORDS = new Set([
@@ -288,7 +288,7 @@ export async function generateInstructionalForecastItems({ slots, context, fetch
       headers: { Authorization: 'Bearer ' + key, 'Content-Type': 'application/json' },
       body: JSON.stringify({
         model: AI_MODEL,
-        temperature: 0.3,
+        ...aiModelTemperature(0.3, AI_MODEL),
         response_format: { type: 'json_object' },
         messages: [
           { role: 'system', content: systemContent },

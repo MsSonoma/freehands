@@ -18,6 +18,7 @@ import { fetchTTS } from './services'
 import { buildAcceptableList, judgeAnswer } from './judging'
 import { deriveCorrectAnswerText } from '../utils/questionFormatting'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
+import { resolveExerciseResumeProgress } from './exerciseResumeProgress.mjs'
 
 const EXERCISE_CONV_URL = '/api/sonoma-exercise'
 
@@ -113,15 +114,17 @@ export class ExerciseConversationPhase {
     })
   }
 
-  #emitSnapshotSave(trigger) {
+  #emitSnapshotSave(trigger, nextQuestionIndex = this.#questionIndex) {
     this.#emit('requestSnapshotSave', {
       trigger,
       data: {
-        nextQuestionIndex: this.#questionIndex,
+        phaseOverride: 'exercise',
+        nextQuestionIndex,
         score:             this.#score,
         totalQuestions:    this.#questions.length,
         questions:         this.#questions,
         answers:           [...this.#answers],
+        wrongAttempts:     this.#wrongAttempts,
         timerMode:         this.#timerMode,
       },
     })
@@ -280,19 +283,13 @@ export class ExerciseConversationPhase {
       if (Array.isArray(this.#resumeState.questions) && this.#resumeState.questions.length) {
         this.#questions = this.#resumeState.questions
       }
-      this.#score         = Number(this.#resumeState.score || 0)
-      this.#answers       = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : []
-      this.#questionIndex = Math.min(
-        Math.max(this.#resumeState.nextQuestionIndex ?? 0, 0),
-        Math.max(this.#questions.length - 1, 0),
-      )
-
-      const explicitMode   = this.#resumeState.timerMode
-      const hasWorkProgress = this.#answers.length > 0 || this.#questionIndex > 0 || this.#score > 0
-      const inferredMode   = (explicitMode === 'play' || explicitMode === 'work')
-        ? explicitMode
-        : (hasWorkProgress ? 'work' : 'play')
-      this.#timerMode = skipPlayPortion ? 'work' : inferredMode
+      this.#score = Number(this.#resumeState.score || 0)
+      this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : []
+      const progress = resolveExerciseResumeProgress(this.#resumeState, this.#questions)
+      this.#questionIndex = progress.questionIndex
+      this.#wrongAttempts = progress.wrongAttempts
+      // Completed answers always resume in work, even if an old snapshot says play.
+      this.#timerMode = skipPlayPortion ? 'work' : progress.timerMode
 
       if (skipPlayPortion && this.#timerService) {
         this.#timerService.transitionToWork('exercise')
@@ -304,9 +301,14 @@ export class ExerciseConversationPhase {
         return
       }
 
-      // Resume directly into work: re-ask the current question
+      // Resume at the next unanswered question, including legacy snapshots.
       this.#timerMode = 'work'
-      this.#state     = 'awaiting-response'
+      this.#emitSnapshotSave('exercise-resume')
+      if (this.#questionIndex >= this.#questions.length) {
+        this.#complete()
+        return
+      }
+      this.#state = 'awaiting-response'
       this.#emitStateChange()
       await this.#askCurrentQuestion()
       return
@@ -400,6 +402,8 @@ export class ExerciseConversationPhase {
         this.#score++
         this.#wrongAttempts = 0
         const isLast       = this.#questionIndex >= this.#questions.length - 1
+        // Save a correct answer before asynchronous feedback or speech.
+        this.#emitSnapshotSave('exercise-answer', this.#questionIndex + 1)
         const feedbackText = await this.#getFeedbackText(true, 1, isLast, q)
         if (gen !== this.#submitGen || this.#destroyed) return
 
@@ -408,8 +412,6 @@ export class ExerciseConversationPhase {
           await this.#speakAndWait(feedbackText)
         }
         if (gen !== this.#submitGen || this.#destroyed) return
-
-        this.#emitSnapshotSave('exercise-answer')
 
         if (isLast) {
           this.#complete()
@@ -421,6 +423,7 @@ export class ExerciseConversationPhase {
       } else {
         this.#wrongAttempts++
         const isReveal     = this.#wrongAttempts >= 3
+        this.#emitSnapshotSave('exercise-attempt')
         const isLast       = this.#questionIndex >= this.#questions.length - 1
         const feedbackText = await this.#getFeedbackText(
           false,
@@ -454,9 +457,9 @@ export class ExerciseConversationPhase {
         if (gen !== this.#submitGen || this.#destroyed) return
 
         if (isReveal) {
-          this.#emitSnapshotSave('exercise-answer')
           this.#questionIndex++
           this.#wrongAttempts = 0
+          this.#emitSnapshotSave('exercise-answer')
           if (this.#questionIndex >= this.#questions.length) {
             this.#complete()
           } else {

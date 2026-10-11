@@ -22,7 +22,7 @@
  */
 
 import { NextResponse } from 'next/server';
-import { AI_MODEL } from '@/app/lib/aiModel';
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel';
 
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 // Answer judging is a simple classification task — uses the same model as the rest of the app.
@@ -132,7 +132,7 @@ export async function POST(request) {
             content: 'Judge the answer.'
           }
         ],
-        temperature: 0.1, // Low temperature for consistent judgement
+        ...aiModelTemperature(0.1), // Low temperature for models that support custom temperature
         max_completion_tokens: 20,
       }),
     });

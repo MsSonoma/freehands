@@ -38,9 +38,9 @@ export async function POST(request, deps = {}) {
     const learner = await repository.findOwnedLearner(learnerId, context.user.id)
     if (!learner) return NextResponse.json({ error: 'Learner not found or unauthorized', code: 'FORBIDDEN' }, { status: 403 })
 
-    const source = ['session-v2', 'webb'].includes(String(body?.source || '').trim()) ? String(body.source).trim() : null
+    const source = ['session-v2', 'webb', 'slate-liftoff'].includes(String(body?.source || '').trim()) ? String(body.source).trim() : null
     if (!source) return NextResponse.json({ error: 'A canonical instructional source is required', code: 'INSTRUCTIONAL_SOURCE_REQUIRED' }, { status: 400 })
-    const instructionalTeacher = source === 'webb' ? 'webb' : 'sonoma'
+    const instructionalTeacher = source === 'webb' ? 'webb' : (source === 'slate-liftoff' ? 'slate' : 'sonoma')
     const percentage = Number(body?.testPercentage)
     const testPercentage = Number.isFinite(percentage) && percentage >= 0 && percentage <= 100 ? percentage : null
     const runTransaction = deps.completeSessionTransaction || completeSessionTransaction

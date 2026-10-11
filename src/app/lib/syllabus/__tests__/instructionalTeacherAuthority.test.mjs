@@ -13,6 +13,7 @@ import { POST as recordHistoricalActivity } from '../../../api/syllabus/historic
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
 const LEARNER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 const MIGRATION_PATH = path.resolve('supabase/migrations/20260829190809_add_instructional_teacher_authority.sql')
+const LIFTOFF_MIGRATION_PATH = path.resolve('supabase/migrations/20261007142500_add_slate_liftoff_instructional_teacher.sql')
 const LEGACY_ACTIVITY_MIGRATION_PATH = path.resolve('supabase/migrations/20260830160201_add_syllabus_legacy_activity_records.sql')
 
 function instructionalTeacherMigration() {
@@ -110,7 +111,7 @@ function patchRequest(body) {
   })
 }
 
-test('new associations default to Sonoma and explicit Webb assignments persist', async () => {
+test('new associations default to Sonoma and explicit Webb or Slate assignments persist', async () => {
   const defaultAdmin = associationAdmin()
   const defaulted = await write(defaultAdmin, undefined)
   assert.equal(defaulted.instructional_teacher, 'sonoma')
@@ -119,6 +120,10 @@ test('new associations default to Sonoma and explicit Webb assignments persist',
   const webbAdmin = associationAdmin()
   const webb = await write(webbAdmin, 'webb')
   assert.equal(webb.instructional_teacher, 'webb')
+
+  const slateAdmin = associationAdmin()
+  const slate = await write(slateAdmin, 'slate')
+  assert.equal(slate.instructional_teacher, 'slate')
 })
 
 test('omitted teacher updates preserve an existing Webb assignment', async () => {
@@ -135,10 +140,10 @@ test('omitted teacher updates preserve an existing Webb assignment', async () =>
   assert.equal(Object.hasOwn(admin.state.writes[0].payload, 'instructional_teacher'), false)
 })
 
-for (const invalidTeacher of ['slate', 'unknown']) {
+for (const invalidTeacher of ['unknown']) {
   test(`${invalidTeacher} is rejected as an instructional teacher`, async () => {
     const admin = associationAdmin()
-    await assert.rejects(() => write(admin, invalidTeacher), /must be sonoma or webb/i)
+    await assert.rejects(() => write(admin, invalidTeacher), /must be sonoma, webb, or slate/i)
     assert.equal(admin.state.writes.length, 0)
   })
 }
@@ -159,10 +164,14 @@ test('timeline exposes current assignment but preserves the actual historical te
   assert.equal(currentIntent.assigned_instructional_teacher, 'webb')
 })
 
-test('instructional routing permits Sonoma and Webb, never Slate', () => {
+test('instructional routing permits Sonoma, Webb, and Slate Liftoff', () => {
   assert.match(buildInstructionalSessionRoute({ learnerId: LEARNER, subject: 'math', fileName: 'fractions.json', instructionalTeacher: 'sonoma' }), /^\/session\?/)
   assert.match(buildInstructionalSessionRoute({ learnerId: LEARNER, subject: 'math', fileName: 'fractions.json', instructionalTeacher: 'webb' }), /^\/session\/webb\?/)
-  assert.throws(() => buildInstructionalSessionRoute({ learnerId: LEARNER, subject: 'math', fileName: 'fractions.json', instructionalTeacher: 'slate' }), /valid instructional teacher/i)
+  const slate = buildInstructionalSessionRoute({ learnerId: LEARNER, subject: 'math', fileName: 'fractions.json', instructionalTeacher: 'slate', occurrenceId: 'syllabus:forecast-1' })
+  assert.match(slate, /^\/session\/slate\?/)
+  assert.match(slate, /lessonKey=math%2Ffractions\.json/)
+  assert.match(slate, /purpose=instruction/)
+  assert.match(slate, /occurrenceId=syllabus%3Aforecast-1/)
 })
 
 test('learner home is canonical, clears stale preference, and legacy route redirects', () => {
@@ -206,14 +215,15 @@ test('facilitator assignment PATCH admits only an exact active-Syllabus occurren
   assert.equal(admin.state.writes[0].payload.association_source, 'syllabus')
 })
 
-test('teacher assignment rejects Slate, non-membership, and a mismatched repeated occurrence', async () => {
+test('teacher assignment accepts Slate and still rejects non-membership or a mismatched repeated occurrence', async () => {
   const slateAdmin = associationAdmin()
   const repository = membershipRepository()
   const slate = await assignLessonTeacher(patchRequest({ learnerId: LEARNER, lessonKey: 'math/fractions.json', occurrenceId: 'syllabus:forecast-1', instructionalTeacher: 'slate' }), {
     requestContext: { user: { id: FACILITATOR }, admin: slateAdmin }, repository, now: new Date('2026-08-29T12:00:00Z'),
   })
-  assert.equal(slate.status, 400)
-  assert.equal(slateAdmin.state.writes.length, 0)
+  assert.equal(slate.status, 200)
+  assert.equal((await slate.json()).association.instructional_teacher, 'slate')
+  assert.equal(slateAdmin.state.writes.length, 1)
 
   for (const body of [
     { learnerId: LEARNER, lessonKey: 'math/random.json', occurrenceId: 'syllabus:forecast-1', instructionalTeacher: 'webb' },
@@ -535,4 +545,20 @@ test('completion of a historical NULL-teacher session fails closed without guess
   const completion = migrationFunction(instructionalTeacherMigration(), 'complete_lesson_session_transactional')
   assert.match(completion, /if v_session\.instructional_teacher is distinct from p_instructional_teacher then\s+return jsonb_build_object\([\s\S]*?'state', 'teacher_mismatch'/i)
   assert.doesNotMatch(completion, /coalesce\(v_session\.instructional_teacher|set instructional_teacher\s*=/i)
+})
+
+test('Slate Liftoff migration expands canonical teacher authority without merging Daily Review semantics', () => {
+  const sql = fs.readFileSync(LIFTOFF_MIGRATION_PATH, 'utf8')
+  assert.match(sql, /instructional_teacher in \('sonoma', 'webb', 'slate'\)/i)
+  assert.match(sql, /p_instructional_teacher not in \('sonoma', 'webb', 'slate'\)/i)
+  assert.match(sql, /p_instructional_teacher = 'slate' and p_source <> 'slate-liftoff'/i)
+  assert.match(sql, /activity_type = 'slate_drill_completion' and instructional_teacher is null/i)
+  assert.doesNotMatch(sql, /slate_drill_completion'[^;]*instructional_teacher = 'slate'/i)
+  assert.match(sql, /v_same_occurrence_takeover and p_instructional_teacher in \('sonoma', 'slate'\)/i)
+})
+
+test('canonical completion route maps slate-liftoff to Mr. Slate instruction', () => {
+  const source = fs.readFileSync(path.resolve('src/app/api/syllabus/execution/complete/route.js'), 'utf8')
+  assert.match(source, /\['session-v2', 'webb', 'slate-liftoff'\]/)
+  assert.match(source, /source === 'slate-liftoff' \? 'slate'/)
 })

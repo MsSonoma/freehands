@@ -16,28 +16,42 @@ import {
 } from '../../lib/webbCompositionModel.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '../../lib/aiModel.js'
+import { AI_MODEL, aiModelTemperature } from '../../lib/aiModel.js'
 const OPENAI_MODEL = AI_MODEL
 
 async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3, responseFormat = null) {
-  const res = await fetch(OPENAI_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({
-      model: OPENAI_MODEL,
-      messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-      max_completion_tokens: maxTokens,
-      temperature,
-      ...(responseFormat ? { response_format: responseFormat } : {}),
-    }),
-  })
-  if (!res.ok) throw new Error('Learning evaluator unavailable (' + res.status + ')')
-  const json = await res.json()
-  const choice = json.choices?.[0]
-  if (choice?.finish_reason === 'length' || !choice?.message?.content?.trim()) {
-    throw new Error('Learning evaluator returned an incomplete response')
+  const isLuna = /^gpt-5\.6-luna$/i.test(OPENAI_MODEL)
+  const tokenLimits = isLuna ? [maxTokens, Math.max(maxTokens * 3, 2400)] : [maxTokens]
+  for (const tokenLimit of tokenLimits) {
+    const res = await fetch(OPENAI_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+        max_completion_tokens: tokenLimit,
+        ...aiModelTemperature(temperature, OPENAI_MODEL),
+        ...(responseFormat ? { response_format: responseFormat } : {}),
+      }),
+    })
+    if (!res.ok) throw new Error('Learning evaluator unavailable (' + res.status + ')')
+    const json = await res.json()
+    const choice = json.choices?.[0]
+    if (choice?.finish_reason !== 'length' && choice?.message?.content?.trim()) {
+      return choice.message.content.trim()
+    }
   }
-  return choice.message.content.trim()
+  throw new Error('Learning evaluator returned an incomplete response')
+}
+
+function isSafeObjectiveClue(value) {
+  const clue = String(value || '').trim()
+  const words = clue.split(/\s+/).filter(Boolean)
+  if (!clue || words.length > 6 || clue.length > 80) return false
+  if (/[.!?]/.test(clue)) return false
+  if (/^(?:the learner|explain|describe|identify|compare|state|name|summarize|how|why|what|when|where|who)\b/i.test(clue)) return false
+  if (/\b(?:is|are|was|were|because|therefore|thus|caused|led|resulted|became|meant|made|allowed|prevented|showed|proved)\b/i.test(clue)) return false
+  return true
 }
 
 function parseGeneratedObjectives(raw) {
@@ -49,6 +63,7 @@ function parseGeneratedObjectives(raw) {
     const atomicFocus = String(row?.atomic_focus || '').trim().slice(0, 240)
     const objective = String(row?.objective || '').trim().slice(0, 600)
     if (!atomicFocus || !objective) throw new Error('Objective planner returned an incomplete objective')
+    if (!isSafeObjectiveClue(atomicFocus)) throw new Error('Objective planner returned an unsafe retrieval clue')
     return { atomic_focus: atomicFocus, objective }
   })
   if (new Set(normalized.map(row => row.objective.toLocaleLowerCase())).size !== normalized.length) {
@@ -96,8 +111,9 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
     "Each objective should be answerable by one focused comprehension question. Before returning a row containing \"and\", self-check whether the words after \"and\" create a second question, second verb task, or separately gradable fact. If they do, split, reorder, or omit the lower-priority idea.",
     "When the lesson itself teaches writing skills, those skills are legitimate lesson content. Objectives may explain what a claim, reason, supporting detail, transition, conclusion, revision step, or other writing concept does. The later Mrs. Webb essay will explain that learned content; it will not become a separate example essay unless a future writing mode explicitly supports that.",
     "Keep objective text content-focused and student-facing, normally as \"The learner can explain...\", \"The learner can describe...\", \"The learner can compare...\", or \"The learner understands...\". Do not put later writing instructions inside the objective text.",
-    "For each row, atomic_focus must name the single gradable concept in a short phrase.",
-    "Return only valid JSON in this exact shape: {\"objectives\":[{\"atomic_focus\":\"one concept\",\"objective\":\"The learner can explain...\"}]}.",
+    "For each row, atomic_focus is also the learner-facing retrieval clue. It must be a short 2 to 6 word concept label, not a sentence and not a proposition that can be lightly rewritten into the answer.",
+    "A retrieval clue may name the territory (for example, a person, event, process, theme, category, or broad concept), but it must not state the tested relationship, cause, effect, definition, comparison result, sequence result, or other answer-bearing predicate.",
+    "Return only valid JSON in this exact shape: {\"objectives\":[{\"atomic_focus\":\"short retrieval clue\",\"objective\":\"The learner can explain...\"}]}.",
   ].join(' ')
   const user = `Lesson: "${title}" - ${subject}, ${grade}.\n\nAssessment questions:\n${allQ.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
   const invoke = callModel || ((systemPrompt, userPrompt, maxTokens, temperature, responseFormat) => callGPT(apiKey, systemPrompt, userPrompt, maxTokens, temperature, responseFormat))
@@ -129,7 +145,49 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
     validation = validate(raw)
   }
   if (!validation.ok) throw new Error(`Objective planner remained invalid after recovery: ${validation.violations.join('; ')}`)
-  return validation.plan.map(row => row.objective)
+  return validation.plan
+}
+
+function fallbackObjectiveClues(objectives = []) {
+  return objectives.map((_, index) => `Goal ${index + 1}`)
+}
+
+async function generateObjectiveClues(apiKey, lesson, objectives, callModel = null) {
+  const cleanObjectives = (Array.isArray(objectives) ? objectives : [])
+    .map(value => String(value || '').trim())
+    .filter(Boolean)
+    .slice(0, 8)
+  if (!cleanObjectives.length) return []
+
+  const system = [
+    "Translate hidden mastery objectives into learner-facing retrieval clues.",
+    "Each clue must be a short 2 to 6 word concept label, not a sentence.",
+    "The clue may name the territory but must not state the proposition being tested.",
+    "Do not preserve a subject-plus-predicate relationship, cause plus effect, definition, comparison result, sequence result, or wording that can simply be paraphrased into a passing answer.",
+    "Examples: an objective about why colonists resisted taxation may become \"Colonial taxation\"; an objective about how evaporation changes liquid water may become \"Changes of state\".",
+    "Return exactly one clue for each objective, in the same order.",
+    "Return only valid JSON in this shape: {\"clues\":[\"short clue\"]}.",
+  ].join(' ')
+  const user = JSON.stringify({
+    lesson: {
+      title: lesson?.title || '',
+      subject: lesson?.subject || '',
+      grade: lesson?.grade || '',
+    },
+    hidden_objectives: cleanObjectives,
+  })
+  const invoke = callModel || ((systemPrompt, userPrompt, maxTokens, temperature, responseFormat) => callGPT(apiKey, systemPrompt, userPrompt, maxTokens, temperature, responseFormat))
+  try {
+    const raw = await invoke(system, user, 300, 0.1, { type: 'json_object' })
+    const parsed = JSON.parse(String(raw || ''))
+    const clues = Array.isArray(parsed?.clues)
+      ? parsed.clues.map(value => String(value || '').trim().slice(0, 100))
+      : []
+    if (clues.length !== cleanObjectives.length || clues.some(value => !isSafeObjectiveClue(value))) return fallbackObjectiveClues(cleanObjectives)
+    return clues
+  } catch {
+    return fallbackObjectiveClues(cleanObjectives)
+  }
 }
 
 function generateCompositionPlan(_apiKey, _lesson, objectives, learnerNotes, _callModel = null) {
@@ -256,9 +314,23 @@ export async function POST(req, deps = {}) {
 
     if (body.action === 'generate') {
       const pendingObjectives = Array.isArray(body.pendingObjectives) ? body.pendingObjectives.map(value => String(value || '').trim()).filter(Boolean).slice(0, 8) : []
-      if (pendingObjectives.length) return NextResponse.json({ objectives: [...new Set(pendingObjectives)], revisit: true })
-      const objectives = await generateObjectives(apiKey, buildInstructionalLessonView(body.lesson || {}), deps.callModel || null)
-      return NextResponse.json({ objectives })
+      if (pendingObjectives.length) {
+        const objectives = [...new Set(pendingObjectives)]
+        const lesson = buildInstructionalLessonView(body.lesson || {})
+        const clues = await generateObjectiveClues(apiKey, lesson, objectives, deps.callModel || null)
+        return NextResponse.json({ objectives, clues, revisit: true })
+      }
+      const objectivePlan = await generateObjectives(apiKey, buildInstructionalLessonView(body.lesson || {}), deps.callModel || null)
+      return NextResponse.json({
+        objectives: objectivePlan.map(row => row.objective),
+        clues: objectivePlan.map(row => row.atomic_focus),
+      })
+    }
+
+    if (body.action === 'clues') {
+      const objectives = Array.isArray(body.objectives) ? body.objectives.map(value => String(value || '').trim()).filter(Boolean).slice(0, 8) : []
+      const clues = await generateObjectiveClues(apiKey, buildInstructionalLessonView(body.lesson || {}), objectives, deps.callModel || null)
+      return NextResponse.json({ clues })
     }
 
     if (body.action === 'check') {

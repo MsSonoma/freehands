@@ -223,6 +223,19 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
     return () => { cancelled = true }
   }, [isAuthenticated])
 
+  useEffect(() => {
+    if (!isAuthenticated) {
+      setToken('')
+      return undefined
+    }
+    const supabase = getSupabaseClient()
+    if (!supabase) return undefined
+    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
+      setToken(session?.access_token || '')
+    })
+    return () => { data?.subscription?.unsubscribe?.() }
+  }, [isAuthenticated])
+
   function applySyllabusSnapshot(snapshot, id = learnerId) {
     if (!isCurrentLearnerSnapshot(snapshot, id) || !pageIdentity.current.startsWith(`${id}:`)) return false
     loadSequence.current++

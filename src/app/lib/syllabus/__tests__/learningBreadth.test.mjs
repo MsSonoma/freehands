@@ -125,6 +125,7 @@ test('production model request receives learner grade and subject breadth and re
     assert.equal(userPayload.subject_breadth.subjects[0].default_planning_move, 'branch')
     assert.match(requestBody.messages[0].content, /Learning history is evidence, not a command to continue/i)
     assert.match(requestBody.messages[0].content, /Actively maintain subject breadth across weeks/i)
+    assert.equal(requestBody.temperature, undefined)
     assert.equal(items[0].planning_move, 'branch')
     assert.equal(items[0].strand, 'geometry and spatial reasoning')
   } finally {

@@ -14,7 +14,7 @@ import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessme
 import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 
 // ── System prompt builders ─────────────────────────────────────────────────
@@ -160,7 +160,7 @@ export async function POST(request) {
             { role: 'user', content: `Generate the opening introduction for ${nameHint}.` },
           ],
           max_completion_tokens: 200,
-          temperature: 0.75,
+          ...aiModelTemperature(0.75, OPENAI_MODEL),
         }),
       })
       const json = await res.json()
@@ -202,7 +202,7 @@ export async function POST(request) {
         model: OPENAI_MODEL,
         messages: [{ role: 'system', content: system }, ...messages],
         max_completion_tokens: 160,
-        temperature: 0.75,
+        ...aiModelTemperature(0.75, OPENAI_MODEL),
       }),
     })
     const json = await res.json()

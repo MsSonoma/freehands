@@ -50,6 +50,7 @@ import LearnerEditOverlay from '@/app/facilitator/learners/components/LearnerEdi
 import GamesOverlay from '../components/games/GamesOverlay';
 import EventBus from './EventBus';
 import { loadLesson, fetchTTS } from './services';
+import { ttsCache } from '../utils/ttsCache';
 import { formatMcOptions, isMultipleChoice, isTrueFalse, formatQuestionForSpeech, ensureQuestionMark } from '../utils/questionFormatting';
 import { buildAcceptableList, judgeAnswer } from './judging';
 import { deriveCorrectAnswerText } from '../utils/questionFormatting';
@@ -61,6 +62,7 @@ import { getStoredAssessments, saveAssessments, clearAssessments } from '../asse
 import { buildAssessmentPhaseSets, resolveLearnerAssessmentTarget } from '../assessment/assessmentSets';
 import { createAssessmentPdf, shareOrPreviewPdf as shareOrPreviewAssessmentPdf } from '../assessment/printPdf';
 import CaptionPanel from '../components/CaptionPanel';
+import SonomaBackgroundMusicControl from '../components/SonomaBackgroundMusicControl';
 import StudyPanel from './StudyPanel';
 import VocabularyPanel from './VocabularyPanel';
 import { normalizeLessonVocabulary, getVocabularyTerms, buildVocabularyPromptChunk } from '@/app/lib/lessonVocabulary.mjs';
@@ -133,7 +135,7 @@ const SESSION_TUTORIAL_STEPS = [
   {
     icon: '\ud83d\udcd6',
     title: 'Teaching Phase',
-    body: 'Ms. Sonoma reads the lesson to you. Press Repeat (blue button) to hear a sentence again, or Next Sentence (green button) to move forward.',
+    body: 'Ms. Sonoma reads the lesson to you. Tap any Ms. Sonoma sentence to hear that sentence again, or press Next Sentence to move forward.',
   },
   {
     icon: '?',
@@ -554,6 +556,8 @@ function SessionPageV2Inner() {
   const videoRef = useRef(null);
   const transcriptRef = useRef(null);
   const audioEngineRef = useRef(null);
+  const captionReplayAudioRef = useRef(null);
+  const captionReplayRequestRef = useRef(0);
   const studyAudioEngineRef = useRef(null);
   const studyResumeMainAudioRef = useRef(false);
   const wordsResumeMainAudioRef = useRef(false);
@@ -694,7 +698,6 @@ function SessionPageV2Inner() {
   const [teachingStage, setTeachingStage] = useState('idle');
   const [teachingLoading, setTeachingLoading] = useState(false);
   const [comprehensionSubmitting, setComprehensionSubmitting] = useState(false);
-  const [exerciseSubmitting, setExerciseSubmitting] = useState(false);
   const [worksheetSubmitting, setWorksheetSubmitting] = useState(false);
   const [testSubmitting, setTestSubmitting] = useState(false);
   const [congratsTtsUrl, setCongratsTtsUrl] = useState(null);
@@ -860,8 +863,10 @@ function SessionPageV2Inner() {
   const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
   const [discussionObjectivesInfo, setDiscussionObjectivesInfo] = useState({ completed: 0, total: 0 });
   const [discussionObjectivesList, setDiscussionObjectivesList] = useState([]);
+  const [discussionObjectiveClues, setDiscussionObjectiveClues] = useState([]);
   const [discussionCompletedIndices, setDiscussionCompletedIndices] = useState([]);
   const [showDiscussionObjectives, setShowDiscussionObjectives] = useState(false);
+  const [showFullDiscussionObjectives, setShowFullDiscussionObjectives] = useState(false);
   const [newlyCompletedDiscussionObj, setNewlyCompletedDiscussionObj] = useState(null); // {text, completedCount, totalCount}
   const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState({ type: 'overview', index: 0, total: 0, text: '', waitingForNext: false });
 
@@ -1271,7 +1276,6 @@ function SessionPageV2Inner() {
   const [activeCaptionIndex, setActiveCaptionIndex] = useState(-1);
   const [engineState, setEngineState] = useState('idle');
   const [isMuted, setIsMuted] = useState(false);
-  const [showRepeatButton, setShowRepeatButton] = useState(false);
   const [events, setEvents] = useState([]);
   const [downloadError, setDownloadError] = useState('');
   const [generatedComprehension, setGeneratedComprehension] = useState(null);
@@ -1307,6 +1311,17 @@ function SessionPageV2Inner() {
       if (transcriptPersistTimerRef.current) {
         try { clearTimeout(transcriptPersistTimerRef.current); } catch {}
         transcriptPersistTimerRef.current = null;
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      captionReplayRequestRef.current += 1;
+      if (captionReplayAudioRef.current) {
+        try { captionReplayAudioRef.current.pause(); } catch {}
+        try { captionReplayAudioRef.current.src = ''; } catch {}
+        captionReplayAudioRef.current = null;
       }
     };
   }, []);
@@ -1711,6 +1726,89 @@ function SessionPageV2Inner() {
       console.warn('[SessionPageV2] Visual aid explain failed:', err);
     }
   }, [stopAudioSafe]);
+
+  const handleReplayTranscriptLine = useCallback(async (line, originalIndex) => {
+    const text = String(line?.text || '').trim();
+    if (!text || line?.role === 'user') return;
+    if (audioEngineRef.current?.isPlaying) return;
+
+    const requestId = captionReplayRequestRef.current + 1;
+    captionReplayRequestRef.current = requestId;
+
+    if (captionReplayAudioRef.current) {
+      try { captionReplayAudioRef.current.pause(); } catch {}
+      try { captionReplayAudioRef.current.src = ''; } catch {}
+      captionReplayAudioRef.current = null;
+    }
+
+    // Prime this specific HTMLAudio element during the learner's click so iPad/Safari
+    // can still play it after the async TTS request returns.
+    const audio = new Audio('data:audio/wav;base64,UklGRigAAABXQVZFZm10IBIAAAABAAEARKwAAIhYAQACABAAAABkYXRhAgAAAAEA');
+    audio.muted = isMuted;
+    audio.volume = isMuted ? 0 : 1;
+    captionReplayAudioRef.current = audio;
+    try {
+      const unlock = audio.play();
+      if (unlock && typeof unlock.catch === 'function') unlock.catch(() => {});
+    } catch {}
+
+    void masteryEvidenceClientRef.current?.recordInteractionEvent({
+      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
+      phase: normalizePhaseAlias(line?.phase || currentPhaseRef.current || currentPhase),
+      suffix: `transcript-repeat:${originalIndex}:${Date.now()}`,
+      payload: {
+        repeat_surface: 'transcript_sentence_click',
+        transcript_index: Number.isFinite(originalIndex) ? originalIndex : null,
+      },
+    });
+
+    let audioBase64 = ttsCache.get(text);
+    if (!audioBase64) {
+      audioBase64 = await fetchTTS(text);
+      if (audioBase64) ttsCache.set(text, audioBase64);
+    }
+
+    if (
+      requestId !== captionReplayRequestRef.current
+      || captionReplayAudioRef.current !== audio
+      || audioEngineRef.current?.isPlaying
+    ) {
+      try { audio.pause(); } catch {}
+      return;
+    }
+
+    if (!audioBase64) {
+      try { audio.pause(); } catch {}
+      if (captionReplayAudioRef.current === audio) captionReplayAudioRef.current = null;
+      return;
+    }
+
+    const cleanupReplay = () => {
+      if (captionReplayAudioRef.current === audio) captionReplayAudioRef.current = null;
+      if (!audioEngineRef.current?.isPlaying) {
+        try { videoRef.current?.pause(); } catch {}
+      }
+    };
+
+    try {
+      audio.pause();
+      audio.src = /^data:audio\//i.test(String(audioBase64))
+        ? String(audioBase64)
+        : `data:audio/mpeg;base64,${audioBase64}`;
+      audio.currentTime = 0;
+      audio.onended = cleanupReplay;
+      audio.onerror = cleanupReplay;
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.then === 'function') await playPromise;
+      try {
+        const videoPlay = videoRef.current?.play();
+        if (videoPlay && typeof videoPlay.catch === 'function') videoPlay.catch(() => {});
+      } catch {}
+    } catch (err) {
+      cleanupReplay();
+      console.warn('[SessionPageV2] Transcript sentence replay failed:', err);
+    }
+  }, [currentPhase, isMuted]);
 
   
   // Load learner profile (REQUIRED - no defaults or fallback)
@@ -4994,18 +5092,19 @@ function SessionPageV2Inner() {
     // Subscribe to AudioEngine events
     engine.on('start', (data) => {
       addEvent('ðŸŽ¬ AudioEngine START');
+      captionReplayRequestRef.current += 1;
+      if (captionReplayAudioRef.current) {
+        try { captionReplayAudioRef.current.pause(); } catch {}
+        try { captionReplayAudioRef.current.src = ''; } catch {}
+        captionReplayAudioRef.current = null;
+      }
       setEngineState('playing');
-      setShowRepeatButton(false); // Hide repeat while playing
     });
     
     engine.on('end', (data) => {
       addEvent(`ðŸ AudioEngine END (completed: ${data.completed}, skipped: ${data.skipped || false})`);
       sonomaReminderAudioActiveRef.current = null;
       setEngineState('idle');
-      // Show repeat button if there's audio to replay
-      if (engine.hasAudioToReplay) {
-        setShowRepeatButton(true);
-      }
     });
     
     engine.on('captionChange', (data) => {
@@ -5601,6 +5700,7 @@ function SessionPageV2Inner() {
         total:     data.totalObjectives     || 0,
       });
       if (Array.isArray(data.objectives))      setDiscussionObjectivesList(data.objectives);
+      if (Array.isArray(data.objectiveClues))  setDiscussionObjectiveClues(data.objectiveClues);
       if (Array.isArray(data.completedIndices)) setDiscussionCompletedIndices(data.completedIndices);
       // Auto-start on resume: skip the 'Begin Discussion' button when prefetch completes
       if (data.state === 'ready' && isDiscussionResume) {
@@ -6142,6 +6242,8 @@ function SessionPageV2Inner() {
         nextQuestionIndex: savedExercise.nextQuestionIndex ?? savedExercise.questionIndex ?? 0,
         score: savedExercise.score || 0,
         answers: savedExercise.answers || [],
+        wrongAttempts: savedExercise.wrongAttempts,
+        lastAction: savedExercise.lastAction,
         timerMode: savedExercise.timerMode || 'work'
       } : null
     });
@@ -7993,57 +8095,21 @@ function SessionPageV2Inner() {
     if (!audioEngineRef.current) return;
     const newMuted = !audioEngineRef.current.isMuted;
     audioEngineRef.current.setMuted(newMuted);
+    if (captionReplayAudioRef.current) {
+      captionReplayAudioRef.current.muted = newMuted;
+      captionReplayAudioRef.current.volume = newMuted ? 0 : 1;
+    }
     setIsMuted(newMuted);
   };
   
-  // Skip current TTS playback ONLY — NEVER call phase.skip() here.
-  // This is a TTS/audio skip: it stops Ms. Sonoma's current sentence so the user
-  // doesn't have to listen to the full read-aloud. The question remains on screen
-  // and the student must still answer it.
-  // !! DO NOT add phase.skip() / skipComprehension / skipExerciseQuestion / etc. !!
-  // Those call phase.skip() which records a null answer and advances the question — wrong.
-  const skipTTS = () => {
-    if (!audioEngineRef.current) return;
-    if (askExitSpeechLockRef.current) return;
-    stopAudioSafe();
-  };
-  
-  // Skip sentence (hotkey handler for teaching phase)
+  // Skip sentence hotkey retained for keyboard accessibility; there is no longer a skip button.
   const skipSentence = () => {
     if (!audioEngineRef.current) return;
     if (askExitSpeechLockRef.current) return;
     if (ttsUnskippableRef.current) return;
     stopAudioSafe();
   };
-  
-  // Replay current sentence
-  const replayTTS = () => {
-    if (!audioEngineRef.current) return;
-    const itemContext = getActiveEvidenceItemContext();
-    void masteryEvidenceClientRef.current?.recordInteractionEvent({
-      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
-      ...itemContext,
-      suffix: `tts-replay:${Date.now()}`,
-      payload: {
-        repeat_surface: 'current_tts_replay_button',
-      },
-    });
-    audioEngineRef.current.replay();
-  };
 
-  const repeatDiscussionSentence = () => {
-    if (!discussionPhaseRef.current) return;
-    void masteryEvidenceClientRef.current?.recordInteractionEvent({
-      eventType: STAGE_2_EVIDENCE_EVENT_TYPES.REPEAT_USED,
-      phase: 'discussion',
-      suffix: `discussion-repeat:${Date.now()}`,
-      payload: {
-        repeat_surface: 'discussion_sentence',
-      },
-    });
-    discussionPhaseRef.current.repeatCurrentSentence();
-  };
-  
   // Discussion handlers
   const submitDiscussionResponse = () => {
     if (!discussionPhaseRef.current) return;
@@ -8137,25 +8203,6 @@ function SessionPageV2Inner() {
   };
   
   // Exercise handlers
-  const submitExerciseAnswer = async () => {
-    if (!exercisePhaseRef.current || !selectedExerciseAnswer) return;
-    appendTranscriptLine({ text: selectedExerciseAnswer, role: 'user' });
-    setExerciseSubmitting(true);
-    let watchdogId;
-    const watchdog = new Promise((_, reject) => {
-      watchdogId = setTimeout(() => reject(new Error('submit-watchdog')), 35000);
-    });
-    try {
-      await Promise.race([exercisePhaseRef.current.submitAnswer(selectedExerciseAnswer), watchdog]);
-    } catch (err) {
-      console.warn('[SessionPageV2] Exercise submit error – recovering phase state:', err?.message);
-      try { exercisePhaseRef.current.recover?.(); } catch {}
-    } finally {
-      clearTimeout(watchdogId);
-      setExerciseSubmitting(false);
-    }
-  };
-  
   const skipExerciseQuestion = () => {
     if (!exercisePhaseRef.current) return;
     exercisePhaseRef.current.skip();
@@ -8371,32 +8418,6 @@ function SessionPageV2Inner() {
         />
       )}
 
-      {/* Fixed tutorial toggle button */}
-      {!showTutorial && (
-        <button
-          onClick={() => setShowTutorial(true)}
-          title="Show page tour"
-          style={{
-            position: 'fixed',
-            bottom: 80,
-            right: 16,
-            zIndex: 1500,
-            padding: '6px 12px',
-            border: '1px solid #c7d2fe',
-            borderRadius: 8,
-            background: '#eef2ff',
-            color: '#6366f1',
-            fontWeight: 700,
-            fontSize: 13,
-            cursor: 'pointer',
-            lineHeight: 1,
-            boxShadow: '0 2px 8px rgba(99,102,241,0.15)',
-          }}
-        >
-          ? Tour
-        </button>
-      )}
-
       {/* Content wrapper - add horizontal gutters in landscape */}
       <div style={isMobileLandscape ? { width: '100%', paddingLeft: 8, paddingRight: 8, boxSizing: 'border-box', position: 'relative' } : { width: '100%' }}>
         
@@ -8449,6 +8470,32 @@ function SessionPageV2Inner() {
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
           />
           
+          {/* Tour stays inside the video, never over the answer/objective footer. */}
+          {!showTutorial && (
+            <button
+              type="button"
+              onClick={() => setShowTutorial(true)}
+              title="Show page tour"
+              style={{
+                position: 'absolute',
+                top: 8,
+                right: 8,
+                zIndex: 10002,
+                padding: '6px 12px',
+                border: '1px solid #c7d2fe',
+                borderRadius: 8,
+                background: '#eef2ff',
+                color: '#6366f1',
+                fontWeight: 700,
+                fontSize: 13,
+                cursor: 'pointer',
+                lineHeight: 1,
+                boxShadow: '0 2px 8px rgba(99,102,241,0.15)',
+              }}
+            >
+              ? Tour
+            </button>
+          )}
           {/* Phase Timer - top left overlay (matching V1) */}
           {phaseTimers && !showGames && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
             <div style={{ 
@@ -8474,7 +8521,7 @@ function SessionPageV2Inner() {
             </div>
           )}
           
-          {/* Video overlay controls - bottom right (Skip/Repeat + mute) */}
+          {/* Video overlay controls - bottom right (background music + voice mute) */}
           <div style={{
             position: 'absolute',
             bottom: 16,
@@ -8483,60 +8530,7 @@ function SessionPageV2Inner() {
             gap: 12,
             zIndex: 10
           }}>
-            {/* Skip/Repeat (acts as one button) */}
-            {engineState === 'playing' && !ttsUnskippable && (
-              <button
-                type="button"
-                onClick={skipTTS}
-                aria-label="Skip"
-                title="Skip"
-                style={{
-                  background: '#1f2937',
-                  color: '#fff',
-                  border: 'none',
-                  width: 'clamp(34px, 6.2vw, 52px)',
-                  height: 'clamp(34px, 6.2vw, 52px)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-                }}
-              >
-                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <polygon points="5 4 15 12 5 20 5 4" />
-                  <line x1="19" y1="5" x2="19" y2="19" />
-                </svg>
-              </button>
-            )}
-
-            {engineState !== 'playing' && showRepeatButton && (
-              <button
-                type="button"
-                onClick={replayTTS}
-                aria-label="Repeat"
-                title="Repeat"
-                style={{
-                  background: '#1f2937',
-                  color: '#fff',
-                  border: 'none',
-                  width: 'clamp(34px, 6.2vw, 52px)',
-                  height: 'clamp(34px, 6.2vw, 52px)',
-                  display: 'grid',
-                  placeItems: 'center',
-                  borderRadius: '50%',
-                  cursor: 'pointer',
-                  boxShadow: '0 2px 6px rgba(0,0,0,0.3)'
-                }}
-              >
-                <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M17 1v6h-6" />
-                  <path d="M7 23v-6h6" />
-                  <path d="M3.51 9a9 9 0 0114.13-3.36L17 7" />
-                  <path d="M20.49 15A9 9 0 015.36 18.36L7 17" />
-                </svg>
-              </button>
-            )}
+            <SonomaBackgroundMusicControl />
 
             <button
               type="button"
@@ -8905,6 +8899,8 @@ function SessionPageV2Inner() {
             vocabTerms={vocabTerms}
             captionStartIndex={currentPhase === 'test' ? testCaptionStartIndex : -1}
             studyEnabled={!openingActionActive && !showWords}
+            replayEnabled={engineState !== 'playing'}
+            onReplayRequest={handleReplayTranscriptLine}
             onStudyRequest={(line, originalIndex) => handleStudyStart({
               type: 'sentence',
               text: String(line?.text || ''),
@@ -9921,7 +9917,7 @@ function SessionPageV2Inner() {
             );
           })()}
 
-          {/* Discussion sentence controls — Repeat/Next during overview and vocab playback */}
+          {/* Discussion sentence control — replay is handled by clicking the transcript sentence. */}
           {currentPhase === 'discussion' && !openingActionActive && !showWords &&
            (discussionState === 'playing-greeting' || discussionState === 'playing-vocab') && (
             <div style={{
@@ -9931,23 +9927,6 @@ function SessionPageV2Inner() {
               justifyContent: 'center',
               padding: '8px 4px'
             }}>
-              <button
-                type="button"
-                onClick={repeatDiscussionSentence}
-                style={{
-                  padding: '12px 28px',
-                  background: 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)',
-                  color: '#fff',
-                  border: 'none',
-                  borderRadius: 10,
-                  fontSize: '1rem',
-                  fontWeight: 600,
-                  cursor: 'pointer',
-                  boxShadow: '0 4px 16px rgba(59,130,246,0.4)',
-                }}
-              >
-                Repeat
-              </button>
               <button
                 type="button"
                 onClick={() => discussionPhaseRef.current?.nextSentence()}
@@ -9981,23 +9960,6 @@ function SessionPageV2Inner() {
             }}>
               {(teachingStage === 'idle' || teachingStage === 'concept' || teachingStage === 'definitions' || teachingStage === 'lecture' || teachingStage === 'examples') && (
                 <>
-                  <button
-                    onClick={repeatSentence}
-                    disabled={!isInSentenceMode}
-                    style={{
-                      padding: '12px 28px',
-                      background: isInSentenceMode ? 'linear-gradient(135deg, #3b82f6 0%, #2563eb 100%)' : '#9ca3af',
-                      color: '#fff',
-                      border: 'none',
-                      borderRadius: 10,
-                      fontSize: '1rem',
-                      fontWeight: 600,
-                      cursor: isInSentenceMode ? 'pointer' : 'not-allowed',
-                      boxShadow: isInSentenceMode ? '0 4px 16px rgba(59, 130, 246, 0.4)' : 'none'
-                    }}
-                  >
-                    Repeat
-                  </button>
                   <button
                     onClick={nextSentence}
                     disabled={teachingLoading || (ttsUnskippable && engineState === 'playing')}
@@ -10038,11 +10000,48 @@ function SessionPageV2Inner() {
            !openingActionActive && !showWords && (
             <div style={{
               display: 'flex',
+              flexWrap: 'wrap',
               alignItems: 'center',
               gap: 8,
               padding: '4px 12px',
               marginBottom: 4,
             }}>
+              {exerciseState === 'chatting' && (() => {
+                const q = currentExerciseQuestion;
+                const mc = isMultipleChoice(q);
+                const tf = !mc && isTrueFalse(q);
+                if (!mc && !tf) return null;
+                const raw = Array.isArray(q?.options) ? q.options : (Array.isArray(q?.choices) ? q.choices : []);
+                const letters = ['A', 'B', 'C', 'D'];
+                const anyLabel = /^\s*\(?[A-Z]\)?\s*[\.:)\-]\s*/i;
+                const choices = tf
+                  ? ['True', 'False'].map(value => ({ label: value, value }))
+                  : letters.slice(0, Math.min(4, Math.max(2, raw.length || 4)))
+                    .map((letter, i) => ({
+                      label: letter,
+                      value: String(raw[i] ?? '').trim().replace(anyLabel, '').trim() || letter,
+                    }));
+                return (
+                  <div style={{ display: 'flex', flex: '1 1 100%', flexWrap: 'wrap', justifyContent: 'center', gap: 8, marginBottom: 4 }}>
+                    {choices.map(choice => (
+                      <button
+                        key={choice.label}
+                        type="button"
+                        onClick={() => {
+                          exercisePhaseRef.current?.submitMessage(choice.value);
+                          setSelectedExerciseAnswer('');
+                        }}
+                        style={{
+                          background: '#1f2937', color: '#fff', border: 'none',
+                          borderRadius: 8, padding: '8px 12px', minHeight: 40,
+                          minWidth: 56, fontWeight: 800, cursor: 'pointer',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
+                        }}
+                      >{choice.label}</button>
+                    ))}
+                  </div>
+                );
+              })()}
               <input
                 type="text"
                 placeholder="Type your answer..."
@@ -10185,10 +10184,10 @@ function SessionPageV2Inner() {
 
           {/* Q&A footer for phases 2-5 */}
           {(() => {
-            const qaPhase = ['comprehension', 'exercise', 'worksheet', 'test'].includes(currentPhase) ? currentPhase : null;
+            const qaPhase = ['comprehension', 'worksheet', 'test'].includes(currentPhase) ? currentPhase : null;
             const awaitingAnswer =
               (qaPhase === 'comprehension' && comprehensionState === 'awaiting-answer') ||
-              (qaPhase === 'exercise' && (exerciseState === 'awaiting-answer' || exerciseState === 'chatting')) ||
+
               (qaPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
               (qaPhase === 'test' && testState === 'awaiting-answer');
 
@@ -10196,7 +10195,7 @@ function SessionPageV2Inner() {
 
             const q =
               qaPhase === 'comprehension' ? currentComprehensionQuestion :
-              qaPhase === 'exercise' ? currentExerciseQuestion :
+
               qaPhase === 'worksheet' ? currentWorksheetQuestion :
               currentTestQuestion;
 
@@ -10205,7 +10204,11 @@ function SessionPageV2Inner() {
             const isFill =
               (qaPhase === 'worksheet' && !isMc && !isTf) ||
               (qaPhase === 'test' && ((q?.type === 'fill' || q?.type === 'fib' || q?.sourceType === 'fib') || (!isMc && !isTf))) ||
-              ((qaPhase === 'comprehension' || qaPhase === 'exercise') && !isMc && !isTf);
+              (qaPhase === 'comprehension' && !isMc && !isTf);
+
+
+
+
 
             const getOpts = () => {
               if (isTf) return ['True', 'False'];
@@ -10221,27 +10224,25 @@ function SessionPageV2Inner() {
 
             const currentValue =
               qaPhase === 'comprehension' ? comprehensionAnswer :
-              qaPhase === 'exercise' ? selectedExerciseAnswer :
+
               qaPhase === 'worksheet' ? worksheetAnswer :
               testAnswer;
 
             const setValue = (v) => {
               if (qaPhase === 'comprehension') setComprehensionAnswer(v);
-              else if (qaPhase === 'exercise') setSelectedExerciseAnswer(v);
+
               else if (qaPhase === 'worksheet') setWorksheetAnswer(v);
               else if (qaPhase === 'test') setTestAnswer(v);
             };
 
             const onSubmit = () => {
               if (qaPhase === 'comprehension') submitComprehensionAnswer();
-              else if (qaPhase === 'exercise') submitExerciseAnswer();
               else if (qaPhase === 'worksheet') submitWorksheetAnswer();
               else if (qaPhase === 'test') submitTestAnswer();
             };
 
             const isSubmitting = (
               (qaPhase === 'comprehension' && comprehensionSubmitting) ||
-              (qaPhase === 'exercise' && exerciseSubmitting) ||
               (qaPhase === 'worksheet' && worksheetSubmitting) ||
               (qaPhase === 'test' && testSubmitting)
             );
@@ -10291,10 +10292,6 @@ function SessionPageV2Inner() {
                                 appendTranscriptLine({ text: val, role: 'user' });
                                 comprehensionPhaseRef.current?.submitAnswer(val);
                                 setComprehensionAnswer('');
-                              } else if (qaPhase === 'exercise') {
-                                // submitMessage emits exerciseConvMessage which appends to transcript
-                                exercisePhaseRef.current?.submitMessage(val);
-                                setSelectedExerciseAnswer('');
                               } else if (qaPhase === 'worksheet') {
                                 appendTranscriptLine({ text: val, role: 'user' });
                                 worksheetPhaseRef.current?.submitAnswer(val);
@@ -10329,10 +10326,6 @@ function SessionPageV2Inner() {
                                   appendTranscriptLine({ text: val, role: 'user' });
                                   comprehensionPhaseRef.current?.submitAnswer(val);
                                   setComprehensionAnswer('');
-                                } else if (qaPhase === 'exercise') {
-                                  // submitMessage emits exerciseConvMessage which appends to transcript
-                                  exercisePhaseRef.current?.submitMessage(val);
-                                  setSelectedExerciseAnswer('');
                                 } else if (qaPhase === 'worksheet') {
                                   appendTranscriptLine({ text: val, role: 'user' });
                                   worksheetPhaseRef.current?.submitAnswer(val);
@@ -10674,7 +10667,7 @@ function SessionPageV2Inner() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: 20,
           }}
-          onClick={() => setShowDiscussionObjectives(false)}
+          onClick={() => { setShowDiscussionObjectives(false); setShowFullDiscussionObjectives(false); }}
         >
           <div
             style={{
@@ -10697,10 +10690,27 @@ function SessionPageV2Inner() {
               <div>
                 <div style={{ color: '#c7442e', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
                 <div style={{ color: '#6b7280', fontSize: 12 }}>{discussionObjectivesInfo.completed} of {discussionObjectivesInfo.total} completed</div>
+                {!showFullDiscussionObjectives && (
+                  <button
+                    type="button"
+                    onClick={async (e) => {
+                      e.stopPropagation();
+                      const pin = await requestFacilitatorPinException({
+                        title: 'Facilitator PIN required',
+                        message: 'Enter the Facilitator PIN to view the full learning objectives.',
+                      });
+                      if (pin) setShowFullDiscussionObjectives(true);
+                    }}
+                    style={{
+                      marginTop: 6, padding: 0, background: 'none', border: 'none',
+                      color: '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit',
+                    }}
+                  >Facilitator: show full objectives</button>
+                )}
               </div>
               <button
                 type="button"
-                onClick={() => setShowDiscussionObjectives(false)}
+                onClick={() => { setShowDiscussionObjectives(false); setShowFullDiscussionObjectives(false); }}
                 style={{
                   background: '#f3f4f6', border: 'none', color: '#6b7280',
                   borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
@@ -10725,6 +10735,7 @@ function SessionPageV2Inner() {
                 <div style={{ color: '#9ca3af', fontSize: 13, padding: '16px 20px' }}>Loading objectives…</div>
               ) : discussionObjectivesList.map((obj, i) => {
                 const done = discussionCompletedIndices.includes(i);
+                const learnerText = (showFullDiscussionObjectives || done) ? obj : (discussionObjectiveClues[i] || `Goal ${i + 1}`);
                 return (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'flex-start', gap: 10,
@@ -10736,7 +10747,7 @@ function SessionPageV2Inner() {
                       color: done ? '#111827' : '#9ca3af',
                       fontSize: 13, lineHeight: 1.5,
                       transition: 'color 0.3s',
-                    }}>{obj}</span>
+                    }}>{learnerText}</span>
                   </div>
                 );
               })}

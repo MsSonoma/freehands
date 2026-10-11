@@ -9,7 +9,7 @@ export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 const OPENAI_MODEL = AI_MODEL
 
 // Helper: Get authenticated user
@@ -96,7 +96,7 @@ Summary:`
         { role: 'user', content: prompt }
       ],
       max_completion_tokens: 600,
-      temperature: 0.3 // Lower temperature for more consistent summaries
+      ...aiModelTemperature(0.3) // Lower temperature for models that support custom temperature
     })
   })
 

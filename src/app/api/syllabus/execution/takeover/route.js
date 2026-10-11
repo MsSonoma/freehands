@@ -36,7 +36,7 @@ export async function POST(request, deps = {}) {
     const takeoverPin = String(body?.takeoverPin || '')
     if (!lessonKey) return NextResponse.json({ error: 'A lessonKey is required', code: 'LESSON_ID_REQUIRED' }, { status: 400 })
     if (!occurrenceId) return NextResponse.json({ error: 'A Syllabus occurrenceId is required', code: 'SYLLABUS_OCCURRENCE_REQUIRED' }, { status: 400 })
-    if (!['sonoma', 'webb'].includes(instructionalTeacher)) {
+    if (!['sonoma', 'webb', 'slate'].includes(instructionalTeacher)) {
       return NextResponse.json({ error: 'A valid instructionalTeacher is required', code: 'INSTRUCTIONAL_TEACHER_REQUIRED' }, { status: 400 })
     }
     if (!expectedConflictingSessionId) {

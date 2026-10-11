@@ -1,4 +1,4 @@
-﻿// Next.js API route for Ms. Sonoma (Counselor)
+// Next.js API route for Ms. Sonoma (Counselor)
 // Facilitator-facing Ms. Sonoma Help API
 
 import { NextResponse } from 'next/server'
@@ -20,7 +20,7 @@ const { TextToSpeechClient } = textToSpeech
 
 // OpenAI configuration
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
-import { AI_MODEL } from '@/app/lib/aiModel'
+import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
 import {
   MENTOR_TOOL_REGISTRY,
@@ -844,14 +844,15 @@ async function executeSetInstructionalTeacher(args, request, toolLog, toolContex
     const lessonKey = normalizeLessonKey(args?.lessonKey)
     const occurrenceId = String(args?.occurrenceId || '').trim()
     const instructionalTeacher = String(args?.instructionalTeacher || '').trim().toLowerCase()
-    if (!lessonKey || !occurrenceId || !['sonoma', 'webb'].includes(instructionalTeacher)) return toolError('lessonKey, occurrenceId, and a valid instructionalTeacher are required')
+    if (!lessonKey || !occurrenceId || !['sonoma', 'webb', 'slate'].includes(instructionalTeacher)) return toolError('lessonKey, occurrenceId, and a valid instructionalTeacher are required')
     pushToolLog(toolLog, { name: 'set_instructional_teacher', phase: 'start', context: { learnerId: learner.id, occurrenceId, instructionalTeacher } })
     const response = await internalApiJson(request, '/api/syllabus/lesson-associations', { method: 'PATCH', body: { learnerId: learner.id, lessonKey, occurrenceId, instructionalTeacher } })
     if (!response.ok) return toolError(response.data?.error || 'Could not set the instructional teacher', response.data)
     const savedTeacher = response.data?.association?.instructional_teacher || response.data?.association?.instructionalTeacher || instructionalTeacher
     const verified = savedTeacher === instructionalTeacher
     pushToolLog(toolLog, { name: 'set_instructional_teacher', phase: verified ? 'success' : 'error', context: { learnerId: learner.id, occurrenceId, instructionalTeacher } })
-    return toolSuccess('set_instructional_teacher', verified ? `Assigned ${instructionalTeacher === 'webb' ? 'Mrs. Webb' : 'Ms. Sonoma'} to that Syllabus occurrence for ${learner.name}.` : 'The teacher assignment returned successfully but could not be verified.', { learner: { id: learner.id, name: learner.name }, occurrenceId, instructionalTeacher, association: response.data?.association || null }, verified)
+    const teacherName = instructionalTeacher === 'webb' ? 'Mrs. Webb' : (instructionalTeacher === 'slate' ? 'Mr. Slate' : 'Ms. Sonoma')
+    return toolSuccess('set_instructional_teacher', verified ? `Assigned ${teacherName} to that Syllabus occurrence for ${learner.name}.` : 'The teacher assignment returned successfully but could not be verified.', { learner: { id: learner.id, name: learner.name }, occurrenceId, instructionalTeacher, association: response.data?.association || null }, verified)
   } catch (error) {
     pushToolLog(toolLog, { name: 'set_instructional_teacher', phase: 'error', context: { message: error.message } })
     return toolError(error.message)
@@ -1929,7 +1930,7 @@ export async function POST(req) {
             model: OPENAI_MODEL,
             messages: followUpMessages,
             max_completion_tokens: 1500,
-            temperature: 0.8
+            ...aiModelTemperature(0.8)
           })
         }, OPENAI_TIMEOUT_MS)
       } catch (err) {
@@ -1983,7 +1984,7 @@ export async function POST(req) {
       model: OPENAI_MODEL,
       messages: messages,
       max_completion_tokens: 1500,
-      temperature: 0.8,
+      ...aiModelTemperature(0.8),
       tools: tools,
       tool_choice: 'auto'
     }
@@ -2141,7 +2142,7 @@ export async function POST(req) {
           model: OPENAI_MODEL,
           messages: followUpMessages,
           max_completion_tokens: 1500,
-          temperature: 0.8
+          ...aiModelTemperature(0.8)
         })
         }, OPENAI_TIMEOUT_MS)
       } catch (err) {

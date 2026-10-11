@@ -189,3 +189,31 @@ test('slow writing and completion transitions expose busy state without skipping
   assert.ok(markSaving >= 0 && persistFinal > markSaving, 'completion feedback must appear before the awaited server persistence step')
   assert.match(studio, /completionState === 'saving' \? 'Recording completion\.\.\.'/)
 })
+
+
+test('Finish essay does not second-guess or revoke previously accepted learner sentences', () => {
+  const start = page.indexOf('async function finalizeCompositionDraft(')
+  const end = page.indexOf('async function handleStartWriting()', start)
+  assert.ok(start >= 0 && end > start)
+  const finish = page.slice(start, end)
+  assert.match(finish, /assembleWebbCompositionEssay\(activePlan, accepted\)/)
+  assert.match(finish, /if \(!finalEssay\)/)
+  assert.match(finish, /await persistCompositionArtifact\(\{ plan: activePlan, accepted, status: 'final' \}\)/)
+  assert.match(finish, /setEssayMode\(true\)/)
+  assert.doesNotMatch(finish, /check-paragraph|\/api\/webb-objectives|delete nextAccepted|setAcceptedSentences\(/)
+  // The earlier learner-facing evaluator remains responsible for coherence.
+  assert.match(page, /paragraphFit: evaluation\.paragraphFit/)
+  assert.match(page, /if \(attempt\.accepted\)/)
+})
+
+
+test('draft and final composition saves are ordered so a late draft cannot overwrite finalization', () => {
+  const start = page.indexOf('async function persistCompositionArtifact(')
+  const end = page.indexOf('// Foreground and media checks', start)
+  const persist = page.slice(start, end)
+  assert.ok(start >= 0 && end > start)
+  assert.match(persist, /const pending = compositionSaveQueueRef\.current\.then\(save, save\)/)
+  assert.match(persist, /compositionSaveQueueRef\.current = pending\.catch\(\(\) => \{\}\)/)
+  assert.match(persist, /await pending/)
+  assert.match(persist, /const browserSessionId = getProtectedBrowserSessionId\(\)/)
+})
