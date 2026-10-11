@@ -1841,7 +1841,6 @@
     transform-origin: bottom left;
   }
 }
-
 /* Wall fixtures rest on the baseboard instead of floating above the floor. */
 .houseKitchen,
 .housePantry,
@@ -4302,4 +4301,804 @@
 .conversationCustomizeButton[data-active="true"] {
   background: #dff7e8;
   box-shadow: inset 0 0 0 2px #69b98b, 0 3px 10px rgba(24,45,71,.16);
+}
+
+.mapNpc[data-companion="true"] {
+  transition: left 80ms linear;
+}
+
+/* Four-person conversation crew: Emily plus up to three walking companions. */
+.conversationCrewCount {
+  flex: 0 0 auto;
+  border-radius: 999px;
+  background: rgba(23, 48, 79, .08);
+  padding: 5px 8px;
+  font-size: 11px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.conversationCustomizeButton:disabled {
+  opacity: .5;
+  cursor: default;
+  transform: none;
+}
+
+.conversationCustomizeButton[data-stop="true"] {
+  background: #fff0f3;
+  color: #8a2742;
+  box-shadow: inset 0 0 0 2px rgba(181, 61, 91, .34), 0 3px 10px rgba(24,45,71,.12);
+}
+
+.conversationCrew {
+  position: absolute;
+  left: 34%;
+  right: clamp(245px, 29vw, 310px);
+  bottom: 112px;
+  z-index: 3;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  gap: clamp(3px, .8vw, 12px);
+  min-width: 0;
+}
+
+.conversationCrewMember {
+  position: relative;
+  flex: 1 1 0;
+  min-width: 76px;
+  max-width: 150px;
+  text-align: center;
+}
+
+.conversationCrewMember[data-primary="true"] {
+  z-index: 2;
+}
+
+.conversationCrewMember > strong {
+  display: inline-block;
+  position: relative;
+  z-index: 3;
+  max-width: 100%;
+  overflow: hidden;
+  border-radius: 999px;
+  background: rgba(255,255,255,.88);
+  padding: 5px 10px;
+  box-shadow: 0 4px 12px rgba(40,45,63,.16);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.conversationCrewMember[data-primary="true"] > strong {
+  box-shadow: inset 0 0 0 2px rgba(76,123,217,.3), 0 4px 12px rgba(40,45,63,.16);
+}
+
+.conversationCrew .conversationFigure {
+  width: 100%;
+  height: 218px;
+  margin-bottom: -10px;
+}
+
+.conversationCrew[data-crew-size="1"] .conversationFigure .avatarFigure {
+  transform: scale(.82);
+}
+
+.conversationCrew[data-crew-size="2"] .conversationFigure .avatarFigure {
+  transform: scale(.72);
+}
+
+.conversationCrew[data-crew-size="3"] .conversationFigure .avatarFigure {
+  transform: scale(.62);
+}
+
+.conversationCrew[data-crew-size="4"] .conversationFigure .avatarFigure {
+  transform: scale(.54);
+}
+
+.conversationCrew .conversationWorldBubble {
+  width: min(180px, 15vw);
+  max-height: 112px;
+  overflow-y: auto;
+  padding: 9px 10px;
+  font-size: 12px;
+}
+
+.conversationCrew[data-crew-size="4"] .conversationWorldBubble {
+  width: min(145px, 12vw);
+  font-size: 11px;
+}
+
+.conversationTranscript p[data-chime="true"] {
+  padding-left: 7px;
+  border-left: 3px solid rgba(76,123,217,.35);
+}
+
+@media (max-width: 760px) {
+  .conversationTopActions {
+    gap: 5px;
+  }
+
+  .conversationCrewCount {
+    display: none;
+  }
+
+  .conversationCustomizeButton {
+    padding: 6px 8px;
+    font-size: 10px;
+  }
+
+  .conversationActorPlayer {
+    left: 1%;
+    width: 29vw;
+  }
+
+  .conversationCrew {
+    left: 29%;
+    right: 6px;
+    bottom: 235px;
+    gap: 1px;
+  }
+
+  .conversationCrewMember {
+    min-width: 54px;
+    max-width: 88px;
+  }
+
+  .conversationCrew .conversationFigure {
+    height: 150px;
+  }
+
+  .conversationCrew[data-crew-size="1"] .conversationFigure .avatarFigure {
+    transform: scale(.58);
+  }
+
+  .conversationCrew[data-crew-size="2"] .conversationFigure .avatarFigure {
+    transform: scale(.5);
+  }
+
+  .conversationCrew[data-crew-size="3"] .conversationFigure .avatarFigure,
+  .conversationCrew[data-crew-size="4"] .conversationFigure .avatarFigure {
+    transform: scale(.43);
+  }
+
+  .conversationCrew .conversationWorldBubble,
+  .conversationCrew[data-crew-size="4"] .conversationWorldBubble {
+    width: min(116px, 24vw);
+    max-height: 82px;
+    font-size: 10px;
+    padding: 6px 7px;
+  }
+
+  .conversationCrewMember > strong {
+    max-width: 78px;
+    padding: 3px 6px;
+    font-size: 9px;
+  }
+}
+
+
+/* Art Easel: full paint workspace with real tools, palette, and easel framing. */
+.paintStudioShell {
+  min-height: 0;
+  height: 100%;
+  display: grid;
+  grid-template-columns: 78px minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1fr) auto;
+  gap: 9px;
+}
+
+.paintToolRail {
+  grid-column: 1;
+  grid-row: 1 / 3;
+  min-height: 0;
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  overflow-y: auto;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #f3e3ca, #d9b487);
+  border: 2px solid #ae805d;
+  box-shadow: inset 0 0 0 2px rgba(255,255,255,.28);
+  padding: 7px;
+}
+
+.paintToolRail button {
+  min-height: 34px;
+  border: 1px solid rgba(84,58,42,.16);
+  border-radius: 9px;
+  background: rgba(255,255,255,.88);
+  color: #57483d;
+  cursor: pointer;
+  padding: 5px 3px;
+  font: inherit;
+  font-size: .61rem;
+  font-weight: 950;
+  box-shadow: 0 2px 4px rgba(75,53,40,.08);
+}
+
+.paintToolRail button[data-active="true"] {
+  background: #17304f;
+  border-color: #17304f;
+  color: #fff;
+  transform: translateX(2px);
+}
+
+.paintCanvasFrame {
+  grid-column: 2;
+  grid-row: 1;
+  min-height: 0;
+  position: relative;
+  border: 10px solid #9a6947;
+  border-radius: 10px 10px 6px 6px;
+  background: #8a5c3f;
+  padding: 7px;
+  box-shadow:
+    inset 0 0 0 3px rgba(255,255,255,.2),
+    0 9px 18px rgba(64,43,31,.2);
+}
+
+.paintCanvasFrame::before {
+  content: "";
+  position: absolute;
+  left: 8%;
+  right: 8%;
+  bottom: -15px;
+  height: 15px;
+  border-radius: 2px 2px 7px 7px;
+  background: #805538;
+  box-shadow: 0 4px 0 rgba(74,47,31,.2);
+}
+
+.paintCanvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+  min-height: 210px;
+  max-height: none;
+  aspect-ratio: auto;
+  border: 0;
+  border-radius: 3px;
+  background: var(--paint-paper, #fffaf3);
+  box-shadow:
+    inset 0 0 16px rgba(83,67,45,.05),
+    0 0 0 1px rgba(89,67,44,.16);
+  touch-action: none;
+  cursor: crosshair;
+}
+
+.paintControlDeck {
+  grid-column: 2;
+  grid-row: 2;
+  min-width: 0;
+  display: grid;
+  grid-template-columns: minmax(210px, 1.25fr) minmax(190px, .9fr) auto;
+  gap: 8px;
+  align-items: center;
+  border-radius: 14px;
+  background: linear-gradient(180deg, #fffdfa, #f2e9dd);
+  border: 1px solid #ddcbb8;
+  padding: 8px;
+}
+
+.paintPalette {
+  min-width: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.paintPalette > button {
+  width: 27px;
+  height: 27px;
+  flex: 0 0 auto;
+  border: 2px solid rgba(23,48,79,.18);
+  border-radius: 50%;
+  background: var(--paint-swatch);
+  cursor: pointer;
+  box-shadow: inset 0 0 0 1px rgba(255,255,255,.4);
+}
+
+.paintPalette > button[data-selected="true"] {
+  outline: 3px solid #17304f;
+  outline-offset: 2px;
+}
+
+.paintCustomColor {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #5d6f7f;
+  font-size: .58rem;
+  font-weight: 900;
+}
+
+.paintCustomColor input,
+.paintPaperControl input {
+  width: 34px;
+  height: 28px;
+  border: 1px solid #c8d2db;
+  border-radius: 7px;
+  background: #fff;
+  padding: 2px;
+}
+
+.paintSliders {
+  min-width: 0;
+  display: grid;
+  gap: 5px;
+}
+
+.paintSliders label {
+  min-width: 0;
+  display: grid;
+  grid-template-columns: 64px minmax(70px, 1fr) 38px;
+  gap: 6px;
+  align-items: center;
+  color: #5d6f7f;
+  font-size: .56rem;
+  font-weight: 900;
+}
+
+.paintSliders label > span {
+  white-space: nowrap;
+}
+
+.paintSliders input[type="range"] {
+  width: 100%;
+  min-width: 0;
+  margin: 0;
+  accent-color: #17304f;
+}
+
+.paintSliders b {
+  color: #17304f;
+  font-size: .55rem;
+  text-align: right;
+}
+
+.paintSliders .paintPaperControl {
+  grid-template-columns: 64px auto;
+  justify-content: start;
+}
+
+.paintActions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 5px;
+}
+
+.paintActions button {
+  border: 0;
+  border-radius: 9px;
+  background: #e7edf2;
+  color: #17304f;
+  cursor: pointer;
+  padding: 7px 9px;
+  font: inherit;
+  font-size: .58rem;
+  font-weight: 950;
+  white-space: nowrap;
+}
+
+.paintActions button:disabled {
+  cursor: default;
+  opacity: .38;
+}
+
+.paintActions .paintFinishButton {
+  background: #17304f;
+  color: #fff;
+}
+
+@media (max-width: 720px) {
+  .paintStudioShell {
+    grid-template-columns: 62px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .paintToolRail {
+    gap: 3px;
+    padding: 5px;
+  }
+
+  .paintToolRail button {
+    min-height: 29px;
+    font-size: .52rem;
+  }
+
+  .paintCanvasFrame {
+    border-width: 7px;
+    padding: 4px;
+  }
+
+  .paintCanvas {
+    min-height: 170px;
+  }
+
+  .paintControlDeck {
+    grid-template-columns: 1fr;
+    gap: 6px;
+    padding: 6px;
+  }
+
+  .paintPalette > button {
+    width: 23px;
+    height: 23px;
+  }
+
+  .paintActions {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-height: 620px) {
+  .paintToolRail button {
+    min-height: 25px;
+    padding: 3px 2px;
+  }
+
+  .paintCanvas {
+    min-height: 135px;
+  }
+
+  .paintControlDeck {
+    padding: 5px;
+  }
+}
+
+/* Fit the complete paint station into its room without nested scrolling. */
+.paintStudioShell {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.paintToolRail {
+  min-height: 0;
+  grid-template-rows: repeat(9, minmax(0, 1fr));
+  align-content: stretch;
+  overflow: hidden;
+  gap: 3px;
+  padding: 5px;
+}
+
+.paintToolRail button {
+  min-height: 0;
+  padding: 3px 2px;
+}
+
+.paintCanvasFrame {
+  min-height: 0;
+  overflow: visible;
+  border-width: 7px;
+  padding: 4px;
+}
+
+.paintCanvas {
+  min-height: 0;
+}
+
+.paintControlDeck {
+  min-height: 0;
+  padding: 6px;
+  gap: 6px;
+}
+
+.paintPalette {
+  gap: 4px;
+}
+
+.paintPalette > button {
+  width: 24px;
+  height: 24px;
+}
+
+.paintActions button {
+  padding: 6px 8px;
+}
+
+@media (max-width: 720px) {
+  .paintStudioShell {
+    grid-template-columns: 54px minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr) auto;
+    gap: 5px;
+  }
+
+  .paintToolRail {
+    grid-row: 1 / 3;
+  }
+
+  .paintToolRail button {
+    min-height: 0;
+    font-size: .47rem;
+    padding: 2px 1px;
+  }
+
+  .paintControlDeck {
+    grid-template-columns: minmax(0, 1fr) minmax(140px, .8fr);
+    align-items: start;
+    padding: 5px;
+  }
+
+  .paintActions {
+    grid-column: 1 / -1;
+    justify-content: flex-start;
+  }
+
+  .paintPalette > button {
+    width: 20px;
+    height: 20px;
+  }
+
+  .paintSliders label {
+    grid-template-columns: 58px minmax(60px, 1fr) 34px;
+  }
+}
+
+@media (max-width: 480px) {
+  .paintStudioShell {
+    grid-template-columns: 47px minmax(0, 1fr);
+  }
+
+  .paintControlDeck {
+    grid-template-columns: 1fr;
+  }
+
+  .paintActions {
+    grid-column: 1;
+  }
+
+  .paintPalette > button {
+    width: 18px;
+    height: 18px;
+  }
+
+  .paintCustomColor span,
+  .paintPaperControl span {
+    font-size: .5rem;
+  }
+}
+
+@media (max-height: 620px) {
+  .paintToolRail {
+    gap: 2px;
+    padding: 3px;
+  }
+
+  .paintToolRail button {
+    min-height: 0;
+    font-size: .46rem;
+  }
+
+  .paintCanvasFrame {
+    border-width: 5px;
+    padding: 3px;
+  }
+
+  .paintControlDeck {
+    padding: 4px;
+  }
+
+  .paintPalette > button {
+    width: 19px;
+    height: 19px;
+  }
+
+  .paintActions button {
+    padding: 4px 6px;
+    font-size: .52rem;
+  }
+}
+
+/* Vertical side-panel controls for the four non-art Design Studio activities. */
+.fashionCategoryTabs {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 4px;
+}
+
+.fashionCategoryTabs button {
+  width: 100%;
+  padding: 5px 8px;
+  border-radius: 9px;
+  font-size: .64rem;
+  text-align: left;
+}
+
+.fashionEditorCard {
+  gap: 7px;
+  padding: 9px;
+  border-radius: 15px;
+}
+
+.fashionEditorHeading {
+  gap: 7px;
+}
+
+.fashionEditorHeading h3 {
+  margin: 1px 0 0;
+}
+
+.fashionTypeGrid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 5px;
+}
+
+.fashionTypeGrid button {
+  padding: 6px 7px;
+  border-radius: 10px;
+}
+
+.fashionTypeGrid strong {
+  font-size: .68rem;
+}
+
+.fashionTypeGrid small {
+  font-size: .56rem;
+}
+
+.fashionActionRow {
+  grid-template-columns: 1fr;
+  gap: 5px;
+}
+
+.fashionActionRow > button {
+  min-height: 30px;
+  padding: 6px 8px;
+}
+
+.tryOnTray {
+  gap: 4px;
+  padding: 6px 7px;
+  border-radius: 11px;
+}
+
+.tryOnTrayItems {
+  gap: 3px;
+}
+
+.tryOnTrayItems > span {
+  padding: 3px 6px;
+  font-size: .57rem;
+}
+
+.wearableFitControls {
+  gap: 4px;
+  margin-top: 4px;
+  padding: 6px 7px;
+}
+
+.wearableFitControls label {
+  grid-template-columns: 76px minmax(0, 1fr);
+  gap: 5px;
+}
+
+.wearableFitControls label > span {
+  font-size: .58rem;
+}
+
+.beautyControlPanel,
+.beautyControlGroup {
+  min-width: 0;
+}
+
+.beautyControlGroup {
+  gap: 5px;
+  padding-bottom: 6px;
+}
+
+.beautyControlGroup h3 {
+  font-size: .76rem;
+}
+
+.beautyControlGroup .creatorChoiceWrap {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.beautyControlGroup .creatorTextChoice {
+  min-width: 0;
+  padding: 5px 6px;
+  font-size: .58rem;
+}
+
+.beautyControlGroup .creatorSwatches {
+  gap: 4px;
+}
+
+.studioSceneMessage,
+.customerOpinion,
+.fullMessage {
+  font-size: .62rem;
+}
+
+/* Art keeps a compact vertical tool rail but gives almost all remaining area to the canvas. */
+.paintStudioShell {
+  grid-template-columns: 54px minmax(0, 1fr);
+  gap: 5px;
+}
+
+.paintToolRail {
+  gap: 2px;
+  padding: 4px;
+}
+
+.paintToolRail button {
+  min-height: 0;
+  font-size: .47rem;
+  padding: 2px 1px;
+}
+
+.paintCanvasFrame {
+  border-width: 6px;
+  padding: 3px;
+}
+
+.paintControlDeck {
+  padding: 4px 5px;
+  gap: 5px;
+}
+
+.paintActions button {
+  padding: 4px 6px;
+  font-size: .52rem;
+}
+
+@media (max-width: 560px) {
+  .fashionCategoryTabs button {
+    padding: 4px 6px;
+    font-size: .56rem;
+  }
+
+  .fashionEditorCard {
+    padding: 6px;
+    gap: 5px;
+  }
+
+  .fashionTypeGrid button {
+    padding: 4px 5px;
+  }
+
+  .beautyControlGroup .creatorTextChoice {
+    padding: 4px 5px;
+    font-size: .53rem;
+  }
+
+  .paintStudioShell {
+    grid-template-columns: 43px minmax(0, 1fr);
+  }
+}
+
+@media (max-height: 620px) {
+  .fashionCategoryTabs {
+    gap: 2px;
+  }
+
+  .fashionCategoryTabs button {
+    padding: 3px 6px;
+  }
+
+  .fashionEditorCard {
+    gap: 4px;
+    padding: 5px;
+  }
+
+  .fashionTypeGrid {
+    gap: 3px;
+  }
+
+  .fashionTypeGrid button {
+    padding: 3px 5px;
+  }
+
+  .beautyControlGroup {
+    gap: 3px;
+    padding-bottom: 4px;
+  }
+
+  .beautyControlGroup .creatorTextChoice {
+    padding: 3px 5px;
+  }
 }
