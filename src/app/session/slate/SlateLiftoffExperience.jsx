@@ -265,6 +265,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
   const answerInputRef = useRef(null)
   const audioRef = useRef(null)
+  const soundOnRef = useRef(true)
+  const speechRequestRef = useRef(0)
   const videoRef = useRef(null)
   const musicAudioRef = useRef(null)
   const musicMutedRef = useRef(false)
@@ -312,7 +314,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   liftoffRef.current = liftoff
 
   const speak = useCallback(async (text) => {
-    if (!soundOn || !text || !audioRef.current) return
+    if (!soundOnRef.current || !text || !audioRef.current) return
+    const requestId = ++speechRequestRef.current
     try {
       const response = await fetch('/api/slate-tts', {
         method: 'POST',
@@ -320,16 +323,29 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         body: JSON.stringify({ text }),
       })
       const body = await response.json().catch(() => null)
-      if (!response.ok || !body?.audio) return
+      if (!response.ok || !body?.audio || !soundOnRef.current || requestId !== speechRequestRef.current) return
       const audio = audioRef.current
+      if (!audio) return
       audio.pause()
       audio.src = String(body.audio).startsWith('data:') ? body.audio : `data:audio/mp3;base64,${body.audio}`
       try { videoRef.current?.play?.().catch(() => {}) } catch {}
       audio.onended = () => { try { videoRef.current?.pause?.() } catch {} }
       audio.onerror = () => { try { videoRef.current?.pause?.() } catch {} }
+      if (!soundOnRef.current || requestId !== speechRequestRef.current) return
       await audio.play().catch(() => {})
     } catch {}
-  }, [soundOn])
+  }, [])
+
+  const toggleSpeech = useCallback(() => {
+    const next = !soundOnRef.current
+    soundOnRef.current = next
+    setSoundOn(next)
+    if (!next) {
+      speechRequestRef.current += 1
+      audioRef.current?.pause()
+      try { videoRef.current?.pause?.() } catch {}
+    }
+  }, [])
 
   const clearMusicLongPress = useCallback(() => {
     if (musicLongPressRef.current) {
@@ -1790,7 +1806,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               {musicMuted ? 'MUSIC OFF' : 'MUSIC ON'}
             </button>
           </div>
-          <button type="button" onClick={() => setSoundOn((value) => !value)} style={{ padding: '7px 10px', cursor: 'pointer' }}>{soundOn ? 'SPEECH ON' : 'SPEECH OFF'}</button>
+          <button type="button" onClick={toggleSpeech} aria-pressed={!soundOn} style={{ padding: '7px 10px', cursor: 'pointer' }}>{soundOn ? 'SPEECH ON' : 'SPEECH OFF'}</button>
           <button type="button" onClick={() => void handleExit()} disabled={busy || exiting || lineHelpBusy} aria-label="Exit Mr. Slate Liftoff" style={{ padding: '7px 10px', cursor: busy || exiting || lineHelpBusy ? 'not-allowed' : 'pointer', fontWeight: 800 }}>{exiting ? 'SAVING...' : 'EXIT'}</button>
         </div>
       </header>
