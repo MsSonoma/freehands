@@ -166,11 +166,38 @@ export async function resolveSyllabusExecution({
     : (sourceInProgress.length > 1
         ? null
         : (sourceCompleted.length > 0 ? latestActual(sourceCompleted) : latestActual(sourceIncomplete)))
+  let rebasedOccurrence = null
+  // A revision rebuild gives the same lesson lineage a new forecast row ID.
+  // Recover a stale ID only after proving its original, activated Syllabus membership
+  // and uniquely matching that lineage and lesson key in the current revision.
+  if (requestedOccurrenceId.startsWith('syllabus:')
+      && directMatches.length === 0
+      && sourceMatches.length === 0
+      && typeof repository.findActivatedSyllabusForecastItem === 'function') {
+    const oldForecastId = requestedOccurrenceId.slice('syllabus:'.length)
+    if (isUuid(oldForecastId)) {
+      const prior = await repository.findActivatedSyllabusForecastItem(syllabus.id, oldForecastId)
+      if (prior?.lineage_id && normalizeLessonKey(prior.lesson_key) === normalizedKey) {
+        const currentForecasts = forecastItems.filter((item) => (
+          clean(item?.lineage_id) === clean(prior.lineage_id)
+          && normalizeLessonKey(item?.lesson_key) === normalizedKey
+        ))
+        if (currentForecasts.length === 1) {
+          const currentForecastId = clean(currentForecasts[0].id)
+          const matches = candidates.filter((item) => (
+            (item.placement_kind === 'syllabus' && clean(item.occurrence_id) === `syllabus:${currentForecastId}`)
+            || (item.placement_kind === 'scheduled' && clean(item.reconciled_forecast_id) === currentForecastId)
+          ))
+          if (matches.length === 1) rebasedOccurrence = matches[0]
+        }
+      }
+    }
+  }
   const occurrence = sourceMatches.length > 0
     ? continuedSource
     : (directMatches.length === 1
         ? directMatches[0]
-        : (!requestedOccurrenceId && candidates.length === 1 ? candidates[0] : null))
+        : (rebasedOccurrence || (!requestedOccurrenceId && candidates.length === 1 ? candidates[0] : null)))
   if (!occurrence) {
     throw new SyllabusError('The requested Syllabus occurrence is missing or ambiguous', 403, 'SYLLABUS_OCCURRENCE_REQUIRED')
   }
@@ -196,7 +223,7 @@ export async function resolveSyllabusExecution({
       facilitatorId,
       learnerId,
       lessonKey: normalizedKey,
-      occurrenceId: requestedOccurrenceId || occurrence.occurrence_id,
+      occurrenceId: rebasedOccurrence ? occurrence.occurrence_id : (requestedOccurrenceId || occurrence.occurrence_id),
       instructionalTeacher,
       today: calendar.today,
     },

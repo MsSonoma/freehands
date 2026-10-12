@@ -8,6 +8,7 @@ import { POST as startExecution } from '../../../api/syllabus/execution/start/ro
 import { POST as authorizeTakeover } from '../../../api/syllabus/execution/takeover/route.js'
 import { requireProtectedSessionCreation } from '../../../session/v2/protectedSessionBoundary.mjs'
 import { createSyllabusExecutionProof, createSyllabusTakeoverProof, resolveSyllabusExecution } from '../executionAuthorization.server.mjs'
+import { createSyllabusRepository } from '../supabaseRepository.server.mjs'
 import { getActiveSyllabus } from '../revisions.server.mjs'
 
 const FACILITATOR = '11111111-1111-4111-8111-111111111111'
@@ -135,6 +136,149 @@ test('today Syllabus occurrence is authorized without legacy availability or Cal
   assert.equal(decision.allowedWithoutPin, true)
   assert.equal(decision.reason, 'today')
   assert.equal(decision.resumeBrowserSessionId, null)
+})
+
+const CHURN_OLD_ID = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2'
+const CHURN_CURRENT_ID = 'c3c3c3c3-c3c3-4c3c-8c3c-c3c3c3c3c3c3'
+const CHURN_LINEAGE_ID = 'd4d4d4d4-d4d4-4d4d-8d4d-d4d4d4d4d4d4'
+const CHURN_LESSON_KEY = 'generated/syllabus-materialization-example.json'
+
+function revisionChurnRepository({ plannedDate = '2026-08-23', teacher = 'webb' } = {}) {
+  const prior = { ...forecast(CHURN_OLD_ID, CHURN_LESSON_KEY, plannedDate), lineage_id: CHURN_LINEAGE_ID }
+  const current = { ...prior, id: CHURN_CURRENT_ID, instructional_teacher: teacher }
+  return {
+    prior,
+    current,
+    repo: {
+      ...repository({ forecast: [current] }),
+      async findActivatedSyllabusForecastItem(syllabusId, id) {
+        return syllabusId === 'syllabus-1' && id === CHURN_OLD_ID ? prior : null
+      },
+    },
+  }
+}
+
+test('Mrs. Webb launches a refreshed occurrence from a verified older revision using the current signed identity', async () => {
+  const { prior, current, repo } = revisionChurnRepository()
+  const authorization = await authorizeExecution(request({
+    learnerId: LEARNER,
+    lessonKey: current.lesson_key,
+    occurrenceId: `syllabus:${prior.id}`,
+    instructionalTeacher: 'webb',
+  }), { ...startDeps(), repository: repo })
+  assert.equal(authorization.status, 200)
+  const authorized = await authorization.json()
+  assert.equal(authorized.occurrenceId, `syllabus:${current.id}`)
+  assert.equal(authorized.instructionalTeacher, 'webb')
+  assert.equal(authorized.authorization, 'today')
+
+  const cookie = (authorization.headers.get('set-cookie') || '').split(';')[0]
+  const starter = fakeTransactionalStarter()
+  const started = await startExecution(request({
+    learnerId: LEARNER,
+    lessonId: current.lesson_key,
+    browserSessionId: RESUME_BROWSER,
+    occurrenceId: authorized.occurrenceId,
+    instructionalTeacher: 'webb',
+  }, cookie), startDeps(starter))
+  assert.equal(started.status, 200)
+  assert.ok((await started.json()).id)
+  assert.equal(starter.state.calls[0].p_syllabus_occurrence_id, `syllabus:${current.id}`)
+  assert.equal(starter.state.calls[0].p_instructional_teacher, 'webb')
+})
+
+test('stale occurrence recovery rejects removed, different-key and ambiguous lineages', async () => {
+  const make = () => revisionChurnRepository()
+  const { prior, current } = make()
+  const variants = [
+    { label: 'no activated source', prior: null, currentRows: [current] },
+    { label: 'different original lesson key', prior: { ...prior, lesson_key: 'math/different.json' }, currentRows: [current] },
+    { label: 'removed lineage', prior, currentRows: [] },
+    { label: 'replaced lineage', prior, currentRows: [{ ...current, lineage_id: 'different-lineage' }] },
+    { label: 'ambiguous current lineage', prior, currentRows: [current, { ...current, id: 'e5e5e5e5-e5e5-4e5e-8e5e-e5e5e5e5e5e5' }] },
+  ]
+  for (const variant of variants) {
+    const base = make().repo
+    const guarded = {
+      ...base,
+      async listForecastItems() { return variant.currentRows },
+      async findActivatedSyllabusForecastItem(syllabusId, id) {
+        assert.equal(syllabusId, 'syllabus-1')
+        return id === prior.id ? variant.prior : null
+      },
+    }
+    await assert.rejects(
+      resolveSyllabusExecution({
+        repository: guarded,
+        facilitatorId: FACILITATOR,
+        learnerId: LEARNER,
+        lessonKey: current.lesson_key,
+        occurrenceId: `syllabus:${prior.id}`,
+        now: new Date('2026-08-23T16:00:00Z'),
+      }),
+      (error) => error.code === 'SYLLABUS_OCCURRENCE_REQUIRED',
+      variant.label,
+    )
+  }
+})
+
+test('stale forecast recovered through a reconciled schedule uses that schedule occurrence', async () => {
+  const { prior, current, repo } = revisionChurnRepository()
+  repo.listLessonSchedule = async () => [{
+    id: 'schedule-123', lesson_key: current.lesson_key, scheduled_date: '2026-08-23',
+    created_at: '2026-08-22T12:00:00Z', sort_order: 0,
+  }]
+  const decision = await resolveSyllabusExecution({
+    repository: repo, facilitatorId: FACILITATOR, learnerId: LEARNER,
+    lessonKey: current.lesson_key, occurrenceId: `syllabus:${prior.id}`,
+    now: new Date('2026-08-23T16:00:00Z'),
+  })
+  assert.equal(decision.occurrence.placement_kind, 'scheduled')
+  assert.equal(decision.scope.occurrenceId, 'scheduled:schedule-123')
+})
+
+test('recovered occurrence obeys the current date and teacher PIN protections', async () => {
+  const { prior, current, repo } = revisionChurnRepository({ plannedDate: '2026-08-25' })
+  const deps = { ...startDeps(), repository: repo }
+  const attempt = { learnerId: LEARNER, lessonKey: current.lesson_key, occurrenceId: `syllabus:${prior.id}`, instructionalTeacher: 'webb' }
+  const denied = await authorizeExecution(request(attempt), deps)
+  assert.equal(denied.status, 409)
+  assert.equal((await denied.json()).code, 'SYLLABUS_EXECUTION_PIN_REQUIRED')
+  const pin = await authorizeExecution(request({ ...attempt, exceptionPin: '2468' }), deps)
+  assert.equal(pin.status, 200)
+  assert.equal((await pin.json()).occurrenceId, `syllabus:${current.id}`)
+  const wrongTeacher = await authorizeExecution(request({ ...attempt, instructionalTeacher: 'slate' }), deps)
+  assert.equal(wrongTeacher.status, 403)
+  assert.equal((await wrongTeacher.json()).code, 'INSTRUCTIONAL_TEACHER_MISMATCH')
+})
+
+test('stale-forecast repository lookup is scoped to an activated revision of the same Syllabus', async () => {
+  const rows = {
+    syllabus_forecast_items: [{
+      id: CHURN_OLD_ID, revision_id: 'old-revision', lineage_id: CHURN_LINEAGE_ID, lesson_key: CHURN_LESSON_KEY,
+    }],
+    syllabus_revisions: [{
+      id: 'old-revision', syllabus_id: 'syllabus-1', activated_at: '2026-08-22T12:00:00Z',
+    }],
+  }
+  const admin = {
+    from(table) {
+      const conditions = []
+      return {
+        select() { return this },
+        eq(column, value) { conditions.push([column, value]); return this },
+        async maybeSingle() {
+          const data = (rows[table] || []).find(row => conditions.every(([key, value]) => row[key] === value)) || null
+          return { data, error: null }
+        },
+      }
+    },
+  }
+  const source = createSyllabusRepository(admin)
+  assert.equal((await source.findActivatedSyllabusForecastItem('syllabus-1', CHURN_OLD_ID))?.lineage_id, CHURN_LINEAGE_ID)
+  assert.equal(await source.findActivatedSyllabusForecastItem('another-learner-syllabus', CHURN_OLD_ID), null)
+  rows.syllabus_revisions[0].activated_at = null
+  assert.equal(await source.findActivatedSyllabusForecastItem('syllabus-1', CHURN_OLD_ID), null)
 })
 
 test('Mr. Slate practice is authorized on demand without weakening instructional PIN rules', async () => {

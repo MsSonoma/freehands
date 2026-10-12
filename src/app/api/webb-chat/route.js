@@ -1,12 +1,13 @@
 /**
  * /api/webb-chat
  * Mrs. Webb - AI conversation endpoint.
- * Maintains freeform chat about a lesson topic using GPT-4o-mini.
+ * Facilitates lesson conversations using the globally configured model.
  * Safety-validates student input before forwarding.
  */
 import { NextResponse } from 'next/server'
 import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
 import { buildWritingGuidanceInstructions } from '@/app/lib/webbLearningModel.mjs'
+import { requestWebbStructuredReply } from '@/app/lib/webbChatCompletion.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
@@ -21,15 +22,6 @@ function structuredObjectiveReplyInstruction() {
     'If this response should not ask a focused learning question, set "objectivePrompt" to null.',
     'Never invent an objectivePrompt that is not present verbatim inside reply.',
   ].join('\n')
-}
-
-function parseStructuredObjectiveReply(raw, fallbackReply = '') {
-  let parsed = null
-  try { parsed = JSON.parse(String(raw || '')) } catch {}
-  const reply = String(parsed?.reply || fallbackReply || '').trim()
-  const candidate = String(parsed?.objectivePrompt || '').trim()
-  const objectivePrompt = candidate && reply.includes(candidate) ? candidate : null
-  return { reply, objectivePrompt }
 }
 
 function buildResearchSystem(lesson, targetObjective, media) {
@@ -267,23 +259,17 @@ export async function POST(req) {
       const sysContent = researchDirect
         ? buildDirectTeachSystem(lesson, targetObjective)
         : buildResearchSystem(lesson, targetObjective, media)
-      const r = await fetch(OPENAI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          messages: [{ role: 'system', content: `${sysContent}\n\n${structuredObjectiveReplyInstruction()}` }],
-          max_completion_tokens: 180,
-          ...aiModelTemperature(0.7),
-          response_format: { type: 'json_object' },
-        }),
+      const result = await requestWebbStructuredReply({
+        endpoint: OPENAI_URL,
+        apiKey,
+        model: OPENAI_MODEL,
+        messages: [{ role: 'system', content: `${sysContent}\n\n${structuredObjectiveReplyInstruction()}` }],
+        temperatureOptions: aiModelTemperature(0.7),
       })
-      if (!r.ok) return NextResponse.json({ error: 'AI unavailable' }, { status: 502 })
-      const d = await r.json()
-      const fallbackReply = `Let me tell you about: ${targetObjective}. Can you explain it back to me in your own words?`
-      const rawReply = d.choices?.[0]?.message?.content?.trim() || ''
-      const { reply, objectivePrompt } = parseStructuredObjectiveReply(rawReply, fallbackReply)
-      return NextResponse.json({ reply, objectivePrompt })
+      if (!result.ok) {
+        return NextResponse.json({ error: 'Mrs. Webb could not continue just yet. Please retry.', code: 'WEBB_REPLY_UNAVAILABLE' }, { status: 502 })
+      }
+      return NextResponse.json({ reply: result.reply, objectivePrompt: result.objectivePrompt })
     }
 
     // Classify sensitive turns without treating educational vocabulary as a veto.
@@ -301,33 +287,17 @@ export async function POST(req) {
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]
 
-    const res = await fetch(OPENAI_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: oaiMessages,
-        max_completion_tokens: 160,
-        ...aiModelTemperature(0.75),
-        response_format: { type: 'json_object' },
-      }),
+    const result = await requestWebbStructuredReply({
+      endpoint: OPENAI_URL,
+      apiKey,
+      model: OPENAI_MODEL,
+      messages: oaiMessages,
+      temperatureOptions: aiModelTemperature(0.75),
     })
-
-    if (!res.ok) {
-      const err = await res.text()
-      console.error('Webb-chat OpenAI error:', err)
-      return NextResponse.json({ error: 'AI unavailable' }, { status: 502 })
+    if (!result.ok) {
+      return NextResponse.json({ error: 'Mrs. Webb could not continue just yet. Please retry.', code: 'WEBB_REPLY_UNAVAILABLE' }, { status: 502 })
     }
-
-    const data = await res.json()
-    const rawReply = data.choices?.[0]?.message?.content?.trim() || ''
-    const { reply, objectivePrompt } = parseStructuredObjectiveReply(rawReply,
-      "That's a great question! What else would you like to know about this topic?")
-
-    return NextResponse.json({ reply, objectivePrompt })
+    return NextResponse.json({ reply: result.reply, objectivePrompt: result.objectivePrompt })
   } catch (e) {
     console.error('Webb-chat error:', e)
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })

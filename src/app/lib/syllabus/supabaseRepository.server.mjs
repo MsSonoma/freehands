@@ -70,6 +70,23 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load Syllabus revision')
       return data
     },
+    async findActivatedSyllabusForecastItem(syllabusId, forecastItemId) {
+      const { data: row, error } = await admin.from('syllabus_forecast_items')
+        .select('id,revision_id,lineage_id,lesson_key')
+        .eq('id', forecastItemId)
+        .maybeSingle()
+      throwOn(error, 'Failed to inspect earlier Syllabus occurrence')
+      if (!row?.revision_id || !row?.lineage_id || !row?.lesson_key) return null
+      // A past client ID is eligible only if it belonged to an activated revision
+      // of this learner's already-ownership-checked Syllabus, not a proposal or another learner.
+      const { data: revision, error: revisionError } = await admin.from('syllabus_revisions')
+        .select('id,activated_at')
+        .eq('id', row.revision_id)
+        .eq('syllabus_id', syllabusId)
+        .maybeSingle()
+      throwOn(revisionError, 'Failed to verify earlier Syllabus revision')
+      return revision?.activated_at ? row : null
+    },
     async findLatestLearningForecastProposal(syllabusId, baseRevisionId) {
       const { data, error } = await admin.from('syllabus_revisions').select('*')
         .eq('syllabus_id', syllabusId)
