@@ -8,6 +8,11 @@ import {
   evaluateVerticalMath,
   validateVerticalMathExercise,
 } from '@/lib/math/verticalMath.mjs'
+import {
+  listVerticalMathWorkingNoteSlots,
+  sanitizeVerticalMathWorkingNotes,
+  updateVerticalMathWorkingNote,
+} from '@/lib/math/verticalMathNotes.mjs'
 import styles from './VerticalMathWorkspace.module.css'
 
 const MULTIPLICATION = '\u00d7'
@@ -15,19 +20,21 @@ const MULTIPLICATION = '\u00d7'
 /** One teacher-neutral renderer for every supported operation engine. */
 export default function VerticalMathWorkspace({
   problem, view, onViewChange, onCellSelect, selectedLocation = null, phase = 'teaching', onCheck,
-  showCheck = true, showFullAnswerInputs = true,
+  showCheck = true, showFullAnswerInputs = true, notes, onNotesChange,
 }) {
   const inputId = useId()
   const [fullAnswer, setFullAnswer] = useState('')
   const [divisionAnswer, setDivisionAnswer] = useState({ quotient: '', remainder: '' })
   const [entryMessage, setEntryMessage] = useState('')
   const [lastCheck, setLastCheck] = useState(null)
+  const [localNotes, setLocalNotes] = useState({})
 
   useEffect(() => {
     setFullAnswer('')
     setDivisionAnswer({ quotient: '', remainder: '' })
     setEntryMessage('')
     setLastCheck(null)
+    setLocalNotes({})
   }, [problem])
 
   useEffect(() => {
@@ -48,6 +55,16 @@ export default function VerticalMathWorkspace({
     [problem, view.hidden, view.editable],
   )
   const workRows = problem.workRows || (problem.carryRow ? [problem.carryRow] : [])
+  const noteSlots = useMemo(
+    () => listVerticalMathWorkingNoteSlots(problem, view),
+    [problem, view.hidden, view.editable],
+  )
+  const validNoteKeys = useMemo(() => noteSlots.map((slot) => slot.key), [noteSlots])
+  const workingNotes = sanitizeVerticalMathWorkingNotes(
+    notes === undefined ? localNotes : notes,
+    { validKeys: validNoteKeys },
+  )
+  const noteSlotByCell = new Map(noteSlots.map((slot) => [slot.cellId, slot]))
   const entireResultEditable = problem.resultRow.cells.every((cell) => editable.has(cell.id))
   const divisionAnswersEditable = isDivision && problem.answerRows?.every((row) =>
     row.cells.every((cell) => editable.has(cell.id)))
@@ -70,6 +87,26 @@ export default function VerticalMathWorkspace({
     else setEntryMessage(result.error)
   }
 
+  function changeWorkingNote(slot, value) {
+    const next = updateVerticalMathWorkingNote(workingNotes, slot.key, value, {
+      validKeys: validNoteKeys,
+    })
+    if (notes === undefined) setLocalNotes(next)
+    onNotesChange?.(next)
+  }
+
+  function workingNoteNode(cell) {
+    const slot = noteSlotByCell.get(cell.id)
+    if (!slot) return null
+    return <input
+      className={problem.operation === 'subtraction' ? styles.replacementNote : styles.workingNote}
+      type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2}
+      value={workingNotes[slot.key] ?? ''} aria-label={slot.label} autoComplete="off"
+      data-working-note={slot.key}
+      onChange={(event) => changeWorkingNote(slot, event.target.value)}
+    />
+  }
+
   function cellNode(cell, decimalConcealed) {
     const isHidden = hidden.has(cell.id)
     const isEditable = editable.has(cell.id) && isHidden
@@ -83,6 +120,7 @@ export default function VerticalMathWorkspace({
       highlighted.has(cell.id) ? styles.highlighted : '',
       selectedLocation === cell.id ? styles.selected : '',
       cell.row === 'operand.1' && replacementPlaces.has(cell.place) ? styles.replaced : '',
+      cell.row === 'operand.1' && workingNotes[noteSlotByCell.get(cell.id)?.key] ? styles.noteReplaced : '',
       cell.value === null && !isEditable ? styles.padding : '',
     ].filter(Boolean).join(' ')
     const maxLength = Number.isInteger(cell.inputCapacity) && cell.inputCapacity > 0
@@ -206,7 +244,12 @@ export default function VerticalMathWorkspace({
             : ''
       : null
     return <>
-      <div className={styles.mathRow} role="row" aria-label={operatorHidden ? 'Number row' : (row.label || row.id)}
+      <div className={[
+        styles.mathRow,
+        problem.operation === 'subtraction' && row.id === 'operand.1' && noteSlots.length
+          ? styles.replacementTargetRow
+          : '',
+      ].filter(Boolean).join(' ')} role="row" aria-label={operatorHidden ? 'Number row' : (row.label || row.id)}
         data-row-id={row.id} data-row-role={operatorHidden ? undefined : (row.role || row.kind)}
         data-decimal-mode={anyDecimalHidden && row.kind !== 'work' ? 'overlay' : undefined}
         data-decimal-row={anyDecimalHidden && row.kind !== 'work' ? row.id : undefined}>
@@ -215,6 +258,7 @@ export default function VerticalMathWorkspace({
         {row.cells.map((cell) => <span className={styles.cellWrapper} role="cell" key={cell.id}
           data-slot={cell.slot}>
           {cellNode(cell, decimalConcealed)}
+          {workingNoteNode(cell)}
           {anyDecimalHidden
             ? decimalDot(row, cell)
             : isMultiplication
@@ -290,6 +334,8 @@ export default function VerticalMathWorkspace({
     if (item.type === 'rule') return <div className={styles.mathRule} aria-hidden="true" key={item.id || 'rule-' + index} />
     const row = rowsById.get(item.rowId)
     if (!row) return null
+    if (problem.operation === 'subtraction' && row.id === 'regroup' &&
+      !row.cells.some((cell) => (!hidden.has(cell.id) && cell.value !== null) || editable.has(cell.id))) return null
     const className = row.id === problem.resultRow.id
       ? styles.answerRow
       : (row.kind === 'work' && row.role !== 'partial_product' ? styles.workRow : '')

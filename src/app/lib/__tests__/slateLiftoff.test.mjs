@@ -376,3 +376,15 @@ test('earned skills stay revealed if later evidence becomes unstable', () => {
   assert.equal(state.components[0].evidenceState, 'unstable')
   assert.equal(state.components[0].revealedToLearner, true)
 })
+
+test('Liftoff snapshot feature state preserves optional activity-keyed working notes exactly', () => {
+  const mathWorkingNotes = { activityId: 'teaching-activity', notes: { 'carry.ones': '1' } }
+  const assessmentMathWorkingNotes = { activityId: 'test-activity', notes: { 'sum_carry.tens': '2' } }
+  const feature = buildLiftoffSnapshotFeatureState({ mathWorkingNotes, assessmentMathWorkingNotes })
+  assert.strictEqual(feature.mathWorkingNotes, mathWorkingNotes)
+  assert.strictEqual(feature.assessmentMathWorkingNotes, assessmentMathWorkingNotes)
+
+  const oldFeature = buildLiftoffSnapshotFeatureState()
+  assert.equal(Object.hasOwn(oldFeature, 'mathWorkingNotes'), false)
+  assert.equal(Object.hasOwn(oldFeature, 'assessmentMathWorkingNotes'), false)
+})

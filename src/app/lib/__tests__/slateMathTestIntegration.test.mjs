@@ -19,6 +19,7 @@ import {
 import { evaluateMathTestAnswer } from '../../../lib/math/mathTestAnswer.mjs'
 import { routeMathTextInput } from '../../../lib/math/mathTextInput.mjs'
 import { enterVerticalMathRowAnswer } from '../../../lib/math/verticalMath.mjs'
+import { updateVerticalMathWorkingNote } from '../../../lib/math/verticalMathNotes.mjs'
 
 function enterText(state, text, selectedLocation = null, requestId = 'input') {
   const problem = buildMathActivityProblem(state.spec)
@@ -73,6 +74,28 @@ test('wrong shorter test answers submit without public correctness feedback', ()
   assert.equal(duplicate.ok, true)
   assert.equal(duplicate.duplicate, true)
   assert.equal(duplicate.state.attempts.length, submitted.state.attempts.length)
+})
+
+test('working notes stay outside text routing, view entries, evaluation, and test submission', () => {
+  const item = { question: 'What is 47 + 26?', expected: '73' }
+  let state = createSlateMathTestSession({ item, activityId: 'note-separation' }).state
+  state = enterText(state, '73').state
+  const evaluationBeforeNotes = evaluateMathTestAnswer(buildMathActivityProblem(state.spec), state.view)
+  const entriesBeforeNotes = structuredClone(state.view.entries)
+  const notes = updateVerticalMathWorkingNote({}, 'carry.ones', '9', { validKeys: ['carry.ones'] })
+  const submitted = submitMathSession(state, {
+    activityId: state.activityId,
+    expectedRevision: state.revision,
+    requestId: 'submit-note-separation',
+  })
+
+  assert.deepEqual(notes, { 'carry.ones': '9' })
+  assert.deepEqual(state.view.entries, entriesBeforeNotes)
+  assert.deepEqual(evaluateMathTestAnswer(buildMathActivityProblem(state.spec), state.view), evaluationBeforeNotes)
+  assert.equal(Object.hasOwn(submitted.submission, 'notes'), false)
+  assert.equal(Object.hasOwn(submitted.submission.entries, 'carry.ones'), false)
+  assert.match(slateExperienceSource, /routeMathTextInput\(problem, activeMath\.view, answer/)
+  assert.match(slateExperienceSource, /<textarea ref=\{answerInputRef\} value=\{answer\} onChange=\{\(event\) => setAnswer\(event\.target\.value\)\}/)
 })
 
 test('regular numeric text and directly edited grid produce the same response record', () => {

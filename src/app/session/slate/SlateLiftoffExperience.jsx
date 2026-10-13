@@ -70,12 +70,25 @@ import {
   slateTestMathFingerprint,
 } from '@/app/lib/slateMathTest.mjs'
 import { evaluateMathTestAnswer } from '@/lib/math/mathTestAnswer.mjs'
+import {
+  listVerticalMathWorkingNoteSlots,
+  restoreVerticalMathWorkingNotes,
+  sanitizeVerticalMathWorkingNotes,
+} from '@/lib/math/verticalMathNotes.mjs'
 
 const SLATE_MUSIC_SRC = '/media/Focus%20Flow.wav'
 const SLATE_MUSIC_DEFAULT_VOLUME = 0.18
 const SLATE_MUSIC_VOLUME_KEY = 'mr_slate_background_music_volume'
 const SLATE_MUSIC_MUTED_KEY = 'mr_slate_background_music_muted'
 const SLATE_MUSIC_LONG_PRESS_MS = 550
+
+function safeVerticalMathNoteKeys(session) {
+  try {
+    return listVerticalMathWorkingNoteSlots(buildMathActivityProblem(session?.spec), session?.view).map((slot) => slot.key)
+  } catch {
+    return []
+  }
+}
 
 function clampSlateMusicVolume(value) {
   if (value === null || value === undefined || value === '') return SLATE_MUSIC_DEFAULT_VOLUME
@@ -254,11 +267,13 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [lineHelpBusy, setLineHelpBusy] = useState(false)
   const [lineHelpError, setLineHelpError] = useState('')
   const [mathSession, setMathSession] = useState(null)
+  const [mathWorkingNotes, setMathWorkingNotes] = useState(null)
   const [mathArchive, setMathArchive] = useState([])
   const [mathPending, setMathPending] = useState(null)
   const [mathError, setMathError] = useState('')
   const [selectedMathTextLocation, setSelectedMathTextLocation] = useState('')
   const [assessmentMathSession, setAssessmentMathSession] = useState(null)
+  const [assessmentMathWorkingNotes, setAssessmentMathWorkingNotes] = useState(null)
   const [assessmentMathPending, setAssessmentMathPending] = useState(null)
   const [assessmentMathTextLocation, setAssessmentMathTextLocation] = useState('')
   const [assessmentMathError, setAssessmentMathError] = useState('')
@@ -286,12 +301,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const canonicalReservedTestRef = useRef([])
   const initializedRef = useRef(false)
   const mathSessionRef = useRef(null)
+  const mathWorkingNotesRef = useRef(null)
   const mathArchiveRef = useRef([])
   const mathPendingRef = useRef(null)
   const mathActivityKeyRef = useRef('')
   const submitLockRef = useRef(false)
   const assessmentSubmitLockRef = useRef(false)
   const assessmentMathSessionRef = useRef(null)
+  const assessmentMathWorkingNotesRef = useRef(null)
   const assessmentMathPendingRef = useRef(null)
   const assessmentMathTextRef = useRef('')
   const assessmentMathTextLocationRef = useRef('')
@@ -503,6 +520,18 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     assessmentMathTextLocationRef.current = restoredAssessmentLocation
     assessmentMathFingerprintRef.current = assessmentDraft.fingerprint
     setAssessmentMathSession(restoredAssessmentMath)
+    const restoredMathNotes = feature.mathSession ? restoreVerticalMathWorkingNotes(feature.mathWorkingNotes, {
+      activityId: feature.mathSession.activityId,
+      validKeys: safeVerticalMathNoteKeys(feature.mathSession),
+    }) : null
+    mathWorkingNotesRef.current = restoredMathNotes
+    setMathWorkingNotes(restoredMathNotes)
+    const restoredAssessmentNotes = !restartTransferredTest && restoredAssessmentMath ? restoreVerticalMathWorkingNotes(feature.assessmentMathWorkingNotes, {
+      activityId: restoredAssessmentMath.activityId,
+      validKeys: safeVerticalMathNoteKeys(restoredAssessmentMath),
+    }) : null
+    assessmentMathWorkingNotesRef.current = restoredAssessmentNotes
+    setAssessmentMathWorkingNotes(restoredAssessmentNotes)
     setAssessmentMathPending(restoredAssessmentPending)
     setAssessmentMathTextLocation(restoredAssessmentLocation)
     assessmentMathKeyRef.current = ''
@@ -557,9 +586,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       finalPercentage: finalPercentageValue,
       startedAt: startedAtRef.current || new Date().toISOString(),
       mathSession: mathSessionRef.current,
+      mathWorkingNotes: mathWorkingNotesRef.current,
       mathArchive: mathArchiveRef.current,
       mathPending: mathPendingRef.current,
       assessmentMathSession: assessmentMathSessionRef.current,
+      assessmentMathWorkingNotes: assessmentMathWorkingNotesRef.current,
       assessmentMathPending: assessmentMathPendingRef.current,
       assessmentMathText: assessmentMathTextRef.current,
       assessmentMathTextLocation: assessmentMathTextLocationRef.current,
@@ -1001,6 +1032,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         mathActivityKeyRef.current = ''
         mathSessionRef.current = null
         setMathSession(null)
+        mathWorkingNotesRef.current = null
+        setMathWorkingNotes(null)
         setMathError('')
       }
       return
@@ -1041,6 +1074,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setSelectedMathTextLocation(restoreLocation ? pendingLocation : '')
     mathSessionRef.current = result.state
     setMathSession(result.state)
+    const restoredNotes = restoreVerticalMathWorkingNotes(mathWorkingNotesRef.current, {
+      activityId: result.state.activityId,
+      validKeys: safeVerticalMathNoteKeys(result.state),
+    })
+    mathWorkingNotesRef.current = restoredNotes
+    setMathWorkingNotes(restoredNotes)
     setMathError('')
     scheduleMathSnapshot()
   }, [liftoff, occurrenceId, phase, scheduleMathSnapshot, session?.id])
@@ -1107,6 +1146,16 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setMathError('')
     scheduleMathSnapshot()
   }, [busy, lineHelpBusy, lineHelpTarget, scheduleMathSnapshot])
+  const changeMathWorkingNotes = useCallback((nextNotes) => {
+    const current = mathSessionRef.current
+    if (!current || phase !== 'active' || busy || lineHelpBusy || lineHelpTarget || submitLockRef.current || snapshotServiceRef.current?.writesFenced) return
+    if (mathWorkingNotesRef.current?.activityId !== current.activityId) return
+    const validKeys = safeVerticalMathNoteKeys(current)
+    const scoped = { activityId: current.activityId, notes: sanitizeVerticalMathWorkingNotes(nextNotes, { validKeys }) }
+    mathWorkingNotesRef.current = scoped
+    setMathWorkingNotes(scoped)
+    scheduleMathSnapshot()
+  }, [busy, lineHelpBusy, lineHelpTarget, phase, scheduleMathSnapshot])
   const essentialComponents = components.filter((component) => component.essential !== false)
   const demonstratedComponents = essentialComponents.filter((component) => ['independent', 'retained'].includes(component.evidenceState))
   const revealedComponents = essentialComponents.filter((component) => component.revealedToLearner === true || ['independent', 'retained'].includes(component.evidenceState))
@@ -1140,6 +1189,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         assessmentMathKeyRef.current = ''
         assessmentMathSessionRef.current = null
         setAssessmentMathSession(null)
+        assessmentMathWorkingNotesRef.current = null
+        setAssessmentMathWorkingNotes(null)
       }
       return
     }
@@ -1167,6 +1218,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     assessmentMathSessionRef.current = result.state
     assessmentMathFingerprintRef.current = assessmentMathFingerprint
     setAssessmentMathSession(result.state)
+    const restoredNotes = restoreVerticalMathWorkingNotes(assessmentMathWorkingNotesRef.current, {
+      activityId: result.state.activityId,
+      validKeys: safeVerticalMathNoteKeys(result.state),
+    })
+    assessmentMathWorkingNotesRef.current = restoredNotes
+    setAssessmentMathWorkingNotes(restoredNotes)
     setAssessmentMathError('')
     scheduleMathSnapshot()
   }, [assessmentIndex, assessmentMathFingerprint, assessmentMathResolution, currentAssessment, occurrenceId, phase, scheduleMathSnapshot, session?.id])
@@ -1185,6 +1242,16 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setAssessmentMathError('')
     scheduleMathSnapshot()
   }, [busy, lineHelpBusy, lineHelpTarget, scheduleMathSnapshot])
+  const changeAssessmentMathWorkingNotes = useCallback((nextNotes) => {
+    const current = assessmentMathSessionRef.current
+    if (!current || phase !== 'test' || busy || lineHelpBusy || lineHelpTarget || assessmentSubmitLockRef.current || snapshotServiceRef.current?.writesFenced) return
+    if (assessmentMathWorkingNotesRef.current?.activityId !== current.activityId) return
+    const validKeys = safeVerticalMathNoteKeys(current)
+    const scoped = { activityId: current.activityId, notes: sanitizeVerticalMathWorkingNotes(nextNotes, { validKeys }) }
+    assessmentMathWorkingNotesRef.current = scoped
+    setAssessmentMathWorkingNotes(scoped)
+    scheduleMathSnapshot()
+  }, [busy, lineHelpBusy, lineHelpTarget, phase, scheduleMathSnapshot])
   const skillsRemaining = Math.max(0, essentialComponents.length - demonstratedComponents.length)
   const learnerStage = phase === 'test' ? 'test' : 'liftoff'
   const progressStages = [
@@ -1239,11 +1306,13 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     assessmentMathTextRef.current = ''
     assessmentMathTextLocationRef.current = ''
     assessmentMathSessionRef.current = null
+    assessmentMathWorkingNotesRef.current = null
     assessmentMathPendingRef.current = null
     assessmentMathKeyRef.current = ''
     assessmentMathFingerprintRef.current = ''
     setAssessmentMathTextLocation('')
     setAssessmentMathSession(null)
+    setAssessmentMathWorkingNotes(null)
     setAssessmentMathPending(null)
     setAssessmentMathError('')
     setTestResults([])
@@ -1430,6 +1499,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         setMathPending(null)
         mathSessionRef.current = null
         setMathSession(null)
+        mathWorkingNotesRef.current = null
+        setMathWorkingNotes(null)
         mathActivityKeyRef.current = ''
         setAnswer('')
         setMathError('')
@@ -1556,6 +1627,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         setAssessmentMathPending(null)
         assessmentMathSessionRef.current = null
         setAssessmentMathSession(null)
+        assessmentMathWorkingNotesRef.current = null
+        setAssessmentMathWorkingNotes(null)
         assessmentMathKeyRef.current = ''
         assessmentMathFingerprintRef.current = ''
         assessmentMathTextRef.current = ''
@@ -1729,6 +1802,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         setAssessmentMathPending(null)
         assessmentMathSessionRef.current = null
         setAssessmentMathSession(null)
+        assessmentMathWorkingNotesRef.current = null
+        setAssessmentMathWorkingNotes(null)
         assessmentMathKeyRef.current = ''
         assessmentMathFingerprintRef.current = ''
         assessmentMathTextRef.current = ''
@@ -1792,6 +1867,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             problem={activeMathProblem}
             view={mathSession.view}
             onViewChange={changeMathView}
+            notes={mathWorkingNotes?.activityId === mathSession.activityId ? mathWorkingNotes.notes : {}}
+            onNotesChange={changeMathWorkingNotes}
             selectedLocation={selectedMathTextLocation || null}
             onCellSelect={(location) => {
               if (mathSession.view.editable.includes(location)) setSelectedMathTextLocation(location)
@@ -1956,6 +2033,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                         problem={assessmentMathProblem}
                         view={assessmentMathSession.view}
                         onViewChange={changeAssessmentMathView}
+                        notes={assessmentMathWorkingNotes?.activityId === assessmentMathSession.activityId ? assessmentMathWorkingNotes.notes : {}}
+                        onNotesChange={changeAssessmentMathWorkingNotes}
                         selectedLocation={assessmentMathTextLocation || null}
                         onCellSelect={(location) => {
                           if (assessmentMathSession.view.editable.includes(location)) {
