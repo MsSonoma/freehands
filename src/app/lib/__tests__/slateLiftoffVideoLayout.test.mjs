@@ -38,7 +38,7 @@ test('transcript grows to fill space above the original input form', () => {
   assert.match(layout, /\.transcriptColumn\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex:\s*1 1 auto;[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/)
   assert.match(layout, /\.transcriptColumn \[data-ms-caption-panel-container\]\s*\{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?height:\s*auto !important;[\s\S]*?max-height:\s*none !important;/)
   assert.match(layout, /\.contentColumn > \[data-slate-primary-answer-form\]\s*\{[\s\S]*?flex-shrink:\s*0;/)
-  assert.match(slate, /stackedHeight=\{activeMathSpec \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
+  assert.match(slate, /stackedHeight=\{activeScratchDraft\?\.visible \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
 })
 
 test('right progress panel fills remaining height under the video and scrolls inside its own area', () => {
@@ -61,7 +61,7 @@ test('new sizing keeps math workspace inside captions, original answer bar, asse
   assert.match(slate, /placeholder="Show your thinking or answer Mr\. Slate\."/)
   assert.match(slate, /<form data-slate-primary-answer-form onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitLiftoffAnswer\(\) \}\}/)
   assert.match(slate, /<form onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitAssessmentAnswer\(\) \}\}/)
-  assert.match(slate, /notes=\{assessmentMathWorkingNotes\?\.activityId === assessmentMathSession\.activityId/)
+  assert.match(slate, /notes=\{assessmentScratchNotes\}/)
   assert.equal((slate.match(/ref=\{videoRef\}/g) || []).length, 2)
 })
 

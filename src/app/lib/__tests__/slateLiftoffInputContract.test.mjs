@@ -73,7 +73,7 @@ test('Slate scratch workspace owns its transfer button and has no decorative div
   const workspaceCss = fs.readFileSync(path.resolve('src/components/math/VerticalMathWorkspace.module.css'), 'utf8')
   assert.equal((slate.match(/embeddedScratch/g) || []).length, 2)
   assert.equal((slate.match(/footer=\{\s*<button type="button"[\s\S]*?USE THIS RESULT IN ANSWER<\/button>\s*\}/g) || []).length, 2)
-  assert.match(slate, /data-slate-active-math-transcript-tail style=\{\{ marginTop: 12, paddingTop: 14 \}\}/)
+  assert.match(slate, /data-slate-active-math-transcript-tail style=\{\{ marginTop: 12, paddingTop: 8 \}\}/)
   assert.doesNotMatch(slate, /data-slate-active-math-transcript-tail style=\{\{ borderTop:/)
   assert.match(verticalMathWorkspace, /embeddedScratch \? styles\.scratchGrid : ''/)
   assert.match(verticalMathWorkspace, /embeddedScratch \? styles\.scratchBottomArea : ''/)

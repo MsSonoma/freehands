@@ -30,10 +30,10 @@ test('active teaching math is routed through CaptionPanel in-scroller tail conte
   assert.ok(tailContentIndex > panelIndex)
   assert.ok(tailSpacerIndex > tailContentIndex)
   assert.match(captions, /displayItems\.length, hasTailContent, boxRef, recomputeScrollState/)
-  assert.match(slate, /const activeMathTranscriptContent = phase === 'active' && !questionPending && activeMathSpec \? \([\s\S]*<VerticalMathWorkspace[\s\S]*phase="teaching"[\s\S]*The scratch workspace is unavailable\. You can still answer in the text field\.[\s\S]*\{mathError &&/)
+  assert.match(slate, /const activeMathTranscriptContent = phase === 'active' && !questionPending && !introTeaching && activeMathSpec \? \([\s\S]*<VerticalMathWorkspace[\s\S]*phase="teaching"[\s\S]*The scratch workspace is unavailable\.[\s\S]*\{mathError &&/)
   assert.match(slate, /data-slate-active-math-transcript-tail[\s\S]*<VerticalMathWorkspace[\s\S]*showFullAnswerInputs=\{false\}/)
   assert.match(slate, /tailContent=\{activeMathTranscriptContent\}/)
-  assert.match(slate, /stackedHeight=\{activeMathSpec \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
+  assert.match(slate, /stackedHeight=\{activeScratchDraft\?\.visible \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
   assert.doesNotMatch(slate, /\{phase === 'active' && activeMathSpec && \(\s*<div/)
 })
 

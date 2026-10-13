@@ -16,12 +16,13 @@ import {
 import styles from './VerticalMathWorkspace.module.css'
 
 const MULTIPLICATION = '\u00d7'
+const SCRATCH_SYMBOLS = { addition: '+', subtraction: '\u2212', multiplication: MULTIPLICATION, division: '\u00f7' }
 
 /** One teacher-neutral renderer for every supported operation engine. */
 export default function VerticalMathWorkspace({
   problem, view, onViewChange, onCellSelect, selectedLocation = null, phase = 'teaching', onCheck,
   showCheck = true, showFullAnswerInputs = true, notes, onNotesChange,
-  embeddedScratch = false, footer = null,
+  embeddedScratch = false, footer = null, onOperationChange = null, operationChoices = [],
 }) {
   const inputId = useId()
   const [fullAnswer, setFullAnswer] = useState('')
@@ -153,6 +154,17 @@ export default function VerticalMathWorkspace({
     return <span className={classes} aria-hidden="true" data-cell-id={publicCellName} />
   }
 
+  function scratchOperationSelect(extraClass = '') {
+    return <select
+      className={[styles.scratchOperationSelect, extraClass].filter(Boolean).join(' ')}
+      aria-label="Change arithmetic operation" title="Change arithmetic operation"
+      value={problem.operation} data-scratch-operation
+      onChange={(event) => onOperationChange?.(event.target.value)}
+    >
+      {operationChoices.map((operation) => <option key={operation} value={operation}>{SCRATCH_SYMBOLS[operation]}</option>)}
+    </select>
+  }
+
   function operatorNode(symbol, isDesignatedOperatorRow) {
     if (!isDesignatedOperatorRow) {
       return !operatorHidden && symbol
@@ -167,6 +179,7 @@ export default function VerticalMathWorkspace({
       highlighted.has('operator') ? styles.highlighted : '',
       selectedLocation === 'operator' ? styles.selected : '',
     ].filter(Boolean).join(' ')
+    if (!operatorHidden && onOperationChange) return scratchOperationSelect()
     if (!operatorHidden) return <button
       type="button" className={classes + ' ' + styles.given}
       aria-label="Select arithmetic symbol" title="Arithmetic symbol"
@@ -294,7 +307,9 @@ export default function VerticalMathWorkspace({
     const quotient = problem.answerRows.find((row) => row.id === problem.layout.bracket.quotientRow)
     return <div className={styles.divisionAssembly} role="table" aria-label="Long division">
       <div className={styles.divisionDivisor}>
-        <div className={styles.divisionDivisorSpacer} aria-hidden="true" />
+        <div className={styles.divisionDivisorSpacer}>
+          {onOperationChange ? scratchOperationSelect(styles.scratchDivisionOperationSelect) : null}
+        </div>
         <div className={styles.divisionDivisorRow} role="row" aria-label="Divisor" data-row-id={divisor.id}>
           {divisor.cells.filter((cell) => cell.value !== null).map((cell) =>
             <span className={styles.cellWrapper} role="cell" key={cell.id} data-slot={cell.slot}>
