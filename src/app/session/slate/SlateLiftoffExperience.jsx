@@ -14,6 +14,7 @@ import { recordSlateLiftoffEvidence } from '@/app/lib/slateLiftoffClient.js'
 import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { separateLiftoffTranscriptQuestion } from '@/app/lib/slateLiftoffTranscript.mjs'
+import { advanceSlateIntroTeaching, createSlateIntroTeaching, restoreSlateIntroTeaching } from '@/app/lib/slateIntroTeaching.mjs'
 import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
 import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
 import { slateMathWorkspaceResult, insertSlateMathResult } from '@/app/lib/slateMathDraft.mjs'
@@ -245,6 +246,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [lesson, setLesson] = useState(null)
   const [liftoff, setLiftoff] = useState(null)
   const [slateText, setSlateText] = useState('')
+  const [introTeaching, setIntroTeaching] = useState(null)
+  const [introSpeechPlaying, setIntroSpeechPlaying] = useState(false)
   const [questionPending, setQuestionPending] = useState(false)
   const [answer, setAnswer] = useState('')
   const [busy, setBusy] = useState(false)
@@ -285,6 +288,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const soundOnRef = useRef(true)
   const speechRequestRef = useRef(0)
   const introSpeechRef = useRef(null)
+  const introTeachingRef = useRef(null)
+  const introAdvanceLockRef = useRef(false)
   const componentActiveRef = useRef(true)
   const videoRef = useRef(null)
   const musicAudioRef = useRef(null)
@@ -557,6 +562,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setAnswer(pendingOwnsRestoredMath || pendingOwnsTextAnswer
       ? String(restoredPending.kind === 'composer_help' ? restoredPending.text : restoredPending.learnerResponse || '')
       : '')
+    const restoredIntro = resumedPhase === 'active' ? restoreSlateIntroTeaching(feature.introTeaching) : null
+    introTeachingRef.current = restoredIntro
+    setIntroTeaching(restoredIntro)
+    introSpeechRef.current = null
+    setIntroSpeechPlaying(false)
+    setQuestionPending(Boolean(restoredIntro))
     const restoredLines = Array.isArray(snapshot.transcript) ? [...snapshot.transcript] : []
     // Former worksheet snapshots resume at the same independent test boundary.
     if (oldWorksheetSnapshot) restoredLines.push({ role: 'assistant', text: 'Liftoff is complete. Now take the independent test. No help or answer feedback until the test is finished.', kind: 'test_start' })
@@ -564,7 +575,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     // Restore the unanswered question into the learner transcript, with its own hand.
     const activeQuestion = resumedPhase === 'active' ? String(feature.liftoff?.currentAction?.problem?.prompt || '').trim() : ''
     const questionAlreadyPresent = activeQuestion && restoredLines.some((line) => line?.kind === 'liftoff_question' && line?.text === activeQuestion)
-    transcriptRef.current = activeQuestion && !questionAlreadyPresent
+    transcriptRef.current = activeQuestion && !restoredIntro && !questionAlreadyPresent
       ? [...restoredLines, { role: 'assistant', text: activeQuestion, kind: 'liftoff_question' }]
       : restoredLines
     setTranscriptLines(transcriptRef.current)
@@ -589,6 +600,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       phase: phaseValue,
       liftoff: liftoffValue,
       slateText: slateTextValue,
+      introTeaching: introTeachingRef.current,
       assessmentIndex: assessmentIndexValue,
       worksheetFeedback: null,
       testResults: testResultsValue,
@@ -648,6 +660,40 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     void speak(text)
   }, [speak])
 
+  const nextIntroSentence = useCallback(async () => {
+    const current = introTeachingRef.current
+    if (!current || introSpeechPlaying || introAdvanceLockRef.current || busy || exiting ||
+        lineHelpBusy || lineHelpTarget || snapshotServiceRef.current?.writesFenced) return
+    const next = advanceSlateIntroTeaching(current)
+    if (!next) return
+    introAdvanceLockRef.current = true
+    if (next.kind === 'question') {
+      introTeachingRef.current = null
+      setIntroTeaching(null)
+      setQuestionPending(false)
+      if (next.question) {
+        appendTranscript('assistant', next.question, { kind: 'liftoff_question' })
+        void speak(next.question)
+      }
+      introAdvanceLockRef.current = false
+      void persistRef.current?.()
+      return
+    }
+    introTeachingRef.current = next.stage
+    setIntroTeaching(next.stage)
+    appendTranscript('assistant', next.sentence, { kind: 'liftoff_teaching_sentence' })
+    setIntroSpeechPlaying(true)
+    void persistRef.current?.()
+    try {
+      await speak(next.sentence)
+    } finally {
+      if (componentActiveRef.current && introTeachingRef.current === next.stage) {
+        setIntroSpeechPlaying(false)
+      }
+      introAdvanceLockRef.current = false
+    }
+  }, [appendTranscript, busy, exiting, introSpeechPlaying, lineHelpBusy, lineHelpTarget, speak])
+
   const openLineHelp = useCallback((line, sourceIndex) => {
     const text = String(line?.text || '').trim()
     if (!text || busy || lineHelpBusy || phase === 'test') return
@@ -674,7 +720,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       return
     }
 
-    const activeMath = mathSessionRef.current
+    const activeMath = introTeachingRef.current ? null : mathSessionRef.current
     if (activeMath) {
       const recorded = recordMathSessionHelp(activeMath, {
         activityId: activeMath.activityId,
@@ -980,11 +1026,20 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         setSlateText(init.learnerMessage)
         const initialQuestion = String(initialState.currentAction?.problem?.prompt || '').trim()
         const initialLines = separateLiftoffTranscriptQuestion(init.learnerMessage, initialQuestion)
-        if (initialLines.response) appendTranscript('assistant', initialLines.response)
-        // The response appears now; the next question waits for its TTS to end.
-        introSpeechRef.current = initialLines
-        setQuestionPending(Boolean(initialLines.question))
-        setBusy(Boolean(initialLines.response || initialLines.question))
+        const opening = createSlateIntroTeaching(initialLines.response, initialLines.question)
+        introTeachingRef.current = opening
+        setIntroTeaching(opening)
+        if (opening) {
+          appendTranscript('assistant', opening.sentences[0], { kind: 'liftoff_teaching_sentence' })
+          introSpeechRef.current = opening.sentences[0]
+        } else {
+          if (initialLines.response) appendTranscript('assistant', initialLines.response)
+          if (initialLines.question) appendTranscript('assistant', initialLines.question, { kind: 'liftoff_question' })
+          introSpeechRef.current = initialLines.response || initialLines.question
+        }
+        setIntroSpeechPlaying(Boolean(introSpeechRef.current))
+        setQuestionPending(Boolean(opening))
+        setBusy(false)
         setPhase('active')
         await snapshotService.saveProgress('liftoff-start', {
           phaseOverride: 'active',
@@ -995,6 +1050,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             phase: 'active',
             liftoff: initialState,
             slateText: init.learnerMessage,
+            introTeaching: opening,
             assessmentIndex: 0,
             worksheetFeedback: null,
             testResults: [],
@@ -1013,31 +1069,24 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     return () => { cancelled = true }
   }, [appendTranscript, initializeCanonicalMasteryEvidence, learnerId, lessonKey, occurrenceId, restoreLiftoffSnapshot])
 
-  // Intro audio cannot start until the active lesson (and its <audio>) has mounted.
+  // Play only the first visible teaching sentence on mount. The learner
+  // advances every later sentence; no next question is revealed automatically.
   useEffect(() => {
     if (phase !== 'active' || !introSpeechRef.current || !audioRef.current) return undefined
-    const intro = introSpeechRef.current
+    const sentence = introSpeechRef.current
     introSpeechRef.current = null
     let cancelled = false
-    let completed = false
     void (async () => {
-      if (intro.response) await speak(intro.response)
-      if (cancelled || !componentActiveRef.current || snapshotServiceRef.current?.writesFenced) return
-      if (intro.question) {
-        appendTranscript('assistant', intro.question, { kind: 'liftoff_question' })
-        void speak(intro.question)
-      }
-      completed = true
-      setQuestionPending(false)
-      setBusy(false)
-      void persistRef.current?.()
+      await speak(sentence)
+      if (cancelled || !componentActiveRef.current) return
+      setIntroSpeechPlaying(false)
     })()
     return () => {
       cancelled = true
-      // StrictMode replays effects during development: do not lose the intro.
-      if (!completed && !introSpeechRef.current) introSpeechRef.current = intro
+      // React StrictMode replays effects during development.
+      if (!introSpeechRef.current) introSpeechRef.current = sentence
     }
-  }, [appendTranscript, phase, speak])
+  }, [phase, speak])
 
   useEffect(() => {
     if (!session?.id || !browserSessionIdRef.current) return undefined
@@ -1368,7 +1417,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     const currentLiftoff = liftoffRef.current
     const currentMathSpec = currentLiftoff?.currentAction?.problem?.math
     const writesFenced = snapshotServiceRef.current?.writesFenced
-    if (phase !== 'active' || lineHelpTarget || lineHelpBusy || writesFenced || submitLockRef.current || busy || !lesson || !currentLiftoff) return
+    if (phase !== 'active' || introTeachingRef.current || lineHelpTarget || lineHelpBusy || writesFenced || submitLockRef.current || busy || !lesson || !currentLiftoff) return
     if (currentMathSpec && mathPendingRef.current?.submission && !slateMathSessionMatchesSpec({
       math: currentMathSpec,
       snapshot: activeMath,
@@ -1955,7 +2004,25 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             />
           </div>
 
-          {phase === 'active' && (
+          {phase === 'active' && introTeaching && (
+            <div data-slate-intro-navigation style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
+              <button
+                type="button"
+                onClick={() => void nextIntroSentence()}
+                disabled={introSpeechPlaying || busy || exiting || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+                style={{
+                  padding: '12px 24px', minHeight: 44, background: C.accent, color: C.bg,
+                  border: 0, borderRadius: 8, fontFamily: C.font, fontWeight: 800,
+                  cursor: introSpeechPlaying || lessonInteractionHeld ? 'not-allowed' : 'pointer',
+                  opacity: introSpeechPlaying || lessonInteractionHeld ? 0.6 : 1,
+                }}
+              >
+                {introTeaching.index < introTeaching.sentences.length - 1 ? 'NEXT SENTENCE' : 'START QUESTION'}
+              </button>
+            </div>
+          )}
+
+          {phase === 'active' && !introTeaching && (
             <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
               <WebbDictationButton
                 disabled={busy || lessonInteractionHeld}

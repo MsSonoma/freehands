@@ -95,7 +95,7 @@ test('working notes stay outside text routing, view entries, evaluation, and tes
   assert.equal(Object.hasOwn(submitted.submission, 'notes'), false)
   assert.equal(Object.hasOwn(submitted.submission.entries, 'carry.ones'), false)
   assert.match(slateExperienceSource, /const learnerResponse = answer\.trim\(\)/)
-  assert.match(slateExperienceSource, /\{phase === 'active' && \(\s*<form data-slate-primary-answer-form/)
+  assert.match(slateExperienceSource, /\{phase === 'active' && !introTeaching && \(\s*<form data-slate-primary-answer-form/)
   assert.match(slateExperienceSource, /kind: 'optional_work'/)
 })
 

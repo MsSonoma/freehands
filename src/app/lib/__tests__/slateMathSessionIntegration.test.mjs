@@ -73,7 +73,7 @@ test('active source preserves retries, persistence, guards, and separate submit 
   assert.match(source, /pending\.learnerResponse \? \{ learnerResponse: pending\.learnerResponse \} : \{\}/)
   assert.ok(source.indexOf('const nextState = applyLiftoffTurn') < source.indexOf('appendSlateMathArchive(mathArchiveRef.current'))
   assert.match(source, /liftoffRef\.current = nextState\s+setLiftoff\(nextState\)/)
-  assert.match(source, /phase !== 'active' \|\| lineHelpTarget \|\| lineHelpBusy \|\| writesFenced/)
+  assert.match(source, /phase !== 'active' \|\| introTeachingRef\.current \|\| lineHelpTarget \|\| lineHelpBusy \|\| writesFenced/)
   assert.match(source, /if \(!text \|\| busy \|\| lineHelpBusy \|\| phase === 'test'\) return/)
   assert.match(source, /saveProgress\('liftoff'/)
   assert.match(source, /window\.addEventListener\('pagehide', flush\)/)
