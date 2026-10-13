@@ -11,7 +11,7 @@ function stripMarkdown(text) {
     .replace(/_([^_]+)_/g, '$1');
 }
 
-function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false, onReplayRequest = null, replayEnabled = true, teacherName = 'Ms. Sonoma', theme = null }) {
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false, onReplayRequest = null, replayEnabled = true, teacherName = 'Ms. Sonoma', theme = null, tailContent = null }) {
   const panelTheme = {
     background: '#ffffff',
     text: '#111111',
@@ -35,6 +35,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
   const endRef = useRef(null);
+  const hasTailContent = Boolean(tailContent);
   // Normalize incoming sentences (strings or { text, role }) to a consistent shape
   const items = useMemo(() => {
     if (!Array.isArray(sentences)) return [];
@@ -61,7 +62,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     setAtBottom(el.scrollTop >= el.scrollHeight - el.clientHeight - 4);
   }, [boxRef]);
 
-  useEffect(() => { recomputeScrollState(); }, [displayItems, stackedHeight, fullHeight, compact, recomputeScrollState]);
+  useEffect(() => { recomputeScrollState(); }, [displayItems, stackedHeight, fullHeight, compact, hasTailContent, recomputeScrollState]);
 
   // Keep the latest caption in view (V1 behavior: always pinned to the newest line)
   useEffect(() => {
@@ -93,7 +94,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
       }
       clearTimeout(t1);
     };
-  }, [displayItems.length, boxRef, recomputeScrollState]);
+  }, [displayItems.length, hasTailContent, boxRef, recomputeScrollState]);
 
   useEffect(() => {
     if (!boxRef?.current) return;
@@ -344,18 +345,14 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
               </div>
             );
           })}
-          {/* Dynamic tail spacer to keep one blank line at the bottom without altering the transcript */}
-          <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
-          <div ref={endRef} aria-hidden data-ms-caption-end style={{ height: 1 }} />
           </>
         ) : (
-          <>
-            <div style={{ color: panelTheme.muted }}>No captions yet.</div>
-            {/* Keep consistent tail spacing even when empty */}
-            <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
-            <div ref={endRef} aria-hidden data-ms-caption-end style={{ height: 1 }} />
-          </>
+          <div style={{ color: panelTheme.muted }}>No captions yet.</div>
         )}
+        {tailContent}
+        {/* Dynamic tail spacer to keep one blank line at the bottom without altering the transcript */}
+        <div aria-hidden data-ms-caption-tail-spacer style={{ height: '1.5em' }} />
+        <div ref={endRef} aria-hidden data-ms-caption-end style={{ height: 1 }} />
       </div>
     </div>
   );

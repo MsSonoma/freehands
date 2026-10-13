@@ -1784,6 +1784,30 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
   const isAssessment = phase === 'test'
   const lessonInteractionHeld = Boolean(lineHelpTarget) || lineHelpBusy
+  const activeMathTranscriptContent = phase === 'active' && activeMathSpec ? (
+    <div data-slate-active-math-transcript-tail style={{ borderTop: `1px solid ${mathError ? C.red : C.border}`, marginTop: 12, paddingTop: 14 }}>
+      {activeMathProblem && activeMathMatches ? (
+        <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+          <VerticalMathWorkspace
+            problem={activeMathProblem}
+            view={mathSession.view}
+            onViewChange={changeMathView}
+            selectedLocation={selectedMathTextLocation || null}
+            onCellSelect={(location) => {
+              if (mathSession.view.editable.includes(location)) setSelectedMathTextLocation(location)
+            }}
+            phase="teaching"
+            showCheck={false}
+          />
+        </fieldset>
+      ) : (
+        <div role="alert" style={{ color: C.red, fontWeight: 700 }}>
+          This math activity needs attention before it can be submitted. Your saved work has not been reset.
+        </div>
+      )}
+      {mathError && <div role="status" style={{ color: C.red, fontWeight: 700, marginTop: 10 }}>{mathError}</div>}
+    </div>
+  ) : null
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: C.font, display: 'flex', flexDirection: 'column' }}>
@@ -1831,6 +1855,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               onReplayRequest={replayTranscriptLine}
               replayEnabled={!busy && !lineHelpBusy}
               teacherName="Mr. Slate"
+              stackedHeight={activeMathSpec ? 'clamp(260px, 42vh, 460px)' : null}
+              tailContent={activeMathTranscriptContent}
               theme={{
                 background: C.surface2,
                 text: C.text,
@@ -1851,31 +1877,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               }}
             />
           </div>
-
-          {phase === 'active' && activeMathSpec && (
-            <div style={{ background: C.surface, border: `1px solid ${mathError ? C.red : C.border}`, borderRadius: 10, padding: 14 }}>
-              {activeMathProblem && activeMathMatches ? (
-                <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
-                  <VerticalMathWorkspace
-                    problem={activeMathProblem}
-                    view={mathSession.view}
-                    onViewChange={changeMathView}
-                    selectedLocation={selectedMathTextLocation || null}
-                    onCellSelect={(location) => {
-                      if (mathSession.view.editable.includes(location)) setSelectedMathTextLocation(location)
-                    }}
-                    phase="teaching"
-                    showCheck={false}
-                  />
-                </fieldset>
-              ) : (
-                <div role="alert" style={{ color: C.red, fontWeight: 700 }}>
-                  This math activity needs attention before it can be submitted. Your saved work has not been reset.
-                </div>
-              )}
-              {mathError && <div role="status" style={{ color: C.red, fontWeight: 700, marginTop: 10 }}>{mathError}</div>}
-            </div>
-          )}
 
           {phase === 'active' && (
             !activeMathSpec ? (

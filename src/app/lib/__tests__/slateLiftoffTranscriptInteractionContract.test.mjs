@@ -20,6 +20,22 @@ test('Slate Liftoff renders the full saved transcript with the shared scrollable
   assert.match(slate, /boxRef=\{transcriptBoxRef\}/)
 })
 
+test('active teaching math is routed through CaptionPanel in-scroller tail content', () => {
+  assert.match(captions, /tailContent = null/)
+  assert.match(captions, /const hasTailContent = Boolean\(tailContent\)/)
+  const panelIndex = captions.indexOf('data-ms-caption-panel className=')
+  const tailContentIndex = captions.indexOf('{tailContent}', panelIndex)
+  const tailSpacerIndex = captions.indexOf('data-ms-caption-tail-spacer', panelIndex)
+  assert.ok(panelIndex >= 0)
+  assert.ok(tailContentIndex > panelIndex)
+  assert.ok(tailSpacerIndex > tailContentIndex)
+  assert.match(captions, /displayItems\.length, hasTailContent, boxRef, recomputeScrollState/)
+  assert.match(slate, /const activeMathTranscriptContent = phase === 'active' && activeMathSpec \? \([\s\S]*<VerticalMathWorkspace[\s\S]*phase="teaching"[\s\S]*This math activity needs attention before it can be submitted\.[\s\S]*\{mathError &&/)
+  assert.match(slate, /tailContent=\{activeMathTranscriptContent\}/)
+  assert.match(slate, /stackedHeight=\{activeMathSpec \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
+  assert.doesNotMatch(slate, /\{phase === 'active' && activeMathSpec && \(\s*<div/)
+})
+
 test('current Liftoff diagnostic questions are transcript lines with hand and replay before answering', () => {
   assert.match(slate, /const initialQuestion = String\(initialState\.currentAction\?\.problem\?\.prompt/)
   assert.match(slate, /const initialLines = separateLiftoffTranscriptQuestion\(init\.learnerMessage, initialQuestion\)/)
