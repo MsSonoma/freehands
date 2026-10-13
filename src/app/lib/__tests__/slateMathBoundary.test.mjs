@@ -296,3 +296,51 @@ test('route exports only supported framework fields and source keeps post-await 
   assert.ok(fence < parse && fence < apply && fence < archive && fence < speak)
   assert.match(experienceSource, /result\.success !== false && result\.blocked !== true && !result\.ownershipLost && !service\.writesFenced/)
 })
+
+
+test('new Liftoff answers can be submitted mentally without a math grid or receipt', async () => {
+  const { route, calls } = loadRoute([turnResult({ nextKey: 'probe:mental-answer' })])
+  const response = await post(route, {
+    mode: 'turn', lesson, state: liftoffState(problem('probe:current', math)),
+    learnerResponse: 'I got 19 in my head.',
+  })
+  assert.equal(response.status, 200)
+  assert.equal(response.body.ok, true)
+  assert.equal(Object.hasOwn(response.body, 'mathReceipt'), false)
+  const modelPrompt = JSON.parse(calls[0].init.body).messages[0].content
+  assert.match(modelPrompt, /I got 19 in my head\./)
+  assert.doesNotMatch(modelPrompt, /AUTHORITATIVE STRUCTURED MATH OBSERVATION/)
+})
+
+test('optional grid digits reach teaching as scratch context, never a graded answer', async () => {
+  const initial = mathSession.createMathSession(math, { activityId: 'scratch:one', phase: 'teaching' }).state
+  const problemModel = mathSession.buildMathActivityProblem(math)
+  const edited = enterVerticalMathFullAnswer(problemModel, initial.view, '18')
+  const update = mathSession.updateMathSessionView(initial, edited.view, {
+    activityId: initial.activityId, expectedRevision: initial.revision, requestId: 'scratch-edit',
+  })
+  assert.equal(update.ok, true)
+  const { route, calls } = loadRoute([turnResult({ nextKey: 'probe:optional-scratch' })])
+  const response = await post(route, {
+    mode: 'turn', lesson, state: liftoffState(problem('probe:current', math)),
+    learnerResponse: 'My answer is 18.', mathSession: update.state,
+  })
+  assert.equal(response.status, 200)
+  assert.equal(Object.hasOwn(response.body, 'mathReceipt'), false)
+  const modelPrompt = JSON.parse(calls[0].init.body).messages[0].content
+  assert.match(modelPrompt, /OPTIONAL LEARNER SCRATCH WORK/)
+  assert.match(modelPrompt, /"result\.ones":"8"/)
+  assert.match(modelPrompt, /My answer is 18\./)
+  assert.doesNotMatch(modelPrompt, /"correct":(true|false)|"incorrectLocations"|AUTHORITATIVE STRUCTURED MATH OBSERVATION/)
+})
+
+test('invalid optional scratch does not block the learner text answer', async () => {
+  const { route, calls } = loadRoute([turnResult({ nextKey: 'probe:invalid-scratch' })])
+  const response = await post(route, {
+    mode: 'turn', lesson, state: liftoffState(problem('probe:current', math)),
+    learnerResponse: 'I reasoned through 19.', mathSession: { phase: 'test', activityId: 'wrong' },
+  })
+  assert.equal(response.status, 200)
+  assert.equal(calls.length, 1)
+  assert.equal(Object.hasOwn(response.body, 'mathReceipt'), false)
+})

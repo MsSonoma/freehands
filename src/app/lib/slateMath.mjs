@@ -6,6 +6,7 @@ import {
 } from '../../lib/math/mathSession.mjs'
 import { evaluateVerticalMath } from '../../lib/math/verticalMath.mjs'
 import { isMathConversationQuestion } from '../../lib/math/mathTextInput.mjs'
+import { listVerticalMathWorkingNoteSlots, restoreVerticalMathWorkingNotes } from '../../lib/math/verticalMathNotes.mjs'
 
 const own = (value, key) => Object.prototype.hasOwnProperty.call(value, key)
 const same = (left, right) => JSON.stringify(left) === JSON.stringify(right)
@@ -181,4 +182,39 @@ export function appendSlateMathArchive(archive, snapshot, metadata = {}) {
     return fail('ARCHIVE_FULL', 'Math evidence storage is full. Ask a facilitator to preserve this lesson before continuing.')
   }
   return { ok: true, archive: [...current, { ...metadata, mathSession: snapshot }] }
+}
+
+/**
+ * Validates optional learner working without grading it or requiring it.
+ * Values come only from editable grid entries and optional learner scratch
+ * notes. This observation must never substitute for the submitted text.
+ */
+export function observeSlateMathWorking({ problem, snapshot, workingNotes } = {}) {
+  if (!snapshot) return { ok: true, observation: null }
+  if (!problem?.math || snapshot.phase !== 'teaching') {
+    return fail('INVALID_SCRATCH', 'This working belongs to a different activity.')
+  }
+  const restored = createOrRestoreSlateMathActivity({
+    math: problem.math, snapshot, activityId: snapshot.activityId, phase: 'teaching',
+  })
+  if (!restored.ok) return restored
+  const state = restored.state
+  const entries = Object.fromEntries(Object.entries(state.view.entries || {})
+    .filter(([key]) => state.view.editable.includes(key) && state.view.hidden.includes(key)))
+  const workspace = buildMathActivityProblem(state.spec)
+  const keys = listVerticalMathWorkingNoteSlots(workspace, state.view).map((slot) => slot.key)
+  const notes = restoreVerticalMathWorkingNotes(workingNotes, {
+    activityId: state.activityId, validKeys: keys,
+  }).notes
+  if (!Object.keys(entries).length && !Object.keys(notes).length) {
+    return { ok: true, observation: null }
+  }
+  return {
+    ok: true,
+    observation: {
+      enteredCells: entries,
+      scratchNotes: notes,
+      assisted: state.events.some((event) => event.type === 'help' || event.kind === 'help'),
+    },
+  }
 }

@@ -15,6 +15,7 @@ import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { separateLiftoffTranscriptQuestion } from '@/app/lib/slateLiftoffTranscript.mjs'
 import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
+import { slateMathWorkspaceResult, insertSlateMathResult } from '@/app/lib/slateMathDraft.mjs'
 import { SnapshotService } from '@/app/session/v2/SnapshotService.jsx'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { analyzeAssessmentIsolation, ASSESSMENT_ISOLATION_STATUSES, ASSESSMENT_ROLES } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
@@ -47,7 +48,7 @@ import {
   updateMathSessionView,
 } from '@/lib/math/mathSession.mjs'
 import {
-  listMathTextDestinations,
+  isMathConversationQuestion,
   routeMathTextInput,
 } from '@/lib/math/mathTextInput.mjs'
 import {
@@ -65,13 +66,10 @@ import {
 } from '@/app/lib/slateMath.mjs'
 import {
   createSlateMathTestSession,
-  formatSlateMathTestResponse,
-  mathTestSubmissionReady,
   resolveSlateTestMath,
   restoreSlateMathTestDraft,
   slateTestMathFingerprint,
 } from '@/app/lib/slateMathTest.mjs'
-import { evaluateMathTestAnswer } from '@/lib/math/mathTestAnswer.mjs'
 import {
   listVerticalMathWorkingNoteSlots,
   restoreVerticalMathWorkingNotes,
@@ -547,7 +545,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       (restoredPending?.kind === 'composer_help' && restoredPending.activityId === restoredMath.activityId &&
         restoredPending.helpedRevision === restoredMath.revision && restoredPending.turnNumber === restoredTurn)
     )
-    setAnswer(pendingOwnsRestoredMath
+    const pendingOwnsTextAnswer = resumedPhase === 'active' && restoredPending?.kind === 'text_answer' && restoredPending.turnNumber === restoredTurn
+    setAnswer(pendingOwnsRestoredMath || pendingOwnsTextAnswer
       ? String(restoredPending.kind === 'composer_help' ? restoredPending.text : restoredPending.learnerResponse || '')
       : '')
     const restoredLines = Array.isArray(snapshot.transcript) ? [...snapshot.transcript] : []
@@ -1122,15 +1121,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (!activeMathMatches) return null
     try { return buildMathActivityProblem(activeMathSpec) } catch { return null }
   }, [activeMathMatches, activeMathSpec])
-  const mathSubmitReady = Boolean(activeMathMatches && slateMathSubmissionReady({
-    math: activeMathSpec,
-    snapshot: mathSession,
-    activityId: mathSession?.activityId,
-    phase: 'teaching',
-  }))
-  const mathTextDestinations = useMemo(() => activeMathProblem && mathSession
-    ? listMathTextDestinations(activeMathProblem, mathSession.view)
-    : [], [activeMathProblem, mathSession])
+  const activeWorkspaceValue = useMemo(() => slateMathWorkspaceResult(activeMathProblem, mathSession?.view), [activeMathProblem, mathSession])
   const changeMathView = useCallback((nextView) => {
     const current = mathSessionRef.current
     if (!current || busy || lineHelpBusy || lineHelpTarget || snapshotServiceRef.current?.writesFenced) return
@@ -1179,9 +1170,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (!assessmentMathMatches) return null
     try { return buildMathActivityProblem(assessmentMathSpec) } catch { return null }
   }, [assessmentMathMatches, assessmentMathSpec])
-  const assessmentMathDestinations = useMemo(() => assessmentMathProblem && assessmentMathSession
-    ? listMathTextDestinations(assessmentMathProblem, assessmentMathSession.view)
-    : [], [assessmentMathProblem, assessmentMathSession])
+  const assessmentWorkspaceValue = useMemo(() => slateMathWorkspaceResult(assessmentMathProblem, assessmentMathSession?.view), [assessmentMathProblem, assessmentMathSession])
 
   useEffect(() => {
     if (phase !== 'test' || !currentAssessment || assessmentMathResolution.kind !== 'math' || !session?.id) {
@@ -1338,7 +1327,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     const currentMathSpec = currentLiftoff?.currentAction?.problem?.math
     const writesFenced = snapshotServiceRef.current?.writesFenced
     if (phase !== 'active' || lineHelpTarget || lineHelpBusy || writesFenced || submitLockRef.current || busy || !lesson || !currentLiftoff) return
-    if (currentMathSpec && !slateMathSessionMatchesSpec({
+    if (currentMathSpec && mathPendingRef.current?.submission && !slateMathSessionMatchesSpec({
       math: currentMathSpec,
       snapshot: activeMath,
       activityId: activeMath?.activityId,
@@ -1347,8 +1336,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       setMathError('This math activity needs attention before it can be submitted. Your saved work has not been reset.')
       return
     }
-    if (!learnerResponse && !currentMathSpec) return
-    if (activeMath && mathArchiveRef.current.length >= SLATE_MATH_ARCHIVE_LIMIT) {
+    if (!learnerResponse && !mathPendingRef.current?.submission) return
+    if (activeMath && (Object.keys(activeMath.view?.entries || {}).length || Object.keys(mathWorkingNotesRef.current?.notes || {}).length) && mathArchiveRef.current.length >= SLATE_MATH_ARCHIVE_LIMIT) {
       setMathError('Math evidence storage is full. Ask a facilitator to preserve this lesson before continuing.')
       return
     }
@@ -1356,7 +1345,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setBusy(true)
     try {
       let pending = null
-      if (activeMath) {
+      if (activeMath && (mathPendingRef.current?.submission || mathPendingRef.current?.kind === 'composer_help' || isMathConversationQuestion(learnerResponse))) {
         const problem = buildMathActivityProblem(currentMathSpec)
         const initiallyComplete = slateMathSubmissionReady({ math: currentMathSpec, snapshot: activeMath, activityId: activeMath.activityId })
         const route = routeMathTextInput(problem, activeMath.view, answer, { selectedLocation: selectedMathTextLocation || null })
@@ -1457,8 +1446,21 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
           await persistLiftoffSnapshot()
         }
       } else {
-        setAnswer('')
-        appendTranscript('user', learnerResponse)
+        // One learner answer, whether mentally calculated, written, or copied from scratch.
+        const previous = mathPendingRef.current
+        if (previous?.kind === 'text_answer' && previous.turnNumber === currentLiftoff.turnNumber && previous.learnerResponse === learnerResponse) {
+          pending = previous
+        } else {
+          const savedWork = currentMathSpec && activeMath && slateMathSessionMatchesSpec({
+            math: currentMathSpec, snapshot: activeMath, activityId: activeMath.activityId, phase: 'teaching',
+          }) ? activeMath : null
+          pending = { kind: 'text_answer', turnNumber: currentLiftoff.turnNumber, learnerResponse,
+            mathSession: savedWork, mathWorkingNotes: savedWork ? mathWorkingNotesRef.current : null }
+          mathPendingRef.current = pending
+          setMathPending(pending)
+          appendTranscript('user', learnerResponse)
+          if (!await persistLiftoffSnapshot()) throw new Error('Your answer could not be safely saved. Please submit it again.')
+        }
       }
 
       if (snapshotServiceRef.current?.writesFenced) return
@@ -1471,13 +1473,15 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
           ...(pending
             ? (pending.learnerResponse ? { learnerResponse: pending.learnerResponse } : {})
             : (learnerResponse ? { learnerResponse } : {})),
-          ...(pending ? { mathSession: pending.mathSession, mathSubmission: pending.submission } : {}),
+          ...(pending?.submission
+            ? { mathSession: pending.mathSession, mathSubmission: pending.submission }
+            : (pending?.mathSession ? { mathSession: pending.mathSession, mathWorkingNotes: pending.mathWorkingNotes } : {})),
         }),
       })
       if (snapshotServiceRef.current?.writesFenced) return
       const turn = await response.json().catch(() => null)
       if (!response.ok || !turn?.ok) throw new Error(turn?.error || 'Mr. Slate could not evaluate that step.')
-      if (pending && !slateMathReceiptMatches({
+      if (pending?.submission && !slateMathReceiptMatches({
         receipt: turn.mathReceipt,
         pending,
         currentActivityId: mathSessionRef.current?.activityId,
@@ -1488,15 +1492,34 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
       const nextState = applyLiftoffTurn(submittedState, turn)
       if (pending) {
-        const archived = appendSlateMathArchive(mathArchiveRef.current, pending.mathSession, {
-          activityId: pending.submission.activityId,
-          requestId: pending.submission.requestId,
-          submittedRevision: pending.submission.submittedRevision,
-          turnNumber: pending.turnNumber,
-        })
-        if (!archived.ok) throw new Error(archived.error)
-        mathArchiveRef.current = archived.archive
-        setMathArchive(archived.archive)
+        if (pending.submission) {
+          // Finish a valid submission from a session saved before this change.
+          const archived = appendSlateMathArchive(mathArchiveRef.current, pending.mathSession, {
+            activityId: pending.submission.activityId,
+            requestId: pending.submission.requestId,
+            submittedRevision: pending.submission.submittedRevision,
+            turnNumber: pending.turnNumber,
+          })
+          if (!archived.ok) throw new Error(archived.error)
+          mathArchiveRef.current = archived.archive
+          setMathArchive(archived.archive)
+        } else if (pending.kind === 'text_answer' && pending.mathSession) {
+          const entries = pending.mathSession.view?.entries || {}
+          const notes = pending.mathWorkingNotes?.notes || {}
+          if (Object.keys(entries).length || Object.keys(notes).length) {
+            const archived = appendSlateMathArchive(mathArchiveRef.current, pending.mathSession, {
+              activityId: pending.mathSession.activityId,
+              requestId: 'scratch:' + String(pending.turnNumber),
+              submittedRevision: pending.mathSession.revision,
+              turnNumber: pending.turnNumber,
+              kind: 'optional_work',
+              workingNotes: notes,
+            })
+            if (!archived.ok) throw new Error(archived.error)
+            mathArchiveRef.current = archived.archive
+            setMathArchive(archived.archive)
+          }
+        }
         mathPendingRef.current = null
         setMathPending(null)
         mathSessionRef.current = null
@@ -1604,12 +1627,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const submitAssessmentAnswer = useCallback(async (choiceValue = null) => {
     const item = currentAssessment
     let rawAnswer = choiceValue == null ? assessmentAnswer.trim() : String(choiceValue)
-    const originalResponse = rawAnswer
-    const mathResolved = assessmentMathResolution
-    const isMath = mathResolved.kind === 'math'
     if (phase !== 'test' || !item || busy || assessmentSubmitLockRef.current || snapshotServiceRef.current?.writesFenced) return
-    if (mathResolved.kind === 'invalid') { setAssessmentMathError(mathResolved.error); return }
-    if (!isMath && !rawAnswer) return
+    if (!rawAnswer && !assessmentMathPendingRef.current?.status) return
     const submittedIndex = assessmentIndex
     const submittedQuestion = questionText(item)
     const executionSessionId = sessionRef.current?.id
@@ -1652,10 +1671,17 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         return
       }
 
-      if (!isMath && !pending) {
+      if (!pending) {
+        const workingSession = assessmentMathResolution.kind === 'math' && assessmentMathMatches
+          ? assessmentMathSessionRef.current : null
+        const hasWorking = Boolean(workingSession && (
+          Object.keys(workingSession.view?.entries || {}).length || Object.keys(assessmentMathWorkingNotesRef.current?.notes || {}).length
+        ))
         pending = {
           id: slateMathRequestId('assessment'), index: submittedIndex, question: submittedQuestion,
           answer: rawAnswer, status: 'judge', transcriptRecorded: false,
+          ...(hasWorking ? { working: { source: assessmentMathResolution.source,
+            snapshot: workingSession, notes: assessmentMathWorkingNotesRef.current?.notes || {} } } : {}),
         }
         assessmentMathPendingRef.current = pending
         setAssessmentMathPending(pending)
@@ -1667,98 +1693,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         pending = {
           ...pending,
           status: 'evidence',
-          result: { question: submittedQuestion, answer: pending.answer, correct, expected: expectedText(item) },
+          result: { question: submittedQuestion, answer: pending.answer, correct, expected: expectedText(item),
+            ...(pending.working ? { mathWorking: pending.working } : {}) },
         }
         assessmentMathPendingRef.current = pending
         setAssessmentMathPending(pending)
         if (!await persistLiftoffSnapshot()) throw new Error('The test response could not be safely saved yet. Please submit it again.')
       }
 
-      if (!pending) {
-        let result
-        if (isMath) {
-          let activeMath = assessmentMathSessionRef.current
-          if (!activeMath || activeMath.phase !== 'test') {
-            setAssessmentMathError('This test math item is not ready. Your work was kept.')
-            return
-          }
-          if (rawAnswer) {
-            const route = routeMathTextInput(
-              buildMathActivityProblem(mathResolved.spec), activeMath.view, rawAnswer,
-              { selectedLocation: assessmentMathTextLocationRef.current || null },
-            )
-            if (route.kind === 'conversation') {
-              setAssessmentMathError('Help is not available during the test.')
-              return
-            }
-            if (route.kind === 'clarification') {
-              setAssessmentMathError(mathResolved.spec.operation === 'division'
-                ? 'Enter both the quotient and remainder, or select an answer row.'
-                : 'Select the space or answer row for this entry.')
-              return
-            }
-            if (route.kind === 'invalid') {
-              setAssessmentMathError(route.message)
-              return
-            }
-            if (route.kind === 'entry') {
-              const updated = updateMathSessionView(activeMath, route.view, {
-                activityId: activeMath.activityId,
-                expectedRevision: activeMath.revision,
-                requestId: slateMathRequestId('test-input'),
-              })
-              if (!updated.ok) { setAssessmentMathError(updated.error); return }
-              activeMath = updated.state
-              assessmentMathSessionRef.current = activeMath
-              setAssessmentMathSession(activeMath)
-            }
-          }
-          if (!mathTestSubmissionReady(activeMath)) {
-            setAssessmentMathError('Enter an answer in each answer row before submitting.')
-            scheduleMathSnapshot()
-            return
-          }
-          const problem = buildMathActivityProblem(mathResolved.spec)
-          const privateEvaluation = evaluateMathTestAnswer(problem, activeMath.view)
-          const submitted = submitMathSession(activeMath, {
-            activityId: activeMath.activityId,
-            expectedRevision: activeMath.revision,
-            requestId: slateMathRequestId('test-submit'),
-          })
-          if (!submitted.ok) { setAssessmentMathError(submitted.error); return }
-          assessmentMathSessionRef.current = submitted.state
-          setAssessmentMathSession(submitted.state)
-          rawAnswer = formatSlateMathTestResponse(activeMath)
-          result = {
-            question: submittedQuestion,
-            answer: rawAnswer,
-            correct: privateEvaluation.correct === true,
-            expected: expectedText(item),
-            math: {
-              source: mathResolved.source,
-              response: rawAnswer,
-              originalResponse,
-              textLocation: assessmentMathTextLocationRef.current || '',
-              entries: { ...submitted.submission.entries },
-              submission: submitted.submission,
-              snapshot: submitted.state,
-            },
-          }
-        }
-
-        pending = {
-          id: pending?.id || slateMathRequestId('assessment'),
-          index: submittedIndex,
-          question: submittedQuestion,
-          answer: rawAnswer,
-          result,
-          status: 'evidence',
-          transcriptRecorded: false,
-        }
-        assessmentMathPendingRef.current = pending
-        setAssessmentMathPending(pending)
-        if (!await persistLiftoffSnapshot()) throw new Error('The test response could not be safely saved yet. Please submit it again.')
-      }
 
       if (!stillOwnsItem()) return
       if (!pending.transcriptRecorded) {
@@ -1826,7 +1768,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       setBusy(false)
       assessmentSubmitLockRef.current = false
     }
-  }, [appendTranscript, assessmentAnswer, assessmentIndex, assessmentMathResolution, busy, currentAssessment, currentAssessmentItems, finishLesson, persistLiftoffSnapshot, phase, recordCanonicalMasteryAnswer, scheduleMathSnapshot, testItems.length, testResults])
+  }, [appendTranscript, assessmentAnswer, assessmentIndex, assessmentMathMatches, assessmentMathResolution, busy, currentAssessment, currentAssessmentItems, finishLesson, persistLiftoffSnapshot, phase, recordCanonicalMasteryAnswer, scheduleMathSnapshot, testItems.length, testResults])
 
   if (phase === 'loading') {
     return <div style={{ minHeight: '100vh', background: C.bg, color: C.muted, display: 'grid', placeItems: 'center', fontFamily: C.font }}>PREPARING LIFTOFF...</div>
@@ -1863,6 +1805,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const lessonInteractionHeld = Boolean(lineHelpTarget) || lineHelpBusy
   const activeMathTranscriptContent = phase === 'active' && activeMathSpec ? (
     <div data-slate-active-math-transcript-tail style={{ borderTop: `1px solid ${mathError ? C.red : C.border}`, marginTop: 12, paddingTop: 14 }}>
+      <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>OPTIONAL SCRATCH WORKSPACE. YOU CAN ANSWER IN THE FIELD BELOW WITHOUT USING IT.</div>
       {activeMathProblem && activeMathMatches ? (
         <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
           <VerticalMathWorkspace
@@ -1879,10 +1822,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             showCheck={false}
             showFullAnswerInputs={false}
           />
+          <button type="button" onClick={() => { setAnswer((current) => insertSlateMathResult(current, activeWorkspaceValue)); answerInputRef.current?.focus() }} disabled={busy || lessonInteractionHeld || !activeWorkspaceValue} style={{ marginTop: 10, cursor: activeWorkspaceValue ? 'pointer' : 'default' }}>USE THIS RESULT IN ANSWER</button>
         </fieldset>
       ) : (
-        <div role="alert" style={{ color: C.red, fontWeight: 700 }}>
-          This math activity needs attention before it can be submitted. Your saved work has not been reset.
+        <div role="alert" style={{ color: C.muted, fontWeight: 700 }}>
+          The scratch workspace is unavailable. You can still answer in the text field.
         </div>
       )}
       {mathError && <div role="status" style={{ color: C.red, fontWeight: 700, marginTop: 10 }}>{mathError}</div>}
@@ -1957,14 +1901,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
           </div>
 
           {phase === 'active' && (
-            !activeMathSpec ? (
             <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
               <WebbDictationButton
                 disabled={busy || lessonInteractionHeld}
                 onBeforeRecord={() => answerInputRef.current?.blur()}
-                onTranscript={(text) => {
-                  setAnswer((current) => [current.trim(), text].filter(Boolean).join(' '))
-                }}
+                onTranscript={(text) => setAnswer((current) => [current.trim(), text].filter(Boolean).join(' '))}
               />
               <textarea
                 ref={answerInputRef}
@@ -1981,20 +1922,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 disabled={busy || lessonInteractionHeld}
                 style={{ flex: '1 1 280px', minWidth: 0, width: '100%', boxSizing: 'border-box', resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }}
               />
-              <button disabled={busy || lessonInteractionHeld || !answer.trim()} style={{ alignSelf: 'stretch', minWidth: 110, cursor: 'pointer', fontWeight: 900 }}>
+              <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!answer.trim() && !mathPending?.submission)} style={{ alignSelf: 'stretch', minWidth: 110, cursor: 'pointer', fontWeight: 900 }}>
                 {busy ? 'CHECKING...' : 'SUBMIT'}
               </button>
             </form>
-            ) : (
-            <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
-              {mathTextDestinations.length > 0 && <select aria-label="Text answer destination" value={selectedMathTextLocation} onChange={(event) => setSelectedMathTextLocation(event.target.value)} disabled={busy || lessonInteractionHeld} style={{ alignSelf: 'stretch', flex: '1 1 180px', minWidth: 0, maxWidth: '100%', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-                {mathTextDestinations.map((destination) => <option key={destination.value} value={destination.value}>{destination.label}</option>)}
-              </select>}
-              <WebbDictationButton disabled={busy || lessonInteractionHeld} onBeforeRecord={() => answerInputRef.current?.blur()} onTranscript={(text) => setAnswer((current) => [current.trim(), text].filter(Boolean).join(' '))} />
-              <textarea ref={answerInputRef} value={answer} onChange={(event) => setAnswer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent?.isComposing) { event.preventDefault(); void submitLiftoffAnswer() } }} placeholder="Type your answer, explain your thinking, or ask a question." rows={2} disabled={busy || lessonInteractionHeld} style={{ flex: '1 1 280px', minWidth: 0, width: '100%', boxSizing: 'border-box', resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }} />
-              <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!answer.trim() && (snapshotServiceRef.current?.writesFenced || !mathSubmitReady))} style={{ alignSelf: 'stretch', minWidth: 110, cursor: 'pointer', fontWeight: 900 }}>{busy ? 'CHECKING...' : 'SUBMIT'}</button>
-            </form>
-            )
           )}
 
           {isAssessment && currentAssessment && (
@@ -2021,12 +1952,17 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 >{questionText(currentAssessment)}</div>
               </div>
 
-              {assessmentMathResolution.kind === 'invalid' ? (
-                <div role="alert" style={{ color: C.red, fontWeight: 700 }}>
-                  This test item cannot be scored because its math setup is invalid. Your test work has been kept.
+              {assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? (
+                <div style={{ display: 'grid', gap: 8 }}>
+                  <div role="status" style={{ color: C.muted }}>The scratch workspace is unavailable. You can still answer this question.</div>
+                  <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
+                    <textarea rows={2} value={assessmentAnswer} onChange={(event) => { assessmentMathTextRef.current = event.target.value; setAssessmentAnswer(event.target.value); scheduleMathSnapshot() }} disabled={busy || lessonInteractionHeld} style={{ flex: 1, minWidth: 0, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
+                    <button disabled={busy || lessonInteractionHeld || (!assessmentAnswer.trim() && !assessmentMathPending?.status)} style={{ padding: '10px 18px' }}>SUBMIT</button>
+                  </form>
                 </div>
               ) : assessmentMathResolution.kind === 'math' ? (
                 <div style={{ display: 'grid', gap: 12 }}>
+                  <div style={{ color: C.muted, fontSize: 12 }}>OPTIONAL SCRATCH WORKSPACE. YOU CAN ANSWER IN THE FIELD BELOW WITHOUT USING IT.</div>
                   {assessmentMathProblem && assessmentMathMatches ? (
                     <fieldset disabled={busy || lineHelpBusy || Boolean(lineHelpTarget) || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
                       <VerticalMathWorkspace
@@ -2047,25 +1983,19 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                         phase="test"
                         showFullAnswerInputs={false}
                       />
-                    </fieldset>
+                    <button type="button" onClick={() => { const next = insertSlateMathResult(assessmentAnswer, assessmentWorkspaceValue); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }} disabled={busy || snapshotServiceRef.current?.writesFenced || !assessmentWorkspaceValue} style={{ marginTop: 10, cursor: assessmentWorkspaceValue ? 'pointer' : 'default' }}>USE THIS RESULT IN ANSWER</button>
+                     </fieldset>
                   ) : (
                     <div role="alert" style={{ color: C.red, fontWeight: 700 }}>This test math item could not be opened. Your work has been kept.</div>
                   )}
                   <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
-                    {assessmentMathDestinations.length > 0 && <select aria-label="Text answer destination" value={assessmentMathTextLocation} onChange={(event) => {
-                      assessmentMathTextLocationRef.current = event.target.value
-                      setAssessmentMathTextLocation(event.target.value)
-                      scheduleMathSnapshot()
-                    }} disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ maxWidth: 190, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }}>
-                      {assessmentMathDestinations.map((destination) => <option key={destination.value} value={destination.value}>{destination.label}</option>)}
-                    </select>}
-                    <input value={assessmentAnswer} onChange={(event) => {
+                    <textarea rows={2} value={assessmentAnswer} onChange={(event) => {
                       assessmentMathTextRef.current = event.target.value
                       setAssessmentAnswer(event.target.value)
                       setAssessmentMathError('')
                       scheduleMathSnapshot()
-                    }} disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} placeholder="Type an answer or use the math grid" style={{ flex: 1, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
-                    <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ padding: '10px 18px', cursor: 'pointer' }}>SUBMIT</button>
+                    }} disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} placeholder="Type your answer or use a result from scratch work" style={{ flex: 1, minWidth: 0, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
+                    <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!assessmentAnswer.trim() && !assessmentMathPending?.status)} style={{ padding: '10px 18px', cursor: 'pointer' }}>SUBMIT</button>
                   </form>
                   {assessmentMathError && <div role="status" style={{ color: C.muted, fontWeight: 700 }}>{assessmentMathError}</div>}
                 </div>

@@ -94,8 +94,9 @@ test('working notes stay outside text routing, view entries, evaluation, and tes
   assert.deepEqual(evaluateMathTestAnswer(buildMathActivityProblem(state.spec), state.view), evaluationBeforeNotes)
   assert.equal(Object.hasOwn(submitted.submission, 'notes'), false)
   assert.equal(Object.hasOwn(submitted.submission.entries, 'carry.ones'), false)
-  assert.match(slateExperienceSource, /routeMathTextInput\(problem, activeMath\.view, answer/)
-  assert.match(slateExperienceSource, /<textarea ref=\{answerInputRef\} value=\{answer\} onChange=\{\(event\) => setAnswer\(event\.target\.value\)\}/)
+  assert.match(slateExperienceSource, /const learnerResponse = answer\.trim\(\)/)
+  assert.match(slateExperienceSource, /\{phase === 'active' && \(\s*<form data-slate-primary-answer-form/)
+  assert.match(slateExperienceSource, /kind: 'optional_work'/)
 })
 
 test('regular numeric text and directly edited grid produce the same response record', () => {
@@ -134,14 +135,17 @@ test('division routing is neutral when ambiguous and preserves partial answer ro
   assert.equal(formatSlateMathTestResponse(state), '12 r 4')
 })
 
-test('test clarification replaces router examples with numbers-free directions', () => {
-  const clarificationBranch = slateExperienceSource.match(
-    /if \(route\.kind === 'clarification'\) \{([\s\S]*?)\n\s*\}/,
-  )?.[1] || ''
-  assert.match(clarificationBranch, /Enter both the quotient and remainder, or select an answer row\./)
-  assert.match(clarificationBranch, /Select the space or answer row for this entry\./)
-  assert.doesNotMatch(clarificationBranch, /route\.message|\d/)
-  assert.match(slateExperienceSource, /if \(route\.kind === 'invalid'\) \{\s*setAssessmentMathError\(route\.message\)/)
+test('independent test submits a single text response without math-routing hints or early grade', () => {
+  const start = slateExperienceSource.indexOf('const submitAssessmentAnswer = useCallback')
+  const end = slateExperienceSource.indexOf('\n  }, [appendTranscript', start)
+  const submit = slateExperienceSource.slice(start, end)
+  assert.match(submit, /const correct = await judgeAssessmentItem\(item, pending\.answer\)/)
+  assert.match(submit, /status: 'judge'/)
+  assert.match(submit, /mathWorking: pending\.working/)
+  assert.doesNotMatch(submit, /routeMathTextInput|mathTestSubmissionReady|evaluateMathTestAnswer|submitMathSession|privateEvaluation/)
+  assert.doesNotMatch(submit, /correct answer is|incorrect|right answer/i)
+  assert.match(slateExperienceSource, /showCheck=\{false\}/)
+  assert.match(slateExperienceSource, /phase="test"/)
 })
 
 test('lesson completion rechecks ownership after transcript update before final UI', () => {

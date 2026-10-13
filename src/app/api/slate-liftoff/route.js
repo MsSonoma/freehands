@@ -10,7 +10,7 @@ import {
   normalizeLiftoffAction,
   normalizeLiftoffComponentMap,
 } from '@/app/lib/slateLiftoff.mjs'
-import { verifySlateMathSubmission } from '@/app/lib/slateMath.mjs'
+import { observeSlateMathWorking, verifySlateMathSubmission } from '@/app/lib/slateMath.mjs'
 import {
   buildMathActivityProblem,
   createMathSession,
@@ -88,7 +88,10 @@ function baseMethod() {
     'After failure, localize the problem, restore the minimum useful support, teach if needed, then re-probe on a genuinely different instance.',
     'Every learner problem must include a structured problem object with prompt and a deterministic instanceKey.',
     'The same underlying quantities and relationships must use the same instanceKey even if wording changes.',
-    'For supported direct arithmetic, prefer a structured math object: problem:{prompt:"Add these numbers.",instanceKey:"addition:47:26",math:{operation:"addition",operands:["47","26"],commands:[]}}.',
+    'For direct arithmetic where a vertical grid is useful, you may supply optional scratch math: problem:{prompt:"Add these numbers.",instanceKey:"addition:47:26",math:{operation:"addition",operands:["47","26"],commands:[]}}.',
+    'The learner always responds through one text field. Any math object is an optional working tool, NEVER a separate required response or independent score. Mental answers and explanations are valid without using it.',
+    'Select a math workspace based on the actual task, not the presence of arithmetic symbols in a prompt. Omit it when it would distract, solve a targeted reasoning step, or misrepresent an estimate or explanation as exact calculation.',
+    'Judge the submitted learner response against the full question, and use optional entered scratch as diagnostic context only. A correct final number alone does not prove a specific procedure.',
     'The small math contract is exactly {operation, operands, commands}: operation is addition|subtraction|multiplication|division; operands are strings; commands is an array of {action,locations,editable?}, where action is hide|show|highlight|clear_highlight, locations is an array of named locations, and editable is an optional boolean.',
     'Bounds: addition uses 2..10 nonnegative decimal operands with at most 7 whole and 6 fractional digits each; subtraction uses exactly 2 such operands with the first at least the second; multiplication uses exactly 2 such operands with at most 7 whole and 6 fractional digits each; division uses exactly 2 integer operands, dividend >= 0 and divisor > 0, with at most 7 digits each.',
     'Answer targets are blank by default. Use result.* for the result digit row and remainder.* for the division remainder row. Decimal and operator targets are supported only for addition, subtraction, and multiplication. Do not invent pixel positions or any fields outside the contract.',
@@ -172,7 +175,7 @@ ${JSON.stringify(compactLesson(lesson))}
 `
 }
 
-function turnPrompt({ lesson, state, learnerResponse, mathEvidence = null }) {
+function turnPrompt({ lesson, state, learnerResponse, mathEvidence = null, mathWorking = null }) {
   return `${baseMethod()}
 
 TASK: Diagnose this learner response relative to the explicit Liftoff state. Decide what evidence, if any, the response provides about specific components. Then choose the smallest next teaching/probing move that is likely to change the instructional decision.
@@ -232,6 +235,7 @@ LEARNER RESPONSE:
 ${JSON.stringify(clean(learnerResponse, 4000))}
 
 ${mathEvidence ? `AUTHORITATIVE STRUCTURED MATH OBSERVATION (application-verified; do not contradict it or invent a cause):\n${JSON.stringify(mathEvidence)}` : ''}
+${mathWorking ? `OPTIONAL LEARNER SCRATCH WORK (not a separately graded answer; use only to diagnose what the learner entered, never infer unobserved steps or override their text answer):\n${JSON.stringify(mathWorking)}` : ''}
 `
 }
 
@@ -476,12 +480,14 @@ export async function POST(request) {
     const learnerText = clean(body?.learnerResponse, 4000)
     let learnerResponse = learnerText
     let verifiedMath = null
+    let mathWorking = null
     if (mode === 'turn') {
       if (!body?.state || typeof body.state !== 'object') {
         return NextResponse.json({ error: 'Liftoff state is required.' }, { status: 400 })
       }
       const currentProblem = body.state?.currentAction?.problem
-      if (currentProblem?.math) {
+      if (currentProblem?.math && body?.mathSubmission) {
+        // Backward compatible with a saved pre-update math submission.
         verifiedMath = verifySlateMathSubmission({ problem: currentProblem, snapshot: body?.mathSession, submission: body?.mathSubmission })
         if (!verifiedMath.ok) {
           const conflict = ['ACTIVITY_MISMATCH', 'STALE_SUBMISSION', 'SUBMISSION_MISMATCH'].includes(verifiedMath.code)
@@ -490,6 +496,9 @@ export async function POST(request) {
         learnerResponse = learnerText
           ? `${verifiedMath.responseText}\nLearner note: ${learnerText}`
           : verifiedMath.responseText
+      } else if (currentProblem?.math && body?.mathSession) {
+        const optional = observeSlateMathWorking({ problem: currentProblem, snapshot: body.mathSession, workingNotes: body?.mathWorkingNotes })
+        if (optional.ok) mathWorking = optional.observation
       }
       if (!learnerResponse) {
         return NextResponse.json({ error: 'A learner response is required.' }, { status: 400 })
@@ -500,7 +509,7 @@ export async function POST(request) {
 
     const rawPrompt = mode === 'initialize'
       ? initializePrompt(lesson)
-      : turnPrompt({ lesson, state: body.state, learnerResponse, mathEvidence: verifiedMath?.evidence || null })
+      : turnPrompt({ lesson, state: body.state, learnerResponse, mathEvidence: verifiedMath?.evidence || null, mathWorking })
     const safety = classifyConversationSafety(learnerResponse, { educational: true }).classification
     const prompt = hardenInstructions(rawPrompt, clean(lesson.title || lesson.subject, 200) || 'educational content', [], safety)
     let modelText = await callModel(prompt)

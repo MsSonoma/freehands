@@ -30,7 +30,7 @@ test('active teaching math is routed through CaptionPanel in-scroller tail conte
   assert.ok(tailContentIndex > panelIndex)
   assert.ok(tailSpacerIndex > tailContentIndex)
   assert.match(captions, /displayItems\.length, hasTailContent, boxRef, recomputeScrollState/)
-  assert.match(slate, /const activeMathTranscriptContent = phase === 'active' && activeMathSpec \? \([\s\S]*<VerticalMathWorkspace[\s\S]*phase="teaching"[\s\S]*This math activity needs attention before it can be submitted\.[\s\S]*\{mathError &&/)
+  assert.match(slate, /const activeMathTranscriptContent = phase === 'active' && activeMathSpec \? \([\s\S]*<VerticalMathWorkspace[\s\S]*phase="teaching"[\s\S]*The scratch workspace is unavailable\. You can still answer in the text field\.[\s\S]*\{mathError &&/)
   assert.match(slate, /data-slate-active-math-transcript-tail[\s\S]*<VerticalMathWorkspace[\s\S]*showFullAnswerInputs=\{false\}/)
   assert.match(slate, /tailContent=\{activeMathTranscriptContent\}/)
   assert.match(slate, /stackedHeight=\{activeMathSpec \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
@@ -109,7 +109,7 @@ test('Slate line help is a stateless non-progressing API mode with answer-protec
 test('opening Slate line help holds normal answer controls rather than advancing the lesson', () => {
   assert.match(slate, /const lessonInteractionHeld = Boolean\(lineHelpTarget\) \|\| lineHelpBusy/)
   assert.match(slate, /disabled=\{busy \|\| lessonInteractionHeld\}/)
-  assert.match(slate, /disabled=\{busy \|\| lessonInteractionHeld \|\| !answer\.trim\(\)\}/)
+  assert.match(slate, /disabled=\{busy \|\| lessonInteractionHeld \|\| snapshotServiceRef\.current\?\.writesFenced \|\| \(!answer\.trim\(\) && !mathPending\?\.submission\)\}/)
 })
 
 test('Slate keeps its own visual system and does not inherit Sonoma transcript styling', () => {

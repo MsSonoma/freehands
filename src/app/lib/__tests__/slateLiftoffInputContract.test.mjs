@@ -11,11 +11,12 @@ const slateLiftoffForm = slate.slice(slate.indexOf("{phase === 'active' && ("), 
 test('Liftoff keeps its textarea and shrinks it to two rows', () => {
   assert.match(slateLiftoffForm, /<textarea/)
   assert.match(slateLiftoffForm, /rows=\{2\}/)
-  assert.equal((slateLiftoffForm.match(/<textarea/g) || []).length, 2)
+  assert.equal((slateLiftoffForm.match(/<textarea/g) || []).length, 1)
   assert.match(slateLiftoffForm, /value=\{answer\}/)
   assert.match(slateLiftoffForm, /onChange=\{\(event\) => setAnswer\(event\.target\.value\)\}/)
   assert.match(slateLiftoffForm, /disabled=\{busy \|\| lessonInteractionHeld\}/)
-  assert.match(slateLiftoffForm, /<button disabled=\{busy \|\| lessonInteractionHeld \|\| !answer\.trim\(\)\}/)
+  assert.match(slateLiftoffForm, /!answer\.trim\(\) && !mathPending\?\.submission/)
+  assert.equal((slateLiftoffForm.match(/data-slate-primary-answer-form/g) || []).length, 1)
 })
 
 test('the original active answer form stays sticky, full-width, and responsive', () => {
@@ -37,7 +38,7 @@ test('Slate reuses Mrs. Webb microphone and inserts recognized words into the dr
   assert.match(slateLiftoffForm, /<WebbDictationButton/)
   assert.match(slateLiftoffForm, /disabled=\{busy \|\| lessonInteractionHeld\}/)
   assert.match(slateLiftoffForm, /onBeforeRecord=\{\(\) => answerInputRef\.current\?\.blur\(\)\}/)
-  assert.match(slateLiftoffForm, /onTranscript=\{\(text\) => \{\s+setAnswer\(\(current\) => \[current\.trim\(\), text\]\.filter\(Boolean\)\.join\(' '\)\)/)
+  assert.match(slateLiftoffForm, /onTranscript=\{\(text\) => setAnswer\(\(current\) => \[current\.trim\(\), text\]\.filter\(Boolean\)\.join\(' '\)\)\}/)
   assert.doesNotMatch(slateLiftoffForm.slice(slateLiftoffForm.indexOf('onTranscript='), slateLiftoffForm.indexOf('/>', slateLiftoffForm.indexOf('onTranscript='))), /submitLiftoffAnswer/)
   assert.match(webbDictation, /getReusableMicrophoneStream/)
   assert.match(webbDictation, /fetch\('\/api\/stt'/)

@@ -47,26 +47,35 @@ test('conversation context exposes displayed decimals but conceals noneditable s
   assert.ok(context.length <= 2400)
 })
 
-test('active UI routes text at submit and keeps help separate from math submission', () => {
+test('active math uses one learner answer while preserving line-help and legacy retries', () => {
   assert.match(source, /const submitLiftoffAnswer = useCallback/)
-  assert.match(source, /routeMathTextInput\(problem, activeMath\.view, answer/)
+  assert.match(source, /kind: 'text_answer'/)
+  assert.match(source, /learnerResponse = answer\.trim\(\)/)
   assert.match(source, /mode: 'line_help'/)
   assert.match(source, /kind: 'composer_help'/)
-  assert.match(source, /mathSessionRef\.current\?\.activityId !== originalActivityId/)
-  assert.match(source, /placeholder="Type your answer, explain your thinking, or ask a question\."/)
-  assert.match(source, /selectedLocation=\{selectedMathTextLocation \|\| null\}/)
-  assert.match(source, /<textarea ref=\{answerInputRef\} value=\{answer\} onChange=\{\(event\) => setAnswer\(event\.target\.value\)\}/)
+  assert.match(source, /isMathConversationQuestion\(learnerResponse\)/)
+  assert.match(source, /mathSession: savedWork, mathWorkingNotes:/)
+  assert.match(source, /pending\?\.submission && !slateMathReceiptMatches/)
+  assert.match(source, /placeholder="Show your thinking or answer Mr\. Slate\."/)
+  assert.match(source, /<textarea\s+ref=\{answerInputRef\}\s+value=\{answer\}/)
   assert.match(source, /<form data-slate-primary-answer-form onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitLiftoffAnswer\(\) \}\}/)
+  assert.equal((source.match(/data-slate-primary-answer-form onSubmit/g) || []).length, 1)
   const problem = buildMathActivityProblem({ operation: 'addition', operands: ['47', '26'], commands: [] })
   const state = createMathSession({ operation: 'addition', operands: ['47', '26'], commands: [] }, { activityId: 'route' }).state
   assert.equal(routeMathTextInput(problem, state.view, '73').kind, 'entry')
 })
 
-test('independent test math keeps routing its existing assessment answer without correctness feedback', () => {
+test('independent test always grades the written answer and never requires grid completion', () => {
   assert.match(source, /let rawAnswer = choiceValue == null \? assessmentAnswer\.trim\(\)/)
-  assert.match(source, /routeMathTextInput\(\s*buildMathActivityProblem\(mathResolved\.spec\), activeMath\.view, rawAnswer/)
-  assert.match(source, /showCheck=\{false\}\s+phase="test"/)
-  assert.match(source, /phase="test"\s+showFullAnswerInputs=\{false\}/)
+  const start = source.indexOf('const submitAssessmentAnswer = useCallback')
+  const end = source.indexOf('\n  }, [appendTranscript', start)
+  const submit = source.slice(start, end)
+  assert.match(submit, /const correct = await judgeAssessmentItem\(item, pending\.answer\)/)
+  assert.doesNotMatch(submit, /routeMathTextInput|mathTestSubmissionReady|evaluateMathTestAnswer|submitMathSession/)
+  assert.match(source, /phase="test"/)
+  assert.match(source, /showCheck=\{false\}/)
+  assert.match(source, /USE THIS RESULT IN ANSWER/)
+  assert.match(source, /insertSlateMathResult\(assessmentAnswer, assessmentWorkspaceValue\)/)
 })
 
 test('active UI binds teaching phase and preserves completed entry text for retries', () => {
