@@ -14,6 +14,7 @@ import { recordSlateLiftoffEvidence } from '@/app/lib/slateLiftoffClient.js'
 import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { separateLiftoffTranscriptQuestion } from '@/app/lib/slateLiftoffTranscript.mjs'
+import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
 import { SnapshotService } from '@/app/session/v2/SnapshotService.jsx'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { analyzeAssessmentIsolation, ASSESSMENT_ISOLATION_STATUSES, ASSESSMENT_ROLES } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
@@ -37,6 +38,7 @@ import {
 import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
 import WebbDictationButton from '../webb/WebbDictationButton'
 import CaptionPanel from '../components/CaptionPanel'
+import styles from './SlateLiftoffExperience.module.css'
 import VerticalMathWorkspace from '@/components/math/VerticalMathWorkspace'
 import {
   buildMathActivityProblem,
@@ -1446,7 +1448,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
           }
           mathPendingRef.current = pending
           setMathPending(pending)
-          appendTranscript('user', `Math response: ${submitted.submission.responseText}${learnerResponse ? `\nExplanation: ${learnerResponse}` : ''}`, {
+          appendTranscript('user', `Math response: ${formatSlateMathTranscript(problem, submitted.submission.entries)}${route.kind !== 'entry' && learnerResponse ? `\nExplanation: ${learnerResponse}` : ''}`, {
             kind: 'math_submission',
             activityId: submitted.submission.activityId,
             requestId: submitted.submission.requestId,
@@ -1916,9 +1918,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
       <main style={{ flex: 1, minHeight: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 16, padding: 16 }}>
         <section style={{ minWidth: 0, flex: '1 1 520px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <ReviewTeacherVideoStage teacher="slate" ref={videoRef} />
+          <div className={styles.videoTranscriptLayout}>
+            <div className={styles.videoColumn}>
+              <ReviewTeacherVideoStage teacher="slate" ref={videoRef} />
+            </div>
 
-          <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
+            <div className={styles.transcriptColumn} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
             <div style={{ color: C.accent, fontSize: 11, fontWeight: 900, letterSpacing: 1.4, marginBottom: 8 }}>
               TRANSCRIPT · {phase === 'active' ? liftoff?.currentAction?.type?.toUpperCase() || 'LIFTOFF' : phase.toUpperCase()}
             </div>
@@ -1954,6 +1959,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 fontFamily: C.font,
               }}
             />
+            </div>
           </div>
 
           {phase === 'active' && (
