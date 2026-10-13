@@ -1,21 +1,16 @@
-.videoTranscriptLayout {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  gap: 14px;
-  min-width: 0;
-}
-
-.videoColumn,
 .transcriptColumn {
   min-width: 0;
 }
 
-@media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
-  .videoTranscriptLayout {
-    grid-template-columns: clamp(250px, 27vw, 330px) minmax(0, 1fr);
-    align-items: start;
-  }
+.sidebarColumn {
+  display: flex;
+  flex-direction: column;
+  align-self: flex-start;
+  gap: 14px;
+  min-width: 0;
+}
 
+@media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
   .transcriptColumn [data-ms-caption-panel-container] {
     height: 54vh !important;
     max-height: 54vh !important;

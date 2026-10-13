@@ -1918,12 +1918,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
       <main style={{ flex: 1, minHeight: 0, display: 'flex', flexWrap: 'wrap', alignItems: 'flex-start', gap: 16, padding: 16 }}>
         <section style={{ minWidth: 0, flex: '1 1 520px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div className={styles.videoTranscriptLayout}>
-            <div className={styles.videoColumn}>
-              <ReviewTeacherVideoStage teacher="slate" ref={videoRef} />
-            </div>
-
-            <div className={styles.transcriptColumn} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
+          <div className={styles.transcriptColumn} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
             <div style={{ color: C.accent, fontSize: 11, fontWeight: 900, letterSpacing: 1.4, marginBottom: 8 }}>
               TRANSCRIPT · {phase === 'active' ? liftoff?.currentAction?.type?.toUpperCase() || 'LIFTOFF' : phase.toUpperCase()}
             </div>
@@ -1959,7 +1954,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 fontFamily: C.font,
               }}
             />
-            </div>
           </div>
 
           {phase === 'active' && (
@@ -2128,7 +2122,9 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
         </section>
 
-        <aside aria-label="Lesson progress" style={{ flex: '0 1 320px', minWidth: 'min(260px, 100%)', maxWidth: '100%', background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
+        <div className={styles.sidebarColumn} style={{ flex: '0 1 320px', minWidth: 'min(260px, 100%)', maxWidth: '100%' }}>
+          <ReviewTeacherVideoStage teacher="slate" ref={videoRef} style={{ width: '100%', margin: 0 }} />
+          <aside aria-label="Lesson progress" style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
           <div style={{ color: C.muted, fontSize: 11, letterSpacing: 1.4, fontWeight: 900, marginBottom: 12 }}>YOUR PROGRESS</div>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginBottom: 16 }}>
             {progressStages.map((stage, index) => {
@@ -2158,7 +2154,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               </div>
             )
           }) : <div style={{ color: C.muted, fontSize: 12, lineHeight: 1.5 }}>Skills will appear here after you demonstrate them.</div>}
-        </aside>
+          </aside>
+        </div>
       </main>
 
       <audio ref={audioRef} style={{ display: 'none' }} />
