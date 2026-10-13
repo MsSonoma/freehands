@@ -15,7 +15,7 @@ const MULTIPLICATION = '\u00d7'
 /** One teacher-neutral renderer for every supported operation engine. */
 export default function VerticalMathWorkspace({
   problem, view, onViewChange, onCellSelect, selectedLocation = null, phase = 'teaching', onCheck,
-  showCheck = true,
+  showCheck = true, showFullAnswerInputs = true,
 }) {
   const inputId = useId()
   const [fullAnswer, setFullAnswer] = useState('')
@@ -318,7 +318,7 @@ export default function VerticalMathWorkspace({
       </div>
     </div>
     <div className={styles.bottomArea}>
-      {divisionAnswersEditable && <form className={styles.fullAnswerForm} onSubmit={(event) => {
+      {showFullAnswerInputs && divisionAnswersEditable && <form className={styles.fullAnswerForm} onSubmit={(event) => {
         event.preventDefault()
         const quotientResult = enterVerticalMathRowAnswer(problem, view, problem.resultRow.id, divisionAnswer.quotient)
         if (!quotientResult.ok) return setEntryMessage(quotientResult.error)
@@ -340,7 +340,7 @@ export default function VerticalMathWorkspace({
           <button type="submit">Apply</button>
         </div>
       </form>}
-      {!isDivision && entireResultEditable && !anyDecimalHidden && !operatorHidden && <form className={styles.fullAnswerForm} onSubmit={(event) => {
+      {showFullAnswerInputs && !isDivision && entireResultEditable && !anyDecimalHidden && !operatorHidden && <form className={styles.fullAnswerForm} onSubmit={(event) => {
         event.preventDefault()
         const result = enterVerticalMathFullAnswer(problem, view, fullAnswer)
         if (!result.ok) return setEntryMessage(result.error)

@@ -1798,6 +1798,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             }}
             phase="teaching"
             showCheck={false}
+            showFullAnswerInputs={false}
           />
         </fieldset>
       ) : (
@@ -1880,7 +1881,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
           {phase === 'active' && (
             !activeMathSpec ? (
-            <form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+            <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
               <WebbDictationButton
                 disabled={busy || lessonInteractionHeld}
                 onBeforeRecord={() => answerInputRef.current?.blur()}
@@ -1901,19 +1902,19 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 placeholder="Show your thinking or answer Mr. Slate."
                 rows={2}
                 disabled={busy || lessonInteractionHeld}
-                style={{ flex: 1, resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }}
+                style={{ flex: '1 1 280px', minWidth: 0, width: '100%', boxSizing: 'border-box', resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }}
               />
               <button disabled={busy || lessonInteractionHeld || !answer.trim()} style={{ alignSelf: 'stretch', minWidth: 110, cursor: 'pointer', fontWeight: 900 }}>
                 {busy ? 'CHECKING...' : 'SUBMIT'}
               </button>
             </form>
             ) : (
-            <form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
-              {mathTextDestinations.length > 0 && <select aria-label="Text answer destination" value={selectedMathTextLocation} onChange={(event) => setSelectedMathTextLocation(event.target.value)} disabled={busy || lessonInteractionHeld} style={{ alignSelf: 'stretch', maxWidth: 190, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }}>
+            <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
+              {mathTextDestinations.length > 0 && <select aria-label="Text answer destination" value={selectedMathTextLocation} onChange={(event) => setSelectedMathTextLocation(event.target.value)} disabled={busy || lessonInteractionHeld} style={{ alignSelf: 'stretch', flex: '1 1 180px', minWidth: 0, maxWidth: '100%', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }}>
                 {mathTextDestinations.map((destination) => <option key={destination.value} value={destination.value}>{destination.label}</option>)}
               </select>}
               <WebbDictationButton disabled={busy || lessonInteractionHeld} onBeforeRecord={() => answerInputRef.current?.blur()} onTranscript={(text) => setAnswer((current) => [current.trim(), text].filter(Boolean).join(' '))} />
-              <textarea ref={answerInputRef} value={answer} onChange={(event) => setAnswer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent?.isComposing) { event.preventDefault(); void submitLiftoffAnswer() } }} placeholder="Type your answer, explain your thinking, or ask a question." rows={2} disabled={busy || lessonInteractionHeld} style={{ flex: 1, resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }} />
+              <textarea ref={answerInputRef} value={answer} onChange={(event) => setAnswer(event.target.value)} onKeyDown={(event) => { if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent?.isComposing) { event.preventDefault(); void submitLiftoffAnswer() } }} placeholder="Type your answer, explain your thinking, or ask a question." rows={2} disabled={busy || lessonInteractionHeld} style={{ flex: '1 1 280px', minWidth: 0, width: '100%', boxSizing: 'border-box', resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }} />
               <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!answer.trim() && (snapshotServiceRef.current?.writesFenced || !mathSubmitReady))} style={{ alignSelf: 'stretch', minWidth: 110, cursor: 'pointer', fontWeight: 900 }}>{busy ? 'CHECKING...' : 'SUBMIT'}</button>
             </form>
             )
@@ -1965,6 +1966,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                         }}
                         showCheck={false}
                         phase="test"
+                        showFullAnswerInputs={false}
                       />
                     </fieldset>
                   ) : (

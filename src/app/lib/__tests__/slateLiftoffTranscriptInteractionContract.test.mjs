@@ -31,6 +31,7 @@ test('active teaching math is routed through CaptionPanel in-scroller tail conte
   assert.ok(tailSpacerIndex > tailContentIndex)
   assert.match(captions, /displayItems\.length, hasTailContent, boxRef, recomputeScrollState/)
   assert.match(slate, /const activeMathTranscriptContent = phase === 'active' && activeMathSpec \? \([\s\S]*<VerticalMathWorkspace[\s\S]*phase="teaching"[\s\S]*This math activity needs attention before it can be submitted\.[\s\S]*\{mathError &&/)
+  assert.match(slate, /data-slate-active-math-transcript-tail[\s\S]*<VerticalMathWorkspace[\s\S]*showFullAnswerInputs=\{false\}/)
   assert.match(slate, /tailContent=\{activeMathTranscriptContent\}/)
   assert.match(slate, /stackedHeight=\{activeMathSpec \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
   assert.doesNotMatch(slate, /\{phase === 'active' && activeMathSpec && \(\s*<div/)
@@ -129,4 +130,5 @@ test('Slate transcript history does not displace the primary learner answer fiel
   const helpIndex = slate.indexOf("{lineHelpTarget && phase !== 'test'")
   assert.ok(answerIndex >= 0)
   assert.ok(helpIndex > answerIndex)
+  assert.match(slate, /data-slate-primary-answer-form[\s\S]*position: 'sticky', bottom: 0[\s\S]*flexWrap: 'wrap'/)
 })
