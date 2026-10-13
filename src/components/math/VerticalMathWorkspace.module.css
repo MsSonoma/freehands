@@ -331,6 +331,28 @@
   display: flex;
   justify-content: flex-start;
 }
+.workspaceFooter > button {
+  appearance: none;
+  padding: 10px 15px;
+  min-height: 42px;
+  border: 1px solid var(--addition-accent);
+  border-radius: 8px;
+  background: var(--addition-accent);
+  color: #07111d;
+  font: 800 13px/1.25 system-ui, sans-serif;
+  box-shadow: 0 2px 0 color-mix(in srgb, var(--addition-accent), #000 35%);
+}
+.workspaceFooter > button:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.workspaceFooter > button:focus-visible {
+  outline: 2px solid var(--addition-text);
+  outline-offset: 3px;
+}
+.workspaceFooter > button:disabled {
+  opacity: 0.5;
+  box-shadow: none;
+}
 .fullAnswerForm {
   display: flex;
   flex-wrap: wrap;

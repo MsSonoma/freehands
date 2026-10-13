@@ -80,5 +80,7 @@ test('Slate scratch workspace owns its transfer button and has no decorative div
   assert.match(verticalMathWorkspace, /footer && <div className=\{styles\.workspaceFooter\}>\{footer\}<\/div>/)
   assert.match(workspaceCss, /\.scratchGrid \{\s*margin-left: 0;\s*margin-right: auto;\s*\}/)
   assert.match(workspaceCss, /\.scratchBottomArea \{\s*border-top: 0;\s*padding-top: 0;\s*\}/)
+  assert.match(workspaceCss, /\.workspaceFooter > button \{[\s\S]*?border-radius: 8px;[\s\S]*?background: var\(--addition-accent\);[\s\S]*?font: 800 13px/)
+  assert.match(workspaceCss, /\.workspaceFooter > button:disabled \{\s*opacity: 0\.5;/)
   assert.match(workspaceCss, /\.mathRule \{\s*border-top: 2px solid/)
 })
