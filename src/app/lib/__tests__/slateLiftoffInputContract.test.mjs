@@ -59,3 +59,11 @@ test('Slate disables redundant workspace full-answer inputs while standalone kee
   assert.match(verticalMathWorkspace, />Quotient and remainder<\/label>/)
   assert.match(verticalMathWorkspace, />Or type the entire answer<\/label>/)
 })
+
+test('Slate math scratch does not instruct a separate grid submission', () => {
+  assert.equal((slate.match(/showCheck=\{false\}/g) || []).length, 2)
+  assert.doesNotMatch(verticalMathWorkspace, /Complete the requested spaces, then submit to your teacher\./)
+  assert.match(verticalMathWorkspace, /<\/\> : null\}/)
+  assert.match(verticalMathWorkspace, /Answer feedback is unavailable during a test\./)
+  assert.match(verticalMathWorkspace, /Complete the requested spaces, then check your entries\./)
+})

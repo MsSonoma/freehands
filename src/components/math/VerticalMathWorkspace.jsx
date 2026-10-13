@@ -411,7 +411,7 @@ export default function VerticalMathWorkspace({
               onCheck?.(result)
             }}>Check entries</button>
             <span className={styles.guidance}>Complete the requested spaces, then check your entries.</span>
-          </> : <span className={styles.guidance}>Complete the requested spaces, then submit to your teacher.</span>}
+          </> : null}
       </div>
       {entryMessage && <p className={styles.message} role="status">{entryMessage}</p>}
       {!isTest && showCheck && lastCheck && lastCheck.problem === problem && lastCheck.view === view && lastCheck.phase === phase && <p className={styles.message} role="status">
