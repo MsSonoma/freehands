@@ -21,6 +21,7 @@ const MULTIPLICATION = '\u00d7'
 export default function VerticalMathWorkspace({
   problem, view, onViewChange, onCellSelect, selectedLocation = null, phase = 'teaching', onCheck,
   showCheck = true, showFullAnswerInputs = true, notes, onNotesChange,
+  embeddedScratch = false, footer = null,
 }) {
   const inputId = useId()
   const [fullAnswer, setFullAnswer] = useState('')
@@ -355,6 +356,7 @@ export default function VerticalMathWorkspace({
     <div className={styles.scrollArea} tabIndex={0} aria-label="Scrollable vertical math grid">
       <div className={[
         styles.grid,
+        embeddedScratch ? styles.scratchGrid : '',
         problem.operation === 'multiplication' && !operatorHidden ? styles.multiplicationGrid : '',
         isDivision ? styles.divisionGrid : '',
         anyDecimalHidden ? styles.overlayGrid : '',
@@ -363,7 +365,7 @@ export default function VerticalMathWorkspace({
         {isDivision ? divisionLayoutNode() : layout.map(layoutNode)}
       </div>
     </div>
-    <div className={styles.bottomArea}>
+    <div className={[styles.bottomArea, embeddedScratch ? styles.scratchBottomArea : ''].filter(Boolean).join(' ')}>
       {showFullAnswerInputs && divisionAnswersEditable && <form className={styles.fullAnswerForm} onSubmit={(event) => {
         event.preventDefault()
         const quotientResult = enterVerticalMathRowAnswer(problem, view, problem.resultRow.id, divisionAnswer.quotient)
@@ -401,7 +403,7 @@ export default function VerticalMathWorkspace({
           <button type="submit">Apply</button>
         </div>
       </form>}
-      <div className={styles.bottomButtons}>
+      {(isTest || showCheck) && <div className={styles.bottomButtons}>
         {isTest
           ? <span className={styles.guidance}>Answer feedback is unavailable during a test.</span>
           : showCheck ? <>
@@ -412,7 +414,8 @@ export default function VerticalMathWorkspace({
             }}>Check entries</button>
             <span className={styles.guidance}>Complete the requested spaces, then check your entries.</span>
           </> : null}
-      </div>
+      </div>}
+      {footer && <div className={styles.workspaceFooter}>{footer}</div>}
       {entryMessage && <p className={styles.message} role="status">{entryMessage}</p>}
       {!isTest && showCheck && lastCheck && lastCheck.problem === problem && lastCheck.view === view && lastCheck.phase === phase && <p className={styles.message} role="status">
         {!lastCheck.result.responseRequired

@@ -23,6 +23,11 @@
   min-width: min-content;
   margin: 0 auto;
 }
+/* Slate embeds the grid as optional scratch work, left-aligned in its panel. */
+.scratchGrid {
+  margin-left: 0;
+  margin-right: auto;
+}
 .rowLabel {
   width: 76px;
   min-width: 76px;
@@ -317,6 +322,14 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+}
+.scratchBottomArea {
+  border-top: 0;
+  padding-top: 0;
+}
+.workspaceFooter {
+  display: flex;
+  justify-content: flex-start;
 }
 .fullAnswerForm {
   display: flex;

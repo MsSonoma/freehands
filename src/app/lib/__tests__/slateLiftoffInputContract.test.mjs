@@ -67,3 +67,18 @@ test('Slate math scratch does not instruct a separate grid submission', () => {
   assert.match(verticalMathWorkspace, /Answer feedback is unavailable during a test\./)
   assert.match(verticalMathWorkspace, /Complete the requested spaces, then check your entries\./)
 })
+
+
+test('Slate scratch workspace owns its transfer button and has no decorative divider', () => {
+  const workspaceCss = fs.readFileSync(path.resolve('src/components/math/VerticalMathWorkspace.module.css'), 'utf8')
+  assert.equal((slate.match(/embeddedScratch/g) || []).length, 2)
+  assert.equal((slate.match(/footer=\{\s*<button type="button"[\s\S]*?USE THIS RESULT IN ANSWER<\/button>\s*\}/g) || []).length, 2)
+  assert.match(slate, /data-slate-active-math-transcript-tail style=\{\{ marginTop: 12, paddingTop: 14 \}\}/)
+  assert.doesNotMatch(slate, /data-slate-active-math-transcript-tail style=\{\{ borderTop:/)
+  assert.match(verticalMathWorkspace, /embeddedScratch \? styles\.scratchGrid : ''/)
+  assert.match(verticalMathWorkspace, /embeddedScratch \? styles\.scratchBottomArea : ''/)
+  assert.match(verticalMathWorkspace, /footer && <div className=\{styles\.workspaceFooter\}>\{footer\}<\/div>/)
+  assert.match(workspaceCss, /\.scratchGrid \{\s*margin-left: 0;\s*margin-right: auto;\s*\}/)
+  assert.match(workspaceCss, /\.scratchBottomArea \{\s*border-top: 0;\s*padding-top: 0;\s*\}/)
+  assert.match(workspaceCss, /\.mathRule \{\s*border-top: 2px solid/)
+})

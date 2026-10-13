@@ -1804,7 +1804,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const isAssessment = phase === 'test'
   const lessonInteractionHeld = Boolean(lineHelpTarget) || lineHelpBusy
   const activeMathTranscriptContent = phase === 'active' && activeMathSpec ? (
-    <div data-slate-active-math-transcript-tail style={{ borderTop: `1px solid ${mathError ? C.red : C.border}`, marginTop: 12, paddingTop: 14 }}>
+    <div data-slate-active-math-transcript-tail style={{ marginTop: 12, paddingTop: 14 }}>
       <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>OPTIONAL SCRATCH WORKSPACE. YOU CAN ANSWER IN THE FIELD BELOW WITHOUT USING IT.</div>
       {activeMathProblem && activeMathMatches ? (
         <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
@@ -1821,8 +1821,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             phase="teaching"
             showCheck={false}
             showFullAnswerInputs={false}
+            embeddedScratch
+            footer={
+              <button type="button" onClick={() => { setAnswer((current) => insertSlateMathResult(current, activeWorkspaceValue)); answerInputRef.current?.focus() }} disabled={busy || lessonInteractionHeld || !activeWorkspaceValue} style={{ cursor: activeWorkspaceValue ? 'pointer' : 'default' }}>USE THIS RESULT IN ANSWER</button>
+            }
           />
-          <button type="button" onClick={() => { setAnswer((current) => insertSlateMathResult(current, activeWorkspaceValue)); answerInputRef.current?.focus() }} disabled={busy || lessonInteractionHeld || !activeWorkspaceValue} style={{ marginTop: 10, cursor: activeWorkspaceValue ? 'pointer' : 'default' }}>USE THIS RESULT IN ANSWER</button>
         </fieldset>
       ) : (
         <div role="alert" style={{ color: C.muted, fontWeight: 700 }}>
@@ -1982,9 +1985,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                         showCheck={false}
                         phase="test"
                         showFullAnswerInputs={false}
+                        embeddedScratch
+                        footer={
+                          <button type="button" onClick={() => { const next = insertSlateMathResult(assessmentAnswer, assessmentWorkspaceValue); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }} disabled={busy || snapshotServiceRef.current?.writesFenced || !assessmentWorkspaceValue} style={{ cursor: assessmentWorkspaceValue ? 'pointer' : 'default' }}>USE THIS RESULT IN ANSWER</button>
+                        }
                       />
-                    <button type="button" onClick={() => { const next = insertSlateMathResult(assessmentAnswer, assessmentWorkspaceValue); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }} disabled={busy || snapshotServiceRef.current?.writesFenced || !assessmentWorkspaceValue} style={{ marginTop: 10, cursor: assessmentWorkspaceValue ? 'pointer' : 'default' }}>USE THIS RESULT IN ANSWER</button>
-                     </fieldset>
+                    </fieldset>
                   ) : (
                     <div role="alert" style={{ color: C.red, fontWeight: 700 }}>This test math item could not be opened. Your work has been kept.</div>
                   )}
