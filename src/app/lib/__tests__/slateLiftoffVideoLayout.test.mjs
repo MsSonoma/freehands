@@ -6,42 +6,55 @@ import test from 'node:test'
 const slate = fs.readFileSync(path.resolve('src/app/session/slate/SlateLiftoffExperience.jsx'), 'utf8')
 const layout = fs.readFileSync(path.resolve('src/app/session/slate/SlateLiftoffExperience.module.css'), 'utf8')
 
-test('Mr. Slate video is in the right column above the existing Your Progress panel', () => {
+test('Mr. Slate video is to the right above Your Progress, without moving the transcript', () => {
   assert.match(slate, /import styles from '\.\/SlateLiftoffExperience\.module\.css'/)
-  const main = slate.indexOf('<main style=')
-  const section = slate.indexOf('<section style=', main)
+  const main = slate.indexOf('<main className={styles.sessionMain}')
+  const section = slate.indexOf('<section className={styles.contentColumn}', main)
   const transcript = slate.indexOf('className={styles.transcriptColumn}', section)
   const sidebar = slate.indexOf('className={styles.sidebarColumn}', transcript)
   const video = slate.indexOf('<ReviewTeacherVideoStage teacher="slate" ref={videoRef}', sidebar)
-  const progressPanel = slate.indexOf('<aside aria-label="Lesson progress"', sidebar)
-  const heading = slate.indexOf('YOUR PROGRESS', progressPanel)
-
-  assert.ok(main >= 0 && section > main)
-  assert.ok(transcript > section && sidebar > transcript)
-  assert.ok(video > sidebar && progressPanel > video && heading > progressPanel)
-  // The completed-results screen retains its own separate video stage.
-  assert.ok(slate.indexOf('<ReviewTeacherVideoStage teacher="slate"') < main)
-  assert.equal((slate.slice(main).match(/<ReviewTeacherVideoStage teacher="slate"/g) || []).length, 1)
+  const progress = slate.indexOf('<aside className={styles.progressPanel} aria-label="Lesson progress"', sidebar)
+  const heading = slate.indexOf('YOUR PROGRESS', progress)
+  assert.ok(main >= 0 && section > main && transcript > section)
+  assert.ok(sidebar > transcript && video > sidebar && progress > video && heading > progress)
   assert.doesNotMatch(slate.slice(section, sidebar), /ReviewTeacherVideoStage/)
   assert.match(slate, /<ReviewTeacherVideoStage teacher="slate" ref=\{videoRef\} style=\{\{ width: '100%', margin: 0 \}\} \/>/)
 })
 
-test('right sidebar stacks video above progress and preserves the responsive two-column layout', () => {
-  assert.match(layout, /\.sidebarColumn\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;/)
-  assert.match(layout, /\.sidebarColumn\s*\{[\s\S]*?gap:\s*14px;/)
-  assert.match(layout, /\.transcriptColumn\s*\{[\s\S]*?min-width:\s*0;/)
-  assert.doesNotMatch(layout, /videoTranscriptLayout|videoColumn/)
-  assert.match(slate, /className=\{styles\.sidebarColumn\} style=\{\{ flex: '0 1 320px', minWidth: 'min\(260px, 100%\)', maxWidth: '100%' \}\}/)
-  assert.match(slate, /<aside aria-label="Lesson progress" style=\{\{ background: C\.surface/)
+test('desktop viewport is a fixed-height two-column shell below its header', () => {
+  assert.match(slate, /className=\{styles\.sessionShell\}/)
+  assert.match(slate, /className=\{styles\.sessionMain\}/)
+  assert.match(layout, /\.sessionMain\s*\{[\s\S]*?flex-wrap:\s*wrap;[\s\S]*?align-items:\s*flex-start;/)
+  assert.match(layout, /@media \(min-width: 900px\), \(min-width: 700px\) and \(orientation: landscape\)/)
+  assert.match(layout, /\.sessionShell\s*\{[\s\S]*?min-height:\s*0;[\s\S]*?height:\s*calc\(100dvh - clamp\(56px, 9svh, 72px\) - 4px\);[\s\S]*?overflow:\s*hidden;/)
+  assert.match(layout, /@media \(min-width: 700px\) and \(orientation: landscape\) and \(max-height: 820px\)[\s\S]*?height:\s*calc\(100dvh - clamp\(48px, 8svh, 60px\) - 4px\);/)
+  assert.match(layout, /\.sessionMain\s*\{[\s\S]*?flex-wrap:\s*nowrap;[\s\S]*?align-items:\s*stretch;[\s\S]*?overflow:\s*hidden;/)
+  assert.match(layout, /\.contentColumn\s*\{[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/)
 })
 
-test('transcript remains a tall scrollable area on wide screens and bounded on narrow screens', () => {
-  assert.match(layout, /@media \(min-width: 900px\), \(min-width: 700px\) and \(orientation: landscape\)/)
-  assert.match(layout, /\.transcriptColumn \[data-ms-caption-panel-container\][\s\S]*height:\s*54vh !important;[\s\S]*max-height:\s*54vh !important;/)
+test('transcript grows to fill space above the original input form', () => {
+  assert.match(slate, /className=\{styles\.contentColumn\}/)
+  assert.match(slate, /className=\{styles\.transcriptColumn\}/)
+  assert.match(layout, /\.transcriptColumn\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex:\s*1 1 auto;[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/)
+  assert.match(layout, /\.transcriptColumn \[data-ms-caption-panel-container\]\s*\{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?height:\s*auto !important;[\s\S]*?max-height:\s*none !important;/)
+  assert.match(layout, /\.contentColumn > \[data-slate-primary-answer-form\]\s*\{[\s\S]*?flex-shrink:\s*0;/)
   assert.match(slate, /stackedHeight=\{activeMathSpec \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
 })
 
-test('move preserves the embedded math grid, original answer bar, independent test and video ref', () => {
+test('right progress panel fills remaining height under the video and scrolls inside its own area', () => {
+  assert.match(layout, /\.sidebarColumn\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex-direction:\s*column;/)
+  assert.match(layout, /\.sidebarColumn\s*\{[\s\S]*?align-self:\s*stretch;[\s\S]*?height:\s*100%;[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/)
+  assert.match(layout, /\.progressPanel\s*\{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?min-height:\s*0;[\s\S]*?overflow-y:\s*auto;/)
+})
+
+test('mobile remains a naturally scrollable stack; independent test and line help remain accessible', () => {
+  assert.match(slate, /data-slate-scroll-mode=\{isAssessment \? 'test' : \(lineHelpTarget \? 'help' : 'active'\)\}/)
+  assert.match(layout, /\.contentColumn\[data-slate-scroll-mode='test'\],[\s\S]*?\.contentColumn\[data-slate-scroll-mode='help'\]\s*\{[\s\S]*?overflow-y:\s*auto;/)
+  assert.match(layout, /\.contentColumn\[data-slate-scroll-mode='test'\] \.transcriptColumn \[data-ms-caption-panel-container\],[\s\S]*?height:\s*clamp\(150px, 25vh, 260px\) !important;/)
+  assert.doesNotMatch(layout.split('@media')[0], /height:\s*100dvh|overflow:\s*hidden;/)
+})
+
+test('new sizing keeps math workspace inside captions, original answer bar, assessment and video reference', () => {
   assert.match(slate, /tailContent=\{activeMathTranscriptContent\}/)
   assert.match(slate, /data-slate-active-math-transcript-tail[\s\S]*<VerticalMathWorkspace/)
   assert.match(slate, /data-slate-primary-answer-form/)
@@ -49,5 +62,5 @@ test('move preserves the embedded math grid, original answer bar, independent te
   assert.match(slate, /<form data-slate-primary-answer-form onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitLiftoffAnswer\(\) \}\}/)
   assert.match(slate, /<form onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitAssessmentAnswer\(\) \}\}/)
   assert.match(slate, /notes=\{assessmentMathWorkingNotes\?\.activityId === assessmentMathSession\.activityId/)
-  assert.equal((slate.match(/ref=\{videoRef\}/g) || []).length, 2) // Results screen and active lesson retain their refs.
+  assert.equal((slate.match(/ref=\{videoRef\}/g) || []).length, 2)
 })

@@ -1,3 +1,13 @@
+.sessionShell {
+  min-height: 100vh;
+}
+
+.sessionMain {
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.contentColumn,
 .transcriptColumn {
   min-width: 0;
 }
@@ -11,8 +21,85 @@
 }
 
 @media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
+  .sessionShell {
+    /* The global HeaderBar reserves this height, then RootLayout adds 4px. */
+    min-height: 0;
+    height: calc(100dvh - clamp(56px, 9svh, 72px) - 4px);
+    overflow: hidden;
+  }
+
+  .sessionShell > header {
+    flex-shrink: 0;
+  }
+
+  .sessionMain {
+    box-sizing: border-box;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    overflow: hidden;
+  }
+
+  .contentColumn {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .transcriptColumn {
+    display: flex;
+    flex: 1 1 auto;
+    flex-direction: column;
+    min-height: 0;
+    overflow: hidden;
+  }
+
   .transcriptColumn [data-ms-caption-panel-container] {
-    height: 54vh !important;
-    max-height: 54vh !important;
+    flex: 1 1 auto;
+    min-height: 0;
+    height: auto !important;
+    max-height: none !important;
+  }
+
+  .contentColumn > [data-slate-primary-answer-form] {
+    flex-shrink: 0;
+  }
+
+  .sidebarColumn {
+    align-self: stretch;
+    height: 100%;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  .progressPanel {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+  }
+
+  /* Test questions and the optional line-help panel may be taller than one viewport.
+     Let those lesson states scroll without hiding their interaction controls. */
+  .contentColumn[data-slate-scroll-mode='test'],
+  .contentColumn[data-slate-scroll-mode='help'] {
+    overflow-y: auto;
+  }
+
+  .contentColumn[data-slate-scroll-mode='test'] .transcriptColumn,
+  .contentColumn[data-slate-scroll-mode='help'] .transcriptColumn {
+    flex: 0 0 auto;
+    min-height: 0;
+  }
+
+  .contentColumn[data-slate-scroll-mode='test'] .transcriptColumn [data-ms-caption-panel-container],
+  .contentColumn[data-slate-scroll-mode='help'] .transcriptColumn [data-ms-caption-panel-container] {
+    flex: 0 0 auto;
+    height: clamp(150px, 25vh, 260px) !important;
+    max-height: clamp(150px, 25vh, 260px) !important;
+  }
+}
+
+/* HeaderBar uses its compact height in mobile/tablet landscape. */
+@media (min-width: 700px) and (orientation: landscape) and (max-height: 820px) {
+  .sessionShell {
+    height: calc(100dvh - clamp(48px, 8svh, 60px) - 4px);
   }
 }
