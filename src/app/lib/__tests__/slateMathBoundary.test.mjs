@@ -291,7 +291,7 @@ test('route exports only supported framework fields and source keeps post-await 
   const parse = afterFetch.indexOf('const turn = await response.json()')
   const apply = afterFetch.indexOf('const nextState = applyLiftoffTurn')
   const archive = afterFetch.indexOf('appendSlateMathArchive(mathArchiveRef.current')
-  const speak = afterFetch.indexOf('void speak(turn.learnerMessage)')
+  const speak = afterFetch.indexOf('await speak(nextLines.response)')
   assert.ok(fetchStart >= 0 && fence >= 0)
   assert.ok(fence < parse && fence < apply && fence < archive && fence < speak)
   assert.match(experienceSource, /result\.success !== false && result\.blocked !== true && !result\.ownershipLost && !service\.writesFenced/)

@@ -14,6 +14,7 @@ import { recordSlateLiftoffEvidence } from '@/app/lib/slateLiftoffClient.js'
 import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { separateLiftoffTranscriptQuestion } from '@/app/lib/slateLiftoffTranscript.mjs'
+import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
 import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
 import { slateMathWorkspaceResult, insertSlateMathResult } from '@/app/lib/slateMathDraft.mjs'
 import { SnapshotService } from '@/app/session/v2/SnapshotService.jsx'
@@ -244,6 +245,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [lesson, setLesson] = useState(null)
   const [liftoff, setLiftoff] = useState(null)
   const [slateText, setSlateText] = useState('')
+  const [questionPending, setQuestionPending] = useState(false)
   const [answer, setAnswer] = useState('')
   const [busy, setBusy] = useState(false)
   const [exiting, setExiting] = useState(false)
@@ -282,6 +284,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const audioRef = useRef(null)
   const soundOnRef = useRef(true)
   const speechRequestRef = useRef(0)
+  const introSpeechRef = useRef(null)
+  const componentActiveRef = useRef(true)
   const videoRef = useRef(null)
   const musicAudioRef = useRef(null)
   const musicMutedRef = useRef(false)
@@ -331,7 +335,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   liftoffRef.current = liftoff
 
   const speak = useCallback(async (text) => {
-    if (!soundOnRef.current || !text || !audioRef.current) return
+    if (!soundOnRef.current || !text || !audioRef.current) return 'unavailable'
     const requestId = ++speechRequestRef.current
     try {
       const response = await fetch('/api/slate-tts', {
@@ -340,17 +344,21 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         body: JSON.stringify({ text }),
       })
       const body = await response.json().catch(() => null)
-      if (!response.ok || !body?.audio || !soundOnRef.current || requestId !== speechRequestRef.current) return
+      if (!response.ok || !body?.audio || !soundOnRef.current || requestId !== speechRequestRef.current) return 'unavailable'
       const audio = audioRef.current
-      if (!audio) return
+      if (!audio) return 'unavailable'
       audio.pause()
       audio.src = String(body.audio).startsWith('data:') ? body.audio : `data:audio/mp3;base64,${body.audio}`
       try { videoRef.current?.play?.().catch(() => {}) } catch {}
-      audio.onended = () => { try { videoRef.current?.pause?.() } catch {} }
-      audio.onerror = () => { try { videoRef.current?.pause?.() } catch {} }
-      if (!soundOnRef.current || requestId !== speechRequestRef.current) return
-      await audio.play().catch(() => {})
-    } catch {}
+      if (!soundOnRef.current || requestId !== speechRequestRef.current) return 'unavailable'
+      const result = await playSlateSpeechUntilEnd(audio)
+      if (requestId === speechRequestRef.current) {
+        try { videoRef.current?.pause?.() } catch {}
+      }
+      return result
+    } catch {
+      return 'unavailable'
+    }
   }, [])
 
   const toggleSpeech = useCallback(() => {
@@ -973,7 +981,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         const initialQuestion = String(initialState.currentAction?.problem?.prompt || '').trim()
         const initialLines = separateLiftoffTranscriptQuestion(init.learnerMessage, initialQuestion)
         if (initialLines.response) appendTranscript('assistant', initialLines.response)
-        if (initialLines.question) appendTranscript('assistant', initialLines.question, { kind: 'liftoff_question' })
+        // The response appears now; the next question waits for its TTS to end.
+        introSpeechRef.current = initialLines
+        setQuestionPending(Boolean(initialLines.question))
+        setBusy(Boolean(initialLines.response || initialLines.question))
         setPhase('active')
         await snapshotService.saveProgress('liftoff-start', {
           phaseOverride: 'active',
@@ -991,7 +1002,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             startedAt: startedAtRef.current,
           }),
         })
-        void speak(init.learnerMessage)
       } catch (cause) {
         if (cancelled) return
         setError(cause?.message || 'Mr. Slate could not start this Liftoff lesson.')
@@ -1001,7 +1011,33 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
     void initialize()
     return () => { cancelled = true }
-  }, [appendTranscript, initializeCanonicalMasteryEvidence, learnerId, lessonKey, occurrenceId, restoreLiftoffSnapshot, speak])
+  }, [appendTranscript, initializeCanonicalMasteryEvidence, learnerId, lessonKey, occurrenceId, restoreLiftoffSnapshot])
+
+  // Intro audio cannot start until the active lesson (and its <audio>) has mounted.
+  useEffect(() => {
+    if (phase !== 'active' || !introSpeechRef.current || !audioRef.current) return undefined
+    const intro = introSpeechRef.current
+    introSpeechRef.current = null
+    let cancelled = false
+    let completed = false
+    void (async () => {
+      if (intro.response) await speak(intro.response)
+      if (cancelled || !componentActiveRef.current || snapshotServiceRef.current?.writesFenced) return
+      if (intro.question) {
+        appendTranscript('assistant', intro.question, { kind: 'liftoff_question' })
+        void speak(intro.question)
+      }
+      completed = true
+      setQuestionPending(false)
+      setBusy(false)
+      void persistRef.current?.()
+    })()
+    return () => {
+      cancelled = true
+      // StrictMode replays effects during development: do not lose the intro.
+      if (!completed && !introSpeechRef.current) introSpeechRef.current = intro
+    }
+  }, [appendTranscript, phase, speak])
 
   useEffect(() => {
     if (!session?.id || !browserSessionIdRef.current) return undefined
@@ -1098,8 +1134,13 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
   }, [])
 
-  useEffect(() => () => {
-    try { audioRef.current?.pause?.() } catch {}
+  useEffect(() => {
+    componentActiveRef.current = true
+    return () => {
+      componentActiveRef.current = false
+      speechRequestRef.current += 1
+      try { audioRef.current?.pause?.() } catch {}
+    }
   }, [])
 
   useEffect(() => {
@@ -1289,7 +1330,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       setTestPrintBusy(false)
     }
   }, [lesson?.title, lessonKey, phase, testItems, testPrintBusy])
-  const beginIndependentAssessment = useCallback((loadedLesson, liftoffState) => {
+  const beginIndependentAssessment = useCallback(async (loadedLesson, liftoffState) => {
     const sets = buildAssessmentSets(loadedLesson)
     setTestItems(sets.test)
     setAssessmentIndex(0)
@@ -1315,9 +1356,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     const text = 'Liftoff is complete. Now take the independent test. No help or answer feedback until the test is finished.'
     setSlateText(text)
     appendTranscript('assistant', text, { kind: 'test_start' })
-    setPhase('test')
     void persistLiftoffSnapshot({ phase: 'test', liftoff: liftoffState, slateText: text, assessmentIndex: 0, worksheetFeedback: null, testResults: [], finalPercentage: null })
-    void speak(text)
+    // The independent-test question appears only after the introduction is spoken.
+    await speak(text)
+    if (componentActiveRef.current && !snapshotServiceRef.current?.writesFenced) setPhase('test')
   }, [appendTranscript, persistLiftoffSnapshot, speak])
 
   const submitLiftoffAnswer = useCallback(async () => {
@@ -1536,12 +1578,23 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       const readyForTest = nextState.procedureReleased && liftoffReleaseReady(nextState)
       const nextQuestion = readyForTest ? '' : String(nextState.currentAction?.problem?.prompt || '').trim()
       const nextLines = separateLiftoffTranscriptQuestion(turn.learnerMessage, nextQuestion)
+      setQuestionPending(Boolean(nextLines.question))
       if (nextLines.response) appendTranscript('assistant', nextLines.response)
-      if (nextLines.question) appendTranscript('assistant', nextLines.question, { kind: 'liftoff_question' })
-      void speak(turn.learnerMessage)
+      if (!readyForTest) {
+        // Save the next action before playback, but not its question transcript yet.
+        void persistLiftoffSnapshot({ phase: 'active', liftoff: nextState, slateText: turn.learnerMessage })
+      }
+      if (nextLines.response) await speak(nextLines.response)
+      if (!componentActiveRef.current || snapshotServiceRef.current?.writesFenced ||
+          liftoffRef.current?.turnNumber !== nextState.turnNumber) return
       if (readyForTest) {
-        beginIndependentAssessment(lesson, nextState)
+        await beginIndependentAssessment(lesson, nextState)
       } else {
+        if (nextLines.question) {
+          appendTranscript('assistant', nextLines.question, { kind: 'liftoff_question' })
+          void speak(nextLines.question)
+        }
+        setQuestionPending(false)
         void persistLiftoffSnapshot({ phase: 'active', liftoff: nextState, slateText: turn.learnerMessage })
       }
     } catch (cause) {
@@ -1803,7 +1856,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
   const isAssessment = phase === 'test'
   const lessonInteractionHeld = Boolean(lineHelpTarget) || lineHelpBusy
-  const activeMathTranscriptContent = phase === 'active' && activeMathSpec ? (
+  const activeMathTranscriptContent = phase === 'active' && !questionPending && activeMathSpec ? (
     <div data-slate-active-math-transcript-tail style={{ marginTop: 12, paddingTop: 14 }}>
       {activeMathProblem && activeMathMatches ? (
         <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
