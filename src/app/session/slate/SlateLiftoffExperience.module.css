@@ -1,3 +1,16 @@
+/* Scope outer-page corrections to Mr. Slate Liftoff only.
+   Other routes keep their global scrollbar and page spacing rules. */
+:global(html):has(.sessionShell),
+:global(body):has(.sessionShell) {
+  scrollbar-gutter: auto !important;
+  background-color: #0d1117;
+}
+
+/* Remove the RootLayout 4px top padding only around this lesson. */
+:global(body) > div:has(> .sessionShell) {
+  padding-top: 0 !important;
+}
+
 .sessionShell {
   min-height: 100vh;
 }
@@ -22,9 +35,9 @@
 
 @media (min-width: 900px), (min-width: 700px) and (orientation: landscape) {
   .sessionShell {
-    /* The global HeaderBar reserves this height, then RootLayout adds 4px. */
+    /* The global HeaderBar still reserves its own height. */
     min-height: 0;
-    height: calc(100dvh - clamp(56px, 9svh, 72px) - 4px);
+    height: calc(100dvh - clamp(56px, 9svh, 72px));
     overflow: hidden;
   }
 
@@ -100,6 +113,6 @@
 /* HeaderBar uses its compact height in mobile/tablet landscape. */
 @media (min-width: 700px) and (orientation: landscape) and (max-height: 820px) {
   .sessionShell {
-    height: calc(100dvh - clamp(48px, 8svh, 60px) - 4px);
+    height: calc(100dvh - clamp(48px, 8svh, 60px));
   }
 }
