@@ -1805,7 +1805,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const lessonInteractionHeld = Boolean(lineHelpTarget) || lineHelpBusy
   const activeMathTranscriptContent = phase === 'active' && activeMathSpec ? (
     <div data-slate-active-math-transcript-tail style={{ marginTop: 12, paddingTop: 14 }}>
-      <div style={{ fontSize: 12, color: C.muted, marginBottom: 10 }}>OPTIONAL SCRATCH WORKSPACE. YOU CAN ANSWER IN THE FIELD BELOW WITHOUT USING IT.</div>
       {activeMathProblem && activeMathMatches ? (
         <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
           <VerticalMathWorkspace
@@ -1965,7 +1964,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 </div>
               ) : assessmentMathResolution.kind === 'math' ? (
                 <div style={{ display: 'grid', gap: 12 }}>
-                  <div style={{ color: C.muted, fontSize: 12 }}>OPTIONAL SCRATCH WORKSPACE. YOU CAN ANSWER IN THE FIELD BELOW WITHOUT USING IT.</div>
                   {assessmentMathProblem && assessmentMathMatches ? (
                     <fieldset disabled={busy || lineHelpBusy || Boolean(lineHelpTarget) || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
                       <VerticalMathWorkspace
