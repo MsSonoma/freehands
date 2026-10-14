@@ -18,6 +18,7 @@ import {
 } from '../../../lib/math/mathSession.mjs'
 import { evaluateMathTestAnswer } from '../../../lib/math/mathTestAnswer.mjs'
 import { routeMathTextInput } from '../../../lib/math/mathTextInput.mjs'
+import { slateScratchUiForQuestion } from '../slateMathScratch.mjs'
 import { enterVerticalMathRowAnswer } from '../../../lib/math/verticalMath.mjs'
 import { updateVerticalMathWorkingNote } from '../../../lib/math/verticalMathNotes.mjs'
 
@@ -38,6 +39,29 @@ const slateExperienceSource = readFileSync(
   new URL('../../session/slate/SlateLiftoffExperience.jsx', import.meta.url),
   'utf8',
 )
+
+test('bare arithmetic in a test opens the prepopulated Question Math Workspace without solving it', () => {
+  const item = { type: 'fillintheblank', question: '247 + 38 =', expected: '285' }
+  const result = createSlateMathTestSession({ item, activityId: 'test-question-one' })
+  assert.equal(result.ok, true)
+  assert.equal(result.state.phase, 'test')
+  assert.deepEqual(result.state.spec.operands, ['247', '38'])
+  const problem = buildMathActivityProblem(result.state.spec)
+  assert.deepEqual(problem.operands, ['247', '38'])
+  assert.equal(Object.keys(result.state.view.entries).length, 0)
+
+  const shown = slateScratchUiForQuestion(null, result.state.activityId, result.state.spec, 'test')
+  assert.equal(shown.visible, true)
+  const hidden = slateScratchUiForQuestion({ ...shown, visible: false }, result.state.activityId, result.state.spec, 'test')
+  assert.equal(hidden.visible, false)
+
+  const next = createSlateMathTestSession({
+    item: { question: '8 × 7 =', expected: '56' }, activityId: 'test-question-two',
+  })
+  assert.equal(next.ok, true)
+  const nextShown = slateScratchUiForQuestion(hidden, next.state.activityId, next.state.spec, 'test')
+  assert.equal(nextShown.visible, true)
+})
 
 test('wrong shorter test answers submit without public correctness feedback', () => {
   const item = { question: '999 + 1 = ?', expected: '1000' }

@@ -11,7 +11,7 @@ function stripMarkdown(text) {
     .replace(/_([^_]+)_/g, '$1');
 }
 
-function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false, onReplayRequest = null, replayEnabled = true, teacherName = 'Ms. Sonoma', theme = null, tailContent = null }) {
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false, onReplayRequest = null, replayEnabled = true, teacherName = 'Ms. Sonoma', theme = null, tailContent = null, followTranscriptEnd = true }) {
   const panelTheme = {
     background: '#ffffff',
     text: '#111111',
@@ -66,7 +66,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
 
   // Keep the latest caption in view (V1 behavior: always pinned to the newest line)
   useEffect(() => {
-    if (!boxRef?.current) return;
+    if (!followTranscriptEnd || !boxRef?.current) return;
     const el = boxRef.current;
     const endEl = endRef.current;
 
@@ -94,7 +94,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
       }
       clearTimeout(t1);
     };
-  }, [displayItems.length, hasTailContent, boxRef, recomputeScrollState]);
+  }, [displayItems.length, hasTailContent, boxRef, followTranscriptEnd, recomputeScrollState]);
 
   useEffect(() => {
     if (!boxRef?.current) return;
@@ -120,7 +120,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     const viewTop = container.scrollTop;
     const viewBottom = viewTop + container.clientHeight;
     const maxScroll = Math.max(0, container.scrollHeight - container.clientHeight);
-    const isLast = displayActiveIndex >= (Array.isArray(displayItems) ? displayItems.length - 1 : -1);
+    const isLast = followTranscriptEnd && displayActiveIndex >= (Array.isArray(displayItems) ? displayItems.length - 1 : -1);
     if (elementTop < viewTop || elementBottom > viewBottom) {
       const distance = Math.abs(elementTop - viewTop);
       const jumpThreshold = (container.clientHeight * 0.65) / scale;
@@ -132,7 +132,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
       if (distance > jumpThreshold) container.scrollTop = target; else container.scrollTo({ top: target, behavior: 'smooth' });
       if (isLast) requestAnimationFrame(() => { container.scrollTop = maxScroll; });
     }
-  }, [displayActiveIndex, displayItems, scaleFactor, boxRef]);
+  }, [displayActiveIndex, displayItems, scaleFactor, boxRef, followTranscriptEnd]);
 
   const containerStyle = {
     width: '100%',

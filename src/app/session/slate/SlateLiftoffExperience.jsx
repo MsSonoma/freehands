@@ -348,6 +348,16 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setTranscriptLines(next)
   }, [])
 
+  const appendTestQuestion = useCallback((item, index) => {
+    const text = questionText(item)
+    if (!text) return
+    // On resume, the active question may already be the last transcript line.
+    // Only suppress that exact duplicate, not a question from a restarted test.
+    const last = transcriptRef.current.at(-1)
+    if (last?.role === 'assistant' && last?.text === text) return
+    appendTranscript('assistant', text, { kind: 'test_question', testIndex: index })
+  }, [appendTranscript])
+
   liftoffRef.current = liftoff
 
   const speak = useCallback(async (text) => {
@@ -596,10 +606,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       ? [...restoredLines, { role: 'assistant', text: activeQuestion, kind: 'liftoff_question' }]
       : restoredLines
     setTranscriptLines(transcriptRef.current)
+    if (resumedPhase === 'test' && !restoredAssessmentPending?.transcriptRecorded) {
+      const restoredIndex = restartTransferredTest || oldWorksheetSnapshot ? 0 : Math.max(0, Number(feature.assessmentIndex) || 0)
+      appendTestQuestion(sets.test[restoredIndex], restoredIndex)
+    }
     startedAtRef.current = feature.startedAt || new Date().toISOString()
     setPhase(resumedPhase)
     return true
-  }, [occurrenceId])
+  }, [appendTestQuestion, occurrenceId])
 
   const persistLiftoffSnapshot = useCallback(async (overrides = {}) => {
     const service = snapshotServiceRef.current
@@ -1581,10 +1595,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setSlateText(text)
     appendTranscript('assistant', text, { kind: 'test_start' })
     void persistLiftoffSnapshot({ phase: 'test', liftoff: liftoffState, slateText: text, assessmentIndex: 0, worksheetFeedback: null, testResults: [], finalPercentage: null })
-    // The independent-test question appears only after the introduction is spoken.
+    // The independent-test question appears in the transcript once the introduction ends.
     await speak(text)
-    if (componentActiveRef.current && !snapshotServiceRef.current?.writesFenced) setPhase('test')
-  }, [appendTranscript, persistLiftoffSnapshot, speak])
+    if (componentActiveRef.current && !snapshotServiceRef.current?.writesFenced) {
+      appendTestQuestion(sets.test[0], 0)
+      setPhase('test')
+      void persistLiftoffSnapshot({ phase: 'test', liftoff: liftoffState, slateText: text, assessmentIndex: 0, worksheetFeedback: null, testResults: [], finalPercentage: null })
+    }
+  }, [appendTestQuestion, appendTranscript, persistLiftoffSnapshot, speak])
 
   const submitLiftoffAnswer = useCallback(async () => {
     const learnerResponse = answer.trim()
@@ -1935,6 +1953,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         setAssessmentMathError('')
         setAssessmentAnswer('')
         setAssessmentIndex(nextIndex)
+        appendTestQuestion(currentAssessmentItems[nextIndex], nextIndex)
         if (!await persistLiftoffSnapshot({ phase: 'test', assessmentIndex: nextIndex, testResults: pending.nextResults })) {
           throw new Error('The test response could not be safely saved yet. Please submit it again.')
         }
@@ -1981,7 +2000,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
       if (!stillOwnsItem()) return
       if (!pending.transcriptRecorded) {
-        appendTranscript('assistant', submittedQuestion)
+        appendTestQuestion(item, submittedIndex)
         appendTranscript('user', pending.answer)
         pending = { ...pending, transcriptRecorded: true }
         assessmentMathPendingRef.current = pending
@@ -2033,6 +2052,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         setAssessmentMathError('')
         setAssessmentAnswer('')
         setAssessmentIndex(nextIndex)
+        appendTestQuestion(currentAssessmentItems[nextIndex], nextIndex)
         await persistLiftoffSnapshot({ phase: 'test', assessmentIndex: nextIndex, testResults: savedResults })
         return
       }
@@ -2045,7 +2065,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       setBusy(false)
       assessmentSubmitLockRef.current = false
     }
-  }, [appendTranscript, assessmentAnswer, assessmentIndex, assessmentMathMatches, assessmentMathResolution, busy, currentAssessment, currentAssessmentItems, finishLesson, persistLiftoffSnapshot, phase, recordCanonicalMasteryAnswer, scheduleMathSnapshot, testItems.length, testResults])
+  }, [appendTestQuestion, appendTranscript, assessmentAnswer, assessmentIndex, assessmentMathMatches, assessmentMathResolution, busy, currentAssessment, currentAssessmentItems, finishLesson, persistLiftoffSnapshot, phase, recordCanonicalMasteryAnswer, scheduleMathSnapshot, testItems.length, testResults])
 
   if (phase === 'loading') {
     return <div style={{ minHeight: '100vh', background: C.bg, color: C.muted, display: 'grid', placeItems: 'center', fontFamily: C.font }}>PREPARING LIFTOFF...</div>
@@ -2139,161 +2159,13 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     </div>
   ) : null
 
-  return (
-    <div className={styles.sessionShell} style={{ background: C.bg, color: C.text, fontFamily: C.font, display: 'flex', flexDirection: 'column' }}>
-      <header style={{ minHeight: 58, padding: '10px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
-        <div>
-          <div style={{ fontWeight: 900, letterSpacing: 1 }}>MR. SLATE · LIFTOFF</div>
-          <div style={{ color: C.muted, fontSize: 12 }}>{lesson?.title || lessonKey}</div>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={{ color: C.muted, fontSize: 12 }}>{isAssessment ? phase.toUpperCase() : statusText}</span>
-          <div ref={musicControlRef} style={{ position: 'relative', display: 'inline-grid' }}>
-            {musicVolumeOpen && (
-              <div role="dialog" aria-label="Mr. Slate background music volume" onContextMenu={(event) => event.preventDefault()} style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 210, padding: '10px 12px', background: C.surface, color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, boxShadow: '0 10px 28px rgba(0,0,0,0.4)', zIndex: 50 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}><strong style={{ fontSize: 11, letterSpacing: 1 }}>MUSIC VOLUME</strong><span style={{ color: C.muted, fontSize: 11 }}>{Math.round(musicVolume * 100)}%</span></div>
-                <input type="range" min="0" max="1" step="0.01" value={musicVolume} onChange={changeMusicVolume} aria-label="Background music volume" style={{ width: '100%', cursor: 'pointer' }} />
-                <div style={{ marginTop: 6, color: C.muted, fontSize: 10 }}>RIGHT-CLICK OR HOLD FOR VOLUME</div>
-              </div>
-            )}
-            <button type="button" onClick={toggleMusic} onContextMenu={openMusicVolume} onPointerDown={beginMusicLongPress} onPointerUp={clearMusicLongPress} onPointerCancel={clearMusicLongPress} onPointerLeave={clearMusicLongPress} aria-pressed={musicMuted} aria-haspopup="dialog" aria-expanded={musicVolumeOpen} title={musicMuted ? 'Unmute music. Right-click or hold for volume.' : 'Mute music. Right-click or hold for volume.'} style={{ padding: '7px 10px', cursor: 'pointer' }}>
-              {musicMuted ? 'MUSIC OFF' : 'MUSIC ON'}
-            </button>
-          </div>
-          <button type="button" onClick={toggleSpeech} aria-pressed={!soundOn} style={{ padding: '7px 10px', cursor: 'pointer' }}>{soundOn ? 'SPEECH ON' : 'SPEECH OFF'}</button>
-          <button type="button" onClick={() => void handleExit()} disabled={busy || exiting || lineHelpBusy} aria-label="Exit Mr. Slate Liftoff" style={{ padding: '7px 10px', cursor: busy || exiting || lineHelpBusy ? 'not-allowed' : 'pointer', fontWeight: 800 }}>{exiting ? 'SAVING...' : 'EXIT'}</button>
-        </div>
-      </header>
-      {exitError && <div role="alert" style={{ padding: '8px 18px', color: C.red, fontSize: 12 }}>{exitError}</div>}
-
-      <main className={styles.sessionMain} style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16, padding: 16 }}>
-        <section className={styles.contentColumn} data-slate-scroll-mode={isAssessment ? 'test' : (lineHelpTarget ? 'help' : 'active')} style={{ minWidth: 0, flex: '1 1 520px', display: 'flex', flexDirection: 'column', gap: 14 }}>
-          <div className={styles.transcriptColumn} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
-            <div style={{ color: C.accent, fontSize: 11, fontWeight: 900, letterSpacing: 1.4, marginBottom: 8 }}>
-              TRANSCRIPT · {phase === 'active' ? liftoff?.currentAction?.type?.toUpperCase() || 'LIFTOFF' : phase.toUpperCase()}
-            </div>
-            <CaptionPanel
-              sentences={transcriptLines}
-              activeIndex={Math.max(0, transcriptLines.length - 1)}
-              boxRef={transcriptBoxRef}
-              phase={phase === 'active' ? 'teaching' : phase}
-              captionStartIndex={transcriptStartIndex}
-              studyEnabled={!busy && !lineHelpBusy && phase !== 'test'}
-              onStudyRequest={openLineHelp}
-              onReplayRequest={replayTranscriptLine}
-              replayEnabled={!busy && !lineHelpBusy}
-              teacherName="Mr. Slate"
-              stackedHeight={(structuredMathPresented && activeScratchDraft?.visible) || manualScratchUi.visible ? 'clamp(260px, 42vh, 460px)' : null}
-              tailContent={activeMathTranscriptContent}
-              theme={{
-                background: C.surface2,
-                text: C.text,
-                muted: C.muted,
-                userText: C.accent,
-                activeBackground: 'rgba(88,166,255,0.10)',
-                activeText: C.text,
-                controlBackground: C.surface,
-                controlDisabledBackground: C.border,
-                controlText: C.text,
-                handBorder: C.accent,
-                handBackground: C.surface,
-                handText: C.accent,
-                borderRadius: 8,
-                border: `1px solid ${C.border}`,
-                boxShadow: 'none',
-                fontFamily: C.font,
-              }}
-            />
-          </div>
-
-          {phase === 'active' && introTeaching && (
-            <div data-slate-intro-navigation style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
-              <button
-                type="button"
-                onClick={() => void nextIntroSentence()}
-                disabled={introSpeechPlaying || busy || exiting || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
-                style={{
-                  padding: '12px 24px', minHeight: 44, background: C.accent, color: C.bg,
-                  border: 0, borderRadius: 8, fontFamily: C.font, fontWeight: 800,
-                  cursor: introSpeechPlaying || lessonInteractionHeld ? 'not-allowed' : 'pointer',
-                  opacity: introSpeechPlaying || lessonInteractionHeld ? 0.6 : 1,
-                }}
-              >
-                {introTeaching.index < introTeaching.sentences.length - 1 ? 'NEXT SENTENCE' : 'START QUESTION'}
-              </button>
-            </div>
-          )}
-
-          {phase === 'active' && !introTeaching && (
-            <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
-              <WebbDictationButton
-                disabled={busy || lessonInteractionHeld}
-                onBeforeRecord={() => answerInputRef.current?.blur()}
-                onTranscript={(text) => setAnswer((current) => [current.trim(), text].filter(Boolean).join(' '))}
-              />
-              <textarea
-                ref={answerInputRef}
-                value={answer}
-                onChange={(event) => setAnswer(event.target.value)}
-                onKeyDown={(event) => {
-                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent?.isComposing) {
-                    event.preventDefault()
-                    void submitLiftoffAnswer()
-                  }
-                }}
-                placeholder="Show your thinking or answer Mr. Slate."
-                rows={2}
-                disabled={busy || lessonInteractionHeld}
-                style={{ flex: '1 1 280px', minWidth: 0, width: '100%', boxSizing: 'border-box', resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }}
-              />
-              <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!answer.trim() && !mathPending?.submission)} style={{ alignSelf: 'stretch', minWidth: 110, cursor: 'pointer', fontWeight: 900 }}>
-                {busy ? 'CHECKING...' : 'SUBMIT'}
-              </button>
-            </form>
-          )}
-
-          {isAssessment && currentAssessment && (
-            <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 18 }}>
+  const assessmentTranscriptContent = isAssessment && currentAssessment ? (
+    <div data-slate-test-transcript-tail style={{ marginTop: 12, paddingTop: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
                 <div style={{ color: C.muted, fontSize: 12 }}>TEST {assessmentIndex + 1}/{currentAssessmentItems.length}</div>
                 {phase === 'test' && <button type="button" onClick={() => void printIndependentTest()} disabled={testPrintBusy || busy} style={{ padding: '7px 10px', background: C.surface2, color: C.accent, border: '1px solid ' + C.border, borderRadius: 6, fontFamily: C.font, fontWeight: 800, cursor: testPrintBusy ? 'wait' : 'pointer' }}>{testPrintBusy ? 'PREPARING PDF...' : 'PRINT TEST'}</button>}
               </div>
               {testPrintError && <div role="alert" style={{ color: C.red, fontSize: 12, marginBottom: 8 }}>{testPrintError}</div>}
-              <div style={{ display: 'flex', alignItems: 'flex-start', gap: 8, marginBottom: 16 }}>
-                <div
-                  role="button"
-                  tabIndex={busy ? -1 : 0}
-                  aria-label={`Hear this question again: ${questionText(currentAssessment)}`}
-                  title="Click to hear this question again"
-                  onClick={!busy ? () => replayTranscriptLine({ text: questionText(currentAssessment) }) : undefined}
-                  onKeyDown={!busy ? (event) => {
-                    if (event.key === 'Enter' || event.key === ' ') {
-                      event.preventDefault()
-                      replayTranscriptLine({ text: questionText(currentAssessment) })
-                    }
-                  } : undefined}
-                  style={{ flex: 1, minWidth: 0, fontSize: 17, lineHeight: 1.55, cursor: busy ? 'default' : 'pointer' }}
-                >{questionText(currentAssessment)}</div>
-              </div>
-
-              <div data-slate-test-manual-scratch-panel style={{ marginBottom: 10 }}>
-                <button type="button" data-slate-test-manual-math-toggle aria-expanded={manualScratchUi.visible}
-                  onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
-                  style={{ background: C.surface2, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-                  {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
-                </button>
-                {manualScratchUi.visible && (
-                  <div data-slate-manual-scratch style={{ marginTop: 10 }}>
-                    <SlateManualScratch
-                      draft={manualScratchUi} activityId={manualScratchActivityId} phase="test"
-                      onChange={commitManualScratchUi}
-                      onUseResult={(result) => { const next = insertSlateMathResult(assessmentAnswer, result); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }}
-                      allowTransfer={questionType(currentAssessment) === 'shortanswer'}
-                      disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
-                    />
-                  </div>
-                )}
-              </div>
               {assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? (
                 <div style={{ display: 'grid', gap: 8 }}>
                   <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
@@ -2373,8 +2245,141 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 </form>
               )}
 
+              <div data-slate-test-manual-scratch-panel style={{ marginBottom: 10 }}>
+                <button type="button" data-slate-test-manual-math-toggle aria-expanded={manualScratchUi.visible}
+                  onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
+                  style={{ background: C.surface2, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
+                  {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
+                </button>
+                {manualScratchUi.visible && (
+                  <div data-slate-manual-scratch style={{ marginTop: 10 }}>
+                    <SlateManualScratch
+                      draft={manualScratchUi} activityId={manualScratchActivityId} phase="test"
+                      onChange={commitManualScratchUi}
+                      onUseResult={(result) => { const next = insertSlateMathResult(assessmentAnswer, result); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }}
+                      allowTransfer={questionType(currentAssessment) === 'shortanswer'}
+                      disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+                    />
+                  </div>
+                )}
+              </div>
+    </div>
+  ) : null
+
+  return (
+    <div className={styles.sessionShell} style={{ background: C.bg, color: C.text, fontFamily: C.font, display: 'flex', flexDirection: 'column' }}>
+      <header style={{ minHeight: 58, padding: '10px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
+        <div>
+          <div style={{ fontWeight: 900, letterSpacing: 1 }}>MR. SLATE · LIFTOFF</div>
+          <div style={{ color: C.muted, fontSize: 12 }}>{lesson?.title || lessonKey}</div>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ color: C.muted, fontSize: 12 }}>{isAssessment ? phase.toUpperCase() : statusText}</span>
+          <div ref={musicControlRef} style={{ position: 'relative', display: 'inline-grid' }}>
+            {musicVolumeOpen && (
+              <div role="dialog" aria-label="Mr. Slate background music volume" onContextMenu={(event) => event.preventDefault()} style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 210, padding: '10px 12px', background: C.surface, color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, boxShadow: '0 10px 28px rgba(0,0,0,0.4)', zIndex: 50 }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}><strong style={{ fontSize: 11, letterSpacing: 1 }}>MUSIC VOLUME</strong><span style={{ color: C.muted, fontSize: 11 }}>{Math.round(musicVolume * 100)}%</span></div>
+                <input type="range" min="0" max="1" step="0.01" value={musicVolume} onChange={changeMusicVolume} aria-label="Background music volume" style={{ width: '100%', cursor: 'pointer' }} />
+                <div style={{ marginTop: 6, color: C.muted, fontSize: 10 }}>RIGHT-CLICK OR HOLD FOR VOLUME</div>
+              </div>
+            )}
+            <button type="button" onClick={toggleMusic} onContextMenu={openMusicVolume} onPointerDown={beginMusicLongPress} onPointerUp={clearMusicLongPress} onPointerCancel={clearMusicLongPress} onPointerLeave={clearMusicLongPress} aria-pressed={musicMuted} aria-haspopup="dialog" aria-expanded={musicVolumeOpen} title={musicMuted ? 'Unmute music. Right-click or hold for volume.' : 'Mute music. Right-click or hold for volume.'} style={{ padding: '7px 10px', cursor: 'pointer' }}>
+              {musicMuted ? 'MUSIC OFF' : 'MUSIC ON'}
+            </button>
+          </div>
+          <button type="button" onClick={toggleSpeech} aria-pressed={!soundOn} style={{ padding: '7px 10px', cursor: 'pointer' }}>{soundOn ? 'SPEECH ON' : 'SPEECH OFF'}</button>
+          <button type="button" onClick={() => void handleExit()} disabled={busy || exiting || lineHelpBusy} aria-label="Exit Mr. Slate Liftoff" style={{ padding: '7px 10px', cursor: busy || exiting || lineHelpBusy ? 'not-allowed' : 'pointer', fontWeight: 800 }}>{exiting ? 'SAVING...' : 'EXIT'}</button>
+        </div>
+      </header>
+      {exitError && <div role="alert" style={{ padding: '8px 18px', color: C.red, fontSize: 12 }}>{exitError}</div>}
+
+      <main className={styles.sessionMain} style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16, padding: 16 }}>
+        <section className={styles.contentColumn} data-slate-scroll-mode={isAssessment ? 'test' : (lineHelpTarget ? 'help' : 'active')} style={{ minWidth: 0, flex: '1 1 520px', display: 'flex', flexDirection: 'column', gap: 14 }}>
+          <div className={styles.transcriptColumn} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
+            <div style={{ color: C.accent, fontSize: 11, fontWeight: 900, letterSpacing: 1.4, marginBottom: 8 }}>
+              TRANSCRIPT · {phase === 'active' ? liftoff?.currentAction?.type?.toUpperCase() || 'LIFTOFF' : phase.toUpperCase()}
+            </div>
+            <CaptionPanel
+              sentences={transcriptLines}
+              activeIndex={Math.max(0, transcriptLines.length - 1)}
+              boxRef={transcriptBoxRef}
+              phase={phase === 'active' ? 'teaching' : phase}
+              captionStartIndex={transcriptStartIndex}
+              studyEnabled={!busy && !lineHelpBusy && phase !== 'test'}
+              onStudyRequest={openLineHelp}
+              onReplayRequest={replayTranscriptLine}
+              replayEnabled={!busy && !lineHelpBusy}
+              teacherName="Mr. Slate"
+              stackedHeight={isAssessment ? 'min(72dvh, 720px)' : ((structuredMathPresented && activeScratchDraft?.visible) || manualScratchUi.visible ? 'clamp(260px, 42vh, 460px)' : null)}
+              tailContent={isAssessment ? assessmentTranscriptContent : activeMathTranscriptContent}
+              followTranscriptEnd={!isAssessment}
+              theme={{
+                background: C.surface2,
+                text: C.text,
+                muted: C.muted,
+                userText: C.accent,
+                activeBackground: 'rgba(88,166,255,0.10)',
+                activeText: C.text,
+                controlBackground: C.surface,
+                controlDisabledBackground: C.border,
+                controlText: C.text,
+                handBorder: C.accent,
+                handBackground: C.surface,
+                handText: C.accent,
+                borderRadius: 8,
+                border: `1px solid ${C.border}`,
+                boxShadow: 'none',
+                fontFamily: C.font,
+              }}
+            />
+          </div>
+
+          {phase === 'active' && introTeaching && (
+            <div data-slate-intro-navigation style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
+              <button
+                type="button"
+                onClick={() => void nextIntroSentence()}
+                disabled={introSpeechPlaying || busy || exiting || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+                style={{
+                  padding: '12px 24px', minHeight: 44, background: C.accent, color: C.bg,
+                  border: 0, borderRadius: 8, fontFamily: C.font, fontWeight: 800,
+                  cursor: introSpeechPlaying || lessonInteractionHeld ? 'not-allowed' : 'pointer',
+                  opacity: introSpeechPlaying || lessonInteractionHeld ? 0.6 : 1,
+                }}
+              >
+                {introTeaching.index < introTeaching.sentences.length - 1 ? 'NEXT SENTENCE' : 'START QUESTION'}
+              </button>
             </div>
           )}
+
+          {phase === 'active' && !introTeaching && (
+            <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
+              <WebbDictationButton
+                disabled={busy || lessonInteractionHeld}
+                onBeforeRecord={() => answerInputRef.current?.blur()}
+                onTranscript={(text) => setAnswer((current) => [current.trim(), text].filter(Boolean).join(' '))}
+              />
+              <textarea
+                ref={answerInputRef}
+                value={answer}
+                onChange={(event) => setAnswer(event.target.value)}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent?.isComposing) {
+                    event.preventDefault()
+                    void submitLiftoffAnswer()
+                  }
+                }}
+                placeholder="Show your thinking or answer Mr. Slate."
+                rows={2}
+                disabled={busy || lessonInteractionHeld}
+                style={{ flex: '1 1 280px', minWidth: 0, width: '100%', boxSizing: 'border-box', resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }}
+              />
+              <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!answer.trim() && !mathPending?.submission)} style={{ alignSelf: 'stretch', minWidth: 110, cursor: 'pointer', fontWeight: 900 }}>
+                {busy ? 'CHECKING...' : 'SUBMIT'}
+              </button>
+            </form>
+          )}
+
           {lineHelpTarget && phase !== 'test' && (
             <div style={{ background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14, fontFamily: C.font }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'flex-start', marginBottom: 10 }}>

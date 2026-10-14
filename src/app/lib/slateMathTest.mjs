@@ -15,7 +15,7 @@ function itemType(item = {}) {
   const declared = String(item.type || '').trim().toLowerCase().replace(/[\s_-]+/g, '')
   if (['multiplechoice', 'mcq', 'choice'].includes(declared)) return 'multiplechoice'
   if (['truefalse', 'tf', 'boolean'].includes(declared)) return 'truefalse'
-  if (declared && !['short', 'shortanswer', 'numeric', 'number'].includes(declared)) return 'other'
+  // Every other item is rendered as a written answer, including legacy fill-ins.
   return 'shortanswer'
 }
 
@@ -62,13 +62,16 @@ function candidateMatches(problem, candidate) {
 }
 
 function parseExpression(text) {
-  const body = text.match(/^(?:(?:what\s+is|calculate|compute|solve|evaluate)\s*:?[ \t]*)?(.+?)(?:\s*(?:\?|=\s*\?))?$/i)?.[1]?.trim()
-  if (!body || /[\/]/.test(body)) return null
+  const body = text.match(/^(?:(?:what\s+is|calculate|compute|solve|evaluate)\s*:?[ \t]*)?(.+?)(?:\s*(?:\?|=\s*\??))?$/i)?.[1]?.trim()
+  if (!body || /\d\/\d/.test(body)) return null
   const add = body.match(/^(\d+(?:\.\d+)?)(?:\s*\+\s*\d+(?:\.\d+)?){1,9}$/)
   if (add) return { operation: 'addition', operands: body.split(/\s*\+\s*/), commands: [] }
-  const binary = body.match(/^(\d+(?:\.\d+)?)\s*([-*x\u00d7\u00f7])\s*(\d+(?:\.\d+)?)$/i)
+  // A spaced slash is a division operator; an unspaced 1/2 stays a fraction.
+  const spacedDivision = body.match(/^(\d+(?:\.\d+)?)\s+\/\s+(\d+(?:\.\d+)?)$/)
+  if (spacedDivision) return { operation: 'division', operands: [spacedDivision[1], spacedDivision[2]], commands: [] }
+  const binary = body.match(/^(\d+(?:\.\d+)?)\s*([-*x\u00d7\u00f7\u2212])\s*(\d+(?:\.\d+)?)$/i)
   if (!binary) return null
-  const operation = binary[2] === '-' ? 'subtraction'
+  const operation = binary[2] === '-' || binary[2] === '\u2212' ? 'subtraction'
     : binary[2] === '\u00f7' ? 'division' : 'multiplication'
   return { operation, operands: [binary[1], binary[3]], commands: [] }
 }
@@ -102,10 +105,10 @@ export function resolveSlateTestMath(item = {}) {
   if (!raw) return { kind: 'text' }
   const resolved = normalizedResult(raw, 'expression')
   if (resolved.kind !== 'math') return { kind: 'text' }
-  const candidates = expectedCandidates(item)
-  if (!candidates.length) return { kind: 'text' }
-  const problem = buildMathActivityProblem(resolved.spec)
-  return candidates.some((candidate) => candidateMatches(problem, candidate)) ? resolved : { kind: 'text' }
+  // Recognition only controls the optional working layout, never the test answer key.
+  // A bare arithmetic problem should display its operands even when older test data
+  // lacks a numeric key or contains an inconsistent one. Grading stays unchanged.
+  return resolved
 }
 
 export function slateTestMathFingerprint(item, spec) {

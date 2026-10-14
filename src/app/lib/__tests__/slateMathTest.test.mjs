@@ -32,7 +32,7 @@ test('explicit test math is normalized and rejects incompatible or conflicting i
   assert.equal(resolveSlateTestMath(explicit({ math: { operation: 'unknown', operands: ['12', '3'] } })).kind, 'invalid')
 })
 
-test('legacy recognition is fully anchored and requires an exact existing key', () => {
+test('bare arithmetic recognition is anchored and independent of the test answer key', () => {
   const accepted = [
     [{ question: 'What is 12 + 3?', expected: '15' }, 'addition'],
     [{ question: 'Calculate: 10 - 7 = ?', answer: 3n }, 'subtraction'],
@@ -41,6 +41,15 @@ test('legacy recognition is fully anchored and requires an exact existing key', 
     [{ question: 'Solve: 9 ÷ 2 = ?', expected: '4 r 1' }, 'division'],
     [{ question: '20 ÷ 5', expected: '4' }, 'division'],
     [{ question: '1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10', expected: '55' }, 'addition'],
+    [{ question: '247 + 38 =', expected: '285' }, 'addition'],
+    [{ question: '14 - 8 = ?', type: 'fillintheblank', expected: '6' }, 'subtraction'],
+    [{ question: '6 × 9 =', expected: '54' }, 'multiplication'],
+    [{ question: '42 ÷ 6 =', expected: '7' }, 'division'],
+    [{ question: '83 − 17 =', expected: '66' }, 'subtraction'],
+    [{ question: '42 / 6 =', expected: '7' }, 'division'],
+    [{ question: '3 + 4', type: 'numeric' }, 'addition'],
+    [{ question: '12 + 3?', expected: '14' }, 'addition'],
+    [{ question: '9 ÷ 2', expected: '4' }, 'division'],
   ]
   for (const [item, operation] of accepted) {
     const result = resolveSlateTestMath(item)
@@ -50,16 +59,14 @@ test('legacy recognition is fully anchored and requires an exact existing key', 
   }
 
   const rejected = [
-    { question: 'What is 12 + 3?', expected: '14' },
-    { question: 'What is 12 + 3?' },
     { question: 'What is 1/2?', expected: '0.5' },
     { question: 'What is -2 + 3?', expected: '1' },
     { question: 'What is 2 + 3 apples?', expected: '5' },
     { question: 'Ava has 2 and gets 3. What is 2 + 3?', expected: '5' },
     { question: 'What is 2 + 3 - 1?', expected: '4' },
     { question: 'Round 2 + 3.', expected: '5' },
-    { question: '9 ÷ 2', expected: '4' },
     { question: '1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11', expected: '66' },
+    { question: '2 + 2', type: 'tf', correct: true },
   ]
   for (const item of rejected) assert.deepEqual(resolveSlateTestMath(item), { kind: 'text' }, item.question)
 

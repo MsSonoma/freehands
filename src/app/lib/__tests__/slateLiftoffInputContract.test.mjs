@@ -6,7 +6,7 @@ import test from 'node:test'
 const slate = fs.readFileSync(path.resolve('src/app/session/slate/SlateLiftoffExperience.jsx'), 'utf8')
 const verticalMathWorkspace = fs.readFileSync(path.resolve('src/components/math/VerticalMathWorkspace.jsx'), 'utf8')
 const webbDictation = fs.readFileSync(path.resolve('src/app/session/webb/WebbDictationButton.jsx'), 'utf8')
-const slateLiftoffForm = slate.slice(slate.indexOf("{phase === 'active' && !introTeaching && ("), slate.indexOf("{isAssessment && currentAssessment && ("))
+const slateLiftoffForm = slate.slice(slate.indexOf("{phase === 'active' && !introTeaching && ("), slate.indexOf("{lineHelpTarget && phase !== 'test' && ("))
 
 test('Liftoff keeps its textarea and shrinks it to two rows', () => {
   assert.match(slateLiftoffForm, /<textarea/)
@@ -45,7 +45,7 @@ test('Slate reuses Mrs. Webb microphone and inserts recognized words into the dr
 })
 
 test('Slate does not alter the independent test answer input', () => {
-  const testForm = slate.slice(slate.indexOf("questionType(currentAssessment) === 'multiplechoice'"), slate.indexOf("lineHelpTarget && phase !== 'test'"))
+  const testForm = slate.slice(slate.indexOf('const assessmentTranscriptContent = isAssessment && currentAssessment ? ('), slate.indexOf('  return (\n    <div className={styles.sessionShell}'))
   assert.match(testForm, /<input value=\{assessmentAnswer\}/)
   assert.match(testForm, /onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitAssessmentAnswer\(\) \}\}/)
   assert.doesNotMatch(testForm, /WebbDictationButton/)
@@ -97,7 +97,7 @@ test('supplied problem and learner-entered math workspaces remain independently 
   assert.match(slate, /data-slate-manual-math-toggle/)
   assert.match(slate, /data-slate-manual-scratch-panel/)
   assert.ok(slate.indexOf('data-slate-manual-math-toggle') > slate.indexOf('data-slate-active-math-transcript-tail'))
-  assert.ok(slate.indexOf('data-slate-manual-math-toggle') < slate.indexOf('tailContent={activeMathTranscriptContent}'))
+  assert.ok(slate.indexOf('data-slate-manual-math-toggle') < slate.indexOf('tailContent={isAssessment ? assessmentTranscriptContent : activeMathTranscriptContent}'))
   assert.match(slate, /data-slate-test-manual-math-toggle/)
   assert.match(slate, /const activeMathTranscriptContent = phase === 'active' \? \(/)
   assert.match(slate, /manualScratchUi\.visible && \(\s*<div data-slate-manual-scratch/)

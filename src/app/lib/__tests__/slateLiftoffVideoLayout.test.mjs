@@ -38,7 +38,7 @@ test('transcript grows to fill space above the original input form', () => {
   assert.match(layout, /\.transcriptColumn\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex:\s*1 1 auto;[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/)
   assert.match(layout, /\.transcriptColumn \[data-ms-caption-panel-container\]\s*\{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?height:\s*auto !important;[\s\S]*?max-height:\s*none !important;/)
   assert.match(layout, /\.contentColumn > \[data-slate-primary-answer-form\]\s*\{[\s\S]*?flex-shrink:\s*0;/)
-  assert.match(slate, /stackedHeight=\{\(structuredMathPresented && activeScratchDraft\?\.visible\) \|\| manualScratchUi\.visible \? 'clamp\(260px, 42vh, 460px\)' : null\}/)
+  assert.match(slate, /stackedHeight=\{isAssessment \? 'min\(72dvh, 720px\)' : \(\(structuredMathPresented && activeScratchDraft\?\.visible\) \|\| manualScratchUi\.visible \? 'clamp\(260px, 42vh, 460px\)' : null\)\}/)
 })
 
 test('right progress panel fills remaining height under the video and scrolls inside its own area', () => {
@@ -49,13 +49,14 @@ test('right progress panel fills remaining height under the video and scrolls in
 
 test('mobile remains a naturally scrollable stack; independent test and line help remain accessible', () => {
   assert.match(slate, /data-slate-scroll-mode=\{isAssessment \? 'test' : \(lineHelpTarget \? 'help' : 'active'\)\}/)
-  assert.match(layout, /\.contentColumn\[data-slate-scroll-mode='test'\],[\s\S]*?\.contentColumn\[data-slate-scroll-mode='help'\]\s*\{[\s\S]*?overflow-y:\s*auto;/)
-  assert.match(layout, /\.contentColumn\[data-slate-scroll-mode='test'\] \.transcriptColumn \[data-ms-caption-panel-container\],[\s\S]*?height:\s*clamp\(150px, 25vh, 260px\) !important;/)
+  assert.match(layout, /\.contentColumn\[data-slate-scroll-mode='test'\]\s*\{\s*overflow:\s*hidden;/)
+  assert.match(layout, /\.contentColumn\[data-slate-scroll-mode='test'\] \.transcriptColumn\s*\{\s*flex:\s*1 1 auto;[\s\S]*?overflow:\s*hidden;/)
+  assert.doesNotMatch(layout, /\.contentColumn\[data-slate-scroll-mode='test'\] \.transcriptColumn \[data-ms-caption-panel-container\][\s\S]*?height:\s*clamp\(150px, 25vh, 260px\) !important;/)
   assert.doesNotMatch(layout.split('@media')[0], /height:\s*100dvh|overflow:\s*hidden;/)
 })
 
 test('new sizing keeps math workspace inside captions, original answer bar, assessment and video reference', () => {
-  assert.match(slate, /tailContent=\{activeMathTranscriptContent\}/)
+  assert.match(slate, /tailContent=\{isAssessment \? assessmentTranscriptContent : activeMathTranscriptContent\}/)
   assert.match(slate, /data-slate-active-math-transcript-tail[\s\S]*<VerticalMathWorkspace/)
   assert.match(slate, /data-slate-primary-answer-form/)
   assert.match(slate, /placeholder="Show your thinking or answer Mr\. Slate\."/)

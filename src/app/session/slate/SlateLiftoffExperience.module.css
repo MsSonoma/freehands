@@ -89,20 +89,29 @@
     overflow-y: auto;
   }
 
-  /* Test questions and the optional line-help panel may be taller than one viewport.
-     Let those lesson states scroll without hiding their interaction controls. */
-  .contentColumn[data-slate-scroll-mode='test'],
+  /* The independent test now lives inside the transcript, so give that scroller
+     the full column instead of the short height once used for a separate test card. */
+  .contentColumn[data-slate-scroll-mode='test'] {
+    overflow: hidden;
+  }
+
+  .contentColumn[data-slate-scroll-mode='test'] .transcriptColumn {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  /* Line help remains a separate teaching-only panel and can scroll outside
+     the caption area without affecting the independent test. */
   .contentColumn[data-slate-scroll-mode='help'] {
     overflow-y: auto;
   }
 
-  .contentColumn[data-slate-scroll-mode='test'] .transcriptColumn,
   .contentColumn[data-slate-scroll-mode='help'] .transcriptColumn {
     flex: 0 0 auto;
     min-height: 0;
   }
 
-  .contentColumn[data-slate-scroll-mode='test'] .transcriptColumn [data-ms-caption-panel-container],
   .contentColumn[data-slate-scroll-mode='help'] .transcriptColumn [data-ms-caption-panel-container] {
     flex: 0 0 auto;
     height: clamp(150px, 25vh, 260px) !important;
