@@ -4,8 +4,8 @@ import { useMemo } from 'react'
 import VerticalMathWorkspace from '@/components/math/VerticalMathWorkspace'
 import { updateMathSessionView } from '@/lib/math/mathSession.mjs'
 import { sanitizeVerticalMathWorkingNotes } from '@/lib/math/verticalMathNotes.mjs'
-import { buildSlateManualScratch } from '@/app/lib/slateManualScratch.mjs'
-import { slateScratchChoices, SLATE_SCRATCH_OPERATIONS } from '@/app/lib/slateMathScratch.mjs'
+import { buildSlateManualScratch, slateManualOperationChoices } from '@/app/lib/slateManualScratch.mjs'
+import { SLATE_SCRATCH_OPERATIONS } from '@/app/lib/slateMathScratch.mjs'
 import { slateMathWorkspaceResult } from '@/app/lib/slateMathDraft.mjs'
 
 const SIGNS = { addition: '+', subtraction: '\u2212', multiplication: '\u00d7', division: '\u00f7' }
@@ -14,7 +14,10 @@ export default function SlateManualScratch({
   draft, activityId, phase, onChange, onUseResult, disabled = false, allowTransfer = true,
 }) {
   const model = useMemo(() => buildSlateManualScratch(draft, activityId, phase), [draft, activityId, phase])
-  const options = useMemo(() => slateScratchChoices({ operands: draft.operands }), [draft.operands])
+  const options = useMemo(() => slateManualOperationChoices(draft.operands), [draft.operands])
+  const negativeSubtraction = draft.operation === 'subtraction' &&
+    draft.operands.every((number) => /^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(number)) &&
+    Number(draft.operands[0].replaceAll(',', '')) < Number(draft.operands[1].replaceAll(',', ''))
   const result = model ? slateMathWorkspaceResult(model.problem, model.session.view) : null
 
   function setOperand(index, value) {
@@ -51,6 +54,9 @@ export default function SlateManualScratch({
         value={draft.operands[1]} onChange={(event) => setOperand(1, event.target.value)}
         style={{ flex: '1 1 110px', minWidth: 0, maxWidth: 170, padding: 8 }} />
     </div>
+    {negativeSubtraction && <div role="status" style={{ marginBottom: 10 }}>
+      This vertical subtraction grid does not support negative answers.
+    </div>}
     {model && <VerticalMathWorkspace
       problem={model.problem} view={model.session.view} onViewChange={setView}
       notes={draft.notes} onNotesChange={(notes) =>

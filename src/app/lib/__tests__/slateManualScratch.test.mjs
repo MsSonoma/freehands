@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { buildSlateManualScratch, initialSlateManualScratch, restoreSlateManualScratch } from '../slateManualScratch.mjs'
+import { buildSlateManualScratch, initialSlateManualScratch, restoreSlateManualScratch, slateManualOperationChoices } from '../slateManualScratch.mjs'
 import { enterVerticalMathCell } from '../../../lib/math/verticalMath.mjs'
 import { updateMathSessionView } from '../../../lib/math/mathSession.mjs'
 
@@ -34,4 +34,24 @@ test('manual scratch rejects incompatible and unsupported operand drafts safely'
   assert.equal(buildSlateManualScratch(invalid, 'manual', 'teaching'), null)
   assert.equal(restoreSlateManualScratch({ operands: ['abcdef', '7'] }, 'manual', 'teaching').operands[0], '')
   assert.equal(restoreSlateManualScratch({ operands: ['2', '3'], operation: 'addition', visible: true }, 'manual', 'teaching').visible, true)
+})
+
+test('manual subtraction stays in the operation menu when operands would produce a negative result', () => {
+  const negativeOperands = ['2', '8']
+  const choices = slateManualOperationChoices(negativeOperands)
+  assert.ok(choices.includes('subtraction'))
+  assert.ok(choices.includes('addition'))
+  assert.equal(buildSlateManualScratch({
+    ...initialSlateManualScratch(), operands: negativeOperands, operation: 'subtraction',
+  }, 'manual', 'teaching'), null)
+
+  const positiveOperands = ['9', '8']
+  assert.ok(slateManualOperationChoices(positiveOperands).includes('subtraction'))
+  const subtraction = buildSlateManualScratch({
+    ...initialSlateManualScratch(), operands: positiveOperands, operation: 'subtraction',
+  }, 'manual', 'teaching')
+  assert.equal(subtraction?.problem?.operation, 'subtraction')
+  assert.deepEqual(subtraction?.problem?.operands, positiveOperands)
+  assert.ok(slateManualOperationChoices(['1.25', '0.35']).includes('subtraction'))
+  assert.ok(!slateManualOperationChoices(['1.25', '0.35']).includes('division'))
 })

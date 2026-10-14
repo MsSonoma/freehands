@@ -2,6 +2,12 @@ import { buildMathActivityProblem, createMathSession, normalizeMathActivity, res
 import { sanitizeVerticalMathWorkingNotes } from '../../lib/math/verticalMathNotes.mjs'
 import { slateScratchChoices, SLATE_SCRATCH_OPERATIONS } from './slateMathScratch.mjs'
 
+export function slateManualOperationChoices(operands) {
+  const supported = slateScratchChoices({ operands })
+  return SLATE_SCRATCH_OPERATIONS.filter((operation) =>
+    operation === 'subtraction' || supported.includes(operation))
+}
+
 export function initialSlateManualScratch() {
   return { visible: false, operands: ['', ''], operation: 'addition', session: null, notes: {} }
 }
