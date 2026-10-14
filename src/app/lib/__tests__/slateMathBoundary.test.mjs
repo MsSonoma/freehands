@@ -5,6 +5,7 @@ import test from 'node:test'
 import vm from 'node:vm'
 
 import * as slateLiftoff from '../slateLiftoff.mjs'
+import * as alignment from '../slateTestAlignment.mjs'
 import * as slateMath from '../slateMath.mjs'
 import * as mathSession from '../../../lib/math/mathSession.mjs'
 import * as verticalMathValidation from '../../../lib/math/verticalMathValidation.mjs'
@@ -88,6 +89,7 @@ function loadRoute(queue = []) {
     }],
     ['@/app/lib/slateLiftoff.mjs', slateLiftoff],
     ['@/app/lib/slateMath.mjs', slateMath],
+    ['@/app/lib/slateTestAlignment.mjs', alignment],
     ['@/lib/math/mathSession.mjs', mathSession],
     ['@/lib/math/verticalMathValidation.mjs', verticalMathValidation],
   ])
@@ -269,6 +271,37 @@ test('mismatched math request and revision fields fail before any model call', a
       assert.equal(calls.length, 0)
     })
   }
+})
+
+test('test preparation requires a fully released Liftoff state before contacting the model', async () => {
+  const { route, calls } = loadRoute([])
+  const response = await post(route, {
+    mode: 'prepare_test', lesson,
+    state: { components: [{ id: 'add', essential: true, evidenceState: 'emerging' }],
+      integrationConfirmed: false, variationConfirmed: false, procedureReleased: false },
+  })
+  assert.equal(response.status, 409)
+  assert.equal(calls.length, 0)
+})
+
+test('test preparation generates objective-linked independent items after release', async () => {
+  const state = {
+    components: [{ id: 'add', name: 'Add', description: 'Add numbers.', essential: true,
+      evidenceState: 'independent' }],
+    procedureReleased: true, integrationConfirmed: true, variationConfirmed: true,
+    problemHistory: [{ prompt: 'Add 3 and 4.' }],
+  }
+  const valid = Array.from({ length: 6 }, (_, index) => ({
+    objectiveId: 'add', question: `What is ${index + 31} plus 20?`,
+    expectedAny: [String(index + 51)],
+  }))
+  const { route, calls } = loadRoute([{ items: valid }])
+  const response = await post(route, { mode: 'prepare_test', lesson, state })
+  assert.equal(response.status, 200)
+  assert.equal(response.body.ok, true)
+  assert.equal(response.body.testItems.length, 6)
+  assert.ok(response.body.testItems.every(item => item.objectiveId === 'add' && item.id.startsWith('slate-independent-')))
+  assert.equal(calls.length, 1)
 })
 
 test('test-mode line help is rejected before any model call', async () => {

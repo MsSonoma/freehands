@@ -104,13 +104,14 @@ test('mastery evidence client keeps the old source by default but permits Liftof
 })
 
 test('only an isolated explicit reserved test enters canonical Liftoff mastery evidence', () => {
-  assert.match(experience, /reservedTestItems\(loadedLesson\)/)
+  assert.match(experience, /reservedTestItems\(evidenceLesson\)/)
+  assert.match(experience, /validateSlateTestAlignment/)
   assert.match(experience, /analyzeAssessmentIsolation/)
   assert.match(experience, /ASSESSMENT_ISOLATION_STATUSES\.ISOLATED/)
   assert.match(experience, /qualifyMasteryOpportunity/)
   assert.match(experience, /assessmentRole: ASSESSMENT_ROLES\.ASSESSMENT_RESERVED/)
   assert.match(experience, /recordMasteryCheckResult/)
-  assert.match(experience, /if \(restartTransferredTest\) canonicalReservedTestRef\.current = \[\]/)
+  assert.match(experience, /if \(needsReplacement \|\| restartTransferredTest\) canonicalReservedTestRef\.current = \[\]/)
 })
 
 test('Liftoff preserves Mr. Slate Focus Flow controls and separates music from speech mute', () => {

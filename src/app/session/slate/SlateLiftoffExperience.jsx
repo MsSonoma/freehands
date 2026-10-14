@@ -13,6 +13,7 @@ import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { recordSlateLiftoffEvidence } from '@/app/lib/slateLiftoffClient.js'
 import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
+import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import { separateLiftoffTranscriptQuestion } from '@/app/lib/slateLiftoffTranscript.mjs'
 import { advanceSlateIntroTeaching, createSlateIntroTeaching, restoreSlateIntroTeaching } from '@/app/lib/slateIntroTeaching.mjs'
 import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
@@ -154,7 +155,15 @@ async function judgeAssessmentItem(item, answer) {
   if (type === 'multiplechoice') {
     const raw = String(answer || '').trim()
     const correct = item.correct
-    if (typeof correct === 'number') return Number(raw) === Number(correct)
+    if (typeof correct === 'number') {
+      const index = Math.trunc(correct)
+      const letterIndex = /^[A-Z]$/i.test(raw) ? raw.toUpperCase().charCodeAt(0) - 65 : null
+      const choice = item.choices?.[index]
+      const choiceText = typeof choice === 'object' && choice !== null
+        ? String(choice.text || choice.label || '') : String(choice ?? '')
+      return letterIndex === index || (raw !== '' && /^[0-9]+$/.test(raw) && Number(raw) === index) ||
+        (Boolean(choiceText) && normalizeAnswer(raw) === normalizeAnswer(choiceText))
+    }
     const choice = item.choices?.find((entry) => String(entry?.letter || '').toUpperCase() === String(correct || '').toUpperCase())
     return raw.toUpperCase() === String(correct || '').toUpperCase()
       || normalizeAnswer(raw) === normalizeAnswer(choice?.text)
@@ -162,11 +171,13 @@ async function judgeAssessmentItem(item, answer) {
 
   const learnerAnswer = String(answer || '').trim()
   if (!learnerAnswer) return false
+  const reasoningRequired = /\b(explain|justify|defend|prove|why|reasonableness|compare)\b/i.test(questionText(item))
+  if (reasoningRequired && /^[-+]?[0-9, .%]+$/.test(learnerAnswer)) return false
   const expectedAny = Array.isArray(item.expectedAny) ? item.expectedAny : []
   const expectedAnswer = String(expectedAny[0] || item.expected || item.answer || '').trim()
   const expectedCandidates = [expectedAnswer, ...expectedAny, item.expected, item.answer].filter(Boolean)
-  if (slateMathAnswersEquivalent(learnerAnswer, expectedCandidates, { question: questionText(item) })) return true
-  const keywords = Array.isArray(item.keywords) ? item.keywords : (Array.isArray(item.keyTerms) ? item.keyTerms : [])
+  if (!reasoningRequired && slateMathAnswersEquivalent(learnerAnswer, expectedCandidates, { question: questionText(item) })) return true
+  const keywords = reasoningRequired ? [] : (Array.isArray(item.keywords) ? item.keywords : (Array.isArray(item.keyTerms) ? item.keyTerms : []))
   try {
     const response = await fetch('/api/judge-short-answer', {
       method: 'POST',
@@ -178,12 +189,15 @@ async function judgeAssessmentItem(item, answer) {
         expectedAny,
         keywords,
         minKeywords: Number.isInteger(item.minKeywords) ? item.minKeywords : (keywords.length ? 1 : 0),
+        requiresReasoning: reasoningRequired,
       }),
     })
     const body = await response.json().catch(() => null)
     if (response.ok && typeof body?.correct === 'boolean') return body.correct
   } catch {}
 
+  // A numerical match or substring match is not evidence of a defended strategy.
+  if (reasoningRequired) return false
   const normalized = normalizeAnswer(learnerAnswer)
   return [expectedAnswer, ...expectedAny].filter(Boolean).some((candidate) => {
     const expected = normalizeAnswer(candidate)
@@ -316,6 +330,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const masteryEligibilityRef = useRef(null)
   const assessmentIsolationRef = useRef(null)
   const canonicalReservedTestRef = useRef([])
+  const testItemsRef = useRef([])
+  const rebuildLegacyTestRef = useRef(false)
   const initializedRef = useRef(false)
   const mathSessionRef = useRef(null)
   const mathWorkingNotesRef = useRef(null)
@@ -524,7 +540,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     const resumedPhase = feature.phase === 'test' || oldWorksheetSnapshot ? 'test' : 'active'
     const transferredExecution = String(feature.executionSessionId || '') !== String(activeSession?.id || '')
     const restartTransferredTest = transferredExecution && feature.phase === 'test'
-    const sets = buildAssessmentSets(loadedLesson)
+    const savedTestItems = Array.isArray(feature.testItems) ? feature.testItems : []
+    const needsReplacement = resumedPhase === 'test' && !validateSlateTestAlignment({ lesson: loadedLesson, liftoff: feature.liftoff, testItems: savedTestItems }).ok
+    const restoredTestItems = needsReplacement ? [] : savedTestItems
+    rebuildLegacyTestRef.current = needsReplacement
+    testItemsRef.current = restoredTestItems
     setLesson(loadedLesson)
     setLiftoff(feature.liftoff)
     activeScratchUiRef.current = feature.activeScratchUi || null
@@ -533,17 +553,19 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setAssessmentScratchUi(assessmentScratchUiRef.current)
     manualScratchUiRef.current = restoreSlateManualScratch(feature.manualScratchUi, manualScratchActivityId, resumedPhase === 'test' ? 'test' : 'teaching')
     setManualScratchUi(manualScratchUiRef.current)
-    setSlateText(restartTransferredTest
-      ? 'This lesson moved devices during the independent test, so the test is restarting. Because those test items were already seen, this restarted test will not create a new mastery claim.'
-      : (oldWorksheetSnapshot ? 'Liftoff is complete. Now take the independent test. No help or answer feedback until the test is finished.' : String(feature.slateText || '')))
-    setTestItems(sets.test)
-    setAssessmentIndex(restartTransferredTest || oldWorksheetSnapshot ? 0 : Math.max(0, Number(feature.assessmentIndex) || 0))
-    const assessmentDraft = restoreSlateMathTestDraft(feature, { restart: restartTransferredTest || oldWorksheetSnapshot })
+    setSlateText(needsReplacement
+      ? 'The previous test did not verify the objectives taught in Liftoff. Those attempts remain in the transcript but will not count. Preparing an aligned independent test.'
+      : (restartTransferredTest
+        ? 'This lesson moved devices during the independent test, so the test is restarting. Because those test items were already seen, this restarted test will not create a new mastery claim.'
+        : (oldWorksheetSnapshot ? 'Liftoff is complete. Now take the independent test. No help or answer feedback until the test is finished.' : String(feature.slateText || ''))))
+    setTestItems(restoredTestItems)
+    setAssessmentIndex(needsReplacement || restartTransferredTest || oldWorksheetSnapshot ? 0 : Math.max(0, Number(feature.assessmentIndex) || 0))
+    const assessmentDraft = restoreSlateMathTestDraft(feature, { restart: needsReplacement || restartTransferredTest || oldWorksheetSnapshot })
     const restoredAssessmentText = assessmentDraft.text
     setAssessmentAnswer(restoredAssessmentText)
     assessmentMathTextRef.current = restoredAssessmentText
-    setTestResults(restartTransferredTest || oldWorksheetSnapshot ? [] : (Array.isArray(feature.testResults) ? feature.testResults : []))
-    if (restartTransferredTest) canonicalReservedTestRef.current = []
+    setTestResults(needsReplacement || restartTransferredTest || oldWorksheetSnapshot ? [] : (Array.isArray(feature.testResults) ? feature.testResults : []))
+    if (needsReplacement || restartTransferredTest) canonicalReservedTestRef.current = []
     setFinalPercentage(Number.isFinite(Number(feature.finalPercentage)) ? Number(feature.finalPercentage) : null)
     const restoredMathArchive = Array.isArray(feature.mathArchive) ? feature.mathArchive : []
     mathArchiveRef.current = restoredMathArchive
@@ -606,12 +628,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       ? [...restoredLines, { role: 'assistant', text: activeQuestion, kind: 'liftoff_question' }]
       : restoredLines
     setTranscriptLines(transcriptRef.current)
-    if (resumedPhase === 'test' && !restoredAssessmentPending?.transcriptRecorded) {
+    if (resumedPhase === 'test' && !needsReplacement && !restoredAssessmentPending?.transcriptRecorded) {
       const restoredIndex = restartTransferredTest || oldWorksheetSnapshot ? 0 : Math.max(0, Number(feature.assessmentIndex) || 0)
-      appendTestQuestion(sets.test[restoredIndex], restoredIndex)
+      appendTestQuestion(restoredTestItems[restoredIndex], restoredIndex)
     }
     startedAtRef.current = feature.startedAt || new Date().toISOString()
-    setPhase(resumedPhase)
+    setPhase(needsReplacement ? 'preparing_test' : resumedPhase)
     return true
   }, [appendTestQuestion, occurrenceId])
 
@@ -638,6 +660,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       assessmentIndex: assessmentIndexValue,
       worksheetFeedback: null,
       testResults: testResultsValue,
+      testItems: Object.prototype.hasOwnProperty.call(overrides, 'testItems') ? overrides.testItems : testItemsRef.current,
       finalPercentage: finalPercentageValue,
       startedAt: startedAtRef.current || new Date().toISOString(),
       mathSession: mathSessionRef.current,
@@ -825,9 +848,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
   }, [appendTranscript, lesson, lineHelpBusy, lineHelpInput, lineHelpTarget, persistLiftoffSnapshot, phase, speak])
 
-  const initializeCanonicalMasteryEvidence = useCallback(async ({ loadedLesson, activeSession, browserSessionId }) => {
-    const sets = buildAssessmentSets(loadedLesson)
-    const explicitReserved = reservedTestItems(loadedLesson)
+  const initializeCanonicalMasteryEvidence = useCallback(async ({ loadedLesson, activeSession, browserSessionId, providedTestItems = null }) => {
+    const evidenceLesson = Array.isArray(providedTestItems) && providedTestItems.length
+      ? { ...loadedLesson, test: providedTestItems }
+      : loadedLesson
+    const sets = buildAssessmentSets(evidenceLesson)
+    const explicitReserved = reservedTestItems(evidenceLesson)
     const canonicalItems = explicitReserved.length ? sets.test : []
     canonicalReservedTestRef.current = canonicalItems
     masteryEligibilityRef.current = null
@@ -840,7 +866,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       const isolation = await analyzeAssessmentIsolation({
         lessonKey,
         lessonId: loadedLesson?.id || lessonKey,
-        lessonData: loadedLesson,
+        lessonData: evidenceLesson,
         phaseSets,
       })
       assessmentIsolationRef.current = isolation
@@ -853,6 +879,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         learnerId,
         lessonKey,
         lessonId: loadedLesson?.id || lessonKey,
+        // The version identity remains the actual stored lesson, not a temporary test pool.
         lessonData: loadedLesson,
         assessmentIsolation: isolation,
         mastery: { protocolVersion: INDEPENDENT_MASTERY_PROTOCOL_VERSION },
@@ -867,7 +894,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         identities.push(await buildItemIdentity({
           lessonKey,
           lessonId: loadedLesson?.id || lessonKey,
-          lessonData: loadedLesson,
+          lessonData: evidenceLesson,
           item,
         }))
       }
@@ -900,7 +927,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       const context = await buildMasteryEligibilityContext({
         lessonKey,
         lessonId: loadedLesson?.id || lessonKey,
-        lessonData: loadedLesson,
+        lessonData: evidenceLesson,
         phaseSets,
         priorExposedKeys: prior.exposedKeys || [],
       })
@@ -925,7 +952,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
     const eligibility = masteryEligibilityRef.current
     const itemIdentity = eligibility?.itemIdentities?.[index] || null
-    const itemExposureId = `slate-liftoff-test:${sessionRef.current?.id || 'session'}:${index + 1}`
+    const itemExposureId = `slate-liftoff-test:${sessionRef.current?.id || 'session'}:${index + 1}:${String(canonicalItem.id || questionText(canonicalItem)).slice(0, 80)}`
     const itemContext = {
       phase: 'test',
       itemId: String(canonicalItem?.id || `slate-liftoff-test-${index + 1}`),
@@ -1061,7 +1088,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         }
 
         startedAtRef.current = resumeSnapshot?.featureState?.startedAt || new Date().toISOString()
-        await initializeCanonicalMasteryEvidence({ loadedLesson, activeSession: started, browserSessionId })
+        const savedAssessment = Array.isArray(resumeSnapshot?.featureState?.testItems) ? resumeSnapshot.featureState.testItems : []
+        if (savedAssessment.length && validateSlateTestAlignment({ lesson: loadedLesson, liftoff: resumeSnapshot.featureState.liftoff, testItems: savedAssessment }).ok) {
+          await initializeCanonicalMasteryEvidence({ loadedLesson, activeSession: started, browserSessionId, providedTestItems: savedAssessment })
+        }
 
         if (cancelled) return
         if (restoreLiftoffSnapshot(resumeSnapshot, started, loadedLesson)) return
@@ -1540,8 +1570,37 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
   }, [lesson?.title, lessonKey, phase, testItems, testPrintBusy])
   const beginIndependentAssessment = useCallback(async (loadedLesson, liftoffState) => {
+    setPhase('preparing_test')
     const sets = buildAssessmentSets(loadedLesson)
-    setTestItems(sets.test)
+    let alignedTestItems = sets.test
+    try {
+      if (!validateSlateTestAlignment({ lesson: loadedLesson, liftoff: liftoffState, testItems: alignedTestItems }).ok) {
+        const response = await fetch('/api/slate-liftoff', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ mode: 'prepare_test', lesson: loadedLesson, state: liftoffState }),
+        })
+        const body = await response.json().catch(() => ({}))
+        if (!response.ok || !body?.ok || !Array.isArray(body?.testItems)) {
+          throw new Error(body?.error || 'Could not prepare a test that assesses the taught objectives.')
+        }
+        alignedTestItems = body.testItems
+      }
+      const alignment = validateSlateTestAlignment({ lesson: loadedLesson, liftoff: liftoffState, testItems: alignedTestItems })
+      if (!alignment.ok) throw new Error('The reserved test does not adequately assess every essential Liftoff objective. No test score was recorded.')
+      if (!sessionRef.current?.id || snapshotServiceRef.current?.writesFenced) return
+      await initializeCanonicalMasteryEvidence({
+        loadedLesson, activeSession: sessionRef.current,
+        browserSessionId: browserSessionIdRef.current, providedTestItems: alignedTestItems,
+      })
+      if (snapshotServiceRef.current?.writesFenced) return
+    } catch (cause) {
+      setError(cause?.message || 'The independent test could not be aligned with Liftoff.')
+      setPhase('error')
+      return
+    }
+    testItemsRef.current = alignedTestItems
+    setTestItems(alignedTestItems)
     setAssessmentIndex(0)
     setAssessmentAnswer('')
     assessmentMathTextRef.current = ''
@@ -1557,7 +1616,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setAssessmentMathPending(null)
     setAssessmentMathError('')
     setTestResults([])
-    if (!sets.test.length) {
+    if (!alignedTestItems.length) {
       setError('Liftoff released the procedure, but this lesson has no independent test items. The lesson was not marked complete.')
       setPhase('error')
       return
@@ -1565,15 +1624,24 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     const text = 'Liftoff is complete. Now take the independent test. No help or answer feedback until the test is finished.'
     setSlateText(text)
     appendTranscript('assistant', text, { kind: 'test_start' })
-    void persistLiftoffSnapshot({ phase: 'test', liftoff: liftoffState, slateText: text, assessmentIndex: 0, worksheetFeedback: null, testResults: [], finalPercentage: null })
+    void persistLiftoffSnapshot({ phase: 'test', liftoff: liftoffState, slateText: text, testItems: alignedTestItems, assessmentIndex: 0, worksheetFeedback: null, testResults: [], finalPercentage: null })
     // The independent-test question appears in the transcript once the introduction ends.
     await speak(text)
     if (componentActiveRef.current && !snapshotServiceRef.current?.writesFenced) {
-      appendTestQuestion(sets.test[0], 0)
+      appendTestQuestion(alignedTestItems[0], 0)
       setPhase('test')
-      void persistLiftoffSnapshot({ phase: 'test', liftoff: liftoffState, slateText: text, assessmentIndex: 0, worksheetFeedback: null, testResults: [], finalPercentage: null })
+      void persistLiftoffSnapshot({ phase: 'test', liftoff: liftoffState, slateText: text, testItems: alignedTestItems, assessmentIndex: 0, worksheetFeedback: null, testResults: [], finalPercentage: null })
     }
-  }, [appendTestQuestion, appendTranscript, persistLiftoffSnapshot, speak])
+  }, [appendTestQuestion, appendTranscript, initializeCanonicalMasteryEvidence, persistLiftoffSnapshot, speak])
+
+  useEffect(() => {
+    if (phase !== 'preparing_test' || !rebuildLegacyTestRef.current || !lesson || !liftoff) return
+    rebuildLegacyTestRef.current = false
+    appendTranscript('assistant',
+      'The earlier test questions did not establish the objectives taught in Liftoff. Those answers remain visible in the transcript but will not be used as this test score. An aligned independent test is being prepared.',
+      { kind: 'test_replaced' })
+    void beginIndependentAssessment(lesson, liftoff)
+  }, [appendTranscript, beginIndependentAssessment, lesson, liftoff, phase])
 
   const submitLiftoffAnswer = useCallback(async () => {
     const learnerResponse = answer.trim()
@@ -1821,6 +1889,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
   const finishLesson = useCallback(async (results, { stillOwns = finishOwnershipRef.current || (() => true) } = {}) => {
     if (!stillOwns()) return
+    const alignment = validateSlateTestAlignment({ lesson, liftoff, testItems: testItemsRef.current })
+    if (!alignment.ok || results.length !== testItemsRef.current.length) {
+      throw new Error('The independent test did not verify every essential Liftoff objective. No completion or mastery score was recorded.')
+    }
     const total = results.length
     const correct = results.filter((result) => result.correct).length
     const percentage = total ? Math.round((correct / total) * 100) : null
@@ -2038,8 +2110,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
   }, [appendTestQuestion, appendTranscript, assessmentAnswer, assessmentIndex, assessmentMathMatches, assessmentMathResolution, busy, currentAssessment, currentAssessmentItems, finishLesson, persistLiftoffSnapshot, phase, recordCanonicalMasteryAnswer, scheduleMathSnapshot, testItems.length, testResults])
 
-  if (phase === 'loading') {
-    return <div style={{ minHeight: '100vh', background: C.bg, color: C.muted, display: 'grid', placeItems: 'center', fontFamily: C.font }}>PREPARING LIFTOFF...</div>
+  if (phase === 'loading' || phase === 'preparing_test') {
+    return <div style={{ minHeight: '100vh', background: C.bg, color: C.muted, display: 'grid', placeItems: 'center', fontFamily: C.font }}>{phase === 'preparing_test' ? 'PREPARING OBJECTIVE-ALIGNED TEST...' : 'PREPARING LIFTOFF...'}</div>
   }
 
   if (phase === 'error') {

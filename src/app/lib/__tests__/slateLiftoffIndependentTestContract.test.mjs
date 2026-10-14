@@ -62,6 +62,19 @@ test('Slate transitions straight from mastery-qualified Liftoff into independent
   assert.doesNotMatch(phases, /Worksheet/)
 })
 
+
+test('misaligned reserved questions are replaced before testing and the accepted pool survives resume', () => {
+  const slateRoute = fs.readFileSync(path.resolve('src/app/api/slate-liftoff/route.js'), 'utf8')
+  assert.match(slate, /mode: 'prepare_test'/)
+  assert.match(slate, /validateSlateTestAlignment\(\{ lesson: loadedLesson, liftoff: liftoffState, testItems: alignedTestItems \}\)/)
+  assert.match(slate, /testItems: alignedTestItems, assessmentIndex: 0/)
+  assert.match(slate, /testItemsRef\.current = restoredTestItems/)
+  assert.match(slate, /const needsReplacement = resumedPhase === 'test'/)
+  assert.match(slate, /results\.length !== testItemsRef\.current\.length/)
+  assert.match(slateRoute, /requestedMode === 'prepare_test'/)
+  assert.match(slateRoute, /const alignment = validateSlateTestAlignment/)
+})
+
 test('old worksheet snapshots resume at the independent test instead of returning to worksheet', () => {
   assert.match(slate, /const oldWorksheetSnapshot = feature\.phase === 'worksheet'/)
   assert.match(slate, /feature\.phase === 'test' \|\| oldWorksheetSnapshot \? 'test' : 'active'/)

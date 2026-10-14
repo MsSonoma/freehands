@@ -3,6 +3,7 @@ import { isMissingStorageObject } from '../../../../lib/syllabus/storageObjectEr
 import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitlements.js'
 import { AI_MODEL, aiModelTemperature } from '../../../../lib/aiModel.js'
 import { canonicalizeAiGeneratedLessonChoices } from '../../../../lib/aiGeneratedChoiceOrder.mjs'
+import { validateSlateTestAlignment } from '../../../../lib/slateTestAlignment.mjs'
 import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '../../../../lib/facilitatorPreparation.mjs'
 import { requireAssociationLearner, upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
 import {
@@ -130,6 +131,7 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "blurb": "string",
   "vocab": [{"term": "string", "definition": "string"}],
   "teachingNotes": "string",
+  "learningObjectives": [{"id": "objective-1", "name": "specific demonstrated skill", "description": "observable action the learner must perform", "evidenceType": "reasoned_explanation|calculation|application|recognition"}],
   "baseline": [{"id": "baseline-1", "question": "short, low-pressure pre-instruction question", "expectedAny": ["answer"]}],
   "retention": [{"id": "retention-1", "question": "legacy delayed retention question", "choices": ["A", "B", "C", "D"], "correct": 2, "expectedAny": ["correct answer text"]}],
   "dailyFollowup": [{"id": "daily-followup-1", "question": "daily follow-up question", "choices": ["A", "B", "C", "D"], "correct": 1, "expectedAny": ["correct answer text"]}],
@@ -138,7 +140,7 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
   "multiplechoice": [{"question": "string", "choices": ["A", "B", "C", "D"], "correct": 2, "expectedAny": ["correct answer text"]}],
   "fillintheblank": [{"question": "COMPLETE SENTENCE WITH _____ BLANK", "expectedAny": ["answer"]}],
   "shortanswer": [{"question": "string", "expectedAny": ["answer"]}],
-  "test": [{"id": "reserved-test-1", "question": "held-out test question", "choices": ["A", "B", "C", "D"], "correct": 1, "expectedAny": ["correct answer text"]}]
+  "test": [{"id": "reserved-test-1", "objectiveId": "objective-1", "question": "held-out question assessing exactly this learning objective", "expectedAny": ["correct result or defensible reference explanation"], "keywords": ["key idea"], "minKeywords": 1}]
 }
 
 FACTUAL ACCURACY REQUIREMENTS:
@@ -164,7 +166,7 @@ CRITICAL REQUIREMENTS:
    - Example: ["photosynthesis", "making food", "food production", "creating energy"]
 6. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
 7. baseline: Include exactly 2 short, low-pressure pre-instruction questions. These must check what a learner may already know before teaching, not trick questions. They must be distinct from all truefalse, multiplechoice, fillintheblank, shortanswer, and test items. Do not call them a pretest.
-8. test: Include at least 6 reserved held-out Test questions. They must be distinct from baseline and all instructional question pools. Prefer multiple-choice or true/false with source-backed answers. These are for the final Test only and must not duplicate practice items.
+8. learningObjectives and test must form one verifiable instructional contract. Identify 2-6 specific observable learning objectives from the lesson TITLE, BLURB, teachingNotes, and required curriculum progression. Each must have a stable unique id, a precise skill description, and evidenceType of reasoned_explanation, calculation, application, or recognition. Include at least 6 reserved, held-out Test questions, each with one objectiveId matching one of those objectives. EVERY objective must be meaningfully assessed by at least one Test question. Merely using related vocabulary or arithmetic from the same subject does not establish coverage. The question must require the action in its objective, and have a correct answer or reference explanation. A defend, justify, explain, prove, or reasonableness objective MUST use a free-response Test question explicitly asking the learner to explain WHY, justify a choice, or defend a method. Do NOT use a bare numerical calculation, multiple choice, or true/false to assess such an objective. Calculation objectives may use numerical problems and application objectives may use multi-step situations. Test items must be distinct from baseline, every instructional pool, and each other; never disclose them during instruction. Preserve all teaching targets in the Test, not just the easiest nearby skill. For mathematical explanations give a defensible reference explanation in expectedAny, not just a number. Include objectiveId on every Test item.
 9. retention: Include exactly 2 delayed-retention-reserved questions. They must be distinct from baseline, all instructional pools, test, dailyFollowup, and weeklyReview. These preserve the existing in-session Stage 7 path.
 10. dailyFollowup: Include exactly 2 Daily Follow-Up-reserved questions. They must be distinct from baseline, all instructional pools, test, retention, and weeklyReview. These are held out for a strict delayed follow-up only.
 11. weeklyReview: Include exactly 5 Weekly Review-reserved questions. They must be distinct from baseline, all instructional pools, test, retention, and dailyFollowup. These are held out for a separate weekly review only.
@@ -197,6 +199,7 @@ async function callModel(prompt){
       id: 'Dev_Lesson', title: 'Dev Lesson', grade: '3rd', difficulty: 'Beginner',
       blurb: 'A development stub lesson.', vocab:[{term:'term',definition:'definition'}], 
       teachingNotes:'Use concrete examples and hands-on activities. Address common misconceptions. Connect to real-world scenarios.',
+      learningObjectives:[{id:'objective-1',name:'Identify even and odd numbers',description:'Choose whether a number is even or odd using divisibility by two.',evidenceType:'recognition'}],
       baseline:[
         {id:'baseline-1', question:'What do you already know about this topic?', expectedAny:['something about the topic']},
         {id:'baseline-2', question:'Can you name one idea related to this topic?', expectedAny:['related idea']}
@@ -221,12 +224,12 @@ async function callModel(prompt){
       fillintheblank:[{question:'__ is the result of 1+1.', expectedAny:['2']}],
       shortanswer:[{question:'Explain even numbers.', expectedAny:['divisible by 2']}],
       test:[
-        {id:'reserved-test-1', question:'Which number is even?', choices:['1','2','3','5'], correct:1, expectedAny:['2']},
-        {id:'reserved-test-2', question:'True or false: 4 is even.', answer:true, expectedAny:['true']},
-        {id:'reserved-test-3', question:'Which number is odd?', choices:['2','4','5','6'], correct:2, expectedAny:['5']},
-        {id:'reserved-test-4', question:'True or false: 3 is even.', answer:false, expectedAny:['false']},
-        {id:'reserved-test-5', question:'Pick another even number.', choices:['7','8','9','11'], correct:1, expectedAny:['8']},
-        {id:'reserved-test-6', question:'Pick another odd number.', choices:['10','12','13','14'], correct:2, expectedAny:['13']}
+        {id:'reserved-test-1', objectiveId:'objective-1', question:'Which number is even?', choices:['1','2','3','5'], correct:1, expectedAny:['2']},
+        {id:'reserved-test-2', objectiveId:'objective-1', question:'True or false: 4 is even.', answer:true, expectedAny:['true']},
+        {id:'reserved-test-3', objectiveId:'objective-1', question:'Which number is odd?', choices:['2','4','5','6'], correct:2, expectedAny:['5']},
+        {id:'reserved-test-4', objectiveId:'objective-1', question:'True or false: 3 is even.', answer:false, expectedAny:['false']},
+        {id:'reserved-test-5', objectiveId:'objective-1', question:'Pick another even number.', choices:['7','8','9','11'], correct:1, expectedAny:['8']},
+        {id:'reserved-test-6', objectiveId:'objective-1', question:'Pick another odd number.', choices:['10','12','13','14'], correct:2, expectedAny:['13']}
       ]
     }
   }
@@ -276,7 +279,15 @@ function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, 
     userId,
     approved: false,
   }
-  return canonicalizeAiGeneratedLessonChoices(applyCurriculumTargetsToLesson(normalizedLesson, curriculumTargets), { rng })
+  const complete = canonicalizeAiGeneratedLessonChoices(applyCurriculumTargetsToLesson(normalizedLesson, curriculumTargets), { rng })
+  const alignment = validateSlateTestAlignment({ lesson: complete, testItems: complete.test })
+  if (!alignment.ok) {
+    throw new MaterializationGenerationError(
+      `Lesson generation did not produce an objective-aligned test (${alignment.errors.slice(0, 8).join(', ')}). Nothing was saved.`,
+      'LESSON_TEST_ALIGNMENT_FAILED', 422,
+    )
+  }
+  return complete
 }
 
 async function verifiedMaterializationOperation(admin, raw, { facilitatorId, learnerId }) {
@@ -534,6 +545,7 @@ export async function POST(request, deps = {}){
       userId: user.id // Return for debugging/confirmation
     })
   } catch (e) {
-    return NextResponse.json({ error: e?.message || String(e) }, { status: 500 })
+    const status = e instanceof MaterializationGenerationError ? e.status : 500
+    return NextResponse.json({ error: e?.message || String(e), ...(e?.code ? { code: e.code } : {}) }, { status })
   }
 }

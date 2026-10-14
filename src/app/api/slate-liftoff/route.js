@@ -5,12 +5,14 @@ import {
   LIFTOFF_ACTION_TYPES,
   LIFTOFF_DIAGNOSTIC_CATEGORIES,
   liftoffStateForModel,
+  liftoffReleaseReady,
   isLiftoffProblemFresh,
   normalizeLiftoffProblem,
   normalizeLiftoffAction,
   normalizeLiftoffComponentMap,
 } from '@/app/lib/slateLiftoff.mjs'
 import { observeSlateMathWorking, verifySlateMathSubmission } from '@/app/lib/slateMath.mjs'
+import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import {
   buildMathActivityProblem,
   createMathSession,
@@ -35,7 +37,7 @@ function compactRows(value, limit = 8) {
     if (typeof row === 'string') return clean(row, 500)
     if (!row || typeof row !== 'object') return row
     const out = {}
-    for (const key of ['id', 'term', 'definition', 'question', 'prompt', 'answer', 'expected', 'expectedAny', 'choices', 'correct', 'text', 'title', 'description', 'objective']) {
+    for (const key of ['id', 'term', 'definition', 'question', 'prompt', 'answer', 'expected', 'expectedAny', 'choices', 'correct', 'text', 'title', 'name', 'description', 'objective', 'evidenceType']) {
       if (row[key] != null) out[key] = row[key]
     }
     return out
@@ -109,7 +111,7 @@ function baseMethod() {
 function initializePrompt(lesson) {
   return `${baseMethod()}
 
-TASK: Decompose this lesson into real knowledge/decision/procedure components that can transfer from teacher provision to learner responsibility. Do not invent fake steps merely to create a longer list. A conceptual lesson may have fewer components than a procedural math lesson. Dependencies must reference component ids.
+TASK: Decompose this lesson into real knowledge/decision/procedure components that can transfer from teacher provision to learner responsibility. Do not invent fake steps merely to create a longer list. A conceptual lesson may have fewer components than a procedural math lesson. Dependencies must reference component ids. When the lesson supplies learningObjectives with ids, use those exact ids for their essential component counterparts. Teach every listed objective, including explanation and justification, not merely neighboring arithmetic. You may add nonessential prerequisite components as needed. Do not downgrade a reasoning objective to just calculating an answer.
 
 Then begin instruction in learnerMessage: briefly model enough of the task that the learner has a fair basis. Do not put the first diagnostic problem inside learnerMessage. nextAction must describe the first probe and include its structured problem. The first probe must be genuinely different from the modeled example. Do not test an untaught component.
 
@@ -143,6 +145,50 @@ Use compatible=false only when the supplied lesson does not contain enough subst
 
 LESSON:
 ${JSON.stringify(compactLesson(lesson))}
+`
+}
+
+function slateIndependentItemKey(item) {
+  const value = JSON.stringify({
+    question: clean(item?.question || item?.prompt, 1600),
+    objectiveId: clean(item?.objectiveId, 160),
+  })
+  let a = 2166136261
+  let b = 2246822519
+  for (let index = 0; index < value.length; index++) {
+    const code = value.charCodeAt(index)
+    a = Math.imul(a ^ code, 16777619)
+    b = Math.imul(b ^ code, 3266489917)
+  }
+  return `slate-independent-${(a >>> 0).toString(36)}-${(b >>> 0).toString(36)}`
+}
+
+function prepareTestPrompt(lesson, state) {
+  const components = (Array.isArray(state?.components) ? state.components : [])
+    .filter(component => component?.essential !== false)
+    .map(component => ({ id: component.id, name: component.name, description: component.description }))
+  const priorProblems = (Array.isArray(state?.problemHistory) ? state.problemHistory : [])
+    .map(problem => problem?.prompt).filter(Boolean).slice(-40)
+  const count = Math.max(6, components.length)
+  return `You prepare an INDEPENDENT, HELD-OUT written test for Mr. Slate.
+The lesson has already been taught. The application, not you, controls progression and grading.
+Use ONLY the actual essential Liftoff learning components below as assessment objectives.
+Every component must have at least one test question requiring that skill, not just topical vocabulary.
+Do not turn a lesson about defending strategies into a general arithmetic fluency test.
+For each objective about defending, reasoning, judging reasonableness, or explaining WHY, use a written free-response question that explicitly asks for an explanation. A bare number or multiple choice is insufficient.
+For calculation objectives, new direct arithmetic can be appropriate. For multistep objectives, require steps or operation order.
+Keep questions age appropriate, unambiguous, independently answerable, and factually correct.
+Provide a correct reference explanation/answer in expectedAny for every item; explanation reference answers must include enough reasoning to be judged fairly.
+If the item is multiple-choice, include four choices and zero-based numeric correct index. Only use choices for objectives that do not require a constructed explanation.
+Provide a single exact objectiveId from the component list on every item.
+Use at least ${count} items, varying situations where useful, with no duplicate problems.
+NEVER repeat or paraphrase any learner problem already used in Liftoff; use different numbers and contexts.
+No help, scaffolds, hints, answer reveals, or correctness information in questions.
+Do not add objectives that were not taught.
+Return ONLY a JSON object: {"items":[{"id":"slate-independent-1","objectiveId":"one exact id from below","question":"question","expectedAny":["reference answer or explanation"],"keywords":["optional key concept"],"minKeywords":1}]}
+LESSON: ${JSON.stringify(compactLesson(lesson))}
+ESSENTIAL LIFTOFF OBJECTIVES: ${JSON.stringify(components)}
+PRIOR TAUGHT OR PROBED PROBLEMS - FORBIDDEN IN TEST: ${JSON.stringify(priorProblems)}
 `
 }
 
@@ -257,7 +303,7 @@ function capMathObservations(payload, evidence, state) {
   return payload
 }
 
-async function callModel(prompt) {
+async function callModel(prompt, maxCompletionTokens = 1800) {
   const key = process.env.OPENAI_API_KEY
   if (!key) return null
   const response = await fetch(OPENAI_URL, {
@@ -266,7 +312,7 @@ async function callModel(prompt) {
     body: JSON.stringify({
       model: AI_MODEL,
       messages: [{ role: 'user', content: prompt }],
-      max_completion_tokens: 1800,
+      max_completion_tokens: maxCompletionTokens,
     }),
   })
   const raw = await response.text()
@@ -449,10 +495,44 @@ export async function POST(request) {
   try {
     const body = await request.json().catch(() => null)
     const requestedMode = clean(body?.mode, 40)
-    const mode = requestedMode === 'turn' ? 'turn' : (requestedMode === 'line_help' ? 'line_help' : 'initialize')
+    const mode = requestedMode === 'turn' ? 'turn' : (requestedMode === 'line_help' ? 'line_help' : (requestedMode === 'prepare_test' ? 'prepare_test' : 'initialize'))
     const lesson = body?.lesson
     if (!lesson || typeof lesson !== 'object') {
       return NextResponse.json({ error: 'Lesson data is required.' }, { status: 400 })
+    }
+
+    if (mode === 'prepare_test') {
+      const state = body?.state
+      if (!state || typeof state !== 'object' || !liftoffReleaseReady(state) || state.procedureReleased !== true) {
+        return NextResponse.json({ error: 'The independent test cannot start before Liftoff has released every essential skill.' }, { status: 409 })
+      }
+      const safety = classifyConversationSafety('', { educational: true }).classification
+      const basePrompt = hardenInstructions(prepareTestPrompt(lesson, state), clean(lesson.title || lesson.subject, 200) || 'educational content', [], safety)
+      let validationErrors = []
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const responseText = await callModel(attempt === 0
+          ? basePrompt
+          : `${basePrompt}\n\nTHE PREVIOUS TEST WAS REJECTED: ${validationErrors.join('; ')}. Produce a corrected full JSON response, with a distinct, objective-aligned question for every essential component.`, 3200)
+        const parsed = await parseSafeModelResponse(responseText)
+        if (!parsed.error) {
+          const proposed = Array.isArray(parsed.parsed?.items) ? parsed.parsed.items : []
+          const primaryConceptId = clean(lesson?.curriculumTargets?.primaryRequirement?.key, 240)
+          const testItems = proposed.filter(item => item && typeof item === 'object' && !Array.isArray(item))
+            .map(item => {
+              return { ...item, id: slateIndependentItemKey(item),
+                ...(primaryConceptId ? { conceptId: primaryConceptId } : {}) }
+            })
+          const alignment = validateSlateTestAlignment({ lesson, liftoff: state, testItems })
+          if (alignment.ok) return NextResponse.json({ ok: true, mode, testItems })
+          validationErrors = alignment.errors
+        } else {
+          validationErrors = [parsed.error]
+        }
+      }
+      return NextResponse.json({
+        error: 'The independent test could not be verified against the actual Liftoff objectives. No test has started or been scored.',
+        code: 'SLATE_TEST_ALIGNMENT_UNVERIFIED',
+      }, { status: 502 })
     }
 
     if (mode === 'line_help') {

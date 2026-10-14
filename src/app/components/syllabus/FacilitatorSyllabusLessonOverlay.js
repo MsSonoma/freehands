@@ -16,6 +16,7 @@ import { buildLessonGeneratorReviewHref } from '@/app/lib/facilitatorLessonWorkf
 import { getLearner } from '@/app/facilitator/learners/clientApi'
 import { getStoredAssessments, saveAssessments } from '@/app/session/assessment/assessmentStore'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
+import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import { buildAssessmentPhaseSets, resolveLearnerAssessmentTargets } from '@/app/session/assessment/assessmentSets'
 import { loadLesson } from '@/app/session/v2/services'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
@@ -670,6 +671,9 @@ export default function FacilitatorSyllabusLessonOverlay({
       if (slateTest) {
         lesson = await loadSlatePrintableLesson()
         source = buildSlateLiftoffTestItems(lesson)
+        if (!validateSlateTestAlignment({ lesson, testItems: source }).ok) {
+          throw new Error("The stored test does not verify every lesson objective. Print Mr. Slate's verified independent test from the learner session after Liftoff.")
+        }
       } else if (!source) {
         const [loadedLesson, learner] = await Promise.all([
           loadPrintableLesson(),

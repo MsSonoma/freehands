@@ -72,6 +72,7 @@ test('generated lesson storage and API response share one canonical answer order
     difficulty: 'intermediate',
     subject: 'math',
     blurb: 'A test lesson.',
+    learningObjectives: [{ id: 'objective-1', name: 'Choose the correct answer', description: 'Select the correct item from four choices.', evidenceType: 'recognition' }],
     multiplechoice: Array.from({ length: 8 }, (_, index) => ({
       id: `practice-${index + 1}`,
       question: `Practice ${index + 1}`,
@@ -79,8 +80,9 @@ test('generated lesson storage and API response share one canonical answer order
       correct: 0,
       expectedAny: [`right-${index + 1}`],
     })),
-    test: Array.from({ length: 4 }, (_, index) => ({
+    test: Array.from({ length: 6 }, (_, index) => ({
       id: `reserved-${index + 1}`,
+      objectiveId: 'objective-1',
       question: `Test ${index + 1}`,
       choices: [`test-right-${index + 1}`, `test-wrong-a-${index + 1}`, `test-wrong-b-${index + 1}`, `test-wrong-c-${index + 1}`],
       correct: 0,
@@ -107,7 +109,7 @@ test('generated lesson storage and API response share one canonical answer order
     const storedLesson = JSON.parse(uploadCapture.body)
     assert.deepEqual(storedLesson, json.lesson)
     assert.deepEqual(json.lesson.multiplechoice.map((item) => item.correct), [1, 2, 3, 0, 1, 2, 3, 0])
-    assert.deepEqual(json.lesson.test.map((item) => item.correct), [1, 2, 3, 0])
+    assert.deepEqual(json.lesson.test.map((item) => item.correct), [1, 2, 3, 0, 1, 2])
     json.lesson.multiplechoice.forEach((item, index) => {
       assert.equal(item.choices[item.correct], `right-${index + 1}`)
       assert.deepEqual(item.expectedAny, [`right-${index + 1}`])
@@ -118,6 +120,44 @@ test('generated lesson storage and API response share one canonical answer order
     })
     assert.equal(uploadCapture.options.cacheControl, '0')
     assert.deepEqual(modelLesson, originalModelLesson)
+  } finally {
+    restore()
+  }
+})
+
+test('generated lessons cannot be saved with only topically related and unlinked test questions', async () => {
+  const restore = withSupabaseEnv()
+  const uploadCapture = {}
+  try {
+    const response = await generateLesson(requestFor({
+      title: 'Defend an efficient multiplication strategy',
+      subject: 'math',
+      difficulty: 'intermediate',
+      grade: '5',
+      description: 'Explain and defend strategies, not only calculate a product.',
+    }), {
+      callModel: async () => ({
+        title: 'Defend an efficient multiplication strategy',
+        learningObjectives: [{
+          id: 'defend',
+          name: 'Defend a multiplication strategy',
+          description: 'Explain why a strategy works.',
+          evidenceType: 'reasoned_explanation',
+        }],
+        test: Array.from({ length: 6 }, (_, index) => ({
+          id: `t-${index + 1}`,
+          objectiveId: 'defend',
+          question: `What is ${index + 12} × 4?`,
+          expectedAny: [String((index + 12) * 4)],
+        })),
+      }),
+      createClientImpl: createClientMock(uploadCapture),
+    })
+    assert.equal(response.status, 422)
+    const body = await response.json()
+    assert.equal(body.code, 'LESSON_TEST_ALIGNMENT_FAILED')
+    assert.match(body.error, /objective-aligned test/i)
+    assert.equal(uploadCapture.body, undefined)
   } finally {
     restore()
   }
