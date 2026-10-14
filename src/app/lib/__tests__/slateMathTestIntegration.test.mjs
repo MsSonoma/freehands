@@ -53,7 +53,7 @@ test('bare arithmetic in a test opens the prepopulated Question Math Workspace w
   const shown = slateScratchUiForQuestion(null, result.state.activityId, result.state.spec, 'test')
   assert.equal(shown.visible, true)
   const hidden = slateScratchUiForQuestion({ ...shown, visible: false }, result.state.activityId, result.state.spec, 'test')
-  assert.equal(hidden.visible, false)
+  assert.equal(hidden.visible, true)
 
   const next = createSlateMathTestSession({
     item: { question: '8 × 7 =', expected: '56' }, activityId: 'test-question-two',

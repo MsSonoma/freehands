@@ -86,8 +86,14 @@ export function selectSlateScratchOperation(ui, originalId, math, phase, operati
 }
 
 export function slateScratchUiForQuestion(ui, originalId, math, phase) {
-  return restoreSlateScratchUi(ui, originalId, math, phase) || {
-    activityId: originalId, visible: true, operation: math.operation, variants: {},
-    partialEntriesByOperation: {},
-  }
+  const restored = restoreSlateScratchUi(ui, originalId, math, phase)
+  // Question workspaces belong to the supplied problem. Legacy snapshots may
+  // contain the hide/operation controls once offered here; neither can override
+  // the question's visibility or operation. Keep its saved working entries.
+  return restored
+    ? { ...restored, visible: true, operation: math.operation }
+    : {
+        activityId: originalId, visible: true, operation: math.operation, variants: {},
+        partialEntriesByOperation: {},
+      }
 }

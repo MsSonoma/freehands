@@ -90,7 +90,7 @@ test('independent test questions and response tools live in the shared transcrip
   assert.ok(begin >= 0 && end > begin)
   const tail = slate.slice(begin, end)
   assert.match(tail, /data-slate-test-transcript-tail/)
-  assert.match(tail, /data-slate-test-math-toggle/)
+  assert.doesNotMatch(tail, /data-slate-test-math-toggle/)
   assert.match(tail, /<VerticalMathWorkspace[\s\S]*phase="test"/)
   assert.match(tail, /data-slate-test-manual-math-toggle/)
   assert.match(tail, /<SlateManualScratch/)

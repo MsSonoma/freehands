@@ -18,7 +18,7 @@ import { advanceSlateIntroTeaching, createSlateIntroTeaching, restoreSlateIntroT
 import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
 import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
 import { slateMathWorkspaceResult, insertSlateMathResult } from '@/app/lib/slateMathDraft.mjs'
-import { slateScratchChoices, slateScratchSpec, slateScratchUiForQuestion, selectSlateScratchOperation } from '@/app/lib/slateMathScratch.mjs'
+import { slateScratchSpec, slateScratchUiForQuestion } from '@/app/lib/slateMathScratch.mjs'
 import { sanitizeMultiplicationScratchEntries } from '@/lib/math/multiplicationScratch.mjs'
 import { SnapshotService } from '@/app/session/v2/SnapshotService.jsx'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
@@ -1267,7 +1267,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (!activeMathMatches) return null
     try { return buildMathActivityProblem(activeMathSpec) } catch { return null }
   }, [activeMathMatches, activeMathSpec])
-  const activeScratchChoices = useMemo(() => slateScratchChoices(activeMathSpec), [activeMathSpec])
   const activeScratchDraft = useMemo(() => activeMathMatches && mathSession?.activityId
     ? slateScratchUiForQuestion(activeScratchUi, mathSession.activityId, activeMathSpec, 'teaching')
     : null, [activeMathMatches, activeMathSpec, activeScratchUi, mathSession?.activityId])
@@ -1334,7 +1333,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (!assessmentMathMatches) return null
     try { return buildMathActivityProblem(assessmentMathSpec) } catch { return null }
   }, [assessmentMathMatches, assessmentMathSpec])
-  const assessmentScratchChoices = useMemo(() => slateScratchChoices(assessmentMathSpec), [assessmentMathSpec])
   const assessmentScratchDraft = useMemo(() => assessmentMathMatches && assessmentMathSession?.activityId
     ? slateScratchUiForQuestion(assessmentScratchUi, assessmentMathSession.activityId, assessmentMathSpec, 'test')
     : null, [assessmentMathMatches, assessmentMathSession?.activityId, assessmentMathSpec, assessmentScratchUi])
@@ -1425,33 +1423,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setAssessmentMathWorkingNotes(scoped)
     scheduleMathSnapshot()
   }, [busy, lineHelpBusy, lineHelpTarget, phase, scheduleMathSnapshot])
-  const toggleScratchWorkspace = useCallback((isTest) => {
-    if (snapshotServiceRef.current?.writesFenced) return
-    const original = isTest ? assessmentMathSessionRef.current : mathSessionRef.current
-    const math = isTest ? assessmentMathSpec : activeMathSpec
-    if (!original || !math) return
-    const ui = slateScratchUiForQuestion(
-      isTest ? assessmentScratchUiRef.current : activeScratchUiRef.current,
-      original.activityId, math, isTest ? 'test' : 'teaching',
-    )
-    commitScratchUi(isTest, { ...ui, visible: !ui.visible })
-  }, [activeMathSpec, assessmentMathSpec, commitScratchUi])
-
-  const changeScratchOperation = useCallback((isTest, operation) => {
-    if (busy || lineHelpBusy || lineHelpTarget || snapshotServiceRef.current?.writesFenced) return
-    const original = isTest ? assessmentMathSessionRef.current : mathSessionRef.current
-    const math = isTest ? assessmentMathSpec : activeMathSpec
-    if (!original || !math) return
-    const next = selectSlateScratchOperation(
-      isTest ? assessmentScratchUiRef.current : activeScratchUiRef.current,
-      original.activityId, math, isTest ? 'test' : 'teaching', operation,
-    )
-    if (!next) return
-    commitScratchUi(isTest, next)
-    if (isTest) setAssessmentMathTextLocation('')
-    else setSelectedMathTextLocation('')
-  }, [activeMathSpec, assessmentMathSpec, busy, commitScratchUi, lineHelpBusy, lineHelpTarget])
-
   const changeScratchView = useCallback((isTest, nextView) => {
     if (busy || lineHelpBusy || lineHelpTarget || snapshotServiceRef.current?.writesFenced) return
     const original = isTest ? assessmentMathSessionRef.current : mathSessionRef.current
@@ -2104,13 +2075,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const activeMathTranscriptContent = phase === 'active' ? (
     <div data-slate-active-math-transcript-tail style={{ marginTop: 12, paddingTop: 8 }}>
       {structuredMathPresented && <>
-      <button type="button" data-slate-math-toggle aria-expanded={Boolean(activeScratchDraft?.visible)}
-        onClick={() => toggleScratchWorkspace(false)}
-        disabled={!activeMathMatches || busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
-        style={{ background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-        {activeScratchDraft?.visible ? 'HIDE QUESTION WORKSPACE' : 'SHOW QUESTION WORKSPACE'}
-      </button>
-      {activeScratchDraft?.visible && (activeScratchProblem && activeScratchSession ? (
+      {activeMathMatches && (activeScratchProblem && activeScratchSession ? (
         <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: '10px 0 0', minWidth: 0 }}>
           <VerticalMathWorkspace
             problem={activeScratchProblem}
@@ -2124,8 +2089,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             onCellSelect={activeScratchOperation === activeMathSpec.operation ? (location) => {
               if (mathSession.view.editable.includes(location)) setSelectedMathTextLocation(location)
             } : undefined}
-            onOperationChange={(operation) => changeScratchOperation(false, operation)}
-            operationChoices={activeScratchChoices}
             phase="teaching"
             showCheck={false}
             showFullAnswerInputs={false}
@@ -2175,14 +2138,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 </div>
               ) : assessmentMathResolution.kind === 'math' ? (
                 <div style={{ display: 'grid', gap: 12 }}>
-                  {assessmentMathMatches && <button type="button" data-slate-test-math-toggle
-                    aria-expanded={Boolean(assessmentScratchDraft?.visible)}
-                    onClick={() => toggleScratchWorkspace(true)}
-                    disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
-                    style={{ justifySelf: 'start', background: C.surface2, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-                    {assessmentScratchDraft?.visible ? 'HIDE QUESTION WORKSPACE' : 'SHOW QUESTION WORKSPACE'}
-                  </button>}
-                  {assessmentScratchDraft?.visible && (assessmentScratchProblem && assessmentScratchSession ? (
+                  {assessmentMathMatches && (assessmentScratchProblem && assessmentScratchSession ? (
                     <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
                       <VerticalMathWorkspace
                         problem={assessmentScratchProblem}
@@ -2200,8 +2156,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                             scheduleMathSnapshot()
                           }
                         } : undefined}
-                        onOperationChange={(operation) => changeScratchOperation(true, operation)}
-                        operationChoices={assessmentScratchChoices}
                         showCheck={false}
                         phase="test"
                         showFullAnswerInputs={false}

@@ -80,3 +80,16 @@ test('question scratch keeps partial digits for its multiplier across operation 
   assert.deepEqual(slateScratchUiForQuestion(withPartials, 'other-question', math, 'test').partialEntriesByOperation, {})
   assert.deepEqual(slateScratchUiForQuestion(null, 'original', math, 'test').partialEntriesByOperation, {})
 })
+
+test('legacy question math settings cannot hide or change the question operation in Liftoff or test', () => {
+  const math = { operation: 'addition', operands: ['47', '26'], commands: [] }
+  for (const phase of ['teaching', 'test']) {
+    const initial = slateScratchUiForQuestion(null, 'given-problem', math, phase)
+    const legacy = { ...initial, visible: false, operation: 'multiplication' }
+    const restored = slateScratchUiForQuestion(legacy, 'given-problem', math, phase)
+    assert.equal(restored.visible, true)
+    assert.equal(restored.operation, 'addition')
+    assert.deepEqual(restored.partialEntriesByOperation, initial.partialEntriesByOperation)
+    assert.equal(slateScratchUiForQuestion(legacy, 'new-problem', math, phase).operation, 'addition')
+  }
+})
