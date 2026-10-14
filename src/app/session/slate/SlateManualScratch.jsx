@@ -1,0 +1,64 @@
+'use client'
+
+import { useMemo } from 'react'
+import VerticalMathWorkspace from '@/components/math/VerticalMathWorkspace'
+import { updateMathSessionView } from '@/lib/math/mathSession.mjs'
+import { sanitizeVerticalMathWorkingNotes } from '@/lib/math/verticalMathNotes.mjs'
+import { buildSlateManualScratch } from '@/app/lib/slateManualScratch.mjs'
+import { slateScratchChoices, SLATE_SCRATCH_OPERATIONS } from '@/app/lib/slateMathScratch.mjs'
+import { slateMathWorkspaceResult } from '@/app/lib/slateMathDraft.mjs'
+
+const SIGNS = { addition: '+', subtraction: '\u2212', multiplication: '\u00d7', division: '\u00f7' }
+
+export default function SlateManualScratch({
+  draft, activityId, phase, onChange, onUseResult, disabled = false, allowTransfer = true,
+}) {
+  const model = useMemo(() => buildSlateManualScratch(draft, activityId, phase), [draft, activityId, phase])
+  const options = useMemo(() => slateScratchChoices({ operands: draft.operands }), [draft.operands])
+  const result = model ? slateMathWorkspaceResult(model.problem, model.session.view) : null
+
+  function setOperand(index, value) {
+    if (value.length > 26 || !/^[0-9.,]*$/.test(value)) return
+    const operands = [...draft.operands]
+    operands[index] = value
+    onChange({ ...draft, operands, session: null, notes: {} })
+  }
+  function setOperation(operation) {
+    if (!SLATE_SCRATCH_OPERATIONS.includes(operation) || (model && !options.includes(operation))) return
+    onChange({ ...draft, operation, session: null, notes: {} })
+  }
+  function setView(view) {
+    if (!model) return
+    const updated = updateMathSessionView(model.session, view, {
+      activityId: model.session.activityId, expectedRevision: model.session.revision,
+      requestId: 'manual-input:' + (globalThis.crypto?.randomUUID?.() || String(Date.now()) + '-' + Math.random()),
+    })
+    if (updated.ok) onChange({ ...draft, session: updated.state })
+  }
+
+  return <fieldset disabled={disabled} style={{ border: 0, padding: 0, margin: '10px 0 0', minWidth: 0 }}>
+    <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 10 }}>
+      <input aria-label="First scratch number" placeholder="Number 1" inputMode="decimal"
+        value={draft.operands[0]} onChange={(event) => setOperand(0, event.target.value)}
+        style={{ flex: '1 1 110px', minWidth: 0, maxWidth: 170, padding: 8 }} />
+      {!model && <select aria-label="Change arithmetic operation" data-scratch-operation
+        value={draft.operation} onChange={(event) => setOperation(event.target.value)}
+        style={{ padding: 8, fontSize: 19 }}>
+        {SLATE_SCRATCH_OPERATIONS.map((operation) =>
+          <option key={operation} value={operation}>{SIGNS[operation]}</option>)}
+      </select>}
+      <input aria-label="Second scratch number" placeholder="Number 2" inputMode="decimal"
+        value={draft.operands[1]} onChange={(event) => setOperand(1, event.target.value)}
+        style={{ flex: '1 1 110px', minWidth: 0, maxWidth: 170, padding: 8 }} />
+    </div>
+    {model && <VerticalMathWorkspace
+      problem={model.problem} view={model.session.view} onViewChange={setView}
+      notes={draft.notes} onNotesChange={(notes) =>
+        onChange({ ...draft, notes: sanitizeVerticalMathWorkingNotes(notes) })}
+      phase={phase} embeddedScratch showCheck={false} showFullAnswerInputs={false}
+      operationChoices={options} onOperationChange={setOperation}
+      footer={allowTransfer && <button type="button" disabled={!result}
+        onClick={() => onUseResult?.(result)}>USE THIS RESULT IN ANSWER</button>}
+    />}
+  </fieldset>
+}

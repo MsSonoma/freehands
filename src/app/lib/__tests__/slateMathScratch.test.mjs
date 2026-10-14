@@ -28,7 +28,7 @@ test('unsupported operations are excluded instead of constructing invalid math',
 
 test('switching operations preserves existing variants and does not grade independent test entries', () => {
   const addition = slateScratchUiForQuestion(null, 'original-question', ADD, 'test')
-  assert.equal(addition.visible, false)
+  assert.equal(addition.visible, true)
   assert.equal(addition.operation, 'addition')
   const multiplication = selectSlateScratchOperation(addition, 'original-question', ADD, 'test', 'multiplication')
   assert.equal(multiplication.variants.multiplication.session.phase, 'test')
@@ -52,7 +52,7 @@ test('switching operations preserves existing variants and does not grade indepe
 test('drafts from another question and forged states do not carry over', () => {
   const draft = selectSlateScratchOperation(null, 'first', ADD, 'teaching', 'division')
   assert.equal(restoreSlateScratchUi(draft, 'second', ADD, 'teaching'), null)
-  assert.equal(slateScratchUiForQuestion(draft, 'second', ADD, 'teaching').visible, false)
+  assert.equal(slateScratchUiForQuestion(draft, 'second', ADD, 'teaching').visible, true)
   const forged = { ...draft, variants: { division: { session: { wrong: true } } } }
   assert.deepEqual(restoreSlateScratchUi(forged, 'first', ADD, 'teaching').variants, {})
 })

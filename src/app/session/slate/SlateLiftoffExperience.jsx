@@ -44,6 +44,8 @@ import WebbDictationButton from '../webb/WebbDictationButton'
 import CaptionPanel from '../components/CaptionPanel'
 import styles from './SlateLiftoffExperience.module.css'
 import VerticalMathWorkspace from '@/components/math/VerticalMathWorkspace'
+import SlateManualScratch from './SlateManualScratch'
+import { initialSlateManualScratch, restoreSlateManualScratch } from '@/app/lib/slateManualScratch.mjs'
 import {
   buildMathActivityProblem,
   recordMathSessionHelp,
@@ -243,6 +245,7 @@ function slateMathRequestId(kind = 'request') {
 
 export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenceId }) {
   const router = useRouter()
+  const manualScratchActivityId = `slate-manual:${String(occurrenceId || lessonKey || 'lesson').slice(0, 145)}`
   const [phase, setPhase] = useState('loading')
   const [lesson, setLesson] = useState(null)
   const [liftoff, setLiftoff] = useState(null)
@@ -279,6 +282,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [mathError, setMathError] = useState('')
   const [activeScratchUi, setActiveScratchUi] = useState(null)
   const [assessmentScratchUi, setAssessmentScratchUi] = useState(null)
+  const [manualScratchUi, setManualScratchUi] = useState(initialSlateManualScratch)
   const [selectedMathTextLocation, setSelectedMathTextLocation] = useState('')
   const [assessmentMathSession, setAssessmentMathSession] = useState(null)
   const [assessmentMathWorkingNotes, setAssessmentMathWorkingNotes] = useState(null)
@@ -319,6 +323,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const mathActivityKeyRef = useRef('')
   const activeScratchUiRef = useRef(null)
   const assessmentScratchUiRef = useRef(null)
+  const manualScratchUiRef = useRef(initialSlateManualScratch())
   const submitLockRef = useRef(false)
   const assessmentSubmitLockRef = useRef(false)
   const assessmentMathSessionRef = useRef(null)
@@ -515,6 +520,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setActiveScratchUi(activeScratchUiRef.current)
     assessmentScratchUiRef.current = restartTransferredTest ? null : (feature.assessmentScratchUi || null)
     setAssessmentScratchUi(assessmentScratchUiRef.current)
+    manualScratchUiRef.current = restoreSlateManualScratch(feature.manualScratchUi, manualScratchActivityId, resumedPhase === 'test' ? 'test' : 'teaching')
+    setManualScratchUi(manualScratchUiRef.current)
     setSlateText(restartTransferredTest
       ? 'This lesson moved devices during the independent test, so the test is restarting. Because those test items were already seen, this restarted test will not create a new mastery claim.'
       : (oldWorksheetSnapshot ? 'Liftoff is complete. Now take the independent test. No help or answer feedback until the test is finished.' : String(feature.slateText || '')))
@@ -612,6 +619,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       introTeaching: introTeachingRef.current,
       activeScratchUi: activeScratchUiRef.current,
       assessmentScratchUi: assessmentScratchUiRef.current,
+      manualScratchUi: manualScratchUiRef.current,
       assessmentIndex: assessmentIndexValue,
       worksheetFeedback: null,
       testResults: testResultsValue,
@@ -675,6 +683,17 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
     scheduleMathSnapshot()
   }, [scheduleMathSnapshot])
+
+  const commitManualScratchUi = useCallback((next) => {
+    manualScratchUiRef.current = next
+    setManualScratchUi(next)
+    scheduleMathSnapshot()
+  }, [scheduleMathSnapshot])
+
+  const toggleManualScratch = useCallback(() => {
+    if (snapshotServiceRef.current?.writesFenced) return
+    commitManualScratchUi({ ...manualScratchUiRef.current, visible: !manualScratchUiRef.current.visible })
+  }, [commitManualScratchUi])
 
   const replayTranscriptLine = useCallback((line) => {
     const text = String(line?.text || '').trim()
@@ -2041,13 +2060,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
   const isAssessment = phase === 'test'
   const lessonInteractionHeld = Boolean(lineHelpTarget) || lineHelpBusy
-  const activeMathTranscriptContent = phase === 'active' && !questionPending && !introTeaching && activeMathSpec ? (
+  const structuredMathPresented = Boolean(activeMathSpec && !questionPending && !introTeaching)
+  const activeMathTranscriptContent = phase === 'active' && structuredMathPresented ? (
     <div data-slate-active-math-transcript-tail style={{ marginTop: 12, paddingTop: 8 }}>
       <button type="button" data-slate-math-toggle aria-expanded={Boolean(activeScratchDraft?.visible)}
         onClick={() => toggleScratchWorkspace(false)}
         disabled={!activeMathMatches || busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
         style={{ background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-        {activeScratchDraft?.visible ? 'HIDE MATH WORKSPACE' : 'SHOW MATH WORKSPACE'}
+        {activeScratchDraft?.visible ? 'HIDE QUESTION WORKSPACE' : 'SHOW QUESTION WORKSPACE'}
       </button>
       {activeScratchDraft?.visible && (activeScratchProblem && activeScratchSession ? (
         <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: '10px 0 0', minWidth: 0 }}>
@@ -2109,8 +2129,15 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       <main className={styles.sessionMain} style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16, padding: 16 }}>
         <section className={styles.contentColumn} data-slate-scroll-mode={isAssessment ? 'test' : (lineHelpTarget ? 'help' : 'active')} style={{ minWidth: 0, flex: '1 1 520px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className={styles.transcriptColumn} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
-            <div style={{ color: C.accent, fontSize: 11, fontWeight: 900, letterSpacing: 1.4, marginBottom: 8 }}>
-              TRANSCRIPT · {phase === 'active' ? liftoff?.currentAction?.type?.toUpperCase() || 'LIFTOFF' : phase.toUpperCase()}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
+              <div style={{ color: C.accent, fontSize: 11, fontWeight: 900, letterSpacing: 1.4 }}>
+                TRANSCRIPT · {phase === 'active' ? liftoff?.currentAction?.type?.toUpperCase() || 'LIFTOFF' : phase.toUpperCase()}
+              </div>
+              {phase === 'active' && <button type="button" data-slate-manual-math-toggle aria-expanded={manualScratchUi.visible}
+                onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
+                style={{ background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
+                {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
+              </button>}
             </div>
             <CaptionPanel
               sentences={transcriptLines}
@@ -2123,7 +2150,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               onReplayRequest={replayTranscriptLine}
               replayEnabled={!busy && !lineHelpBusy}
               teacherName="Mr. Slate"
-              stackedHeight={activeScratchDraft?.visible ? 'clamp(260px, 42vh, 460px)' : null}
+              stackedHeight={structuredMathPresented && activeScratchDraft?.visible ? 'clamp(260px, 42vh, 460px)' : null}
               tailContent={activeMathTranscriptContent}
               theme={{
                 background: C.surface2,
@@ -2145,6 +2172,16 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               }}
             />
           </div>
+
+          {phase === 'active' && manualScratchUi.visible && (
+            <div data-slate-manual-scratch style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
+              <SlateManualScratch draft={manualScratchUi} activityId={manualScratchActivityId} phase="teaching"
+                onChange={commitManualScratchUi} allowTransfer={!introTeaching && !questionPending}
+                onUseResult={(result) => { setAnswer((current) => insertSlateMathResult(current, result)); answerInputRef.current?.focus() }}
+                disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+              />
+            </div>
+          )}
 
           {phase === 'active' && introTeaching && (
             <div data-slate-intro-navigation style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
@@ -2196,6 +2233,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
                 <div style={{ color: C.muted, fontSize: 12 }}>TEST {assessmentIndex + 1}/{currentAssessmentItems.length}</div>
+                <button type="button" data-slate-test-manual-math-toggle aria-expanded={manualScratchUi.visible}
+                  onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
+                  style={{ background: C.surface2, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 6, padding: '7px 10px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
+                  {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
+                </button>
                 {phase === 'test' && <button type="button" onClick={() => void printIndependentTest()} disabled={testPrintBusy || busy} style={{ padding: '7px 10px', background: C.surface2, color: C.accent, border: '1px solid ' + C.border, borderRadius: 6, fontFamily: C.font, fontWeight: 800, cursor: testPrintBusy ? 'wait' : 'pointer' }}>{testPrintBusy ? 'PREPARING PDF...' : 'PRINT TEST'}</button>}
               </div>
               {testPrintError && <div role="alert" style={{ color: C.red, fontSize: 12, marginBottom: 8 }}>{testPrintError}</div>}
@@ -2216,9 +2258,17 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 >{questionText(currentAssessment)}</div>
               </div>
 
+              {manualScratchUi.visible && <div data-slate-manual-scratch style={{ marginTop: 12 }}>
+                  <SlateManualScratch
+                  draft={manualScratchUi} activityId={manualScratchActivityId} phase="test"
+                  onChange={commitManualScratchUi}
+                  onUseResult={(result) => { const next = insertSlateMathResult(assessmentAnswer, result); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }}
+                  allowTransfer={questionType(currentAssessment) === 'shortanswer'}
+                  disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+                  />
+                </div>}
               {assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? (
                 <div style={{ display: 'grid', gap: 8 }}>
-                  <div role="status" style={{ color: C.muted }}>The scratch workspace is unavailable. You can still answer this question.</div>
                   <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
                     <textarea rows={2} value={assessmentAnswer} onChange={(event) => { assessmentMathTextRef.current = event.target.value; setAssessmentAnswer(event.target.value); scheduleMathSnapshot() }} disabled={busy || lessonInteractionHeld} style={{ flex: 1, minWidth: 0, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
                     <button disabled={busy || lessonInteractionHeld || (!assessmentAnswer.trim() && !assessmentMathPending?.status)} style={{ padding: '10px 18px' }}>SUBMIT</button>
@@ -2231,7 +2281,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                     onClick={() => toggleScratchWorkspace(true)}
                     disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
                     style={{ justifySelf: 'start', background: C.surface2, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-                    {assessmentScratchDraft?.visible ? 'HIDE MATH WORKSPACE' : 'SHOW MATH WORKSPACE'}
+                    {assessmentScratchDraft?.visible ? 'HIDE QUESTION WORKSPACE' : 'SHOW QUESTION WORKSPACE'}
                   </button>}
                   {assessmentScratchDraft?.visible && (assessmentScratchProblem && assessmentScratchSession ? (
                     <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>

@@ -1,0 +1,37 @@
+import assert from 'node:assert/strict'
+import test from 'node:test'
+import { buildSlateManualScratch, initialSlateManualScratch, restoreSlateManualScratch } from '../slateManualScratch.mjs'
+import { enterVerticalMathCell } from '../../../lib/math/verticalMath.mjs'
+import { updateMathSessionView } from '../../../lib/math/mathSession.mjs'
+
+test('unprompted workspace starts collapsed and waits for learner-entered numbers', () => {
+  const draft = initialSlateManualScratch()
+  assert.equal(draft.visible, false)
+  assert.equal(buildSlateManualScratch(draft, 'manual', 'teaching'), null)
+  draft.operands = ['16', '7']
+  const built = buildSlateManualScratch(draft, 'manual', 'teaching')
+  assert.equal(built.session.spec.operation, 'addition')
+  assert.deepEqual(built.session.spec.operands, ['16', '7'])
+})
+
+test('manual scratch preserves entered work after snapshot restore', () => {
+  const initial = { ...initialSlateManualScratch(), visible: true, operands: ['16', '7'] }
+  const built = buildSlateManualScratch(initial, 'manual', 'teaching')
+  const target = built.session.view.editable.find((id) => id === 'result.ones')
+  const entered = enterVerticalMathCell(built.problem, built.session.view, target, '3')
+  const updated = updateMathSessionView(built.session, entered.view, {
+    activityId: 'manual', expectedRevision: 0, requestId: 'a',
+  })
+  const saved = { ...initial, session: updated.state }
+  const restored = restoreSlateManualScratch(JSON.parse(JSON.stringify(saved)), 'manual', 'teaching')
+  assert.equal(restored.visible, true)
+  assert.equal(buildSlateManualScratch(restored, 'manual', 'teaching').session.view.entries[target], '3')
+  assert.equal(buildSlateManualScratch(restored, 'manual', 'test').session.phase, 'test')
+})
+
+test('manual scratch rejects incompatible and unsupported operand drafts safely', () => {
+  const invalid = { ...initialSlateManualScratch(), operands: ['16', '0'], operation: 'division' }
+  assert.equal(buildSlateManualScratch(invalid, 'manual', 'teaching'), null)
+  assert.equal(restoreSlateManualScratch({ operands: ['abcdef', '7'] }, 'manual', 'teaching').operands[0], '')
+  assert.equal(restoreSlateManualScratch({ operands: ['2', '3'], operation: 'addition', visible: true }, 'manual', 'teaching').visible, true)
+})

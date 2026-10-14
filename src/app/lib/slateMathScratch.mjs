@@ -63,7 +63,7 @@ export function restoreSlateScratchUi(raw, originalId, math, phase) {
 export function selectSlateScratchOperation(ui, originalId, math, phase, operation) {
   if (!slateScratchChoices(math).includes(operation)) return null
   const base = restoreSlateScratchUi(ui, originalId, math, phase) || {
-    activityId: originalId, visible: false, operation: math.operation, variants: {},
+    activityId: originalId, visible: true, operation: math.operation, variants: {},
   }
   if (operation === math.operation || base.variants[operation]) return { ...base, operation }
   const variant = createSlateScratchVariant(math, operation, originalId, phase)
@@ -73,6 +73,6 @@ export function selectSlateScratchOperation(ui, originalId, math, phase, operati
 
 export function slateScratchUiForQuestion(ui, originalId, math, phase) {
   return restoreSlateScratchUi(ui, originalId, math, phase) || {
-    activityId: originalId, visible: false, operation: math.operation, variants: {},
+    activityId: originalId, visible: true, operation: math.operation, variants: {},
   }
 }
