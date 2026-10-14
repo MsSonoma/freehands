@@ -2061,8 +2061,9 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const isAssessment = phase === 'test'
   const lessonInteractionHeld = Boolean(lineHelpTarget) || lineHelpBusy
   const structuredMathPresented = Boolean(activeMathSpec && !questionPending && !introTeaching)
-  const activeMathTranscriptContent = phase === 'active' && structuredMathPresented ? (
+  const activeMathTranscriptContent = phase === 'active' ? (
     <div data-slate-active-math-transcript-tail style={{ marginTop: 12, paddingTop: 8 }}>
+      {structuredMathPresented && <>
       <button type="button" data-slate-math-toggle aria-expanded={Boolean(activeScratchDraft?.visible)}
         onClick={() => toggleScratchWorkspace(false)}
         disabled={!activeMathMatches || busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
@@ -2096,6 +2097,23 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         <div role="alert" style={{ color: C.muted, fontWeight: 700 }}>The scratch workspace is unavailable.</div>
       ))}
       {mathError && <div role="status" style={{ color: C.red, fontWeight: 700, marginTop: 10 }}>{mathError}</div>}
+      </>}
+      <div data-slate-manual-scratch-panel style={{ marginTop: structuredMathPresented ? 12 : 0 }}>
+        <button type="button" data-slate-manual-math-toggle aria-expanded={manualScratchUi.visible}
+          onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
+          style={{ background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
+          {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
+        </button>
+        {manualScratchUi.visible && (
+          <div data-slate-manual-scratch style={{ marginTop: 10 }}>
+            <SlateManualScratch draft={manualScratchUi} activityId={manualScratchActivityId} phase="teaching"
+              onChange={commitManualScratchUi} allowTransfer={!introTeaching && !questionPending}
+              onUseResult={(result) => { setAnswer((current) => insertSlateMathResult(current, result)); answerInputRef.current?.focus() }}
+              disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+            />
+          </div>
+        )}
+      </div>
     </div>
   ) : null
 
@@ -2129,15 +2147,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       <main className={styles.sessionMain} style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16, padding: 16 }}>
         <section className={styles.contentColumn} data-slate-scroll-mode={isAssessment ? 'test' : (lineHelpTarget ? 'help' : 'active')} style={{ minWidth: 0, flex: '1 1 520px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className={styles.transcriptColumn} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, marginBottom: 8 }}>
-              <div style={{ color: C.accent, fontSize: 11, fontWeight: 900, letterSpacing: 1.4 }}>
-                TRANSCRIPT · {phase === 'active' ? liftoff?.currentAction?.type?.toUpperCase() || 'LIFTOFF' : phase.toUpperCase()}
-              </div>
-              {phase === 'active' && <button type="button" data-slate-manual-math-toggle aria-expanded={manualScratchUi.visible}
-                onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
-                style={{ background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 6, padding: '5px 8px', fontSize: 11, fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-                {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
-              </button>}
+            <div style={{ color: C.accent, fontSize: 11, fontWeight: 900, letterSpacing: 1.4, marginBottom: 8 }}>
+              TRANSCRIPT · {phase === 'active' ? liftoff?.currentAction?.type?.toUpperCase() || 'LIFTOFF' : phase.toUpperCase()}
             </div>
             <CaptionPanel
               sentences={transcriptLines}
@@ -2150,7 +2161,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               onReplayRequest={replayTranscriptLine}
               replayEnabled={!busy && !lineHelpBusy}
               teacherName="Mr. Slate"
-              stackedHeight={structuredMathPresented && activeScratchDraft?.visible ? 'clamp(260px, 42vh, 460px)' : null}
+              stackedHeight={(structuredMathPresented && activeScratchDraft?.visible) || manualScratchUi.visible ? 'clamp(260px, 42vh, 460px)' : null}
               tailContent={activeMathTranscriptContent}
               theme={{
                 background: C.surface2,
@@ -2172,16 +2183,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               }}
             />
           </div>
-
-          {phase === 'active' && manualScratchUi.visible && (
-            <div data-slate-manual-scratch style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
-              <SlateManualScratch draft={manualScratchUi} activityId={manualScratchActivityId} phase="teaching"
-                onChange={commitManualScratchUi} allowTransfer={!introTeaching && !questionPending}
-                onUseResult={(result) => { setAnswer((current) => insertSlateMathResult(current, result)); answerInputRef.current?.focus() }}
-                disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
-              />
-            </div>
-          )}
 
           {phase === 'active' && introTeaching && (
             <div data-slate-intro-navigation style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>
@@ -2233,11 +2234,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             <div style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 18 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
                 <div style={{ color: C.muted, fontSize: 12 }}>TEST {assessmentIndex + 1}/{currentAssessmentItems.length}</div>
-                <button type="button" data-slate-test-manual-math-toggle aria-expanded={manualScratchUi.visible}
-                  onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
-                  style={{ background: C.surface2, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 6, padding: '7px 10px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-                  {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
-                </button>
                 {phase === 'test' && <button type="button" onClick={() => void printIndependentTest()} disabled={testPrintBusy || busy} style={{ padding: '7px 10px', background: C.surface2, color: C.accent, border: '1px solid ' + C.border, borderRadius: 6, fontFamily: C.font, fontWeight: 800, cursor: testPrintBusy ? 'wait' : 'pointer' }}>{testPrintBusy ? 'PREPARING PDF...' : 'PRINT TEST'}</button>}
               </div>
               {testPrintError && <div role="alert" style={{ color: C.red, fontSize: 12, marginBottom: 8 }}>{testPrintError}</div>}
@@ -2258,15 +2254,24 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 >{questionText(currentAssessment)}</div>
               </div>
 
-              {manualScratchUi.visible && <div data-slate-manual-scratch style={{ marginTop: 12 }}>
-                  <SlateManualScratch
-                  draft={manualScratchUi} activityId={manualScratchActivityId} phase="test"
-                  onChange={commitManualScratchUi}
-                  onUseResult={(result) => { const next = insertSlateMathResult(assessmentAnswer, result); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }}
-                  allowTransfer={questionType(currentAssessment) === 'shortanswer'}
-                  disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
-                  />
-                </div>}
+              <div data-slate-test-manual-scratch-panel style={{ marginBottom: 10 }}>
+                <button type="button" data-slate-test-manual-math-toggle aria-expanded={manualScratchUi.visible}
+                  onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
+                  style={{ background: C.surface2, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
+                  {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
+                </button>
+                {manualScratchUi.visible && (
+                  <div data-slate-manual-scratch style={{ marginTop: 10 }}>
+                    <SlateManualScratch
+                      draft={manualScratchUi} activityId={manualScratchActivityId} phase="test"
+                      onChange={commitManualScratchUi}
+                      onUseResult={(result) => { const next = insertSlateMathResult(assessmentAnswer, result); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }}
+                      allowTransfer={questionType(currentAssessment) === 'shortanswer'}
+                      disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+                    />
+                  </div>
+                )}
+              </div>
               {assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? (
                 <div style={{ display: 'grid', gap: 8 }}>
                   <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>

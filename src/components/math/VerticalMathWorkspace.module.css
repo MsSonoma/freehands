@@ -92,6 +92,18 @@
 .scratchDivisionOperationSelect {
   margin-right: 8px;
 }
+/* An operation dropdown must occupy the same column as the blank sign slots
+   above and below it, or the place-value digits shift sideways by 23px. */
+.scratchGrid .operator {
+  width: 58px;
+  min-width: 58px;
+}
+.scratchGrid .mathRule {
+  margin-left: 58px;
+}
+.scratchGrid.multiplicationGrid .mathRule {
+  margin-left: 134px;
+}
 .cellWrapper {
   display: inline-flex;
   align-items: center;

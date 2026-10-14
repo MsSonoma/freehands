@@ -83,6 +83,9 @@ test('Slate scratch workspace owns its transfer button and has no decorative div
   assert.match(workspaceCss, /\.workspaceFooter > button \{[\s\S]*?border-radius: 8px;[\s\S]*?background: var\(--addition-accent\);[\s\S]*?font: 800 13px/)
   assert.match(workspaceCss, /\.workspaceFooter > button:disabled \{\s*opacity: 0\.5;/)
   assert.match(workspaceCss, /\.mathRule \{\s*border-top: 2px solid/)
+  assert.match(workspaceCss, /\.scratchGrid \.operator \{\s*width: 58px;\s*min-width: 58px;/)
+  assert.match(workspaceCss, /\.scratchGrid \.mathRule \{\s*margin-left: 58px;/)
+  assert.match(workspaceCss, /\.scratchGrid\.multiplicationGrid \.mathRule \{\s*margin-left: 134px;/)
 })
 
 test('supplied problem and learner-entered math workspaces remain independently accessible', () => {
@@ -92,8 +95,11 @@ test('supplied problem and learner-entered math workspaces remain independently 
   assert.match(slate, /data-slate-math-toggle/)
   assert.match(slate, /data-slate-test-math-toggle/)
   assert.match(slate, /data-slate-manual-math-toggle/)
+  assert.match(slate, /data-slate-manual-scratch-panel/)
+  assert.ok(slate.indexOf('data-slate-manual-math-toggle') > slate.indexOf('data-slate-active-math-transcript-tail'))
+  assert.ok(slate.indexOf('data-slate-manual-math-toggle') < slate.indexOf('tailContent={activeMathTranscriptContent}'))
   assert.match(slate, /data-slate-test-manual-math-toggle/)
-  assert.match(slate, /const activeMathTranscriptContent = phase === 'active' && structuredMathPresented/)
+  assert.match(slate, /const activeMathTranscriptContent = phase === 'active' \? \(/)
   assert.match(slate, /manualScratchUi\.visible && \(\s*<div data-slate-manual-scratch/)
   assert.match(slate, /manualScratchUi: manualScratchUiRef\.current/)
   assert.match(manual, /aria-label="First scratch number"/)
