@@ -50,6 +50,11 @@ test('bare arithmetic recognition is anchored and independent of the test answer
     [{ question: '3 + 4', type: 'numeric' }, 'addition'],
     [{ question: '12 + 3?', expected: '14' }, 'addition'],
     [{ question: '9 ÷ 2', expected: '4' }, 'division'],
+    [{ question: 'What is 6,708 + 4,395?', choices: ['11,103', '11,003'], correct: 'A' }, 'addition'],
+    [{ question: 'What is 10,000 - 6,438?', choices: ['3,562', '3,662'], correct: 'A' }, 'subtraction'],
+    [{ question: 'What is 407 × 16?', choices: ['6,512', '6,112'], correct: 'A' }, 'multiplication'],
+    [{ question: '8,640 ÷ 12 = ?', expected: '720' }, 'division'],
+    [{ question: '4,810 + 2,005 + 1,025?', expected: '7840' }, 'addition'],
   ]
   for (const [item, operation] of accepted) {
     const result = resolveSlateTestMath(item)
@@ -67,10 +72,15 @@ test('bare arithmetic recognition is anchored and independent of the test answer
     { question: 'Round 2 + 3.', expected: '5' },
     { question: '1 + 2 + 3 + 4 + 5 + 6 + 7 + 8 + 9 + 10 + 11', expected: '66' },
     { question: '2 + 2', type: 'tf', correct: true },
+    { question: 'What is 10,00 - 6,438?', choices: ['3,562', '3,662'], correct: 'A' },
+    { question: 'Which estimate best checks 2,986 × 31?', choices: ['10,000', '100,000'], correct: 'A' },
+    { question: 'A farmer puts 2,736 apples equally into 12 crates. How many apples go in each crate?', choices: ['228', '236'], correct: 'A' },
   ]
   for (const item of rejected) assert.deepEqual(resolveSlateTestMath(item), { kind: 'text' }, item.question)
 
-  assert.deepEqual(resolveSlateTestMath({ question: '2 + 2', choices: ['3', '4'], correct: 1 }), { kind: 'text' })
+  assert.equal(resolveSlateTestMath({ question: '2 + 2', choices: ['3', '4'], correct: 1 }).kind, 'math')
+  const liveQuestion = resolveSlateTestMath({ question: 'What is 10,000 - 6,438?', choices: ['3,562', '3,662'], correct: 'A' })
+  assert.deepEqual(liveQuestion.spec.operands, ['10000', '6438'])
   assert.deepEqual(resolveSlateTestMath({ question: '2 + 2', type: 'tf', correct: true }), { kind: 'text' })
 })
 

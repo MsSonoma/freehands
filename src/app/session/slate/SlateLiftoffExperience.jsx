@@ -2206,14 +2206,23 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                         phase="test"
                         showFullAnswerInputs={false}
                         embeddedScratch
-                        footer={
+                        footer={questionType(currentAssessment) === 'multiplechoice' ? null : (
                           <button type="button" onClick={() => { const next = insertSlateMathResult(assessmentAnswer, assessmentWorkspaceValue); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }} disabled={busy || snapshotServiceRef.current?.writesFenced || !assessmentWorkspaceValue} style={{ cursor: assessmentWorkspaceValue ? 'pointer' : 'default' }}>USE THIS RESULT IN ANSWER</button>
-                        }
+                        )}
                       />
                     </fieldset>
                   ) : (
                     <div role="alert" style={{ color: C.red, fontWeight: 700 }}>This test math item could not be opened. Your work has been kept.</div>
                   ))}
+                  {questionType(currentAssessment) === 'multiplechoice' ? (
+                  <div style={{ display: 'grid', gap: 8 }}>
+                    {currentAssessment.choices.map((choice, index) => {
+                      const letter = typeof choice === 'object' ? (choice.letter || String.fromCharCode(65 + index)) : String.fromCharCode(65 + index)
+                      const text = typeof choice === 'object' ? (choice.text || choice.label || letter) : choice
+                      return <button key={`${letter}-${index}`} disabled={busy || lessonInteractionHeld} onClick={() => void submitAssessmentAnswer(letter)} style={{ textAlign: 'left', padding: 12, cursor: 'pointer' }}>{letter}. {text}</button>
+                    })}
+                  </div>
+                  ) : (
                   <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
                     <textarea rows={2} value={assessmentAnswer} onChange={(event) => {
                       assessmentMathTextRef.current = event.target.value
@@ -2223,6 +2232,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                     }} disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} placeholder="Type your answer or use a result from scratch work" style={{ flex: 1, minWidth: 0, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
                     <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!assessmentAnswer.trim() && !assessmentMathPending?.status)} style={{ padding: '10px 18px', cursor: 'pointer' }}>SUBMIT</button>
                   </form>
+                  )}
                   {assessmentMathError && <div role="status" style={{ color: C.muted, fontWeight: 700 }}>{assessmentMathError}</div>}
                 </div>
               ) : questionType(currentAssessment) === 'multiplechoice' ? (

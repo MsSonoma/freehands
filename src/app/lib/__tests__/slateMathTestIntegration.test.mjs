@@ -63,6 +63,34 @@ test('bare arithmetic in a test opens the prepopulated Question Math Workspace w
   assert.equal(nextShown.visible, true)
 })
 
+test('current comma-grouped multiple-choice arithmetic opens the existing question grid and keeps choice answers', () => {
+  const item = {
+    question: 'What is 10,000 - 6,438?',
+    choices: [{ letter: 'A', text: '3,562' }, { letter: 'B', text: '3,662' }],
+    correct: 'A',
+  }
+  const result = createSlateMathTestSession({ item, activityId: 'current-slate-math-test' })
+  assert.equal(result.ok, true)
+  assert.equal(result.resolved.kind, 'math')
+  assert.equal(result.state.phase, 'test')
+  assert.deepEqual(result.state.spec.operands, ['10000', '6438'])
+  assert.deepEqual(result.state.view.entries, {})
+  const problem = buildMathActivityProblem(result.state.spec)
+  assert.deepEqual(problem.operands, ['10000', '6438'])
+  assert.equal(slateScratchUiForQuestion(null, result.state.activityId, result.state.spec, 'test').visible, true)
+
+  const mathBranch = slateExperienceSource.slice(
+    slateExperienceSource.indexOf(") : assessmentMathResolution.kind === 'math' ? ("),
+    slateExperienceSource.indexOf(") : questionType(currentAssessment) === 'multiplechoice' ? ("),
+  )
+  assert.match(mathBranch, /<VerticalMathWorkspace/)
+  assert.match(mathBranch, /phase="test"/)
+  assert.match(mathBranch, /showCheck=\{false\}/)
+  assert.match(mathBranch, /questionType\(currentAssessment\) === 'multiplechoice' \? \(/)
+  assert.match(mathBranch, /submitAssessmentAnswer\(letter\)/)
+  assert.match(mathBranch, /footer=\{questionType\(currentAssessment\) === 'multiplechoice' \? null/)
+})
+
 test('wrong shorter test answers submit without public correctness feedback', () => {
   const item = { question: '999 + 1 = ?', expected: '1000' }
   let state = createSlateMathTestSession({ item, activityId: 'shorter' }).state

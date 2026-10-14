@@ -64,16 +64,26 @@ function candidateMatches(problem, candidate) {
 function parseExpression(text) {
   const body = text.match(/^(?:(?:what\s+is|calculate|compute|solve|evaluate)\s*:?[ \t]*)?(.+?)(?:\s*(?:\?|=\s*\??))?$/i)?.[1]?.trim()
   if (!body || /\d\/\d/.test(body)) return null
-  const add = body.match(/^(\d+(?:\.\d+)?)(?:\s*\+\s*\d+(?:\.\d+)?){1,9}$/)
-  if (add) return { operation: 'addition', operands: body.split(/\s*\+\s*/), commands: [] }
-  // A spaced slash is a division operator; an unspaced 1/2 stays a fraction.
-  const spacedDivision = body.match(/^(\d+(?:\.\d+)?)\s+\/\s+(\d+(?:\.\d+)?)$/)
-  if (spacedDivision) return { operation: 'division', operands: [spacedDivision[1], spacedDivision[2]], commands: [] }
-  const binary = body.match(/^(\d+(?:\.\d+)?)\s*([-*x\u00d7\u00f7\u2212])\s*(\d+(?:\.\d+)?)$/i)
-  if (!binary) return null
+
+  // The test's numeric prompts can have comma-grouped thousands (10,000 - 6,438).
+  // Validate whole numerals first: only then strip commas for the existing workspace.
+  const validNumber = (value) => /^(?:\d+|\d{1,3}(?:,\d{3})+)(?:\.\d+)?$/.test(value)
+  const clean = (values) => values.map((value) => value.replace(/,/g, ''))
+  const parts = body.split(/\s*\+\s*/)
+  if (parts.length >= 2 && parts.length <= 10 && parts.every(validNumber)) {
+    return { operation: 'addition', operands: clean(parts), commands: [] }
+  }
+
+  // A spaced slash denotes division; an unspaced 1/2 stays a fraction.
+  const spacedDivision = body.match(/^([\d.,]+)\s+\/\s+([\d.,]+)$/)
+  if (spacedDivision && validNumber(spacedDivision[1]) && validNumber(spacedDivision[2])) {
+    return { operation: 'division', operands: clean([spacedDivision[1], spacedDivision[2]]), commands: [] }
+  }
+  const binary = body.match(/^([\d.,]+)\s*([-*x\u00d7\u00f7\u2212])\s*([\d.,]+)$/i)
+  if (!binary || !validNumber(binary[1]) || !validNumber(binary[3])) return null
   const operation = binary[2] === '-' || binary[2] === '\u2212' ? 'subtraction'
     : binary[2] === '\u00f7' ? 'division' : 'multiplication'
-  return { operation, operands: [binary[1], binary[3]], commands: [] }
+  return { operation, operands: clean([binary[1], binary[3]]), commands: [] }
 }
 
 function normalizedResult(raw, source) {
@@ -100,7 +110,9 @@ export function resolveSlateTestMath(item = {}) {
     }
     return resolved
   }
-  if (itemType(item) !== 'shortanswer') return { kind: 'text' }
+  // A choice-based arithmetic test still needs the existing working grid;
+  // the response remains a multiple-choice selection, not a numeric submission.
+  if (itemType(item) === 'truefalse') return { kind: 'text' }
   const raw = parseExpression(questionText(item))
   if (!raw) return { kind: 'text' }
   const resolved = normalizedResult(raw, 'expression')
