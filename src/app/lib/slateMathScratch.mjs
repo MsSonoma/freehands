@@ -1,5 +1,6 @@
 import { buildMathActivityProblem, createMathSession, normalizeMathActivity, restoreMathSession } from '../../lib/math/mathSession.mjs'
 import { listVerticalMathWorkingNoteSlots, restoreVerticalMathWorkingNotes } from '../../lib/math/verticalMathNotes.mjs'
+import { sanitizeMultiplicationScratchEntries } from '../../lib/math/multiplicationScratch.mjs'
 
 function scratchNoteKeys(state) {
   try {
@@ -23,6 +24,17 @@ export function slateScratchChoices(math) {
       return false
     }
   })
+}
+
+function restoredScratchPartialEntries(raw, math, supported) {
+  if (!supported.includes('multiplication')) return {}
+  try {
+    const problem = buildMathActivityProblem(slateScratchSpec(math, 'multiplication'))
+    const entries = sanitizeMultiplicationScratchEntries(
+      problem, raw?.partialEntriesByOperation?.multiplication,
+    )
+    return Object.keys(entries).length ? { multiplication: entries } : {}
+  } catch { return {} }
 }
 
 export function slateScratchActivityId(originalId, operation) {
@@ -57,13 +69,15 @@ export function restoreSlateScratchUi(raw, originalId, math, phase) {
     })
     variants[op] = { session: restored.state, notes: notes.notes }
   }
-  return { activityId: originalId, visible: raw.visible === true, operation, variants }
+  return { activityId: originalId, visible: raw.visible === true, operation, variants,
+    partialEntriesByOperation: restoredScratchPartialEntries(raw, math, supported) }
 }
 
 export function selectSlateScratchOperation(ui, originalId, math, phase, operation) {
   if (!slateScratchChoices(math).includes(operation)) return null
   const base = restoreSlateScratchUi(ui, originalId, math, phase) || {
     activityId: originalId, visible: true, operation: math.operation, variants: {},
+    partialEntriesByOperation: {},
   }
   if (operation === math.operation || base.variants[operation]) return { ...base, operation }
   const variant = createSlateScratchVariant(math, operation, originalId, phase)
@@ -74,5 +88,6 @@ export function selectSlateScratchOperation(ui, originalId, math, phase, operati
 export function slateScratchUiForQuestion(ui, originalId, math, phase) {
   return restoreSlateScratchUi(ui, originalId, math, phase) || {
     activityId: originalId, visible: true, operation: math.operation, variants: {},
+    partialEntriesByOperation: {},
   }
 }

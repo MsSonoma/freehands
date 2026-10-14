@@ -7,6 +7,7 @@ import { sanitizeVerticalMathWorkingNotes } from '@/lib/math/verticalMathNotes.m
 import { buildSlateManualScratch, slateManualOperationChoices } from '@/app/lib/slateManualScratch.mjs'
 import { SLATE_SCRATCH_OPERATIONS } from '@/app/lib/slateMathScratch.mjs'
 import { slateMathWorkspaceResult } from '@/app/lib/slateMathDraft.mjs'
+import { sanitizeMultiplicationScratchEntries } from '@/lib/math/multiplicationScratch.mjs'
 
 const SIGNS = { addition: '+', subtraction: '\u2212', multiplication: '\u00d7', division: '\u00f7' }
 
@@ -24,11 +25,11 @@ export default function SlateManualScratch({
     if (value.length > 26 || !/^[0-9.,]*$/.test(value)) return
     const operands = [...draft.operands]
     operands[index] = value
-    onChange({ ...draft, operands, session: null, notes: {} })
+    onChange({ ...draft, operands, session: null, notes: {}, partialEntries: {} })
   }
   function setOperation(operation) {
     if (!SLATE_SCRATCH_OPERATIONS.includes(operation) || (model && !options.includes(operation))) return
-    onChange({ ...draft, operation, session: null, notes: {} })
+    onChange({ ...draft, operation, session: null, notes: {}, partialEntries: {} })
   }
   function setView(view) {
     if (!model) return
@@ -63,6 +64,10 @@ export default function SlateManualScratch({
         onChange({ ...draft, notes: sanitizeVerticalMathWorkingNotes(notes) })}
       phase={phase} embeddedScratch showCheck={false} showFullAnswerInputs={false}
       operationChoices={options} onOperationChange={setOperation}
+      scratchPartialEntries={draft.partialEntries || {}}
+      onScratchPartialEntriesChange={(entries) => onChange({
+        ...draft, partialEntries: sanitizeMultiplicationScratchEntries(model.problem, entries),
+      })}
       footer={allowTransfer && <button type="button" disabled={!result}
         onClick={() => onUseResult?.(result)}>USE THIS RESULT IN ANSWER</button>}
     />}

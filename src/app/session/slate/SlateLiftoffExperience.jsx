@@ -19,6 +19,7 @@ import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
 import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
 import { slateMathWorkspaceResult, insertSlateMathResult } from '@/app/lib/slateMathDraft.mjs'
 import { slateScratchChoices, slateScratchSpec, slateScratchUiForQuestion, selectSlateScratchOperation } from '@/app/lib/slateMathScratch.mjs'
+import { sanitizeMultiplicationScratchEntries } from '@/lib/math/multiplicationScratch.mjs'
 import { SnapshotService } from '@/app/session/v2/SnapshotService.jsx'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { analyzeAssessmentIsolation, ASSESSMENT_ISOLATION_STATUSES, ASSESSMENT_ROLES } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
@@ -1488,6 +1489,25 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     } })
   }, [activeMathSpec, assessmentMathSpec, busy, changeAssessmentMathWorkingNotes, changeMathWorkingNotes, commitScratchUi, lineHelpBusy, lineHelpTarget])
 
+  const changeScratchPartialEntries = useCallback((isTest, entries) => {
+    if (busy || lineHelpBusy || lineHelpTarget || snapshotServiceRef.current?.writesFenced) return
+    const original = isTest ? assessmentMathSessionRef.current : mathSessionRef.current
+    const math = isTest ? assessmentMathSpec : activeMathSpec
+    if (!original || !math) return
+    const ui = slateScratchUiForQuestion(
+      isTest ? assessmentScratchUiRef.current : activeScratchUiRef.current,
+      original.activityId, math, isTest ? 'test' : 'teaching',
+    )
+    if (ui.operation !== 'multiplication') return
+    let problem
+    try { problem = buildMathActivityProblem(slateScratchSpec(math, 'multiplication')) }
+    catch { return }
+    const clean = sanitizeMultiplicationScratchEntries(problem, entries)
+    commitScratchUi(isTest, { ...ui, partialEntriesByOperation: {
+      ...ui.partialEntriesByOperation, multiplication: clean,
+    } })
+  }, [activeMathSpec, assessmentMathSpec, busy, commitScratchUi, lineHelpBusy, lineHelpTarget])
+
   const skillsRemaining = Math.max(0, essentialComponents.length - demonstratedComponents.length)
   const learnerStage = phase === 'test' ? 'test' : 'liftoff'
   const progressStages = [
@@ -2078,6 +2098,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             onViewChange={(nextView) => changeScratchView(false, nextView)}
             notes={activeScratchNotes}
             onNotesChange={(nextNotes) => changeScratchNotes(false, nextNotes)}
+            scratchPartialEntries={activeScratchDraft?.partialEntriesByOperation?.multiplication || {}}
+            onScratchPartialEntriesChange={(entries) => changeScratchPartialEntries(false, entries)}
             selectedLocation={activeScratchOperation === activeMathSpec.operation ? (selectedMathTextLocation || null) : null}
             onCellSelect={activeScratchOperation === activeMathSpec.operation ? (location) => {
               if (mathSession.view.editable.includes(location)) setSelectedMathTextLocation(location)
@@ -2296,6 +2318,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                         onViewChange={(nextView) => changeScratchView(true, nextView)}
                         notes={assessmentScratchNotes}
                         onNotesChange={(nextNotes) => changeScratchNotes(true, nextNotes)}
+                        scratchPartialEntries={assessmentScratchDraft?.partialEntriesByOperation?.multiplication || {}}
+                        onScratchPartialEntriesChange={(entries) => changeScratchPartialEntries(true, entries)}
                         selectedLocation={assessmentScratchOperation === assessmentMathSpec.operation ? (assessmentMathTextLocation || null) : null}
                         onCellSelect={assessmentScratchOperation === assessmentMathSpec.operation ? (location) => {
                           if (assessmentMathSession.view.editable.includes(location)) {

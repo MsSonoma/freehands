@@ -62,3 +62,21 @@ test('division is available when two supported nonzero whole numbers are provide
   const initial = createSlateScratchVariant(input, 'addition', 'id', 'teaching')
   assert.equal(initial.session.spec.operation, 'addition')
 })
+
+test('question scratch keeps partial digits for its multiplier across operation switches and restore', () => {
+  const math = { operation: 'addition', operands: ['47', '26'], commands: [] }
+  const base = selectSlateScratchOperation(null, 'original', math, 'test', 'multiplication')
+  const withPartials = { ...base, partialEntriesByOperation: {
+    multiplication: { 'partial.1.ones': '2', 'partial.2.tens': '4', 'partial.2.ones': '0' },
+  } }
+  const restored = restoreSlateScratchUi(withPartials, 'original', math, 'test')
+  assert.deepEqual(restored.partialEntriesByOperation, {
+    multiplication: { 'partial.1.ones': '2', 'partial.2.tens': '4' },
+  })
+  const switchToAddition = selectSlateScratchOperation(restored, 'original', math, 'test', 'addition')
+  const switchedBack = selectSlateScratchOperation(switchToAddition, 'original', math, 'test', 'multiplication')
+  assert.deepEqual(switchedBack.partialEntriesByOperation, restored.partialEntriesByOperation)
+  assert.equal(restoreSlateScratchUi(withPartials, 'other-question', math, 'test'), null)
+  assert.deepEqual(slateScratchUiForQuestion(withPartials, 'other-question', math, 'test').partialEntriesByOperation, {})
+  assert.deepEqual(slateScratchUiForQuestion(null, 'original', math, 'test').partialEntriesByOperation, {})
+})

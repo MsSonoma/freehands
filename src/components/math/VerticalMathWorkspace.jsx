@@ -14,6 +14,7 @@ import {
   updateVerticalMathWorkingNote,
 } from '@/lib/math/verticalMathNotes.mjs'
 import styles from './VerticalMathWorkspace.module.css'
+import { multiplicationScratchIsShiftZero, updateMultiplicationScratchEntry } from '@/lib/math/multiplicationScratch.mjs'
 
 const MULTIPLICATION = '\u00d7'
 const SCRATCH_SYMBOLS = { addition: '+', subtraction: '\u2212', multiplication: MULTIPLICATION, division: '\u00f7' }
@@ -23,6 +24,7 @@ export default function VerticalMathWorkspace({
   problem, view, onViewChange, onCellSelect, selectedLocation = null, phase = 'teaching', onCheck,
   showCheck = true, showFullAnswerInputs = true, notes, onNotesChange,
   embeddedScratch = false, footer = null, onOperationChange = null, operationChoices = [],
+  scratchPartialEntries = {}, onScratchPartialEntriesChange = null,
 }) {
   const inputId = useId()
   const [fullAnswer, setFullAnswer] = useState('')
@@ -154,6 +156,28 @@ export default function VerticalMathWorkspace({
     return <span className={classes} aria-hidden="true" data-cell-id={publicCellName} />
   }
 
+  function partialScratchCellNode(row, cell, decimalConcealed) {
+    if (!embeddedScratch || problem.operation !== 'multiplication' ||
+      row.role !== 'partial_product' || !hidden.has(cell.id) ||
+      editable.has(cell.id) || cell.value === null || !onScratchPartialEntriesChange) {
+      return cellNode(cell, decimalConcealed)
+    }
+    if (multiplicationScratchIsShiftZero(row, cell)) {
+      return <span className={styles.cell} aria-label={'Place-value zero for partial ' + row.rowIndex}>0</span>
+    }
+    return <input
+      className={[styles.cell, styles.editable].join(' ')}
+      type="text" inputMode="numeric" pattern="[0-9]*" maxLength={1}
+      value={scratchPartialEntries?.[cell.id] ?? ''}
+      aria-label={'Enter partial ' + row.rowIndex + ' ' + cell.id.split('.').at(-1)}
+      data-scratch-partial={cell.id} autoComplete="off"
+      onChange={(event) => {
+        const next = updateMultiplicationScratchEntry(problem, scratchPartialEntries, cell.id, event.target.value)
+        if (next !== null) onScratchPartialEntriesChange(next)
+      }}
+    />
+  }
+
   function scratchOperationSelect(extraClass = '') {
     return <select
       className={[styles.scratchOperationSelect, extraClass].filter(Boolean).join(' ')}
@@ -271,7 +295,7 @@ export default function VerticalMathWorkspace({
         {operatorNode(symbol, isDesignatedOperatorRow)}
         {row.cells.map((cell) => <span className={styles.cellWrapper} role="cell" key={cell.id}
           data-slot={cell.slot}>
-          {cellNode(cell, decimalConcealed)}
+          {partialScratchCellNode(row, cell, decimalConcealed)}
           {workingNoteNode(cell)}
           {anyDecimalHidden
             ? decimalDot(row, cell)

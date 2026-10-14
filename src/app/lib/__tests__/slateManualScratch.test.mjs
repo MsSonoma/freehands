@@ -55,3 +55,23 @@ test('manual subtraction stays in the operation menu when operands would produce
   assert.ok(slateManualOperationChoices(['1.25', '0.35']).includes('subtraction'))
   assert.ok(!slateManualOperationChoices(['1.25', '0.35']).includes('division'))
 })
+
+test('My Math Workspace retains multiplier-dependent partial entries across refresh', () => {
+  const draft = { ...initialSlateManualScratch(), visible: true,
+    operation: 'multiplication', operands: ['47', '26'] }
+  const problem = buildSlateManualScratch(draft, 'manual', 'teaching')
+  assert.equal(problem.problem.partialRows.length, 2)
+  assert(problem.session.view.editable.every((id) => !id.startsWith('partial.')))
+  const entries = { 'partial.1.ones': '2', 'partial.2.tens': '4' }
+  const saved = { ...draft, partialEntries: entries }
+  const restored = restoreSlateManualScratch(JSON.parse(JSON.stringify(saved)), 'manual', 'teaching')
+  assert.deepEqual(restored.partialEntries, entries)
+  assert.equal(buildSlateManualScratch(restored, 'manual', 'teaching').problem.partialRows.length, 2)
+  assert.deepEqual(restoreSlateManualScratch({
+    ...saved, partialEntries: { ...entries, 'result.ones': '8', 'partial.2.ones': '0' },
+  }, 'manual', 'teaching').partialEntries, entries)
+  assert.deepEqual(restoreSlateManualScratch({
+    ...saved, operation: 'addition',
+  }, 'manual', 'teaching').partialEntries, {})
+  assert.deepEqual(restoreSlateManualScratch({ ...draft }, 'manual', 'test').partialEntries, {})
+})
