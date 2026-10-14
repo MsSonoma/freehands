@@ -248,3 +248,37 @@ test('setter errors other than missing association propagate', async () => {
   )
   assert.equal(setterCalls.length, 1)
 })
+
+test('forecast generation defaults to beginner without educator-selected difficulty', async () => {
+  const h = fixture()
+  h.state.revisions[0].planning_policy = {}
+  h.state.forecast[0].metadata = {
+    learning_forecast: { curriculum_guidance: { mastery_state_before: 'not_measured' } },
+  }
+  let requestedDifficulty = null
+  await materializeForecastOccurrence({
+    ...args(h, async () => {}),
+    generateLesson: async (request) => {
+      requestedDifficulty = request.difficulty
+      return { lessonKey: LESSON_KEY }
+    },
+  })
+  assert.equal(requestedDifficulty, 'beginner')
+})
+
+test('facilitator-selected difficulty outranks syllabus policy during materialization', async () => {
+  const h = fixture()
+  h.state.forecast[0].metadata = {
+    facilitator_planning: { generation_spec: { difficulty: 'advanced' } },
+    learning_forecast: { curriculum_guidance: { mastery_state_before: 'not_measured' } },
+  }
+  let requestedDifficulty = null
+  await materializeForecastOccurrence({
+    ...args(h, async () => {}),
+    generateLesson: async (request) => {
+      requestedDifficulty = request.difficulty
+      return { lessonKey: LESSON_KEY }
+    },
+  })
+  assert.equal(requestedDifficulty, 'advanced')
+})

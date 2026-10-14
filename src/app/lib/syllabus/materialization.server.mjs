@@ -291,7 +291,8 @@ export async function materializeForecastOccurrence({
         subject: item.subject,
         description: item.description || `A complete lesson for ${item.title}.`,
         grade: learnerGrade,
-        difficulty: clean(facilitatorSpec.difficulty) || clean(activeRevision.planning_policy?.difficulty) || 'intermediate',
+        // Without an educator-selected level, start with supported beginner work rather than assuming readiness.
+        difficulty: clean(facilitatorSpec.difficulty) || clean(activeRevision.planning_policy?.difficulty) || 'beginner',
         notes: [facilitatorNotes, syllabusNotes].filter(Boolean).join(' '),
         vocab: clean(facilitatorSpec.vocab),
         curriculumTargets: curriculumTargetsFromForecastItem(item),

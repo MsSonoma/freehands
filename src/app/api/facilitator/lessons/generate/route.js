@@ -120,6 +120,15 @@ function buildPrompt({ title, subject, difficulty, grade, description, notes, vo
     const instructionalChange = String(curriculumTargets.instructionalChange || '').trim()
     curriculumGuidance = ` Curriculum target identity: ${curriculumTargets.primaryRequirement.key}. ${statement ? `Required learning: ${statement}. ` : ''}${instructionalChange ? `Instructional progression requirement: ${instructionalChange}. ` : ''}Keep the lesson and every assessment item centered on this target; do not silently substitute a neighboring topic.`
   }
+  const difficultyCalibration = String(difficulty || '').trim().toLowerCase() === 'beginner'
+    ? [
+        'BEGINNER CONTENT CALIBRATION (MANDATORY): Beginner describes the difficulty of the ACTUAL problems, learning objectives, baseline, instructional exercises, independent test, and follow-ups, not merely tone or pacing.',
+        'Assume the learner has NOT demonstrated mastery of this exact skill. Start with accessible prerequisite checks and concrete worked examples; explain each step before expecting independence.',
+        'For math, use manageable number sizes and one operation at a time at entry, with place-value models, vertical alignment, and guided reasoning where appropriate. Introduce regrouping, additional digits, or a second step only after clear scaffolded practice.',
+        'If the curriculum target includes multi-digit or multi-step operations, keep the same target but teach it using small, readable numbers and explicitly scaffold each step. Do not put large multi-step calculations or multiple unfamiliar operations in the baseline or early exercises.',
+        'Keep independent Test questions aligned to the taught beginner-level objectives and representations, without new complexity or untaught prerequisites. Do not make the Test harder than the lesson.',
+      ].join(' ')
+    : ''
   return `You are an education content generator. Create a complete JSON lesson following this exact structure:
 
 {
@@ -185,6 +194,7 @@ Blurb: ${description}
 Grade: ${grade}
 Difficulty: ${difficulty}
 Subject: ${subject}${vocabText}${curriculumGuidance}
+${difficultyCalibration}
 
 Return ONLY valid JSON. No markdown, no code blocks, no commentary.`
 }
@@ -274,7 +284,8 @@ function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, 
     title: lesson.title || title,
     description: lesson.description || lesson.blurb || description || '',
     grade: lesson.grade || grade,
-    difficulty: lesson.difficulty || difficulty,
+    // The facilitator/server-selected level is authoritative; generated JSON cannot silently raise it.
+    difficulty: difficulty || lesson.difficulty,
     subject: (lesson.subject || subject || '').toString().toLowerCase(),
     userId,
     approved: false,
