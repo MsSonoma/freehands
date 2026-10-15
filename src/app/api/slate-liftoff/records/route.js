@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server.js'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization.js'
 import { getSyllabusRequestContext } from '@/app/lib/syllabus/request.server.mjs'
 import { validateLearnerId } from '@/app/lib/syllabus/schema.mjs'
+import { buildSlateTestReportFromEvents } from '@/app/lib/slateTestGradeReport.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -60,7 +61,26 @@ export async function GET(request, deps = {}) {
     const { data, error } = await query
     if (error?.code === '42P01') return NextResponse.json({ records: [] })
     if (error) throw error
-    return NextResponse.json({ records: data || [] })
+    const records = data || []
+    const ids = records.map(r => String(r.execution_session_id || '')).filter(Boolean)
+    if (!ids.length) return NextResponse.json({ records })
+    const evidence = await admin.from('learning_evidence_events')
+      .select('session_id,event_type,payload,result,occurred_at,event_sequence')
+      .eq('learner_id', learnerId).eq('facilitator_id', context.user.id)
+      .in('session_id', ids)
+      .in('event_type', ['item_presented', 'answer_evaluated'])
+      .order('occurred_at', { ascending: true }).limit(2000)
+    if (evidence.error) return NextResponse.json({ records: records.map(row => ({ ...row, test_report_unavailable: true })) })
+    const grouped = new Map()
+    for (const event of evidence.data || []) {
+      const id = String(event.session_id || '')
+      if (!grouped.has(id)) grouped.set(id, [])
+      grouped.get(id).push(event)
+    }
+    return NextResponse.json({ records: records.map(row => ({
+      ...row,
+      test_report: buildSlateTestReportFromEvents(grouped.get(String(row.execution_session_id)) || [], row.independent_test_percentage),
+    })) })
   } catch (error) {
     return NextResponse.json({ error: error?.message || 'Could not load Liftoff instructional evidence' }, { status: Number.isInteger(error?.status) ? error.status : 500 })
   }

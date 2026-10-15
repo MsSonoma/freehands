@@ -17,6 +17,7 @@ import { getLearner } from '@/app/facilitator/learners/clientApi'
 import { getStoredAssessments, saveAssessments } from '@/app/session/assessment/assessmentStore'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
+import SlateIndependentTestReport from '@/app/session/slate/SlateIndependentTestReport'
 import { buildAssessmentPhaseSets, resolveLearnerAssessmentTargets } from '@/app/session/assessment/assessmentSets'
 import { loadLesson } from '@/app/session/v2/services'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
@@ -881,6 +882,19 @@ export default function FacilitatorSyllabusLessonOverlay({
                 {liftoffComponents.some((component) => component.description || (Array.isArray(component.dependencies) && component.dependencies.length > 0)) && <ul>{liftoffComponents.map((component) => <li key={`detail-${component.id || component.name}`}><strong>{component.name || component.id || 'Objective'}:</strong> {String(component.evidenceState || 'unobserved').replaceAll('_', ' ')}{component.description ? <div>{component.description}</div> : null}{Array.isArray(component.dependencies) && component.dependencies.length > 0 ? <small>Depends on: {component.dependencies.join(', ')}</small> : null}</li>)}</ul>}
                 {(displayedLiftoffProgress.responsibility_trace || []).length > 0 && <details><summary>Instructional trace</summary><ol>{displayedLiftoffProgress.responsibility_trace.map((entry, index) => <li key={String(entry.turn || index) + '-' + index}><strong>Turn {entry.turn || index + 1}:</strong> {String(entry.diagnosis || 'unknown').replaceAll('_', ' ')}{entry.evidence ? <span> - {entry.evidence}</span> : null}{entry.action?.type ? <div><strong>Next move:</strong> {String(entry.action.type).replaceAll('_', ' ')}{entry.action.reason ? <span> - {entry.action.reason}</span> : null}</div> : null}</li>)}</ol></details>}
               </details>
+              {liftoffRecord?.test_report_unavailable && <p role="status">The grading report could not be loaded. The recorded score remains unchanged.</p>}
+              {liftoffRecord && !liftoffRecord.test_report && !liftoffRecord.test_report_unavailable && <p>No question-level grading evidence is available for this historical test.</p>}
+              {liftoffRecord?.test_report?.items?.length > 0 && <details style={{ marginTop: 12 }}>
+                <summary style={{ fontWeight: 800, cursor: 'pointer' }}>
+                  View independent test grading report ({liftoffRecord.test_report.items.length} questions)
+                </summary>
+                <SlateIndependentTestReport
+                  items={liftoffRecord.test_report.items}
+                  percentage={liftoffRecord.test_report.percentage}
+                  legacy={liftoffRecord.test_report.legacy}
+                  compact
+                />
+              </details>}
               {liftoffLive && <small>{liftoffRealtimeStatus === 'subscribed' ? 'Live updates connected.' : 'Connecting live updates...'}</small>}
               {!liftoffLive && <small>This is observed instructional process evidence from Liftoff. It does not by itself establish delayed retention.</small>}
             </> : <p>No Liftoff objectives yet. They will appear here as soon as the learner begins with Mr. Slate.</p>}

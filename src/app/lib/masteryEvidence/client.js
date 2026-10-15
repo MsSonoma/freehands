@@ -308,6 +308,8 @@ export class MasteryEvidenceClient {
     isFirstResponse,
     isCorrect,
     evaluationMode = 'current_app_judgment',
+    judgmentStatus = null,
+    judgmentReason = null,
     response = null,
     correctAnswer = null,
     questionIndex = null,
@@ -335,6 +337,7 @@ export class MasteryEvidenceClient {
       result: {
         correct: isCorrect === true,
         evaluation_mode: evaluationMode,
+        ...(judgmentStatus ? { judgment_status: String(judgmentStatus) } : {}),
       },
       payload: {
         source: this.meta?.eventSource || 'session-v2',
@@ -342,6 +345,7 @@ export class MasteryEvidenceClient {
         question_index: Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : null,
         response_value: response == null ? null : String(response),
         correct_answer: correctAnswer == null ? null : String(correctAnswer),
+        ...(judgmentReason ? { judgment_reason: String(judgmentReason).slice(0, 400) } : {}),
       },
     }));
   }

@@ -191,7 +191,7 @@ test('independent test submits a single text response without math-routing hints
   const start = slateExperienceSource.indexOf('const submitAssessmentAnswer = useCallback')
   const end = slateExperienceSource.indexOf('\n  }, [appendTranscript', start)
   const submit = slateExperienceSource.slice(start, end)
-  assert.match(submit, /const correct = await judgeAssessmentItem\(item, pending\.answer\)/)
+  assert.match(submit, /const judgment = await judgeAssessmentItem\(item, pending\.answer\)/)
   assert.match(submit, /status: 'judge'/)
   assert.match(submit, /mathWorking: pending\.working/)
   assert.doesNotMatch(submit, /routeMathTextInput|mathTestSubmissionReady|evaluateMathTestAnswer|submitMathSession|privateEvaluation/)

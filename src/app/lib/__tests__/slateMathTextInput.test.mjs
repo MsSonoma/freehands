@@ -70,7 +70,7 @@ test('independent test always grades the written answer and never requires grid 
   const start = source.indexOf('const submitAssessmentAnswer = useCallback')
   const end = source.indexOf('\n  }, [appendTranscript', start)
   const submit = source.slice(start, end)
-  assert.match(submit, /const correct = await judgeAssessmentItem\(item, pending\.answer\)/)
+  assert.match(submit, /const judgment = await judgeAssessmentItem\(item, pending\.answer\)/)
   assert.doesNotMatch(submit, /routeMathTextInput|mathTestSubmissionReady|evaluateMathTestAnswer|submitMathSession/)
   assert.match(source, /phase="test"/)
   assert.match(source, /showCheck=\{false\}/)

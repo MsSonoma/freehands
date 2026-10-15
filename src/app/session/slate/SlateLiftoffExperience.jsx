@@ -12,6 +12,8 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient.js'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { recordSlateLiftoffEvidence } from '@/app/lib/slateLiftoffClient.js'
 import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
+import { summarizeSlateTestResults } from '@/app/lib/slateTestGradeReport.mjs'
+import SlateIndependentTestReport from './SlateIndependentTestReport'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import { separateLiftoffTranscriptQuestion } from '@/app/lib/slateLiftoffTranscript.mjs'
@@ -150,59 +152,65 @@ function normalizeAnswer(value) {
 async function judgeAssessmentItem(item, answer) {
   const type = questionType(item)
   if (type === 'truefalse') {
-    return String(answer).toLowerCase() === String(Boolean(item.answer ?? item.correct))
+    const correct = String(answer).trim().toLowerCase() === String(Boolean(item.answer ?? item.correct))
+    return { status: correct ? 'correct' : 'incorrect',
+      reason: correct ? 'The true/false choice is correct.' : 'The true/false choice does not match the question.' }
   }
   if (type === 'multiplechoice') {
     const raw = String(answer || '').trim()
     const correct = item.correct
+    let matched = false
     if (typeof correct === 'number') {
       const index = Math.trunc(correct)
       const letterIndex = /^[A-Z]$/i.test(raw) ? raw.toUpperCase().charCodeAt(0) - 65 : null
       const choice = item.choices?.[index]
       const choiceText = typeof choice === 'object' && choice !== null
         ? String(choice.text || choice.label || '') : String(choice ?? '')
-      return letterIndex === index || (raw !== '' && /^[0-9]+$/.test(raw) && Number(raw) === index) ||
+      matched = letterIndex === index || (raw !== '' && /^[0-9]+$/.test(raw) && Number(raw) === index) ||
         (Boolean(choiceText) && normalizeAnswer(raw) === normalizeAnswer(choiceText))
+    } else {
+      const choice = item.choices?.find(entry => String(entry?.letter || '').toUpperCase() === String(correct || '').toUpperCase())
+      matched = raw.toUpperCase() === String(correct || '').toUpperCase() ||
+        normalizeAnswer(raw) === normalizeAnswer(choice?.text)
     }
-    const choice = item.choices?.find((entry) => String(entry?.letter || '').toUpperCase() === String(correct || '').toUpperCase())
-    return raw.toUpperCase() === String(correct || '').toUpperCase()
-      || normalizeAnswer(raw) === normalizeAnswer(choice?.text)
+    return { status: matched ? 'correct' : 'incorrect',
+      reason: matched ? 'The selected answer is correct.' : 'The selected answer does not match the question.' }
   }
 
   const learnerAnswer = String(answer || '').trim()
-  if (!learnerAnswer) return false
-  const reasoningRequired = /\b(explain|justify|defend|prove|why|reasonableness|compare)\b/i.test(questionText(item))
-  if (reasoningRequired && /^[-+]?[0-9, .%]+$/.test(learnerAnswer)) return false
+  if (!learnerAnswer) return { status: 'incorrect', reason: 'No answer was provided.' }
   const expectedAny = Array.isArray(item.expectedAny) ? item.expectedAny : []
   const expectedAnswer = String(expectedAny[0] || item.expected || item.answer || '').trim()
   const expectedCandidates = [expectedAnswer, ...expectedAny, item.expected, item.answer].filter(Boolean)
-  if (!reasoningRequired && slateMathAnswersEquivalent(learnerAnswer, expectedCandidates, { question: questionText(item) })) return true
-  const keywords = reasoningRequired ? [] : (Array.isArray(item.keywords) ? item.keywords : (Array.isArray(item.keyTerms) ? item.keyTerms : []))
+  const prompt = questionText(item)
+  const reasoningRequired = /\b(explain|justify|defend|prove|why|reasonableness|compare|describe|check|how)\b/i.test(prompt)
+  // Mechanical equivalence is suitable only for a plain numerical question;
+  // it must never replace the semantic assessment of a requested explanation.
+  if (!reasoningRequired && slateMathAnswersEquivalent(learnerAnswer, expectedCandidates, { question: prompt })) {
+    return { status: 'correct', reason: 'The numerical value is equivalent to the expected value.' }
+  }
+  let response
   try {
-    const response = await fetch('/api/judge-short-answer', {
+    response = await fetch('/api/judge-short-answer', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        question: questionText(item),
+        question: prompt,
         learnerAnswer,
         expectedAnswer,
         expectedAny,
-        keywords,
-        minKeywords: Number.isInteger(item.minKeywords) ? item.minKeywords : (keywords.length ? 1 : 0),
         requiresReasoning: reasoningRequired,
       }),
     })
-    const body = await response.json().catch(() => null)
-    if (response.ok && typeof body?.correct === 'boolean') return body.correct
-  } catch {}
-
-  // A numerical match or substring match is not evidence of a defended strategy.
-  if (reasoningRequired) return false
-  const normalized = normalizeAnswer(learnerAnswer)
-  return [expectedAnswer, ...expectedAny].filter(Boolean).some((candidate) => {
-    const expected = normalizeAnswer(candidate)
-    return expected && (normalized === expected || normalized.includes(expected) || expected.includes(normalized))
-  })
+  } catch {
+    throw new Error('Grading is temporarily unavailable. Your answer is saved; submit it again to retry.')
+  }
+  const body = await response.json().catch(() => null)
+  if (!response.ok || !['correct', 'partial', 'incorrect'].includes(body?.status) ||
+      typeof body?.reason !== 'string' || !body.reason.trim()) {
+    throw new Error('Grading is temporarily unavailable. Your answer is saved; submit it again to retry.')
+  }
+  return { status: body.status, reason: body.reason.trim() }
 }
 
 function uniqueQuestions(items = []) {
@@ -945,7 +953,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
   }, [learnerId, lessonKey, occurrenceId])
 
-  const recordCanonicalMasteryAnswer = useCallback(async ({ item, index, answer: learnerAnswer, correct }) => {
+  const recordCanonicalMasteryAnswer = useCallback(async ({ item, index, answer: learnerAnswer, correct, judgment }) => {
     const client = masteryEvidenceClientRef.current
     const canonicalItem = canonicalReservedTestRef.current[index]
     if (!client || !canonicalItem || questionText(canonicalItem) !== questionText(item)) return null
@@ -980,6 +988,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       isFirstResponse: true,
       isCorrect: correct === true,
       evaluationMode: 'slate_liftoff_independent_test',
+      judgmentStatus: judgment?.status || null,
+      judgmentReason: judgment?.reason || null,
       response: learnerAnswer,
       correctAnswer: expectedText(canonicalItem) || null,
     })
@@ -1893,9 +1903,9 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (!alignment.ok || results.length !== testItemsRef.current.length) {
       throw new Error('The independent test did not verify every essential Liftoff objective. No completion or mastery score was recorded.')
     }
-    const total = results.length
-    const correct = results.filter((result) => result.correct).length
-    const percentage = total ? Math.round((correct / total) * 100) : null
+    const score = summarizeSlateTestResults(results)
+    if (!score.complete) throw new Error('An independent test response still needs evaluation. No grade was recorded.')
+    const percentage = score.percentage
     setFinalPercentage(percentage)
     const activeSession = sessionRef.current
     if (!activeSession?.id) throw new Error('The Liftoff session identity was lost before completion.')
@@ -1905,7 +1915,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       learnerId,
       lessonId: lessonKey,
       occurrenceId: activeSession.occurrenceId || occurrenceId,
-      metadata: { source: 'slate-liftoff', test_percentage: percentage },
+      metadata: { source: 'slate-liftoff', test_percentage: percentage,
+        test_points: score.points, test_total: score.total, test_partial: score.partial },
     })
     if (!completed) throw new Error('The lesson assessment finished, but the protected Syllabus completion could not be verified.')
     if (!stillOwns()) return
@@ -2027,12 +2038,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         if (!await persistLiftoffSnapshot()) throw new Error('The test response could not be safely saved yet. Please submit it again.')
       }
       if (pending?.status === 'judge') {
-        const correct = await judgeAssessmentItem(item, pending.answer)
+        const judgment = await judgeAssessmentItem(item, pending.answer)
         if (!stillOwnsItem()) return
         pending = {
           ...pending,
           status: 'evidence',
-          result: { question: submittedQuestion, answer: pending.answer, correct, expected: expectedText(item),
+          result: { question: submittedQuestion, answer: pending.answer,
+            correct: judgment.status === 'correct', judgmentStatus: judgment.status,
+            judgmentReason: judgment.reason, expected: expectedText(item),
             ...(pending.working ? { mathWorking: pending.working } : {}) },
         }
         assessmentMathPendingRef.current = pending
@@ -2054,6 +2067,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       if (!pending.evidenceRecorded) {
         const masteryOutcome = await recordCanonicalMasteryAnswer({
           item, index: submittedIndex, answer: pending.answer, correct: pending.result.correct,
+          judgment: { status: pending.result.judgmentStatus, reason: pending.result.judgmentReason },
         })
         if (!stillOwnsItem()) return
         pending = {
@@ -2132,8 +2146,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         <div style={{ maxWidth: 760, width: '100%', textAlign: 'center' }}>
           <ReviewTeacherVideoStage teacher="slate" ref={videoRef} />
           <h1>Independent Test Results</h1>
-          {finalPercentage != null && <p style={{ fontSize: 20, color: C.green }}>Independent test: {finalPercentage}%</p>}
-          <p style={{ color: C.muted }}>Liftoff transferred the procedure before the independent assessment.</p>
+          <SlateIndependentTestReport items={testResults} percentage={finalPercentage} />
+          <p style={{ color: C.muted }}>This independent test was completed without help during the test. Partial answers receive half a point; only correct answers establish independent mastery evidence.</p>
           <button onClick={() => router.push('/learn')} style={{ padding: '12px 20px', cursor: 'pointer', fontWeight: 800 }}>Back to lessons</button>
           <audio ref={audioRef} style={{ display: 'none' }} />
         </div>
