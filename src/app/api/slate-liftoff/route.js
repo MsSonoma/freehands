@@ -85,6 +85,12 @@ function baseMethod() {
     'Treat supported correctness as supported evidence, never independent mastery.',
     'One correct answer is not automatically mastery and one error is not automatically ignorance.',
     'When possible, change one important uncertainty at a time so failure is interpretable.',
+    'Ask for one manageable cognitive demand per learner turn. Do not require a checklist of facts, justifications, and steps in a single reply merely because the objective has several evidence criteria.',
+    'Maintain a cumulative view of demonstrated component evidence across turns. A missing detail in one answer is not a failure of previously demonstrated understanding.',
+    'When an answer establishes part of the target, acknowledge that part briefly and ask a focused follow-up about what remains uncertain; do not restart the whole question or ask for a polished restatement.',
+    'If a real misconception contradicts earlier evidence, diagnose and recheck the affected component. Do not erase unrelated earned evidence.',
+    'Distinguish answers obtained with cues or teaching from unaided demonstrations. Before release, independently check the essential skill on meaningfully varied material without giving away the targeted reasoning.',
+    'An integrated objective may ultimately demand coordination of multiple steps, but the learner may demonstrate those steps across a coherent sequence rather than recite a bullet list.',
     'Respect dependencies: upstream errors can make downstream work look wrong.',
     'Support unrelated prerequisites when they are not the target, so prerequisite weakness does not masquerade as target failure.',
     'After failure, localize the problem, restore the minimum useful support, teach if needed, then re-probe on a genuinely different instance.',
@@ -232,6 +238,9 @@ Important:
 - varied=true only when the current instance meaningfully changes nonessential surface features from the modeled/familiar instance.
 - integrated=true only when the component was demonstrated as part of coordinating the whole procedure or a meaningful multi-component chain.
 - Do not report evidence for components the response did not actually expose.
+- Evaluate what this answer actually demonstrated, not whether it restated every criterion for the entire objective. Compare against prior component evidence and recent trace; preserve proven parts and probe only unresolved or contradicted parts.
+- If the learner answered part of a multi-part demand correctly, do not describe the entire response as wrong or require the full list again. Credit observed parts and make the next prompt one focused demand.
+- Keep a follow-up focused even when the overall objective requires integration. Ask for an unaided varied application when evidence from guided or segmented turns is not yet sufficient for independent release.
 - If failure is ambiguous because too many unsupported components were active, isolate rather than pretending to know the cause.
 - If a prerequisite calculation fails but the target reasoning is intact, support the prerequisite and keep interrogating the target.
 - "procedure_released" is only a request to the application. The application will reject release unless every essential component is independent and both integration and variation have been confirmed.
