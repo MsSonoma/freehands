@@ -15,6 +15,7 @@ import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSe
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
+import { requestSonomaTextReply } from '@/app/lib/sonomaTextCompletion.mjs'
 const OPENAI_MODEL = AI_MODEL
 
 // ── System prompt builders ─────────────────────────────────────────────────
@@ -150,28 +151,23 @@ export async function POST(request) {
     const nameHint = learnerName || 'student'
 
     try {
-      const res = await fetch(OPENAI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user', content: `Generate the opening introduction for ${nameHint}.` },
-          ],
-          max_completion_tokens: 200,
-          ...aiModelTemperature(0.75, OPENAI_MODEL),
-        }),
+      const result = await requestSonomaTextReply({
+        endpoint: OPENAI_URL,
+        apiKey,
+        model: OPENAI_MODEL,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: `Generate the opening introduction for ${nameHint}.` },
+        ],
+        temperatureOptions: aiModelTemperature(0.75, OPENAI_MODEL),
+        context: 'overview',
       })
-      const json = await res.json()
-      if (!res.ok) {
-        console.error('[sonoma-discussion] OpenAI overview error:', json)
-        return NextResponse.json({ error: 'OpenAI API error', detail: json }, { status: 502 })
+      if (!result.ok) {
+        return NextResponse.json({ error: 'Ms. Sonoma could not prepare the introduction. Please retry.', code: 'SONOMA_REPLY_UNAVAILABLE' }, { status: 502 })
       }
-      const text = json.choices?.[0]?.message?.content?.trim() || ''
-      return NextResponse.json({ text })
+      return NextResponse.json({ text: result.text })
     } catch (err) {
-      console.error('[sonoma-discussion] Overview fetch error:', err)
+      console.error('[sonoma-discussion] Overview handler error:', err?.name || 'unknown')
       return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
   }
@@ -195,25 +191,20 @@ export async function POST(request) {
   const system = `${baseSystem}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}`
 
   try {
-    const res = await fetch(OPENAI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: [{ role: 'system', content: system }, ...messages],
-        max_completion_tokens: 160,
-        ...aiModelTemperature(0.75, OPENAI_MODEL),
-      }),
+    const result = await requestSonomaTextReply({
+      endpoint: OPENAI_URL,
+      apiKey,
+      model: OPENAI_MODEL,
+      messages: [{ role: 'system', content: system }, ...messages],
+      temperatureOptions: aiModelTemperature(0.75, OPENAI_MODEL),
+      context: 'discussion',
     })
-    const json = await res.json()
-    if (!res.ok) {
-      console.error('[sonoma-discussion] OpenAI chat error:', json)
-      return NextResponse.json({ error: 'OpenAI API error', detail: json }, { status: 502 })
+    if (!result.ok) {
+      return NextResponse.json({ error: 'Ms. Sonoma could not continue just yet. Please retry.', code: 'SONOMA_REPLY_UNAVAILABLE' }, { status: 502 })
     }
-    const text = json.choices?.[0]?.message?.content?.trim() || ''
-    return NextResponse.json({ text })
+    return NextResponse.json({ text: result.text })
   } catch (err) {
-    console.error('[sonoma-discussion] Chat fetch error:', err)
+    console.error('[sonoma-discussion] Chat handler error:', err?.name || 'unknown')
     return NextResponse.json({ error: 'Internal error' }, { status: 500 })
   }
 }

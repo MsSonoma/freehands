@@ -5752,11 +5752,23 @@ function SessionPageV2Inner() {
         completedCount: data.completedCount,
         totalCount:     data.totalCount,
       });
+      // The learner's utterance was snapshotted before the async objective
+      // evaluation. Persist newly earned mastery even when the model reply fails.
+      if (Array.isArray(data.completedIndices)) {
+        discussionCompletedIndicesRef.current = [...data.completedIndices];
+        setDiscussionCompletedIndices([...data.completedIndices]);
+        if (snapshotServiceRef.current) {
+          snapshotServiceRef.current.saveProgress('discussion-objective', {
+            completedObjectiveIndices: [...data.completedIndices],
+            sentenceKey: null,
+          }).catch(() => {});
+        }
+      }
     });
 
     const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', () => {
       addEvent('Overview complete — entering discussion chat');
-      setDiscussionState('chatting');
+      setDiscussionState(phase.state === 'reply-unavailable' ? 'reply-unavailable' : 'chatting');
     });
     
     const unsubLearnerTurnReady = eventBusRef.current.on('learnerTurnReady', (data) => {
@@ -10179,6 +10191,43 @@ function SessionPageV2Inner() {
                   {discussionObjectivesInfo.completed}/{discussionObjectivesInfo.total}
                 </button>
               )}
+            </div>
+          )}
+
+          {/* A failed model response must never become a fabricated teaching turn. */}
+          {currentPhase === 'discussion' &&
+           discussionState === 'reply-unavailable' &&
+           !openingActionActive && !showWords && (
+            <div role="alert" style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              flexWrap: 'wrap',
+              gap: 10,
+              margin: '4px 12px 8px',
+              padding: '10px 14px',
+              background: '#fff7ed',
+              border: '1px solid #fdba74',
+              borderRadius: 8,
+              color: '#7c2d12',
+              fontSize: '0.95rem',
+            }}>
+              <span>Ms. Sonoma couldn't respond. Your answer is still here.</span>
+              <button
+                type="button"
+                onClick={() => discussionPhaseRef.current?.retryReply()}
+                style={{
+                  background: '#c7442e',
+                  border: 'none',
+                  borderRadius: 6,
+                  color: '#fff',
+                  fontWeight: 700,
+                  padding: '8px 14px',
+                  cursor: 'pointer',
+                }}
+              >
+                Retry reply
+              </button>
             </div>
           )}
 

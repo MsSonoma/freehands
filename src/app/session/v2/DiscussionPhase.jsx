@@ -56,6 +56,7 @@ export class DiscussionPhase {
   #audioEndListener  = null;
   #destroyed         = false;
   #submitGen         = 0;     // incremented on each submitMessage; used to abort stale async chains
+  #pendingReply      = null;  // exact learner turn and mastery context retained until reply
 
   // Sentence-by-sentence playback
   #prefetchDone       = false;
@@ -220,6 +221,7 @@ export class DiscussionPhase {
 
     // Bump generation — any in-flight async chain from a previous call will bail out
     const gen = ++this.#submitGen;
+    this.#pendingReply = null;
 
     this.#state = 'awaiting-response';
     this.#emitStateChange();
@@ -266,6 +268,7 @@ export class DiscussionPhase {
     if (newlyCompleted.length > 0) {
       this.#eventBus.emit('discussionObjectiveComplete', {
         completedCount:  this.#completedIndices.length,
+        completedIndices: [...this.#completedIndices],
         totalCount:      this.#objectives.length,
         newlyCompleted,
         objectiveText:   this.#objectives[newlyCompleted[0]] ?? null,
@@ -279,56 +282,75 @@ export class DiscussionPhase {
       !this.#completedIndices.includes(i)
     );
 
-    // Get Ms. Sonoma's reply
+    // Store the learner's turn and evaluated mastery once. Retrying the model
+    // must not append another user utterance or run mastery checks again.
+    this.#pendingReply = {
+      request: {
+        lesson: this.#lessonData,
+        learnerName: this.#learnerName,
+        messages: this.#instructionalChatHistory(),
+        remainingObjectives,
+        allObjectivesMet: allMet,
+        objectiveStatus,
+      },
+      allMet,
+    };
+    await this.#deliverPendingReply(gen);
+  }
+
+  async retryReply() {
+    if (this.#destroyed || this.#state !== 'reply-unavailable' || !this.#pendingReply) return;
+    const gen = ++this.#submitGen;
+    this.#state = 'awaiting-response';
+    this.#emitStateChange();
+    await this.#deliverPendingReply(gen);
+  }
+
+  async #deliverPendingReply(gen) {
+    const pending = this.#pendingReply;
+    if (!pending) return;
     let replyText = '';
     try {
       const res = await fetch(SONOMA_DISCUSSION_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lesson:              this.#lessonData,
-          learnerName:         this.#learnerName,
-          messages:            this.#instructionalChatHistory(),
-          remainingObjectives,
-          allObjectivesMet:    allMet,
-          objectiveStatus,
-        }),
+        body: JSON.stringify(pending.request),
       });
       if (gen !== this.#submitGen || this.#destroyed) return;
       if (res.ok) {
         const data = await res.json();
-        replyText = data.text || '';
+        replyText = typeof data?.text === 'string' ? data.text.trim() : '';
+      } else {
+        console.warn('[DiscussionPhase] Chat request unavailable:', res.status);
       }
     } catch (err) {
-      console.warn('[DiscussionPhase] Chat API error:', err);
+      console.warn('[DiscussionPhase] Chat request failed:', err?.name || 'unknown');
     }
-
     if (gen !== this.#submitGen || this.#destroyed) return;
 
-    // Fallback reply
     if (!replyText) {
-      replyText = allMet
-        ? `Excellent work, ${this.#learnerName}! You showed that you understand the ideas we discussed.`
-        : `Great thinking! Can you tell me more about what you've learned?`;
+      // An empty reply or API failure cannot masquerade as spoken teaching.
+      // Keep the learner's original response and make the same request retryable.
+      this.#state = 'reply-unavailable';
+      this.#emitStateChange();
+      return;
     }
 
-    // Record and emit assistant reply
+    this.#pendingReply = null;
     this.#chatHistory.push({ role: 'assistant', content: replyText });
     this.#eventBus.emit('discussionMessage', { role: 'assistant', text: replyText });
 
-    // Fetch and play reply TTS
     let replyAudio = null;
     try {
       replyAudio = await fetchTTS(replyText);
     } catch (err) {
       console.warn('[DiscussionPhase] TTS fetch failed for reply:', err);
     }
-
     if (gen !== this.#submitGen || this.#destroyed) return;
 
     this.#setupAudioEndListener(() => {
       if (gen !== this.#submitGen || this.#destroyed) return;
-      if (allMet) {
+      if (pending.allMet) {
         this.#state = 'complete';
         this.#emitStateChange();
         this.#eventBus.emit('discussionComplete', {});
@@ -345,7 +367,7 @@ export class DiscussionPhase {
       console.warn('[DiscussionPhase] Audio playback error for reply:', err);
       this.#removeAudioEndListener();
       if (gen !== this.#submitGen || this.#destroyed) return;
-      if (allMet) {
+      if (pending.allMet) {
         this.#state = 'complete';
         this.#emitStateChange();
         this.#eventBus.emit('discussionComplete', {});
@@ -365,6 +387,7 @@ export class DiscussionPhase {
 
     // A product-help turn belongs to conversational continuity, not mastery evidence.
     ++this.#submitGen
+    this.#pendingReply = null
     try { this.#audioEngine.stop() } catch {}
     this.#removeAudioEndListener()
     this.#chatHistory.push({ role: 'user', content: user, kind, featureId })
@@ -377,6 +400,8 @@ export class DiscussionPhase {
 
   skip() {
     if (this.#state === 'complete') return;
+    ++this.#submitGen;
+    this.#pendingReply = null;
     try { this.#audioEngine.stop(); } catch {}
     this.#removeAudioEndListener();
     this.#eventBus.emit('learnerTurnEnded', { phase: 'discussion', turnKind: 'discussion', reason: 'skip' });
@@ -387,6 +412,8 @@ export class DiscussionPhase {
 
   destroy() {
     this.#destroyed = true;
+    ++this.#submitGen;
+    this.#pendingReply = null;
     this.#removeAudioEndListener();
     this.#state = 'idle';
   }
@@ -485,12 +512,31 @@ export class DiscussionPhase {
 
     // Chat-level resume: conversation history pre-loaded — skip the overview and re-enter chatting directly
     if (this.#chatHistory.length > 0) {
-      this.#state = 'chatting';
+      const unansweredTurn = this.#chatHistory[this.#chatHistory.length - 1]?.role === 'user';
+      if (unansweredTurn) {
+        // Browser refresh before the model reply must retain the user's last
+        // utterance and offer a retry rather than prompting a duplicate answer.
+        const allMet = this.#objectives.length > 0 &&
+          this.#completedIndices.length >= this.#objectives.length;
+        this.#pendingReply = {
+          request: {
+            lesson: this.#lessonData,
+            learnerName: this.#learnerName,
+            messages: this.#instructionalChatHistory(),
+            remainingObjectives: this.#objectives.filter((_, i) => !this.#completedIndices.includes(i)),
+            allObjectivesMet: allMet,
+            objectiveStatus: null,
+          },
+          allMet,
+        };
+      }
+      this.#state = unansweredTurn ? 'reply-unavailable' : 'chatting';
       this.#emitStateChange();
       // Emit greetingPlaying so SessionPageV2 starts/validates the work timer
       this.#eventBus.emit('greetingPlaying', { greetingText: '' });
       this.#eventBus.emit('greetingComplete', {});
-      this.#emitLearnerTurnReady('discussion-resume');
+      if (unansweredTurn) this.#emitStateChange();
+      else this.#emitLearnerTurnReady('discussion-resume');
       return;
     }
 

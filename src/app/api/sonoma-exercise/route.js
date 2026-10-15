@@ -12,6 +12,7 @@
 import { NextResponse } from 'next/server'
 import { validateInput } from '@/lib/contentSafety'
 import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
+import { requestSonomaTextReply } from '@/app/lib/sonomaTextCompletion.mjs'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs'
 
@@ -167,27 +168,23 @@ export async function POST(request) {
     const questionText = buildQuestionPrompt(question)
 
     try {
-      const res = await fetch(OPENAI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user',   content: `Ask this exercise question: ${questionText}` },
-          ],
-          max_completion_tokens: 150,
-          ...aiModelTemperature(0.75),
-        }),
+      const result = await requestSonomaTextReply({
+        endpoint: OPENAI_URL,
+        apiKey,
+        model: OPENAI_MODEL,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: `Ask this exercise question: ${questionText}` },
+        ],
+        temperatureOptions: aiModelTemperature(0.75),
+        context: 'exercise-ask',
       })
-      const json = await res.json()
-      if (!res.ok) {
-        console.error('[sonoma-exercise] OpenAI ask error:', json)
-        return NextResponse.json({ error: 'OpenAI API error', detail: json }, { status: 502 })
+      if (!result.ok) {
+        return NextResponse.json({ error: 'Ms. Sonoma could not ask the question. Please retry.', code: 'SONOMA_REPLY_UNAVAILABLE' }, { status: 502 })
       }
-      return NextResponse.json({ text: json.choices?.[0]?.message?.content?.trim() || '' })
+      return NextResponse.json({ text: result.text })
     } catch (err) {
-      console.error('[sonoma-exercise] Ask fetch error:', err)
+      console.error('[sonoma-exercise] Ask handler error:', err?.name || 'unknown')
       return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
   }
@@ -204,27 +201,23 @@ export async function POST(request) {
     const userContent = buildFeedbackUserContent(question, correctAnswer, userAnswer, isCorrect, attemptNumber)
 
     try {
-      const res = await fetch(OPENAI_URL, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          messages: [
-            { role: 'system', content: system },
-            { role: 'user',   content: userContent },
-          ],
-          max_completion_tokens: 120,
-          ...aiModelTemperature(0.8),
-        }),
+      const result = await requestSonomaTextReply({
+        endpoint: OPENAI_URL,
+        apiKey,
+        model: OPENAI_MODEL,
+        messages: [
+          { role: 'system', content: system },
+          { role: 'user', content: userContent },
+        ],
+        temperatureOptions: aiModelTemperature(0.8),
+        context: 'exercise-feedback',
       })
-      const json = await res.json()
-      if (!res.ok) {
-        console.error('[sonoma-exercise] OpenAI feedback error:', json)
-        return NextResponse.json({ error: 'OpenAI API error', detail: json }, { status: 502 })
+      if (!result.ok) {
+        return NextResponse.json({ error: 'Ms. Sonoma could not give feedback. Please retry.', code: 'SONOMA_REPLY_UNAVAILABLE' }, { status: 502 })
       }
-      return NextResponse.json({ text: json.choices?.[0]?.message?.content?.trim() || '' })
+      return NextResponse.json({ text: result.text })
     } catch (err) {
-      console.error('[sonoma-exercise] Feedback fetch error:', err)
+      console.error('[sonoma-exercise] Feedback handler error:', err?.name || 'unknown')
       return NextResponse.json({ error: 'Internal error' }, { status: 500 })
     }
   }
