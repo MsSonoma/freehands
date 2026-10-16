@@ -7,6 +7,7 @@ import vm from 'node:vm'
 import * as slateLiftoff from '../slateLiftoff.mjs'
 import * as alignment from '../slateTestAlignment.mjs'
 import * as slateMath from '../slateMath.mjs'
+import * as slateLineHelp from '../slateLineHelp.mjs'
 import * as mathSession from '../../../lib/math/mathSession.mjs'
 import * as verticalMathValidation from '../../../lib/math/verticalMathValidation.mjs'
 import { enterVerticalMathFullAnswer } from '../../../lib/math/verticalMath.mjs'
@@ -71,7 +72,7 @@ function turnResult({ nextKey = 'probe:next', observations, sessionDecision = 'c
 }
 
 function completion(value) {
-  return JSON.stringify({ choices: [{ message: { content: JSON.stringify(value) } }] })
+  return JSON.stringify({ choices: [{ message: { content: typeof value === 'string' ? value : JSON.stringify(value) } }] })
 }
 
 function loadRoute(queue = []) {
@@ -89,6 +90,7 @@ function loadRoute(queue = []) {
     }],
     ['@/app/lib/slateLiftoff.mjs', slateLiftoff],
     ['@/app/lib/slateMath.mjs', slateMath],
+    ['@/app/lib/slateLineHelp.mjs', slateLineHelp],
     ['@/app/lib/slateTestAlignment.mjs', alignment],
     ['@/lib/math/mathSession.mjs', mathSession],
     ['@/lib/math/verticalMathValidation.mjs', verticalMathValidation],
@@ -376,4 +378,68 @@ test('invalid optional scratch does not block the learner text answer', async ()
   assert.equal(response.status, 200)
   assert.equal(calls.length, 1)
   assert.equal(Object.hasOwn(response.body, 'mathReceipt'), false)
+})
+
+
+test('repeated rephrase requests carry history and retry duplicate AI replies', async () => {
+  const sourceLine = 'Line up the ones digits with the ones digits.'
+  const replies = []
+  const { route, calls } = loadRoute([
+    'Put the ones digits in the ones column.',
+    'Put the ones digits in the ones column!',
+    'Ones belong together, just as tens belong together.',
+    'Each position has a value, so match positions before doing the math.',
+  ])
+  for (let i = 0; i < 3; i++) {
+    const response = await post(route, {
+      mode: 'line_help', phase: 'teaching', lesson,
+      sourceLine, action: 'rephrase', previousExplanations: replies, rephraseCount: i,
+    })
+    assert.equal(response.status, 200)
+    assert.equal(slateLineHelp.isSlateLineHelpDuplicate(response.body.reply, [sourceLine, ...replies]), false)
+    replies.push(response.body.reply)
+  }
+  assert.equal(calls.length, 4)
+  const prompts = calls.map(call => JSON.parse(call.init.body).messages[0].content)
+  assert.match(prompts[1], /Put the ones digits in the ones column/)
+  assert.match(prompts[2], /REJECTED NEAR-DUPLICATE REPLIES/)
+  assert.match(prompts[2], /Put the ones digits in the ones column!/)
+  assert.match(prompts[3], /Number of previous explanations for this line: 2/)
+  assert.match(prompts[3], /do not solve it, reveal its answer, or give a targeted hint/)
+})
+
+test('typed repeated explanations also avoid showing an identical reply', async () => {
+  const originalReply = 'Estimate means make a close guess.'
+  const { route, calls } = loadRoute([
+    originalReply,
+    'An estimate is a sensible approximation, not an exact count.',
+  ])
+  const response = await post(route, {
+    mode: 'line_help', phase: 'teaching', lesson,
+    sourceLine: 'What does estimate mean?', action: 'ask',
+    learnerQuestion: 'Can you explain it another way?',
+    previousExplanations: [originalReply], rephraseCount: 1,
+  })
+  assert.equal(response.status, 200)
+  assert.equal(response.body.reply, 'An estimate is a sensible approximation, not an exact count.')
+  assert.equal(calls.length, 2)
+})
+
+test('three failed variations are not displayed; help stays disabled during tests', async () => {
+  const same = 'Put ones under ones.'
+  const { route, calls } = loadRoute([same, same, same])
+  const result = await post(route, {
+    mode: 'line_help', phase: 'teaching', lesson,
+    sourceLine: 'Line up digits by place value.', action: 'rephrase',
+    previousExplanations: [same], rephraseCount: 1,
+  })
+  assert.equal(result.status, 503)
+  assert.match(result.body.error, /could not find a different explanation/)
+  assert.equal(calls.length, 3)
+  const blocked = await post(route, {
+    mode: 'line_help', phase: 'test', lesson,
+    sourceLine: 'Explain your answer.', action: 'rephrase',
+  })
+  assert.equal(blocked.status, 400)
+  assert.equal(calls.length, 3)
 })

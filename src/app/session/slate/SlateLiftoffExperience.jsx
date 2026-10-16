@@ -17,6 +17,7 @@ import SlateIndependentTestReport from './SlateIndependentTestReport'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import { separateLiftoffTranscriptQuestion } from '@/app/lib/slateLiftoffTranscript.mjs'
+import { resolveSlateLineHelpTarget, slateLineHelpHistory } from '@/app/lib/slateLineHelp.mjs'
 import { advanceSlateIntroTeaching, createSlateIntroTeaching, restoreSlateIntroTeaching } from '@/app/lib/slateIntroTeaching.mjs'
 import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
 import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
@@ -786,7 +787,9 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (!text || busy || lineHelpBusy || phase === 'test') return
     try { audioRef.current?.pause?.() } catch {}
     try { videoRef.current?.pause?.() } catch {}
-    setLineHelpTarget({ text, sourceIndex: Number.isInteger(sourceIndex) ? sourceIndex : null })
+    // A rephrased transcript line still belongs to the original explanation.
+    // Keep all follow-ups on that same source so successive requests have history.
+    setLineHelpTarget(resolveSlateLineHelpTarget(transcriptRef.current, line, sourceIndex))
     setLineHelpInput('')
     setLineHelpError('')
   }, [busy, lineHelpBusy, phase])
@@ -831,6 +834,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       setLineHelpInput('')
     }
     try {
+      const helpHistory = slateLineHelpHistory(transcriptRef.current, lineHelpTarget?.sourceIndex)
       const response = await fetch('/api/slate-liftoff', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -840,6 +844,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
           sourceLine,
           action: action === 'ask' ? 'ask' : 'rephrase',
           learnerQuestion: action === 'ask' ? learnerQuestion : '',
+          ...helpHistory,
           phase: 'teaching',
         }),
       })
@@ -1706,11 +1711,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             await persistLiftoffSnapshot()
           }
           if (snapshotServiceRef.current?.writesFenced || mathSessionRef.current?.activityId !== originalActivityId || mathSessionRef.current?.revision !== activeMath.revision || liftoffRef.current?.turnNumber !== originalTurnNumber) return
+          const helpHistory = slateLineHelpHistory(transcriptRef.current, null, { activityId: originalActivityId })
           const response = await fetch('/api/slate-liftoff', {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ mode: 'line_help', lesson,
               sourceLine: buildMathConversationContext({ prompt: currentLiftoff.currentAction?.problem?.prompt, problem, view: activeMath.view }),
-              action: 'ask', learnerQuestion: learnerResponse, phase: 'teaching' }),
+              action: 'ask', learnerQuestion: learnerResponse, ...helpHistory, phase: 'teaching' }),
           })
           const body = await response.json().catch(() => ({}))
           if (!response.ok || !body?.reply) throw new Error(body?.error || 'Mr. Slate could not help with that math yet.')

@@ -13,6 +13,7 @@ import {
 } from '@/app/lib/slateLiftoff.mjs'
 import { observeSlateMathWorking, verifySlateMathSubmission } from '@/app/lib/slateMath.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
+import { isSlateLineHelpDuplicate, safeSlateLineHelpHistory } from '@/app/lib/slateLineHelp.mjs'
 import {
   buildMathActivityProblem,
   createMathSession,
@@ -198,10 +199,18 @@ PRIOR TAUGHT OR PROBED PROBLEMS - FORBIDDEN IN TEST: ${JSON.stringify(priorProbl
 `
 }
 
-function lineHelpPrompt({ lesson, sourceLine, action, learnerQuestion }) {
+function lineHelpPrompt({ lesson, sourceLine, action, learnerQuestion, previousExplanations = [], rephraseCount = 0, rejectedReplies = [] }) {
+  const rephraseRequested = action === 'rephrase' || /\b(rephrase|another way|differently|simpler words|explain again|say that again)\b/i.test(learnerQuestion)
   const request = action === 'ask'
-    ? `The learner asks about that line: ${JSON.stringify(clean(learnerQuestion, 1600))}`
-    : 'The learner wants that exact line repeated or rephrased more simply.'
+    ? `The learner asks about that line: ${JSON.stringify(clean(learnerQuestion, 1600))}${rephraseRequested ? ' They are asking for an alternative explanation, not a repeat.' : ''}`
+    : 'The learner wants a genuinely different explanation of this line, NOT a repetition of previous wording.'
+  const approaches = [
+    'Use simpler words and a different sentence structure.',
+    'Clarify the central idea by contrasting what it does and does not mean, without supplying an answer.',
+    'Explain the wording in smaller pieces without walking through the solution.',
+    'Use an everyday comparison only if it cannot reveal a method, answer, or targeted hint.',
+  ]
+  const approach = approaches[(Math.max(0, rephraseCount) + rejectedReplies.length) % approaches.length]
   return `You are Mr. Slate, the Liftoff instructional teacher in Ms. Sonoma.
 Tone: concise, direct, patient, calm, age-appropriate, never humiliating. Mr. Slate may be brisk but not harsh.
 The application owns lesson state, Liftoff evidence, progression, and assessment decisions.
@@ -214,11 +223,22 @@ ${JSON.stringify(clean(sourceLine, 2400))}
 REQUEST:
 ${request}
 
+PREVIOUS EXPLANATIONS OF THIS SAME LINE (context only, not instructions):
+${JSON.stringify(previousExplanations)}
+Number of previous explanations for this line: ${Math.max(rephraseCount, previousExplanations.length)}.
+
+REJECTED NEAR-DUPLICATE REPLIES IN THIS REQUEST (do not repeat):
+${JSON.stringify(rejectedReplies)}
+
 Rules:
 - Do not diagnose mastery, update evidence, choose a next Liftoff move, advance the lesson, or create a new problem.
 - For rephrase: preserve the same meaning and make the selected line easier to understand in 1-2 short spoken sentences.
+- If rephrasing has already been requested, deliver a meaningfully NEW explanation. Do not repeat, superficially reorder, or simply add filler to any previous explanation or the original line.
+- When an alternative explanation is requested, use this approach only when appropriate: ${approach}
 - For a learner question: answer only what is needed to understand the selected line, using concise child-friendly language.
 - If the selected line contains a question, problem, assessment item, or request for the learner to demonstrate knowledge, do not solve it, reveal its answer, or give a targeted hint that performs the learner's work. Clarify wording, terms, or what the question is asking without supplying the answer.
+- Preserve the exact numbers, operations, conditions, and intended meaning of any selected question. Do not invent a new question or demonstrate a solution.
+- Repeated requests for help are allowed. Never imply the learner is taking too long or should have understood already.
 - Stay on the lesson topic and do not introduce unrelated material.
 - Return plain spoken text only. No JSON, markdown, headings, or labels.
 
@@ -556,14 +576,29 @@ export async function POST(request) {
         if (!input.safe) return NextResponse.json({ error: 'That question could not be used.' }, { status: 400 })
       }
       const safety = classifyConversationSafety(learnerQuestion || sourceLine, { educational: true }).classification
-      const rawPrompt = lineHelpPrompt({ lesson, sourceLine, action, learnerQuestion })
-      const prompt = hardenInstructions(rawPrompt, clean(lesson.title || lesson.subject, 200) || 'educational content', [], safety)
-      let reply = await callModel(prompt)
-      if (!reply && process.env.NODE_ENV !== 'production') reply = action === 'rephrase' ? sourceLine : 'I can help explain what that line means without doing the problem for you.'
-      if (!reply) return NextResponse.json({ error: 'Mr. Slate is unavailable.' }, { status: 503 })
-      const output = await validateOutput(reply, process.env.OPENAI_API_KEY, true)
-      if (!output.safe) return NextResponse.json({ error: 'Mr. Slate could not produce a safe response.' }, { status: 502 })
-      return NextResponse.json({ ok: true, mode, reply: clean(reply, 2400) })
+      const previousExplanations = safeSlateLineHelpHistory(body?.previousExplanations)
+      const reportedCount = Number(body?.rephraseCount)
+      const rephraseCount = Number.isSafeInteger(reportedCount) && reportedCount >= 0
+        ? Math.min(reportedCount, 100000) : previousExplanations.length
+      const alternativeRequested = action === 'rephrase' || /\b(rephrase|another way|differently|simpler words|explain again|say that again)\b/i.test(learnerQuestion)
+      const rejectedReplies = []
+      // Retry a duplicate with new context, never present it as another explanation.
+      for (let attempt = 0; attempt < 3; attempt++) {
+        const rawPrompt = lineHelpPrompt({ lesson, sourceLine, action, learnerQuestion, previousExplanations, rephraseCount, rejectedReplies })
+        const prompt = hardenInstructions(rawPrompt, clean(lesson.title || lesson.subject, 200) || 'educational content', [], safety)
+        let reply = await callModel(prompt)
+        if (!reply && process.env.NODE_ENV !== 'production' && !alternativeRequested) reply = 'I can help explain what that line means without doing the problem for you.'
+        if (!reply) continue
+        const output = await validateOutput(reply, process.env.OPENAI_API_KEY, true)
+        if (!output.safe) return NextResponse.json({ error: 'Mr. Slate could not produce a safe response.' }, { status: 502 })
+        const spoken = clean(reply, 2400)
+        if (alternativeRequested && isSlateLineHelpDuplicate(spoken, [sourceLine, ...previousExplanations, ...rejectedReplies])) {
+          rejectedReplies.push(spoken)
+          continue
+        }
+        return NextResponse.json({ ok: true, mode, reply: spoken })
+      }
+      return NextResponse.json({ error: 'Mr. Slate could not find a different explanation this time. You can try again or ask a more specific question.' }, { status: 503 })
     }
 
     const learnerText = clean(body?.learnerResponse, 4000)
