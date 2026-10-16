@@ -8408,6 +8408,23 @@ function SessionPageV2Inner() {
     ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', ...dynamicHeightStyle }
     : { position: 'relative', overflow: 'hidden', height: '35vh', width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000' };
   
+  // Tour and phase-specific question progress occupy separate rows in one corner.
+  // The stack is inside the video, not above the objective or answer footer.
+  const videoQuestionCounterStyle = {
+    background: 'rgba(17,24,39,0.78)',
+    color: '#fff',
+    padding: '6px 10px',
+    borderRadius: 8,
+    fontSize: 'clamp(0.85rem, 1.6vw, 1rem)',
+    fontWeight: 600,
+    letterSpacing: 0.3,
+    boxShadow: '0 2px 6px rgba(0,0,0,0.25)',
+    pointerEvents: 'none',
+    whiteSpace: 'nowrap',
+    maxWidth: '100%',
+    boxSizing: 'border-box',
+  };
+
   const transcriptWrapperStyle = isMobileLandscape
     ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'visible', minWidth: 0, minHeight: 0, background: 'transparent', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)' }
     : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', paddingLeft: '4%', paddingRight: '4%', paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))', marginTop: 8 };
@@ -8482,32 +8499,59 @@ function SessionPageV2Inner() {
             style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', objectPosition: 'top center' }}
           />
           
-          {/* Tour stays inside the video, never over the answer/objective footer. */}
-          {!showTutorial && (
-            <button
-              type="button"
-              onClick={() => setShowTutorial(true)}
-              title="Show page tour"
-              style={{
-                position: 'absolute',
-                top: 8,
-                right: 8,
-                zIndex: 10002,
-                padding: '6px 12px',
-                border: '1px solid #c7d2fe',
-                borderRadius: 8,
-                background: '#eef2ff',
-                color: '#6366f1',
-                fontWeight: 700,
-                fontSize: 13,
-                cursor: 'pointer',
-                lineHeight: 1,
-                boxShadow: '0 2px 8px rgba(99,102,241,0.15)',
-              }}
-            >
-              ? Tour
-            </button>
-          )}
+          {/* Tour stays inside the video in the same corner stack as question progress. */}
+          <div data-testid="sonoma-video-top-right" style={{
+            position: 'absolute',
+            top: 8,
+            right: 8,
+            zIndex: 10002,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'flex-end',
+            gap: 6,
+            maxWidth: 'calc(100% - 16px)',
+            pointerEvents: 'none',
+          }}>
+            {!showTutorial && (
+              <button
+                type="button"
+                onClick={() => setShowTutorial(true)}
+                title="Show page tour"
+                style={{
+                  pointerEvents: 'auto',
+                  padding: '6px 12px',
+                  border: '1px solid #c7d2fe',
+                  borderRadius: 8,
+                  background: '#eef2ff',
+                  color: '#6366f1',
+                  fontWeight: 700,
+                  fontSize: 13,
+                  cursor: 'pointer',
+                  lineHeight: 1,
+                  boxShadow: '0 2px 8px rgba(99,102,241,0.15)',
+                }}
+              >
+                ? Tour
+              </button>
+            )}
+            {(currentPhase === 'comprehension' && comprehensionState === 'awaiting-answer') && (
+              <div style={videoQuestionCounterStyle}>
+                {comprehensionScore}/{comprehensionTotalQuestions}
+              </div>
+            )}
+            {currentPhase === 'exercise' &&
+             (exerciseState === 'chatting' || exerciseState === 'awaiting-response') && (
+              <div style={videoQuestionCounterStyle}>
+                Q {exerciseCurrentQuestionIndex + 1}/{exerciseTotalQuestions}
+              </div>
+            )}
+            {((currentPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
+              (currentPhase === 'test' && testState === 'awaiting-answer')) && (
+              <div style={videoQuestionCounterStyle}>
+                Question {currentPhase === 'worksheet' ? (worksheetScore + 1) : (testScore + 1)}/{currentPhase === 'worksheet' ? worksheetTotalQuestions : testTotalQuestions}
+              </div>
+            )}
+          </div>
           {/* Phase Timer - top left overlay (matching V1) */}
           {phaseTimers && !showGames && getCurrentPhaseName() && currentTimerMode[getCurrentPhaseName()] && (
             <div style={{ 
@@ -8668,71 +8712,6 @@ function SessionPageV2Inner() {
             )}
           </div>
         </div>
-      
-      {/* Score ticker - top right */}
-      {/* Comprehension/Exercise score counter - top right */}
-      {(currentPhase === 'comprehension' && comprehensionState === 'awaiting-answer') && (
-        <div style={{ 
-          position: 'absolute', 
-          top: 8, 
-          right: 8, 
-          background: 'rgba(17,24,39,0.78)', 
-          color: '#fff', 
-          padding: '6px 10px', 
-          borderRadius: 8, 
-          fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', 
-          fontWeight: 600, 
-          letterSpacing: 0.3, 
-          boxShadow: '0 2px 6px rgba(0,0,0,0.25)', 
-          zIndex: 10000, 
-          pointerEvents: 'none' 
-        }}>
-          {comprehensionScore}/{comprehensionTotalQuestions}
-        </div>
-      )}
-      
-      {currentPhase === 'exercise' &&
-       (exerciseState === 'chatting' || exerciseState === 'awaiting-response') && (
-        <div style={{ 
-          position: 'absolute', 
-          top: 8, 
-          right: 8, 
-          background: 'rgba(17,24,39,0.78)', 
-          color: '#fff', 
-          padding: '6px 10px', 
-          borderRadius: 8, 
-          fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', 
-          fontWeight: 600, 
-          letterSpacing: 0.3, 
-          boxShadow: '0 2px 6px rgba(0,0,0,0.25)', 
-          zIndex: 10000, 
-          pointerEvents: 'none' 
-        }}>
-          Q {exerciseCurrentQuestionIndex + 1}/{exerciseTotalQuestions}
-        </div>
-      )}
-      
-      {/* Worksheet/Test question counter - top right */}
-      {((currentPhase === 'worksheet' && worksheetState === 'awaiting-answer') || (currentPhase === 'test' && testState === 'awaiting-answer')) && (
-        <div style={{ 
-          position: 'absolute', 
-          top: 8, 
-          right: 8, 
-          background: 'rgba(17,24,39,0.78)', 
-          color: '#fff', 
-          padding: '6px 10px', 
-          borderRadius: 8, 
-          fontSize: 'clamp(0.85rem, 1.6vw, 1rem)', 
-          fontWeight: 600, 
-          letterSpacing: 0.3, 
-          boxShadow: '0 2px 6px rgba(0,0,0,0.25)', 
-          zIndex: 10000, 
-          pointerEvents: 'none' 
-        }}>
-          Question {currentPhase === 'worksheet' ? (worksheetScore + 1) : (testScore + 1)}/{currentPhase === 'worksheet' ? worksheetTotalQuestions : testTotalQuestions}
-        </div>
-      )}
-      
       
       {/* Captions are shown only in the transcript panel (no video overlay). */}
       
