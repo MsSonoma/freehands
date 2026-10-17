@@ -3,6 +3,22 @@
  * Pure functions with no dependencies on React or app state.
  */
 
+// Honors common titles and contextual abbreviations when splitting spoken
+// teaching into captions. A period in "Ms. Sonoma" is not a sentence end.
+const SPOKEN_TITLE_END = /\b(?:Mr|Mrs|Ms|Dr|Prof|Rev|Hon|Fr|Capt|Cpt|Sgt|Lt|Col|Maj|Gen|Gov|Sen|Rep|Pres|St|Mt)\.["'”’)]*$/i;
+const EXAMPLE_ABBREVIATION_END = /\b(?:e\.g|i\.e)\.["'”’)]*$/i;
+const CONTEXT_ABBREVIATION_END = /\b(?:Jr|Sr|etc|vs|cf|Fig|Dept|Ave|Blvd|Rd|U\.S|U\.K|a\.m|p\.m|Jan|Feb|Mar|Apr|Jun|Jul|Aug|Sep|Sept|Oct|Nov|Dec)\.["'”’)]*$/i;
+const NUMBER_REFERENCE_END = /\bNo\.["'”’)]*$/i;
+
+function continuesAbbreviation(before, after) {
+  const next = String(after || '').trim().replace(/^["'“‘(]+/, '');
+  if (!next) return false;
+  if (SPOKEN_TITLE_END.test(before) || EXAMPLE_ABBREVIATION_END.test(before)) return true;
+  if (NUMBER_REFERENCE_END.test(before)) return /^\d/.test(next);
+  // "etc. Next..." should still become two sentences, unlike "etc. and...".
+  return CONTEXT_ABBREVIATION_END.test(before) && /^[a-z\d]/.test(next);
+}
+
 /**
  * Split text into sentences, handling multi-line input and various punctuation.
  * @param {string} text - The text to split
@@ -22,15 +38,24 @@ export function splitIntoSentences(text) {
         .split(/(?<=[.?!]["']?)\s+/)
         .map((part) => String(part).trim())
         .filter(Boolean);
-      // Merge any standalone number-period token (e.g. "1." "2.") with the fragment that follows it,
-      // so numbered list items stay together as a single caption sentence.
+      // Protect honorifics and other abbreviations from false sentence breaks.
+      const abbreviationMerged = [];
+      for (const part of rawParts) {
+        const previous = abbreviationMerged[abbreviationMerged.length - 1];
+        if (previous && continuesAbbreviation(previous, part)) {
+          abbreviationMerged[abbreviationMerged.length - 1] = previous + ' ' + part;
+        } else {
+          abbreviationMerged.push(part);
+        }
+      }
+      // Preserve existing numbered-step handling, even after abbreviation merging.
       const parts = [];
-      for (let pi = 0; pi < rawParts.length; pi++) {
-        if (/^\d+\.$/.test(rawParts[pi]) && pi + 1 < rawParts.length) {
-          parts.push(rawParts[pi] + ' ' + rawParts[pi + 1]);
+      for (let pi = 0; pi < abbreviationMerged.length; pi++) {
+        if (/^\d+\.$/.test(abbreviationMerged[pi]) && pi + 1 < abbreviationMerged.length) {
+          parts.push(abbreviationMerged[pi] + ' ' + abbreviationMerged[pi + 1]);
           pi++; // consumed the next fragment
         } else {
-          parts.push(rawParts[pi]);
+          parts.push(abbreviationMerged[pi]);
         }
       }
       if (parts.length) out.push(...parts);

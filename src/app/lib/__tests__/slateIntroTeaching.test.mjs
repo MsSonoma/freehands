@@ -35,3 +35,45 @@ test('sentence splitting keeps decimals and numbered steps together', () => {
   const intro = createSlateIntroTeaching('Start with 1.25. Then estimate.\n1. Check the ones first.', 'What is the estimate?')
   assert.deepEqual(intro.sentences, ['Start with 1.25.', 'Then estimate.', '1. Check the ones first.'])
 })
+
+test('Mr. Slate keeps common teacher titles attached to names in transcript captions', () => {
+  const intro = createSlateIntroTeaching(
+    'Mr. Slate helps Mrs. Webb and Ms. Sonoma. Dr. Seuss wrote stories. Prof. Oak agrees.',
+    'Who is helping?'
+  )
+  assert.deepEqual(intro.sentences, [
+    'Mr. Slate helps Mrs. Webb and Ms. Sonoma.',
+    'Dr. Seuss wrote stories.',
+    'Prof. Oak agrees.',
+  ])
+  assert.equal(advanceSlateIntroTeaching(intro).sentence, 'Dr. Seuss wrote stories.')
+})
+
+test('common abbreviations stay joined without hiding actual sentence boundaries', () => {
+  const intro = createSlateIntroTeaching(
+    'Mr. and Mrs. Green traveled to St. Petersburg. The U.S. has many states. We met at 3 p.m. yesterday. It ended at 4 p.m. Then we went home.',
+    'Where did they travel?'
+  )
+  assert.deepEqual(intro.sentences, [
+    'Mr. and Mrs. Green traveled to St. Petersburg.',
+    'The U.S. has many states.',
+    'We met at 3 p.m. yesterday.',
+    'It ended at 4 p.m.',
+    'Then we went home.',
+  ])
+})
+
+test('examples, issue numbers, true sentence endings, and list labels still segment correctly', () => {
+  const intro = createSlateIntroTeaching(
+    'Use a small example, e.g. 12. See No. 4 for that rule. Bring pens, pencils, etc. Now begin.\n1. Read the prompt. 2. Answer the question.',
+    'Ready?'
+  )
+  assert.deepEqual(intro.sentences, [
+    'Use a small example, e.g. 12.',
+    'See No. 4 for that rule.',
+    'Bring pens, pencils, etc.',
+    'Now begin.',
+    '1. Read the prompt.',
+    '2. Answer the question.',
+  ])
+})
