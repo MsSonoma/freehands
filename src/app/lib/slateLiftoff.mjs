@@ -340,6 +340,22 @@ export function buildLiftoffSnapshotFeatureState({
   }
 }
 
+// A refresh can offer a choice before creating/binding a new protected execution.
+// Do not offer snapshots belonging to another learner, lesson, or occurrence.
+export function isResumableSlateLiftoffSnapshot(snapshot, { learnerId, lessonKey, occurrenceId } = {}) {
+  if (!learnerId || !lessonKey || !occurrenceId) return false
+  const feature = snapshot?.featureState
+  return Boolean(
+    String(snapshot?.learnerId || '') === String(learnerId) &&
+    String(snapshot?.lessonKey || '') === String(lessonKey) &&
+    feature?.kind === LIFTOFF_SNAPSHOT_KIND &&
+    feature.instructionalTeacher === 'slate' &&
+    String(feature.occurrenceId || '') === String(occurrenceId) &&
+    feature.liftoff && typeof feature.liftoff === 'object' &&
+    ['active', 'worksheet', 'test'].includes(feature.phase)
+  )
+}
+
 export function canRestoreLiftoffSnapshot(snapshot, { occurrenceId, executionSessionId } = {}) {
   const feature = snapshot?.featureState
   if (!feature || feature.kind !== LIFTOFF_SNAPSHOT_KIND) return false

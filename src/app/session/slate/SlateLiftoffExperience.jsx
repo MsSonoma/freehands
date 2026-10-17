@@ -41,6 +41,7 @@ import {
   buildLiftoffSnapshotFeatureState,
   canRestoreLiftoffSnapshot,
   createLiftoffState,
+  isResumableSlateLiftoffSnapshot,
   LIFTOFF_PROTOCOL_VERSION,
   liftoffReleaseReady,
 } from '@/app/lib/slateLiftoff.mjs'
@@ -271,6 +272,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const router = useRouter()
   const manualScratchActivityId = `slate-manual:${String(occurrenceId || lessonKey || 'lesson').slice(0, 145)}`
   const [phase, setPhase] = useState('loading')
+  const [resumeLessonTitle, setResumeLessonTitle] = useState('')
+  const [resumeChoiceBusy, setResumeChoiceBusy] = useState(false)
   const [lesson, setLesson] = useState(null)
   const [liftoff, setLiftoff] = useState(null)
   const [slateText, setSlateText] = useState('')
@@ -346,6 +349,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const testItemsRef = useRef([])
   const rebuildLegacyTestRef = useRef(false)
   const initializedRef = useRef(false)
+  const resumeChoiceRef = useRef(null)
   const mathSessionRef = useRef(null)
   const mathWorkingNotesRef = useRef(null)
   const mathArchiveRef = useRef([])
@@ -1062,6 +1066,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     return masteryOutcome
   }, [])
 
+  const chooseLiftoffResume = useCallback((decision) => {
+    const resolve = resumeChoiceRef.current
+    if (!resolve || resumeChoiceBusy) return
+    resumeChoiceRef.current = null
+    setResumeChoiceBusy(true)
+    resolve(decision)
+  }, [resumeChoiceBusy])
+
   useEffect(() => {
     if (initializedRef.current) return
     initializedRef.current = true
@@ -1099,6 +1111,18 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         )) || meta?.lessons?.[0]
         if (!metaResponse.ok || !loadedLesson) throw new Error('This lesson could not be loaded for Liftoff.')
 
+        // Unlike the older Daily Review route, Liftoff used to restore immediately.
+        // Pause before starting a protected execution so a refresh offers the same choice.
+        let resumeDecision = 'resume'
+        if (isResumableSlateLiftoffSnapshot(loadedSnapshot, { learnerId, lessonKey, occurrenceId })) {
+          if (cancelled) return
+          setResumeLessonTitle(String(loadedLesson.title || 'this Liftoff lesson'))
+          setResumeChoiceBusy(false)
+          setPhase('resume_choice')
+          resumeDecision = await new Promise((resolve) => { resumeChoiceRef.current = resolve })
+          if (cancelled || resumeDecision === 'cancelled') return
+        }
+
         const started = await startProtectedInstructionalSession({
           learnerId,
           lessonKey,
@@ -1123,6 +1147,17 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
           else resumeSnapshot = snapshotService.snapshot || loadedSnapshot
         }
 
+        if (resumeDecision === 'restart') {
+          // Only the protected owner may discard this lesson's saved progress.
+          // Keep the recovered copy locally if execution ownership changes mid-delete.
+          await snapshotService.deleteSnapshot()
+          if (snapshotService.writesFenced) {
+            if (resumeSnapshot) snapshotService.adoptTransferredSnapshot(resumeSnapshot)
+            throw new Error('The lesson moved to another session. Its saved progress was not restarted.')
+          }
+          resumeSnapshot = null
+        }
+
         startedAtRef.current = resumeSnapshot?.featureState?.startedAt || new Date().toISOString()
         const savedAssessment = Array.isArray(resumeSnapshot?.featureState?.testItems) ? resumeSnapshot.featureState.testItems : []
         if (savedAssessment.length && validateSlateTestAlignment({ lesson: loadedLesson, liftoff: resumeSnapshot.featureState.liftoff, testItems: savedAssessment }).ok) {
@@ -1130,7 +1165,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         }
 
         if (cancelled) return
-        if (restoreLiftoffSnapshot(resumeSnapshot, started, loadedLesson)) return
+        if (resumeDecision !== 'restart' && restoreLiftoffSnapshot(resumeSnapshot, started, loadedLesson)) return
         snapshotService.clearLoadedSnapshot()
 
         const initResponse = await fetch('/api/slate-liftoff', {
@@ -1191,7 +1226,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
 
     void initialize()
-    return () => { cancelled = true }
+    return () => {
+      cancelled = true
+      const resolve = resumeChoiceRef.current
+      resumeChoiceRef.current = null
+      resolve?.('cancelled')
+    }
   }, [appendTranscript, initializeCanonicalMasteryEvidence, learnerId, lessonKey, occurrenceId, restoreLiftoffSnapshot])
 
   // Play only the first visible teaching sentence on mount. The learner
@@ -2191,6 +2231,48 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       assessmentSubmitLockRef.current = false
     }
   }, [appendTestQuestion, appendTranscript, assessmentAnswer, assessmentIndex, assessmentMathMatches, assessmentMathResolution, busy, currentAssessment, currentAssessmentItems, finishLesson, persistLiftoffSnapshot, phase, recordCanonicalMasteryAnswer, scheduleMathSnapshot, testItems.length, testResults])
+
+  if (phase === 'resume_choice') {
+    return (
+      <div data-slate-liftoff-resume-choice style={{ minHeight: '100dvh', background: C.bg, color: C.text, fontFamily: C.font }}>
+        <div style={{
+          position: 'fixed', inset: 0, zIndex: 1200,
+          background: 'rgba(0,0,0,0.80)', display: 'flex',
+          alignItems: 'center', justifyContent: 'center', padding: 20,
+        }}>
+          <div role="dialog" aria-modal="true" aria-labelledby="slate-liftoff-resume-title" aria-busy={resumeChoiceBusy} style={{
+            background: C.surface, borderRadius: 18,
+            width: 'min(92vw, 360px)',
+            boxShadow: `0 12px 48px rgba(0,0,0,0.6), 0 0 0 2px ${C.accent}`,
+            padding: '28px 24px', textAlign: 'center',
+          }}>
+            <div style={{ fontSize: 36, marginBottom: 12 }}>👋</div>
+            <h1 id="slate-liftoff-resume-title" style={{ color: C.text, fontWeight: 800, fontSize: 18, margin: '0 0 8px' }}>Welcome back!</h1>
+            <p style={{ color: C.muted, fontSize: 14, lineHeight: 1.6, margin: '0 0 24px' }}>
+              You were in the middle of <strong style={{ color: C.text }}>“{resumeLessonTitle}”</strong> with Mr. Slate.
+              <br />
+              {resumeChoiceBusy ? 'Preparing your lesson…' : 'Would you like to pick up where you left off?'}
+            </p>
+            <div style={{ display: 'flex', gap: 12, justifyContent: 'center' }}>
+              <button type="button" onClick={() => chooseLiftoffResume('resume')} disabled={resumeChoiceBusy} style={{
+                flex: 1, background: C.accent, color: C.bg, border: 'none',
+                borderRadius: 10, padding: '11px 0', cursor: resumeChoiceBusy ? 'wait' : 'pointer',
+                fontWeight: 800, fontSize: 15, fontFamily: 'inherit',
+                opacity: resumeChoiceBusy ? 0.7 : 1,
+              }}>▶ Resume</button>
+              <button type="button" onClick={() => chooseLiftoffResume('restart')} disabled={resumeChoiceBusy} style={{
+                flex: 1, background: C.surface2, color: C.muted,
+                border: `1px solid ${C.border}`, borderRadius: 10, padding: '11px 0',
+                cursor: resumeChoiceBusy ? 'wait' : 'pointer',
+                fontWeight: 700, fontSize: 15, fontFamily: 'inherit',
+                opacity: resumeChoiceBusy ? 0.7 : 1,
+              }}>↺ Restart</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   if (phase === 'loading' || phase === 'preparing_test') {
     return <div style={{ minHeight: '100vh', background: C.bg, color: C.muted, display: 'grid', placeItems: 'center', fontFamily: C.font }}>{phase === 'preparing_test' ? 'PREPARING OBJECTIVE-ALIGNED TEST...' : 'PREPARING LIFTOFF...'}</div>
