@@ -2,7 +2,8 @@ import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
-import { separateLiftoffTranscriptQuestion } from '../slateLiftoffTranscript.mjs'
+import { separateLiftoffTranscriptQuestion, prepareSlateLiftoffAdvance, restoreSlateLiftoffAdvance } from '../slateLiftoffTranscript.mjs'
+import { buildLiftoffSnapshotFeatureState } from '../slateLiftoff.mjs'
 
 const slate = fs.readFileSync(path.resolve('src/app/session/slate/SlateLiftoffExperience.jsx'), 'utf8')
 const captions = fs.readFileSync(path.resolve('src/app/session/components/CaptionPanel.js'), 'utf8')
@@ -46,11 +47,11 @@ test('current Liftoff diagnostic questions are transcript lines with hand and re
   assert.match(slate, /if \(introTeaching\.index < introTeaching\.sentences\.length - 1|introTeaching\.index < introTeaching\.sentences\.length - 1/)
   assert.match(slate, /if \(next\.question\) \{\s*appendTranscript\('assistant', next\.question, \{ kind: 'liftoff_question' \}\)/)
   assert.match(slate, /const nextQuestion = readyForTest \? '' : String\(nextState\.currentAction\?\.problem\?\.prompt/)
-  assert.match(slate, /const nextLines = separateLiftoffTranscriptQuestion\(turn\.learnerMessage, nextQuestion\)/)
-  assert.match(slate, /if \(nextLines\.response\) await speak\(nextLines\.response\)/)
-  assert.match(slate, /if \(nextLines\.question\) \{\s*appendTranscript\('assistant', nextLines\.question, \{ kind: 'liftoff_question' \}\)/)
+  assert.match(slate, /const \{ feedback, pendingAdvance: advance \} = prepareSlateLiftoffAdvance\(/)
+  assert.match(slate, /if \(feedback\) void speak\(feedback\)/)
+  assert.match(slate, /appendTranscript\('assistant', advance\.question, \{ kind: 'liftoff_question', turnNumber: advance\.turnNumber \}\)/)
   assert.doesNotMatch(slate, /void speak\(turn\.learnerMessage\)/)
-  assert.match(slate, /activeQuestion && !restoredIntro && !questionAlreadyPresent/)
+  assert.match(slate, /activeQuestion && !restoredIntro && !restoredAdvance && !questionAlreadyPresent/)
   assert.match(captions, /const canStudy = !!studyEnabled/)
 })
 
@@ -72,6 +73,58 @@ test('Liftoff separates an API-appended question once without losing spoken teac
     response: 'What is 4 + 4? Explain in your own way.',
     question: '',
   })
+})
+
+test('a completed response retains its feedback but holds the next question for a click', () => {
+  const message = 'You correctly used inverse addition. Now try a new problem. What is 74 minus 28?'
+  const prepared = prepareSlateLiftoffAdvance(message, 'What is 74 minus 28?', { turnNumber: 5 })
+  assert.deepEqual(prepared, {
+    feedback: 'You correctly used inverse addition. Now try a new problem.',
+    pendingAdvance: { kind: 'question', turnNumber: 5, question: 'What is 74 minus 28?' },
+  })
+  const feature = buildLiftoffSnapshotFeatureState({
+    occurrenceId: 'occ-1', executionSessionId: 'exec-1',
+    liftoff: { turnNumber: 5, procedureReleased: false,
+      currentAction: { problem: { prompt: 'What is 74 minus 28?' } } },
+    pendingAdvance: prepared.pendingAdvance,
+  })
+  assert.deepEqual(feature.pendingAdvance, prepared.pendingAdvance)
+  const reloaded = JSON.parse(JSON.stringify(feature))
+  assert.deepEqual(restoreSlateLiftoffAdvance(reloaded.pendingAdvance, reloaded.liftoff), prepared.pendingAdvance)
+})
+
+test('next question is held even if the model placed it before additional feedback', () => {
+  const prepared = prepareSlateLiftoffAdvance(
+    'Nicely reasoned. What is 6 times 7? Take your time and work carefully.',
+    'What is 6 times 7?', { turnNumber: 8 },
+  )
+  assert.equal(prepared.feedback, 'Nicely reasoned. Take your time and work carefully.')
+  assert.equal(prepared.pendingAdvance.question, 'What is 6 times 7?')
+  const withoutEmbedded = prepareSlateLiftoffAdvance(
+    'That reasoning was correct.', 'What is 6 times 7?', { turnNumber: 9 },
+  )
+  assert.equal(withoutEmbedded.feedback, 'That reasoning was correct.')
+  assert.equal(withoutEmbedded.pendingAdvance.kind, 'question')
+})
+
+test('completion waits for START TEST, and stale saved Next gates are ignored', () => {
+  const prepared = prepareSlateLiftoffAdvance('All essential skills are demonstrated.', '', {
+    turnNumber: 12, readyForTest: true,
+  })
+  assert.deepEqual(prepared.pendingAdvance, { kind: 'test', turnNumber: 12 })
+  assert.deepEqual(restoreSlateLiftoffAdvance(prepared.pendingAdvance, {
+    turnNumber: 12, procedureReleased: true,
+  }), prepared.pendingAdvance)
+  assert.equal(restoreSlateLiftoffAdvance(prepared.pendingAdvance, {
+    turnNumber: 13, procedureReleased: true,
+  }), null)
+  assert.equal(restoreSlateLiftoffAdvance(prepared.pendingAdvance, {
+    turnNumber: 12, procedureReleased: false,
+  }), null)
+  assert.equal(restoreSlateLiftoffAdvance({ kind: 'question', turnNumber: 12, question: 'Old question?' }, {
+    turnNumber: 12, procedureReleased: false,
+    currentAction: { problem: { prompt: 'A new question?' } },
+  }), null)
 })
 
 test('independent test allows question replay but does not expose study help', () => {
@@ -165,19 +218,32 @@ test('Slate transcript history does not displace the primary learner answer fiel
   assert.match(slate, /data-slate-primary-answer-form[\s\S]*position: 'sticky', bottom: 0[\s\S]*flexWrap: 'wrap'/)
 })
 
-test('Slate queues a Liftoff question until feedback speech playback ends', () => {
-  const start = slate.indexOf('const nextLines = separateLiftoffTranscriptQuestion(turn.learnerMessage, nextQuestion)')
-  const finish = slate.indexOf("\n    } catch (cause)", start)
-  const section = slate.slice(start, finish)
-  const announce = section.indexOf("appendTranscript('assistant', nextLines.response)")
-  const awaitResponse = section.indexOf('await speak(nextLines.response)')
-  const showQuestion = section.indexOf("appendTranscript('assistant', nextLines.question")
-  const playQuestion = section.indexOf('void speak(nextLines.question)')
-  assert.ok(announce >= 0 && awaitResponse > announce && showQuestion > awaitResponse && playQuestion > showQuestion)
+test('Slate holds each next question until the learner presses Next, not just until feedback TTS ends', () => {
+  const submitStart = slate.indexOf('const submitLiftoffAnswer = useCallback')
+  const submitEnd = slate.indexOf('const finishLesson = useCallback', submitStart)
+  const submitted = slate.slice(submitStart, submitEnd)
+  assert.match(submitted, /pendingAdvanceRef\.current = advance/)
+  assert.match(submitted, /setPendingAdvance\(advance\)/)
+  assert.match(submitted, /pendingAdvance: advance/)
+  assert.match(submitted, /if \(feedback\) appendTranscript\('assistant', feedback\)/)
+  assert.match(submitted, /if \(feedback\) void speak\(feedback\)/)
+  assert.doesNotMatch(submitted, /appendTranscript\('assistant', advance\.question/)
+  assert.doesNotMatch(submitted, /beginIndependentAssessment\(lesson, nextState\)/)
+  const clickStart = slate.indexOf('const continueAfterFeedback = useCallback')
+  const clickEnd = slate.indexOf('const submitLiftoffAnswer = useCallback', clickStart)
+  const clicked = slate.slice(clickStart, clickEnd)
+  assert.match(clicked, /await persistLiftoffSnapshot\(\{ phase: 'active', liftoff: current, pendingAdvance: null \}\)/)
+  assert.match(clicked, /appendTranscript\('assistant', advance\.question/)
+  assert.match(clicked, /void speak\(advance\.question\)/)
+  assert.match(clicked, /await beginIndependentAssessment\(lesson, current\)/)
+  assert.match(slate, /data-slate-followup-navigation/)
+  assert.match(slate, /onClick=\{\(\) => void continueAfterFeedback\(\)\}/)
+  assert.match(slate, /'START TEST' : 'NEXT'/)
+  assert.match(slate, /phase === 'active' && !introTeaching && !pendingAdvance/)
+  assert.match(slate, /introTeachingRef\.current \|\| pendingAdvanceRef\.current \|\| lineHelpTarget/)
+  assert.match(slate, /restoreSlateLiftoffAdvance\(feature\.pendingAdvance, feature\.liftoff\)/)
+  assert.match(slate, /pendingAdvance: pendingAdvanceValue/)
   assert.match(slate, /const result = await playSlateSpeechUntilEnd\(audio\)/)
-  assert.match(slate, /setQuestionPending\(Boolean\(nextLines.question\)\)/)
-  assert.match(slate, /if \(nextLines.question\) \{[\s\S]*?setQuestionPending\(false\)/)
-  assert.match(slate, /await speak\(text\)[\s\S]*?setPhase\('test'\)/)
 })
 
 test('introductory Slate teaching reveals one sentence at a time with learner-controlled advancement', () => {
@@ -186,13 +252,13 @@ test('introductory Slate teaching reveals one sentence at a time with learner-co
   assert.match(slate, /introTeaching: opening/)
   assert.match(slate, /introTeaching: introTeachingRef\.current/)
   assert.match(slate, /restoreSlateIntroTeaching\(feature\.introTeaching\)/)
-  assert.match(slate, /activeQuestion && !restoredIntro && !questionAlreadyPresent/)
+  assert.match(slate, /activeQuestion && !restoredIntro && !restoredAdvance && !questionAlreadyPresent/)
   assert.match(slate, /appendTranscript\('assistant', next\.sentence, \{ kind: 'liftoff_teaching_sentence' \}\)/)
   assert.match(slate, /await speak\(next\.sentence\)/)
   assert.match(slate, /onClick=\{\(\) => void nextIntroSentence\(\)\}/)
   assert.match(slate, /NEXT SENTENCE/)
   assert.match(slate, /START QUESTION/)
-  assert.match(slate, /\{phase === 'active' && !introTeaching && \(/)
+  assert.match(slate, /\{phase === 'active' && !introTeaching && !pendingAdvance && \(/)
   assert.match(slate, /introTeachingRef\.current \? null : mathSessionRef\.current/)
   assert.match(slate, /onStudyRequest=\{openLineHelp\}/)
 })

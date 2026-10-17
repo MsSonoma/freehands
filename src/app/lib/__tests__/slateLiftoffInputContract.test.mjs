@@ -6,7 +6,7 @@ import test from 'node:test'
 const slate = fs.readFileSync(path.resolve('src/app/session/slate/SlateLiftoffExperience.jsx'), 'utf8')
 const verticalMathWorkspace = fs.readFileSync(path.resolve('src/components/math/VerticalMathWorkspace.jsx'), 'utf8')
 const webbDictation = fs.readFileSync(path.resolve('src/app/session/webb/WebbDictationButton.jsx'), 'utf8')
-const slateLiftoffForm = slate.slice(slate.indexOf("{phase === 'active' && !introTeaching && ("), slate.indexOf("{lineHelpTarget && phase !== 'test' && ("))
+const slateLiftoffForm = slate.slice(slate.indexOf("{phase === 'active' && !introTeaching && !pendingAdvance && ("), slate.indexOf("{lineHelpTarget && phase !== 'test' && ("))
 
 test('Liftoff keeps its textarea and shrinks it to two rows', () => {
   assert.match(slateLiftoffForm, /<textarea/)

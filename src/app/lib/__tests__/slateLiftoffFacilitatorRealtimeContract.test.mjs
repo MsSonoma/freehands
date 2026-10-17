@@ -42,7 +42,7 @@ test('completed record is archival fallback instead of the required live source'
 
 test('learner persists Liftoff snapshot at start and after each active turn', () => {
   assert.match(liftoff, /saveProgress\('liftoff-start'/)
-  assert.match(liftoff, /persistLiftoffSnapshot\(\{ phase: 'active', liftoff: nextState/)
+  assert.match(liftoff, /persistLiftoffSnapshot\(\{\s*phase: 'active', liftoff: nextState, slateText: turn\.learnerMessage, pendingAdvance: advance/)
 })
 
 test('migration publishes learner snapshots to Supabase Realtime idempotently', () => {
