@@ -3,6 +3,7 @@ import { addSyllabusDays, startOfSyllabusWeek } from './timeline.mjs'
 import { subjectBalancedInstructionalEvidenceContext } from './evidenceProjection.mjs'
 import { buildSubjectBreadthContext, forecastPlanningMetadata } from './learningBreadth.mjs'
 import { noSchoolDateSet } from './noSchoolDates.mjs'
+import { instructionalOccupiedSlotKeys } from './dayOffMoves.mjs'
 import { instructionalForecastWindow } from './forecastWindow.mjs'
 
 export { instructionalEvidenceContext } from './evidenceProjection.mjs'
@@ -199,10 +200,9 @@ export function instructionalWeekIsFilled({ activeRevision, timelineItems = [], 
   const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart)
     .filter((slot) => !blockedDates.has(slot.planned_date))
     .filter((slot) => targetWeekStart !== currentWeekStart || slot.planned_date >= today)
-  const occupied = new Set([...timelineItems, ...proposedForecastItems].filter((item) => {
-    if (item?.item_type === 'slate_assignment') return false
-    return startOfSyllabusWeek(item?.planned_date) === targetWeekStart
-  }).map((item) => `${String(item.planned_date).slice(0, 10)}:${Number(item.sort_order || 0)}`))
+  const occupied = new Set([...timelineItems, ...proposedForecastItems]
+    .filter((item) => item?.item_type !== 'slate_assignment')
+    .flatMap(instructionalOccupiedSlotKeys))
   return slots.every((slot) => occupied.has(`${slot.planned_date}:${slot.sort_order}`))
 }
 
@@ -215,11 +215,9 @@ export function buildInstructionalForecastPlan({ activeRevision, forecastItems =
   const slots = instructionalSlotsForWeek(activeRevision.weekly_pattern, targetWeekStart)
     .filter((slot) => !blockedDates.has(slot.planned_date))
     .filter((slot) => targetWeekStart !== currentWeekStart || slot.planned_date >= today)
-  const occupied = new Set([...timelineItems, ...proposedForecastItems].filter((item) => {
-    if (item?.item_type === 'slate_assignment') return false
-    const date = String(item?.planned_date || '').slice(0, 10)
-    return date >= targetWeekStart && date <= targetWeekEnd
-  }).map((item) => `${String(item.planned_date).slice(0, 10)}:${Number(item.sort_order || 0)}`))
+  const occupied = new Set([...timelineItems, ...proposedForecastItems]
+    .filter((item) => item?.item_type !== 'slate_assignment')
+    .flatMap(instructionalOccupiedSlotKeys))
   const openSlots = slots.filter((slot) => !occupied.has(`${slot.planned_date}:${slot.sort_order}`))
   const carryPlan = unfinishedLessonCarrySuggestions({ activeRevision, timelineItems, openSlots, today })
   const unfilledSlots = carryPlan.remaining_slots

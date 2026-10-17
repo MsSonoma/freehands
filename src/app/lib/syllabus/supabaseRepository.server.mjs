@@ -256,6 +256,27 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load no-school dates')
       return data || []
     },
+    async moveNoSchoolDay({ facilitatorId, learnerId, sourceDate, destinationDate, reason, localToday, expectedActiveRevisionId }) {
+      const { data, error } = await admin.rpc('move_syllabus_day_off', {
+        p_facilitator_id: facilitatorId,
+        p_learner_id: learnerId,
+        p_source_date: sourceDate,
+        p_destination_date: destinationDate,
+        p_reason: reason,
+        p_local_today: localToday,
+        p_expected_active_revision_id: expectedActiveRevisionId,
+      })
+      if (error) {
+        if (['P0001', '23505', '40001'].includes(error.code)) {
+          const conflict = new Error(error.message || 'Day Off move conflicted with the current schedule')
+          conflict.status = 409
+          conflict.code = 'DAY_OFF_MOVE_CONFLICT'
+          throw conflict
+        }
+        throwOn(error, 'Failed to move this Day Off')
+      }
+      return data
+    },
     async upsertNoSchoolDate(row) {
       const { data, error } = await admin.from('no_school_dates').upsert({ ...row, updated_at: new Date().toISOString() }, { onConflict: 'facilitator_id,learner_id,date' }).select('*').single()
       throwOn(error, 'Failed to save no-school date')

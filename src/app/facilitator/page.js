@@ -660,12 +660,12 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
     setDayActionDate(dateOnly(date))
   }
 
-  async function setNoSchoolDate({ date, reason }) {
+  async function setNoSchoolDate({ date, reason, moveToDate = '' }) {
     if (!learnerId || !token || !date) return
     setWorking(true)
     setDayActionError('')
     try {
-      const response = await fetch('/api/no-school-dates', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ learnerId, date, reason }) })
+      const response = await fetch('/api/no-school-dates', { method: 'POST', headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' }, body: JSON.stringify({ learnerId, date, reason, ...(moveToDate ? { moveToDate, expectedActiveRevisionId: syllabus?.active_revision?.id || '' } : {}) }) })
       const json = await response.json().catch(() => ({}))
       if (!response.ok) throw new Error(json.error || 'Could not mark this day off')
       setDayActionDate('')
@@ -1218,6 +1218,8 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
             subjects={syllabus?.active_revision?.subjects || []}
             isNoSchool={Object.prototype.hasOwnProperty.call(noSchoolByDate, dayActionDate)}
             noSchoolReason={noSchoolByDate[dayActionDate] || ''}
+            existingMoveToDate={(syllabus?.no_school_dates || []).find((row) => dateOnly(row?.date) === dayActionDate)?.move_to_date || ''}
+            minimumMoveDate={syllabus?.resolved_today || ''}
             canGenerate={planningAccess.can_change_intent}
             canUseExisting={canScheduleLessons}
             busy={working}

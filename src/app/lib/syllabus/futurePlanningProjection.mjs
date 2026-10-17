@@ -1,6 +1,7 @@
 import { addSyllabusDays, dateOnly } from './timeline.mjs'
 import { canonicalSlotsForDate, syllabusSlotKey } from './planning.mjs'
 import { noSchoolDateSet } from './noSchoolDates.mjs'
+import { instructionalOccupiedSlotKeys } from './dayOffMoves.mjs'
 
 function validDate(value) {
   return /^\d{4}-\d{2}-\d{2}$/.test(dateOnly(value))
@@ -56,13 +57,11 @@ export function buildFuturePlanningProjection({
   const activeItems = (timelineItems || [])
     .filter((item) => inRange(dateOnly(item?.planned_date), start, end))
     .map((item) => ({ ...item, planning_state: item?.planning_state || 'active' }))
-  const occupiedSlots = new Set(activeItems
-    .filter((item) => item?.item_type !== 'slate_assignment' && validDate(item?.planned_date))
-    .map(syllabusSlotKey))
+  const occupiedSlots = new Set((timelineItems || []).flatMap(instructionalOccupiedSlotKeys))
   const activeLineages = new Set((timelineItems || []).map(item => String(item?.lineage_id || '')).filter(Boolean))
   const forecastItems = provisionalForecastPlanningItems(proposedForecastItems, { rangeStart: start, rangeEnd: end, noSchoolDates })
     .filter((item) => !activeLineages.has(String(item.lineage_id)) && !occupiedSlots.has(syllabusSlotKey(item)))
-  const reservedSlots = new Set([...occupiedSlots, ...forecastItems.map(syllabusSlotKey)])
+  const reservedSlots = new Set([...occupiedSlots, ...(proposedForecastItems || []).flatMap(instructionalOccupiedSlotKeys)])
   const openSlots = []
 
   if (includeOpenSlots && validDate(start) && validDate(end) && start <= end) {

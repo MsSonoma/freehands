@@ -9,13 +9,15 @@ const FACILITATOR = '11111111-1111-4111-8111-111111111111'
 const LEARNER = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
 
 function deps({ owned = true } = {}) {
-  const state = { dates: [{ id: 'date-1', date: '2026-09-14', reason: 'Holiday: Family day' }], writes: [], deletes: [] }
+  const state = { dates: [{ id: 'date-1', date: '2026-09-14', reason: 'Holiday: Family day' }], writes: [], deletes: [], moves: [] }
   return {
     state,
     requestContext: { user: { id: FACILITATOR }, admin: {} },
     repository: {
       async findOwnedLearner(id, owner) { return owned && id === LEARNER && owner === FACILITATOR ? { id } : null },
       async listNoSchoolDates() { return structuredClone(state.dates) },
+      async findFacilitatorTimeZone() { return 'America/New_York' },
+      async moveNoSchoolDay(options) { state.moves.push(structuredClone(options)); return { ok: true, destination_date: options.destinationDate, moved_active_count: 1 } },
       async upsertNoSchoolDate(row) { state.writes.push(structuredClone(row)); return { id: 'saved', ...row } },
       async deleteNoSchoolDate(owner, id, date) { state.deletes.push({ owner, id, date }); return { id: 'deleted' } },
     },
@@ -40,6 +42,47 @@ test('hardened no-school API validates ownership and date while preserving facil
   assert.equal(forbidden.status, 403)
   const invalid = await POST(new Request('http://local/api/no-school-dates', { method: 'POST', body: JSON.stringify({ learnerId: LEARNER, date: '2026-02-31' }) }), allowed)
   assert.equal(invalid.status, 400)
+})
+
+
+test('one-time Day Off move delegates the full operation to the atomic server RPC', async () => {
+  const allowed = deps()
+  const request = new Request('http://local/api/no-school-dates', {
+    method: 'POST',
+    body: JSON.stringify({
+      learnerId: LEARNER,
+      date: '2030-09-16',
+      reason: 'Day off: Appointment',
+      moveToDate: '2030-09-19',
+      expectedActiveRevisionId: '22222222-2222-4222-8222-222222222222',
+    }),
+  })
+  const response = await POST(request, allowed)
+  assert.equal(response.status, 200)
+  assert.equal((await response.json()).move.destination_date, '2030-09-19')
+  assert.deepEqual(allowed.state.moves[0], {
+    facilitatorId: FACILITATOR,
+    learnerId: LEARNER,
+    sourceDate: '2030-09-16',
+    destinationDate: '2030-09-19',
+    reason: 'Day off: Appointment',
+    localToday: allowed.state.moves[0].localToday,
+    expectedActiveRevisionId: '22222222-2222-4222-8222-222222222222',
+  })
+  assert.equal(allowed.state.writes.length, 0, 'the move must not be written separately from the Day Off mark')
+
+  const duplicateDate = await POST(new Request('http://local/api/no-school-dates', {
+    method: 'POST',
+    body: JSON.stringify({ learnerId: LEARNER, date: '2030-09-16', moveToDate: '2030-09-16', expectedActiveRevisionId: '22222222-2222-4222-8222-222222222222' }),
+  }), allowed)
+  assert.equal(duplicateDate.status, 400)
+  assert.equal(allowed.state.moves.length, 1)
+
+  const forbidden = await POST(new Request('http://local/api/no-school-dates', {
+    method: 'POST',
+    body: JSON.stringify({ learnerId: LEARNER, date: '2030-09-16', moveToDate: '2030-09-19', expectedActiveRevisionId: '22222222-2222-4222-8222-222222222222' }),
+  }), deps({ owned: false }))
+  assert.equal(forbidden.status, 403)
 })
 
 test('future planning excludes no-school dates from recurring open slots', () => {

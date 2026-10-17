@@ -7,6 +7,7 @@ import { latestExplicitLessonSessionEvent, lifecycleEventActualKind, resolveLess
 import { normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotations.mjs'
 import { noSchoolDateSet } from './noSchoolDates.mjs'
+import { isDayOffMovedToDate } from './dayOffMoves.mjs'
 
 const DAY_MS = 86400000
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
@@ -261,11 +262,11 @@ export function composeSyllabusLessonTimeline({
     let match = identities.size
       ? candidates.find((forecast) => identities.has(clean(forecast.row?.id)) || identities.has(clean(forecast.row?.lineage_id)))
       : null
-    if (!match && identities.size === 0) {
+    if (!match && identities.size === 0 && !isDayOffMovedToDate(schedule.row, schedule.planned_date)) {
       const exactDate = candidates.filter((forecast) => forecast.planned_date === schedule.planned_date)
       if (exactDate.length === 1) match = exactDate[0]
     }
-    if (!match && identities.size === 0 && candidates.length === 1 && scheduleCountByKey.get(schedule.key) === 1) match = candidates[0]
+    if (!match && identities.size === 0 && !isDayOffMovedToDate(schedule.row, schedule.planned_date) && candidates.length === 1 && scheduleCountByKey.get(schedule.key) === 1) match = candidates[0]
     if (match) {
       consumedForecasts.add(match)
       schedule.reconciled_forecast_id = clean(match.row?.id || match.row?.lineage_id)
@@ -353,6 +354,12 @@ export function composeSyllabusLessonTimeline({
       intent.capacity = { slot: null, capacity_conflict: null }
       intent.rendered_date = intent.planned_date
       intent.needs_placement = false
+    } else if (isDayOffMovedToDate(intent.row, intent.planned_date)) {
+      // The educator already authorized this one-time overflow. It does not
+      // consume or replace a regular weekly-pattern slot on the make-up day.
+      intent.capacity = { slot: { index: intent.sort_order }, capacity_conflict: null }
+      intent.rendered_date = intent.planned_date
+      intent.needs_placement = false
     } else {
       intent.capacity = reserveExplicitSlot({ weeklyPattern: activeRevision?.weekly_pattern, plannedDate: intent.planned_date, subject: details?.subject, preferredIndex: intent.sort_order, occupied })
       intent.rendered_date = intent.planned_date
@@ -363,6 +370,13 @@ export function composeSyllabusLessonTimeline({
   for (const item of (forecastItems || []).filter((row) => !row?.lesson_key && validDate(row?.planned_date))) {
     if (isoDate(item.planned_date) < today) {
       standaloneForecastCapacity.set(item, { slot: null, capacity_conflict: null, rendered_date: isoDate(item.planned_date), needs_placement: false })
+    } else if (isDayOffMovedToDate(item, item.planned_date)) {
+      standaloneForecastCapacity.set(item, {
+        slot: { index: Number(item.sort_order || 0) },
+        capacity_conflict: null,
+        rendered_date: isoDate(item.planned_date),
+        needs_placement: false,
+      })
     } else {
       const capacity = reserveExplicitSlot({ weeklyPattern: activeRevision?.weekly_pattern, plannedDate: isoDate(item.planned_date), subject: item.subject, preferredIndex: Number(item.sort_order || 0), occupied })
       standaloneForecastCapacity.set(item, { ...capacity, rendered_date: isoDate(item.planned_date), needs_placement: false })

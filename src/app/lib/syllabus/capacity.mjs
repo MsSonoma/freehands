@@ -1,3 +1,5 @@
+import { isDayOffMovedToDate } from './dayOffMoves.mjs'
+
 const DAY_KEYS = Object.freeze(['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'])
 
 function clean(value) { return String(value || '').trim() }
@@ -53,7 +55,7 @@ export function findSnapshotCapacityConflict(snapshot = {}, { schedules = [], as
     || clean(left?.id || left?.lesson_key).localeCompare(clean(right?.id || right?.lesson_key)))
   for (const row of scheduleRows) {
     const date = String(row?.scheduled_date || '').slice(0, 10)
-    if (!date) continue
+    if (!date || isDayOffMovedToDate(row, date)) continue
     if (!occupied.has(date)) occupied.set(date, [])
     const intent = {
       id: row.id,
@@ -82,6 +84,7 @@ export function findSnapshotCapacityConflict(snapshot = {}, { schedules = [], as
   for (const item of items) {
     const date = String(item?.planned_date || '').slice(0, 10)
     const lessonKey = clean(item?.lesson_key)
+    if (isDayOffMovedToDate(item, date)) continue
     const correspondingSchedule = lessonKey && scheduleCountByLesson.get(lessonKey) === 1 && forecastCountByLesson.get(lessonKey) === 1
     if (correspondingSchedule) continue
     if (!occupied.has(date)) occupied.set(date, [])
@@ -116,8 +119,8 @@ export async function inspectLearnerSyllabusPlacement({ admin, facilitatorId, le
     { data: associations, error: associationsError },
   ] = await Promise.all([
     admin.from('syllabus_revisions').select('weekly_pattern').eq('id', syllabus.active_revision_id).maybeSingle(),
-    admin.from('syllabus_forecast_items').select('id,lesson_key,subject,planned_date,sort_order').eq('revision_id', syllabus.active_revision_id).eq('planned_date', date),
-    admin.from('lesson_schedule').select('id,lesson_key,scheduled_date').eq('learner_id', learnerId).eq('scheduled_date', date),
+    admin.from('syllabus_forecast_items').select('id,lesson_key,subject,planned_date,sort_order,metadata').eq('revision_id', syllabus.active_revision_id).eq('planned_date', date),
+    admin.from('lesson_schedule').select('id,lesson_key,scheduled_date,day_off_move_source_date,day_off_move_destination_date').eq('learner_id', learnerId).eq('scheduled_date', date),
     admin.from('syllabus_lesson_associations').select('lesson_key,subject').eq('facilitator_id', facilitatorId).eq('learner_id', learnerId),
   ])
   if (revisionError) throw revisionError
@@ -127,12 +130,12 @@ export async function inspectLearnerSyllabusPlacement({ admin, facilitatorId, le
   if (!revision?.weekly_pattern) return { allowed: false, conflict: 'no_capacity', message: `No normal Syllabus slot is configured for ${date}. Enter the Facilitator PIN to place this lesson anyway.` }
   const effectiveSchedules = (schedules || []).filter((row) => !excludeScheduleId || clean(row.id) !== clean(excludeScheduleId))
   const scheduledKeys = new Set(effectiveSchedules.map((row) => clean(row.lesson_key)))
-  const forecastIntents = (forecast || []).filter((row) => !scheduledKeys.has(clean(row.lesson_key))).map((row) => ({
+  const forecastIntents = (forecast || []).filter((row) => !scheduledKeys.has(clean(row.lesson_key)) && !isDayOffMovedToDate(row, row.planned_date)).map((row) => ({
     id: row.id, lesson_key: row.lesson_key, subject: row.subject, date: row.planned_date, sort_order: row.sort_order, priority: 1,
   }))
   const subjectByLesson = new Map((associations || []).map((row) => [clean(row.lesson_key), row.subject]))
   for (const row of forecast || []) subjectByLesson.set(clean(row.lesson_key), row.subject)
-  const scheduleIntents = effectiveSchedules.map((row) => ({
+  const scheduleIntents = effectiveSchedules.filter((row) => !isDayOffMovedToDate(row, row.scheduled_date)).map((row) => ({
     id: row.id, lesson_key: row.lesson_key, subject: subjectByLesson.get(clean(row.lesson_key)) || '', date: row.scheduled_date, priority: 0,
   }))
   return { syllabus_active: true, ...evaluateManualSyllabusPlacement({
