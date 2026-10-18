@@ -89,3 +89,38 @@ test('file-only legacy approval callers remain compatible', async () => {
   assert.equal(result.body.approved, true)
   assert.equal(h.state.associations.length, 0)
 })
+test('educator approval stays available when generated Test coverage needs review', async () => {
+  const h = fixture()
+  h.state.lesson = {
+    title: 'Defend a strategy', subject: 'math', approved: false,
+    learningObjectives: [{ id: 'reason', name: 'Explain why a strategy works', evidenceType: 'reasoned_explanation' }],
+    test: Array.from({ length: 6 }, (_, index) => ({
+      objectiveId: 'reason', question: `What is ${index + 4} × 5?`, expectedAny: [String((index + 4) * 5)],
+    })),
+    assessmentReadiness: { scope: 'generated_test_alignment', status: 'needs_review', issues: [] },
+  }
+  const { status, body } = await h.invoke()
+  assert.equal(status, 200)
+  assert.equal(body.lesson.approved, true)
+  assert.equal(body.lesson.assessmentReadiness.status, 'needs_review')
+  assert.ok(body.lesson.assessmentReadiness.objectivesNeedingAssessment.includes('reason'))
+  assert.equal(body.association.readiness_state, 'approved')
+})
+
+test('approval refreshes a stale warning after an educator improves the Test', async () => {
+  const h = fixture()
+  h.state.lesson = {
+    title: 'Explain how to multiply', subject: 'math', approved: false,
+    learningObjectives: [{ id: 'reason', name: 'Explain why a method works', evidenceType: 'reasoned_explanation' }],
+    test: Array.from({ length: 6 }, (_, index) => ({
+      objectiveId: 'reason',
+      question: `For ${index + 13} × 5, explain why doubling and halving can solve the problem.`,
+      expectedAny: ['Multiplying by ten and halving produces the same result because five is half of ten.'],
+    })),
+    assessmentReadiness: { scope: 'generated_test_alignment', status: 'needs_review', issues: ['reasoning_not_assessed:reason'] },
+  }
+  const { status, body } = await h.invoke()
+  assert.equal(status, 200)
+  assert.equal(body.lesson.assessmentReadiness.status, 'aligned')
+  assert.deepEqual(body.lesson.assessmentReadiness.issues, [])
+})

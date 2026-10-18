@@ -3,7 +3,7 @@ import { isMissingStorageObject } from '../../../../lib/syllabus/storageObjectEr
 import { resolveEffectiveTier, featuresForTier } from '../../../../lib/entitlements.js'
 import { AI_MODEL, aiModelTemperature } from '../../../../lib/aiModel.js'
 import { canonicalizeAiGeneratedLessonChoices } from '../../../../lib/aiGeneratedChoiceOrder.mjs'
-import { validateSlateTestAlignment } from '../../../../lib/slateTestAlignment.mjs'
+import { improveGeneratedLessonAssessment } from '../../../../lib/lessonAssessmentReview.mjs'
 import { buildCanonicalLessonIdentity, normalizeGenerationRequest } from '../../../../lib/facilitatorPreparation.mjs'
 import { requireAssociationLearner, upsertLessonAssociation } from '../../../../lib/syllabus/lessonAssociations.server.mjs'
 import {
@@ -175,7 +175,7 @@ CRITICAL REQUIREMENTS:
    - Example: ["photosynthesis", "making food", "food production", "creating energy"]
 6. teachingNotes: Include key teaching strategies, common misconceptions, real-world connections, and differentiation tips (2-4 sentences)${notesGuidance}
 7. baseline: Include exactly 2 short, low-pressure pre-instruction questions. These must check what a learner may already know before teaching, not trick questions. They must be distinct from all truefalse, multiplechoice, fillintheblank, shortanswer, and test items. Do not call them a pretest.
-8. learningObjectives and test must form one verifiable instructional contract. Identify 2-6 specific observable learning objectives from the lesson TITLE, BLURB, teachingNotes, and required curriculum progression. Each must have a stable unique id, a precise skill description, and evidenceType of reasoned_explanation, calculation, application, or recognition. Include at least 6 reserved, held-out Test questions, each with one objectiveId matching one of those objectives. EVERY objective must be meaningfully assessed by at least one Test question. Merely using related vocabulary or arithmetic from the same subject does not establish coverage. The question must require the action in its objective, and have a correct answer or reference explanation. A defend, justify, explain, prove, or reasonableness objective MUST use a free-response Test question explicitly asking the learner to explain WHY, justify a choice, or defend a method. Do NOT use a bare numerical calculation, multiple choice, or true/false to assess such an objective. Calculation objectives may use numerical problems and application objectives may use multi-step situations. Test items must be distinct from baseline, every instructional pool, and each other; never disclose them during instruction. Preserve all teaching targets in the Test, not just the easiest nearby skill. For mathematical explanations give a defensible reference explanation in expectedAny, not just a number. Include objectiveId on every Test item.
+8. learningObjectives and test must form one verifiable instructional contract. Identify 2-6 specific observable learning objectives from the lesson TITLE, BLURB, teachingNotes, and required curriculum progression. Each must have a stable unique id, a precise skill description, and evidenceType of reasoned_explanation, calculation, application, or recognition. Include at least 6 reserved, held-out Test questions, each with one objectiveId matching one of those objectives. EVERY objective must be meaningfully assessed by at least one Test question. Merely using related vocabulary or arithmetic from the same subject does not establish coverage. The question must require the action in its objective, and have a correct answer or reference explanation. A defend, justify, explain, prove, or reasonableness objective MUST use a free-response Test question explicitly asking the learner to explain WHY, justify a choice, or defend a method. Do NOT use a bare numerical calculation, multiple choice, or true/false to assess such an objective. Calculation objectives may use numerical problems and application objectives may use multi-step situations. Test items must be distinct from baseline, every instructional pool, and each other; never disclose them during instruction. Preserve all teaching targets in the Test, not just the easiest nearby skill. For mathematical explanations give a defensible reference explanation in expectedAny, not just a number. Include objectiveId on every Test item. EVERY Test item assigned to a reasoning or justification objective must itself ask for a free-response explanation and include a reference explanation; do not attach only a calculation or multiple-choice item to that objective.
 9. retention: Include exactly 2 delayed-retention-reserved questions. They must be distinct from baseline, all instructional pools, test, dailyFollowup, and weeklyReview. These preserve the existing in-session Stage 7 path.
 10. dailyFollowup: Include exactly 2 Daily Follow-Up-reserved questions. They must be distinct from baseline, all instructional pools, test, retention, and weeklyReview. These are held out for a strict delayed follow-up only.
 11. weeklyReview: Include exactly 5 Weekly Review-reserved questions. They must be distinct from baseline, all instructional pools, test, retention, and dailyFollowup. These are held out for a separate weekly review only.
@@ -199,7 +199,7 @@ ${difficultyCalibration}
 Return ONLY valid JSON. No markdown, no code blocks, no commentary.`
 }
 
-async function callModel(prompt){
+async function callModel(prompt, { timeoutMs = 55000 } = {}){
   // Use existing Ms. Sonoma OpenAI provider where available; fallback to a minimal stub
   const key = process.env.OPENAI_API_KEY
   const url = 'https://api.openai.com/v1/chat/completions'
@@ -253,7 +253,7 @@ async function callModel(prompt){
   }
   
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), 55000) // 55 second hard limit
+  const timeoutId = setTimeout(() => controller.abort(), Math.max(1000, Math.min(55000, Number(timeoutMs) || 55000))) // One request, within the route's 60-second ceiling
   
   try {
     const res = await fetch(url, { 
@@ -291,14 +291,22 @@ function normalizedGeneratedLesson(lesson, { title, subject, difficulty, grade, 
     approved: false,
   }
   const complete = canonicalizeAiGeneratedLessonChoices(applyCurriculumTargetsToLesson(normalizedLesson, curriculumTargets), { rng })
-  const alignment = validateSlateTestAlignment({ lesson: complete, testItems: complete.test })
-  if (!alignment.ok) {
-    throw new MaterializationGenerationError(
-      `Lesson generation did not produce an objective-aligned test (${alignment.errors.slice(0, 8).join(', ')}). Nothing was saved.`,
-      'LESSON_TEST_ALIGNMENT_FAILED', 422,
-    )
-  }
   return complete
+}
+
+// Assessment generation is part of lesson production, not a permission gate.
+// Save the instructor-reviewable draft even if the model fails a quality check.
+async function generateReviewedLesson({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets, userId, rng, modelCall = callModel }) {
+  const startedAt = Date.now()
+  const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets })
+  const generated = await modelCall(prompt)
+  const lesson = normalizedGeneratedLesson(generated, { title, subject, difficulty, grade, description, curriculumTargets }, userId, rng)
+  // The first model request owns most of the function's 60-second budget.
+  // Never risk an otherwise usable lesson by waiting for an extra repair.
+  const repairTest = Date.now() - startedAt < 36000
+    ? async (repairPrompt) => modelCall(repairPrompt, { timeoutMs: 12000 })
+    : null
+  return improveGeneratedLessonAssessment(lesson, { repairTest })
 }
 
 async function verifiedMaterializationOperation(admin, raw, { facilitatorId, learnerId }) {
@@ -404,8 +412,7 @@ export async function POST(request, deps = {}){
           if (Number.isFinite(lifetimeLimit) && lifetimeUsed >= lifetimeLimit) {
             throw new MaterializationGenerationError(`You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.`, 'LESSON_GENERATION_QUOTA_EXHAUSTED', 429)
           }
-          const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets })
-          return normalizedGeneratedLesson(await (deps.callModel || callModel)(prompt), { title, subject, difficulty, grade, description, curriculumTargets }, user.id, deps.choiceOrderRng)
+          return generateReviewedLesson({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets, userId: user.id, rng: deps.choiceOrderRng, modelCall: deps.callModel || callModel })
         },
         createArtifact: async (identity, lesson) => {
           const { error } = await storage.upload(identity.storagePath, JSON.stringify(lesson, null, 2), {
@@ -472,13 +479,7 @@ export async function POST(request, deps = {}){
     if (Number.isFinite(lifetimeLimit) && lifetimeUsed >= lifetimeLimit) {
       return NextResponse.json({ error: `You have used all ${lifetimeLimit} free lesson generations. Upgrade to Standard or Pro for unlimited generations.` }, { status: 429 })
     }
-    const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets })
-    const lesson = normalizedGeneratedLesson(
-      await (deps.callModel || callModel)(prompt),
-      { title, subject, difficulty, grade, description, curriculumTargets },
-      user.id,
-      deps.choiceOrderRng,
-    )
+    const lesson = await generateReviewedLesson({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets, userId: user.id, rng: deps.choiceOrderRng, modelCall: deps.callModel || callModel })
     
     const base = safeFileName(`${grade}_${lesson.title}_${difficulty}`)
     const file = `${base}.json`

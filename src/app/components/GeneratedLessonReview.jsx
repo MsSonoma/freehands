@@ -1,5 +1,7 @@
 'use client'
 
+import { generatedAssessmentReview } from '../lib/lessonAssessmentReview.mjs'
+
 const INSTRUCTIONAL_REVIEW_SECTIONS = [
   { key: 'truefalse', title: 'True/False' },
   { key: 'multiplechoice', title: 'Multiple Choice' },
@@ -67,6 +69,18 @@ function supportText(item) {
 
 export default function GeneratedLessonReview({ lesson }) {
   const title = lesson?.title || 'Lesson content'
+  // Re-evaluate what is actually in the saved draft (including any educator
+  // edits). A generation-time note is never itself evidence of learner mastery.
+  const assessmentReview = lesson?.assessmentReadiness?.scope === 'generated_test_alignment'
+    ? generatedAssessmentReview(lesson, {
+        repairAttempted: lesson.assessmentReadiness.repairAttempted,
+        repaired: lesson.assessmentReadiness.repaired,
+      })
+    : null
+  const gaps = (assessmentReview?.objectivesNeedingAssessment || []).map((id) => ({
+    id,
+    name: (lesson?.learningObjectives || []).find((item) => String(item?.id) === id)?.name || id,
+  }))
   const vocab = asArray(lesson?.vocab)
   const instructionalSections = INSTRUCTIONAL_REVIEW_SECTIONS
     .map((section) => ({ ...section, items: asArray(lesson?.[section.key]) }))
@@ -87,6 +101,28 @@ export default function GeneratedLessonReview({ lesson }) {
           </div>
         )}
       </div>
+
+      {assessmentReview?.status === 'needs_review' && (
+        <section role="status" aria-label="Assessment coverage review" style={{ border: '1px solid #d6bc86', borderRadius: 8, padding: 12, background: '#fffbeb', color: '#713f12' }}>
+          <strong>Assessment coverage needs review</strong>
+          <p style={{ margin: '6px 0', lineHeight: 1.5 }}>The lesson draft has been saved. Some independent Test questions need improvement before they can substantiate the listed objectives. This is a content-quality note, not a learner result, and it does not block your decision to edit or approve the lesson.</p>
+          {gaps.length > 0 && <p style={{ margin: '6px 0', fontSize: 13 }}><strong>Test coverage to improve:</strong> {gaps.map(({ name }) => name).join('; ')}</p>}
+          <details style={{ marginTop: 7 }}>
+            <summary style={{ cursor: 'pointer', fontWeight: 600, fontSize: 13 }}>Review affected Test questions</summary>
+            <div style={{ display: 'grid', gap: 8, marginTop: 8 }}>
+              {(Array.isArray(lesson?.test) ? lesson.test : []).map((item, index) => {
+                const id = String(item?.objectiveId || item?.objective_id || '')
+                if (!gaps.some((gap) => gap.id === id)) return null
+                return <div key={index} style={{ fontSize: 13, borderTop: '1px solid #edd7ab', paddingTop: 6 }}>
+                  <strong>Question {index + 1} ({id})</strong>: {questionText(item) || 'Question missing'}
+                  {expectedAnswers(item).length > 0 && <p style={{ margin: '4px 0 0' }}>Reference: {expectedAnswers(item).join('; ')}</p>}
+                </div>
+              })}
+              <p style={{ margin: 0, fontSize: 12 }}>Use Edit draft to correct an item, or approve the lesson as-is without claiming unassessed mastery.</p>
+            </div>
+          </details>
+        </section>
+      )}
 
       {vocab.length > 0 && (
         <section style={{ border: '1px solid #e5e7eb', borderRadius: 8, padding: 12, background: '#fff' }}>

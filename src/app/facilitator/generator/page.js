@@ -600,21 +600,26 @@ export default function LessonMakerPage({ embeddedHref = '', onNavigate = null }
     const generatedUserId = json?.userId
     const storedLessonKey = json?.storageError ? null : (json?.lessonKey || (generatedFile ? `generated/${generatedFile}` : null))
 
-    setToast({ message: 'Validating lesson quality...', type: 'info' })
+    setToast({ message: 'Reviewing lesson quality...', type: 'info' })
     const validation = validateLessonQuality(json?.lesson)
+    let optionalImprovementsPending = false
     if (validation?.issues?.length && generatedFile) {
       setToast({ message: 'Improving lesson quality...', type: 'info' })
-      const fixResponse = await fetch('/api/facilitator/lessons/request-changes', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
-        body: JSON.stringify({
-          file: generatedFile,
-          userId: generatedUserId,
-          changeRequest: buildValidationChangeRequest(validation.issues),
-        }),
-      })
-      const fixJson = await fixResponse.json().catch(() => ({}))
-      if (!fixResponse.ok) throw new Error(fixJson?.error || 'Lesson generated, but quality improvements failed')
+      try {
+        const fixResponse = await fetch('/api/facilitator/lessons/request-changes', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({
+            file: generatedFile,
+            userId: generatedUserId,
+            changeRequest: buildValidationChangeRequest(validation.issues),
+          }),
+        })
+        if (!fixResponse.ok) optionalImprovementsPending = true
+      } catch {
+        // An optional quality repair cannot erase or obstruct the saved draft.
+        optionalImprovementsPending = true
+      }
     }
 
     const identity = json?.identity || (storedLessonKey ? {
@@ -623,7 +628,7 @@ export default function LessonMakerPage({ embeddedHref = '', onNavigate = null }
       storagePath: json?.storagePath || '',
       ownerId: json?.ownerId || generatedUserId || '',
     } : null)
-    setToast({ message: 'Lesson ready!', type: 'success' })
+    setToast({ message: optionalImprovementsPending ? 'Lesson saved for review. Some optional improvements were not completed.' : 'Lesson ready!', type: optionalImprovementsPending ? 'info' : 'success' })
     await continueGeneratedLesson({ identity, spec, proposal, intent })
   }
 

@@ -3,6 +3,7 @@ import { requireAssociationLearner, upsertLessonAssociation } from '../../../../
 import { validateLearnerId } from '../../../../lib/syllabus/schema.mjs'
 import { featuresForTier, resolveEffectiveTier } from '../../../../lib/entitlements.js'
 import { buildCanonicalLessonIdentity } from '../../../../lib/facilitatorPreparation.mjs'
+import { generatedAssessmentReview } from '../../../../lib/lessonAssessmentReview.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -124,6 +125,13 @@ export async function POST(request, deps = {}){
       // bounded and retryable instead of treating the first stale read as loss.
       js.approved = true
       if (js.needsUpdate) delete js.needsUpdate
+      if (js.assessmentReadiness?.scope === 'generated_test_alignment') {
+        // Refresh the note after educator edits without vetoing approval.
+        js.assessmentReadiness = generatedAssessmentReview(js, {
+          repairAttempted: js.assessmentReadiness.repairAttempted,
+          repaired: js.assessmentReadiness.repaired,
+        })
+      }
 
       const updatedContent = JSON.stringify(js, null, 2)
       const { error: updateError } = await lessonStorage.update(storagePath, updatedContent, {

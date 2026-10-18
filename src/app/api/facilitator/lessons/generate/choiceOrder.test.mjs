@@ -125,7 +125,55 @@ test('generated lesson storage and API response share one canonical answer order
   }
 })
 
-test('generated lessons cannot be saved with only topically related and unlinked test questions', async () => {
+test('the route repairs only unaligned test items and stores the repaired draft once', async () => {
+  const restore = withSupabaseEnv()
+  const uploadCapture = {}
+  let calls = 0
+  const original = {
+    title: 'Explain multiplication strategies', subject: 'math', grade: '5',
+    teachingNotes: 'Explain several ways to multiply and discuss why the methods work.',
+    learningObjectives: [{ id: 'defend', name: 'Defend a method', description: 'Explain why the method works', evidenceType: 'reasoned_explanation' }],
+    test: Array.from({ length: 6 }, (_, index) => ({
+      id: `heldout-${index + 1}`, objectiveId: 'defend',
+      question: `What is ${index + 21} × 4?`,
+      expectedAny: [String((index + 21) * 4)],
+    })),
+  }
+  try {
+    const response = await generateLesson(requestFor({
+      title: original.title, subject: 'math', difficulty: 'intermediate', grade: '5',
+      description: 'Explain and defend several ways to multiply.',
+    }), {
+      callModel: async (prompt) => {
+        calls++
+        if (calls === 1) return structuredClone(original)
+        assert.match(prompt, /Improve ONLY the held-out independent test items/)
+        return { repairs: Array.from({ length: 6 }, (_, index) => ({
+          index: index + 1,
+          item: {
+            id: `heldout-${index + 1}`, objectiveId: 'defend',
+            question: `For ${index + 21} × 4, explain why a strategy you choose gives the right result.`,
+            expectedAny: ['Multiplying by four can be done by doubling twice because each doubling multiplies the quantity by two.'],
+          },
+        })) }
+      },
+      createClientImpl: createClientMock(uploadCapture),
+    })
+    assert.equal(response.status, 200)
+    const body = await response.json()
+    assert.equal(calls, 2)
+    assert.equal(body.lesson.assessmentReadiness.status, 'aligned')
+    assert.equal(body.lesson.assessmentReadiness.repaired, true)
+    assert.equal(body.lesson.approved, false)
+    assert.deepEqual(body.lesson.learningObjectives, original.learningObjectives)
+    assert.equal(body.lesson.test.length, 6)
+    assert.deepEqual(JSON.parse(uploadCapture.body), body.lesson)
+  } finally {
+    restore()
+  }
+})
+
+test('a mismatched generated test is saved as a reviewable draft rather than rejecting the learner', async () => {
   const restore = withSupabaseEnv()
   const uploadCapture = {}
   try {
@@ -153,11 +201,14 @@ test('generated lessons cannot be saved with only topically related and unlinked
       }),
       createClientImpl: createClientMock(uploadCapture),
     })
-    assert.equal(response.status, 422)
+    assert.equal(response.status, 200)
     const body = await response.json()
-    assert.equal(body.code, 'LESSON_TEST_ALIGNMENT_FAILED')
-    assert.match(body.error, /objective-aligned test/i)
-    assert.equal(uploadCapture.body, undefined)
+    assert.equal(body.lesson.approved, false)
+    assert.equal(body.lesson.assessmentReadiness.status, 'needs_review')
+    assert.ok(body.lesson.assessmentReadiness.issues.includes('reasoning_not_assessed:defend'))
+    assert.deepEqual(body.lesson.assessmentReadiness.objectivesNeedingAssessment, ['defend'])
+    assert.deepEqual(JSON.parse(uploadCapture.body), body.lesson, 'the review warning persists with the saved lesson')
+    assert.equal(body.lesson.test.length, 6)
   } finally {
     restore()
   }
