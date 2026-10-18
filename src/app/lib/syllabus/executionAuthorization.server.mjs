@@ -127,7 +127,7 @@ export async function resolveSyllabusExecution({
   }
   const revision = await repository.findRevision(syllabus.active_revision_id, syllabus.id)
   if (!revision) throw new SyllabusError('The active Syllabus revision could not be found', 500, 'ACTIVE_REVISION_MISSING')
-  const { forecastItems, associations, schedules, sessions, sessionEvents, lessonMetadata } = await loadSyllabusTimelineInputs({
+  const { forecastItems, associations, schedules, sessions, sessionEvents, lessonMetadata, removedOccurrences } = await loadSyllabusTimelineInputs({
     repository, admin, facilitatorId, learner, activeRevision: revision, verifyLessonAccess,
   })
   const timeline = composeSyllabusLessonTimeline({
@@ -139,6 +139,7 @@ export async function resolveSyllabusExecution({
     sessions,
     sessionEvents,
     lessonMetadata,
+    removedOccurrences,
     today: calendar.today,
     timeZone: calendar.timeZone,
   })

@@ -16,20 +16,23 @@ function between(source, startMarker, endMarker) {
   return source.slice(start, end)
 }
 
-test('shared lesson details exposes separately scoped exact and broad removal choices', () => {
-  assert.match(overlaySource, /Remove this occurrence/)
+test('Facilitator lesson removal exposes both evidence choices and a fresh PIN requirement', () => {
+  assert.match(overlaySource, /Remove lesson, keep evidence \(recommended\)/)
+  assert.match(overlaySource, /Remove lesson and its evidence/)
+  assert.match(overlaySource, /A fresh Facilitator PIN is required for either choice/)
+  assert.match(overlaySource, /\[removalChoice, setRemovalChoice\] = useState\('keep'\)/)
+  assert.match(overlaySource, /This cannot be undone/)
   assert.match(overlaySource, /Remove lesson from learner/)
-  assert.match(overlaySource, /This removes only this occurrence from the Syllabus\. The lesson, other occurrences, and existing learning history remain\./)
-  assert.match(overlaySource, /This removes the lesson from this learner's current and future plan and availability\. The lesson itself and existing learning history remain\./)
 })
 
-test('exact removal uses occurrence authority and preserves historical records', () => {
+test('exact lesson removal is available for actual and historical records', () => {
   const exactAction = between(overlaySource, 'async function removeExactSyllabusOccurrence()', 'async function removeLessonFromLearner()')
-  assert.match(overlaySource, /exactOccurrenceIsProtected = sourceOccurrenceId\.startsWith\('actual:'\) \|\| sourceOccurrenceId\.startsWith\('historical:'\)/)
-  assert.match(overlaySource, /canRemoveExactOccurrence = coreAuthority && canChangeIntent && !isHistorical && Boolean\(sourceOccurrenceId\) && !exactOccurrenceIsProtected/)
-  assert.match(exactAction, /fetch\('\/api\/syllabus\/lesson-occurrences'/)
-  assert.match(exactAction, /method: 'DELETE'/)
-  assert.match(exactAction, /occurrenceId: sourceOccurrenceId/)
+  assert.match(overlaySource, /canRemoveExactOccurrence = coreAuthority && isLesson && Boolean\(item\.lesson_key\) && Boolean\(occurrenceId\)/)
+  assert.doesNotMatch(overlaySource, /exactOccurrenceIsProtected/)
+  assert.match(exactAction, /requestFacilitatorPinException\(/)
+  assert.match(exactAction, /fetch\('\/api\/syllabus\/lesson-removal'/)
+  assert.match(exactAction, /method: 'POST'/)
+  assert.match(exactAction, /occurrenceId, evidenceDisposition: removalChoice, pin/)
   assert.match(exactAction, /payload\.expectedActiveRevisionId = activeRevisionId/)
   assert.doesNotMatch(exactAction, /lesson-availability/)
 })

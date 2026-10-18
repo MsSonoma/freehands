@@ -301,6 +301,19 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to remove no-school date')
       return data
     },
+    async listLessonOccurrenceRemovals(facilitatorId, learnerId) {
+      try {
+        return await readAllSupabaseRows(() => admin.from('syllabus_lesson_removals').select('*')
+          .eq('facilitator_id', facilitatorId)
+          .eq('learner_id', learnerId)
+          .order('removed_at', { ascending: false }))
+      } catch (error) {
+        // Rolling deployment compatibility: the Syllabus must still load before
+        // this migration is installed. A real query or permission error is fatal.
+        if (error?.code === '42P01' || error?.code === 'PGRST205') return []
+        throw error
+      }
+    },
     async listLessonAssociations(facilitatorId, learnerId) {
       const { data, error } = await admin.from('syllabus_lesson_associations').select('*')
         .eq('facilitator_id', facilitatorId)

@@ -185,6 +185,8 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [repeatMode, setRepeatMode] = useState(false)
   const [learnerLessonBound, setLearnerLessonBound] = useState(false)
   const [removalBusy, setRemovalBusy] = useState('')
+  const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
+  const [removalChoice, setRemovalChoice] = useState('keep')
   const [forecastChangeOpen, setForecastChangeOpen] = useState(false)
   const [forecastChangeRequest, setForecastChangeRequest] = useState('')
   const [conceptEditMode, setConceptEditMode] = useState('')
@@ -219,6 +221,8 @@ export default function FacilitatorSyllabusLessonOverlay({
     setRepeatMode(false)
     setLearnerLessonBound(false)
     setRemovalBusy('')
+    setRemoveDialogOpen(false)
+    setRemovalChoice('keep')
     setForecastChangeOpen(false)
     setForecastChangeRequest('')
     setConceptEditMode('')
@@ -364,8 +368,7 @@ export default function FacilitatorSyllabusLessonOverlay({
   const occurrenceId = String(item.occurrence_id || item.id || '').trim()
   const sourceOccurrenceId = String(item.source_occurrence_id || occurrenceId).trim()
   const historyOccurrenceId = occurrenceId.startsWith('actual:') || occurrenceId.startsWith('historical:') ? occurrenceId : ''
-  const exactOccurrenceIsProtected = sourceOccurrenceId.startsWith('actual:') || sourceOccurrenceId.startsWith('historical:')
-  const canRemoveExactOccurrence = coreAuthority && canChangeIntent && !isHistorical && Boolean(sourceOccurrenceId) && !exactOccurrenceIsProtected
+  const canRemoveExactOccurrence = coreAuthority && isLesson && Boolean(item.lesson_key) && Boolean(occurrenceId)
   const canRemoveFromLearner = coreAuthority && learnerLessonBound === true && !isHistorical
   const historyAvailable = Boolean(historyOccurrenceId) && (typeof onReviewHistory === 'function' || coreAuthority)
   const repeatDeliveryActive = repeatMode && selection.syllabus_state === 'completed_historical'
@@ -712,30 +715,37 @@ export default function FacilitatorSyllabusLessonOverlay({
   }
 
   async function removeExactSyllabusOccurrence() {
-    if (!canRemoveExactOccurrence) return
-    const confirmed = window.confirm('This removes only this occurrence from the Syllabus. The lesson, other occurrences, and existing learning history remain.')
-    if (!confirmed) return
+    if (!canRemoveExactOccurrence || !removeDialogOpen) return
+    // A fresh, server-verified PIN is required even while already inside Facilitator.
+    const pin = await requestFacilitatorPinException({
+      message: removalChoice === 'delete'
+        ? 'Delete this lesson instance and its associated evidence? Enter the Facilitator PIN to confirm.'
+        : 'Remove this lesson instance while keeping its learning evidence? Enter the Facilitator PIN to confirm.',
+    })
+    if (!pin) return
     setRemovalBusy('occurrence')
     setCoreError('')
     setMessage('')
     try {
-      const payload = { learnerId, lessonKey: item.lesson_key, occurrenceId: sourceOccurrenceId }
+      const payload = { learnerId, lessonKey: item.lesson_key, occurrenceId, evidenceDisposition: removalChoice, pin }
       if (activeRevisionId) payload.expectedActiveRevisionId = activeRevisionId
-      const response = await fetch('/api/syllabus/lesson-occurrences', {
-        method: 'DELETE',
+      const response = await fetch('/api/syllabus/lesson-removal', {
+        method: 'POST',
         headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
       })
       const json = await response.json().catch(() => ({}))
-      if (!response.ok) throw new Error(json?.error || 'Could not remove this Syllabus occurrence')
+      if (!response.ok || json?.removed !== true) throw new Error(json?.error || 'Could not remove this lesson')
+      setRemoveDialogOpen(false)
       onClose?.()
       await refreshAfterChange()
+      if (json?.transcriptCleanup?.status === 'incomplete') {
+        window.alert('The lesson and linked learning evidence were removed, but some transcript files could not be verified as removed. Shared files were preserved rather than risk deleting another attempt.')
+      }
     } catch (cause) {
-      // The server may have completed the removal before a late transport/readback
-      // failure. Reconcile the Syllabus before presenting an error so a removed
-      // occurrence never remains stuck on screen until a manual browser refresh.
+      // Reconcile after a late response failure; the server may have committed.
       await refreshAfterChange()
-      setCoreError(cause?.message || 'Could not remove this Syllabus occurrence')
+      setCoreError(cause?.message || 'Could not remove this lesson')
     } finally {
       setRemovalBusy('')
     }
@@ -951,7 +961,7 @@ export default function FacilitatorSyllabusLessonOverlay({
             {isLesson && item.lesson_key && !isDraft && item.historical_record !== true && (typeof onScheduleSlate === 'function' || canScheduleSlateCore) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={openSlateScheduler}>Schedule Daily Review</button>}
             {isSlateAssignment && (typeof onRemoveSlateSchedule === 'function' || coreAuthority) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={() => void removeSlateSchedule()}>Remove scheduled session</button>}
             {canRepeat && <button type="button" onClick={() => void handleRepeat()}>Retry lesson</button>}
-            {canRemoveExactOccurrence && <button type="button" disabled={Boolean(removalBusy)} onClick={() => void removeExactSyllabusOccurrence()}>{removalBusy === 'occurrence' ? 'Removing...' : 'Remove this occurrence'}</button>}
+            {canRemoveExactOccurrence && <button type="button" disabled={Boolean(removalBusy)} onClick={() => { setRemovalChoice('keep'); setRemoveDialogOpen(true) }}>{removalBusy === 'occurrence' ? 'Removing...' : 'Remove lesson'}</button>}
             {canRemoveFromLearner && <button type="button" disabled={Boolean(removalBusy)} onClick={() => void removeLessonFromLearner()}>{removalBusy === 'learner' ? 'Removing...' : 'Remove lesson from learner'}</button>}
           </div>
           {isDraft && item.lesson_key && <button type="button" className={styles.primary} onClick={reviewDraft}>Review & approve draft</button>}
@@ -971,6 +981,27 @@ export default function FacilitatorSyllabusLessonOverlay({
       onDateChange={(scheduledDate) => setScheduleDialog((current) => ({ ...current, scheduledDate }))}
       onSubmit={() => void saveSchedule()}
     />}
+    {removeDialogOpen && canRemoveExactOccurrence && <div className={styles.removalBackdrop} role="presentation">
+      <section className={styles.removalDialog} role="dialog" aria-modal="true" aria-labelledby="remove-lesson-title">
+        <h2 id="remove-lesson-title">Remove lesson</h2>
+        <p><strong>{item.title || 'This lesson'}</strong> has status <strong>{displayStatus}</strong>. Choose what happens to its learning evidence.</p>
+        <label className={styles.removalOption}>
+          <input type="radio" name="lesson-removal-choice" value="keep" checked={removalChoice === 'keep'} disabled={Boolean(removalBusy)} onChange={() => setRemovalChoice('keep')} />
+          <span><strong>Remove lesson, keep evidence (recommended)</strong><small>Remove this instance from the Syllabus and its lesson history. Keep the learner’s demonstrated mastery, assessments, and associated evidence for future planning.</small></span>
+        </label>
+        <label className={styles.removalOption}>
+          <input type="radio" name="lesson-removal-choice" value="delete" checked={removalChoice === 'delete'} disabled={Boolean(removalBusy)} onChange={() => setRemovalChoice('delete')} />
+          <span><strong>Remove lesson and its evidence</strong><small>Remove this instance, linked instructional evidence, and attributable transcripts where safely identifiable. Mastery reports and future forecasts may change. Other attempts remain.</small></span>
+        </label>
+        {removalChoice === 'delete' && <p className={styles.removalWarning} role="note"><strong>Permanent evidence removal:</strong> Instructional session records and linked mastery evidence will be deleted. This cannot be undone.</p>}
+        <p className={styles.removalPin}>A fresh Facilitator PIN is required for either choice.</p>
+        {coreError && <p className={styles.errorMessage} role="alert">{coreError}</p>}
+        <div className={styles.removalActions}>
+          <button type="button" disabled={Boolean(removalBusy)} onClick={() => { setRemoveDialogOpen(false); setCoreError('') }}>Cancel</button>
+          <button type="button" className={removalChoice === 'delete' ? styles.danger : styles.primary} disabled={Boolean(removalBusy)} onClick={() => void removeExactSyllabusOccurrence()}>{removalBusy === 'occurrence' ? 'Removing...' : removalChoice === 'delete' ? 'Remove lesson and evidence' : 'Remove lesson, keep evidence'}</button>
+        </div>
+      </section>
+    </div>}
     <LessonRevisionDialog
       open={revisionOpen}
       lessonKey={item.lesson_key}

@@ -213,7 +213,7 @@ export async function GET(request, deps = {}) {
       })
       const startsOn = String(bundle.period.starts_on || '').slice(0, 10)
       const endsOn = String(bundle.period.ends_on || '').slice(0, 10)
-      const trackedSessions = (inputs.sessions || []).filter((row) => {
+      const trackedSessions = (inputs.evidenceSessions || inputs.sessions || []).filter((row) => {
         const observedOn = String(row?.ended_at || row?.started_at || '').slice(0, 10)
         return observedOn && (!startsOn || observedOn >= startsOn) && (!endsOn || observedOn <= endsOn)
       })

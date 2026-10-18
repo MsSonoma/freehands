@@ -174,6 +174,17 @@ export async function GET(request, deps = {}) {
     }
 
     const limit = parseLimit(searchParams.get('limit'))
+    // Hide the exact removed lesson instance here. Mastery reports still
+    // retain kept evidence through their independent evidence repository.
+    let removedSessionIds = new Set()
+    try {
+      const removed = await fetchAllRows(() => supabase.from('syllabus_lesson_removals')
+        .select('execution_session_ids')
+        .eq('learner_id', learnerId))
+      removedSessionIds = new Set(removed.flatMap((row) => row?.execution_session_ids || []).map(String))
+    } catch (error) {
+      if (error?.code !== '42P01' && error?.code !== 'PGRST205') throw error
+    }
 
     const from = searchParams.get('from')
     const to = searchParams.get('to')
@@ -198,14 +209,14 @@ export async function GET(request, deps = {}) {
 
     const { data: sessionRows, error: sessionError } = await sessionsQuery
       .order('started_at', { ascending: false })
-      .limit(limit)
+      .limit(Math.min(5000, limit + removedSessionIds.size))
 
     if (sessionError) {
       return NextResponse.json({ error: 'Failed to load lesson sessions' }, { status: 500 })
     }
 
     const sessions = Array.isArray(sessionRows)
-      ? sessionRows.map((row) => {
+      ? sessionRows.filter((row) => !removedSessionIds.has(String(row?.id))).slice(0, limit).map((row) => {
           const startedAt = row?.started_at || null
           const endedAt = row?.ended_at || null
           let durationSeconds = null
@@ -272,11 +283,11 @@ export async function GET(request, deps = {}) {
             // Silent warning - table may not exist yet
           }
         } else if (Array.isArray(eventRows)) {
-          events = eventRows
+          events = eventRows.filter((row) => !removedSessionIds.has(String(row?.session_id)))
         }
       } else {
         const eventRows = await fetchAllRows(eventsQueryBase, { pageSize: 1000, maxRows: 5000 })
-        events = eventRows
+        events = eventRows.filter((row) => !removedSessionIds.has(String(row?.session_id)))
       }
     } catch (eventsFetchError) {
       // Silent warning - events fetch failed

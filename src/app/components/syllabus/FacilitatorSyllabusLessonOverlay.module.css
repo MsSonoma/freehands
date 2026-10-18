@@ -35,3 +35,21 @@
 .forecastChoices .primary { border-color:#c7442e; background:#c7442e; color:#fff; }
 .forecastChange { margin-top:14px; padding:14px; border:1px solid #ded8cf; border-radius:10px; background:#faf9f7; }
 .forecastChange textarea { width:100%; box-sizing:border-box; resize:vertical; min-height:90px; padding:9px; border:1px solid #d1d5db; border-radius:7px; background:#fff; color:#111827; font:inherit; }
+.removalBackdrop { position:fixed; inset:0; z-index:1250; display:grid; place-items:center; padding:14px; background:rgba(17,24,39,.56); }
+.removalDialog { width:min(510px,100%); max-height:calc(100vh - 28px); overflow:auto; padding:22px; border-radius:14px; background:#fff; color:#1f2937; box-shadow:0 25px 70px rgba(0,0,0,.28); }
+.removalDialog h2 { margin:0 0 10px; font-size:21px; }
+.removalDialog > p { font-size:13px; line-height:1.55; }
+.removalOption { display:flex; align-items:flex-start; gap:11px; padding:13px; margin:12px 0; border:1px solid #d1d5db; border-radius:10px; cursor:pointer; }
+.removalOption:has(input:checked) { border-color:#955d4d; background:#fffaf7; }
+.removalOption input { margin:4px 0 0; accent-color:#9a4634; }
+.removalOption span { display:grid; gap:6px; }
+.removalOption strong { font-size:13px; }
+.removalOption small { font-size:12px; line-height:1.5; color:#4b5563; }
+.removalWarning { padding:10px 12px; border:1px solid #f0b2ad; background:#fff7f5; border-radius:8px; color:#8d1d1d; }
+.removalPin { color:#6b7280; }
+.removalActions { display:flex; justify-content:flex-end; flex-wrap:wrap; gap:8px; margin-top:16px; }
+.removalActions button { min-height:40px; padding:9px 12px; border:1px solid #d1d5db; border-radius:8px; cursor:pointer; font-weight:700; }
+.removalActions .danger { color:white; border-color:#a12b29; background:#a12b29; }
+.removalActions .primary { color:white; }
+.removalActions button:disabled { opacity:.55; cursor:wait; }
+@media (max-width:600px) { .removalDialog { padding:16px; } .removalActions button { flex:1 1 auto; } }

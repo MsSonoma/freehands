@@ -6,6 +6,7 @@ import { normalizeReviewTeacher, normalizeReviewTeacherSelection } from '../revi
 import { latestExplicitLessonSessionEvent, lifecycleEventActualKind, resolveLessonSessionLifecycle } from '../lessonSessionLifecycle.mjs'
 import { normalizeInstructionalTeacher } from './instructionalTeacher.mjs'
 import { annotateSyllabusItemsWithSlateEvidence } from './slateEvidenceAnnotations.mjs'
+import { removedLessonBlocksInference, visibleLessonTimeline } from './lessonRemovalProjection.mjs'
 import { noSchoolDateSet } from './noSchoolDates.mjs'
 import { isDayOffMovedToDate } from './dayOffMoves.mjs'
 
@@ -93,7 +94,7 @@ function intentOccurrenceId(intent) {
 
 export function composeSyllabusLessonTimeline({
   activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
-  legacyActivities = [], noSchoolDates = [], intentSourceDates = [], lessonMetadata = [], slateAssignments = [], slateCompletions = [], slateEvidenceReports = [], slateReviewReports = [],
+  legacyActivities = [], noSchoolDates = [], intentSourceDates = [], lessonMetadata = [], slateAssignments = [], slateCompletions = [], slateEvidenceReports = [], slateReviewReports = [], removedOccurrences = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
 } = {}) {
@@ -455,6 +456,7 @@ export function composeSyllabusLessonTimeline({
   const keysWithActualOrIntent = new Set([...instructionalActuals.map((actual) => actual.key), ...activeIntents.map((intent) => intent.key)])
   const inferenceCandidates = [...metadata.values()].filter((entry) => (
     !keysWithActualOrIntent.has(entry.lesson_key) && entry.inferred_placement_suppressed !== true
+      && !removedLessonBlocksInference(entry.lesson_key, removedOccurrences)
   ))
     .sort((left, right) => clean(left.association_id).localeCompare(clean(right.association_id)) || left.lesson_key.localeCompare(right.lesson_key))
   for (const entry of inferenceCandidates) {
@@ -644,10 +646,10 @@ export function composeSyllabusLessonTimeline({
     }
   }).filter(Boolean)
 
-  return [...canonical.map((item) => ({
+  return visibleLessonTimeline([...canonical.map((item) => ({
     ...item,
     historical_activity_annotations: historicalSlateByOccurrence.get(clean(item.occurrence_id || item.id)) || [],
-  })), ...standaloneHistoricalSlate, ...currentSlateHistory].sort((left, right) => left.planned_date.localeCompare(right.planned_date)
+  })), ...standaloneHistoricalSlate, ...currentSlateHistory], removedOccurrences).sort((left, right) => left.planned_date.localeCompare(right.planned_date)
     || Number(left.sort_order || 0) - Number(right.sort_order || 0)
     || String(left.occurrence_id || left.id || '').localeCompare(String(right.occurrence_id || right.id || '')))
 }

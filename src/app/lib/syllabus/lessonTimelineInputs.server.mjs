@@ -2,6 +2,7 @@ import { normalizeLessonKey, resolveLessonKeyAgainst } from '../lessonKeyNormali
 import { verifyFacilitatorLessonAccess } from '../serverLessonAccess.mjs'
 import { aggregateFacilitatorEvidenceSession } from '../masteryEvidence/reporting.js'
 import { buildReviewRunSummary } from '../masteryEvidence/followUps.js'
+import { removedTimelineSessionIds, visiblePlanningOccurrences } from './lessonRemovalProjection.mjs'
 
 const DEFAULT_CONCURRENCY = 4
 
@@ -190,7 +191,7 @@ export async function loadSyllabusTimelineInputs({
   includeSlateEvidence = false,
 } = {}) {
   const optionalList = async (name, ...args) => typeof repository[name] === 'function' ? repository[name](...args) : []
-  const [forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, slateEvidence] = await Promise.all([
+  const [forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, slateEvidence, removedOccurrences] = await Promise.all([
     repository.listForecastItems(activeRevision.id),
     optionalList('listLessonAssociations', facilitatorId, learner.id),
     optionalList('listSlateAssignments', facilitatorId, learner.id),
@@ -203,10 +204,26 @@ export async function loadSyllabusTimelineInputs({
     includeSlateEvidence
       ? loadSlateEvidenceInputs({ repository, facilitatorId, learnerId: learner.id })
       : { slateEvidenceReports: [], slateReviewReports: [] },
+    optionalList('listLessonOccurrenceRemovals', facilitatorId, learner.id),
   ])
+  const removedSessionIds = removedTimelineSessionIds(removedOccurrences)
+  const visibleSessions = (sessions || []).filter((row) => !removedSessionIds.has(clean(row?.id)))
+  const visibleEvents = (sessionEvents || []).filter((row) => !removedSessionIds.has(clean(row?.session_id)))
+  const visibleForecastItems = visiblePlanningOccurrences(forecastItems, removedOccurrences, 'syllabus')
+  const visibleSchedules = visiblePlanningOccurrences(schedules, removedOccurrences, 'scheduled')
+  const visibleLegacyActivities = (legacyActivities || []).filter((row) => !(removedOccurrences || []).some((removal) => (
+    normalizeLessonKey(row?.lesson_key) === normalizeLessonKey(removal?.lesson_key)
+      && (clean(removal?.occurrence_id) === `historical:${clean(row?.id || row?.source_identity)}`
+        || ((!clean(removal?.occurrence_id).startsWith('actual:') && !clean(removal?.occurrence_id).startsWith('historical:'))
+          && clean(row?.syllabus_occurrence_id) === clean(removal?.occurrence_id)))
+  )))
+  const visibleSlateCompletions = (slateCompletions || []).filter((row) => !(removedOccurrences || []).some((removal) => (
+    normalizeLessonKey(row?.lesson_key) === normalizeLessonKey(removal?.lesson_key)
+      && clean(row?.syllabus_occurrence_id) === clean(removal?.occurrence_id)
+  )))
   const sourceOccurrenceIds = [...new Set([
-    ...(sessions || []).map((row) => clean(row?.syllabus_occurrence_id)),
-    ...(sessionEvents || []).map((row) => clean(row?.metadata?.syllabus_occurrence_id)),
+    ...visibleSessions.map((row) => clean(row?.syllabus_occurrence_id)),
+    ...visibleEvents.map((row) => clean(row?.metadata?.syllabus_occurrence_id)),
   ].filter(Boolean))]
   const intentSourceDates = await optionalList(
     'listSyllabusIntentSourceDates',
@@ -219,13 +236,13 @@ export async function loadSyllabusTimelineInputs({
   const lessonMetadata = await resolveSyllabusLessonMetadata({
     admin,
     facilitatorId,
-    forecastItems,
+    forecastItems: visibleForecastItems,
     associations,
     approvedLessons: learner.approved_lessons || {},
-    schedules,
-    sessions,
-    sessionEvents,
+    schedules: visibleSchedules,
+    sessions: visibleSessions,
+    sessionEvents: visibleEvents,
     verifyLessonAccess,
   })
-  return { forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, intentSourceDates, lessonMetadata, ...slateEvidence }
+  return { forecastItems: visibleForecastItems, associations, slateAssignments, slateCompletions: visibleSlateCompletions, schedules: visibleSchedules, sessions: visibleSessions, evidenceSessions: sessions, sessionEvents: visibleEvents, legacyActivities: visibleLegacyActivities, noSchoolDates, intentSourceDates, lessonMetadata, removedOccurrences, ...slateEvidence }
 }
