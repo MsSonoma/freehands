@@ -214,9 +214,10 @@ export default function SlateReviewExperience({ runId }) {
       <button style={styles.headerGhost} onClick={() => router.push('/learn')}>BACK</button>
     </header>
 
-    <ReviewTeacherVideoStage teacher={teacher} ref={videoRef} />
+    <div className="review-question-layout">
+      <ReviewTeacherVideoStage teacher={teacher} ref={videoRef} style={{ width: '100%', margin: 0 }} />
 
-    <section style={styles.card}>
+    <section className="review-question-card" style={styles.card}>
       {!state && !error && <p style={styles.muted}>Loading review...</p>}
       {error && !state && <><h1>Review unavailable</h1><p style={styles.error}>{error}</p></>}
       {state && <>
@@ -266,6 +267,73 @@ export default function SlateReviewExperience({ runId }) {
         </> : !state.enabled ? <h1 style={styles.title}>This review is turned off.</h1> : null}
       </>}
     </section>
+      </div>
+    <style>{`
+      .review-question-layout {
+        width: min(1120px, calc(100% - 24px));
+        margin: 12px auto;
+        display: grid;
+        grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+        gap: clamp(12px, 2vw, 24px);
+        align-items: center;
+      }
+      .review-question-layout > [data-review-teacher-video-stage] {
+        max-width: 440px;
+        justify-self: center;
+      }
+      .review-question-card {
+        width: 100% !important;
+        max-width: none !important;
+        min-width: 0;
+        margin: 0 !important;
+        padding: clamp(12px, 2vh, 24px) !important;
+      }
+      .review-question-card h1 {
+        font-size: clamp(17px, 2.5vh, 24px) !important;
+        line-height: 1.25 !important;
+        margin-bottom: clamp(10px, 1.5vh, 18px) !important;
+        overflow-wrap: anywhere;
+      }
+      .review-question-card button {
+        min-width: 0;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+      @media (max-width: 800px) and (orientation: portrait) {
+        .review-question-layout {
+          grid-template-columns: minmax(0, 1fr);
+          justify-items: stretch;
+          gap: 8px;
+          margin: 8px auto;
+        }
+        .review-question-layout > [data-review-teacher-video-stage] {
+          width: auto !important;
+          height: clamp(90px, 18svh, 175px);
+          aspect-ratio: 16 / 9;
+          max-width: 100%;
+        }
+        .review-question-card {
+          padding: clamp(10px, 1.6vh, 18px) !important;
+        }
+      }
+      @media (max-height: 700px) {
+        .review-question-layout { gap: 8px; margin: 5px auto; }
+        .review-question-layout > [data-review-teacher-video-stage] {
+          max-width: 270px;
+        }
+        .review-question-card { padding: 10px 14px !important; }
+        .review-question-card h1 { margin-bottom: 8px !important; }
+      }
+      @media (max-width: 800px) and (orientation: portrait) and (max-height: 700px) {
+        .review-question-layout > [data-review-teacher-video-stage] {
+          width: auto !important;
+          height: clamp(70px, 13svh, 105px);
+        }
+      }
+      @media (max-width: 500px) {
+        .review-question-card button { font-size: clamp(12px, 1.8vh, 15px) !important; }
+      }
+    `}</style>
   </main>
 }
 
