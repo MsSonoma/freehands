@@ -16,7 +16,7 @@ import {
   loadLessonForFollowUp,
 } from '@/app/lib/masteryEvidence/followUps.server.js';
 import { isUuid } from '@/app/lib/masteryEvidence/schema.js';
-import { loadDailyReviewCyclesForLearner } from '@/app/lib/syllabus/reviewProjection.server.mjs';
+import { loadSyllabusReviewCyclesForLearner } from '@/app/lib/syllabus/reviewProjection.server.mjs';
 
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
@@ -62,10 +62,12 @@ function enabled() {
   return isMasteryEvidenceEnabled(process.env);
 }
 
-async function dailyReviewCyclesFor(ctx, learnerId, now, deps = {}) {
-  if (Array.isArray(deps.dailyReviewCycles)) return deps.dailyReviewCycles;
+async function reviewCyclesFor(ctx, learnerId, now, deps = {}) {
+  if (Array.isArray(deps.dailyReviewCycles) || Array.isArray(deps.weeklyReviewCycles)) {
+    return { dailyReviewCycles: deps.dailyReviewCycles || [], weeklyReviewCycles: deps.weeklyReviewCycles || null };
+  }
   try {
-    return await loadDailyReviewCyclesForLearner({
+    return await loadSyllabusReviewCyclesForLearner({
       admin: ctx.auth.admin,
       facilitatorId: ctx.auth.user.id,
       learnerId,
@@ -73,7 +75,8 @@ async function dailyReviewCyclesFor(ctx, learnerId, now, deps = {}) {
       fallbackTimeZone: ctx.auth.user?.user_metadata?.timezone,
     });
   } catch {
-    return [];
+    // Keep the existing availability route usable if the projection fails.
+    return { dailyReviewCycles: [], weeklyReviewCycles: null };
   }
 }
 
@@ -87,7 +90,7 @@ export async function GET(request, deps = {}) {
       return NextResponse.json({ ok: false, error: 'learner_id must be a UUID' }, { status: 400 });
     }
     const now = deps.now?.() || new Date().toISOString();
-    const dailyReviewCycles = await dailyReviewCyclesFor(ctx, learnerId, now, deps);
+    const { dailyReviewCycles, weeklyReviewCycles } = await reviewCyclesFor(ctx, learnerId, now, deps);
     const availability = await buildFollowUpAvailability({
       repository: ctx.repository,
       userId: ctx.auth.user.id,
@@ -95,6 +98,7 @@ export async function GET(request, deps = {}) {
       loadLesson: ctx.loadLesson,
       now,
       dailyReviewCycles,
+      weeklyReviewCycles,
     });
     const failure = responseForKind(availability);
     if (failure) return failure;
@@ -124,7 +128,7 @@ export async function POST(request, deps = {}) {
       return NextResponse.json({ ok: false, error: 'instructional_teacher must be sonoma, webb, or slate' }, { status: 400 });
     }
     const now = deps.now?.() || new Date().toISOString();
-    const dailyReviewCycles = await dailyReviewCyclesFor(ctx, learnerId, now, deps);
+    const { dailyReviewCycles, weeklyReviewCycles } = await reviewCyclesFor(ctx, learnerId, now, deps);
     const availability = await buildFollowUpAvailability({
       repository: ctx.repository,
       userId: ctx.auth.user.id,
@@ -133,6 +137,7 @@ export async function POST(request, deps = {}) {
       now,
       includePrivate: true,
       dailyReviewCycles,
+      weeklyReviewCycles,
     });
     const failure = responseForKind(availability);
     if (failure) return failure;

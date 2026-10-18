@@ -48,6 +48,32 @@ function nextReviewDate(value, reviewDay) {
   return addDays(value, delta)
 }
 
+// An instructional occurrence keeps its source-cycle identity when a Day Off
+// moves it. Reviews can then travel with that occurrence without merging into
+// a different day's review or changing historical evidence keys.
+function sourceInstructionDate(item = {}) {
+  const recordedMoves = item?.metadata?.day_off_moves
+  const original = Array.isArray(recordedMoves) && recordedMoves.length
+    ? dateOnly(recordedMoves[0]?.source_date)
+    : ''
+  return original || dateOnly(item?.day_off_move_source_date) || dateOnly(item?.planned_date)
+}
+
+export function resolveOneTimeReviewDate(sourceDate, dayOffMoves = []) {
+  let date = dateOnly(sourceDate)
+  const seen = new Set()
+  const moves = new Map((dayOffMoves || [])
+    .map((move) => [dateOnly(move?.source_date || move?.date), dateOnly(move?.destination_date || move?.move_to_date)])
+    .filter(([source, destination]) => source && destination && source !== destination))
+  while (moves.has(date) && !seen.has(date)) {
+    seen.add(date)
+    const next = moves.get(date)
+    if (seen.has(next)) break
+    date = next
+  }
+  return date
+}
+
 function lessonIdentity(item = {}) {
   return clean(
     item.source_occurrence_id
@@ -101,31 +127,37 @@ export function buildDailyReviewCycles({
   enabled = false,
   today = '',
   timeZone = 'UTC',
+  dayOffMoves = [],
 } = {}) {
   if (!enabled) return []
   const grouped = new Map()
   for (const lesson of dedupeLessons(timelineItems)) {
-    const plannedDate = dateOnly(lesson.planned_date)
-    if (!plannedDate) continue
-    if (!grouped.has(plannedDate)) grouped.set(plannedDate, [])
-    grouped.get(plannedDate).push(lesson)
+    const sourceDate = sourceInstructionDate(lesson)
+    if (!sourceDate) continue
+    if (!grouped.has(sourceDate)) grouped.set(sourceDate, [])
+    grouped.get(sourceDate).push(lesson)
   }
 
   return [...grouped.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([reviewDate, lessons]) => {
+    .map(([sourceReviewDate, lessons]) => {
+      const movedDate = lessons.map((lesson) => dateOnly(lesson.planned_date))
+        .find((date) => date && date !== sourceReviewDate)
+      const reviewDate = resolveOneTimeReviewDate(sourceReviewDate, dayOffMoves)
+      const destination = reviewDate === sourceReviewDate ? (movedDate || reviewDate) : reviewDate
       const progress = lessons.map(lessonProgress)
       const completedCount = progress.filter((entry) => entry.completed).length
       return {
         review_type: 'daily_review',
-        cycleKey: `${timeZone}:${reviewDate}`,
-        reviewDate,
+        cycleKey: `${timeZone}:${sourceReviewDate}`,
+        reviewDate: destination,
+        sourceReviewDate,
         timeZone,
         lessonKeys: [...new Set(progress.map((entry) => entry.lesson_key).filter(Boolean))],
         lessons: progress,
         lessonCount: progress.length,
         completedCount,
-        ready: progress.length > 0 && completedCount === progress.length && (!today || reviewDate === dateOnly(today)),
+        ready: progress.length > 0 && completedCount === progress.length && (!today || destination === dateOnly(today)),
       }
     })
 }
@@ -136,11 +168,12 @@ export function buildWeeklyReviewCycles({
   reviewDay = 'friday',
   today = '',
   timeZone = 'UTC',
+  dayOffMoves = [],
 } = {}) {
   if (!enabled) return []
   const grouped = new Map()
   for (const lesson of dedupeLessons(timelineItems)) {
-    const plannedDate = dateOnly(lesson.planned_date)
+    const plannedDate = sourceInstructionDate(lesson)
     const reviewDate = nextReviewDate(plannedDate, reviewDay)
     if (!reviewDate) continue
     if (!grouped.has(reviewDate)) grouped.set(reviewDate, [])
@@ -149,16 +182,18 @@ export function buildWeeklyReviewCycles({
 
   return [...grouped.entries()]
     .sort(([left], [right]) => left.localeCompare(right))
-    .map(([reviewDate, lessons]) => {
+    .map(([sourceReviewDate, lessons]) => {
+      const reviewDate = resolveOneTimeReviewDate(sourceReviewDate, dayOffMoves)
       const progress = lessons.map(lessonProgress)
       const completedCount = progress.filter((entry) => entry.completed).length
       return {
         review_type: 'weekly_review',
-        cycleKey: `${timeZone}:${reviewDate}`,
+        cycleKey: `${timeZone}:${sourceReviewDate}`,
         reviewDate,
+        sourceReviewDate,
         timeZone,
-        windowStartDate: addDays(reviewDate, -7),
-        windowEndDate: reviewDate,
+        windowStartDate: addDays(sourceReviewDate, -7),
+        windowEndDate: sourceReviewDate,
         lessonKeys: [...new Set(progress.map((entry) => entry.lesson_key).filter(Boolean))],
         lessons: progress,
         lessonCount: progress.length,
@@ -174,12 +209,14 @@ export function buildSyllabusReviewProjection({
   today = '',
   timeZone = 'UTC',
   availability = null,
+  dayOffMoves = [],
 } = {}) {
   const daily = buildDailyReviewCycles({
     timelineItems,
     enabled: settings.daily_followups_enabled === true,
     today,
     timeZone,
+    dayOffMoves,
   })
   const weekly = buildWeeklyReviewCycles({
     timelineItems,
@@ -187,6 +224,7 @@ export function buildSyllabusReviewProjection({
     reviewDay: settings.weekly_review_day || 'friday',
     today,
     timeZone,
+    dayOffMoves,
   })
   const cards = Array.isArray(availability?.cards) ? availability.cards : []
   const completedCycles = Array.isArray(availability?.completed_cycles) ? availability.completed_cycles : []
@@ -218,6 +256,7 @@ export function buildSyllabusReviewProjection({
       item_type: 'review',
       review_type: cycle.review_type,
       cycle_key: cycle.cycleKey,
+      ...(cycle.sourceReviewDate !== cycle.reviewDate ? { review_source_date: cycle.sourceReviewDate } : {}),
       planned_date: completedRun?.completed_at ? (dateInTimeZone(completedRun.completed_at, cycle.timeZone || timeZone) || cycle.reviewDate) : cycle.reviewDate,
       sort_order: 1000000,
       subject: reviewSubject(cycle.lessons),

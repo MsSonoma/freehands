@@ -441,6 +441,26 @@ export function buildWeeklyReviewCycle({
   };
 }
 
+
+export function localReviewDateMidnight(localDate, timeZone = 'UTC') {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(String(localDate || ''))
+  if (!match) throw new Error('Invalid original review date')
+  const at = localMidnightUtc(
+    { year: Number(match[1]), month: Number(match[2]), day: Number(match[3]) },
+    validTimeZone(timeZone),
+  )
+  if (!Number.isFinite(at.getTime())) throw new Error('Invalid review date')
+  return at.toISOString()
+}
+
+export function buildWeeklyReviewCycleForLocalDate({ localDate, weekday = 'friday', timeZone = 'UTC' } = {}) {
+  return buildWeeklyReviewCycle({
+    now: localReviewDateMidnight(localDate, timeZone),
+    weekday,
+    timeZone,
+  })
+}
+
 function normalizeEventType(event) {
   return event?.event_type || event?.eventType || null;
 }
@@ -503,13 +523,17 @@ export function selectDailyReviewAnchors({
   if (!cycle?.reviewDate) return [];
   const lessonKeys = new Set((cycle.lessonKeys || []).map((value) => String(value || '').trim()).filter(Boolean));
   const zone = validTimeZone(cycle.timeZone || 'UTC');
-  const eligible = groupLatestEligibleAnchors(evidenceEvents).filter((anchor) => {
+  // Limit to this review's own lessons before concept-level deduplication.
+  // Different source-day reviews can land on the same destination day and
+  // legitimately cover the same concept without swallowing one another.
+  const sourceEvents = (evidenceEvents || []).filter((anchor) => {
     if (lessonKeys.size && !lessonKeys.has(String(anchor.lesson_key || '').trim())) return false;
     const occurred = new Date(anchor.occurred_at || '');
     if (Number.isNaN(occurred.getTime())) return false;
     const local = zonedParts(occurred, zone);
     return dateKey({ year: local.year, month: local.month, day: local.day }) === cycle.reviewDate;
   });
+  const eligible = groupLatestEligibleAnchors(sourceEvents);
   const seenLessons = new Set();
   return eligible.filter((anchor) => {
     const key = String(anchor.lesson_key || anchor.session_id || anchor.mastery_check_id || '').trim();

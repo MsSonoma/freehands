@@ -67,8 +67,8 @@ export default function SyllabusDayActionDialog({
         <strong>{noSchoolReason || 'Day off'}</strong>
         <p>This date is protected from new instructional planning. Existing explicit commitments are preserved unless you choose to move them.</p>
         {existingMoveToDate
-          ? <p>Lessons were moved once to {prettyDate(existingMoveToDate)}. Removing this Day Off mark will not undo that move.</p>
-          : <button type="button" className={styles.danger} disabled={busy} onClick={() => { setIncludeMove(true); setMode('off') }}>Move existing lessons to another day</button>}
+          ? <p>Lessons and reviews were moved once to {prettyDate(existingMoveToDate)}. Removing this Day Off mark will not undo that move.</p>
+          : <button type="button" className={styles.danger} disabled={busy} onClick={() => { setIncludeMove(true); setMode('off') }}>Move existing lessons and reviews to another day</button>}
         <button type="button" className={styles.danger} disabled={busy} onClick={() => onClearNoSchool?.({ date })}>{busy ? 'Saving...' : 'Remove day-off mark'}</button>
       </div> : mode === 'menu' ? <div className={styles.actions}>
         <button type="button" disabled={!canGenerate || busy} onClick={() => onGenerate?.({ date })}><strong>Generate a new lesson</strong><span>Open the Lesson Generator with this learner and date already attached.</span></button>
@@ -82,17 +82,17 @@ export default function SyllabusDayActionDialog({
         <p className={styles.note}>New forecasts, inferred lessons, and new scheduling will avoid this date.</p>
         <label className={styles.checkboxRow}>
           <input type="checkbox" checked={includeMove} disabled={busy} onChange={(event) => setIncludeMove(event.target.checked)} />
-          Move this day&apos;s forecasted and scheduled lessons to another date (one time only)
+          Move this day&apos;s lessons and Daily or Weekly Reviews to another date (one time only)
         </label>
         {includeMove && <div className={styles.moveOptions}>
-          <label>Move lessons to
+          <label>Move lessons and reviews to
             <input type="date" value={destinationDate} min={minimumMoveDate || undefined} disabled={busy} onChange={(event) => setDestinationDate(event.target.value)} />
           </label>
-          <p className={styles.note}>These lessons will be added after anything already on the destination day. Their original subject forecast remains satisfied. The weekly pattern will not change.</p>
+          <p className={styles.note}>Lessons and reviews from this date will be added alongside anything already on the destination day. The original forecast stays satisfied, and the weekly pattern does not change.</p>
           {!destinationValid && destinationDate && <p className={styles.validation}>Choose a different current or future date.</p>}
         </div>}
         {!includeMove && <p className={styles.note}>Anything already explicitly scheduled will remain visible so you can move or remove it deliberately.</p>}
-        <footer><button type="button" onClick={() => setMode('menu')} disabled={busy}>Back</button><button type="button" className={styles.primary} onClick={submitNoSchool} disabled={busy || !destinationValid}>{busy ? 'Saving...' : isNoSchool ? 'Move lessons' : 'Mark day off'}</button></footer>
+        <footer><button type="button" onClick={() => setMode('menu')} disabled={busy}>Back</button><button type="button" className={styles.primary} onClick={submitNoSchool} disabled={busy || !destinationValid}>{busy ? 'Saving...' : isNoSchool ? 'Move lessons and reviews' : 'Mark day off'}</button></footer>
       </div>}
     </section>
   </div>

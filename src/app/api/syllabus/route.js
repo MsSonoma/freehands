@@ -29,13 +29,17 @@ export async function GET(request, deps = {}) {
     if (view === 'full' && result?.has_active_syllabus && Array.isArray(result.timeline_items) && isMasteryEvidenceEnabled(process.env)) {
       try {
         const followUpRepository = createSupabaseFollowUpRepository(context.admin)
-        const learner = await followUpRepository.findOwnedLearner({ userId: context.user.id, learnerId })
+        const [learner, dayOffMoves] = await Promise.all([
+          followUpRepository.findOwnedLearner({ userId: context.user.id, learnerId }),
+          repository.listDayOffMoves(context.user.id, learnerId).catch(() => []),
+        ])
         const settings = normalizeFollowUpSettings(learner || {})
         const preliminary = buildSyllabusReviewProjection({
           timelineItems: result.timeline_items,
           settings,
           today: result.resolved_today,
           timeZone: result.resolved_timezone || 'UTC',
+          dayOffMoves,
         })
         const availability = await buildFollowUpAvailability({
           repository: followUpRepository,
@@ -48,12 +52,14 @@ export async function GET(request, deps = {}) {
           }),
           now: new Date().toISOString(),
           dailyReviewCycles: preliminary.dailyReviewCycles,
+          weeklyReviewCycles: preliminary.weeklyReviewCycles,
         })
         const projection = buildSyllabusReviewProjection({
           timelineItems: result.timeline_items,
           settings,
           today: result.resolved_today,
           timeZone: result.resolved_timezone || 'UTC',
+          dayOffMoves,
           availability,
         })
         result.timeline_items = [...result.timeline_items, ...projection.items]

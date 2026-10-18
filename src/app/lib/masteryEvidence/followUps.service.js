@@ -11,6 +11,8 @@ import {
   buildDailyReviewPlan,
   buildReviewRunSummary,
   buildWeeklyReviewCycle,
+  buildWeeklyReviewCycleForLocalDate,
+  localReviewDateMidnight,
   buildWeeklyReviewPlan,
   classifyDailyFollowUpOutcome,
   classifyWeeklyReviewOutcome,
@@ -144,6 +146,59 @@ function pendingRunCard(run, items, events) {
   };
 }
 
+// A Day Off changes when a review is offered, not which learning cycle it
+// assesses. Keep the original cycle key (and evidence window) so a moved review
+// does not overwrite an existing review on its destination date.
+function localReviewDay(value, timeZone) {
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone, year: 'numeric', month: '2-digit', day: '2-digit',
+  }).formatToParts(new Date(value));
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.year}-${values.month}-${values.day}`;
+}
+
+export function selectScheduledWeeklyReviewCycles({
+  projectedCycles = null,
+  normalCycle,
+  weekday = 'friday',
+  timeZone = 'UTC',
+  now = new Date().toISOString(),
+  activeCycleKeys = [],
+} = {}) {
+  if (!Array.isArray(projectedCycles) || projectedCycles.length === 0) return normalCycle?.active ? [normalCycle] : [];
+  const today = localReviewDay(now, timeZone);
+  const active = new Set(activeCycleKeys);
+  return projectedCycles.flatMap((entry) => {
+    const sourceDate = String(entry?.sourceReviewDate || entry?.reviewDate || '');
+    const scheduledDate = String(entry?.reviewDate || '');
+    if (!entry?.cycleKey || !sourceDate || !scheduledDate) return [];
+    const moved = sourceDate !== scheduledDate;
+    // Normal weekly reviews retain their existing cadence; a relocated review
+    // becomes due only on its chosen date and remains available for that week.
+    const current = !moved && entry.cycleKey === normalCycle?.cycleKey;
+    const sourceTime = Date.parse(`${scheduledDate}T12:00:00Z`);
+    const todayTime = Date.parse(`${today}T12:00:00Z`);
+    const makeUp = moved && Number.isFinite(sourceTime)
+      && todayTime >= sourceTime && todayTime < sourceTime + 7 * 86400000;
+    if (!current && !makeUp && !active.has(entry.cycleKey)) return [];
+    try {
+      const source = buildWeeklyReviewCycleForLocalDate({
+        localDate: sourceDate, weekday, timeZone,
+      });
+      return [{
+        ...source,
+        cycleKey: entry.cycleKey,
+        active: true,
+        scheduledActivationAt: moved
+          ? localReviewDateMidnight(scheduledDate, timeZone)
+          : source.activationAt,
+      }];
+    } catch {
+      return [];
+    }
+  });
+}
+
 export async function buildFollowUpAvailability({
   repository,
   userId,
@@ -152,6 +207,7 @@ export async function buildFollowUpAvailability({
   now = new Date().toISOString(),
   includePrivate = false,
   dailyReviewCycles = [],
+  weeklyReviewCycles = null,
 } = {}) {
   const learner = await repository.findOwnedLearner({ userId, learnerId });
   if (!learner?.id) return { kind: 'forbidden' };
@@ -305,7 +361,25 @@ export async function buildFollowUpAvailability({
     }
   }
 
-  if (settings.weekly_reviews_enabled && cycle.active) {
+  const activeWeeklyCycles = history.runs
+    .filter((run) => run.review_type === REVIEW_TYPES.WEEKLY_REVIEW && run.status === 'active')
+    .map((run) => run.cycle_key);
+  const dueWeeklyCycles = settings.weekly_reviews_enabled
+    ? selectScheduledWeeklyReviewCycles({
+        projectedCycles: weeklyReviewCycles,
+        normalCycle: cycle,
+        weekday: settings.weekly_review_day,
+        timeZone: timezone,
+        now,
+        activeCycleKeys: activeWeeklyCycles,
+      })
+    : [];
+  for (const cycle of dueWeeklyCycles) {
+    const alreadyCompleted = history.runs.some((run) => (
+      run.review_type === REVIEW_TYPES.WEEKLY_REVIEW
+      && run.cycle_key === cycle.cycleKey && run.status === 'completed'
+    ));
+    if (alreadyCompleted) continue;
     const currentRun = history.runs.find((run) => (
       run.review_type === REVIEW_TYPES.WEEKLY_REVIEW
       && run.cycle_key === cycle.cycleKey
@@ -442,7 +516,7 @@ export async function startFollowUpRun({
     timezone: card._cycle?.timeZone || 'UTC',
     activation_at: isDelayedDaily
       ? new Date(Date.parse(firstSelection.anchor.occurred_at) + (24 * 60 * 60 * 1000)).toISOString()
-      : card._cycle?.activationAt || now,
+      : card._cycle?.scheduledActivationAt || card._cycle?.activationAt || now,
     window_start: isDelayedDaily ? null : card._cycle?.windowStart || null,
     window_end: isDelayedDaily ? null : card._cycle?.windowEnd || null,
     metadata: {

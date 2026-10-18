@@ -256,6 +256,15 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load no-school dates')
       return data || []
     },
+    async listDayOffMoves(facilitatorId, learnerId) {
+      const { data, error } = await admin.from('syllabus_day_off_moves')
+        .select('source_date,destination_date')
+        .eq('facilitator_id', facilitatorId)
+        .eq('learner_id', learnerId)
+        .order('source_date')
+      throwOn(error, 'Failed to load one-time Day Off review dates')
+      return data || []
+    },
     async moveNoSchoolDay({ facilitatorId, learnerId, sourceDate, destinationDate, reason, localToday, expectedActiveRevisionId }) {
       const { data, error } = await admin.rpc('move_syllabus_day_off', {
         p_facilitator_id: facilitatorId,
