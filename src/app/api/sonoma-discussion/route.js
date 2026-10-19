@@ -17,6 +17,8 @@ const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 import { requestSonomaTextReply } from '@/app/lib/sonomaTextCompletion.mjs'
 const OPENAI_MODEL = AI_MODEL
+// Permit model completion and existing response recovery within the function lifetime.
+export const maxDuration = 60
 
 // ── System prompt builders ─────────────────────────────────────────────────
 

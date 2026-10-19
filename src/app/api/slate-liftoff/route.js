@@ -23,6 +23,8 @@ import { validateVerticalMathExercise } from '@/lib/math/verticalMathValidation.
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
+// Allow Liftoff generation and existing problem-validation retry time to finish.
+export const maxDuration = 60
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 const ACTIONS = new Set(LIFTOFF_ACTION_TYPES)
