@@ -19,9 +19,13 @@ const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL, aiModelTemperature } from '../../lib/aiModel.js'
 const OPENAI_MODEL = AI_MODEL
 
+// Allow objective generation and its validation repair time to finish.
+export const maxDuration = 60
+
 async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3, responseFormat = null) {
   const isLuna = /^gpt-5\.6-luna$/i.test(OPENAI_MODEL)
-  const tokenLimits = isLuna ? [maxTokens, Math.max(maxTokens * 3, 2400)] : [maxTokens]
+  // Avoid a guaranteed second full model request after an undersized Luna attempt.
+  const tokenLimits = [isLuna ? Math.max(maxTokens * 3, 2400) : maxTokens]
   for (const tokenLimit of tokenLimits) {
     const res = await fetch(OPENAI_URL, {
       method: 'POST',

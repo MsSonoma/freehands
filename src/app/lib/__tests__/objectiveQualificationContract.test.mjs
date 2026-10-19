@@ -67,8 +67,9 @@ test('both teachers use a transfer question after reproduction instead of inviti
   assert.match(webb, /small transfer question/)
 })
 
-test('Luna retries an incomplete objective-evaluator response with a larger completion budget', () => {
-  assert.match(route, /const tokenLimits = isLuna \? \[maxTokens, Math\.max\(maxTokens \* 3, 2400\)\] : \[maxTokens\]/)
+test('Luna starts with sufficient completion budget and Webb has extended route time', () => {
+  assert.match(route, /export const maxDuration = 60/)
+  assert.match(route, /const tokenLimits = \[isLuna \? Math\.max\(maxTokens \* 3, 2400\) : maxTokens\]/)
   assert.match(route, /choice\?\.finish_reason !== 'length'/)
   assert.match(route, /\.\.\.aiModelTemperature\(temperature, OPENAI_MODEL\)/)
 })
