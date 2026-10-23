@@ -41,8 +41,9 @@ export async function POST(request, deps = {}) {
     const source = ['session-v2', 'webb', 'slate-liftoff'].includes(String(body?.source || '').trim()) ? String(body.source).trim() : null
     if (!source) return NextResponse.json({ error: 'A canonical instructional source is required', code: 'INSTRUCTIONAL_SOURCE_REQUIRED' }, { status: 400 })
     const instructionalTeacher = source === 'webb' ? 'webb' : (source === 'slate-liftoff' ? 'slate' : 'sonoma')
-    const percentage = Number(body?.testPercentage)
-    const testPercentage = Number.isFinite(percentage) && percentage >= 0 && percentage <= 100 ? percentage : null
+    const rawPercentage = body?.testPercentage
+    const percentage = rawPercentage == null || rawPercentage === '' ? null : Number(rawPercentage)
+    const testPercentage = percentage != null && Number.isFinite(percentage) && percentage >= 0 && percentage <= 100 ? percentage : null
     const runTransaction = deps.completeSessionTransaction || completeSessionTransaction
     const result = await runTransaction(context.admin, {
       p_session_id: sessionId,

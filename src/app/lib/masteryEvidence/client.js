@@ -335,7 +335,7 @@ export class MasteryEvidenceClient {
       attemptNumber: normalizedAttempt,
       isFirstResponse: !!isFirstResponse,
       result: {
-        correct: isCorrect === true,
+        correct: typeof isCorrect === 'boolean' ? isCorrect : null,
         evaluation_mode: evaluationMode,
         ...(judgmentStatus ? { judgment_status: String(judgmentStatus) } : {}),
       },

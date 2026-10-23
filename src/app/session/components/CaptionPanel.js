@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { enforceNbspAfterMcLabels } from "../utils/textProcessing.js";
+import { isTranscriptAtEnd, pinTranscriptToEnd } from "./transcriptViewport.mjs";
 
 // Strip markdown bold/italic markers so they don't appear literally in captions.
 // GPT sometimes outputs **word** — we bold vocab automatically, so these are noise.
@@ -11,7 +12,7 @@ function stripMarkdown(text) {
     .replace(/_([^_]+)_/g, '$1');
 }
 
-function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false, onReplayRequest = null, replayEnabled = true, teacherName = 'Ms. Sonoma', theme = null, tailContent = null, followTranscriptEnd = true }) {
+function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact = false, fullHeight = false, stackedHeight = null, phase, vocabTerms = [], captionStartIndex = -1, onStudyRequest = null, studyEnabled = false, onReplayRequest = null, replayEnabled = true, teacherName = 'Ms. Sonoma', theme = null, tailContent = null, followTranscriptEnd = true, keyboardActive = false, keyboardHeight = 0 }) {
   const panelTheme = {
     background: '#ffffff',
     text: '#111111',
@@ -35,6 +36,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
   const [atTop, setAtTop] = useState(true);
   const [atBottom, setAtBottom] = useState(true);
   const endRef = useRef(null);
+  const manualBrowsingRef = useRef(false);
   const hasTailContent = Boolean(tailContent);
   // Normalize incoming sentences (strings or { text, role }) to a consistent shape
   const items = useMemo(() => {
@@ -64,51 +66,80 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
 
   useEffect(() => { recomputeScrollState(); }, [displayItems, stackedHeight, fullHeight, compact, hasTailContent, recomputeScrollState]);
 
-  // Keep the latest caption in view (V1 behavior: always pinned to the newest line)
+  // Keep the latest transcript line above the answer bar when the custom keyboard
+  // changes the space available. Only the transcript scroller moves; never scroll
+  // the whole page with scrollIntoView while the Sonoma Keyboard is open.
   useEffect(() => {
-    if (!followTranscriptEnd || !boxRef?.current) return;
+    if (!followTranscriptEnd || !boxRef?.current) return undefined;
     const el = boxRef.current;
-    const endEl = endRef.current;
-
-    const doScroll = () => {
-      try {
-        // iOS Safari can ignore direct scrollTop writes during layout.
-        // scrollIntoView tends to be more reliable in overflow containers.
-        endEl?.scrollIntoView?.({ block: 'end' });
-      } catch {}
-      el.scrollTop = el.scrollHeight;
+    manualBrowsingRef.current = false;
+    const alignLatest = () => {
+      if (!el.isConnected || (keyboardActive && manualBrowsingRef.current)) return;
+      if (!keyboardActive) {
+        try { endRef.current?.scrollIntoView?.({ block: 'end' }); } catch {}
+      }
+      pinTranscriptToEnd(el);
       recomputeScrollState();
     };
 
     let raf2 = null;
     const raf1 = requestAnimationFrame(() => {
-      doScroll();
-      raf2 = requestAnimationFrame(doScroll);
+      alignLatest();
+      raf2 = requestAnimationFrame(alignLatest);
     });
-    const t1 = setTimeout(doScroll, 60);
-
+    const settle = setTimeout(alignLatest, 60);
     return () => {
-      try { cancelAnimationFrame(raf1); } catch {}
-      if (raf2) {
-        try { cancelAnimationFrame(raf2); } catch {}
-      }
-      clearTimeout(t1);
+      cancelAnimationFrame(raf1);
+      if (raf2 !== null) cancelAnimationFrame(raf2);
+      clearTimeout(settle);
     };
-  }, [displayItems.length, hasTailContent, boxRef, followTranscriptEnd, recomputeScrollState]);
+  }, [displayItems, keyboardActive, keyboardHeight, hasTailContent, boxRef, followTranscriptEnd, recomputeScrollState]);
 
+  // A viewport/keyboard resize can shorten the scroller without adding any new
+  // caption. Restore its end position after that resize unless the learner has
+  // deliberately scrolled up to review earlier lines.
   useEffect(() => {
-    if (!boxRef?.current) return;
-    const el = boxRef.current;
-    const handler = () => recomputeScrollState();
-    el.addEventListener('scroll', handler, { passive: true });
-    const resizeObs = new ResizeObserver(handler);
-    resizeObs.observe(el);
-    return () => { el.removeEventListener('scroll', handler); resizeObs.disconnect(); };
-  }, [boxRef, recomputeScrollState]);
+    const el = boxRef?.current;
+    if (!el) return undefined;
+    let frame = null;
+    const updateScrollState = () => {
+      recomputeScrollState();
+      if (keyboardActive && isTranscriptAtEnd(el)) manualBrowsingRef.current = false;
+    };
+    const markManualBrowsing = () => {
+      if (keyboardActive) manualBrowsingRef.current = true;
+    };
+    const onResize = () => {
+      recomputeScrollState();
+      if (!keyboardActive || !followTranscriptEnd || manualBrowsingRef.current) return;
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        if (!el.isConnected || manualBrowsingRef.current) return;
+        pinTranscriptToEnd(el);
+        recomputeScrollState();
+      });
+    };
+    el.addEventListener('scroll', updateScrollState, { passive: true });
+    el.addEventListener('touchstart', markManualBrowsing, { passive: true });
+    el.addEventListener('wheel', markManualBrowsing, { passive: true });
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(onResize) : null;
+    resizeObserver?.observe(el);
+    if (el.parentElement) resizeObserver?.observe(el.parentElement);
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame);
+      resizeObserver?.disconnect();
+      el.removeEventListener('scroll', updateScrollState);
+      el.removeEventListener('touchstart', markManualBrowsing);
+      el.removeEventListener('wheel', markManualBrowsing);
+    };
+  }, [boxRef, recomputeScrollState, keyboardActive, followTranscriptEnd]);
 
+  // When typing with the Sonoma Keyboard, the latest line takes priority over
+  // the earlier active spoken sentence's auto-centering behavior.
   // Auto-center active caption line
   useEffect(() => {
-    if (!boxRef?.current) return;
+    if (keyboardActive || !boxRef?.current) return;
     const activeEl = boxRef.current.querySelector(`[data-idx="${displayActiveIndex}"]`);
     if (!activeEl) return;
     const container = boxRef.current;
@@ -132,7 +163,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
       if (distance > jumpThreshold) container.scrollTop = target; else container.scrollTo({ top: target, behavior: 'smooth' });
       if (isLast) requestAnimationFrame(() => { container.scrollTop = maxScroll; });
     }
-  }, [displayActiveIndex, displayItems, scaleFactor, boxRef, followTranscriptEnd]);
+  }, [displayActiveIndex, displayItems, scaleFactor, boxRef, followTranscriptEnd, keyboardActive]);
 
   const containerStyle = {
     width: '100%',
@@ -145,13 +176,16 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
     display: 'flex',
     flexDirection: 'column',
     flex: fullHeight ? '1 1 auto' : undefined,
+    minHeight: fullHeight ? 0 : undefined,
     maxHeight: fullHeight ? '100%' : (stackedHeight ? stackedHeight : (compact ? '14vh' : '18vh')),
     height: fullHeight ? '100%' : (stackedHeight ? stackedHeight : 'auto'),
   };
 
   const scrollerStyle = {
     flex: '1 1 auto',
-    height: '100%',
+    minHeight: 0,
+    boxSizing: 'border-box',
+    height: keyboardActive ? 'auto' : '100%',
     overflowY: 'auto',
     WebkitOverflowScrolling: 'touch',
     paddingTop: compact ? 6 : 12,
@@ -171,7 +205,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
           type="button"
           aria-label="Scroll up captions"
           disabled={atTop}
-          onClick={() => { if (boxRef.current) boxRef.current.scrollBy({ top: -Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
+          onClick={() => { if (keyboardActive) manualBrowsingRef.current = true; if (boxRef.current) boxRef.current.scrollBy({ top: -Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
           style={{
             background: atTop ? panelTheme.controlDisabledBackground : panelTheme.controlBackground,
             color: panelTheme.controlText,
@@ -195,7 +229,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
           type="button"
           aria-label="Scroll down captions"
           disabled={atBottom}
-          onClick={() => { if (boxRef.current) boxRef.current.scrollBy({ top: Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
+          onClick={() => { if (keyboardActive) manualBrowsingRef.current = true; if (boxRef.current) boxRef.current.scrollBy({ top: Math.max(80, boxRef.current.clientHeight * 0.4), behavior: 'smooth' }); }}
           style={{
             background: atBottom ? panelTheme.controlDisabledBackground : panelTheme.controlBackground,
             color: panelTheme.controlText,

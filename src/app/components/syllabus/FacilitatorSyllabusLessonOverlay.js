@@ -19,6 +19,7 @@ import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/ap
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import SlateIndependentTestReport from '@/app/session/slate/SlateIndependentTestReport'
 import { buildAssessmentPhaseSets, resolveLearnerAssessmentTargets } from '@/app/session/assessment/assessmentSets'
+import { requestRephrasedAssessmentTest } from '@/app/session/assessment/testRephrase.mjs'
 import { loadLesson } from '@/app/session/v2/services'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import styles from './FacilitatorSyllabusLessonOverlay.module.css'
@@ -688,8 +689,61 @@ export default function FacilitatorSyllabusLessonOverlay({
         const targets = resolveLearnerAssessmentTargets(learner, { learnerId })
         const sets = buildAssessmentPhaseSets({ lessonData: lesson, targets })
         if (!sets) throw new Error('Worksheet and test content are unavailable for this lesson.')
+        if (kind === 'test' && displayTeacher === 'sonoma') {
+          const previousQuestions = ['comprehension', 'exercise', 'worksheet']
+            .flatMap((phase) => sets[phase] || [])
+            .map((question) => String(question.question || question.prompt || '').trim()).filter(Boolean)
+          try {
+            const reworded = await requestRephrasedAssessmentTest({
+              lessonData: lesson,
+              targetCount: targets.test || sets.test?.length || 10,
+              previousQuestions,
+            })
+            if (reworded?.length) sets.test = reworded
+          } catch (cause) {
+            console.warn('[FacilitatorSyllabus] Test rephrasing was unavailable; retaining the printable Test.', cause)
+          }
+        }
         await saveAssessments(item.lesson_key, sets, { learnerId })
         source = sets[kind]
+      }
+
+      // If the Test was stored before this rephrasing support existed, update
+      // its *unstarted* printable deck only. An attempted Test stays immutable.
+      if (kind === 'test' && displayTeacher === 'sonoma' && stored?.test?.length &&
+          !stored.test.every((question) => question.rewordedFrom?.question)) {
+        try {
+          const snapshotResponse = await fetch(`/api/snapshots?${new URLSearchParams({
+            learner_id: learnerId, lesson_key: item.lesson_key,
+          })}`, { headers: { Authorization: `Bearer ${accessToken}` }, cache: 'no-store' })
+          if (snapshotResponse.ok) {
+            const snapshot = (await snapshotResponse.json())?.snapshot
+            if (!snapshot?.phaseData?.test) {
+              const [loadedLesson, learner] = await Promise.all([loadPrintableLesson(), getLearner(learnerId)])
+              const sets = stored.comprehension?.length && stored.exercise?.length && stored.worksheet?.length
+                ? stored : buildAssessmentPhaseSets({
+                    lessonData: loadedLesson,
+                    targets: resolveLearnerAssessmentTargets(learner, { learnerId }),
+                  })
+              if (sets) {
+                const previousQuestions = ['comprehension', 'exercise', 'worksheet']
+                  .flatMap((phase) => sets[phase] || [])
+                  .map((question) => String(question.question || question.prompt || '').trim()).filter(Boolean)
+                const target = resolveLearnerAssessmentTargets(learner, { learnerId }).test || sets.test?.length || 10
+                const reworded = await requestRephrasedAssessmentTest({
+                  lessonData: loadedLesson, targetCount: target, previousQuestions,
+                })
+                if (reworded?.length) {
+                  await saveAssessments(item.lesson_key, { ...sets, test: reworded }, { learnerId, replaceTest: true })
+                  source = reworded
+                  lesson = loadedLesson
+                }
+              }
+            }
+          }
+        } catch (cause) {
+          console.warn('[FacilitatorSyllabus] Existing Test rephrasing was unavailable.', cause)
+        }
       }
 
       if (!Array.isArray(source) || !source.length) {

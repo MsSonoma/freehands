@@ -50,12 +50,16 @@ export async function getStoredAssessments(lessonId, { learnerId } = {}) {
 }
 
 
-function mergePools(existing, incoming) {
+function mergePools(existing, incoming, { replaceTest = false } = {}) {
 	const ex = normalizeShape(existing || {});
 	const next = { ...ex };
 	const mergeOne = (key) => {
 		const inc = incoming ? incoming[key] : undefined;
 		// Rule: once a pool is set (non-empty), keep it stable until explicitly cleared.
+		if (key === 'test' && replaceTest && Array.isArray(inc) && inc.length) {
+			next.test = inc;
+			return;
+		}
 		if (Array.isArray(ex[key]) && ex[key].length > 0) return;
 		if (Array.isArray(inc) && inc.length > 0) {
 			next[key] = inc;
@@ -84,7 +88,7 @@ async function fetchRemoteAssessments(lessonId, learnerId, token) {
 	}
 }
 
-export async function saveAssessments(lessonId, incoming = {}, { learnerId } = {}) {
+export async function saveAssessments(lessonId, incoming = {}, { learnerId, replaceTest = false } = {}) {
 	if (typeof window === 'undefined') return;
 
 	// Merge against local immediately for fast UX.
@@ -94,7 +98,7 @@ export async function saveAssessments(lessonId, incoming = {}, { learnerId } = {
 		localExisting = raw ? JSON.parse(raw) : null;
 	} catch {}
 
-	const mergedLocal = mergePools(localExisting, incoming);
+	const mergedLocal = mergePools(localExisting, incoming, { replaceTest });
 	const localPayload = normalizeShape({ ...mergedLocal, savedAt: new Date().toISOString() });
 	try { localStorage.setItem(buildKey(lessonId), JSON.stringify(localPayload)); } catch {}
 
@@ -109,7 +113,7 @@ export async function saveAssessments(lessonId, incoming = {}, { learnerId } = {
 			const token = session?.access_token;
 			if (token) {
 				const remoteExisting = await fetchRemoteAssessments(lessonId, learnerId, token);
-				const mergedRemote = mergePools(remoteExisting || localPayload, incoming);
+				const mergedRemote = mergePools(remoteExisting || localPayload, incoming, { replaceTest });
 				const remotePayload = normalizeShape({ ...mergedRemote, savedAt: new Date().toISOString() });
 				try { localStorage.setItem(buildKey(lessonId), JSON.stringify(remotePayload)); } catch {}
 				await fetch('/api/assessments', {

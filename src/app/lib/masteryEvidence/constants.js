@@ -25,6 +25,7 @@ export const STAGE_2_EVIDENCE_EVENT_TYPES = Object.freeze({
   VISUAL_AID_USED: 'visual_aid_used',
   QUESTION_SET_REFRESHED: 'question_set_refreshed',
   TIMELINE_JUMP: 'timeline_jump',
+  TEST_GRADE_REVIEWED: 'test_grade_reviewed',
 });
 
 export const STAGE_6_EVIDENCE_EVENT_TYPES = Object.freeze({

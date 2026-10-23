@@ -22,8 +22,10 @@
 
 import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
-import { buildAcceptableList, judgeAnswer } from './judging';
-import { deriveCorrectAnswerText, ensureQuestionMark, formatQuestionForSpeech } from '../utils/questionFormatting';
+import { buildAcceptableList, judgeTestAnswer } from './judging';
+import { summarizeSlateTestResults } from '@/app/lib/slateTestGradeReport.mjs';
+import { normalizeSavedSonomaTestAnswers } from '@/app/lib/sonomaTestGradeReport.mjs';
+import { deriveCorrectAnswerText, ensureQuestionMark, formatQuestionForSpeech, isFillInBlank, isMultipleChoice, isTrueFalse } from '../utils/questionFormatting';
 
 // Intro phrases for phase start (matches V1 pacing)
 const INTRO_PHRASES = [
@@ -52,6 +54,7 @@ export class TestPhase {
   #learnerTurnAudioEndListener = null;
   #questionPlaybackToken = 0;
   #interactionInFlight = false;
+  #reviewRevealsEmitted = false;
   #resumeState = null;
 
   
@@ -72,7 +75,7 @@ export class TestPhase {
     
     // Normalize questions to standard format
     this.#questions = this.#questions.map((q, index) => {
-      const type = q.type || 'mc';
+      const type = q.type || (isTrueFalse(q) ? 'tf' : (isMultipleChoice(q) ? 'mc' : (isFillInBlank(q) ? 'fib' : 'short')));
 
       const opts = Array.isArray(q.options) ? q.options : (Array.isArray(q.choices) ? q.choices : []);
       const correctIndex = typeof q.correct === 'number'
@@ -87,6 +90,7 @@ export class TestPhase {
       }
 
       return {
+        ...q, // Preserve question provenance, objective, and assessment role for evidence.
         id: q.id || `q${index}`,
         type,
         sourceType: (type === 'fill' || type === 'fib') ? 'fib' : (q.sourceType || null),
@@ -143,8 +147,8 @@ export class TestPhase {
         this.#questions = this.#resumeState.questions;
       }
 
-      this.#score = Number(this.#resumeState.score || 0);
-      this.#answers = Array.isArray(this.#resumeState.answers) ? this.#resumeState.answers : [];
+      this.#answers = normalizeSavedSonomaTestAnswers(this.#resumeState.answers);
+      this.#score = summarizeSlateTestResults(this.#answers).points;
       const nextIndex = Math.min(
         Math.max(this.#resumeState.nextQuestionIndex ?? 0, 0),
         this.#questions.length
@@ -178,7 +182,7 @@ export class TestPhase {
       if (this.#currentQuestionIndex >= this.#questions.length) {
         this.#state = 'reviewing';
         this.#reviewIndex = Math.max(Math.min(this.#resumeState.reviewIndex ?? 0, this.#answers.length), 0);
-        this.startReview();
+        this.startReview({ preserveIndex: true });
         return;
       }
 
@@ -304,99 +308,42 @@ export class TestPhase {
     
     try {
       const acceptable = buildAcceptableList(question);
-      const isCorrect = await judgeAnswer(answer, acceptable, question);
-
-      // V1 Test rule: single attempt. If correct, praise and advance.
-      // If incorrect, speak the correct answer and advance.
-      if (isCorrect) {
-        this.#score++;
-      }
-
-      const correctText = deriveCorrectAnswerText(question, acceptable) || String(question.answer || '');
-
-      // Emit result (single-attempt test).
+      const judgment = await judgeTestAnswer(answer, acceptable, question);
+      const correctText = deriveCorrectAnswerText(question, acceptable) || String(question.answer ?? '');
+      const result = {
+        questionId: question.id, type: question.type,
+        question: question.question, options: question.options,
+        userAnswer: answer, correctAnswer: correctText,
+        isCorrect: judgment.status === 'correct',
+        judgmentStatus: judgment.status, judgmentReason: judgment.reason,
+        evaluationMode: judgment.evaluationMode,
+      };
+      this.#answers.push(result);
+      this.#score = summarizeSlateTestResults(this.#answers).points;
       this.#emit('answerSubmitted', {
-        questionIndex: this.#currentQuestionIndex,
-        question,
-        answer,
-        isCorrect,
-        attemptNumber: 1,
-        isFirstResponse: true,
-        correctAnswer: isCorrect ? correctText : undefined,
-        score: this.#score,
-        totalQuestions: this.#questions.length
+        questionIndex: this.#currentQuestionIndex, question, answer,
+        isCorrect: result.isCorrect, judgmentStatus: judgment.status,
+        judgmentReason: judgment.reason, evaluationMode: judgment.evaluationMode,
+        attemptNumber: 1, isFirstResponse: true,
+        // The evidence service keeps the reference key; the active Test UI does not reveal it.
+        correctAnswer: correctText,
+        score: this.#score, totalQuestions: this.#questions.length,
       });
-    
-      // Request granular snapshot save (V1 behavioral parity)
+
+      // The saved deck must include the just-graded response.
       this.#emit('requestSnapshotSave', {
         trigger: 'test-answer',
         data: {
           nextQuestionIndex: Math.min(this.#currentQuestionIndex + 1, this.#questions.length),
-          score: this.#score,
-          totalQuestions: this.#questions.length,
-          questions: this.#questions,
-          answers: [...this.#answers],
-          timerMode: this.#timerMode,
-          reviewIndex: this.#reviewIndex
-        }
+          score: this.#score, totalQuestions: this.#questions.length,
+          questions: this.#questions, answers: [...this.#answers],
+          timerMode: this.#timerMode, reviewIndex: this.#reviewIndex,
+        },
       });
-
-      if (isCorrect) {
-        // Record answer
-        this.#answers.push({
-          questionId: question.id,
-          type: question.type,
-          question: question.question,
-          options: question.options,
-          userAnswer: answer,
-          correctAnswer: correctText,
-          isCorrect: true
-        });
-
-        // Check if we've reached the target count
-        const reachedTarget = this.#answers.length >= this.#questions.length;
-
-        // Enter review if target reached, otherwise move to next question
-        if (reachedTarget) {
-          console.log('[TestPhase] Calling enterReview()');
-          this.#enterReview();
-        } else {
-          console.log('[TestPhase] Advancing to next question');
-          const nextIndex = this.#currentQuestionIndex + 1;
-          this.#currentQuestionIndex = nextIndex;
-          this.#playCurrentQuestion();
-        }
-        return;
-      }
-
-      // Incorrect: record answer and advance — no spoken reveal (learner finds out at review).
-      // Record answer
-      this.#answers.push({
-        questionId: question.id,
-        type: question.type,
-        question: question.question,
-        options: question.options,
-        userAnswer: answer,
-        correctAnswer: correctText,
-        isCorrect: false
-      });
-
-      this.#emit('answerRevealed', {
-        questionIndex: this.#currentQuestionIndex,
-        question,
-        attemptNumber: 1,
-        correctAnswer: correctText
-      });
-
-      // Check if we've reached the target count
-      const reachedTarget = this.#answers.length >= this.#questions.length;
-
-      // Enter review if target reached, otherwise move to next question
-      if (reachedTarget) {
+      if (this.#answers.length >= this.#questions.length) {
         this.#enterReview();
       } else {
-        const nextIndex = this.#currentQuestionIndex + 1;
-        this.#currentQuestionIndex = nextIndex;
+        this.#currentQuestionIndex++;
         this.#playCurrentQuestion();
       }
     } finally {
@@ -424,21 +371,23 @@ export class TestPhase {
       this.#audioEngine.stop();
     } catch {}
     
-    // Record as skipped (incorrect)
+    // Skipped answers count as zero credit, not a missing model judgment.
     this.#answers.push({
-      questionId: question.id,
-      type: question.type,
-      question: question.question,
-      options: question.options,
+      questionId: question.id, type: question.type,
+      question: question.question, options: question.options,
       userAnswer: null,
-      correctAnswer: question.answer,
-      isCorrect: false
+      correctAnswer: deriveCorrectAnswerText(question, buildAcceptableList(question)) || String(question.answer ?? ''),
+      isCorrect: false, judgmentStatus: 'incorrect',
+      judgmentReason: 'The question was skipped without an answer.',
+      evaluationMode: 'skipped', skipped: true,
     });
-
+    this.#score = summarizeSlateTestResults(this.#answers).points;
     this.#emit('questionSkipped', {
-      questionIndex: this.#currentQuestionIndex,
-      score: this.#score,
-      totalQuestions: this.#questions.length
+      questionIndex: this.#currentQuestionIndex, question,
+      answer: null, isCorrect: false, judgmentStatus: 'incorrect',
+      judgmentReason: 'The question was skipped without an answer.',
+      evaluationMode: 'skipped', attemptNumber: 1, isFirstResponse: true,
+      score: this.#score, totalQuestions: this.#questions.length,
     });
 
     this.#emit('requestSnapshotSave', {
@@ -479,10 +428,10 @@ export class TestPhase {
   }
   
   // Public API: Start review
-  startReview() {
+  startReview({ preserveIndex = false } = {}) {
     if (this.#state !== 'reviewing' && this.#answers.length === 0) return;
     
-    this.#reviewIndex = 0;
+    if (!preserveIndex) this.#reviewIndex = 0;
     this.#state = 'reviewing';
     
     this.#emit('reviewStart', {
@@ -491,6 +440,7 @@ export class TestPhase {
       percentage: this.#calculateGrade()
     });
     
+    this.#emitReviewReveals();
     this.#showReviewQuestion();
   }
   
@@ -544,6 +494,40 @@ export class TestPhase {
   
   get answers() {
     return [...this.#answers];
+  }
+
+  getResults() {
+    const summary = summarizeSlateTestResults(this.#answers);
+    const percentage = this.#answers.length === this.#questions.length ? summary.percentage : null;
+    return {
+      ...summary, score: summary.points, totalQuestions: this.#questions.length,
+      percentage, grade: this.#calculateLetterGrade(percentage),
+      answers: this.#answers.map(item => ({ ...item })),
+    };
+  }
+
+  applyFacilitatorReview(index, status, reason) {
+    if (this.#state !== 'reviewing') throw new Error('Facilitator review requires a completed Test.');
+    if (!Number.isInteger(index) || index < 0 || index >= this.#answers.length) throw new Error('Invalid Test item.');
+    if (!['correct', 'partial', 'incorrect'].includes(status)) throw new Error('Choose a grading judgment.');
+    if (!String(reason || '').trim()) throw new Error('A reason is required for a grading revision.');
+    const original = this.#answers[index];
+    const initial = original.initialJudgment || {
+      status: original.judgmentStatus || (original.isCorrect ? 'correct' : 'incorrect'),
+      reason: original.judgmentReason || null,
+      evaluationMode: original.evaluationMode || null,
+    };
+    const review = { status, reason: String(reason).trim(), reviewedAt: new Date().toISOString() };
+    this.#answers[index] = {
+      ...original, initialJudgment: initial,
+      reviews: [...(original.reviews || []), review],
+      judgmentStatus: status, judgmentReason: review.reason,
+      evaluationMode: 'facilitator_review', isCorrect: status === 'correct',
+    };
+    const result = this.getResults();
+    this.#score = result.score;
+    this.#emit('testGradeRevised', { ...result, questionIndex: index, review });
+    return result;
   }
   
   get reviewIndex() {
@@ -661,18 +645,9 @@ export class TestPhase {
     this.#state = 'reviewing';
     this.#reviewIndex = 0;
     
-    const grade = this.#calculateGrade();
-    console.log('[TestPhase] Grade calculated:', grade, 'score:', this.#score, 'questions:', this.#questions.length);
-    
-    console.log('[TestPhase] Emitting testQuestionsComplete event');
-    this.#emit('testQuestionsComplete', {
-      score: this.#score,
-      totalQuestions: this.#questions.length,
-      percentage: grade,
-      grade: this.#calculateLetterGrade(grade),
-      answers: this.#answers
-    });
-    
+    this.#emit('testQuestionsComplete', this.getResults());
+    this.#emitReviewReveals();
+
     console.log('[TestPhase] Calling showReviewQuestion');
     this.#showReviewQuestion();
   }
@@ -694,16 +669,35 @@ export class TestPhase {
       totalReviews: this.#answers.length,
       answer: answer
     });
+
   }
   
+  // The full review shows every reference answer at once, unlike the
+  // one-question spoken Test. Log the exposure only when entering review.
+  #emitReviewReveals() {
+    if (this.#reviewRevealsEmitted) return;
+    this.#reviewRevealsEmitted = true;
+    for (let index = 0; index < this.#answers.length; index++) {
+      const answer = this.#answers[index];
+      if (answer?.isCorrect || !answer?.correctAnswer) continue;
+      this.#emit('answerRevealed', {
+        questionIndex: index,
+        question: this.#questions[index],
+        attemptNumber: 1,
+        correctAnswer: answer.correctAnswer,
+        revealSource: 'test-review',
+      });
+    }
+  }
+
   // Private: Calculate grade percentage
   #calculateGrade() {
-    if (this.#questions.length === 0) return 0;
-    return Math.round((this.#score / this.#questions.length) * 100);
+    return this.getResults().percentage;
   }
   
   // Private: Calculate letter grade
   #calculateLetterGrade(percentage) {
+    if (percentage == null) return 'Pending';
     if (percentage >= 90) return 'A';
     if (percentage >= 80) return 'B';
     if (percentage >= 70) return 'C';
@@ -723,15 +717,7 @@ export class TestPhase {
       this.#audioEndListener = null;
     }
     
-    const grade = this.#calculateGrade();
-    
-    this.#emit('testComplete', {
-      score: this.#score,
-      totalQuestions: this.#questions.length,
-      percentage: grade,
-      grade: this.#calculateLetterGrade(grade),
-      answers: [...this.#answers]
-    });
+    this.#emit('testComplete', this.getResults());
   }
   
   // Public: Cleanup

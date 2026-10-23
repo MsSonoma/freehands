@@ -95,13 +95,18 @@ export async function getReusableMicrophoneStream() {
   return activateStream(stream);
 }
 
+export function isMicrophoneCapturing() {
+  return microphoneUseCount > 0 && hasReusableAudio(cachedMicrophoneStream);
+}
+
 export function pauseReusableMicrophoneStream(stream = cachedMicrophoneStream) {
   if (!stream) return;
-  if (stream === cachedMicrophoneStream && microphoneUseCount > 0) {
-    microphoneUseCount -= 1;
-  }
+  if (stream === cachedMicrophoneStream && microphoneUseCount > 0) microphoneUseCount -= 1;
   if (stream !== cachedMicrophoneStream || microphoneUseCount === 0) {
-    setTracksEnabled(stream, false);
+    // Disabling a live capture track can leave mobile playback permanently ducked.
+    // End the capture session completely; browser permission remains independent.
+    stopStream(stream);
+    if (stream === cachedMicrophoneStream) cachedMicrophoneStream = null;
   }
 }
 

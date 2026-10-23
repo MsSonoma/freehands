@@ -106,37 +106,34 @@ export function buildAcceptableList(problem) {
  * - SA/FIB: backend judge, fallback to local
  * - MC/TF: local judge
  */
-export async function judgeAnswer(learnerAnswerRaw, acceptableList, problem) {
+// Test consumers need the complete judgment. The other lesson phases retain
+// judgeAnswer()'s boolean contract, including retriable evaluator failures.
+export async function judgeTestAnswer(learnerAnswerRaw, acceptableList, problem) {
   const learnerAnswer = String(learnerAnswerRaw ?? '').trim();
-  if (!learnerAnswer) return false;
-
   const acceptable = uniqStrings(acceptableList);
-
-  const localFallback = () => {
-    try {
-      return isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
-    } catch {
-      return false;
-    }
+  if (!learnerAnswer) return {
+    status: 'incorrect', correct: false, reason: 'No answer was submitted.',
+    evaluationMode: 'no_response',
   };
 
   const shouldUseBackend = isShortAnswerItem(problem) || isFillInBlank(problem);
-  if (!shouldUseBackend) return localFallback();
+  if (!shouldUseBackend) {
+    const correct = isAnswerCorrectLocal(learnerAnswer, acceptable, problem);
+    return {
+      status: correct ? 'correct' : 'incorrect',
+      correct,
+      reason: correct ? 'The selected answer matches the answer key.' : 'The selected answer does not match the answer key.',
+      evaluationMode: 'answer_key',
+    };
+  }
 
-  // SA/FIB: backend is the only authoritative judge — no local fallback.
-  // Retry up to 3 times (5 s timeout each, 2 s gap) before giving up.
   const MAX_ATTEMPTS = 3;
   const ATTEMPT_TIMEOUT_MS = 5000;
   const RETRY_DELAY_MS = 2000;
-
-  const questionText = String(
-    problem?.question || problem?.prompt || problem?.Q || problem?.q || ''
-  ).trim();
-  const expectedAnswer = String(problem?.answer || problem?.expected || '').trim();
+  const questionText = String(problem?.question || problem?.prompt || problem?.Q || problem?.q || '').trim();
+  const expectedAnswer = String(problem?.answer ?? problem?.expected ?? '').trim();
   const keywords = Array.isArray(problem?.keywords) ? problem.keywords : [];
-  const minKeywords = Number.isInteger(problem?.minKeywords)
-    ? problem.minKeywords
-    : (keywords.length > 0 ? 1 : 0);
+  const minKeywords = Number.isInteger(problem?.minKeywords) ? problem.minKeywords : (keywords.length > 0 ? 1 : 0);
 
   for (let attempt = 1; attempt <= MAX_ATTEMPTS; attempt++) {
     const controller = new AbortController();
@@ -146,30 +143,36 @@ export async function judgeAnswer(learnerAnswerRaw, acceptableList, problem) {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          question: questionText,
-          learnerAnswer,
-          expectedAnswer,
-          expectedAny: acceptable,
-          keywords,
-          minKeywords,
+          question: questionText, learnerAnswer, expectedAnswer,
+          expectedAny: acceptable, keywords, minKeywords,
+          requiresReasoning: problem?.requiresReasoning === true,
         }),
         signal: controller.signal,
       });
-      clearTimeout(timeoutId);
       if (!res.ok) throw new Error(`judge-short-answer ${res.status}`);
       const data = await res.json();
-      if (typeof data?.correct === 'boolean') return data.correct;
-      // Unexpected response shape — treat as retriable.
-      throw new Error('judge-short-answer: unexpected response shape');
-    } catch (err) {
-      clearTimeout(timeoutId);
-      if (attempt < MAX_ATTEMPTS) {
-        // Wait before retrying.
-        await new Promise((r) => setTimeout(r, RETRY_DELAY_MS));
+      const status = String(data?.status || '').toLowerCase();
+      const reason = String(data?.reason || '').trim();
+      if (['correct', 'partial', 'incorrect'].includes(status) && reason) {
+        return { status, correct: status === 'correct', reason, evaluationMode: 'semantic' };
       }
+      throw new Error('judge-short-answer: incomplete semantic result');
+    } catch (error) {
+      if (attempt < MAX_ATTEMPTS) await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+    } finally {
+      clearTimeout(timeoutId);
     }
   }
 
-  // All attempts exhausted — throw so the caller can recover the phase.
-  throw new Error('judge-unavailable');
+  return {
+    status: 'ungraded', correct: null,
+    reason: 'The learning evaluator was unavailable. The answer was retained for review.',
+    evaluationMode: 'semantic_unavailable',
+  };
+}
+
+export async function judgeAnswer(learnerAnswerRaw, acceptableList, problem) {
+  const judgment = await judgeTestAnswer(learnerAnswerRaw, acceptableList, problem);
+  if (judgment.status === 'ungraded') throw new Error('judge-unavailable');
+  return judgment.correct === true;
 }

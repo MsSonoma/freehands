@@ -1,6 +1,7 @@
 import HeaderBar from './HeaderBar';
 import CookieBanner from '@/components/CookieBanner';
 import FacilitatorSectionTracker from '@/components/FacilitatorSectionTracker';
+import { SonomaKeyboardProvider } from './components/SonomaKeyboard';
 
 // Expose richer metadata so Next.js will emit proper <link rel="icon" ...> tags.
 // We keep the existing favicon.ico (for legacy browsers) and add the branded png.
@@ -35,6 +36,7 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
   <body style={{ margin:0, fontFamily:'system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif', overflowY:'auto', scrollbarGutter:'stable' }}>
+        <SonomaKeyboardProvider>
         <HeaderBar />
         <FacilitatorSectionTracker />
 
@@ -52,6 +54,7 @@ export default function RootLayout({ children }) {
           {children}
         </div>
         <CookieBanner />
+        </SonomaKeyboardProvider>
       </body>
     </html>
   )

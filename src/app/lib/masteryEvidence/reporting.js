@@ -5,6 +5,7 @@ import {
   STAGE_7_EVIDENCE_EVENT_TYPES,
 } from './constants.js';
 import { BASELINE_PROTOCOL_VERSION } from './baseline.js';
+import { buildSonomaTestGradeReport } from '../sonomaTestGradeReport.mjs';
 import {
   INDEPENDENT_MASTERY_PROTOCOL_VERSION,
   MASTERY_OUTCOMES,
@@ -891,6 +892,10 @@ export function aggregateFacilitatorEvidenceSession({ trackedSession = {}, evide
   const diagnostic_comprehension = summarizeDiagnosticComprehension(orderedEvents);
   const completeness = summarizeCompleteness(evidenceSession, [baseline, independent_evidence, retention]);
   const options = buildOptions(independent_evidence, retention, concept_evidence);
+  const assessmentTeacher = String(trackedSession?.instructional_teacher || '').toLowerCase();
+  const assessmentSource = String(evidenceSession?.lesson_source || '').toLowerCase();
+  const notSonomaTest = ['slate', 'webb'].includes(assessmentTeacher)
+    || ['slate-liftoff', 'webb'].includes(assessmentSource);
   const startedAt = asTimestamp(evidenceSession?.started_at || trackedSession?.started_at);
   const endedAt = asTimestamp(evidenceSession?.ended_at || trackedSession?.ended_at);
   const durationSeconds = startedAt && endedAt
@@ -923,6 +928,7 @@ export function aggregateFacilitatorEvidenceSession({ trackedSession = {}, evide
     retention,
     concept_evidence,
     score: summarizeScore(orderedEvents),
+    test_report: notSonomaTest ? null : buildSonomaTestGradeReport(orderedEvents, summarizeScore(orderedEvents)?.value ?? null),
     interventions,
     interpretations: buildInterpretations(baseline, independent_evidence, retention),
     options,

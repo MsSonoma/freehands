@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getReusableMicrophoneStream, pauseReusableMicrophoneStream } from "../utils/microphoneSession";
+import { useSonomaKeyboard, shouldUseSonomaKeyboard } from "../../components/SonomaKeyboard";
 
 const DEFAULT_HOTKEYS = { micHold: 'NumpadAdd', beginSend: 'Enter' };
 
@@ -13,6 +14,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   const chunksRef = useRef([]);
   const autoStopRef = useRef(null);
   const inputRef = useRef(null);
+  const sonomaKeyboard = useSonomaKeyboard();
   // Track whether Numpad+ is currently held to avoid repeat triggers
   const hotkeyDownRef = useRef(false);
   // Track touch-hold lifecycle so we can start on touchstart and stop on touchend without triggering synthetic clicks
@@ -177,7 +179,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   useEffect(() => {
     const el = inputRef.current;
     if (!el) return;
-    if (sendDisabled || !canSend) return;
+    if (sendDisabled || !canSend || shouldUseSonomaKeyboard()) return;
     let rafId = null;
     let t0 = null;
     let t1 = null;
@@ -308,7 +310,10 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
               return isRecording ? `Release ${label} to stop` : `Hold ${label} to talk`;
             })()}
         value={learnerInput}
-        onFocus={() => setFocused(true)}
+        data-sonoma-input
+        inputMode="none"
+        onPointerDown={() => { if (!sendDisabled && shouldUseSonomaKeyboard()) sonomaKeyboard.open({ ref: inputRef, onChange: setLearnerInput, layout: "text" }); }}
+        onFocus={() => { setFocused(true); if (!sendDisabled && shouldUseSonomaKeyboard()) sonomaKeyboard.open({ ref: inputRef, onChange: setLearnerInput, layout: "text" }); }}
         onBlur={() => setFocused(false)}
         onChange={(event) => setLearnerInput(event.target.value)}
         onKeyDown={(e) => {

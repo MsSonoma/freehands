@@ -60,6 +60,7 @@ import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
 import { buildAssessmentPhaseSets, resolveLearnerAssessmentTarget } from '../assessment/assessmentSets';
+import { requestRephrasedAssessmentTest } from '../assessment/testRephrase.mjs';
 import { createAssessmentPdf, shareOrPreviewPdf as shareOrPreviewAssessmentPdf } from '../assessment/printPdf';
 import CaptionPanel from '../components/CaptionPanel';
 import SonomaBackgroundMusicControl from '../components/SonomaBackgroundMusicControl';
@@ -70,6 +71,9 @@ import FeatureHelpToast from '../components/FeatureHelpToast';
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript } from '@/app/lib/productHelp.mjs';
 import TypingConversationContext from '../components/TypingConversationContext';
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport';
+import { useSonomaKeyboard } from '../../components/SonomaKeyboard';
+import { isMicrophoneCapturing } from '../utils/microphoneSession';
+import { measureSonomaLandscapeRoom, resolveSonomaKeyboardClearance } from './sonomaKeyboardLayout.mjs';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
 import { useSessionTracking } from '@/app/hooks/useSessionTracking';
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js';
@@ -175,8 +179,11 @@ const SESSION_TUTORIAL_STEPS = [
 ];
 
 // Test Review UI Component (matches V1)
-function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview, isMobileLandscape, isMobilePortrait, footerHeight }) {
+function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview, openReviewKeyboard, isMobileLandscape, isMobilePortrait, footerHeight }) {
   const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
+  const [reviewDrafts, setReviewDrafts] = useState({});
+  const [reviewError, setReviewError] = useState('');
+  const [reviewSaving, setReviewSaving] = useState(false);
   
   const tierForPercent = (pct) => {
     if (pct >= 90) return 'gold';
@@ -192,7 +199,7 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
     return '';
   };
   
-  const tier = tierForPercent(percentage);
+  const tier = percentage == null ? null : tierForPercent(percentage);
   const medal = emojiForTier(tier);
   
   const card = { 
@@ -203,16 +210,18 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
     boxShadow: '0 2px 10px rgba(0,0,0,0.04)'
   };
   
-  const badge = (ok) => ({
-    display: 'inline-block',
-    padding: '2px 8px',
-    borderRadius: 999,
-    fontWeight: 800,
-    fontSize: 12,
-    background: ok ? 'rgba(16,185,129,0.14)' : 'rgba(239,68,68,0.14)',
-    color: ok ? '#065f46' : '#7f1d1d',
-    border: `1px solid ${ok ? 'rgba(16,185,129,0.35)' : 'rgba(239,68,68,0.35)'}`
-  });
+  const badge = (status) => {
+    const palette = status === 'correct'
+      ? ['rgba(16,185,129,0.14)', '#065f46', 'rgba(16,185,129,0.35)']
+      : status === 'partial'
+        ? ['rgba(245,158,11,0.16)', '#92400e', 'rgba(245,158,11,0.35)']
+        : status === 'ungraded'
+          ? ['rgba(100,116,139,0.12)', '#334155', 'rgba(100,116,139,0.35)']
+          : ['rgba(239,68,68,0.14)', '#7f1d1d', 'rgba(239,68,68,0.35)'];
+    return { display: 'inline-block', padding: '2px 8px', borderRadius: 999,
+      fontWeight: 800, fontSize: 12, background: palette[0], color: palette[1],
+      border: `1px solid ${palette[2]}` };
+  };
   
   const btn = {
     padding: '8px 14px',
@@ -290,7 +299,7 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
         background: '#ffffff' 
       }}>
         <div style={{ fontSize: 'clamp(1.1rem, 2.4vw, 1.4rem)', fontWeight: 800, color: '#065f46' }}>
-          {percentage}% grade
+          {percentage == null ? 'Grade pending' : `${percentage}% grade · ${score}/${totalQuestions} points`}
         </div>
         <div style={{ fontSize: 'clamp(1.2rem, 2.6vw, 1.5rem)' }} aria-label="Medal preview">{medal}</div>
       </div>
@@ -342,7 +351,9 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
       
       <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
         {answers && answers.map((answerData, i) => {
-          const ok = answerData.isCorrect;
+          const status = answerData.judgmentStatus || (answerData.isCorrect ? 'correct' : 'incorrect');
+          const ok = status === 'correct';
+          const draft = reviewDrafts[i] || { status: '', reason: '' };
           const num = i + 1;
           const stem = formatQuestionForDisplay(answerData.question);
           const userAns = answerData.userAnswer || '';
@@ -352,7 +363,7 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
             <div key={i} style={card}>
               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
                 <div style={{ fontWeight: 800 }}>Question {num}</div>
-                <span style={badge(ok)}>{ok ? 'correct' : 'incorrect'}</span>
+                <span style={badge(status)}>{status === 'correct' ? 'Correct' : status === 'partial' ? 'Partially correct' : status === 'ungraded' ? 'Pending review' : answerData.skipped ? 'Skipped' : 'Needs correction'}</span>
               </div>
               <div style={{ marginTop: 8, color: '#111827', fontWeight: 600 }}>{stem}</div>
               <div style={{ marginTop: 6, color: '#374151' }}>
@@ -363,8 +374,50 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
                   <span style={{ fontWeight: 700 }}>Expected answer:</span> {expectedText}
                 </div>
               ) : null}
-              <div style={{ marginTop: 10 }}>
-                <button type="button" style={btn} onClick={() => onOverrideAnswer(i)}>Facilitator override</button>
+              {answerData.judgmentReason && (
+                <p style={{ marginTop: 7, fontSize: 13 }}><strong>Why:</strong> {answerData.judgmentReason}</p>
+              )}
+              {answerData.initialJudgment && (
+                <p style={{ marginTop: 7, fontSize: 12, color: '#4b5563' }}>
+                  Initial judgment: {answerData.initialJudgment.status} — {answerData.initialJudgment.reason || 'No reason recorded'}
+                </p>
+              )}
+              <div style={{ marginTop: 10, display: 'flex', flexDirection: 'column', gap: 7 }}>
+                <label style={{ fontSize: 13, fontWeight: 700 }}>Facilitator review (PIN required)</label>
+                <select
+                  value={draft.status}
+                  onChange={e => setReviewDrafts(prev => ({ ...prev, [i]: { ...draft, status: e.target.value } }))}
+                  style={{ padding: 8, borderRadius: 7, border: '1px solid #cbd5e1' }}
+                  aria-label={`Revised judgment for question ${num}`}
+                >
+                  <option value="">Select judgment</option>
+                  <option value="correct">Correct · 1 point</option>
+                  <option value="partial">Partially correct · half point</option>
+                  <option value="incorrect">Incorrect · 0 points</option>
+                </select>
+                <textarea
+                  value={draft.reason}
+                  onChange={e => setReviewDrafts(prev => ({ ...prev, [i]: { ...draft, reason: e.target.value } }))}
+                  placeholder="Reason for this grading decision"
+                  aria-label={`Review reason for question ${num}`}
+                  rows={2}
+                  inputMode="none"
+                  onPointerDown={(event) => openReviewKeyboard(event, (value) =>
+                    setReviewDrafts(prev => ({ ...prev, [i]: { ...prev[i], status: prev[i]?.status || '', reason: value } })))}
+                  style={{ padding: 8, borderRadius: 7, border: '1px solid #cbd5e1' }}
+                />
+                <button type="button" style={btn} disabled={reviewSaving || !draft.status || !draft.reason.trim()}
+                  onClick={async () => {
+                    setReviewSaving(true);
+                    setReviewError('');
+                    try {
+                      await onOverrideAnswer(i, draft.status, draft.reason.trim());
+                      setReviewDrafts(prev => ({ ...prev, [i]: { status: '', reason: '' } }));
+                    } catch (error) { setReviewError(error?.message || 'The review could not be saved.'); }
+                    finally { setReviewSaving(false); }
+                  }}
+                >{reviewSaving ? 'Saving review...' : 'Apply grading review'}</button>
+                {reviewError && <p role="alert" style={{ fontSize: 12, color: '#991b1b' }}>{reviewError}</p>}
               </div>
             </div>
           );
@@ -528,7 +581,24 @@ export { SessionPageV2Inner };
 function SessionPageV2Inner() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const typingViewport = useTypingViewport();
+  // Preserve caret focus while the application-owned keyboard is active.
+  const typingViewport = useTypingViewport({ preserveTouchFocus: true });
+  const sonomaKeyboard = useSonomaKeyboard();
+  const keyboardClearance = resolveSonomaKeyboardClearance({
+    customOpen: Boolean(sonomaKeyboard.active),
+    customHeight: sonomaKeyboard.keyboardHeight,
+    nativeVisible: typingViewport.keyboardVisible,
+    nativeInset: typingViewport.keyboardInset,
+  });
+  const openSonomaTextInput = (event, updateValue) => {
+    const element = event.currentTarget;
+    if (element.disabled || element.readOnly) return;
+    sonomaKeyboard.open({
+      ref: { current: element },
+      layout: 'text',
+      onChange: (value) => { updateValue(value); noteSonomaLearnerActivity(); },
+    });
+  };
   const [showTutorial, setShowTutorial] = useState(false);
 
   // Auto-show session tutorial on first visit
@@ -765,9 +835,15 @@ function SessionPageV2Inner() {
   }, [testState]);
   const [currentTestQuestion, setCurrentTestQuestion] = useState(null);
   const [testScore, setTestScore] = useState(0);
+  const [testQuestionIndex, setTestQuestionIndex] = useState(0);
   const [testTotalQuestions, setTestTotalQuestions] = useState(0);
   const [testAnswer, setTestAnswer] = useState('');
   const [testGrade, setTestGrade] = useState(null);
+  const testGradeRef = useRef(null);
+  useEffect(() => {
+    testGradeRef.current = null;
+    setTestGrade(null);
+  }, [lessonKey]);
   const [testReviewAnswer, setTestReviewAnswer] = useState(null);
   const [testReviewIndex, setTestReviewIndex] = useState(0);
   const [testTimerMode, setTestTimerMode] = useState('play');
@@ -2176,6 +2252,58 @@ function SessionPageV2Inner() {
     return sets;
   }, [lessonData, getLearnerTarget]);
 
+  const testRephraseRequestRef = useRef(null);
+  const testRephraseAttemptedRef = useRef('');
+  const prepareRephrasedTestDeck = useCallback(async () => {
+    const learnerId = sessionLearnerIdRef.current || learnerProfileRef.current?.id || null;
+    if (!lessonData || !lessonKey || !learnerId) return generatedTestRef.current;
+    // Do not change Test items or answer identities after an attempt has begun.
+    if (snapshotServiceRef.current?.snapshot?.phaseData?.test) return generatedTestRef.current;
+    const current = generatedTestRef.current;
+    if (Array.isArray(current) && current.length && current.every((item) => item.rewordedFrom?.question)) return current;
+    const requestKey = `${lessonKey}:${learnerId}`;
+    if (testRephraseRequestRef.current) return testRephraseRequestRef.current;
+    if (testRephraseAttemptedRef.current === requestKey) return current;
+    testRephraseAttemptedRef.current = requestKey;
+    const request = (async () => {
+      const sets = buildAllPhaseSets() || {};
+      try {
+        const stored = await getStoredAssessments(lessonKey, { learnerId });
+        if (Array.isArray(stored?.test) && stored.test.length &&
+            stored.test.every((item) => item.rewordedFrom?.question)) {
+          buildAllPhaseSetsCache.current = { lessonData, sets: { ...sets, ...stored } };
+          generatedTestRef.current = stored.test;
+          setGeneratedTest(stored.test);
+          return stored.test;
+        }
+      } catch {}
+      const previousQuestions = ['comprehension', 'exercise', 'worksheet']
+        .flatMap((phase) => (Array.isArray(sets[phase]) ? sets[phase] : []))
+        .map((item) => String(item?.question || item?.prompt || '').trim()).filter(Boolean);
+      try {
+        const reworded = await requestRephrasedAssessmentTest({
+          lessonData, targetCount: resolveLearnerAssessmentTarget(learnerProfileRef.current, 'test', { learnerId }) || sets.test?.length || 10,
+          previousQuestions,
+        });
+        if (!reworded?.length || snapshotServiceRef.current?.snapshot?.phaseData?.test) return generatedTestRef.current;
+        const revised = { ...sets, test: reworded };
+        buildAllPhaseSetsCache.current = { lessonData, sets: revised };
+        generatedTestRef.current = reworded;
+        setGeneratedTest(reworded);
+        await saveAssessments(lessonKey, revised, { learnerId, replaceTest: true });
+        return reworded;
+      } catch (cause) {
+        console.warn('[SessionPageV2] Could not rephrase Test questions; existing Test is preserved.', cause);
+        return generatedTestRef.current;
+      }
+    })().finally(() => { testRephraseRequestRef.current = null; });
+    testRephraseRequestRef.current = request;
+    return request;
+  }, [lessonData, lessonKey, learnerProfile?.id, buildAllPhaseSets, getLearnerTarget]);
+
+  const prepareRephrasedTestDeckRef = useRef(prepareRephrasedTestDeck);
+  useEffect(() => { prepareRephrasedTestDeckRef.current = prepareRephrasedTestDeck; }, [prepareRephrasedTestDeck]);
+
   const resolveAssessmentIsolation = useCallback(async () => {
     if (!lessonData) return null;
     const phaseSets = buildAllPhaseSets() || {};
@@ -2642,31 +2770,51 @@ function SessionPageV2Inner() {
     }
   }, [lessonData, lessonKey, lessonId]);
 
-  const handleTestOverrideAnswer = useCallback(async (index) => {
+  const handleTestOverrideAnswer = useCallback(async (index, status, reason) => {
+    if (!['correct', 'partial', 'incorrect'].includes(status) || !String(reason || '').trim()) {
+      throw new Error('Select a judgment and give a reason for the review.');
+    }
     const ok = await ensurePinAllowed('facilitator');
-    if (!ok) return;
-    
-    setTestGrade((prevGrade) => {
-      if (!prevGrade || !prevGrade.answers) return prevGrade;
-      
-      const newAnswers = prevGrade.answers.slice();
-      newAnswers[index] = {
-        ...newAnswers[index],
-        isCorrect: !newAnswers[index].isCorrect
-      };
-      
-      const newScore = newAnswers.filter(a => a.isCorrect).length;
-      const newPercentage = Math.round((newScore / newAnswers.length) * 100);
-      const newLetterGrade = newPercentage >= 90 ? 'A' : newPercentage >= 80 ? 'B' : newPercentage >= 70 ? 'C' : newPercentage >= 60 ? 'D' : 'F';
-      
-      return {
-        ...prevGrade,
-        answers: newAnswers,
-        score: newScore,
-        percentage: newPercentage,
-        grade: newLetterGrade
-      };
-    });
+    if (!ok) throw new Error('Facilitator PIN verification is required.');
+    const phase = testPhaseRef.current;
+    const original = phase?.answers?.[index];
+    if (!original) throw new Error('The original Test response is unavailable. Nothing was changed.');
+    const reviewId = `test-review:${index}:${Date.now()}`;
+    const evidence = masteryEvidenceClientRef.current;
+    // The original learner response and AI judgment are immutable evidence.
+    // Record the authorized revision as an additional event before applying it.
+    if (evidence?.enabled) {
+      const saved = await evidence.recordInteractionEvent({
+        eventType: STAGE_2_EVIDENCE_EVENT_TYPES.TEST_GRADE_REVIEWED,
+        phase: 'test', itemId: original.questionId,
+        itemExposureId: null, suffix: reviewId,
+        payload: {
+          question_index: index, original_question: original.question,
+          response_value: original.userAnswer ?? null,
+          previous_status: original.judgmentStatus || (original.isCorrect ? 'correct' : 'incorrect'),
+          previous_reason: original.judgmentReason || null,
+          revised_status: status, revised_reason: String(reason).trim(),
+          reviewed_by: 'pin_verified_facilitator',
+        },
+      });
+      if (!saved?.ok) throw new Error('The grading review could not be recorded. No grade was changed.');
+    }
+    const revised = phase.applyFacilitatorReview(index, status, reason);
+    testGradeRef.current = revised;
+    setTestGrade(revised);
+    const snapshot = snapshotServiceRef.current;
+    if (snapshot) {
+      const saved = await snapshot.saveProgress('test-grade-review', {
+        phaseOverride: 'test', score: revised.score,
+        totalQuestions: revised.totalQuestions,
+        questions: generatedTestRef.current || [],
+        nextQuestionIndex: revised.totalQuestions,
+        answers: revised.answers, reviewIndex: phase.reviewIndex,
+        timerMode: 'work',
+      });
+      if (!saved) throw new Error('The review was recorded, but the local Test snapshot could not be confirmed. The grade is retained here.');
+    }
+    return revised;
   }, []);
 
   const handleDownloadWorksheet = useCallback(async () => {
@@ -2702,6 +2850,7 @@ function SessionPageV2Inner() {
     const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     setDownloadError('');
 
+    await prepareRephrasedTestDeck();
     let source = generatedTestRef.current;
     if (!source || !source.length) {
       const allSets = buildAllPhaseSets() || {};
@@ -2721,7 +2870,7 @@ function SessionPageV2Inner() {
     }
 
     await createPdfForItems(source.map((q, i) => ({ ...q, number: q.number || (i + 1) })), 'test', previewWin);
-  }, [buildAllPhaseSets, createPdfForItems, persistAssessments]);
+  }, [buildAllPhaseSets, createPdfForItems, persistAssessments, prepareRephrasedTestDeck]);
 
   const handleDownloadCombined = useCallback(async () => {
     const ok = await ensurePinAllowed('download');
@@ -2729,6 +2878,7 @@ function SessionPageV2Inner() {
     const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null;
     setDownloadError('');
 
+    await prepareRephrasedTestDeck();
     let ws = generatedWorksheetRef.current;
     let ts = generatedTestRef.current;
     if ((!ws || !ws.length) || (!ts || !ts.length)) {
@@ -2840,7 +2990,7 @@ function SessionPageV2Inner() {
       console.error('[SessionPageV2] Combined PDF generation failed', err);
       setDownloadError('Failed to generate facilitator key.');
     }
-  }, [buildAllPhaseSets, generatedTest, generatedWorksheet, lessonData, lessonId, lessonKey, persistAssessments, shareOrPreviewPdf]);
+  }, [buildAllPhaseSets, generatedTest, generatedWorksheet, lessonData, lessonId, lessonKey, persistAssessments, prepareRephrasedTestDeck, shareOrPreviewPdf]);
 
   const handleRefreshWorksheetAndTest = useCallback(async () => {
     const ok = await ensurePinAllowed('refresh');
@@ -3832,12 +3982,12 @@ function SessionPageV2Inner() {
 
   const speakSonomaAttentionLine = useCallback((text, turnId, stage) => {
     const spoken = String(text || '').trim();
-    if (!spoken || !turnId || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current) return;
+    if (!spoken || !turnId || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing()) return;
     void (async () => {
       try {
         const audio = await fetchTTS(spoken);
         const live = sonomaResponseTurnRef.current;
-        if (!live || live.id !== turnId || live.reminderStage < stage || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current) return;
+        if (!live || live.id !== turnId || live.reminderStage < stage || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing()) return;
         sonomaReminderAudioActiveRef.current = { turnId, stage };
         audioEngineRef.current?.playAudio(audio || '', [spoken]).catch(() => {
           if (sonomaReminderAudioActiveRef.current?.turnId === turnId) sonomaReminderAudioActiveRef.current = null;
@@ -3849,7 +3999,7 @@ function SessionPageV2Inner() {
   const deliverSonomaReminder = useCallback((stage) => {
     const current = sonomaResponseTurnRef.current;
     if (!current || stage < 1 || stage > 4 || stage <= Number(current.reminderStage || 0)) return;
-    if (sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isSonomaActivitySnoozed(current, Date.now())) return;
+    if (sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing() || isSonomaActivitySnoozed(current, Date.now())) return;
     const text = sonomaReminderForStage(stage, current.phase);
     if (!text) return;
     const nowMs = Date.now();
@@ -3955,7 +4105,7 @@ function SessionPageV2Inner() {
     if (!sonomaResponseTurn?.id) return undefined;
     const tick = () => {
       const current = sonomaResponseTurnRef.current;
-      if (!current || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || current.pauseStartedAt || executionFencedRef.current) return;
+      if (!current || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing() || current.pauseStartedAt || executionFencedRef.current) return;
       const nowMs = Date.now();
       if (isSonomaActivitySnoozed(current, nowMs)) return;
       const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
@@ -4215,7 +4365,7 @@ function SessionPageV2Inner() {
   }, [learnerProfile, lessonData, lessonId, lessonKey]);
 
   const recordMasteryCheckResult = useCallback((phaseName, data = {}) => {
-    if (normalizePhaseAlias(phaseName) !== 'test') return;
+    if (normalizePhaseAlias(phaseName) !== 'test' || data.judgmentStatus === 'ungraded') return;
     const itemContext = getEvidenceItemContext('test', data.question, data.questionIndex);
     const eligibility = masteryEligibilityRef.current || null;
     const itemIdentity = eligibility?.itemIdentities?.[data.questionIndex] || null;
@@ -4320,8 +4470,10 @@ function SessionPageV2Inner() {
       ...itemContext,
       attemptNumber,
       isFirstResponse,
-      isCorrect: data.isCorrect === true,
-      evaluationMode: `${normalizePhaseAlias(phaseName)}_current_app_judgment`,
+      isCorrect: data.judgmentStatus === 'ungraded' ? null : data.isCorrect === true,
+      evaluationMode: data.evaluationMode || `${normalizePhaseAlias(phaseName)}_current_app_judgment`,
+      judgmentStatus: data.judgmentStatus || null,
+      judgmentReason: data.judgmentReason || null,
       response: data.answer,
       correctAnswer: data.correctAnswer ?? null,
     });
@@ -4859,150 +5011,70 @@ function SessionPageV2Inner() {
   
   // Orientation and layout detection (matching V1)
   const [isMobileLandscape, setIsMobileLandscape] = useState(false);
-  const [videoMaxHeight, setVideoMaxHeight] = useState(null);
-  const [videoColPercent, setVideoColPercent] = useState(50);
+  const [landscapeMediaHeight, setLandscapeMediaHeight] = useState(null);
   const [isShortHeight, setIsShortHeight] = useState(false);
   const [audioReady, setAudioReady] = useState(false);
-  const [sideBySideHeight, setSideBySideHeight] = useState(null);
   const [stackedCaptionHeight, setStackedCaptionHeight] = useState(null);
   const videoColRef = useRef(null);
   const captionColRef = useRef(null);
   const footerRef = useRef(null);
   const [footerHeight, setFooterHeight] = useState(0);
   
-  // Calculate video height and column width based on viewport (matching V1 logic)
+  // Orientation is determined by the layout viewport, never by the old native-keyboard
+  // visual-height ramp. Opening the Sonoma Keyboard must not narrow the video column.
   useEffect(() => {
-    const calcVideoHeight = () => {
-      try {
-        const vv = window.visualViewport || null;
-        const layoutW = window.innerWidth;
-        const layoutH = window.innerHeight;
-        const h = vv?.height || layoutH;
-        // Keyboard height must not change device orientation. A portrait iPad can become wider
-        // than the visible keyboard viewport, but it is still a portrait session.
-        const isLandscape = layoutW > layoutH;
-        setIsMobileLandscape(isLandscape);
-        setIsShortHeight(h <= 500);
-        
-        if (!isLandscape) {
-          setVideoMaxHeight(null);
-          setVideoColPercent(50);
-          return;
-        }
-        
-        // Multi-stage smooth ramp for video height: 40% at 375px -> 65% at 600px -> 70% at 700px -> 75% at 1000px
-        let frac;
-        if (h <= 375) {
-          frac = 0.40;
-        } else if (h <= 600) {
-          const t = (h - 375) / (600 - 375);
-          frac = 0.40 + t * (0.65 - 0.40);
-        } else if (h <= 700) {
-          const t = (h - 600) / (700 - 600);
-          frac = 0.65 + t * (0.70 - 0.65);
-        } else if (h <= 1000) {
-          const t = (h - 700) / (1000 - 700);
-          frac = 0.70 + t * (0.75 - 0.70);
-        } else {
-          frac = 0.75;
-        }
-        const target = Math.round(h * frac);
-        setVideoMaxHeight(target);
-        
-        // Video column width: 30% at 500px -> 50% at 700px
-        const hwMin = 500;
-        const hwMax = 700;
-        let pct;
-        if (h <= hwMin) {
-          pct = 30;
-        } else if (h >= hwMax) {
-          pct = 50;
-        } else {
-          const t2 = (h - hwMin) / (hwMax - hwMin);
-          pct = 30 + t2 * (50 - 30);
-        }
-        pct = Math.max(30, Math.min(50, Math.round(pct * 100) / 100));
-        setVideoColPercent(pct);
-      } catch {
-        setVideoMaxHeight(null);
-      }
+    const updateOrientation = () => {
+      const layoutWidth = window.innerWidth;
+      const layoutHeight = window.innerHeight;
+      setIsMobileLandscape(layoutWidth > layoutHeight);
+      setIsShortHeight(layoutHeight <= 500);
     };
-    
-    calcVideoHeight();
-    window.addEventListener('resize', calcVideoHeight);
-    window.addEventListener('orientationchange', calcVideoHeight);
-    
-    // Listen to visualViewport for mobile URL bar changes
-    let vv = null;
-    try {
-      vv = window.visualViewport || null;
-    } catch {
-      vv = null;
-    }
-    const handleVV = () => calcVideoHeight();
-    if (vv) {
-      try {
-        vv.addEventListener('resize', handleVV);
-      } catch {}
-      try {
-        vv.addEventListener('scroll', handleVV);
-      } catch {}
-    }
-    
+    updateOrientation();
+    window.addEventListener('resize', updateOrientation);
+    window.addEventListener('orientationchange', updateOrientation);
     return () => {
-      window.removeEventListener('resize', calcVideoHeight);
-      window.removeEventListener('orientationchange', calcVideoHeight);
-      if (vv) {
-        try {
-          vv.removeEventListener('resize', handleVV);
-        } catch {}
-        try {
-          vv.removeEventListener('scroll', handleVV);
-        } catch {}
-      }
+      window.removeEventListener('resize', updateOrientation);
+      window.removeEventListener('orientationchange', updateOrientation);
     };
   }, []);
-  
-  // Measure video column height for side-by-side sync (landscape only)
+
+  // Video and transcript use the actual room between their top edge and the raised
+  // fixed answer bar. Measure the footer, rather than assuming an Apple keyboard size.
   useEffect(() => {
     if (!isMobileLandscape) {
-      setSideBySideHeight(null);
-      return;
+      setLandscapeMediaHeight(null);
+      return undefined;
     }
-    
-    const v = videoColRef.current;
-    if (!v) return;
-    
+    let frame = null;
     const measure = () => {
-      try {
-        const h = v.getBoundingClientRect().height;
-        if (Number.isFinite(h) && h > 0) {
-          const next = Math.round(h);
-          setSideBySideHeight(prev => prev !== next ? next : prev);
+      if (frame !== null) cancelAnimationFrame(frame);
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        const mediaTop = videoColRef.current?.getBoundingClientRect().top;
+        const footerTop = footerRef.current?.getBoundingClientRect().top;
+        const room = measureSonomaLandscapeRoom({ mediaTop, footerTop });
+        if (room !== null) {
+          setLandscapeMediaHeight(previous => previous === room ? previous : room);
         }
-      } catch {}
+      });
     };
-    
     measure();
-    let ro;
-    if (typeof ResizeObserver !== 'undefined') {
-      ro = new ResizeObserver(() => measure());
-      try {
-        ro.observe(v);
-      } catch {}
-    } else {
-      window.addEventListener('resize', measure);
-      window.addEventListener('orientationchange', measure);
-    }
-    
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null;
+    if (footerRef.current) observer?.observe(footerRef.current);
+    const vv = window.visualViewport || null;
+    window.addEventListener('resize', measure);
+    window.addEventListener('orientationchange', measure);
+    vv?.addEventListener?.('resize', measure);
+    vv?.addEventListener?.('scroll', measure);
     return () => {
-      try {
-        ro && ro.disconnect();
-      } catch {}
+      if (frame !== null) cancelAnimationFrame(frame);
+      observer?.disconnect();
       window.removeEventListener('resize', measure);
       window.removeEventListener('orientationchange', measure);
+      vv?.removeEventListener?.('resize', measure);
+      vv?.removeEventListener?.('scroll', measure);
     };
-  }, [isMobileLandscape, videoMaxHeight]);
+  }, [isMobileLandscape, keyboardClearance, footerHeight, sonomaKeyboard.active]);
 
   // Measure the fixed footer height so portrait caption sizing can reserve exact space (V1 parity)
   useEffect(() => {
@@ -5249,6 +5321,7 @@ function SessionPageV2Inner() {
       console.log('[SessionPageV2] phaseChange lessonData:', !!lessonData);
       addEvent(`ðŸ”„ Phase: ${data.phase}`);
       setCurrentPhase(data.phase);
+      currentPhaseRef.current = data.phase;
 
       if (masteryEvidenceSkipNextPhaseTransitionRef.current) {
         masteryEvidenceSkipNextPhaseTransitionRef.current = false;
@@ -5319,6 +5392,7 @@ function SessionPageV2Inner() {
           }
         }
       } else if (data.phase === 'worksheet') {
+        void prepareRephrasedTestDeckRef.current?.();
         const started = startWorksheetPhase();
         if (started) {
           if (playPortionsEnabledRef.current?.worksheet !== false) {
@@ -5336,20 +5410,20 @@ function SessionPageV2Inner() {
       } else if (data.phase === 'test') {
         // Record the current transcript length so CaptionPanel can hide pre-test lines.
         setTestCaptionStartIndex(transcriptLinesRef.current.length);
-        const started = startTestPhase();
-        if (started) {
-          if (playPortionsEnabledRef.current?.test !== false) {
-            const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.test?.timerMode === 'work';
-            console.log('[TimerFix] test phaseChange — resumedInWorkMode:', resumedInWorkMode);
-            if (!resumedInWorkMode) {
-              startPhasePlayTimer('test');
+        // Rephrase only before the first Test question. Never rewrite a resumed attempt.
+        void (async () => {
+          await prepareRephrasedTestDeckRef.current?.();
+          if (currentPhaseRef.current !== 'test') return;
+          const started = testPhaseRef.current ? true : startTestPhase();
+          if (started) {
+            if (playPortionsEnabledRef.current?.test !== false) {
+              const resumedInWorkMode = snapshotServiceRef.current?.snapshot?.phaseData?.test?.timerMode === 'work';
+              if (!resumedInWorkMode) startPhasePlayTimer('test');
             }
-          }
-        } else {
-          if (playPortionsEnabledRef.current?.test !== false) {
+          } else if (playPortionsEnabledRef.current?.test !== false) {
             pendingPlayTimersRef.current.test = true;
           }
-        }
+        })();
       } else if (data.phase === 'closing') {
         startClosingPhase();
       }
@@ -5364,7 +5438,7 @@ function SessionPageV2Inner() {
       try {
         canonicalCompletion = await endTrackedSession('completed', {
           source: 'session-v2',
-          test_percentage: data?.testGrade?.percentage ?? testGrade?.percentage ?? null,
+          test_percentage: testGradeRef.current?.percentage ?? null,
         });
       } catch {}
       completionCommitInFlightRef.current = false;
@@ -5415,9 +5489,9 @@ function SessionPageV2Inner() {
       // Requirement: pools reset only via Print -> Refresh or lesson completion + explicit restart.
       
       // Save medal if test was completed
-      if (testGrade?.percentage != null && learnerId && lessonKey) {
+      if (testGradeRef.current?.percentage != null && learnerId && lessonKey) {
         try {
-          await upsertMedal(learnerId, goldenKeyLessonKey || lessonKey, testGrade.percentage);
+          await upsertMedal(learnerId, goldenKeyLessonKey || lessonKey, testGradeRef.current.percentage);
           addEvent(`🏅 Medal saved: ${testGrade.percentage}%`);
         } catch (err) {
           console.error('[SessionPageV2] Failed to save medal:', err);
@@ -5499,7 +5573,7 @@ function SessionPageV2Inner() {
       try {
         await masteryEvidenceClientRef.current?.recordSessionEnded({
           reason: 'completed',
-          testPercentage: testGrade?.percentage ?? null,
+          testPercentage: testGradeRef.current?.percentage ?? null,
         });
       } catch {}
 
@@ -6745,6 +6819,7 @@ function SessionPageV2Inner() {
     const clampedIndex = Math.min(Math.max(resumeIndex, 0), Math.max(questions.length - 1, 0));
     setTestTotalQuestions(questions.length);
     setTestScore(savedTest?.score || 0);
+    setTestQuestionIndex(clampedIndex);
     if (questions[clampedIndex]) {
       setCurrentTestQuestion(questions[clampedIndex]);
     }
@@ -6815,6 +6890,7 @@ function SessionPageV2Inner() {
     phase.on('questionStart', (data) => {
       addEvent(`ðŸ“ Test Question ${data.questionIndex + 1}/${data.totalQuestions}`);
       setCurrentTestQuestion(data.question);
+      setTestQuestionIndex(data.questionIndex);
       setTestTotalQuestions(data.totalQuestions);
       setTestAnswer('');
     });
@@ -6829,8 +6905,10 @@ function SessionPageV2Inner() {
     phase.on('learnerTurnEnded', (data) => finishSonomaResponseTurn(data));
     
     phase.on('answerSubmitted', (data) => {
-      const result = data.isCorrect ? 'âœ… Correct!' : 'âŒ Incorrect';
-      addEvent(`${result} (Score: ${data.score}/${data.totalQuestions})`);
+      const label = data.judgmentStatus === 'partial' ? 'Partially correct'
+        : data.judgmentStatus === 'ungraded' ? 'Grading pending'
+        : data.isCorrect ? 'Correct!' : 'Incorrect';
+      addEvent(`${label} (Points: ${data.score}/${data.totalQuestions})`);
       setTestScore(data.score);
       setTestAnswer('');
       recordEvidenceAnswerSubmitted('test', data);
@@ -6844,11 +6922,14 @@ function SessionPageV2Inner() {
     phase.on('questionSkipped', (data) => {
       addEvent(`â­ï¸ Skipped (Score: ${data.score}/${data.totalQuestions})`);
       setTestAnswer('');
+      recordEvidenceAnswerSubmitted('test', data);
+      recordMasteryCheckResult('test', data);
     });
     
     phase.on('testQuestionsComplete', (data) => {
       console.log('[SessionPageV2] testQuestionsComplete event received:', data);
-      addEvent(`ðŸ“Š Test questions done! Score: ${data.score}/${data.totalQuestions} (${data.percentage}%) - Grade: ${data.grade}`);
+      addEvent(data.percentage == null ? 'Test answers recorded. Grade pending review.' : `Test questions done! ${data.score}/${data.totalQuestions} points (${data.percentage}%)`);
+      testGradeRef.current = data;
       setTestGrade(data);
       console.log('[SessionPageV2] Setting testState to reviewing');
       setTestState('reviewing');
@@ -6878,6 +6959,14 @@ function SessionPageV2Inner() {
         }
       }
     });
+    // Resuming an already-answered Test enters review without re-emitting
+    // testQuestionsComplete. Restore the identical score and item judgments.
+    phase.on('reviewStart', () => {
+      const restored = phase.getResults();
+      testGradeRef.current = restored;
+      setTestGrade(restored);
+      setTestState('reviewing');
+    });
     phase.on('reviewQuestion', (data) => {
       console.log('[SessionPageV2] reviewQuestion event received:', data);
       setTestReviewAnswer(data.answer);
@@ -6885,9 +6974,11 @@ function SessionPageV2Inner() {
       addEvent(`ðŸ“– Review ${data.reviewIndex + 1}/${data.totalReviews}`);
     });
     
-    phase.on('testComplete', (data) => {
+    phase.on('testComplete', async (data) => {
+      testGradeRef.current = data;
+      setTestGrade(data);
       clearSonomaResponseTurn('test');
-      addEvent(`ðŸŽ‰ Test complete! Final grade: ${data.grade} (${data.percentage}%)`);
+      addEvent(data.percentage == null ? 'Test complete. Grade pending review.' : `Test complete. Final grade: ${data.grade} (${data.percentage}%)`);
       setTestState('complete');
       
       // Complete work phase timer
@@ -6908,19 +6999,27 @@ function SessionPageV2Inner() {
         }
       }
       
-      // Save snapshot
+      // Allow Closing even if the final snapshot request stalls.
+      // Each preceding answer has already requested its own checkpoint.
       if (snapshotServiceRef.current) {
-        snapshotServiceRef.current.savePhaseCompletion('test', {
-          score: data.score,
-          totalQuestions: data.totalQuestions,
-          percentage: data.percentage,
-          grade: data.grade,
-          answers: data.answers
-        }).then(() => {
-          addEvent('ðŸ’¾ Saved test progress');
-        }).catch(err => {
-          console.error('[SessionPageV2] Save test error:', err);
-        });
+        let saveTimeoutId = null;
+        try {
+          const saved = await Promise.race([
+            snapshotServiceRef.current.savePhaseCompletion('test', {
+              score: data.score, totalQuestions: data.totalQuestions,
+              percentage: data.percentage, grade: data.grade, answers: data.answers,
+            }),
+            new Promise(resolve => {
+              saveTimeoutId = setTimeout(() => resolve(null), 5000);
+            }),
+          ]);
+          if (saved && saved.success !== false) addEvent('Saved Test result.');
+          else console.warn('[SessionPageV2] Final Test snapshot pending or unavailable; continuing with recorded evidence.');
+        } catch (error) {
+          console.warn('[SessionPageV2] Test snapshot save failed; the lesson can still complete.', error);
+        } finally {
+          if (saveTimeoutId != null) clearTimeout(saveTimeoutId);
+        }
       }
       
       // Notify orchestrator
@@ -7004,6 +7103,7 @@ function SessionPageV2Inner() {
     const ref = refMap[phaseName];
     const starter = startMap[phaseName];
     if (!ref || !starter) return false;
+    if (phaseName === 'test' && testRephraseRequestRef.current) return false;
     if (ref.current) return true;
     if (!learnerProfile) return false;
 
@@ -8382,32 +8482,69 @@ function SessionPageV2Inner() {
     );
   }
   
-  // Layout wrapper style: side-by-side in landscape, stacked in portrait
-  const videoEffectiveHeight = (videoMaxHeight && Number.isFinite(videoMaxHeight)) ? videoMaxHeight : null;
-  const msSideBySideH = videoEffectiveHeight ? `${videoEffectiveHeight}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto');
-
-  // In mobile landscape, the phase timeline is absolutely positioned so it does not add to page height.
-  // IMPORTANT: The fixed HeaderBar already reserves its own space in the document flow, so the timeline
-  // should sit at the top of the content area (no extra top offset). We reserve vertical space by padding
-  // the content BELOW the timeline (not by pushing the timeline down).
+  // Side-by-side video and transcript share the exact height left above the
+  // footer; landscape keyboard use no longer activates the old collapse ramp.
   const timelineLandscapeTop = '0px';
   const timelineLandscapeHeight = 'clamp(40px, 6vh, 56px)';
-  
   const mainLayoutStyle = isMobileLandscape
-    ? { display: 'flex', alignItems: 'stretch', width: '100%', height: typingViewport.keyboardVisible && typingViewport.visualHeight ? `${typingViewport.visualHeight}px` : '100dvh', overflow: 'hidden', background: '#ffffff', paddingBottom: 4, paddingTop: `calc(${timelineLandscapeHeight} + 12px)`, '--msSideBySideH': msSideBySideH }
-    : { display: 'flex', flexDirection: 'column', width: '100%', minHeight: '100vh', background: '#ffffff' };
-  
+    ? {
+        display: 'flex',
+        alignItems: 'stretch',
+        width: '100%',
+        height: landscapeMediaHeight === null ? 'calc(100dvh - 160px)' : `${landscapeMediaHeight}px`,
+        boxSizing: 'content-box',
+        overflow: 'hidden',
+        background: '#ffffff',
+        paddingTop: `calc(${timelineLandscapeHeight} + 12px)`,
+      }
+    : {
+        display: 'flex',
+        flexDirection: 'column',
+        width: '100%',
+        minHeight: '100vh',
+        boxSizing: 'border-box',
+        background: '#ffffff',
+        // Preserve the portrait video/transcript heights; scroll above the raised
+        // input bar instead of swapping to a tiny typing-only layout.
+        paddingBottom: `${footerHeight + keyboardClearance + 12}px`,
+      };
+
   const videoWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${videoColPercent}%`, position: 'relative', overflow: 'visible', background: 'transparent', minWidth: 0, minHeight: 0, height: 'var(--msSideBySideH)', display: 'flex', flexDirection: 'column' }
+    ? {
+        flex: '1 1 50%',
+        position: 'relative',
+        overflow: 'visible',
+        background: 'transparent',
+        minWidth: 0,
+        minHeight: 0,
+        height: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+      }
     : { position: 'relative', width: '100%', margin: '0 auto' };
-  
-  // Dynamic height style: in landscape with videoMaxHeight, override aspectRatio with explicit height
-  const dynamicHeightStyle = (isMobileLandscape && videoMaxHeight) ? { maxHeight: videoMaxHeight, height: videoMaxHeight, minHeight: 0 } : {};
-  
+
   const videoInnerStyle = isMobileLandscape
-    ? { position: 'relative', overflow: 'hidden', aspectRatio: '16 / 7.2', minHeight: 200, width: '100%', background: '#000', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', ...dynamicHeightStyle }
-    : { position: 'relative', overflow: 'hidden', height: '35vh', width: '92%', margin: '0 auto', borderRadius: 12, boxShadow: '0 2px 16px rgba(0,0,0,0.12)', background: '#000' };
-  
+    ? {
+        position: 'relative',
+        overflow: 'hidden',
+        height: '100%',
+        minHeight: 0,
+        width: '100%',
+        background: '#000',
+        borderRadius: 12,
+        boxShadow: '0 2px 16px rgba(0,0,0,0.12)',
+      }
+    : {
+        position: 'relative',
+        overflow: 'hidden',
+        height: '35vh',
+        width: '92%',
+        margin: '0 auto',
+        borderRadius: 12,
+        boxShadow: '0 2px 16px rgba(0,0,0,0.12)',
+        background: '#000',
+      };
+
   // Tour and phase-specific question progress occupy separate rows in one corner.
   // The stack is inside the video, not above the objective or answer footer.
   const videoQuestionCounterStyle = {
@@ -8426,8 +8563,8 @@ function SessionPageV2Inner() {
   };
 
   const transcriptWrapperStyle = isMobileLandscape
-    ? { flex: `0 0 ${100 - videoColPercent}%`, display: 'flex', flexDirection: 'column', overflow: 'visible', minWidth: 0, minHeight: 0, background: 'transparent', height: 'var(--msSideBySideH)', maxHeight: 'var(--msSideBySideH)' }
-    : { flex: '1 1 auto', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', paddingLeft: '4%', paddingRight: '4%', paddingBottom: 'calc(68px + env(safe-area-inset-bottom, 0px))', marginTop: 8 };
+    ? { flex: '1 1 50%', display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0, minHeight: 0, background: 'transparent', height: '100%', maxHeight: '100%' }
+    : { flex: '1 0 auto', minHeight: stackedCaptionHeight || '35vh', display: 'flex', flexDirection: 'column', overflow: 'auto', background: '#ffffff', paddingLeft: '4%', paddingRight: '4%', paddingBottom: 8, marginTop: 8 };
   
   return (
     <>
@@ -8548,7 +8685,7 @@ function SessionPageV2Inner() {
             {((currentPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
               (currentPhase === 'test' && testState === 'awaiting-answer')) && (
               <div style={videoQuestionCounterStyle}>
-                Question {currentPhase === 'worksheet' ? (worksheetScore + 1) : (testScore + 1)}/{currentPhase === 'worksheet' ? worksheetTotalQuestions : testTotalQuestions}
+                Question {currentPhase === 'worksheet' ? (worksheetScore + 1) : (testQuestionIndex + 1)}/{currentPhase === 'worksheet' ? worksheetTotalQuestions : testTotalQuestions}
               </div>
             )}
           </div>
@@ -8857,6 +8994,7 @@ function SessionPageV2Inner() {
             goldenKeysEnabled={goldenKeysEnabled !== false}
             onOverrideAnswer={handleTestOverrideAnswer}
             onCompleteReview={skipTestReview}
+            openReviewKeyboard={openSonomaTextInput}
             isMobileLandscape={isMobileLandscape}
             isMobilePortrait={!isMobileLandscape && (typeof window !== 'undefined' ? window.innerWidth <= 768 : false)}
             footerHeight={footerHeight}
@@ -8884,6 +9022,8 @@ function SessionPageV2Inner() {
             sentences={transcriptLines}
             activeIndex={activeCaptionIndex}
             boxRef={transcriptRef}
+            keyboardActive={Boolean(sonomaKeyboard.active)}
+            keyboardHeight={keyboardClearance}
             fullHeight={isMobileLandscape}
             stackedHeight={isMobileLandscape ? '100%' : (stackedCaptionHeight || null)}
             phase={currentPhase}
@@ -8911,7 +9051,7 @@ function SessionPageV2Inner() {
         position: 'fixed',
         left: 0,
         right: 0,
-        bottom: typingViewport.keyboardVisible ? `${typingViewport.keyboardInset}px` : 0,
+        bottom: keyboardClearance,
         zIndex: 999,
         background: '#ffffff',
         borderTop: '1px solid #e5e7eb',
@@ -8919,7 +9059,7 @@ function SessionPageV2Inner() {
       }}>
         <TypingConversationContext
           entries={transcriptLines}
-          visible={typingViewport.keyboardVisible}
+          visible={!sonomaKeyboard.active && typingViewport.keyboardVisible}
           maxItems={6}
           teacherLabel="Ms. Sonoma"
           accent="#c7442e"
@@ -9182,6 +9322,9 @@ function SessionPageV2Inner() {
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
                 <input
                   ref={openingActionInputRef}
+                  data-sonoma-input
+                  inputMode="none"
+                  onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                   type="text"
                   value={openingActionInput}
                   onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -9214,6 +9357,9 @@ function SessionPageV2Inner() {
                       <div style={{ flex: '1 1 220px', minWidth: 0 }}>
                         <input
                           ref={openingActionInputRef}
+                  data-sonoma-input
+                  inputMode="none"
+                  onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                           type="text"
                           value={openingActionInput}
                           onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -9322,6 +9468,9 @@ function SessionPageV2Inner() {
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                         <input
                           ref={openingActionInputRef}
+                  data-sonoma-input
+                  inputMode="none"
+                  onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                           type="text"
                           value={openingActionInput}
                           onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -9423,6 +9572,9 @@ function SessionPageV2Inner() {
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                           <input
                             ref={openingActionInputRef}
+                  data-sonoma-input
+                  inputMode="none"
+                  onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                             type="text"
                             value={openingActionInput}
                             onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -9469,6 +9621,9 @@ function SessionPageV2Inner() {
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                       <input
                         ref={openingActionInputRef}
+                  data-sonoma-input
+                  inputMode="none"
+                  onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                         type="text"
                         value={openingActionInput}
                         onChange={(e) => setOpeningActionInput(e.target.value)}
@@ -10025,10 +10180,11 @@ function SessionPageV2Inner() {
                         style={{
                           background: '#1f2937', color: '#fff', border: 'none',
                           borderRadius: 8, padding: '8px 12px', minHeight: 40,
-                          minWidth: 56, fontWeight: 800, cursor: 'pointer',
+                          minWidth: 56, maxWidth: '100%', fontWeight: 800, cursor: 'pointer',
+                          textAlign: mc ? 'left' : 'center', whiteSpace: 'normal', overflowWrap: 'anywhere',
                           boxShadow: '0 2px 6px rgba(0,0,0,0.18)',
                         }}
-                      >{choice.label}</button>
+                      >{mc ? `${choice.label}. ${choice.value}` : choice.label}</button>
                     ))}
                   </div>
                 );
@@ -10037,6 +10193,9 @@ function SessionPageV2Inner() {
                 type="text"
                 placeholder="Type your answer..."
                 value={selectedExerciseAnswer}
+                data-sonoma-input
+                inputMode="none"
+                onPointerDown={(event) => openSonomaTextInput(event, setSelectedExerciseAnswer)}
                 style={{
                   flex: 1,
                   padding: '10px 16px',
@@ -10107,6 +10266,8 @@ function SessionPageV2Inner() {
                 type="text"
                 placeholder="Share your thoughts..."
                 value={discussionResponse}
+                data-sonoma-input
+                inputMode="none"
                 style={{
                   flex: 1,
                   padding: '10px 16px',
@@ -10118,7 +10279,7 @@ function SessionPageV2Inner() {
                   color: '#111827',
                 }}
                 onFocus={noteSonomaLearnerActivity}
-                onPointerDown={noteSonomaLearnerActivity}
+                onPointerDown={(event) => { noteSonomaLearnerActivity(); openSonomaTextInput(event, setDiscussionResponse); }}
                 onChange={(e) => { setDiscussionResponse(e.target.value); noteSonomaLearnerActivity(); }}
                 onKeyDown={(e) => {
                   if (e.key === 'Enter' && !e.shiftKey) {
@@ -10347,7 +10508,7 @@ function SessionPageV2Inner() {
                             <button
                               key={letter}
                               type="button"
-                              style={quickButtonStyle}
+                              style={{ ...quickButtonStyle, maxWidth: '100%', whiteSpace: 'normal', overflowWrap: 'anywhere', textAlign: 'left' }}
                               onClick={() => {
                                 setValue(val);
                                 if (qaPhase === 'comprehension') {
@@ -10365,7 +10526,7 @@ function SessionPageV2Inner() {
                                 }
                               }}
                             >
-                              {letter}
+                              {letter + '. ' + (options[idx]?.value || '')}
                             </button>
                           );
                         });
@@ -10405,6 +10566,8 @@ function SessionPageV2Inner() {
                     </button>
                     <input
                       ref={answerInputRef}
+                      data-sonoma-input
+                      inputMode="none"
                       type="text"
                       placeholder="Type your answer..."
                       value={currentValue}
@@ -10419,7 +10582,7 @@ function SessionPageV2Inner() {
                         color: '#111827'
                       }}
                       onFocus={noteSonomaLearnerActivity}
-                      onPointerDown={noteSonomaLearnerActivity}
+                      onPointerDown={(event) => { noteSonomaLearnerActivity(); openSonomaTextInput(event, setValue); }}
                       onChange={(e) => { setValue(e.target.value); noteSonomaLearnerActivity(); }}
                       onKeyDown={(e) => {
                         if (e.key === 'Enter') {

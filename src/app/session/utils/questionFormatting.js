@@ -52,6 +52,10 @@ export function isTrueFalse(item) {
     if (sourceType === 'tf' || qType === 'tf') return true;
     if (/^(true\s*\/\s*false|truefalse|tf)$/i.test(typeField)) return true;
     if (/^(true\s*\/\s*false|truefalse|tf)$/i.test(qType)) return true;
+    // An explicit MC, blank, or short-answer format overrides the fallback
+    // answer-text heuristic, even when that answer happens to be "true".
+    if ([sourceType, typeField, qType].some((kind) =>
+      /^(mc|multiplechoice|multiple.choice|fib|fill|fillintheblank|short|shortanswer)$/.test(kind))) return false;
     // Heuristic: treat as TF when expected/answer is literally true/false
     const exp = String((item?.expected ?? item?.answer) ?? '').trim().toLowerCase();
     if (exp === 'true' || exp === 'false') return true;

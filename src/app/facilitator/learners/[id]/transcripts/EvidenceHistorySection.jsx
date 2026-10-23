@@ -245,6 +245,46 @@ function EvidenceCard({ report, transcripts, onOpenTranscript }) {
         </div>
       )}
 
+      {report.test_report?.items?.length > 0 && (
+        <details className={styles.contextBlock}>
+          <summary><strong>Test grading report ({report.test_report.items.length} questions)</strong></summary>
+          <p>
+            {report.test_report.incomplete
+              ? `Evidence incomplete: ${report.test_report.observedCount} evaluated answer(s)${report.test_report.expectedCount == null ? '; total unknown' : ` of ${report.test_report.expectedCount}`}. No score has been inferred from this subset.`
+              : report.test_report.derivedPercentage == null
+                ? 'Grade pending review'
+                : `${report.test_report.score.points} of ${report.test_report.expectedCount} points · ${report.test_report.derivedPercentage}%`}
+          </p>
+          {report.test_report.scoreMismatch && (
+            <p role="note">
+              <strong>Recorded score discrepancy:</strong> The completion history saved
+              {' '}{report.test_report.recordedPercentage}%, while the stored question decisions total
+              {' '}{report.test_report.derivedPercentage}%. The original evidence has not been silently regraded.
+            </p>
+          )}
+          {report.test_report.legacy && (
+            <p role="note">Historical grading lacks explanations for one or more decisions. Those decisions have not been independently rejudged.</p>
+          )}
+          <ol>
+            {report.test_report.items.map(item => (
+              <li key={item.index} style={{ marginBottom: 14 }}>
+                <strong>{item.question || `Question ${item.index + 1}`}</strong>
+                <p>Answer: {item.answer || '(No answer recorded)'}</p>
+                <p>Original judgment: {item.originalStatus || 'ungraded'}.
+                  {item.originalReason ? ` ${item.originalReason}` : ' No original explanation saved.'}
+                </p>
+                {item.reviews.length > 0 && (
+                  <p><strong>Facilitator revisions:</strong> {item.reviews.map((entry, i) =>
+                    `${i + 1}. ${entry.status} — ${entry.reason} (${entry.reviewedAt || 'time unavailable'})`
+                  ).join(' | ')}</p>
+                )}
+                {item.referenceAnswer && <p>Reference answer: {item.referenceAnswer}</p>}
+              </li>
+            ))}
+          </ol>
+        </details>
+      )}
+
       {(report.interventions || []).length > 0 && (
         <section className={styles.contextBlock} aria-label="Facilitator context">
           <h4>Facilitator context</h4>

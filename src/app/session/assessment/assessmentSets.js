@@ -61,6 +61,12 @@ function questionKey(question) {
   return (question?.prompt || question?.question || question?.Q || question?.q || '').toString().trim().toLowerCase()
 }
 
+// Only the Test deck uses this stronger normalized key; the instructional
+// question-selection strategy is unchanged.
+function testQuestionKey(question) {
+  return questionKey(question).replace(/\s+/g, ' ').replace(/[.!?]+$/, '').trim()
+}
+
 function shuffle(items, random) {
   const copy = [...items]
   for (let index = copy.length - 1; index > 0; index -= 1) {
@@ -129,13 +135,45 @@ export function buildAssessmentPhaseSets({ lessonData, targets = {}, random = Ma
 
   const buildReservedTestPhase = () => {
     if (!reservedTestSource.length) return buildPhase(testTarget)
-    return dealPhase(reservedTestSource, testTarget).map((question, index) => ({
+    const shuffled = shuffle(reservedTestSource, random)
+    const picked = []
+    const pickedKeys = new Set()
+    const take = (question) => {
+      const key = testQuestionKey(question)
+      if (!key || pickedKeys.has(key) || picked.length >= testTarget) return
+      pickedKeys.add(key)
+      picked.push(question)
+    }
+
+    // Honor existing objective mapping before adding other unique held-out items.
+    const objectives = Array.isArray(lessonData.learningObjectives) ? lessonData.learningObjectives : []
+    for (const objective of objectives) {
+      const item = shuffled.find((candidate) =>
+        String(candidate?.objectiveId || candidate?.objective_id || '') === String(objective?.id || '')
+        && !pickedKeys.has(testQuestionKey(candidate)))
+      if (item) take(item)
+    }
+    // Prefer varied formats if the lesson already contains them in its Test pool.
+    const testKind = (item) => {
+      const type = String(item?.sourceType || item?.type || item?.questionType || '').toLowerCase()
+      if (type === 'tf' || type === 'truefalse' || typeof item?.answer === 'boolean') return 'tf'
+      if (Array.isArray(item?.choices) && item.choices.length >= 2 || Array.isArray(item?.options) && item.options.length >= 2) return 'mc'
+      if (type === 'fib' || /_{3,}/.test(testQuestionKey(item))) return 'fib'
+      return 'short'
+    }
+    for (const kind of ['mc', 'tf', 'fib']) {
+      const item = shuffled.find((candidate) => testKind(candidate) === kind
+        && !pickedKeys.has(testQuestionKey(candidate)))
+      if (item) take(item)
+    }
+    for (const question of shuffled) take(question)
+    return picked.map((question, index) => ({
       ...question,
       assessmentRole: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
       assessment_role: ASSESSMENT_ROLES.ASSESSMENT_RESERVED,
       sourceRole: question.sourceRole || 'test',
       evidence_purpose: question.evidence_purpose || 'test',
-      number: question.number || index + 1,
+      number: index + 1,
     }))
   }
 
