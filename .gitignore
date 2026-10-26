@@ -64,6 +64,8 @@ public/media/ms-sonoma.mp4
 # Local QA reports, backups, and working copies (not application source)
 /artifacts/
 /.deploy-webb-timers/
+# Isolated Vercel release snapshots are local artifacts, not application source
+/.deploy-*/
 /modules/structured-generation/
 
 # Local CLI caches and temporary Git/development output

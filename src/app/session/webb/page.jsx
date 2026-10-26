@@ -5,9 +5,11 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import WebbWritingStudio from './WebbWritingStudio'
 import WebbResponseTimer from './WebbResponseTimer'
 import WebbDictationButton from './WebbDictationButton'
+import { isMicrophoneCapturing } from '../utils/microphoneSession'
 import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
 import TimerControlOverlay from '../components/TimerControlOverlay'
-import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
+import { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
+import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
 import FeatureHelpToast from '../components/FeatureHelpToast'
 import WebbBackgroundMusicControl from './WebbBackgroundMusicControl'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
@@ -163,7 +165,7 @@ const VIDEO_TROUBLE_MSG = "Oh, I think I might know what's happening! 📺 A bla
 function WebbPageInner() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const typingViewport = useTypingViewport({ preserveTouchFocus: true, blurDelayMs: 350 })
+  const sonomaKeyboard = useSonomaKeyboard()
   const routeLearnerId = searchParams?.get('learnerId') || ''
   const routeOccurrenceId = searchParams?.get('occurrenceId') || ''
 
@@ -187,6 +189,29 @@ function WebbPageInner() {
   const [activeIndex, setActiveIndex]       = useState(-1)
   const [chatLoading, setChatLoading]       = useState(false)
   const transcriptRef                       = useRef(null)
+  const transcriptManualScrollRef = useRef(false)
+  useEffect(() => {
+    const el = transcriptRef.current
+    if (!el) return
+    let frame = null
+    const follow = () => {
+      if (transcriptManualScrollRef.current) return
+      if (frame !== null) cancelAnimationFrame(frame)
+      frame = requestAnimationFrame(() => {
+        frame = null
+        if (el.isConnected && !transcriptManualScrollRef.current) el.scrollTop = el.scrollHeight - el.clientHeight
+      })
+    }
+    follow()
+    const resizeObserver = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(follow) : null
+    resizeObserver?.observe(el)
+    window.addEventListener('resize', follow)
+    return () => {
+      if (frame !== null) cancelAnimationFrame(frame)
+      resizeObserver?.disconnect()
+      window.removeEventListener('resize', follow)
+    }
+  }, [sonomaKeyboard.keyboardHeight, transcript.length, objectives.length, phase])
 
   // ── Research objectives ──────────────────────────────────────────────
   const [objectives,         setObjectives]        = useState([])  // string[]
@@ -1560,7 +1585,7 @@ function WebbPageInner() {
         || !!webbOwnershipEndedReason
         || !!current.pauseStartedAt
       if (interactionBlocked) return
-      if (Date.now() - lastLearnerActivityRef.current < 8000) return
+      if (isMicrophoneCapturing() || Date.now() - lastLearnerActivityRef.current < 60000) return
       if (current.escalated && Number(current.reminderStage || 0) >= 5) {
         if (!current.notificationDelivered) void deliverWebbEscalationNotification(current, elapsed)
         return
@@ -2480,6 +2505,8 @@ function WebbPageInner() {
             notes: isWritingReadyNote(learnerNotesRef.current[slotIndex]) ? [learnerNotesRef.current[slotIndex]] : [],
           }
         : { objectives: [], notes: [] })
+    const sourceObjectiveIndex = slot.sourceObjectiveIndices?.length === 1 ? slot.sourceObjectiveIndices[0] : null
+    const sourceObjective = sourceObjectiveIndex !== null ? (objectives[sourceObjectiveIndex] || '') : ''
     if (slot.role === 'body' && slot.sourceObjectiveIndices?.length && !slotSource.notes.length) return
     finishWebbResponseTurn(trimmed, 'writing-submitted')
     const totalSentences = activePlan?.slots?.length || objectives.length
@@ -2514,19 +2541,19 @@ function WebbPageInner() {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           action: 'check-writing', slot,
-          controllingIdea: activePlan?.controllingIdea || objectives[slotIndex] || '',
+          controllingIdea: activePlan?.controllingIdea || sourceObjective || objectives[slotIndex] || '',
           sourceObjectives: slotSource.objectives,
           sourceNotes: slotSource.notes,
           text: trimmed, lesson: selectedLesson, priorSentences,
-          objective: objectives[slotIndex] || '', note: slotSource.notes.map(note => note.text).join(' '),
-          objectiveIndex: slotIndex, totalObjectives: totalSentences,
+          objective: sourceObjective || objectives[slotIndex] || '', note: slotSource.notes.map(note => note.text).join(' '),
+          objectiveIndex: sourceObjectiveIndex ?? slotIndex, totalObjectives: totalSentences,
         }),
       })
       if (!evaluationRes.ok) throw new Error('Writing evaluation failed')
       const evaluation = await evaluationRes.json()
       if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
       const attempt = createWritingAttempt({
-        objectiveIndex: slot.sourceObjectiveIndices?.length === 1 ? slot.sourceObjectiveIndices[0] : null,
+        objectiveIndex: sourceObjectiveIndex,
         slotIndex, slotId: slot.id, slotRole: slot.role,
         text: trimmed, message: userMsg,
         accuracy: evaluation.accuracy, sentenceOk: evaluation.sentenceOk,
@@ -3641,7 +3668,7 @@ function WebbPageInner() {
   const videoEffH = videoMaxHeight && Number.isFinite(videoMaxHeight) ? videoMaxHeight : null
   const msSBSH    = videoEffH ? `${videoEffH}px` : (sideBySideHeight ? `${sideBySideHeight}px` : 'auto')
 
-  const keyboardCompact = typingViewport.typing
+  const keyboardCompact = sonomaKeyboard.keyboardHeight > 0
   const mainLayoutStyle = keyboardCompact
     ? (isMobileLandscape
       ? { display: 'flex', alignItems: 'stretch', flex: '1 1 0', minHeight: 0, overflow: 'hidden', background: '#fff', paddingLeft: 4, paddingRight: 4, boxSizing: 'border-box' }
@@ -3794,8 +3821,8 @@ function WebbPageInner() {
   const currentWritingSource = currentWritingSlot
     ? compositionSlotSource(currentWritingSlot, objectives, learnerNotes)
     : { objectives: objectives[writingIndex] ? [{ objectiveIndex: writingIndex, objective: objectives[writingIndex] }] : [], notes: learnerNotes[writingIndex] ? [learnerNotes[writingIndex]] : [] }
-  const currentWritingNote = currentWritingSource.notes?.[0] || learnerNotes[writingIndex] || null
-  const currentWritingObjective = currentWritingSource.objectives?.[0]?.objective || objectives[writingIndex] || ''
+  const currentWritingNote = currentWritingSource.notes?.[0] || (!activeWritingPlan ? learnerNotes[writingIndex] : null) || null
+  const currentWritingObjective = currentWritingSource.objectives?.[0]?.objective || (!activeWritingPlan ? objectives[writingIndex] : '') || ''
   const currentWritingUsesResearchNote = !currentWritingSlot || currentWritingSlot.role === 'body'
   const currentWritingObjectivePrompt = currentWritingUsesResearchNote
     ? (String(currentWritingNote?.objectivePrompt || '').trim() || currentWritingObjective)
@@ -3839,12 +3866,12 @@ function WebbPageInner() {
   // ── Render ────────────────────────────────────────────────────────────
   return (
     <div data-ms-webb-chat-compact={keyboardCompact ? 'true' : 'false'} style={{
-      ...(typingViewport.typing && typingViewport.visualHeight ? {
+      ...(keyboardCompact ? {
         position: 'fixed',
-        top: typingViewport.offsetTop,
-        left: typingViewport.offsetLeft,
-        width: typingViewport.visualWidth || '100%',
-        height: typingViewport.visualHeight,
+        top: 0,
+        left: 0,
+        width: '100%',
+        height: `calc(100dvh - ${sonomaKeyboard.keyboardHeight}px)`,
         right: 'auto',
         bottom: 'auto',
       } : { width: '100%', height: '100dvh' }),
@@ -4142,6 +4169,9 @@ function WebbPageInner() {
           {isChatting && (
             <div
               ref={transcriptRef}
+              onTouchStart={() => { transcriptManualScrollRef.current = true }}
+              onWheel={() => { transcriptManualScrollRef.current = true }}
+              onScroll={(event) => { const el = event.currentTarget; if (el.scrollHeight - el.clientHeight - el.scrollTop <= 6) transcriptManualScrollRef.current = false }}
               data-ms-webb-transcript
               style={{
                 flex: '1 1 0', minHeight: 0,
@@ -5148,6 +5178,7 @@ function WebbLessonBrowser({
 
 // ── StudentInput ──────────────────────────────────────────────────────────────
 function StudentInput({ onSend, onActivity, loading, compact = false }) {
+  const sonomaKeyboard = useSonomaKeyboard()
   const [value, setValue] = useState('')
   const ref = useRef(null)
 
@@ -5175,6 +5206,9 @@ function StudentInput({ onSend, onActivity, loading, compact = false }) {
       />
       <textarea
         ref={ref}
+        data-sonoma-input
+        inputMode="none"
+        onPointerDown={(event) => sonomaKeyboard.open({ ref: { current: event.currentTarget }, layout: 'text', theme: { label: 'Mrs. Webb Keyboard', accent: '#0d9488', background: '#e4f2f0' }, onChange: (next) => { onActivity?.(); setValue(next.slice(0, 400)) } })}
         rows={compact ? 1 : 2}
         value={value}
         disabled={loading}

@@ -45,26 +45,29 @@ const PLAN = {
   ],
 }
 
-test('new composition plan is a deterministic one-to-one projection of the objective blueprint', () => {
+test('new composition plan adds structural framing around every objective-derived body sentence', () => {
   const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes)
   assert.equal(plan.protocolVersion, WEBB_COMPOSITION_PROTOCOL_VERSION)
   assert.deepEqual(compositionPlanViolations(plan, OBJECTIVES.length), [])
-  assert.equal(plan.slots.length, OBJECTIVES.length)
-  assert.deepEqual(plan.slots.map(slot => slot.sourceObjectiveIndices), OBJECTIVES.map((_, index) => [index]))
+  assert.equal(plan.slots.length, OBJECTIVES.length + 2)
   assert.equal(plan.slots[0].role, 'topic')
   assert.equal(plan.slots.at(-1).role, 'conclusion')
+  assert.deepEqual(plan.slots[0].sourceObjectiveIndices, [])
+  assert.deepEqual(plan.slots.at(-1).sourceObjectiveIndices, [])
+  assert.deepEqual(plan.slots.slice(1, -1).map(slot => slot.sourceObjectiveIndices), OBJECTIVES.map((_, index) => [index]))
   assert.ok(plan.slots.slice(1, -1).every(slot => slot.role === 'body'))
 })
 
-test('topic and conclusion are structural while body slots expose their learner notes', () => {
+test('topic and conclusion are structural while every body slot exposes its learner note', () => {
   const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes)
   assert.deepEqual(compositionSlotSource(plan.slots[0], OBJECTIVES, learnerNotes), { objectives: [], notes: [] })
   assert.deepEqual(compositionSlotSource(plan.slots.at(-1), OBJECTIVES, learnerNotes), { objectives: [], notes: [] })
-  for (let index = 1; index < plan.slots.length - 1; index += 1) {
-    const source = compositionSlotSource(plan.slots[index], OBJECTIVES, learnerNotes)
-    assert.deepEqual(source.objectives.map(row => row.objectiveIndex), [index])
-    assert.deepEqual(source.notes.map(row => row.text), [learnerNotes[index].text])
-    if (index === 2) {
+  for (let slotIndex = 1; slotIndex < plan.slots.length - 1; slotIndex += 1) {
+    const objectiveIndex = slotIndex - 1
+    const source = compositionSlotSource(plan.slots[slotIndex], OBJECTIVES, learnerNotes)
+    assert.deepEqual(source.objectives.map(row => row.objectiveIndex), [objectiveIndex])
+    assert.deepEqual(source.notes.map(row => row.text), [learnerNotes[objectiveIndex].text])
+    if (objectiveIndex === 2) {
       assert.equal(source.notes[0].objectivePrompt, 'What is one example of an artifact?')
       assert.equal(source.notes[0].objectivePromptSourceMessageId, 'a2')
     }
@@ -111,6 +114,92 @@ test('resume uses composition slots rather than mastery-objective count', () => 
   assert.equal(nextCompositionSlotIndex(restored.compositionPlan, restored.acceptedSentences), 4)
 })
 
+test('v2 in-progress essays migrate without losing accepted prose and restore the two displaced objective sentences', () => {
+  const previousPlan = {
+    protocolVersion: 'webb-composition-v2-objective-blueprint',
+    controllingIdea: OBJECTIVES[0],
+    slots: OBJECTIVES.map((objective, index) => ({
+      id: 'objective-' + (index + 1),
+      role: index === 0 ? 'topic' : (index === OBJECTIVES.length - 1 ? 'conclusion' : 'body'),
+      focus: objective,
+      connection: 'previous objective-position writing',
+      sourceObjectiveIndices: [index],
+    })),
+  }
+  const acceptedSentences = {
+    0: { text: 'Old topic sentence.', provenance: 'learner-message', objectiveIndex: 0, slotIndex: 0, slotId: 'objective-1', slotRole: 'topic' },
+    1: { text: 'Old body from objective two.', provenance: 'learner-message', objectiveIndex: 1, slotIndex: 1, slotId: 'objective-2', slotRole: 'body' },
+    2: { text: 'Old body from objective three.', provenance: 'learner-message', objectiveIndex: 2, slotIndex: 2, slotId: 'objective-3', slotRole: 'body' },
+    6: { text: 'Old conclusion sentence.', provenance: 'learner-message', objectiveIndex: 6, slotIndex: 6, slotId: 'objective-7', slotRole: 'conclusion' },
+  }
+  const restored = restoreWebbCompositionState({
+    webbStage: WEBB_SESSION_STAGES.WRITING,
+    writingMode: true,
+    writingIndex: 6,
+    writingSubphase: 'committed',
+    compositionPlan: previousPlan,
+    learnerNotes,
+    acceptedSentences,
+    writingAttempts: {
+      1: [{ text: 'Old body from objective two.', provenance: 'learner-message', objectiveIndex: 1, slotIndex: 1, slotId: 'objective-2', slotRole: 'body' }],
+    },
+  }, OBJECTIVES)
+
+  assert.equal(restored.compositionPlan.protocolVersion, WEBB_COMPOSITION_PROTOCOL_VERSION)
+  assert.equal(restored.compositionPlan.slots.length, OBJECTIVES.length + 2)
+  assert.equal(restored.acceptedSentences[0].text, 'Old topic sentence.')
+  assert.equal(restored.acceptedSentences[0].objectiveIndex, null)
+  assert.equal(restored.acceptedSentences[2].text, 'Old body from objective two.')
+  assert.equal(restored.acceptedSentences[2].objectiveIndex, 1)
+  assert.equal(restored.acceptedSentences[3].text, 'Old body from objective three.')
+  assert.equal(restored.acceptedSentences[8].text, 'Old conclusion sentence.')
+  assert.equal(restored.acceptedSentences[8].objectiveIndex, null)
+  assert.equal(restored.acceptedSentences[1], undefined)
+  assert.equal(restored.acceptedSentences[7], undefined)
+  assert.equal(restored.writingAttempts[2][0].slotIndex, 2)
+  assert.equal(restored.writingAttempts[2][0].objectiveIndex, 1)
+  assert.equal(restored.writingIndex, 1)
+  assert.equal(nextCompositionSlotIndex(restored.compositionPlan, restored.acceptedSentences), 1)
+})
+
+test('completed v2 essays remain historical artifacts and are not rewritten by the migration', () => {
+  const previousPlan = {
+    protocolVersion: 'webb-composition-v2-objective-blueprint',
+    controllingIdea: OBJECTIVES[0],
+    slots: OBJECTIVES.map((objective, index) => ({
+      id: 'objective-' + (index + 1),
+      role: index === 0 ? 'topic' : (index === OBJECTIVES.length - 1 ? 'conclusion' : 'body'),
+      focus: objective,
+      connection: 'previous objective-position writing',
+      sourceObjectiveIndices: [index],
+    })),
+  }
+  const acceptedSentences = Object.fromEntries(previousPlan.slots.map((slot, index) => [index, {
+    text: 'Historical learner sentence ' + (index + 1) + '.',
+    provenance: 'learner-message',
+    slotId: slot.id,
+    slotRole: slot.role,
+  }]))
+  const essay = Object.values(acceptedSentences).map(sentence => sentence.text).join(' ')
+  const restored = restoreWebbCompositionState({
+    webbStage: WEBB_SESSION_STAGES.ESSAY,
+    writingMode: false,
+    writingIndex: OBJECTIVES.length - 1,
+    writingSubphase: 'idle',
+    compositionPlan: previousPlan,
+    learnerNotes,
+    acceptedSentences,
+    writingAttempts: {},
+    essay,
+    essayMode: true,
+  }, OBJECTIVES)
+
+  assert.equal(restored.compositionPlan.protocolVersion, 'webb-composition-v2-objective-blueprint')
+  assert.equal(restored.compositionPlan.slots.length, OBJECTIVES.length)
+  assert.equal(restored.essay, essay)
+  assert.equal(Object.keys(restored.acceptedSentences).length, OBJECTIVES.length)
+})
+
 test('plan-writing no longer calls a second planner or merges, omits, or reorders learner notes', async () => {
   let modelCalls = 0
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
@@ -121,8 +210,10 @@ test('plan-writing no longer calls a second planner or merges, omits, or reorder
   assert.equal(modelCalls, 0)
   const data = await response.json()
   assert.equal(data.compositionPlan.protocolVersion, WEBB_COMPOSITION_PROTOCOL_VERSION)
-  assert.equal(data.compositionPlan.slots.length, OBJECTIVES.length)
-  assert.deepEqual(data.compositionPlan.slots.map(slot => slot.sourceObjectiveIndices), OBJECTIVES.map((_, index) => [index]))
+  assert.equal(data.compositionPlan.slots.length, OBJECTIVES.length + 2)
+  assert.deepEqual(data.compositionPlan.slots[0].sourceObjectiveIndices, [])
+  assert.deepEqual(data.compositionPlan.slots.slice(1, -1).map(slot => slot.sourceObjectiveIndices), OBJECTIVES.map((_, index) => [index]))
+  assert.deepEqual(data.compositionPlan.slots.at(-1).sourceObjectiveIndices, [])
 })
 test('writing evaluation deterministically rejects today-style repetition even if semantic evaluator says yes', async () => {
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
@@ -221,7 +312,7 @@ test('final paragraph coherence check never asks the model to rewrite learner pr
 })
 
 
-test('Emma October 6 regression: seven approved learner sentences make a complete essay without regrading earlier work', () => {
+test('Emma regression: every mastered objective remains a body sentence between separate topic and conclusion sentences', () => {
   const objectives = [
     'Maps help people understand a place.',
     'Physical maps show natural landforms.',
@@ -237,12 +328,14 @@ test('Emma October 6 regression: seven approved learner sentences make a complet
   const plan = buildWebbCompositionPlan(objectives, notes)
   const sentences = [
     "It's important to know about maps, regions, and human settlement.",
-    'a physical map shows natural features such as mountains, rivers, and plains.',
-    'climate is the usual pattern of weather in a place over a long time.',
-    'A house is made by people and a tree is made by nature',
-    'A region can have common features, but it could still be different landforms too',
-    'People may settle near water or coast',
-    "And that's why it's important to know about maps, regions, and human settlement.",
+    'Maps help people understand a place.',
+    'A physical map shows natural features such as mountains, rivers, and plains.',
+    'Climate is the usual pattern of weather in a place over a long time.',
+    'A house is made by people and a tree is made by nature.',
+    'A region can have common features, but it could still have different landforms too.',
+    'People may settle near water or a coast.',
+    'Migration and population density describe where and how people live.',
+    "And that's why maps, regions, and human settlement help us understand places.",
   ]
   const approved = Object.fromEntries(sentences.map((sentence, index) => [index, {
     text: sentence,
@@ -250,12 +343,18 @@ test('Emma October 6 regression: seven approved learner sentences make a complet
     sourceMessageId: 'writing-' + index,
     accepted: true, accuracy: 'correct', sentenceOk: true, positionFit: true, paragraphFit: true,
   }]))
+  assert.equal(plan.slots.length, objectives.length + 2)
+  assert.deepEqual(plan.slots.slice(1, -1).map(slot => slot.sourceObjectiveIndices[0]), objectives.map((_, index) => index))
   assert.equal(nextCompositionSlotIndex(plan, approved), -1)
   assert.equal(assembleWebbCompositionEssay(plan, approved), sentences.join(' '))
 
-  // This was the observed failure: final paragraph regrading deleted an already approved fourth sentence.
-  const afterOldFinalCheck = { ...approved }
-  delete afterOldFinalCheck[3]
-  assert.equal(nextCompositionSlotIndex(plan, afterOldFinalCheck), 3)
-  assert.equal(assembleWebbCompositionEssay(plan, afterOldFinalCheck), '')
+  const missingFirstObjectiveSentence = { ...approved }
+  delete missingFirstObjectiveSentence[1]
+  assert.equal(nextCompositionSlotIndex(plan, missingFirstObjectiveSentence), 1)
+  assert.equal(assembleWebbCompositionEssay(plan, missingFirstObjectiveSentence), '')
+
+  const missingFinalObjectiveSentence = { ...approved }
+  delete missingFinalObjectiveSentence[7]
+  assert.equal(nextCompositionSlotIndex(plan, missingFinalObjectiveSentence), 7)
+  assert.equal(assembleWebbCompositionEssay(plan, missingFinalObjectiveSentence), '')
 })

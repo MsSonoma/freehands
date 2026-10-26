@@ -1,4 +1,6 @@
-export const SONOMA_RESPONSE_PACING_THRESHOLDS_SECONDS = Object.freeze([45, 90, 150, 240, 300])
+// Match Mrs. Webb's default two-minute spacing for every reminder and escalation.
+export const SONOMA_RESPONSE_PACING_INTERVAL_SECONDS = 120
+export const SONOMA_RESPONSE_PACING_THRESHOLDS_SECONDS = Object.freeze([120, 240, 360, 480, 600])
 
 export const SONOMA_RESPONSE_PACING_REMINDERS = Object.freeze({
   standard: Object.freeze({
@@ -15,7 +17,7 @@ export const SONOMA_RESPONSE_PACING_REMINDERS = Object.freeze({
   }),
 })
 
-export const SONOMA_RESPONSE_ACTIVITY_SNOOZE_MS = 12000
+export const SONOMA_RESPONSE_ACTIVITY_SNOOZE_MS = 60000
 
 function toMillis(value) {
   if (typeof value === 'number' && Number.isFinite(value)) return value

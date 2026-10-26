@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
 
 import { actOnFollowUp, getFollowUpRun } from '@/app/lib/followUpsClient'
 import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
@@ -31,6 +32,7 @@ function audioSource(value) {
 
 export default function SlateReviewExperience({ runId }) {
   const router = useRouter()
+  const sonomaKeyboard = useSonomaKeyboard()
   const [state, setState] = useState(null)
   const [response, setResponse] = useState('')
   const [feedback, setFeedback] = useState(null)
@@ -250,6 +252,9 @@ export default function SlateReviewExperience({ runId }) {
             style={styles.input}
             rows={3}
             value={response}
+            data-sonoma-input
+            inputMode="none"
+            onPointerDown={(event) => sonomaKeyboard.open({ ref: { current: event.currentTarget }, layout: 'text', theme: { label: `${teacherConfig?.label || 'Review'} Keyboard`, accent: '#0d9488' }, onChange: setResponse })}
             onChange={(event) => setResponse(event.target.value)}
             placeholder="Type what you remember"
           />}

@@ -1,7 +1,12 @@
 import { WEBB_WRITING_SUBPHASES, latestWritingAttempt, normalizeWritingSubphase } from './webbWritingFlow.mjs'
-import { assembleWebbCompositionEssay, nextCompositionSlotIndex } from './webbCompositionModel.mjs'
+import {
+  assembleWebbCompositionEssay,
+  buildWebbCompositionPlan,
+  nextCompositionSlotIndex,
+  PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION,
+} from './webbCompositionModel.mjs'
 
-export const WEBB_SNAPSHOT_VERSION = 8
+export const WEBB_SNAPSHOT_VERSION = 9
 
 export const WEBB_SESSION_STAGES = Object.freeze({
   RESEARCH: 'research',
@@ -127,6 +132,88 @@ function normalizedWebbStage(value) {
   return Object.values(WEBB_SESSION_STAGES).includes(stage) ? stage : null
 }
 
+function previousCompositionSlotIndex(index, objectiveCount) {
+  const value = asIndex(index)
+  if (value === null || objectiveCount < 2 || value >= objectiveCount) return null
+  if (value === 0) return 0
+  if (value === objectiveCount - 1) return objectiveCount + 1
+  return value + 1
+}
+
+function remapPreviousCompositionRecord(record, slot, slotIndex) {
+  if (!record || typeof record !== 'object' || !slot) return record
+  const objectiveIndex = slot.role === 'body' && slot.sourceObjectiveIndices?.length === 1
+    ? slot.sourceObjectiveIndices[0]
+    : null
+  return {
+    ...record,
+    objectiveIndex,
+    slotIndex,
+    slotId: slot.id,
+    slotRole: slot.role,
+  }
+}
+
+function upgradePreviousCompositionSnapshot(snapshot = {}, objectives = []) {
+  const list = Array.isArray(objectives) ? objectives : []
+  const plan = snapshot?.compositionPlan
+  const protocolVersion = String(plan?.protocolVersion || plan?.protocol_version || '').trim()
+  const finalized = normalizedWebbStage(snapshot?.webbStage) === WEBB_SESSION_STAGES.ESSAY
+    || snapshot?.essayMode === true
+    || String(snapshot?.essay || '').trim().length > 0
+  if (finalized
+    || protocolVersion !== PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION
+    || !Array.isArray(plan?.slots)
+    || plan.slots.length !== list.length) return snapshot
+
+  let nextPlan
+  try {
+    nextPlan = buildWebbCompositionPlan(list, snapshot?.learnerNotes || {})
+  } catch {
+    return snapshot
+  }
+
+  const acceptedSentences = {}
+  for (const [rawIndex, record] of Object.entries(snapshot?.acceptedSentences || {})) {
+    const nextIndex = previousCompositionSlotIndex(rawIndex, list.length)
+    if (nextIndex === null) continue
+    acceptedSentences[nextIndex] = remapPreviousCompositionRecord(record, nextPlan.slots[nextIndex], nextIndex)
+  }
+
+  const writingAttempts = {}
+  for (const [rawIndex, attempts] of Object.entries(snapshot?.writingAttempts || {})) {
+    const nextIndex = previousCompositionSlotIndex(rawIndex, list.length)
+    if (nextIndex === null || !Array.isArray(attempts)) continue
+    writingAttempts[nextIndex] = attempts.map(attempt => remapPreviousCompositionRecord(attempt, nextPlan.slots[nextIndex], nextIndex))
+  }
+
+  const mappedWritingIndex = previousCompositionSlotIndex(snapshot?.writingIndex, list.length)
+  const pending = snapshot?.pendingWritingReview && typeof snapshot.pendingWritingReview === 'object'
+    ? snapshot.pendingWritingReview
+    : null
+  const pendingOldIndex = pending ? asIndex(pending.slotIndex ?? pending.objectiveIndex) : null
+  const pendingNewIndex = pendingOldIndex === null ? null : previousCompositionSlotIndex(pendingOldIndex, list.length)
+  const pendingWritingReview = pendingNewIndex === null ? null : {
+    ...pending,
+    objectiveIndex: pendingNewIndex,
+    slotIndex: pendingNewIndex,
+  }
+  const writingIndex = mappedWritingIndex ?? 0
+  const writingSubphase = acceptedSentences?.[writingIndex]
+    ? WEBB_WRITING_SUBPHASES.IDLE
+    : snapshot?.writingSubphase
+
+  return {
+    ...snapshot,
+    compositionPlan: nextPlan,
+    acceptedSentences,
+    writingAttempts,
+    writingIndex,
+    writingSubphase,
+    pendingWritingReview,
+  }
+}
+
 function writingAttemptRecorded(snapshot, objectiveIndex, message) {
   if (!message) return false
   const candidates = [
@@ -168,6 +255,7 @@ function inferPendingWritingReview(snapshot, objectiveIndex) {
  */
 export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot?.objectives || []) {
   const list = Array.isArray(objectives) ? objectives : []
+  snapshot = upgradePreviousCompositionSnapshot(snapshot, list)
   const compositionPlan = snapshot?.compositionPlan?.slots?.length ? snapshot.compositionPlan : null
   const writingUnits = compositionPlan ? compositionPlan.slots : list
   const acceptedSentences = snapshot?.acceptedSentences || {}
@@ -440,7 +528,7 @@ function migrateWebbSnapshotLegacy(saved = {}) {
   }
 }
 
-/** v7 preserves durable research/writing/essay state and adds additive Mrs. Webb pacing/play snapshot fields. */
+/** v9 preserves durable state and upgrades in-progress v2 composition slots without rewriting completed essays. */
 export function migrateWebbSnapshot(saved = {}) {
   const restored = migrateWebbSnapshotLegacy(saved)
   const reconciled = {

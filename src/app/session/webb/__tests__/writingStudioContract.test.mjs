@@ -99,7 +99,9 @@ test('writing evaluation is aware of ordered essay position without taking learn
 })
 
 test('writing resume restores the durable composition stage instead of re-entering research', () => {
-  assert.match(model, /WEBB_SNAPSHOT_VERSION = 8/)
+  assert.match(model, /WEBB_SNAPSHOT_VERSION = 9/)
+  assert.match(model, /PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION/)
+  assert.match(model, /upgradePreviousCompositionSnapshot/)
   assert.match(model, /restoreWebbCompositionState/)
   assert.match(page, /const composition = restoreWebbCompositionState/)
   assert.match(page, /composition\.webbStage === WEBB_SESSION_STAGES\.RESEARCH/)

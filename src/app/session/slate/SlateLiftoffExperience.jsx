@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import {
   getProtectedBrowserSessionId,
@@ -47,6 +48,8 @@ import {
 } from '@/app/lib/slateLiftoff.mjs'
 import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
 import WebbDictationButton from '../webb/WebbDictationButton'
+import { isMicrophoneCapturing } from '../utils/microphoneSession'
+import { SONOMA_RESPONSE_PACING_INTERVAL_SECONDS } from '../v2/sonomaResponsePacing.mjs'
 import CaptionPanel from '../components/CaptionPanel'
 import styles from './SlateLiftoffExperience.module.css'
 import VerticalMathWorkspace from '@/components/math/VerticalMathWorkspace'
@@ -269,6 +272,8 @@ function slateMathRequestId(kind = 'request') {
 }
 
 export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenceId }) {
+  const sonomaKeyboard = useSonomaKeyboard()
+  const openSlateInput = (event, onChange, layout = 'text') => sonomaKeyboard.open({ ref: { current: event.currentTarget }, onChange, layout, theme: { label: 'Mr. Slate Keyboard', background: '#1e293b', color: '#e2e8f0', accent: '#d97706' } })
   const router = useRouter()
   const manualScratchActivityId = `slate-manual:${String(occurrenceId || lessonKey || 'lesson').slice(0, 145)}`
   const [phase, setPhase] = useState('loading')
@@ -320,6 +325,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [assessmentMathError, setAssessmentMathError] = useState('')
 
   const answerInputRef = useRef(null)
+  const reminderActivityRef = useRef(Date.now())
+  const reminderTurnRef = useRef('')
+  const reminderStageRef = useRef(0)
+  const reminderLastAtRef = useRef(0)
   const audioRef = useRef(null)
   const soundOnRef = useRef(true)
   const speechRequestRef = useRef(0)
@@ -420,6 +429,40 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
   }, [])
 
+  // The active question alone is a waiting turn; never remind during instruction,
+  // recording, ongoing typing, or assessment.
+  useEffect(() => {
+    const activeQuestion = phase === 'active' && !introTeaching && !pendingAdvance && !questionPending && !busy && !lineHelpTarget
+    if (!activeQuestion) {
+      reminderTurnRef.current = ''
+      reminderStageRef.current = 0
+      return
+    }
+    const key = String(liftoff?.turnNumber ?? liftoff?.currentAction?.id ?? slateText)
+    if (key !== reminderTurnRef.current) {
+      reminderTurnRef.current = key
+      reminderStageRef.current = 0
+      reminderLastAtRef.current = Date.now()
+      reminderActivityRef.current = Date.now()
+    }
+    const timer = window.setInterval(() => {
+      const now = Date.now()
+      if (isMicrophoneCapturing() || now - reminderActivityRef.current < 60000) return
+      if (now - reminderLastAtRef.current < SONOMA_RESPONSE_PACING_INTERVAL_SECONDS * 1000) return
+      if (reminderStageRef.current >= 4 || !reminderTurnRef.current) return
+      reminderLastAtRef.current = now
+      reminderStageRef.current += 1
+      const message = [
+        "I'm here when you're ready. Ask if you need help.",
+        "If you're stuck, tell me which part is difficult.",
+        "Let's keep an eye on our lesson time. Tell me what you're thinking.",
+        "We should get back to work. You can still ask me for help.",
+      ][reminderStageRef.current - 1]
+      appendTranscript('assistant', message, { kind: 'attention_reminder', pacingStage: reminderStageRef.current })
+      void speak(message)
+    }, 1000)
+    return () => window.clearInterval(timer)
+  }, [phase, introTeaching, pendingAdvance, questionPending, busy, lineHelpTarget, liftoff?.turnNumber, liftoff?.currentAction?.id, slateText, appendTranscript, speak])
   const toggleSpeech = useCallback(() => {
     const next = !soundOnRef.current
     soundOnRef.current = next
@@ -2368,7 +2411,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               {assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? (
                 <div style={{ display: 'grid', gap: 8 }}>
                   <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
-                    <textarea rows={2} value={assessmentAnswer} onChange={(event) => { assessmentMathTextRef.current = event.target.value; setAssessmentAnswer(event.target.value); scheduleMathSnapshot() }} disabled={busy || lessonInteractionHeld} style={{ flex: 1, minWidth: 0, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
+                    <textarea rows={2} data-sonoma-input
+                    inputMode="none"
+                    onPointerDown={(event) => openSlateInput(event, (next) => { assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }, "math")}
+                    value={assessmentAnswer} onChange={(event) => { assessmentMathTextRef.current = event.target.value; setAssessmentAnswer(event.target.value); scheduleMathSnapshot() }} disabled={busy || lessonInteractionHeld} style={{ flex: 1, minWidth: 0, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
                     <button disabled={busy || lessonInteractionHeld || (!assessmentAnswer.trim() && !assessmentMathPending?.status)} style={{ padding: '10px 18px' }}>SUBMIT</button>
                   </form>
                 </div>
@@ -2414,7 +2460,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                   </div>
                   ) : (
                   <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
-                    <textarea rows={2} value={assessmentAnswer} onChange={(event) => {
+                    <textarea rows={2} data-sonoma-input
+                    inputMode="none"
+                    onPointerDown={(event) => openSlateInput(event, (next) => { assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }, "math")}
+                    value={assessmentAnswer} onChange={(event) => {
                       assessmentMathTextRef.current = event.target.value
                       setAssessmentAnswer(event.target.value)
                       setAssessmentMathError('')
@@ -2440,7 +2489,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 </div>
               ) : (
                 <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
-                  <input value={assessmentAnswer} onChange={(event) => { assessmentMathTextRef.current = event.target.value; setAssessmentAnswer(event.target.value) }} disabled={busy || lessonInteractionHeld} style={{ flex: 1, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
+                  <input data-sonoma-input
+                    inputMode="none"
+                    onPointerDown={(event) => openSlateInput(event, (next) => { assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }, "math")}
+                    value={assessmentAnswer} onChange={(event) => { assessmentMathTextRef.current = event.target.value; setAssessmentAnswer(event.target.value) }} disabled={busy || lessonInteractionHeld} style={{ flex: 1, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
                   <button disabled={busy || lessonInteractionHeld || !assessmentAnswer.trim()} style={{ padding: '10px 18px', cursor: 'pointer' }}>SUBMIT</button>
                 </form>
               )}
@@ -2467,7 +2519,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   ) : null
 
   return (
-    <div className={styles.sessionShell} style={{ background: C.bg, color: C.text, fontFamily: C.font, display: 'flex', flexDirection: 'column' }}>
+    <div className={styles.sessionShell} style={{ background: C.bg, color: C.text, fontFamily: C.font, display: 'flex', flexDirection: 'column', ...(sonomaKeyboard.keyboardHeight > 0 ? { height: `calc(100dvh - ${sonomaKeyboard.keyboardHeight}px)`, minHeight: 0, overflowY: 'auto' } : {}) }}>
       <header style={{ minHeight: 58, padding: '10px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <div style={{ fontWeight: 900, letterSpacing: 1 }}>MR. SLATE · LIFTOFF</div>
@@ -2513,6 +2565,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               stackedHeight={isAssessment ? 'min(72dvh, 720px)' : ((structuredMathPresented && activeScratchDraft?.visible) || manualScratchUi.visible ? 'clamp(260px, 42vh, 460px)' : null)}
               tailContent={isAssessment ? assessmentTranscriptContent : activeMathTranscriptContent}
               followTranscriptEnd={!isAssessment}
+              keyboardActive={sonomaKeyboard.keyboardHeight > 0}
+              keyboardHeight={sonomaKeyboard.keyboardHeight}
               theme={{
                 background: C.surface2,
                 text: C.text,
@@ -2572,13 +2626,16 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
               <WebbDictationButton
                 disabled={busy || lessonInteractionHeld}
-                onBeforeRecord={() => answerInputRef.current?.blur()}
+                onBeforeRecord={() => { reminderActivityRef.current = Date.now(); answerInputRef.current?.blur() }}
                 onTranscript={(text) => setAnswer((current) => [current.trim(), text].filter(Boolean).join(' '))}
               />
               <textarea
                 ref={answerInputRef}
+                data-sonoma-input
+                inputMode="none"
+                onPointerDown={(event) => openSlateInput(event, (next) => { reminderActivityRef.current = Date.now(); setAnswer(next) })}
                 value={answer}
-                onChange={(event) => setAnswer(event.target.value)}
+                onChange={(event) => { reminderActivityRef.current = Date.now(); setAnswer(event.target.value) }}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent?.isComposing) {
                     event.preventDefault()
@@ -2612,6 +2669,9 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               </div>
               <form onSubmit={(event) => { event.preventDefault(); void requestLineHelp('ask') }} style={{ display: 'flex', gap: 8 }}>
                 <input
+                  data-sonoma-input
+                  inputMode="none"
+                  onPointerDown={(event) => openSlateInput(event, setLineHelpInput)}
                   value={lineHelpInput}
                   onChange={(event) => setLineHelpInput(event.target.value)}
                   disabled={lineHelpBusy}

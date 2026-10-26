@@ -18,16 +18,19 @@ test('generated objectives are atomic rather than bundled clause checklists', ()
   assert.doesNotMatch(route, /Consolidate overlapping questions into a single objective/)
 })
 
-test('Mrs. Webb objective generation writes the hidden essay first and owns coherence before instruction', () => {
+test('Mrs. Webb objective generation preserves every mastered idea as essay body content', () => {
   assert.match(route, /silently draft a coherent short essay ABOUT what this lesson teaches/)
   assert.match(route, /returned objective order is authoritative for later writing/)
   assert.match(route, /exactly one learner-authored note for each objective/)
-  assert.match(route, /exactly one essay sentence in the same order/)
-  assert.match(route, /will not merge, omit, reorder, or invent content/)
-  assert.match(route, /Objective 1 must establish the essay's controlling idea or necessary opening context/)
-  assert.match(route, /Every middle objective must intentionally advance the essay/)
+  assert.match(route, /exactly one BODY sentence in the same order/)
+  assert.match(route, /separate topic sentence and a separate concluding sentence/)
+  assert.match(route, /will not merge, omit, reorder, or invent objective content/)
+  assert.match(route, /Objective 1 is the first substantive body idea after the separate topic sentence/)
+  assert.match(route, /Every later objective must intentionally advance the essay body/)
   assert.match(route, /Avoid conceptual ricochet/)
-  assert.match(route, /final objective must be the essay's synthesis, significance, theme, overall explanation/)
+  assert.match(route, /final objective is the final substantive body idea before the separate conclusion/)
+  assert.match(route, /Topic and conclusion are composition structure, not mastery objectives/)
+  assert.doesNotMatch(route, /Objective 1 must establish the essay's controlling idea or necessary opening context/)
 })
 
 test('current Mrs. Webb converts writing-production lessons into learnable essay content instead of switching formats', () => {

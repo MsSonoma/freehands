@@ -1,8 +1,9 @@
 /**
  * /api/webb-objectives
  *
- * Mrs. Webb objectives are the authoritative essay blueprint. Each mastered objective
- * yields one learner-authored note and one learner-authored essay sentence in the same order.
+ * Mrs. Webb objectives are the authoritative essay-body blueprint. Each mastered objective
+ * yields one learner-authored note and one learner-authored body sentence in the same order.
+ * Topic and conclusion sentences are additional composition structure, not mastery targets.
  */
 import { NextResponse } from 'next/server.js'
 import { buildInstructionalLessonView } from '../../lib/masteryEvidence/assessmentIsolation.js'
@@ -105,12 +106,12 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
     "Before writing any objectives, silently draft a coherent short essay ABOUT what this lesson teaches. Choose the discourse pattern that fits the content, such as explanation, chronology, cause and effect, compare and contrast, process, literary response, report, or argument. This hidden essay is planning only and is never shown to the learner.",
     "Current Mrs. Webb always writes from mastered lesson notes. She does not switch into a separate composition assignment that requires a new topic, opinion, story, example, or other content that was not learned and saved during research.",
     "If the source lesson asks the learner to produce a different kind of writing, such as an opinion paragraph or narrative, observe the knowledge and skill the lesson teaches and make the hidden essay ABOUT that learned material. For example, a lesson about opinion paragraphs can produce an essay explaining how opinion paragraphs work. Do not invent an unrelated opinion for the learner to write.",
-    "Then reverse-engineer that hidden essay into 5 to 8 ATOMIC core comprehension objectives. Each objective must represent exactly one sentence-worth of essential essay content and must assess ONE central idea, relationship, process, or skill only.",
-    "The returned objective order is authoritative for later writing. The learner will earn exactly one learner-authored note for each objective and later turn exactly that note into exactly one essay sentence in the same order. A later planner will not merge, omit, reorder, or invent content, so solve essay coherence here.",
-    "Objective 1 must establish the essay's controlling idea or necessary opening context and be capable of producing a natural topic/opening sentence from that objective's learner note.",
-    "Every middle objective must intentionally advance the essay from the objectives before it. Put prerequisites before dependent ideas, causes before consequences, events in meaningful chronology when chronology matters, supporting evidence before interpretation, and explanation before significance. Avoid conceptual ricochet.",
-    "The final objective must be the essay's synthesis, significance, theme, overall explanation, or other closing idea supported by the earlier objectives. It must be capable of producing a natural closing sentence from that objective's learner note.",
-    "A bare title, author, character name, date, vocabulary definition, isolated example, or trivia fact is not suitable opening or closing content unless it genuinely carries the essay's controlling or synthesizing idea.",
+    "Then reverse-engineer that hidden essay into 5 to 8 ATOMIC core comprehension objectives. Each objective must represent exactly one sentence-worth of essential BODY content and must assess ONE central idea, relationship, process, or skill only.",
+    "The returned objective order is authoritative for later writing. The learner will earn exactly one learner-authored note for each objective and later turn exactly that note into exactly one BODY sentence in the same order. A separate topic sentence and a separate concluding sentence will be added around those body sentences. The later planner will not merge, omit, reorder, or invent objective content.",
+    "Objective 1 is the first substantive body idea after the separate topic sentence. It must contribute learned content rather than merely announce what the paragraph will discuss.",
+    "Every later objective must intentionally advance the essay body from the objectives before it. Put prerequisites before dependent ideas, causes before consequences, events in meaningful chronology when chronology matters, supporting evidence before interpretation, and explanation before significance. Avoid conceptual ricochet.",
+    "The final objective is the final substantive body idea before the separate conclusion. It must contribute learned content that can support the paragraph's ending, but it must not be reduced to a conclusion or summary sentence.",
+    "Topic and conclusion are composition structure, not mastery objectives. Do not sacrifice the first or final content objective to make either structural sentence.",
     "An objective may describe one relationship involving multiple things, but it must never require two independently gradable answers. Do not combine identification plus explanation, definition plus cause, cause plus effect, fact plus example, or two separate functions.",
     "Each objective should be answerable by one focused comprehension question. Before returning a row containing \"and\", self-check whether the words after \"and\" create a second question, second verb task, or separately gradable fact. If they do, split, reorder, or omit the lower-priority idea.",
     "When the lesson itself teaches writing skills, those skills are legitimate lesson content. Objectives may explain what a claim, reason, supporting detail, transition, conclusion, revision step, or other writing concept does. The later Mrs. Webb essay will explain that learned content; it will not become a separate example essay unless a future writing mode explicitly supports that.",

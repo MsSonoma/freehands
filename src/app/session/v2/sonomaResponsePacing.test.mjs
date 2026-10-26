@@ -14,13 +14,13 @@ import {
 } from './sonomaResponsePacing.mjs'
 
 test('response pacing thresholds progress through four reminders and a fifth escalation', () => {
-  assert.deepEqual(SONOMA_RESPONSE_PACING_THRESHOLDS_SECONDS, [45, 90, 150, 240, 300])
-  assert.equal(sonomaReminderStageForElapsed(44), 0)
-  assert.equal(sonomaReminderStageForElapsed(45), 1)
-  assert.equal(sonomaReminderStageForElapsed(90), 2)
-  assert.equal(sonomaReminderStageForElapsed(150), 3)
-  assert.equal(sonomaReminderStageForElapsed(240), 4)
-  assert.equal(sonomaReminderStageForElapsed(300), 5)
+  assert.deepEqual(SONOMA_RESPONSE_PACING_THRESHOLDS_SECONDS, [120, 240, 360, 480, 600])
+  assert.equal(sonomaReminderStageForElapsed(119), 0)
+  assert.equal(sonomaReminderStageForElapsed(120), 1)
+  assert.equal(sonomaReminderStageForElapsed(240), 2)
+  assert.equal(sonomaReminderStageForElapsed(360), 3)
+  assert.equal(sonomaReminderStageForElapsed(480), 4)
+  assert.equal(sonomaReminderStageForElapsed(600), 5)
   assert.equal(sonomaReminderStageForElapsed(900), 5)
 })
 
@@ -47,7 +47,7 @@ test('activity snoozes speech without resetting elapsed time', () => {
   const active = markSonomaLearnerActivity(turn, start + 50_000)
   assert.equal(sonomaResponseElapsedSeconds(active, start + 55_000), 55)
   assert.equal(isSonomaActivitySnoozed(active, start + 55_000), true)
-  assert.equal(isSonomaActivitySnoozed(active, start + 63_000), false)
+  assert.equal(isSonomaActivitySnoozed(active, start + 111_000), false)
 })
 
 test('restored question turns match the same phase and question without conflating later questions', () => {

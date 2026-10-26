@@ -140,7 +140,7 @@ export async function POST(request, deps = {}) {
       execution_session_id: executionSessionId,
       browser_session_id: browserSessionId || execution.session_id || null,
       status: requestedStatus,
-      protocol_version: WEBB_COMPOSITION_PROTOCOL_VERSION,
+      protocol_version: plan.protocolVersion || WEBB_COMPOSITION_PROTOCOL_VERSION,
       app_build_id: process.env.VERCEL_GIT_COMMIT_SHA || process.env.NEXT_PUBLIC_BUILD_ID || null,
       composition_plan: plan,
       research_notes: compositionResearchSnapshot(objectives, learnerNotes),

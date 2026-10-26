@@ -22,6 +22,7 @@
 
 import { Suspense, useState, useEffect, useRef, useCallback, forwardRef } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
+import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
 import { getCanonicalMasteryForLearner } from '@/app/lib/masteryClient'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { recordSlateCompletion } from '@/app/lib/slateCompletionClient'
@@ -385,6 +386,7 @@ async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef, mut
 // --- Main inner component ----------------------------------------------------
 
 function SlateDrillInner() {
+  const sonomaKeyboard = useSonomaKeyboard()
   const router = useRouter()
   const searchParams = useSearchParams()
   const routeLearnerId = searchParams?.get('learnerId') || ''
@@ -2153,6 +2155,9 @@ ${rows}
                     ref={inputEl}
                     type="text"
                     value={userAnswer}
+                    data-sonoma-input
+                    inputMode="none"
+                    onPointerDown={(event) => sonomaKeyboard.open({ ref: { current: event.currentTarget }, layout: 'text', theme: { label: 'Mr. Slate Keyboard', background: '#1e293b', color: '#e2e8f0', accent: '#d97706' }, onChange: setUserAnswer })}
                     onChange={e => setUserAnswer(e.target.value)}
                     onKeyDown={onKeyDown}
                     placeholder="TYPE YOUR ANSWER..."

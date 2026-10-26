@@ -8,24 +8,24 @@ const studio = fs.readFileSync(new URL('../webb/WebbWritingStudio.jsx', import.m
 const context = fs.readFileSync(new URL('../components/TypingConversationContext.js', import.meta.url), 'utf8')
 const typingViewport = fs.readFileSync(new URL('../hooks/useTypingViewport.js', import.meta.url), 'utf8')
 
-test('Ms. Sonoma keeps six recent transcript entries with the input while touch typing', () => {
+test('Ms. Sonoma keeps native-keyboard transcript context without duplicating the Sonoma Keyboard', () => {
   assert.match(sonoma, /entries=\{transcriptLines\}/)
-  assert.match(sonoma, /visible=\{typingViewport\.keyboardVisible\}/)
+  assert.match(sonoma, /visible=\{!sonomaKeyboard\.active && typingViewport\.keyboardVisible\}/)
   assert.match(sonoma, /maxItems=\{6\}/)
   assert.match(sonoma, /teacherLabel="Ms\. Sonoma"/)
-  assert.match(sonoma, /bottom: typingViewport\.keyboardVisible \? `\$\{typingViewport\.keyboardInset\}px` : 0/)
+  assert.match(sonoma, /bottom: keyboardClearance/)
   assert.match(sonoma, /window\.visualViewport \|\| null/)
-  assert.match(sonoma, /const layoutW = window\.innerWidth/)
-  assert.match(sonoma, /const layoutH = window\.innerHeight/)
-  assert.match(sonoma, /const isLandscape = layoutW > layoutH/)
+  assert.match(sonoma, /const layoutWidth = window\.innerWidth/)
+  assert.match(sonoma, /const layoutHeight = window\.innerHeight/)
+  assert.match(sonoma, /setIsMobileLandscape\(layoutWidth > layoutHeight\)/)
 })
 
-test('Mrs. Webb keeps the same transcript surface aligned to the visible viewport while touch typing', () => {
+test('Mrs. Webb preserves the transcript surface above the custom keyboard', () => {
   assert.match(webb, /data-ms-webb-transcript/)
-  assert.match(webb, /top: typingViewport\.offsetTop/)
-  assert.match(webb, /left: typingViewport\.offsetLeft/)
-  assert.match(webb, /width: typingViewport\.visualWidth/)
-  assert.match(webb, /height: typingViewport\.visualHeight/)
+  assert.match(webb, /height: `calc\(100dvh - \$\{sonomaKeyboard\.keyboardHeight\}px\)`/)
+  assert.match(webb, /const keyboardCompact = sonomaKeyboard\.keyboardHeight > 0/)
+  assert.match(webb, /onScroll=\{\(event\) =>/)
+  assert.doesNotMatch(webb, /height: typingViewport\.visualHeight/)
   assert.doesNotMatch(webb, /<TypingConversationContext/)
   assert.doesNotMatch(webb, /maxItems=\{keyboardCompact \? 3 : 6\}/)
 })
@@ -55,7 +55,7 @@ test('Webb writing studio follows the visible viewport without switching to a se
 })
 
 test('Mrs. Webb compresses the same discussion and writing surfaces into the keyboard-visible viewport', () => {
-  assert.match(webb, /const keyboardCompact = typingViewport\.typing/)
+  assert.match(webb, /const keyboardCompact = sonomaKeyboard\.keyboardHeight > 0/)
   assert.match(webb, /flex: '0 0 34%'/)
   assert.match(webb, /data-ms-webb-transcript/)
   assert.match(webb, /fontSize: keyboardCompact \? 13\.5 : 14/)
@@ -72,11 +72,11 @@ test('Mrs. Webb compresses the same discussion and writing surfaces into the key
   assert.match(studio, />\s*Previous attempt\s*</)
 })
 
-test('Mrs. Webb uses touch focus as a compact-layout fallback while Ms. Sonoma keeps geometry-only behavior', () => {
+test('Mrs. Webb uses custom keyboard geometry while the writing studio retains its own layout', () => {
   assert.doesNotMatch(sonoma, /const keyboardCompact = typingViewport\.typing/)
-  assert.match(webb, /const keyboardCompact = typingViewport\.typing/)
+  assert.match(webb, /const keyboardCompact = sonomaKeyboard\.keyboardHeight > 0/)
   assert.match(studio, /const keyboardCompact = typingViewport\.typing/)
-  assert.match(webb, /useTypingViewport\(\{ preserveTouchFocus: true, blurDelayMs: 350 \}\)/)
+  assert.doesNotMatch(webb, /useTypingViewport\(\{ preserveTouchFocus: true, blurDelayMs: 350 \}\)/)
   assert.match(studio, /useTypingViewport\(\{ preserveTouchFocus: true, blurDelayMs: 350 \}\)/)
 })
 
@@ -84,7 +84,7 @@ test('Mrs. Webb can opt out of stale-touch blur recovery so a second tap can sel
   assert.match(typingViewport, /preserveTouchFocus = false/)
   assert.match(typingViewport, /if \(!preserveTouchFocus\) document\.addEventListener\(touchIntentEvent, handleTouchIntent, true\)/)
   assert.match(typingViewport, /if \(!preserveTouchFocus\) document\.removeEventListener\(touchIntentEvent, handleTouchIntent, true\)/)
-  assert.match(webb, /preserveTouchFocus: true/)
+  assert.doesNotMatch(webb, /preserveTouchFocus: true/)
   assert.match(studio, /preserveTouchFocus: true/)
 })
 

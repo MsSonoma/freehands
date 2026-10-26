@@ -118,7 +118,33 @@ test('composition persistence rejects a session that is not a verified Mrs. Webb
 })
 
 
-test('Emma seven-sentence composition persists as final using the already approved learner words', async () => {
+test('previous v2 compositions keep their protocol identity when persisted', async () => {
+  const previousPlan = {
+    protocolVersion: 'webb-composition-v2-objective-blueprint',
+    controllingIdea: 'Historians compare evidence to understand the past.',
+    slots: [
+      { id: 'objective-1', role: 'topic', focus: 'Explain historical evidence.', connection: 'previous opening role', sourceObjectiveIndices: [0] },
+      { id: 'objective-2', role: 'conclusion', focus: 'Explain source comparison.', connection: 'previous closing role', sourceObjectiveIndices: [1] },
+    ],
+  }
+  let stored = null
+  const response = await POST(new Request('http://localhost/api/webb-compositions', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody({
+      compositionPlan: previousPlan,
+      acceptedSentences: {
+        0: { text: 'Historians use evidence to learn about the past.', provenance: 'learner-message', sourceMessageId: 'old-w1' },
+        1: { text: 'Comparing evidence helps historians understand the past.', provenance: 'learner-message', sourceMessageId: 'old-w2' },
+      },
+    })),
+  }), deps(fakeAdmin(row => { stored = row })))
+
+  assert.equal(response.status, 200)
+  assert.equal(stored.protocol_version, 'webb-composition-v2-objective-blueprint')
+  assert.equal(stored.composition_plan.protocolVersion, 'webb-composition-v2-objective-blueprint')
+})
+
+test('Emma composition persists every objective sentence plus separate topic and conclusion', async () => {
   const objectives = [
     'Understand maps.', 'Describe physical maps.', 'Explain climate.',
     'Distinguish human-made features.', 'Explain regions.', 'Explain settlement.', 'Explain migration.',
@@ -129,12 +155,14 @@ test('Emma seven-sentence composition persists as final using the already approv
   const plan = buildWebbCompositionPlan(objectives, notes)
   const sentences = [
     "It's important to know about maps, regions, and human settlement.",
-    'a physical map shows natural features such as mountains, rivers, and plains.',
-    'climate is the usual pattern of weather in a place over a long time.',
-    'A house is made by people and a tree is made by nature',
-    'A region can have common features, but it could still be different landforms too',
-    'People may settle near water or coast',
-    "And that's why it's important to know about maps, regions, and human settlement.",
+    'Maps help people understand a place.',
+    'A physical map shows natural features such as mountains, rivers, and plains.',
+    'Climate is the usual pattern of weather in a place over a long time.',
+    'A house is made by people and a tree is made by nature.',
+    'A region can have common features, but it could still have different landforms too.',
+    'People may settle near water or a coast.',
+    'Migration and population density describe where and how people live.',
+    "And that's why maps, regions, and human settlement help us understand places.",
   ]
   const acceptedSentences = Object.fromEntries(sentences.map((text, index) => [index, {
     text, provenance: 'learner-message', sourceMessageId: 'writing-' + index,
