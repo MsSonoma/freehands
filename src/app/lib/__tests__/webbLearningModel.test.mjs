@@ -138,7 +138,7 @@ test('writing guidance contract asks for learner retry and forbids supplied pros
   assert.match(positionInstructions, /accepted learner-written sentences before this one are context only/i)
   assert.match(positionInstructions, /specific problem/i)
   const positionFallback = sanitizeWritingGuidance('', positionEvaluation, positionContext)
-  assert.match(positionFallback, /does not add a distinct, connected step/i)
+  assert.match(positionFallback, /does not add the new idea this part needs/i)
   const privateContext = { slot: { role: 'topic', focus: 'how historians compare evidence to understand the past' }, controllingIdea: 'Historians compare evidence to understand the past' }
   const leaked = sanitizeWritingGuidance('Think about historians compare evidence to understand the past.', {}, privateContext)
   assert.doesNotMatch(leaked, /historians compare evidence to understand the past/i)

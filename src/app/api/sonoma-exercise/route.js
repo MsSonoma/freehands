@@ -15,6 +15,7 @@ import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 import { requestSonomaTextReply } from '@/app/lib/sonomaTextCompletion.mjs'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs'
+import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 const OPENAI_MODEL = AI_MODEL
@@ -69,7 +70,9 @@ function buildAskSystem(lesson, learnerName, questionIndex, totalQuestions) {
   return [
     `You are Ms. Sonoma, a warm and encouraging teacher.`,
     `You are helping ${learnerName || 'a student'} practice ${lessonDesc(lesson)}.`,
+    buildLearnerLanguageGuidance({ grade: lesson?.grade || lesson?.gradeLevel }),
     `You will be given an exercise question. Your job:`,
+    `Preserve the exact factual or mathematical meaning and every answer choice. Make the wording natural without changing what is being asked.`,
     isFirst
       ? `1. Start with a brief warm-up intro (1 short sentence) like "Let's put your knowledge to the test!" or "Time to practice!"`
       : `1. Use a short natural transition phrase like "Here's your next question:", "Let's try another:", or "Ready for the next one?"`,
@@ -86,6 +89,10 @@ function buildFeedbackSystem(lesson, learnerName, isCorrect, attemptNumber, isLa
   const lines = [
     `You are Ms. Sonoma, a warm and encouraging teacher.`,
     `You are helping ${learnerName || 'a student'} practice ${lessonDesc(lesson)}.`,
+    buildLearnerLanguageGuidance({
+      grade: lesson?.grade || lesson?.gradeLevel,
+      mode: isCorrect ? LEARNER_LANGUAGE_MODES.DEFAULT : LEARNER_LANGUAGE_MODES.RECOVERY,
+    }),
     `Keep replies SHORT — 1 to 3 sentences — they are read aloud. No markdown. Natural spoken language.`,
   ]
 

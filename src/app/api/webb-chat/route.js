@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server'
 import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
 import { buildWritingGuidanceInstructions } from '@/app/lib/webbLearningModel.mjs'
 import { requestWebbStructuredReply } from '@/app/lib/webbChatCompletion.mjs'
+import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
@@ -32,6 +33,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
     `You are Mrs. Webb, a warm and encouraging teacher.`,
     `You are helping a student learn specifically about this objective: "${targetObjective}"`,
     `Lesson: "${title}" (${subject}, ${grade}).`,
+    buildLearnerLanguageGuidance({ grade }),
     `Your task:`,
     `1. In 2-3 sentences, explain that objective in simple, age-appropriate language.`,
     `2. If a video or article is available, tell the student it can help them learn more about this.`,
@@ -54,6 +56,12 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
   const lines = [
     `You are Mrs. Webb, a warm, encouraging, and knowledgeable teacher.`,
     `You are currently helping a student explore: "${title}" (${subject}, ${grade}).`,
+    buildLearnerLanguageGuidance({
+      grade,
+      mode: ['no_answer', 'information_request', 'partial', 'incorrect'].includes(masteryStatus)
+        ? LEARNER_LANGUAGE_MODES.RECOVERY
+        : LEARNER_LANGUAGE_MODES.DEFAULT,
+    }),
     `Your style:`,
     `- Friendly, patient, and age-appropriate.`,
     `- Ask what the student already knows; build on it.`,
@@ -193,6 +201,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
     `You are Mrs. Webb, a warm and encouraging teacher.`,
     `You are helping a student understand this specific learning goal: "${targetObjective}"`,
     `Lesson: "${title}" (${subject}, ${grade}).`,
+    buildLearnerLanguageGuidance({ grade }),
     `Your task:`,
     `1. In 2-3 clear, age-appropriate sentences, explain what this means — use a simple analogy, real-world example, or concrete fact if it helps.`,
     `2. End with ONE Socratic question asking the student to explain the concept back in their own words (e.g. "Can you tell me, in your own words, what that means?").`,

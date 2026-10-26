@@ -258,19 +258,19 @@ function writingPositionRole(context = {}) {
 function safeWritingRetry(evaluation = {}, context = {}) {
   const role = writingPositionRole(context)
   if (evaluation.sentenceOk === true && evaluation.addsNewInformation === false) {
-    return 'This sentence is complete, but it repeats work the paragraph already did. Look at what this part still needs to add, then try again in your own words.'
+    return 'This sentence says something you already said. What new idea does this part need? Try again in your own words.'
   }
   if (evaluation.sentenceOk === true && evaluation.paragraphFit === false) {
-    return 'This sentence works by itself, but it does not connect cleanly to the paragraph around it yet. Look at the ideas before it and try again in your own words.'
+    return 'This sentence makes sense by itself, but it does not fit smoothly with the sentences around it. Look at the sentence before it, then try again in your own words.'
   }
   if (evaluation.accuracy === 'correct' && evaluation.sentenceOk === true && evaluation.positionFit === false) {
-    if (role === 'topic') return "Your sentence is complete, but the topic sentence needs to introduce what the whole paragraph will explain. Think about the big idea that connects your research, then try again in your own words."
-    if (role === 'conclusion') return 'Your sentence is complete, but the conclusion needs to close the paragraph instead of opening a new thought. Look back at what you actually explained, then finish that same thought in your own words.'
-    return 'Your idea is accurate and complete, but this sentence does not add a distinct, connected step to the paragraph so far. Look at what you have already said and decide what this part needs to add, then try again in your own words.'
+    if (role === 'topic') return "Your sentence is complete, but a topic sentence should tell the reader the big idea of the whole paragraph. Think about that big idea, then try again in your own words."
+    if (role === 'conclusion') return 'Your sentence is complete, but a conclusion should finish the paragraph\'s big idea instead of starting something new. Look back at what you explained, then try again in your own words.'
+    return 'Your idea is correct, but this sentence does not add the new idea this part needs. Look at what you already said. What new information belongs here? Try again in your own words.'
   }
   if (role === 'topic') return 'Try the topic sentence again. Make it one complete thought that tells the reader what the whole paragraph will explain, using your own words.'
   if (role === 'conclusion') return 'Try the conclusion again. Make it one complete thought that closes the ideas you already developed, using your own words.'
-  return 'Reread your sentence. Check that it accurately uses the research for this part, adds a new connected idea, and is a complete thought, then try again in your own words.'
+  return 'Reread your sentence. Does it match your research, add a new idea, and make a complete sentence? Fix what is missing, then try again in your own words.'
 }
 
 export function buildWritingGuidanceInstructions(note, evaluation = {}, context = {}) {

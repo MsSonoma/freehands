@@ -12,6 +12,7 @@ import { NextResponse } from 'next/server'
 import { classifyConversationSafety, buildConversationSafetyContext } from '@/lib/contentSafety'
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js'
 import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs'
+import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
@@ -31,6 +32,7 @@ function buildOverviewSystem(lesson, vocab = []) {
   const lines = [
     `You are Ms. Sonoma, a warm and knowledgeable teacher.`,
     `You are about to start a discussion about: "${title}" (${subject}, ${grade}).`,
+    buildLearnerLanguageGuidance({ grade }),
     `Write a SHORT spoken introduction — 3 to 5 sentences — that:`,
     `1. Greets the student warmly by name and states the lesson topic.`,
     `2. Gives a brief, accessible overview of what the lesson covers in plain language.`,
@@ -49,9 +51,13 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary school'
+  const learnerLanguageMode = ['no_answer', 'information_request', 'partial', 'incorrect'].includes(objectiveStatus)
+    ? LEARNER_LANGUAGE_MODES.RECOVERY
+    : LEARNER_LANGUAGE_MODES.DEFAULT
   const lines = [
     `You are Ms. Sonoma, a warm, encouraging, and knowledgeable teacher.`,
     `You are having a discussion with ${learnerName} about: "${title}" (${subject}, ${grade}).`,
+    buildLearnerLanguageGuidance({ grade, mode: learnerLanguageMode }),
     `Your style:`,
     `- Friendly, patient, and age-appropriate.`,
     `- Keep replies short — 2 to 4 sentences — they are read aloud.`,

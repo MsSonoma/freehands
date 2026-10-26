@@ -29,6 +29,7 @@ import { fetchTTS } from './services';
 import { ttsCache } from '../utils/ttsCache';
 import { splitIntoSentences as sharedSplitIntoSentences } from '../utils/textProcessing';
 import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs';
+import { buildLearnerLanguageGuidance } from '@/app/lib/learnerLanguage.mjs';
 
 export class TeachingController {
   // Private state
@@ -816,6 +817,7 @@ export class TeachingController {
       'Your task: Speak 3 to 5 short sentences that introduce the main idea of this lesson.',
       'Explain what this topic is and why it matters in everyday life.',
       'You may briefly explain a necessary term or use one tiny concrete model or analogy when that is what makes the main idea intelligible. Do not turn this into a full definitions list or a full worked practice problem.',
+      buildLearnerLanguageGuidance({ grade }),
       buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.FIRST_EXPLANATION }),
       'Do NOT greet or introduce yourself. Begin speaking immediately.',
       'Do NOT ask any questions.',
@@ -939,6 +941,7 @@ export class TeachingController {
       '',
       'CRITICAL ACCURACY: All definitions must be factually accurate. If vocab definitions are provided above, base your teaching on that content - paraphrase naturally but preserve meaning exactly.',
       'Connect each formal word to an idea, object, action, quantity, or familiar situation the learner can already understand when useful. Exposure to a definition is not the same as understanding it.',
+      buildLearnerLanguageGuidance({ grade }),
       buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.FIRST_EXPLANATION }),
       '',
       'Kid-friendly: Use simple everyday words a 5 year old can understand. Keep sentences short (about 6-12 words). One idea per sentence.',
@@ -1076,6 +1079,7 @@ export class TeachingController {
       'No intro: Do not greet or introduce yourself; begin immediately with the examples.',
       'End on the final example. Do NOT add a wrap-up segue or announce the next phase; the application owns that transition.',
       `Examples: Show 2-3 tiny worked examples appropriate for this lesson. If needed to cover all question content, you may show up to 5 tiny examples. ${vocabContext} You compute every step. Be concise, warm, and playful. Briefly explain why each model or step represents the idea when that connection is not obvious. Do not drift into a separate lecture.`,
+      buildLearnerLanguageGuidance({ grade }),
       buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.FIRST_EXPLANATION }),
       '',
       teachingNotes ? `Teaching notes: ${teachingNotes}` : '',
@@ -1472,6 +1476,7 @@ export class TeachingController {
       'Your task: Speak 4 to 6 short sentences that teach the main ideas of this lesson.',
       'Explain how the concepts connect. Use present tense. Make it feel like a real lesson, not a list.',
       'Use vocabulary naturally, and briefly re-ground a word when its meaning is necessary for the current idea. You may use a tiny concrete example or contrast when it makes the connection clear, but save full worked practice for the examples stage.',
+      buildLearnerLanguageGuidance({ grade }),
       buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.FIRST_EXPLANATION }),
       'Do NOT greet or introduce yourself. Begin speaking immediately.',
       'Do NOT ask any questions.',

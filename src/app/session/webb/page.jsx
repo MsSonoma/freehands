@@ -11,6 +11,7 @@ import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingV
 import FeatureHelpToast from '../components/FeatureHelpToast'
 import WebbBackgroundMusicControl from './WebbBackgroundMusicControl'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
+import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 import {
   emptyWebbObjectiveState, reconcileWebbObjectiveState, mergeWebbObjectiveResult,
   webbObjectiveProgress, createWebbObjectiveQueue,
@@ -964,8 +965,9 @@ function WebbPageInner() {
         const instruction = [
           'You are Mrs. Webb, a warm and patient teacher.',
           `Lesson: "${lessonTitle}".`,
+          buildLearnerLanguageGuidance({ grade: selectedLesson?.grade || selectedLesson?.gradeLevel, mode: LEARNER_LANGUAGE_MODES.RECOVERY }),
           `The learner tapped the hand beside this exact Mrs. Webb line: "${lineText.slice(0, 1800)}"`,
-          'Repeat or rephrase only that selected line so it is easier to understand.',
+          'Rephrase only that selected line so it is easier to understand. Use a genuinely different, simpler explanation when needed instead of merely swapping words.',
           'If the selected line is a question, restate the same question more simply. Do not answer it, give a hint, or move to a new question.',
           'If it is an explanation or statement, keep the same meaning and explain it in simpler child-friendly words.',
           'Do not advance the lesson, assess the learner, change objectives, or introduce new material.',

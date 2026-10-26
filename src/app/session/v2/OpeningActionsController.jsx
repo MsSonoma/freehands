@@ -31,6 +31,7 @@ import { pickNextJoke, renderJoke } from '@/app/lib/jokes';
 import { fetchTTS } from './services';
 import { getGradeAndDifficultyStyle } from '../utils/constants';
 import { buildSenseMakingGuidance, SENSE_MAKING_MODES } from '@/app/lib/sonomaSenseMaking.mjs';
+import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs';
 import { fallbackComprehensionDiagnostic } from '@/app/lib/comprehensionSignals.mjs';
 
 function makeInteractionId() {
@@ -155,6 +156,7 @@ export class OpeningActionsController {
           ? `Conversation continuity (internal; do not quote this label):\n${this.#askHistory.slice(-4).map(turn => `${turn.role === 'assistant' ? 'Ms. Sonoma' : 'Learner'}: ${turn.content}`).join('\n')}`
           : '',
         this.#askHistory.length ? 'Treat the prior Ms. Sonoma lines as words you already said. Do not repeat them. Continue naturally.' : '',
+        buildLearnerLanguageGuidance({ grade: gradeLevel }),
         buildSenseMakingGuidance({ mode: SENSE_MAKING_MODES.CONCEPTUAL_ASK }),
         'Answer their question directly in 2-3 short sentences. Give a real, specific answer.',
         'Use the provided vocabulary meanings when relevant so words with multiple definitions stay on-topic.',
@@ -380,6 +382,12 @@ export class OpeningActionsController {
       historyText ? `Study conversation so far (internal):\n${historyText}` : '',
       strategies.length ? `Strategies already tried: ${strategies.join(', ')}. Do not repeat a failed representation unless the learner specifically asks.` : '',
       `Learner's latest message: "${learnerMessage}".`,
+      buildLearnerLanguageGuidance({
+        grade: gradeLevel,
+        mode: senseMode === SENSE_MAKING_MODES.FIRST_EXPLANATION
+          ? LEARNER_LANGUAGE_MODES.DEFAULT
+          : LEARNER_LANGUAGE_MODES.RECOVERY,
+      }),
       buildSenseMakingGuidance({ mode: senseMode }),
       'Reply in 2-4 short, age-appropriate spoken sentences. Teach the selected target, not the whole lesson.',
       'You may end with ONE small sense-check question when it will help locate the disconnect. This is teaching, not grading.',

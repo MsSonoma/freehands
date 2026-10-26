@@ -15,6 +15,7 @@ import { observeSlateMathWorking, verifySlateMathSubmission } from '@/app/lib/sl
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import { isSlateLineHelpDuplicate, safeSlateLineHelpHistory } from '@/app/lib/slateLineHelp.mjs'
 import { filterLiftoffPartialEvidence } from '@/app/lib/slateLiftoffPartialEvidence.mjs'
+import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 import {
   buildMathActivityProblem,
   createMathSession,
@@ -114,13 +115,16 @@ function baseMethod() {
     'Vary nonessential surface features before release and test the integrated whole.',
     'Do not use speed or hesitation as proof of understanding.',
     'Stop probing once further evidence is unlikely to change the instructional decision.',
-    'Tone: concise, direct, patient, calm, age-appropriate, never humiliating. Mr. Slate may be brisk but not harsh.',
+    'Tone: direct, patient, calm, age-appropriate, and matter-of-fact, never humiliating. Never let directness become compressed, cryptic, or puzzle-like.',
     'Return JSON only. Do not wrap it in markdown.',
   ].join('\n')
 }
 
 function initializePrompt(lesson) {
   return `${baseMethod()}
+${buildLearnerLanguageGuidance({ grade: lesson?.grade || lesson?.gradeLevel })}
+
+The learner-facing fields learnerMessage and nextAction.problem.prompt MUST follow the learner-language contract above. Keep all Liftoff analysis, component language, evidence language, and release reasoning internal.
 
 TASK: Decompose this lesson into real knowledge/decision/procedure components that can transfer from teacher provision to learner responsibility. Do not invent fake steps merely to create a longer list. A conceptual lesson may have fewer components than a procedural math lesson. Dependencies must reference component ids. When the lesson supplies learningObjectives with ids, use those exact ids for their essential component counterparts. Teach every listed objective, including explanation and justification, not merely neighboring arithmetic. You may add nonessential prerequisite components as needed. Do not downgrade a reasoning objective to just calculating an answer.
 
@@ -216,7 +220,8 @@ function lineHelpPrompt({ lesson, sourceLine, action, learnerQuestion, previousE
   ]
   const approach = approaches[(Math.max(0, rephraseCount) + rejectedReplies.length) % approaches.length]
   return `You are Mr. Slate, the Liftoff instructional teacher in Ms. Sonoma.
-Tone: concise, direct, patient, calm, age-appropriate, never humiliating. Mr. Slate may be brisk but not harsh.
+Tone: direct, patient, calm, age-appropriate, and matter-of-fact, never humiliating. Never let directness become compressed, cryptic, or puzzle-like.
+${buildLearnerLanguageGuidance({ grade: lesson?.grade || lesson?.gradeLevel, mode: LEARNER_LANGUAGE_MODES.RECOVERY })}
 The application owns lesson state, Liftoff evidence, progression, and assessment decisions.
 
 TASK: Help the learner with one exact prior Mr. Slate transcript line. This is transcript help only, not a Liftoff instructional turn.
@@ -253,6 +258,9 @@ ${JSON.stringify(compactLesson(lesson))}
 
 function turnPrompt({ lesson, state, learnerResponse, mathEvidence = null, mathWorking = null }) {
   return `${baseMethod()}
+${buildLearnerLanguageGuidance({ grade: lesson?.grade || lesson?.gradeLevel })}
+
+The learner-facing fields learnerMessage and nextAction.problem.prompt MUST follow the learner-language contract above. Keep all Liftoff analysis, component language, evidence language, and release reasoning internal.
 
 TASK: Diagnose this learner response relative to the explicit Liftoff state. Decide what evidence, if any, the response provides about specific components. Then choose the smallest next teaching/probing move that is likely to change the instructional decision.
 
