@@ -2360,6 +2360,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             problem={activeScratchProblem}
             view={activeScratchSession.view}
             onViewChange={(nextView) => changeScratchView(false, nextView)}
+            onOpenNumberPad={(event, onChange) => openSlateInput(event, onChange, 'number')}
             notes={activeScratchNotes}
             onNotesChange={(nextNotes) => changeScratchNotes(false, nextNotes)}
             scratchPartialEntries={activeScratchDraft?.partialEntriesByOperation?.multiplication || {}}
@@ -2426,6 +2427,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                         problem={assessmentScratchProblem}
                         view={assessmentScratchSession.view}
                         onViewChange={(nextView) => changeScratchView(true, nextView)}
+                        onOpenNumberPad={(event, onChange) => openSlateInput(event, onChange, 'number')}
                         notes={assessmentScratchNotes}
                         onNotesChange={(nextNotes) => changeScratchNotes(true, nextNotes)}
                         scratchPartialEntries={assessmentScratchDraft?.partialEntriesByOperation?.multiplication || {}}

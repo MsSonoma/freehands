@@ -25,6 +25,7 @@ export default function VerticalMathWorkspace({
   showCheck = true, showFullAnswerInputs = true, notes, onNotesChange,
   embeddedScratch = false, footer = null, onOperationChange = null, operationChoices = [],
   scratchPartialEntries = {}, onScratchPartialEntriesChange = null,
+  onOpenNumberPad = null,
 }) {
   const inputId = useId()
   const [fullAnswer, setFullAnswer] = useState('')
@@ -79,6 +80,17 @@ export default function VerticalMathWorkspace({
       : [],
   )
 
+  // Lesson workspaces can supply the Sonoma number pad without changing public math tools.
+  function numberPadInputProps(onChange, nativeInputMode = 'numeric') {
+    if (!onOpenNumberPad) return { inputMode: nativeInputMode }
+    return {
+      inputMode: 'none',
+      'data-sonoma-input': true,
+      onPointerDown: (event) => onOpenNumberPad(event, onChange),
+      onFocus: (event) => onOpenNumberPad(event, onChange),
+    }
+  }
+
   function updateView(next) {
     onViewChange(next)
     setLastCheck(null)
@@ -104,7 +116,7 @@ export default function VerticalMathWorkspace({
     if (!slot) return null
     return <input
       className={problem.operation === 'subtraction' ? styles.replacementNote : styles.workingNote}
-      type="text" inputMode="numeric" pattern="[0-9]*" maxLength={2}
+      type="text" {...numberPadInputProps((next) => changeWorkingNote(slot, next))} pattern="[0-9]*" maxLength={2}
       value={workingNotes[slot.key] ?? ''} aria-label={slot.label} autoComplete="off"
       data-working-note={slot.key}
       onChange={(event) => changeWorkingNote(slot, event.target.value)}
@@ -132,17 +144,18 @@ export default function VerticalMathWorkspace({
       : (cell.kind === 'work' ? 2 : 1)
 
     if (isEditable) {
+      const setCellValue = (value) => {
+        const result = enterVerticalMathCell(problem, view, cell.id, value)
+        if (result.ok) updateView(result.view)
+        else setEntryMessage(result.error)
+      }
       return <input
-        className={classes} type="text" inputMode="numeric" pattern="[0-9]*"
+        className={classes} type="text" {...numberPadInputProps(setCellValue)} pattern="[0-9]*"
         maxLength={maxLength} value={view.entries[cell.id] ?? ''}
         aria-label={'Enter ' + publicCellLabel} title={publicCellLabel} autoComplete="off"
         data-cell-id={publicCellName}
-        onFocus={() => onCellSelect?.(cell.id)}
-        onChange={(event) => {
-          const result = enterVerticalMathCell(problem, view, cell.id, event.target.value)
-          if (result.ok) updateView(result.view)
-          else setEntryMessage(result.error)
-        }}
+        onFocus={(event) => { onCellSelect?.(cell.id); onOpenNumberPad?.(event, setCellValue) }}
+        onChange={(event) => setCellValue(event.target.value)}
       />
     }
     if (!isHidden && cell.value !== null) {
@@ -165,16 +178,17 @@ export default function VerticalMathWorkspace({
     if (multiplicationScratchIsShiftZero(row, cell)) {
       return <span className={styles.cell} aria-label={'Place-value zero for partial ' + row.rowIndex}>0</span>
     }
+    const setPartialValue = (value) => {
+      const next = updateMultiplicationScratchEntry(problem, scratchPartialEntries, cell.id, value)
+      if (next !== null) onScratchPartialEntriesChange(next)
+    }
     return <input
       className={[styles.cell, styles.editable].join(' ')}
-      type="text" inputMode="numeric" pattern="[0-9]*" maxLength={1}
+      type="text" {...numberPadInputProps(setPartialValue)} pattern="[0-9]*" maxLength={1}
       value={scratchPartialEntries?.[cell.id] ?? ''}
       aria-label={'Enter partial ' + row.rowIndex + ' ' + cell.id.split('.').at(-1)}
       data-scratch-partial={cell.id} autoComplete="off"
-      onChange={(event) => {
-        const next = updateMultiplicationScratchEntry(problem, scratchPartialEntries, cell.id, event.target.value)
-        if (next !== null) onScratchPartialEntriesChange(next)
-      }}
+      onChange={(event) => setPartialValue(event.target.value)}
     />
   }
 
@@ -416,11 +430,11 @@ export default function VerticalMathWorkspace({
       }}>
         <label htmlFor={inputId + '-quotient'}>Quotient and remainder</label>
         <div className={styles.fullAnswerControls}>
-          <input id={inputId + '-quotient'} inputMode="numeric" autoComplete="off"
+          <input id={inputId + '-quotient'} {...numberPadInputProps((next) => setDivisionAnswer((answer) => ({ ...answer, quotient: next })))} autoComplete="off"
             value={divisionAnswer.quotient}
             onChange={(event) => setDivisionAnswer((answer) => ({ ...answer, quotient: event.target.value }))}
             placeholder="Quotient" aria-label="Quotient" />
-          <input id={inputId + '-remainder'} inputMode="numeric" autoComplete="off"
+          <input id={inputId + '-remainder'} {...numberPadInputProps((next) => setDivisionAnswer((answer) => ({ ...answer, remainder: next })))} autoComplete="off"
             value={divisionAnswer.remainder}
             onChange={(event) => setDivisionAnswer((answer) => ({ ...answer, remainder: event.target.value }))}
             placeholder="Remainder" aria-label="Remainder" />
@@ -436,7 +450,7 @@ export default function VerticalMathWorkspace({
       }}>
         <label htmlFor={inputId}>Or type the entire answer</label>
         <div className={styles.fullAnswerControls}>
-          <input id={inputId} inputMode="decimal" autoComplete="off"
+          <input id={inputId} {...numberPadInputProps(setFullAnswer, 'decimal')} autoComplete="off"
             value={fullAnswer} onChange={(event) => setFullAnswer(event.target.value)}
             placeholder="Your answer" aria-label="Entire answer" />
           <button type="submit">Apply</button>
