@@ -14,6 +14,7 @@ import {
 import { observeSlateMathWorking, verifySlateMathSubmission } from '@/app/lib/slateMath.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import { isSlateLineHelpDuplicate, safeSlateLineHelpHistory } from '@/app/lib/slateLineHelp.mjs'
+import { filterLiftoffPartialEvidence } from '@/app/lib/slateLiftoffPartialEvidence.mjs'
 import {
   buildMathActivityProblem,
   createMathSession,
@@ -260,6 +261,9 @@ Important:
 - independent=true only when the learner supplied the targeted content rather than copying or receiving it.
 - varied=true only when the current instance meaningfully changes nonessential surface features from the modeled/familiar instance.
 - integrated=true only when the component was demonstrated as part of coordinating the whole procedure or a meaningful multi-component chain.
+- For EACH applicable component, distinguish responseStatus correct, incorrect, or not_addressed. An omission is not a wrong answer. Credit any correct part independently, even if other requested parts were omitted or wrong.
+- Every observation MUST include responseStatus (correct or incorrect) and responseQuote (the exact words or number actually supplied by the learner supporting that observation). Do not invent a quote. Do not emit an observation for not_addressed. The application will discard observations without grounded response quotes.
+- Never make a correct answer contingent on a separate explanation, identification, or justification; ask missing things later, one at a time.
 - Do not report evidence for components the response did not actually expose.
 - Evaluate what this answer actually demonstrated, not whether it restated every criterion for the entire objective. Compare against prior component evidence and recent trace; preserve proven parts and probe only unresolved or contradicted parts.
 - If the learner answered part of a multi-part demand correctly, do not describe the entire response as wrong or require the full list again. Credit observed parts and make the next prompt one focused demand.
@@ -284,6 +288,8 @@ Return exactly:
       "componentId": "component id",
       "diagnostic": "one diagnostic category",
       "result": "independent_success|supported_success|failure|possible_slip",
+      "responseStatus": "correct|incorrect",
+      "responseQuote": "exact words or number from the learner response demonstrating this component",
       "independent": true,
       "varied": false,
       "integrated": false,
@@ -404,7 +410,9 @@ function validateTurnPayload(parsed, componentIds) {
     .map((row) => ({
       componentId: row.componentId,
       diagnostic: DIAGNOSTICS.has(row?.diagnostic) ? row.diagnostic : diagnosis.category,
-      result: ['independent_success', 'supported_success', 'failure', 'possible_slip'].includes(row?.result) ? row.result : 'failure',
+      result: ['independent_success', 'supported_success', 'failure', 'possible_slip'].includes(row?.result) ? row.result : 'possible_slip',
+      responseStatus: row?.responseStatus,
+      responseQuote: clean(row?.responseQuote, 500),
       independent: row?.independent === true,
       varied: row?.varied === true,
       integrated: row?.integrated === true,
@@ -661,7 +669,9 @@ export async function POST(request) {
         })
       }
       const componentIds = (body.state?.components || []).map((component) => component.id).filter(Boolean)
-      const payload = capMathObservations(validateTurnPayload(fallback, componentIds), verifiedMath?.evidence, body.state)
+      const payload = validateTurnPayload(fallback, componentIds)
+      payload.observations = filterLiftoffPartialEvidence(payload.observations, learnerResponse)
+      capMathObservations(payload, verifiedMath?.evidence, body.state)
       const validation = validateProblemActionFreshness(payload.nextAction, problemHistoryForState(body.state))
       if (!validation.ok) return NextResponse.json({ error: 'Development Liftoff fallback repeated a problem.' }, { status: 500 })
       payload.learnerMessage = composeLearnerMessage(payload.learnerMessage, payload.nextAction)
@@ -706,7 +716,9 @@ export async function POST(request) {
     const componentIds = (body.state?.components || []).map((component) => component.id).filter(Boolean)
     const priorProblems = problemHistoryForState(body.state)
     for (let attempt = 0; attempt < 3; attempt += 1) {
-      const payload = capMathObservations(validateTurnPayload(parsed, componentIds), verifiedMath?.evidence, body.state)
+      const payload = validateTurnPayload(parsed, componentIds)
+      payload.observations = filterLiftoffPartialEvidence(payload.observations, learnerResponse)
+      capMathObservations(payload, verifiedMath?.evidence, body.state)
       const validation = validateProblemActionFreshness(payload.nextAction, priorProblems)
       if (validation.ok) {
         payload.learnerMessage = composeLearnerMessage(payload.learnerMessage, payload.nextAction)
