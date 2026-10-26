@@ -20,11 +20,9 @@ test('diagnostic problem actions are freshness-gated by the application', () => 
   assert.match(route, /repeated_problem/)
 })
 
-test('compound Liftoff learner demands are rejected by the application', () => {
+test('Liftoff generation asks one response target without a brittle compound-question rejection gate', () => {
   assert.match(route, /Every Liftoff learner problem must ask for exactly ONE response target/)
-  assert.match(route, /multiple_learner_demands/)
-  assert.match(route, /compoundDemand/)
-  assert.match(route, /answer plus an explanation, identification, justification, comparison, or any second thing/)
+  assert.doesNotMatch(route, /multiple_learner_demands|compoundDemand/)
 })
 
 test('duplicate model problems are regenerated and eventually fail closed', () => {

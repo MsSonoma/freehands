@@ -489,13 +489,6 @@ function validateProblemActionFreshness(action, priorProblems = []) {
   if (!PROBLEM_ACTIONS.has(action?.type)) return { ok: true }
   const { problem } = normalizeProblemForValidation(action?.problem, { requireResponse: true })
   if (!problem?.prompt || !problem?.instanceKey) return { ok: false, reason: 'missing_problem_identity' }
-  const prompt = clean(problem.prompt, 1200)
-  const compoundDemand =
-    (prompt.match(/\?/g) || []).length > 1
-    || /\b(?:and|then|also)\s+(?:why|how|what|which|identify|explain|justify|describe|show|tell|name|write|give|find|solve|calculate)\b/i.test(prompt)
-    || /\b(?:solve|find|calculate|answer|identify|name|choose|write|show|tell|explain|describe|justify)\b[^.!?]{0,100}\band\b[^.!?]{0,100}\b(?:explain|identify|justify|describe|show|tell|name|write|give|find|solve|calculate|answer|choose)\b/i.test(prompt)
-    || /\?\s*(?:explain|identify|justify|describe|show|tell|name|write|give|find|solve|calculate|answer|choose)\b/i.test(prompt)
-  if (compoundDemand) return { ok: false, reason: 'multiple_learner_demands' }
   if (!isLiftoffProblemFresh(problem, priorProblems)) return { ok: false, reason: 'repeated_problem' }
   return { ok: true, problem }
 }
@@ -527,10 +520,7 @@ async function parseSafeModelResponse(modelText) {
 
 async function retryForDifferentProblem(basePrompt, priorProblems, reason) {
   const used = priorProblems.slice(-12).map((problem) => ({ prompt: problem.prompt, instanceKey: problem.instanceKey }))
-  const demandCorrection = reason === 'multiple_learner_demands'
-    ? 'The next learner problem must ask for exactly ONE response target. Do not ask for an answer plus an explanation, identification, justification, comparison, or any second thing. Put any additional probe on a later turn.'
-    : ''
-  const correction = `${basePrompt}\n\nAPPLICATION VALIDATION REJECTED YOUR LAST NEXT PROBLEM: ${reason}. Generate the JSON again. ${demandCorrection} The next learner problem must be genuinely different from every used problem below. Rewording the same quantities or relationships is still the same problem. Use the same deterministic instanceKey for the same underlying instance; never invent a nonce. Do not call the problem fresh/new/different in learnerMessage.\nUSED PROBLEMS:\n${JSON.stringify(used)}`
+  const correction = `${basePrompt}\n\nAPPLICATION VALIDATION REJECTED YOUR LAST NEXT PROBLEM: ${reason}. Generate the JSON again. The next learner problem must be genuinely different from every used problem below. Rewording the same quantities or relationships is still the same problem. Use the same deterministic instanceKey for the same underlying instance; never invent a nonce. Do not call the problem fresh/new/different in learnerMessage.\nUSED PROBLEMS:\n${JSON.stringify(used)}`
   return callModel(correction)
 }
 export async function POST(request) {
