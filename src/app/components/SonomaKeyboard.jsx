@@ -4,6 +4,7 @@ import { createContext, useCallback, useContext, useEffect, useRef, useState } f
 import { isTouchLikeDevice } from "../session/hooks/useTypingViewport";
 import WebbDictationButton from "../session/webb/WebbDictationButton";
 import { insertDictationAtSelection } from "./sonomaDictationInsertion.mjs";
+import { isTranscriptTapGesture } from "./sonomaTranscriptGesture.mjs";
 
 const KeyboardContext = createContext(null);
 const rows = {
@@ -33,13 +34,54 @@ export function SonomaKeyboardProvider({ children }) {
   }, []);
   useEffect(() => {
     if (!active) return;
+    let pendingTranscriptPointer = null;
     const onPointerDown = (event) => {
-      if (event.target.closest?.("[data-sonoma-keyboard]")) return;
-      if (event.target.closest?.("[data-sonoma-input]")) return;
+      // A second finger means the first touch is not a tap.
+      if (pendingTranscriptPointer) pendingTranscriptPointer.dragged = true;
+      if (event.target.closest?.("[data-sonoma-keyboard], [data-sonoma-input]")) return;
+      // Caption scroll arrows must work without dismissing the keyboard.
+      if (event.target.closest?.("[data-sonoma-transcript-scroll]")) return;
+      const transcript = event.target.closest?.("[data-sonoma-transcript]");
+      if (transcript) {
+        if (pendingTranscriptPointer) return;
+        pendingTranscriptPointer = {
+          pointerId: event.pointerId,
+          clientX: event.clientX,
+          clientY: event.clientY,
+          scrollTop: transcript.scrollTop,
+          transcript,
+          dragged: false,
+        };
+        return;
+      }
+      pendingTranscriptPointer = null;
       close();
     };
+    const onPointerMove = (event) => {
+      const pending = pendingTranscriptPointer;
+      if (pending?.pointerId !== event.pointerId) return;
+      if (!isTranscriptTapGesture(pending, event, pending.transcript.scrollTop)) pending.dragged = true;
+    };
+    const onPointerUp = (event) => {
+      const pending = pendingTranscriptPointer;
+      if (pending?.pointerId !== event.pointerId) return;
+      pendingTranscriptPointer = null;
+      if (event.target.closest?.("[data-sonoma-transcript-scroll]")) return;
+      if (isTranscriptTapGesture(pending, event, pending.transcript.scrollTop)) close();
+    };
+    const onPointerCancel = (event) => {
+      if (pendingTranscriptPointer?.pointerId === event.pointerId) pendingTranscriptPointer = null;
+    };
     document.addEventListener("pointerdown", onPointerDown);
-    return () => document.removeEventListener("pointerdown", onPointerDown);
+    document.addEventListener("pointermove", onPointerMove);
+    document.addEventListener("pointerup", onPointerUp);
+    document.addEventListener("pointercancel", onPointerCancel);
+    return () => {
+      document.removeEventListener("pointerdown", onPointerDown);
+      document.removeEventListener("pointermove", onPointerMove);
+      document.removeEventListener("pointerup", onPointerUp);
+      document.removeEventListener("pointercancel", onPointerCancel);
+    };
   }, [active, close]);
 
   useEffect(() => {

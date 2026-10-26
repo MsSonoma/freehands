@@ -200,7 +200,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
 
   return (
     <div data-ms-caption-panel-container style={containerStyle}>
-      <div style={{ position: 'absolute', top: 6, right: 6, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
+      <div data-sonoma-transcript-scroll style={{ position: 'absolute', top: 6, right: 6, display: 'flex', flexDirection: 'column', gap: 6, zIndex: 10 }}>
         <button
           type="button"
           aria-label="Scroll up captions"
@@ -250,7 +250,7 @@ function CaptionPanel({ sentences, activeIndex, boxRef, scaleFactor = 1, compact
           v
         </button>
       </div>
-      <div ref={boxRef} data-ms-caption-panel className="scrollbar-hidden" style={scrollerStyle} aria-live="polite">
+      <div ref={boxRef} data-ms-caption-panel data-sonoma-transcript className="scrollbar-hidden" style={scrollerStyle} aria-live="polite">
         {Array.isArray(displayItems) && displayItems.length > 0 ? (
           <>
           {displayItems.map((s, idx) => {

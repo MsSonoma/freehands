@@ -4172,7 +4172,7 @@ function WebbPageInner() {
               onTouchStart={() => { transcriptManualScrollRef.current = true }}
               onWheel={() => { transcriptManualScrollRef.current = true }}
               onScroll={(event) => { const el = event.currentTarget; if (el.scrollHeight - el.clientHeight - el.scrollTop <= 6) transcriptManualScrollRef.current = false }}
-              data-ms-webb-transcript
+              data-ms-webb-transcript data-sonoma-transcript
               style={{
                 flex: '1 1 0', minHeight: 0,
                 overflowY: 'auto', overflowX: 'hidden',
