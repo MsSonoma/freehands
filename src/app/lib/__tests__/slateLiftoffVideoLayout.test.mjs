@@ -38,7 +38,7 @@ test('transcript grows to fill space above the original input form', () => {
   assert.match(layout, /\.transcriptColumn\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex:\s*1 1 auto;[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/)
   assert.match(layout, /\.transcriptColumn \[data-ms-caption-panel-container\]\s*\{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?height:\s*auto !important;[\s\S]*?max-height:\s*none !important;/)
   assert.match(layout, /\.contentColumn > \[data-slate-primary-answer-form\]\s*\{[\s\S]*?flex-shrink:\s*0;/)
-  assert.match(slate, /stackedHeight=\{isAssessment \? 'min\(72dvh, 720px\)' : \(\(structuredMathPresented && activeScratchDraft\?\.visible\) \|\| manualScratchUi\.visible \? 'clamp\(260px, 42vh, 460px\)' : null\)\}/)
+  assert.match(slate, /stackedHeight=\{isAssessment \? 'min\(72dvh, 720px\)' : \(structuredMathPresented && activeScratchDraft\?\.visible \? 'clamp\(260px, 42vh, 460px\)' : null\)\}/)
 })
 
 test('right progress panel fills remaining height under the video and scrolls inside its own area', () => {

@@ -57,7 +57,7 @@ test('active math uses one learner answer while preserving line-help and legacy 
   assert.match(source, /mathSession: savedWork, mathWorkingNotes:/)
   assert.match(source, /pending\?\.submission && !slateMathReceiptMatches/)
   assert.match(source, /placeholder="Show your thinking or answer Mr\. Slate\."/)
-  assert.match(source, /<textarea\s+ref=\{answerInputRef\}\s+value=\{answer\}/)
+  assert.match(source, /<textarea\s+ref=\{answerInputRef\}[\s\S]*?value=\{answer\}/)
   assert.match(source, /<form data-slate-primary-answer-form onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitLiftoffAnswer\(\) \}\}/)
   assert.equal((source.match(/data-slate-primary-answer-form onSubmit/g) || []).length, 1)
   const problem = buildMathActivityProblem({ operation: 'addition', operands: ['47', '26'], commands: [] })

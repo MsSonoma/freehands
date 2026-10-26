@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { createPortal } from 'react-dom'
 import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
 import {
@@ -809,6 +810,20 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (snapshotServiceRef.current?.writesFenced) return
     commitManualScratchUi({ ...manualScratchUiRef.current, visible: !manualScratchUiRef.current.visible })
   }, [commitManualScratchUi])
+
+  useEffect(() => {
+    sonomaKeyboard.setWorkspaceDock({
+      label: 'Mr. Slate Keyboard',
+      visible: manualScratchUi.visible && (phase === 'active' || phase === 'test'),
+      onToggle: toggleManualScratch,
+      onHide: () => {
+        if (manualScratchUiRef.current.visible) {
+          commitManualScratchUi({ ...manualScratchUiRef.current, visible: false })
+        }
+      },
+    })
+    return () => sonomaKeyboard.setWorkspaceDock(null)
+  }, [sonomaKeyboard.setWorkspaceDock, manualScratchUi.visible, phase, toggleManualScratch, commitManualScratchUi])
 
   const replayTranscriptLine = useCallback((line) => {
     const text = String(line?.text || '').trim()
@@ -2383,22 +2398,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       ))}
       {mathError && <div role="status" style={{ color: C.red, fontWeight: 700, marginTop: 10 }}>{mathError}</div>}
       </>}
-      <div data-slate-manual-scratch-panel style={{ marginTop: structuredMathPresented ? 12 : 0 }}>
-        <button type="button" data-slate-manual-math-toggle aria-expanded={manualScratchUi.visible}
-          onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
-          style={{ background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-          {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
-        </button>
-        {manualScratchUi.visible && (
-          <div data-slate-manual-scratch style={{ marginTop: 10 }}>
-            <SlateManualScratch draft={manualScratchUi} activityId={manualScratchActivityId} phase="teaching"
-              onChange={commitManualScratchUi} allowTransfer={!introTeaching && !questionPending}
-              onUseResult={(result) => { setAnswer((current) => insertSlateMathResult(current, result)); answerInputRef.current?.focus() }}
-              disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
-            />
-          </div>
-        )}
-      </div>
+
     </div>
   ) : null
 
@@ -2499,24 +2499,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 </form>
               )}
 
-              <div data-slate-test-manual-scratch-panel style={{ marginBottom: 10 }}>
-                <button type="button" data-slate-test-manual-math-toggle aria-expanded={manualScratchUi.visible}
-                  onClick={toggleManualScratch} disabled={snapshotServiceRef.current?.writesFenced}
-                  style={{ background: C.surface2, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, padding: '10px 15px', fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-                  {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
-                </button>
-                {manualScratchUi.visible && (
-                  <div data-slate-manual-scratch style={{ marginTop: 10 }}>
-                    <SlateManualScratch
-                      draft={manualScratchUi} activityId={manualScratchActivityId} phase="test"
-                      onChange={commitManualScratchUi}
-                      onUseResult={(result) => { const next = insertSlateMathResult(assessmentAnswer, result); assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }}
-                      allowTransfer={questionType(currentAssessment) === 'shortanswer'}
-                      disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
-                    />
-                  </div>
-                )}
-              </div>
+
     </div>
   ) : null
 
@@ -2547,6 +2530,36 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       </header>
       {exitError && <div role="alert" style={{ padding: '8px 18px', color: C.red, fontSize: 12 }}>{exitError}</div>}
 
+      {manualScratchUi.visible && (phase === 'active' || phase === 'test') && sonomaKeyboard.workspacePortal && createPortal(
+        <div data-slate-manual-scratch style={{ margin: 0 }}>
+          <SlateManualScratch
+            draft={manualScratchUi}
+            activityId={manualScratchActivityId}
+            phase={isAssessment ? 'test' : 'teaching'}
+            onChange={commitManualScratchUi}
+            allowTransfer={!isAssessment ? (!introTeaching && !questionPending) : (questionType(currentAssessment) === 'shortanswer')}
+            onUseResult={(result) => {
+              if (isAssessment) {
+                const next = insertSlateMathResult(assessmentMathTextRef.current, result)
+                assessmentMathTextRef.current = next
+                setAssessmentAnswer(next)
+                scheduleMathSnapshot()
+              } else {
+                setAnswer((current) => insertSlateMathResult(current, result))
+                if (answerInputRef.current) {
+                  answerInputRef.current.focus({ preventScroll: true })
+                  openSlateInput({ currentTarget: answerInputRef.current }, (next) => {
+                    reminderActivityRef.current = Date.now()
+                    setAnswer(next)
+                  })
+                }
+              }
+            }}
+            disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+          />
+        </div>,
+        sonomaKeyboard.workspacePortal
+      )}
       <main className={styles.sessionMain} style={{ flex: 1, minHeight: 0, display: 'flex', gap: 16, padding: 16 }}>
         <section className={styles.contentColumn} data-slate-scroll-mode={isAssessment ? 'test' : (lineHelpTarget ? 'help' : 'active')} style={{ minWidth: 0, flex: '1 1 520px', display: 'flex', flexDirection: 'column', gap: 14 }}>
           <div className={styles.transcriptColumn} style={{ background: C.surface, border: `1px solid ${C.border}`, borderRadius: 10, padding: 14 }}>
@@ -2564,7 +2577,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               onReplayRequest={replayTranscriptLine}
               replayEnabled={!busy && !lineHelpBusy}
               teacherName="Mr. Slate"
-              stackedHeight={isAssessment ? 'min(72dvh, 720px)' : ((structuredMathPresented && activeScratchDraft?.visible) || manualScratchUi.visible ? 'clamp(260px, 42vh, 460px)' : null)}
+              stackedHeight={isAssessment ? 'min(72dvh, 720px)' : (structuredMathPresented && activeScratchDraft?.visible ? 'clamp(260px, 42vh, 460px)' : null)}
               tailContent={isAssessment ? assessmentTranscriptContent : activeMathTranscriptContent}
               followTranscriptEnd={!isAssessment}
               keyboardActive={sonomaKeyboard.keyboardHeight > 0}
@@ -2589,6 +2602,18 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               }}
             />
           </div>
+
+          {(phase === 'active' || (isAssessment && currentAssessment)) && (
+            <button type="button" data-sonoma-keyboard-toggle
+              data-slate-manual-math-toggle={!isAssessment ? '' : undefined}
+              data-slate-test-manual-math-toggle={isAssessment ? '' : undefined}
+              aria-expanded={manualScratchUi.visible}
+              onClick={toggleManualScratch}
+              disabled={snapshotServiceRef.current?.writesFenced}
+              style={{ alignSelf: 'flex-start', minHeight: 38, padding: '8px 14px', background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
+              {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
+            </button>
+          )}
 
           {phase === 'active' && introTeaching && (
             <div data-slate-intro-navigation style={{ display: 'flex', justifyContent: 'center', padding: '10px 0' }}>

@@ -1,0 +1,33 @@
+.layout {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  flex: 1 1 auto;
+  width: 100%;
+}
+
+.workspace {
+  box-sizing: border-box;
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(38dvh, 310px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  border: 1px solid #64748b;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: #0f172a;
+  padding: 8px 10px;
+}
+
+.pad {
+  flex: 0 0 auto;
+  min-width: 0;
+}
+
+@media (orientation: landscape) and (max-height: 600px) {
+  .layout { flex-direction: row; gap: 8px; }
+  .workspace { max-height: none; min-width: 0; }
+  .pad { flex: 0 1 52%; overflow-y: auto; }
+}
