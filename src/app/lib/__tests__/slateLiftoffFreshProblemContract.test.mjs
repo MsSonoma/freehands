@@ -52,3 +52,11 @@ test('question-bound judgment contract is enforced by the application', () => {
   assert.match(route, /retryForFairTurn/)
   assert.match(route, /payload\.evidenceValidated = true/)
 })
+
+
+test('Liftoff rejects stacked cognitive operations before presenting the problem', () => {
+  assert.match(route, /validateSlateCognitiveDemand/)
+  assert.match(route, /one primary cognitive operation/i)
+  assert.match(route, /choose and explain/i)
+  assert.match(route, /find evidence and interpret it/i)
+})

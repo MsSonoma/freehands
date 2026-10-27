@@ -100,3 +100,15 @@ test('Slate lesson and facilitator printing use the same fixed test source', () 
   assert.match(syllabus, /displayTeacher !== 'slate' && <button/)
   assert.match(syllabus, /buildAssessmentPhaseSets/)
 })
+
+
+test('independent test uses the learner-language and single-operation contracts', () => {
+  const slateRoute = fs.readFileSync(path.resolve('src/app/api/slate-liftoff/route.js'), 'utf8')
+  const alignment = fs.readFileSync(path.resolve('src/app/lib/slateTestAlignment.mjs'), 'utf8')
+  assert.match(slateRoute, /buildLearnerLanguageGuidance\(\{ grade: lesson\?\.grade \|\| lesson\?\.gradeLevel \}\)/)
+  assert.match(slateRoute, /Each test item asks for exactly ONE primary cognitive operation/)
+  assert.match(slateRoute, /split them across separate held-out items mapped to the SAME objectiveId/)
+  assert.match(slateRoute, /"demandType":"one allowed cognitive operation"/)
+  assert.match(alignment, /validateSlateCognitiveDemand/)
+  assert.match(alignment, /reasoningCovered/)
+})

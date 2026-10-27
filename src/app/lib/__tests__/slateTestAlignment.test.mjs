@@ -120,3 +120,80 @@ test('aligned test items are preserved in the Liftoff snapshot for resume', () =
   assert.deepEqual(snapshot.testItems, items)
   assert.equal(snapshot.phase, 'test')
 })
+
+
+test('Liftoff reasoning objective can be assessed across separate single-operation items', () => {
+  const moonObjective = {
+    id: 'moon-phases',
+    name: 'Explain Moon phases',
+    description: 'Explain how sunlight and viewing position change the phase seen from Earth.',
+    evidenceType: 'reasoned_explanation',
+    essential: true,
+  }
+  const testItems = [
+    { objectiveId: 'moon-phases', demandType: 'compare', criterion: 'Compare which position shows more of the bright half.', question: 'Which Moon position shows more of the bright half from Earth?', expectedAny: ['Position B'] },
+    { objectiveId: 'moon-phases', demandType: 'find_evidence', criterion: 'Identify the diagram detail that shows which side is lit.', question: 'What part of the diagram shows which side of the Moon is lit?', expectedAny: ['The side facing the Sun is lit.'] },
+    { objectiveId: 'moon-phases', demandType: 'explain', criterion: 'Explain why the Moon can look different from Earth even though half is lit.', question: 'The Sun lights half of the Moon in both positions. Why can the Moon still look different from Earth?', expectedAny: ['From Earth we see different amounts of the lit half as the Moon changes position.'] },
+    { objectiveId: 'moon-phases', demandType: 'compare', criterion: 'Compare which position shows less of the bright half.', question: 'Which Moon position shows less of the bright half from Earth?', expectedAny: ['Position A'] },
+    { objectiveId: 'moon-phases', demandType: 'find_evidence', criterion: 'Identify the model result that shows the visible lit part changed.', question: 'What result in the model shows that the visible bright part changed?', expectedAny: ['The visible bright area is different in the two positions.'] },
+    { objectiveId: 'moon-phases', demandType: 'describe', criterion: 'Describe the visible change.', question: 'Describe what changes in the bright part of the Moon we can see from Earth.', expectedAny: ['We see more or less of the bright half.'] },
+  ]
+  const result = validateSlateTestAlignment({
+    lesson: { title: 'Sunlight and Moon Phases' },
+    liftoff: { components: [moonObjective], problemHistory: [] },
+    testItems,
+  })
+  assert.equal(result.ok, true, JSON.stringify(result.errors))
+})
+
+test('Liftoff independent test rejects stacked Moon comparison and explanation', () => {
+  const component = {
+    id: 'moon-phases',
+    name: 'Explain Moon phases',
+    description: 'Explain how sunlight and viewing position change the phase seen from Earth.',
+    evidenceType: 'reasoned_explanation',
+    essential: true,
+  }
+  const items = Array.from({ length: 6 }, (_, index) => ({
+    objectiveId: 'moon-phases',
+    demandType: index === 0 ? 'compare' : 'explain',
+    criterion: index === 0 ? 'Compare the positions and explain the change.' : 'Explain one Moon-phase relationship.',
+    question: index === 0
+      ? 'Compare the two Moon positions and explain why the visible lit portion changes.'
+      : `The Sun lights half of the Moon in example ${index}. Why can the visible phase still change from Earth?`,
+    expectedAny: ['From Earth we see a different amount of the Moon\'s lit half as its position changes.'],
+  }))
+  const result = validateSlateTestAlignment({
+    lesson: { title: 'Sunlight and Moon Phases' },
+    liftoff: { components: [component], problemHistory: [] },
+    testItems: items,
+  })
+  assert.equal(result.ok, false)
+  assert.ok(result.errors.includes('stacked_cognitive_demands:1'), JSON.stringify(result.errors))
+})
+
+test('Liftoff independent test rejects choose plus evidence plus explanation bundling', () => {
+  const component = {
+    id: 'design-evaluation',
+    name: 'Evaluate a design using requirements',
+    description: 'Choose a design using criteria, constraints, and test evidence and explain the reasoning.',
+    evidenceType: 'reasoned_explanation',
+    essential: true,
+  }
+  const items = Array.from({ length: 6 }, (_, index) => ({
+    objectiveId: 'design-evaluation',
+    demandType: index === 0 ? 'evaluate' : 'explain',
+    criterion: index === 0 ? 'Evaluate the better design using evidence and explain why.' : 'Explain why one supplied result matters.',
+    question: index === 0
+      ? 'Which design better meets the rules? Use the test results to explain why.'
+      : `Design A met the material limit in example ${index}. Why does staying within that limit matter?`,
+    expectedAny: ['A design must meet the stated requirement to count as successful.'],
+  }))
+  const result = validateSlateTestAlignment({
+    lesson: { title: 'Designing Better Solutions' },
+    liftoff: { components: [component], problemHistory: [] },
+    testItems: items,
+  })
+  assert.equal(result.ok, false)
+  assert.ok(result.errors.includes('stacked_cognitive_demands:1'), JSON.stringify(result.errors))
+})

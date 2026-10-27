@@ -6,6 +6,9 @@ import vm from 'node:vm'
 
 import * as slateLiftoff from '../slateLiftoff.mjs'
 import * as alignment from '../slateTestAlignment.mjs'
+import * as cognitiveDemand from '../slateCognitiveDemand.mjs'
+import * as partialEvidence from '../slateLiftoffPartialEvidence.mjs'
+import * as learnerLanguage from '../learnerLanguage.mjs'
 import * as slateMath from '../slateMath.mjs'
 import * as slateLineHelp from '../slateLineHelp.mjs'
 import * as mathSession from '../../../lib/math/mathSession.mjs'
@@ -35,7 +38,12 @@ const NO_MATH = Symbol('NO_MATH')
 const jsonCopy = (value) => JSON.parse(JSON.stringify(value))
 
 function problem(instanceKey, activity = math) {
-  return { prompt: `Solve ${instanceKey}.`, instanceKey, ...(activity === NO_MATH ? {} : { math: activity }) }
+  return {
+    prompt: `Solve ${instanceKey}.`,
+    instanceKey,
+    responseContract: { contractId: 'boundary-add', targetComponentId: 'add', demandType: 'calculate', criterion: 'Calculate the result.' },
+    ...(activity === NO_MATH ? {} : { math: activity }),
+  }
 }
 
 function action(instanceKey, activity = math) {
@@ -56,12 +64,17 @@ function initialization({ modeledMath: modeledActivity = modeledMath, nextMath =
   }
 }
 
-function turnResult({ nextKey = 'probe:next', observations, sessionDecision = 'continue', nextType = 'probe' } = {}) {
+function turnResult({ nextKey = 'probe:next', observations, sessionDecision = 'continue', nextType = 'probe', responseQuote = '19', judgmentStatus = 'satisfied', feedbackDisposition = 'affirm' } = {}) {
   return {
     learnerMessage: 'Keep working.',
-    diagnosis: { category: 'success', componentId: 'add', evidence: 'The learner submitted an answer.' },
+    feedbackDisposition,
+    demandJudgment: { contractId: 'boundary-add', status: judgmentStatus, responseQuote, reason: 'Boundary-test judgment.' },
+    diagnosis: { category: judgmentStatus === 'incorrect' ? 'calculation_error' : 'success', componentId: 'add', evidence: 'The learner submitted an answer.' },
     observations: observations || [{
-      componentId: 'add', diagnostic: 'success', result: 'independent_success', independent: true,
+      componentId: 'add', diagnostic: judgmentStatus === 'incorrect' ? 'calculation_error' : 'success',
+      result: judgmentStatus === 'incorrect' ? 'failure' : 'independent_success',
+      responseStatus: judgmentStatus === 'incorrect' ? 'incorrect' : 'correct',
+      responseQuote, basis: 'asked_target', independent: judgmentStatus !== 'incorrect',
       varied: true, integrated: true, supportLevel: 'none',
     }],
     integrationEvidence: true,
@@ -92,6 +105,9 @@ function loadRoute(queue = []) {
     ['@/app/lib/slateMath.mjs', slateMath],
     ['@/app/lib/slateLineHelp.mjs', slateLineHelp],
     ['@/app/lib/slateTestAlignment.mjs', alignment],
+    ['@/app/lib/slateCognitiveDemand.mjs', cognitiveDemand],
+    ['@/app/lib/slateLiftoffPartialEvidence.mjs', partialEvidence],
+    ['@/app/lib/learnerLanguage.mjs', learnerLanguage],
     ['@/lib/math/mathSession.mjs', mathSession],
     ['@/lib/math/verticalMathValidation.mjs', verticalMathValidation],
   ])
@@ -221,7 +237,7 @@ function submittedMath(answer, { assisted = false } = {}) {
 test('wrong math is recomputed authoritatively and cannot be promoted by tampered evaluation', async () => {
   const submitted = submittedMath('18')
   const tampered = { ...submitted.submission, evaluation: { ...submitted.submission.evaluation, correct: true } }
-  const { route, calls } = loadRoute([turnResult({ sessionDecision: 'procedure_released', nextType: 'release' })])
+  const { route, calls } = loadRoute([turnResult({ sessionDecision: 'procedure_released', nextType: 'release', responseQuote: 'result.ones=8', judgmentStatus: 'incorrect', feedbackDisposition: 'correct' })])
   const response = await post(route, {
     mode: 'turn', lesson, state: liftoffState(problem('probe:current', math)),
     mathSession: submitted.state, mathSubmission: tampered,
@@ -243,7 +259,7 @@ test('wrong math is recomputed authoritatively and cannot be promoted by tampere
 test('assisted correct math is supported evidence and cannot trigger independent release', async () => {
   const submitted = submittedMath('19', { assisted: true })
   const tampered = { ...submitted.submission, evaluation: { ...submitted.submission.evaluation, correct: false } }
-  const { route } = loadRoute([turnResult({ sessionDecision: 'procedure_released', nextType: 'release' })])
+  const { route } = loadRoute([turnResult({ sessionDecision: 'procedure_released', nextType: 'release', responseQuote: 'result.ones=9' })])
   const response = await post(route, {
     mode: 'turn', lesson, state: liftoffState(problem('probe:current', math)),
     mathSession: submitted.state, mathSubmission: tampered,
@@ -317,7 +333,7 @@ test('test-mode line help is rejected before any model call', async () => {
 
 test('route exports only supported framework fields and source keeps post-await ownership fencing', () => {
   const { route } = loadRoute([])
-  assert.deepEqual(Object.keys(route).sort(), ['GET', 'POST', 'dynamic', 'runtime'])
+  assert.deepEqual(Object.keys(route).sort(), ['GET', 'POST', 'dynamic', 'maxDuration', 'runtime'])
   assert.doesNotMatch(routeSource, /export\s+function\s+validateLiftoffMathProblem/)
 
   const fetchStart = experienceSource.indexOf("const response = await fetch('/api/slate-liftoff'")
@@ -355,7 +371,7 @@ test('optional grid digits reach teaching as scratch context, never a graded ans
     activityId: initial.activityId, expectedRevision: initial.revision, requestId: 'scratch-edit',
   })
   assert.equal(update.ok, true)
-  const { route, calls } = loadRoute([turnResult({ nextKey: 'probe:optional-scratch' })])
+  const { route, calls } = loadRoute([turnResult({ nextKey: 'probe:optional-scratch', responseQuote: '18' })])
   const response = await post(route, {
     mode: 'turn', lesson, state: liftoffState(problem('probe:current', math)),
     learnerResponse: 'My answer is 18.', mathSession: update.state,

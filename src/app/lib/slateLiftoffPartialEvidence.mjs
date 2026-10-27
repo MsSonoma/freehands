@@ -140,7 +140,7 @@ export function validateLiftoffEvidenceAgainstDemand({
     })
   }
 
-  if (contract && judgment?.contractId === contract.contractId) {
+  if (contract && judgment && judgment.contractId === contract.contractId) {
     const targetRows = accepted.filter(row => row.basis === 'asked_target' && row.componentId === contract.targetComponentId)
     if (judgment.status === 'satisfied' && !targetRows.some(row => POSITIVE_RESULTS.has(row.result))) {
       violations.push('satisfied_without_positive_target_evidence')

@@ -13,6 +13,7 @@ import {
 } from '@/app/lib/slateLiftoff.mjs'
 import { observeSlateMathWorking, verifySlateMathSubmission } from '@/app/lib/slateMath.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
+import { validateSlateCognitiveDemand } from '@/app/lib/slateCognitiveDemand.mjs'
 import { isSlateLineHelpDuplicate, safeSlateLineHelpHistory } from '@/app/lib/slateLineHelp.mjs'
 import { validateLiftoffEvidenceAgainstDemand } from '@/app/lib/slateLiftoffPartialEvidence.mjs'
 import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
@@ -90,8 +91,10 @@ function baseMethod() {
     'Treat supported correctness as supported evidence, never independent mastery.',
     'One correct answer is not automatically mastery and one error is not automatically ignorance.',
     'When possible, change one important uncertainty at a time so failure is interpretable.',
-    'Ask for one manageable cognitive demand per learner turn. Do not require a checklist of facts, justifications, and steps in a single reply merely because the objective has several evidence criteria.',
-    'Every Liftoff learner problem must ask for exactly ONE response target. Never combine an answer with an explanation, identification, justification, comparison, or second requested fact in the same prompt. Ask the next thing on the next turn.',
+    'Ask for exactly one primary cognitive operation per learner turn. A response may identify, choose, compare, calculate, find evidence, evaluate, predict, describe, explain, demonstrate, propose, or plan, but do not stack two of those jobs in one requested response.',
+    'Do not require a checklist of facts, justifications, and steps in a single reply merely because the objective has several evidence criteria.',
+    'Every Liftoff learner problem must ask for exactly ONE response target. Never ask the learner to choose and explain, compare and justify, find evidence and interpret it, calculate and explain, or evaluate and defend in the same response. Ask the next operation on the next turn.',
+    'Integration belongs to the evidence model: separate clean learner responses may jointly establish an integrated objective. Do not make the learner repackage already demonstrated operations into one miniature argument merely to prove integration.',
     'Every learner problem must carry responseContract:{targetComponentId,demandType,criterion}. The criterion is the ONE learner-visible demand for that question, not the whole objective. The application supplies a stable contractId.',
     'Ordinary negative evidence is allowed only for the exact responseContract demand the learner was asked. An unasked objective criterion is not wrong; it is simply still unobserved and may become a later question.',
     'Correct evidence beyond the asked target may be credited as volunteered_correct. A negative observation beyond the asked target is allowed only for a genuine false claim the learner actually volunteered; label it volunteered_contradiction and state the contradictory claim.',
@@ -154,7 +157,7 @@ Return exactly this shape:
     "targetComponentIds": ["exactly one component id"],
     "withheldComponentIds": [],
     "supportedComponentIds": [],
-    "problem": { "prompt": "the exact learner problem", "instanceKey": "deterministic key for the underlying instance", "responseContract": { "targetComponentId": "same single target id", "demandType": "identify|explain|calculate|choose|compare|predict|describe|demonstrate", "criterion": "the one thing this exact question asks the learner to supply" } },
+    "problem": { "prompt": "the exact learner problem", "instanceKey": "deterministic key for the underlying instance", "responseContract": { "targetComponentId": "same single target id", "demandType": "identify|choose|compare|calculate|find_evidence|evaluate|predict|describe|explain|demonstrate|propose|plan", "criterion": "the one thing this exact question asks the learner to supply" } },
     "reason": "why this is the next useful move"
   }
 }
@@ -190,20 +193,34 @@ function prepareTestPrompt(lesson, state) {
   const count = Math.max(6, components.length)
   return `You prepare an INDEPENDENT, HELD-OUT written test for Mr. Slate.
 The lesson has already been taught. The application, not you, controls progression and grading.
+
+${buildLearnerLanguageGuidance({ grade: lesson?.grade || lesson?.gradeLevel })}
+
+Every learner-facing test question MUST follow that learner-language contract.
 Use ONLY the actual essential Liftoff learning components below as assessment objectives.
 Every component must have at least one test question requiring that skill, not just topical vocabulary.
 Do not turn a lesson about defending strategies into a general arithmetic fluency test.
-For each objective about defending, reasoning, judging reasonableness, or explaining WHY, use a written free-response question that explicitly asks for an explanation. A bare number or multiple choice is insufficient.
-For calculation objectives, new direct arithmetic can be appropriate. For multistep objectives, require steps or operation order.
-Keep questions age appropriate, unambiguous, independently answerable, and factually correct.
-Provide a correct reference explanation/answer in expectedAny for every item; explanation reference answers must include enough reasoning to be judged fairly.
-If the item is multiple-choice, include four choices and zero-based numeric correct index. Only use choices for objectives that do not require a constructed explanation.
+
+COGNITIVE-LOAD CONTRACT:
+- Each test item asks for exactly ONE primary cognitive operation: identify, choose, compare, calculate, find_evidence, evaluate, predict, describe, explain, demonstrate, propose, or plan.
+- Never combine operations in one requested response. Do not ask choose + explain, compare + justify, find evidence + interpret it, calculate + explain, evaluate + defend, or plan + conclude in one item.
+- Do not ask for several separately gradable outputs in one item, such as "state the problem, one criterion, and one constraint."
+- If one objective requires several operations, split them across separate held-out items mapped to the SAME objectiveId. The application combines those separate observations into objective-level evidence.
+- For an objective that truly requires explanation or defense, include at least one separate free-response EXPLAIN item. Other items for that objective may separately test comparison, evidence selection, evaluation, or another single operation.
+- Supply context, data, conclusions, or candidate choices when needed so the learner only has to perform the one operation being tested.
+- Keep the actual task easy to locate. Put scenario facts first, then ask the one task plainly. Reading complexity must not exceed the skill being assessed.
+- Academic vocabulary that belongs to the lesson may remain, but do not wrap it in rubric-like phrases when plain language preserves the same target.
+
+For calculation objectives, new direct arithmetic can be appropriate. For a multistep procedure objective, one item may ask the learner to demonstrate the procedure, but do not append a separate explanation demand to that same response.
+Provide a correct reference answer in expectedAny for every item. For an EXPLAIN item, expectedAny must include enough reasoning to be judged fairly.
+If the item is multiple-choice, include four choices and zero-based numeric correct index. Only use choices when the one cognitive operation can validly be assessed that way.
 Provide a single exact objectiveId from the component list on every item.
-Use at least ${count} items, varying situations where useful, with no duplicate problems.
+Provide demandType and criterion on every item. demandType names the ONE cognitive operation. criterion states the ONE learner-visible thing that response must supply.
+Use at least ${count} items, and use more when splitting a complex objective is necessary. Vary situations where useful, with no duplicate problems.
 NEVER repeat or paraphrase any learner problem already used in Liftoff; use different numbers and contexts.
 No help, scaffolds, hints, answer reveals, or correctness information in questions.
 Do not add objectives that were not taught.
-Return ONLY a JSON object: {"items":[{"id":"slate-independent-1","objectiveId":"one exact id from below","question":"question","expectedAny":["reference answer or explanation"],"keywords":["optional key concept"],"minKeywords":1}]}
+Return ONLY a JSON object: {"items":[{"id":"slate-independent-1","objectiveId":"one exact id from below","demandType":"one allowed cognitive operation","criterion":"one learner-visible response target","question":"question","expectedAny":["reference answer or explanation"],"keywords":["optional key concept"],"minKeywords":1}]}
 LESSON: ${JSON.stringify(compactLesson(lesson))}
 ESSENTIAL LIFTOFF OBJECTIVES: ${JSON.stringify(components)}
 PRIOR TAUGHT OR PROBED PROBLEMS - FORBIDDEN IN TEST: ${JSON.stringify(priorProblems)}
@@ -564,6 +581,13 @@ function validateProblemActionFreshness(action, priorProblems = []) {
     return { ok: false, reason: 'incomplete_response_contract' }
   }
 
+  const cognitive = validateSlateCognitiveDemand({
+    prompt: problem.prompt,
+    criterion: contract.criterion,
+    demandType: contract.demandType,
+  })
+  if (!cognitive.ok) return { ok: false, reason: cognitive.reason }
+
   if (!isLiftoffProblemFresh(problem, priorProblems)) return { ok: false, reason: 'repeated_problem' }
   return { ok: true, problem }
 }
@@ -595,7 +619,7 @@ async function parseSafeModelResponse(modelText) {
 
 async function retryForDifferentProblem(basePrompt, priorProblems, reason) {
   const used = priorProblems.slice(-12).map((problem) => ({ prompt: problem.prompt, instanceKey: problem.instanceKey }))
-  const correction = `${basePrompt}\n\nAPPLICATION VALIDATION REJECTED YOUR LAST NEXT PROBLEM: ${reason}. Generate the JSON again. The next learner problem must be genuinely different from every used problem below. Rewording the same quantities or relationships is still the same problem. Use the same deterministic instanceKey for the same underlying instance; never invent a nonce. Do not call the problem fresh/new/different in learnerMessage.\nUSED PROBLEMS:\n${JSON.stringify(used)}`
+  const correction = `${basePrompt}\n\nAPPLICATION VALIDATION REJECTED YOUR LAST NEXT PROBLEM: ${reason}. Generate the JSON again and fix that exact validation failure. The next learner problem must ask for one primary cognitive operation and one response target only. It must also be genuinely different from every used problem below. Rewording the same quantities or relationships is still the same problem. Use the same deterministic instanceKey for the same underlying instance; never invent a nonce. Do not call the problem fresh/new/different in learnerMessage.\nUSED PROBLEMS:\n${JSON.stringify(used)}`
   return callModel(correction)
 }
 
