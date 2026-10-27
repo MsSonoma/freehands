@@ -67,7 +67,7 @@ export const SERVER_OWNED_PROVENANCE_FIELDS = Object.freeze([
 export function resolveEvidenceSessionProvenance(evidenceSession, env = process.env) {
   const sessionId = String(evidenceSession?.session_id || '').trim().toLowerCase();
   const protocol = String(evidenceSession?.teaching_protocol_version || '').trim().toLowerCase();
-  const fallback = protocol === LIFTOFF_PROTOCOL_VERSION
+  const fallback = (protocol === LIFTOFF_PROTOCOL_VERSION || protocol.startsWith('liftoff-instruction-'))
     ? resolveSlateLiftoffProviderProvenance(env)
     : (sessionId.startsWith('slate:') || protocol.startsWith('slate-')
       ? resolveSlateProviderProvenance(env)

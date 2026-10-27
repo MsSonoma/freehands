@@ -1,5 +1,6 @@
-export const LIFTOFF_PROTOCOL_VERSION = 'liftoff-instruction-v1'
+export const LIFTOFF_PROTOCOL_VERSION = 'liftoff-instruction-v2'
 export const LIFTOFF_SNAPSHOT_KIND = 'slate-liftoff-v1'
+export const LIFTOFF_QUESTION_DEMAND_VERSION = 'question-demand-v1'
 
 export const LIFTOFF_EVIDENCE_STATES = Object.freeze({
   UNOBSERVED: 'unobserved',
@@ -42,6 +43,32 @@ function clean(value, max = 500) {
   return String(value || '').trim().slice(0, max)
 }
 
+function stableContractId({ instanceKey = '', targetComponentId = '', criterion = '' } = {}) {
+  const source = [instanceKey, targetComponentId, criterion]
+    .map(value => clean(value, 1200).toLowerCase())
+    .join('|')
+  let hash = 2166136261
+  for (let index = 0; index < source.length; index += 1) {
+    hash = Math.imul(hash ^ source.charCodeAt(index), 16777619)
+  }
+  return `question-demand-${(hash >>> 0).toString(36)}`
+}
+
+export function normalizeLiftoffResponseContract(raw = {}, { instanceKey = '' } = {}) {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null
+  const targetComponentId = clean(raw.targetComponentId, 80)
+  const demandType = clean(raw.demandType, 80).toLowerCase()
+  const criterion = clean(raw.criterion, 800)
+  if (!targetComponentId || !demandType || !criterion) return null
+  return {
+    version: LIFTOFF_QUESTION_DEMAND_VERSION,
+    contractId: clean(raw.contractId, 160) || stableContractId({ instanceKey, targetComponentId, criterion }),
+    targetComponentId,
+    demandType,
+    criterion,
+  }
+}
+
 export function liftoffProblemFingerprint(value) {
   return clean(value, 1200).toLowerCase().replace(/\s+/g, ' ').trim()
 }
@@ -51,6 +78,8 @@ export function normalizeLiftoffProblem(raw = {}) {
   const instanceKey = clean(raw?.instanceKey, 240).toLowerCase()
   if (!prompt) return null
   const problem = { prompt, instanceKey: instanceKey || null, fingerprint: liftoffProblemFingerprint(prompt) }
+  const responseContract = normalizeLiftoffResponseContract(raw?.responseContract, { instanceKey })
+  if (responseContract) problem.responseContract = responseContract
   if (Object.prototype.hasOwnProperty.call(raw || {}, 'math')) {
     problem.math = normalizeMathActivity(raw.math)
     problem.mathFingerprint = JSON.stringify({ operation: problem.math.operation, operands: problem.math.operands })
@@ -182,7 +211,14 @@ export function liftoffReleaseReady(state) {
 export function applyLiftoffTurn(state, rawTurn = {}) {
   const previous = state || createLiftoffState([])
   const byId = new Map((previous.components || []).map((component) => [component.id, { ...component }]))
-  const observations = Array.isArray(rawTurn?.observations) ? rawTurn.observations : []
+  const observations = (Array.isArray(rawTurn?.observations) ? rawTurn.observations : []).filter((observation) => {
+    if (rawTurn?.evidenceValidated === true) return observation?.accepted === true
+    const result = clean(observation?.result, 80).toLowerCase()
+    if (previous?.protocolVersion === LIFTOFF_PROTOCOL_VERSION && ['failure', 'possible_slip'].includes(result)) {
+      return observation?.accepted === true
+    }
+    return true
+  })
   const priorProblemHistory = (Array.isArray(previous.problemHistory) ? previous.problemHistory : []).map((problem) => ({ ...problem }))
   const currentProblem = normalizeLiftoffProblem(previous.currentAction?.problem)
   const currentProblemFresh = currentProblem ? isLiftoffProblemFresh(currentProblem, priorProblemHistory) : null
@@ -210,6 +246,9 @@ export function applyLiftoffTurn(state, rawTurn = {}) {
       varied: observation?.varied === true,
       integrated: observation?.integrated === true,
       supportLevel: clean(observation?.supportLevel, 80) || null,
+      basis: clean(observation?.basis, 80) || null,
+      contractId: clean(observation?.contractId, 160) || null,
+      responseQuote: clean(observation?.responseQuote, 500) || null,
     }
   }
 
@@ -248,7 +287,21 @@ export function applyLiftoffTurn(state, rawTurn = {}) {
         independent: observation?.independent === true,
         varied: observation?.varied === true,
         integrated: observation?.integrated === true,
+        basis: clean(observation?.basis, 80) || null,
+        contractId: clean(observation?.contractId, 160) || null,
+        responseQuote: clean(observation?.responseQuote, 500) || null,
+        criterion: clean(observation?.criterion, 800) || null,
+        contradiction: clean(observation?.contradiction, 800) || null,
       })),
+      demandJudgment: rawTurn?.demandJudgment && typeof rawTurn.demandJudgment === 'object'
+        ? {
+            contractId: clean(rawTurn.demandJudgment.contractId, 160) || null,
+            status: clean(rawTurn.demandJudgment.status, 80) || null,
+            responseQuote: clean(rawTurn.demandJudgment.responseQuote, 500) || null,
+            reason: clean(rawTurn.demandJudgment.reason, 800) || null,
+          }
+        : null,
+      fairnessVersion: rawTurn?.evidenceValidated === true ? LIFTOFF_QUESTION_DEMAND_VERSION : null,
       releaseRequested: requestedRelease,
       releaseAccepted: next.procedureReleased,
     },

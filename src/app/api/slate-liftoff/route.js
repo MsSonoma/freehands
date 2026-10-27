@@ -14,7 +14,7 @@ import {
 import { observeSlateMathWorking, verifySlateMathSubmission } from '@/app/lib/slateMath.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import { isSlateLineHelpDuplicate, safeSlateLineHelpHistory } from '@/app/lib/slateLineHelp.mjs'
-import { filterLiftoffPartialEvidence } from '@/app/lib/slateLiftoffPartialEvidence.mjs'
+import { validateLiftoffEvidenceAgainstDemand } from '@/app/lib/slateLiftoffPartialEvidence.mjs'
 import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 import {
   buildMathActivityProblem,
@@ -92,6 +92,9 @@ function baseMethod() {
     'When possible, change one important uncertainty at a time so failure is interpretable.',
     'Ask for one manageable cognitive demand per learner turn. Do not require a checklist of facts, justifications, and steps in a single reply merely because the objective has several evidence criteria.',
     'Every Liftoff learner problem must ask for exactly ONE response target. Never combine an answer with an explanation, identification, justification, comparison, or second requested fact in the same prompt. Ask the next thing on the next turn.',
+    'Every learner problem must carry responseContract:{targetComponentId,demandType,criterion}. The criterion is the ONE learner-visible demand for that question, not the whole objective. The application supplies a stable contractId.',
+    'Ordinary negative evidence is allowed only for the exact responseContract demand the learner was asked. An unasked objective criterion is not wrong; it is simply still unobserved and may become a later question.',
+    'Correct evidence beyond the asked target may be credited as volunteered_correct. A negative observation beyond the asked target is allowed only for a genuine false claim the learner actually volunteered; label it volunteered_contradiction and state the contradictory claim.',
     'Maintain a cumulative view of demonstrated component evidence across turns. A missing detail in one answer is not a failure of previously demonstrated understanding.',
     'When an answer establishes part of the target, acknowledge that part briefly and ask a focused follow-up about what remains uncertain; do not restart the whole question or ask for a polished restatement.',
     'If a real misconception contradicts earlier evidence, diagnose and recheck the affected component. Do not erase unrelated earned evidence.',
@@ -148,10 +151,10 @@ Return exactly this shape:
   "learnerMessage": "modeling or explanation only; do not include the diagnostic problem",
   "nextAction": {
     "type": "probe",
-    "targetComponentIds": [],
+    "targetComponentIds": ["exactly one component id"],
     "withheldComponentIds": [],
     "supportedComponentIds": [],
-    "problem": { "prompt": "the exact learner problem", "instanceKey": "deterministic key for the underlying instance" },
+    "problem": { "prompt": "the exact learner problem", "instanceKey": "deterministic key for the underlying instance", "responseContract": { "targetComponentId": "same single target id", "demandType": "identify|explain|calculate|choose|compare|predict|describe|demonstrate", "criterion": "the one thing this exact question asks the learner to supply" } },
     "reason": "why this is the next useful move"
   }
 }
@@ -271,6 +274,10 @@ Important:
 - integrated=true only when the component was demonstrated as part of coordinating the whole procedure or a meaningful multi-component chain.
 - For EACH applicable component, distinguish responseStatus correct, incorrect, or not_addressed. An omission is not a wrong answer. Credit any correct part independently, even if other requested parts were omitted or wrong.
 - Every observation MUST include responseStatus (correct or incorrect) and responseQuote (the exact words or number actually supplied by the learner supporting that observation). Do not invent a quote. Do not emit an observation for not_addressed. The application will discard observations without grounded response quotes.
+- Every observation MUST include basis: asked_target, volunteered_correct, or volunteered_contradiction. asked_target is only for the current question's responseContract target. volunteered_correct may only add positive evidence. volunteered_contradiction may only be negative and MUST include contradiction describing the false claim the learner actually stated.
+- First judge the exact current responseContract in demandJudgment. satisfied means the learner supplied the requested idea in semantically acceptable language; incorrect means they answered that exact demand incorrectly; not_addressed means they answered something else; ambiguous means the response is too unclear to justify either success or failure.
+- If the current problem has no responseContract, it is a legacy question. Do not emit ordinary asked_target negative evidence for it. You may still credit grounded correct evidence or record a genuine volunteered_contradiction.
+- feedbackDisposition must be affirm for a satisfied demand, correct for an incorrect demand, and clarify or neutral for not_addressed/ambiguous unless a genuine volunteered contradiction requires correction.
 - Never make a correct answer contingent on a separate explanation, identification, or justification; ask missing things later, one at a time.
 - Do not report evidence for components the response did not actually expose.
 - Evaluate what this answer actually demonstrated, not whether it restated every criterion for the entire objective. Compare against prior component evidence and recent trace; preserve proven parts and probe only unresolved or contradicted parts.
@@ -286,6 +293,8 @@ Important:
 Return exactly:
 {
   "learnerMessage": "feedback or teaching only; do not include the next problem",
+  "feedbackDisposition": "affirm|correct|clarify|neutral",
+  "demandJudgment": { "contractId": "copy the current responseContract contractId, or empty for a legacy question", "status": "satisfied|incorrect|not_addressed|ambiguous", "responseQuote": "exact learner words supporting satisfied/incorrect, otherwise empty", "reason": "brief reason tied only to the current question demand" },
   "diagnosis": {
     "category": "success|selection_error|execution_error|sequencing_error|representation_error|retrieval_failure|integration_failure|transfer_failure|retention_failure|possible_slip|unknown",
     "componentId": "component id or empty",
@@ -298,6 +307,8 @@ Return exactly:
       "result": "independent_success|supported_success|failure|possible_slip",
       "responseStatus": "correct|incorrect",
       "responseQuote": "exact words or number from the learner response demonstrating this component",
+      "basis": "asked_target|volunteered_correct|volunteered_contradiction",
+      "contradiction": "for volunteered_contradiction only: describe the learner-stated incompatible claim; otherwise empty",
       "independent": true,
       "varied": false,
       "integrated": false,
@@ -308,10 +319,10 @@ Return exactly:
   "variationEvidence": false,
   "nextAction": {
     "type": "probe|isolate|teach|reprobe|integrate|release",
-    "targetComponentIds": [],
+    "targetComponentIds": ["exactly one component id"],
     "withheldComponentIds": [],
     "supportedComponentIds": [],
-    "problem": { "prompt": "exact next learner problem when this action asks for one", "instanceKey": "deterministic key for its underlying instance" },
+    "problem": { "prompt": "exact next learner problem when this action asks for one", "instanceKey": "deterministic key for its underlying instance", "responseContract": { "targetComponentId": "same single target id", "demandType": "one demand type", "criterion": "the single learner-visible demand" } },
     "reason": "why this next absence or restoration of help is useful"
   },
   "sessionDecision": "continue|procedure_released"
@@ -336,8 +347,22 @@ function capMathObservations(payload, evidence, state) {
   const targets = new Set(state?.currentAction?.targetComponentIds || [])
   payload.observations = payload.observations.map((row) => {
     if (targets.size && !targets.has(row.componentId)) return row
-    if (!evidence.correct) return { ...row, result: 'failure', independent: false, supportLevel: row.supportLevel || 'none' }
-    if (evidence.assisted) return { ...row, result: 'supported_success', independent: false, supportLevel: row.supportLevel === 'none' || !row.supportLevel ? 'partial' : row.supportLevel }
+    if (!evidence.correct) return {
+      ...row,
+      result: 'failure',
+      responseStatus: 'incorrect',
+      basis: 'asked_target',
+      independent: false,
+      supportLevel: row.supportLevel || 'none',
+    }
+    if (evidence.assisted) return {
+      ...row,
+      result: 'supported_success',
+      responseStatus: 'correct',
+      basis: 'asked_target',
+      independent: false,
+      supportLevel: row.supportLevel === 'none' || !row.supportLevel ? 'partial' : row.supportLevel,
+    }
     return row
   })
   if (!evidence.correct || evidence.assisted) {
@@ -386,19 +411,21 @@ function devInitialization(lesson) {
     }],
     modeledProblem: { prompt: `Modeled example for ${title}.`, instanceKey: `dev-model:${title.toLowerCase()}` },
     learnerMessage: `We are going to take ${title} apart, learn what matters, and then remove help. Here is the core idea first.`,
-    nextAction: { type: 'probe', targetComponentIds: ['core-skill'], withheldComponentIds: ['core-skill'], supportedComponentIds: [], problem: { prompt: 'Show me how you would apply the core idea to a different example.', instanceKey: 'dev-probe:core-skill:1' }, reason: 'Collect the first independent evidence after modeling the target.' },
+    nextAction: { type: 'probe', targetComponentIds: ['core-skill'], withheldComponentIds: ['core-skill'], supportedComponentIds: [], problem: { prompt: 'Show me how you would apply the core idea to a different example.', instanceKey: 'dev-probe:core-skill:1', responseContract: { targetComponentId: 'core-skill', demandType: 'demonstrate', criterion: 'Apply the core idea to this example.' } }, reason: 'Collect the first independent evidence after modeling the target.' },
   }
 }
 
 function devTurn(state) {
   const first = state?.components?.[0]?.id || 'core-skill'
   return {
-    learnerMessage: 'Show me how you would do the next part on your own. Explain the choice you are making.',
+    learnerMessage: 'I am going to check that idea a different way.',
+    feedbackDisposition: 'neutral',
+    demandJudgment: state?.currentAction?.problem?.responseContract ? { contractId: state.currentAction.problem.responseContract.contractId, status: 'ambiguous', responseQuote: '', reason: 'Development fallback does not diagnose learner work.' } : null,
     diagnosis: { category: 'unknown', componentId: first, evidence: 'Development fallback cannot diagnose learner work.' },
     observations: [],
     integrationEvidence: false,
     variationEvidence: false,
-    nextAction: { type: 'probe', targetComponentIds: [first], withheldComponentIds: [first], supportedComponentIds: [], problem: { prompt: 'Apply the target to the next development example.', instanceKey: 'dev-probe:' + first + ':' + String(Number(state?.turnNumber || 0) + 2) }, reason: 'Collect independent evidence for the target.' },
+    nextAction: { type: 'probe', targetComponentIds: [first], withheldComponentIds: [first], supportedComponentIds: [], problem: { prompt: 'Apply the target to the next development example.', instanceKey: 'dev-probe:' + first + ':' + String(Number(state?.turnNumber || 0) + 2), responseContract: { targetComponentId: first, demandType: 'demonstrate', criterion: 'Apply the target to this example.' } }, reason: 'Collect independent evidence for the target.' },
     sessionDecision: 'continue',
   }
 }
@@ -421,6 +448,8 @@ function validateTurnPayload(parsed, componentIds) {
       result: ['independent_success', 'supported_success', 'failure', 'possible_slip'].includes(row?.result) ? row.result : 'possible_slip',
       responseStatus: row?.responseStatus,
       responseQuote: clean(row?.responseQuote, 500),
+      basis: ['asked_target', 'volunteered_correct', 'volunteered_contradiction'].includes(row?.basis) ? row.basis : '',
+      contradiction: clean(row?.contradiction, 800),
       independent: row?.independent === true,
       varied: row?.varied === true,
       integrated: row?.integrated === true,
@@ -430,8 +459,21 @@ function validateTurnPayload(parsed, componentIds) {
   const nextAction = normalizeActionForValidation(parsed?.nextAction, componentIds)
   if (!ACTIONS.has(nextAction.type)) nextAction.type = 'probe'
 
+  const demandJudgment = parsed?.demandJudgment && typeof parsed.demandJudgment === 'object'
+    ? {
+        contractId: clean(parsed.demandJudgment.contractId, 160),
+        status: clean(parsed.demandJudgment.status, 80),
+        responseQuote: clean(parsed.demandJudgment.responseQuote, 500),
+        reason: clean(parsed.demandJudgment.reason, 800),
+      }
+    : null
+
   return {
     learnerMessage: clean(parsed?.learnerMessage, 5000),
+    feedbackDisposition: ['affirm', 'correct', 'clarify', 'neutral'].includes(parsed?.feedbackDisposition)
+      ? parsed.feedbackDisposition
+      : null,
+    demandJudgment,
     diagnosis,
     observations,
     integrationEvidence: parsed?.integrationEvidence === true,
@@ -502,9 +544,26 @@ function normalizeActionForValidation(rawAction, componentIds) {
 function validateProblemActionFreshness(action, priorProblems = []) {
   const mathValidation = validateLiftoffMathProblem(action?.problem, { requireResponse: true })
   if (!mathValidation.ok) return mathValidation
-  if (!PROBLEM_ACTIONS.has(action?.type)) return { ok: true }
+
+  const hasLearnerProblem = Boolean(action?.problem?.prompt)
+  if (!PROBLEM_ACTIONS.has(action?.type) && !hasLearnerProblem) return { ok: true }
+
   const { problem } = normalizeProblemForValidation(action?.problem, { requireResponse: true })
   if (!problem?.prompt || !problem?.instanceKey) return { ok: false, reason: 'missing_problem_identity' }
+
+  if (!Array.isArray(action?.targetComponentIds) || action.targetComponentIds.length !== 1) {
+    return { ok: false, reason: 'question_requires_one_target' }
+  }
+
+  const contract = problem.responseContract
+  if (!contract) return { ok: false, reason: 'missing_response_contract' }
+  if (contract.targetComponentId !== action.targetComponentIds[0]) {
+    return { ok: false, reason: 'response_contract_target_mismatch' }
+  }
+  if (!contract.demandType || !contract.criterion) {
+    return { ok: false, reason: 'incomplete_response_contract' }
+  }
+
   if (!isLiftoffProblemFresh(problem, priorProblems)) return { ok: false, reason: 'repeated_problem' }
   return { ok: true, problem }
 }
@@ -539,6 +598,13 @@ async function retryForDifferentProblem(basePrompt, priorProblems, reason) {
   const correction = `${basePrompt}\n\nAPPLICATION VALIDATION REJECTED YOUR LAST NEXT PROBLEM: ${reason}. Generate the JSON again. The next learner problem must be genuinely different from every used problem below. Rewording the same quantities or relationships is still the same problem. Use the same deterministic instanceKey for the same underlying instance; never invent a nonce. Do not call the problem fresh/new/different in learnerMessage.\nUSED PROBLEMS:\n${JSON.stringify(used)}`
   return callModel(correction)
 }
+
+async function retryForFairTurn(basePrompt, state, reasons = []) {
+  const contract = state?.currentAction?.problem?.responseContract || null
+  const correction = basePrompt + '\n\nAPPLICATION VALIDATION: ' + (reasons.join('; ') || 'question-bound evaluation invalid') + '. Re-evaluate the same response only against the current response contract. Unasked criteria are not negative evidence. Preserve grounded positive evidence. Any extra negative observation must be explicitly volunteered by the response and labeled volunteered_contradiction. The next problem must have exactly one target and a responseContract.\nCURRENT RESPONSE CONTRACT:\n' + JSON.stringify(contract)
+  return callModel(correction)
+}
+
 export async function POST(request) {
   try {
     const body = await request.json().catch(() => null)
@@ -678,10 +744,14 @@ export async function POST(request) {
       }
       const componentIds = (body.state?.components || []).map((component) => component.id).filter(Boolean)
       const payload = validateTurnPayload(fallback, componentIds)
-      payload.observations = filterLiftoffPartialEvidence(payload.observations, learnerResponse)
       capMathObservations(payload, verifiedMath?.evidence, body.state)
+      const fairness = validateLiftoffEvidenceAgainstDemand({ observations: payload.observations, demandJudgment: payload.demandJudgment, feedbackDisposition: payload.feedbackDisposition, learnerResponse, currentAction: body.state?.currentAction, authoritativeMathEvidence: verifiedMath?.evidence || null })
+      payload.observations = fairness.observations
+      payload.demandJudgment = fairness.demandJudgment
+      payload.feedbackDisposition = fairness.feedbackDisposition
+      payload.evidenceValidated = true
       const validation = validateProblemActionFreshness(payload.nextAction, problemHistoryForState(body.state))
-      if (!validation.ok) return NextResponse.json({ error: 'Development Liftoff fallback repeated a problem.' }, { status: 500 })
+      if (!validation.ok || !fairness.valid) return NextResponse.json({ error: 'Development Liftoff fallback did not produce a valid question-bound turn.' }, { status: 500 })
       payload.learnerMessage = composeLearnerMessage(payload.learnerMessage, payload.nextAction)
       return NextResponse.json({ ok: true, mode, ...payload, ...(verifiedMath ? { mathReceipt: { activityId: verifiedMath.evidence.activityId, requestId: verifiedMath.evidence.requestId, submittedRevision: verifiedMath.evidence.submittedRevision } } : {}), provider: 'dev-fallback' })
     }
@@ -723,22 +793,37 @@ export async function POST(request) {
 
     const componentIds = (body.state?.components || []).map((component) => component.id).filter(Boolean)
     const priorProblems = problemHistoryForState(body.state)
+    let conservativeAction = null
+    let lastValidationReasons = []
     for (let attempt = 0; attempt < 3; attempt += 1) {
       const payload = validateTurnPayload(parsed, componentIds)
-      payload.observations = filterLiftoffPartialEvidence(payload.observations, learnerResponse)
       capMathObservations(payload, verifiedMath?.evidence, body.state)
+      const fairness = validateLiftoffEvidenceAgainstDemand({ observations: payload.observations, demandJudgment: payload.demandJudgment, feedbackDisposition: payload.feedbackDisposition, learnerResponse, currentAction: body.state?.currentAction, authoritativeMathEvidence: verifiedMath?.evidence || null })
+      payload.observations = fairness.observations
+      payload.demandJudgment = fairness.demandJudgment
+      payload.feedbackDisposition = fairness.feedbackDisposition
+      payload.evidenceValidated = true
       const validation = validateProblemActionFreshness(payload.nextAction, priorProblems)
-      if (validation.ok) {
+      if (validation.ok && !conservativeAction) conservativeAction = payload.nextAction
+      if (validation.ok && fairness.valid) {
         payload.learnerMessage = composeLearnerMessage(payload.learnerMessage, payload.nextAction)
         return NextResponse.json({ ok: true, mode, ...payload, ...(verifiedMath ? { mathReceipt: { activityId: verifiedMath.evidence.activityId, requestId: verifiedMath.evidence.requestId, submittedRevision: verifiedMath.evidence.submittedRevision } } : {}) })
       }
+      lastValidationReasons = [...(validation.ok ? [] : [validation.reason]), ...fairness.violations].filter(Boolean)
       if (attempt >= 2) break
-      modelText = await retryForDifferentProblem(prompt, priorProblems, validation.reason)
+      modelText = validation.ok
+        ? await retryForFairTurn(prompt, body.state, fairness.violations)
+        : await retryForDifferentProblem(prompt, priorProblems, validation.reason)
       modelResult = await parseSafeModelResponse(modelText)
       if (modelResult.error) break
       parsed = modelResult.parsed
     }
-    return NextResponse.json({ error: 'Mr. Slate could not generate a genuinely different diagnostic problem.' }, { status: 502 })
+    if (conservativeAction) {
+      const recovery = { learnerMessage: 'I am going to check that idea a different way.', feedbackDisposition: 'neutral', demandJudgment: null, diagnosis: { category: 'unknown', componentId: '', evidence: 'Evaluation withheld.' }, observations: [], integrationEvidence: false, variationEvidence: false, nextAction: conservativeAction, sessionDecision: 'continue', evidenceValidated: true }
+      recovery.learnerMessage = composeLearnerMessage(recovery.learnerMessage, conservativeAction)
+      return NextResponse.json({ ok: true, mode, ...recovery, validationRecovery: { reasons: lastValidationReasons } })
+    }
+    return NextResponse.json({ error: 'Mr. Slate could not generate a valid next diagnostic problem.' }, { status: 502 })
   } catch (error) {
     console.error('[Slate Liftoff] unexpected error', error)
     return NextResponse.json({ error: 'Mr. Slate is unavailable.' }, { status: 500 })

@@ -90,7 +90,7 @@ test('Slate provenance keeps protocol identity distinct while sharing the global
   assert.equal(review.teaching_protocol_version, 'slate-mastery-retention-v1')
   assert.equal(liftoff.provider, 'openai')
   assert.equal(liftoff.model, 'shared-model')
-  assert.equal(liftoff.teaching_protocol_version, 'liftoff-instruction-v1')
+  assert.equal(liftoff.teaching_protocol_version, 'liftoff-instruction-v2')
   const restored = resolveEvidenceSessionProvenance({ teaching_protocol_version: 'liftoff-instruction-v1' }, env)
   assert.equal(restored.provider, 'openai')
   assert.equal(restored.model, 'shared-model')

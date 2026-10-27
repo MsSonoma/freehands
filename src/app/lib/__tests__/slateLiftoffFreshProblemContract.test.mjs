@@ -41,3 +41,14 @@ test('learner sees the validated structured problem rather than trusting problem
 test('initial Liftoff state records the modeled problem before the first probe', () => {
   assert.match(experience, /priorProblems: init\.modeledProblem \? \[init\.modeledProblem\] : \[\]/)
 })
+
+
+test('question-bound judgment contract is enforced by the application', () => {
+  assert.match(route, /responseContract:\{targetComponentId,demandType,criterion\}/)
+  assert.match(route, /question_requires_one_target/)
+  assert.match(route, /missing_response_contract/)
+  assert.match(route, /response_contract_target_mismatch/)
+  assert.match(route, /validateLiftoffEvidenceAgainstDemand/)
+  assert.match(route, /retryForFairTurn/)
+  assert.match(route, /payload\.evidenceValidated = true/)
+})
