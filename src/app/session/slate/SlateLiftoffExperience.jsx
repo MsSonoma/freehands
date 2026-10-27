@@ -2391,6 +2391,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     </div>
   ) : null
 
+  // Text-entry test answers use the same composer position as Liftoff,
+  // outside the transcript. Choice buttons and question math stay in the transcript.
+  const assessmentWrittenAnswerMode = !isAssessment || !currentAssessment ? null
+    : assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? 'invalid-math'
+    : assessmentMathResolution.kind === 'math'
+      ? (questionType(currentAssessment) === 'multiplechoice' ? null : 'math')
+      : ['multiplechoice', 'truefalse'].includes(questionType(currentAssessment)) ? null : 'text'
+
   const assessmentTranscriptContent = isAssessment && currentAssessment ? (
     <div data-slate-test-transcript-tail style={{ marginTop: 12, paddingTop: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
@@ -2398,17 +2406,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 {phase === 'test' && <button type="button" onClick={() => void printIndependentTest()} disabled={testPrintBusy || busy} style={{ padding: '7px 10px', background: C.surface2, color: C.accent, border: '1px solid ' + C.border, borderRadius: 6, fontFamily: C.font, fontWeight: 800, cursor: testPrintBusy ? 'wait' : 'pointer' }}>{testPrintBusy ? 'PREPARING PDF...' : 'PRINT TEST'}</button>}
               </div>
               {testPrintError && <div role="alert" style={{ color: C.red, fontSize: 12, marginBottom: 8 }}>{testPrintError}</div>}
-              {assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? (
-                <div style={{ display: 'grid', gap: 8 }}>
-                  <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
-                    <textarea rows={2} data-sonoma-input
-                    inputMode="none"
-                    onPointerDown={(event) => openSlateInput(event, (next) => { assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }, "math")}
-                    value={assessmentAnswer} onChange={(event) => { assessmentMathTextRef.current = event.target.value; setAssessmentAnswer(event.target.value); scheduleMathSnapshot() }} disabled={busy || lessonInteractionHeld} style={{ flex: 1, minWidth: 0, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
-                    <button disabled={busy || lessonInteractionHeld || (!assessmentAnswer.trim() && !assessmentMathPending?.status)} style={{ padding: '10px 18px' }}>SUBMIT</button>
-                  </form>
-                </div>
-              ) : assessmentMathResolution.kind === 'math' ? (
+              {assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? null : assessmentMathResolution.kind === 'math' ? (
                 <div style={{ display: 'grid', gap: 12 }}>
                   {assessmentMathMatches && (assessmentScratchProblem && assessmentScratchSession ? (
                     <fieldset disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
@@ -2449,20 +2447,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                       return <button key={`${letter}-${index}`} disabled={busy || lessonInteractionHeld} onClick={() => void submitAssessmentAnswer(letter)} style={{ textAlign: 'left', padding: 12, cursor: 'pointer' }}>{letter}. {text}</button>
                     })}
                   </div>
-                  ) : (
-                  <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
-                    <textarea rows={2} data-sonoma-input
-                    inputMode="none"
-                    onPointerDown={(event) => openSlateInput(event, (next) => { assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }, "math")}
-                    value={assessmentAnswer} onChange={(event) => {
-                      assessmentMathTextRef.current = event.target.value
-                      setAssessmentAnswer(event.target.value)
-                      setAssessmentMathError('')
-                      scheduleMathSnapshot()
-                    }} disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced} placeholder="Type your answer or use a result from scratch work" style={{ flex: 1, minWidth: 0, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
-                    <button disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!assessmentAnswer.trim() && !assessmentMathPending?.status)} style={{ padding: '10px 18px', cursor: 'pointer' }}>SUBMIT</button>
-                  </form>
-                  )}
+                  ) : null}
                   {assessmentMathError && <div role="status" style={{ color: C.muted, fontWeight: 700 }}>{assessmentMathError}</div>}
                 </div>
               ) : questionType(currentAssessment) === 'multiplechoice' ? (
@@ -2478,15 +2463,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                   <button disabled={busy || lessonInteractionHeld} onClick={() => void submitAssessmentAnswer('true')} style={{ flex: 1, padding: 12, cursor: 'pointer' }}>TRUE</button>
                   <button disabled={busy || lessonInteractionHeld} onClick={() => void submitAssessmentAnswer('false')} style={{ flex: 1, padding: 12, cursor: 'pointer' }}>FALSE</button>
                 </div>
-              ) : (
-                <form onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }} style={{ display: 'flex', gap: 10 }}>
-                  <input data-sonoma-input
-                    inputMode="none"
-                    onPointerDown={(event) => openSlateInput(event, (next) => { assessmentMathTextRef.current = next; setAssessmentAnswer(next); scheduleMathSnapshot() }, "math")}
-                    value={assessmentAnswer} onChange={(event) => { assessmentMathTextRef.current = event.target.value; setAssessmentAnswer(event.target.value) }} disabled={busy || lessonInteractionHeld} style={{ flex: 1, padding: 12, background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8 }} />
-                  <button disabled={busy || lessonInteractionHeld || !assessmentAnswer.trim()} style={{ padding: '10px 18px', cursor: 'pointer' }}>SUBMIT</button>
-                </form>
-              )}
+              ) : null}
 
 
     </div>
@@ -2566,7 +2543,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               onReplayRequest={replayTranscriptLine}
               replayEnabled={!busy && !lineHelpBusy}
               teacherName="Mr. Slate"
-              stackedHeight={isAssessment ? 'min(72dvh, 720px)' : (structuredMathPresented && activeScratchDraft?.visible ? 'clamp(260px, 42vh, 460px)' : null)}
+              stackedHeight={isAssessment ? (assessmentWrittenAnswerMode ? 'min(52dvh, 480px)' : 'min(72dvh, 720px)') : (structuredMathPresented && activeScratchDraft?.visible ? 'clamp(260px, 42vh, 460px)' : null)}
               tailContent={isAssessment ? assessmentTranscriptContent : activeMathTranscriptContent}
               followTranscriptEnd={!isAssessment}
               keyboardActive={sonomaKeyboard.keyboardHeight > 0}
@@ -2603,6 +2580,51 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               style={{ alignSelf: 'flex-start', minHeight: 38, padding: '8px 14px', background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
               MATH KEYBOARD
             </button>
+          )}
+
+          {assessmentWrittenAnswerMode && (
+            <form
+              data-slate-test-answer-form
+              onSubmit={(event) => { event.preventDefault(); void submitAssessmentAnswer() }}
+              style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}
+            >
+              <textarea
+                data-slate-test-answer-input
+                aria-label="Test answer"
+                data-sonoma-input
+                inputMode="none"
+                onPointerDown={(event) => openSlateInput(event, (next) => {
+                  assessmentMathTextRef.current = next
+                  setAssessmentAnswer(next)
+                  if (assessmentWrittenAnswerMode === 'math') setAssessmentMathError('')
+                  if (assessmentWrittenAnswerMode !== 'text') scheduleMathSnapshot()
+                }, 'math')}
+                value={assessmentAnswer}
+                onChange={(event) => {
+                  assessmentMathTextRef.current = event.target.value
+                  setAssessmentAnswer(event.target.value)
+                  if (assessmentWrittenAnswerMode === 'math') setAssessmentMathError('')
+                  if (assessmentWrittenAnswerMode !== 'text') scheduleMathSnapshot()
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === 'Enter' && !event.shiftKey && !event.nativeEvent?.isComposing) {
+                    event.preventDefault()
+                    void submitAssessmentAnswer()
+                  }
+                }}
+                rows={2}
+                placeholder={assessmentWrittenAnswerMode === 'math' ? 'Type your answer or use a result from scratch work' : 'Type your test answer'}
+                disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced}
+                style={{ flex: '1 1 280px', minWidth: 0, width: '100%', boxSizing: 'border-box', resize: 'vertical', background: C.surface2, color: C.text, border: `1px solid ${C.border}`, borderRadius: 8, padding: 12, font: 'inherit' }}
+              />
+              <button
+                type="submit"
+                disabled={busy || lessonInteractionHeld || snapshotServiceRef.current?.writesFenced || (!assessmentAnswer.trim() && (assessmentWrittenAnswerMode === 'text' || !assessmentMathPending?.status))}
+                style={{ alignSelf: 'stretch', minWidth: 110, cursor: 'pointer', fontWeight: 900 }}
+              >
+                {busy ? 'CHECKING...' : 'SUBMIT'}
+              </button>
+            </form>
           )}
 
           {phase === 'active' && introTeaching && (

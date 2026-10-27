@@ -34,7 +34,7 @@ test('active teaching math is routed through CaptionPanel in-scroller tail conte
   assert.match(slate, /const activeMathTranscriptContent = phase === 'active' \? \([\s\S]*<VerticalMathWorkspace[\s\S]*phase="teaching"[\s\S]*The scratch workspace is unavailable\.[\s\S]*\{mathError &&/)
   assert.match(slate, /data-slate-active-math-transcript-tail[\s\S]*<VerticalMathWorkspace[\s\S]*showFullAnswerInputs=\{false\}/)
   assert.match(slate, /tailContent=\{isAssessment \? assessmentTranscriptContent : activeMathTranscriptContent\}/)
-  assert.match(slate, /stackedHeight=\{isAssessment \? 'min\(72dvh, 720px\)' : \(structuredMathPresented && activeScratchDraft\?\.visible \? 'clamp\(260px, 42vh, 460px\)' : null\)\}/)
+  assert.ok(slate.includes("stackedHeight={isAssessment ? (assessmentWrittenAnswerMode ? 'min(52dvh, 480px)' : 'min(72dvh, 720px)')"))
   assert.doesNotMatch(slate, /\{phase === 'active' && activeMathSpec && \(\s*<div/)
 })
 
@@ -137,7 +137,7 @@ test('independent test allows question replay but does not expose study help', (
   assert.doesNotMatch(slate, /Hear this question again/)
 })
 
-test('independent test questions and response tools live in the shared transcript', () => {
+test('test questions and choice buttons remain in transcript while written responses use the bottom form', () => {
   const begin = slate.indexOf('const assessmentTranscriptContent = isAssessment && currentAssessment ? (')
   const end = slate.indexOf('  return (\n    <div className={styles.sessionShell}', begin)
   assert.ok(begin >= 0 && end > begin)
@@ -148,6 +148,8 @@ test('independent test questions and response tools live in the shared transcrip
   assert.doesNotMatch(tail, /data-slate-test-manual-math-toggle/)
   assert.match(slate, /data-slate-math-keyboard-tab/)
   assert.doesNotMatch(tail, /<SlateManualScratch/)
+  assert.doesNotMatch(tail, /<form\b|<textarea\b|<input\b/)
+  assert.match(slate, /data-slate-test-answer-form/)
   assert.match(slate, /createPortal\(/)
   assert.match(tail, /submitAssessmentAnswer/)
   assert.match(slate, /tailContent=\{isAssessment \? assessmentTranscriptContent : activeMathTranscriptContent\}/)

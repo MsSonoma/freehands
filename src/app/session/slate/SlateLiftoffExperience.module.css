@@ -72,7 +72,8 @@
     max-height: none !important;
   }
 
-  .contentColumn > [data-slate-primary-answer-form] {
+  .contentColumn > [data-slate-primary-answer-form],
+  .contentColumn > [data-slate-test-answer-form] {
     flex-shrink: 0;
   }
 
@@ -89,8 +90,8 @@
     overflow-y: auto;
   }
 
-  /* The independent test now lives inside the transcript, so give that scroller
-     the full column instead of the short height once used for a separate test card. */
+  /* Test questions and choices remain in the transcript, but written answers
+     use the same bottom composer region as Liftoff. */
   .contentColumn[data-slate-scroll-mode='test'] {
     overflow: hidden;
   }

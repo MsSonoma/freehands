@@ -44,11 +44,45 @@ test('Slate reuses Mrs. Webb microphone and inserts recognized words into the dr
   assert.match(webbDictation, /fetch\('\/api\/stt'/)
 })
 
-test('Slate does not alter the independent test answer input', () => {
-  const testForm = slate.slice(slate.indexOf('const assessmentTranscriptContent = isAssessment && currentAssessment ? ('), slate.indexOf('  return (\n    <div className={styles.sessionShell}'))
-  assert.match(testForm, /<input data-sonoma-input[\s\S]*?value=\{assessmentAnswer\}/)
-  assert.match(testForm, /onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitAssessmentAnswer\(\) \}\}/)
-  assert.doesNotMatch(testForm, /WebbDictationButton/)
+test('independent test written answers use the Liftoff bottom composer, outside the transcript', () => {
+  const tail = slate.slice(
+    slate.indexOf('const assessmentTranscriptContent = isAssessment && currentAssessment ? ('),
+    slate.indexOf('  return (\n    <div className={styles.sessionShell}'),
+  )
+  const composer = slate.slice(
+    slate.indexOf('data-slate-test-answer-form') - 20,
+    slate.indexOf("{phase === 'active' && introTeaching && ("),
+  )
+  assert.doesNotMatch(tail, /<form\b|<textarea\b|<input\b/)
+  assert.match(tail, /<VerticalMathWorkspace/)
+  assert.match(tail, /submitAssessmentAnswer\('true'\)/)
+  assert.match(tail, /submitAssessmentAnswer\(letter\)/)
+  assert.match(composer, /data-slate-test-answer-form/)
+  assert.match(composer, /<textarea[\s\S]*?data-slate-test-answer-input/)
+  assert.match(composer, /rows=\{2\}/)
+  assert.match(composer, /data-sonoma-input[\s\S]*?inputMode="none"/)
+  assert.match(composer, /position: 'sticky', bottom: 0[\s\S]*?flexWrap: 'wrap'/)
+  assert.match(composer, /flex: '1 1 280px', minWidth: 0, width: '100%'/)
+  assert.match(composer, /onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitAssessmentAnswer\(\) \}\}/)
+  assert.match(composer, /value=\{assessmentAnswer\}/)
+  assert.match(composer, /assessmentMathTextRef\.current = event\.target\.value/)
+  assert.match(composer, /assessmentWrittenAnswerMode === 'math'\) setAssessmentMathError\(''\)/)
+  assert.match(composer, /!assessmentMathPending\?\.status/)
+  assert.doesNotMatch(composer, /WebbDictationButton/)
+  assert.ok(slate.indexOf('data-slate-test-answer-form') > slate.indexOf('tailContent={isAssessment ? assessmentTranscriptContent : activeMathTranscriptContent}'))
+  assert.ok(slate.indexOf('data-slate-test-answer-form') < slate.indexOf('data-slate-primary-answer-form'))
+})
+
+test('test answer bar is offered only for written-answer modes and preserves test submission', () => {
+  assert.match(slate, /const assessmentWrittenAnswerMode = !isAssessment \|\| !currentAssessment \? null/)
+  assert.match(slate, /assessmentMathResolution\.kind === 'invalid' && questionType\(currentAssessment\) === 'shortanswer' \? 'invalid-math'/)
+  assert.match(slate, /questionType\(currentAssessment\) === 'multiplechoice' \? null : 'math'/)
+  assert.match(slate, /\['multiplechoice', 'truefalse'\]\.includes\(questionType\(currentAssessment\)\) \? null : 'text'/)
+  assert.match(slate, /\{assessmentWrittenAnswerMode && \(\s*<form/)
+  assert.match(slate, /aria-label="Test answer"/)
+  assert.match(slate, /event\.key === 'Enter' && !event\.shiftKey/)
+  assert.match(slate, /disabled=\{busy \|\| lessonInteractionHeld \|\| snapshotServiceRef\.current\?\.writesFenced \|\| \(!assessmentAnswer\.trim\(\)/)
+  assert.match(slate, /const submitAssessmentAnswer = useCallback\(async \(choiceValue = null\)/)
 })
 
 test('Slate disables redundant workspace full-answer inputs while standalone keeps them by default', () => {

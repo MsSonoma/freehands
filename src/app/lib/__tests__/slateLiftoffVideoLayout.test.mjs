@@ -32,13 +32,13 @@ test('desktop viewport is a fixed-height two-column shell below its header', () 
   assert.match(layout, /\.contentColumn\s*\{[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/)
 })
 
-test('transcript grows to fill space above the original input form', () => {
+test('transcript grows above the Liftoff and test bottom answer forms', () => {
   assert.match(slate, /className=\{styles\.contentColumn\}/)
   assert.match(slate, /className=\{styles\.transcriptColumn\}/)
   assert.match(layout, /\.transcriptColumn\s*\{[\s\S]*?display:\s*flex;[\s\S]*?flex:\s*1 1 auto;[\s\S]*?min-height:\s*0;[\s\S]*?overflow:\s*hidden;/)
   assert.match(layout, /\.transcriptColumn \[data-ms-caption-panel-container\]\s*\{[\s\S]*?flex:\s*1 1 auto;[\s\S]*?height:\s*auto !important;[\s\S]*?max-height:\s*none !important;/)
-  assert.match(layout, /\.contentColumn > \[data-slate-primary-answer-form\]\s*\{[\s\S]*?flex-shrink:\s*0;/)
-  assert.match(slate, /stackedHeight=\{isAssessment \? 'min\(72dvh, 720px\)' : \(structuredMathPresented && activeScratchDraft\?\.visible \? 'clamp\(260px, 42vh, 460px\)' : null\)\}/)
+  assert.match(layout, /\.contentColumn > \[data-slate-primary-answer-form\],\s*\.contentColumn > \[data-slate-test-answer-form\]\s*\{[\s\S]*?flex-shrink:\s*0;/)
+  assert.ok(slate.includes("stackedHeight={isAssessment ? (assessmentWrittenAnswerMode ? 'min(52dvh, 480px)' : 'min(72dvh, 720px)')"))
 })
 
 test('right progress panel fills remaining height under the video and scrolls inside its own area', () => {
@@ -55,13 +55,13 @@ test('mobile remains a naturally scrollable stack; independent test and line hel
   assert.doesNotMatch(layout.split('@media')[0], /height:\s*100dvh|overflow:\s*hidden;/)
 })
 
-test('new sizing keeps math workspace inside captions, original answer bar, assessment and video reference', () => {
+test('test question math remains in captions while written answer shares Liftoff bottom layout', () => {
   assert.match(slate, /tailContent=\{isAssessment \? assessmentTranscriptContent : activeMathTranscriptContent\}/)
   assert.match(slate, /data-slate-active-math-transcript-tail[\s\S]*<VerticalMathWorkspace/)
   assert.match(slate, /data-slate-primary-answer-form/)
   assert.match(slate, /placeholder="Show your thinking or answer Mr\. Slate\."/)
   assert.match(slate, /<form data-slate-primary-answer-form onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitLiftoffAnswer\(\) \}\}/)
-  assert.match(slate, /<form onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitAssessmentAnswer\(\) \}\}/)
+  assert.match(slate, /<form\s+data-slate-test-answer-form\s+onSubmit=\{\(event\) => \{ event\.preventDefault\(\); void submitAssessmentAnswer\(\) \}\}/)
   assert.match(slate, /notes=\{assessmentScratchNotes\}/)
   assert.equal((slate.match(/ref=\{videoRef\}/g) || []).length, 2)
 })

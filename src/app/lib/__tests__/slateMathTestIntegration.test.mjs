@@ -79,10 +79,16 @@ test('current comma-grouped multiple-choice arithmetic opens the existing questi
   assert.deepEqual(problem.operands, ['10000', '6438'])
   assert.equal(slateScratchUiForQuestion(null, result.state.activityId, result.state.spec, 'test').visible, true)
 
-  const mathBranch = slateExperienceSource.slice(
-    slateExperienceSource.indexOf(") : assessmentMathResolution.kind === 'math' ? ("),
-    slateExperienceSource.indexOf(") : questionType(currentAssessment) === 'multiplechoice' ? ("),
+  const mathBranchStart = slateExperienceSource.indexOf(
+    "assessmentMathResolution.kind === 'math' ? (",
+    slateExperienceSource.indexOf('const assessmentTranscriptContent ='),
   )
+  const mathBranchEnd = slateExperienceSource.indexOf(
+    ") : questionType(currentAssessment) === 'multiplechoice' ? (",
+    mathBranchStart,
+  )
+  assert.ok(mathBranchStart >= 0 && mathBranchEnd > mathBranchStart)
+  const mathBranch = slateExperienceSource.slice(mathBranchStart, mathBranchEnd)
   assert.match(mathBranch, /<VerticalMathWorkspace/)
   assert.match(mathBranch, /phase="test"/)
   assert.match(mathBranch, /showCheck=\{false\}/)
