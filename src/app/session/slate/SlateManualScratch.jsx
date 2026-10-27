@@ -16,8 +16,8 @@ export default function SlateManualScratch({
   draft, activityId, phase, onChange, onUseResult, disabled = false, allowTransfer = true,
 }) {
   const sonomaKeyboard = useSonomaKeyboard()
-  const openScratchNumberPad = (event, onChange) => sonomaKeyboard.open({
-    ref: { current: event.currentTarget }, onChange, layout: 'number',
+  const openScratchMathTab = (event, onChange) => sonomaKeyboard.open({
+    ref: { current: event.currentTarget }, onChange, layout: 'math',
     theme: { label: 'Mr. Slate Keyboard', background: '#1e293b', color: '#e2e8f0', accent: '#d97706' },
   })
   const model = useMemo(() => buildSlateManualScratch(draft, activityId, phase), [draft, activityId, phase])
@@ -48,7 +48,7 @@ export default function SlateManualScratch({
 
   return <fieldset disabled={disabled} style={{ border: 0, padding: 0, margin: '10px 0 0', minWidth: 0 }}>
     <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center', marginBottom: 10 }}>
-      <input aria-label="First scratch number" placeholder="Number 1" data-sonoma-input inputMode="none" onPointerDown={(event) => openScratchNumberPad(event, (next) => setOperand(0, next))}
+      <input aria-label="First scratch number" placeholder="Number 1" data-sonoma-input inputMode="none" onPointerDown={(event) => openScratchMathTab(event, (next) => setOperand(0, next))}
         value={draft.operands[0]} onChange={(event) => setOperand(0, event.target.value)}
         style={{ flex: '1 1 110px', minWidth: 0, maxWidth: 170, padding: 8 }} />
       {!model && <select aria-label="Change arithmetic operation" data-scratch-operation
@@ -57,7 +57,7 @@ export default function SlateManualScratch({
         {SLATE_SCRATCH_OPERATIONS.map((operation) =>
           <option key={operation} value={operation}>{SIGNS[operation]}</option>)}
       </select>}
-      <input aria-label="Second scratch number" placeholder="Number 2" data-sonoma-input inputMode="none" onPointerDown={(event) => openScratchNumberPad(event, (next) => setOperand(1, next))}
+      <input aria-label="Second scratch number" placeholder="Number 2" data-sonoma-input inputMode="none" onPointerDown={(event) => openScratchMathTab(event, (next) => setOperand(1, next))}
         value={draft.operands[1]} onChange={(event) => setOperand(1, event.target.value)}
         style={{ flex: '1 1 110px', minWidth: 0, maxWidth: 170, padding: 8 }} />
     </div>
@@ -69,7 +69,7 @@ export default function SlateManualScratch({
       notes={draft.notes} onNotesChange={(notes) =>
         onChange({ ...draft, notes: sanitizeVerticalMathWorkingNotes(notes) })}
       phase={phase} embeddedScratch showCheck={false} showFullAnswerInputs={false}
-      onOpenNumberPad={openScratchNumberPad}
+      onOpenNumberPad={openScratchMathTab}
       operationChoices={options} onOperationChange={setOperation}
       scratchPartialEntries={draft.partialEntries || {}}
       onScratchPartialEntriesChange={(entries) => onChange({

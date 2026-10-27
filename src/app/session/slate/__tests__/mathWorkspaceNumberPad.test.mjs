@@ -28,9 +28,9 @@ test('all editable math cell types preserve existing math update paths', () => {
   assert.match(workspace, /onCellSelect\?\.\(cell.id\)/)
 })
 
-test('manual, guided and test Slate workspaces share their existing number-pad opener', () => {
-  assert.match(manual, /onOpenNumberPad=\{openScratchNumberPad\}/)
-  assert.match(manual, /layout: 'number'/)
+test('manual scratch stays on Math tab while question workspaces retain their number pad', () => {
+  assert.match(manual, /onOpenNumberPad=\{openScratchMathTab\}/)
+  assert.match(manual, /layout: 'math'/)
   assert.equal((liftoff.match(/onOpenNumberPad=\{\(event, onChange\) => openSlateInput\(event, onChange, 'number'\)\}/g) || []).length, 2)
 })
 

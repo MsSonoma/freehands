@@ -25,26 +25,28 @@ export function SonomaKeyboardProvider({ children }) {
   const [keyboardHeight, setKeyboardHeight] = useState(0);
   const [workspaceDock, setWorkspaceDock] = useState(null);
   const [workspacePortal, setWorkspacePortal] = useState(null);
-  const workspaceDockRef = useRef(null);
-  workspaceDockRef.current = workspaceDock;
+  const lastOutsideInputRef = useRef(null);
+
   const panelRef = useRef(null);
   const activeRef = useRef(null);
   const dictationTargetRef = useRef(null);
   activeRef.current = active;
   const close = useCallback(() => {
-    if (workspaceDockRef.current?.visible) workspaceDockRef.current.onHide?.();
+    lastOutsideInputRef.current = null;
     dictationTargetRef.current = null;
     setActive(null);
     setShift(false);
     setKeyboardHeight(0);
   }, []);
   const open = useCallback((config) => {
-    if (!isTouchScreen() && !workspaceDockRef.current?.visible) return;
+    if (!isTouchScreen() && !(workspaceDock && config?.layout === "math")) return;
+    const field = config?.ref?.current;
+    if (field?.isConnected && !panelRef.current?.contains(field)) lastOutsideInputRef.current = config;
     setActive(config);
     setShift(false);
-  }, []);
+  }, [workspaceDock]);
   useEffect(() => {
-    if (!active && !workspaceDock?.visible) return;
+    if (!active) return;
     let pendingTranscriptPointer = null;
     const onPointerDown = (event) => {
       // A second finger means the first touch is not a tap.
@@ -93,10 +95,10 @@ export function SonomaKeyboardProvider({ children }) {
       document.removeEventListener("pointerup", onPointerUp);
       document.removeEventListener("pointercancel", onPointerCancel);
     };
-  }, [active, close, workspaceDock?.visible]);
+  }, [active, close]);
 
   useEffect(() => {
-    if (!active && !workspaceDock?.visible) return;
+    if (!active) return;
     const panel = panelRef.current;
     if (!panel) return;
     const measure = () => setKeyboardHeight(Math.ceil(panel.getBoundingClientRect().height));
@@ -105,16 +107,25 @@ export function SonomaKeyboardProvider({ children }) {
     observer?.observe(panel);
     window.addEventListener("resize", measure);
     return () => { observer?.disconnect(); window.removeEventListener("resize", measure); };
-  }, [active, workspaceDock?.visible]);
+  }, [active]);
 
   useEffect(() => {
-    if (!active && !workspaceDock?.visible) setKeyboardHeight(0);
-  }, [active, workspaceDock?.visible]);
+    if (!active) setKeyboardHeight(0);
+  }, [active]);
 
   // A route change may remove the input that previously owned the keyboard.
   useEffect(() => {
     if (!workspaceDock && active && !active.ref?.current?.isConnected) close();
   }, [workspaceDock, active, close]);
+
+  // Open the Math keyboard tab even when a test question has no answer field.
+  const showMathTab = useCallback((theme) => {
+    if (!isTouchScreen() && !workspaceDock) return;
+    setActive((current) => current?.ref?.current?.isConnected
+      ? { ...current, layout: "math" }
+      : { ref: { current: null }, onChange: () => {}, layout: "math", theme });
+    setShift(false);
+  }, [workspaceDock]);
 
   // Reuse the existing STT recorder; keep the input and insertion point from the moment dictation begins.
   const prepareDictation = useCallback(() => {
@@ -152,12 +163,17 @@ export function SonomaKeyboardProvider({ children }) {
     if (!entry) return;
     if (key === "Done") { close(); return; }
     if (key === "Shift") { setShift((v) => !v); return; }
-    if (key === "123") { setActive({ ...entry, layout: "number" }); return; }
-    if (key === "Math") { setActive({ ...entry, layout: "math" }); return; }
-    if (key === "More") { setActive({ ...entry, layout: "symbols" }); return; }
-    if (key === "ABC") { setActive({ ...entry, layout: "text" }); return; }
+    const nextLayout = { "123": "number", "Math": "math", "More": "symbols", "ABC": "text" }[key];
+    if (nextLayout) {
+      const leavingWorkspace = nextLayout !== "math" && workspacePortal?.contains(entry.ref?.current);
+      const outside = lastOutsideInputRef.current;
+      const target = leavingWorkspace && outside?.ref?.current?.isConnected ? outside :
+        leavingWorkspace ? { ref: { current: null }, onChange: () => {}, theme: entry.theme } : entry;
+      setActive({ ...target, layout: nextLayout });
+      return;
+    }
     const el = entry.ref.current;
-    if (!el || !el.isConnected || el.disabled || el.readOnly) { close(); return; }
+    if (!el || !el.isConnected || el.disabled || el.readOnly) return;
     const start = el.selectionStart ?? el.value.length;
     const end = el.selectionEnd ?? start;
     let nextStart = start;
@@ -185,21 +201,17 @@ export function SonomaKeyboardProvider({ children }) {
     });
     if (shift) setShift(false);
   };
-  const workspaceVisible = Boolean(workspaceDock?.visible);
-  const toggleWorkspaceDock = () => {
-    if (workspaceVisible && workspacePortal?.contains(activeRef.current?.ref?.current)) setActive(null);
-    workspaceDock?.onToggle?.();
-  };
-  const layout = active?.layout || (workspaceVisible ? "number" : "text");
+  const layout = active?.layout || "text";
+  const workspaceVisible = Boolean(active && workspaceDock && layout === "math");
   return (
-    <KeyboardContext.Provider value={{ open, close, active, keyboardHeight, setWorkspaceDock, workspacePortal }}>
+    <KeyboardContext.Provider value={{ open, close, showMathTab, active, keyboardHeight, setWorkspaceDock, workspacePortal }}>
       {children}
-      {(active || workspaceVisible) && (
-        <div ref={panelRef} data-sonoma-keyboard role="group" aria-label="Sonoma on-screen keyboard" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:10000, background:active?.theme?.background || (workspaceVisible ? "#1e293b" : "#e8e8eb"), color:active?.theme?.color || (workspaceVisible ? "#e2e8f0" : "#111827"), padding:"8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left))", boxShadow:"0 -5px 24px #0003", touchAction:"manipulation", ...(workspaceVisible ? { display:"flex", flexDirection:"column", maxHeight:"min(86dvh, 720px)" } : {}) }}>
+      {active && (
+        <div ref={panelRef} data-sonoma-keyboard role="group" aria-label="Sonoma on-screen keyboard" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:10000, background:active?.theme?.background || (workspaceVisible ? "#1e293b" : "#e8e8eb"), color:active?.theme?.color || (workspaceVisible ? "#e2e8f0" : "#111827"), padding:"8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left))", boxShadow:"0 -5px 24px #0003", touchAction:"manipulation" }}>
           <div style={{display:"flex", justifyContent:"space-between", maxWidth:740, margin:"0 auto 5px", alignItems:"center"}}>
             <span style={{fontSize:12,color:active?.theme?.color || (workspaceVisible ? "#e2e8f0" : "#374151"),fontWeight:700}}>{active?.theme?.label || workspaceDock?.label || "Sonoma Keyboard"}</span>
             <div style={{display:"inline-flex",alignItems:"center",gap:8}}>
-              {workspaceDock && <button data-sonoma-keyboard-toggle type="button" onPointerDown={(event)=>event.preventDefault()} onClick={toggleWorkspaceDock} aria-expanded={workspaceVisible} aria-controls="sonoma-keyboard-workspace" style={{background:"#334155",color:"#fff",border:"1px solid #64748b",padding:"5px 9px",borderRadius:7,fontSize:12}}>{workspaceVisible ? "Hide my math" : "My math workspace"}</button>}
+
               <span style={{display: active ? undefined : "none"}} onPointerDown={(event) => event.preventDefault()}>
                 <WebbDictationButton
                   onBeforeRecord={prepareDictation}
@@ -210,15 +222,15 @@ export function SonomaKeyboardProvider({ children }) {
             </div>
           </div>
           <div className={workspaceVisible ? dockStyles.layout : undefined}>
-            {workspaceVisible && <div id="sonoma-keyboard-workspace" data-sonoma-keyboard-workspace className={dockStyles.workspace}><div ref={setWorkspacePortal} /></div>}
+            {workspaceVisible && <div id="sonoma-keyboard-workspace" data-sonoma-keyboard-workspace className={dockStyles.workspace}><div ref={setWorkspacePortal} className={dockStyles.workspaceScroll} /></div>}
             <div className={workspaceVisible ? dockStyles.pad : undefined}>
-              {workspaceVisible && !active && <div style={{fontSize:12,textAlign:"center",color:"#cbd5e1",padding:4}}>Tap a math box to use the number keys.</div>}
+
           {(rows[layout] || rows.text).map((row, rowIndex) => (
-            <div key={rowIndex} style={{display:"flex", justifyContent:"center", gap:4, margin:"4px auto", maxWidth:740}}>
+            <div key={rowIndex} style={{display:"flex", justifyContent:"center", gap:4, margin:"4px auto", maxWidth:740, minWidth: workspaceVisible ? 280 : undefined}}>
               {row.map((key) => (
-                <button key={key} type="button" disabled={!active && key !== "Done"} onPointerDown={(e)=>e.preventDefault()} onClick={()=>press(key)}
+                <button key={key} type="button" disabled={!active?.ref?.current?.isConnected && !["ABC", "Math", "More", "123", "Done"].includes(key)} onPointerDown={(e)=>e.preventDefault()} onClick={()=>press(key)}
                   aria-label={key === "Space" ? "Space" : key}
-                  style={{flex:key==="Space"?5:1, minWidth:0, height:44, background:key==="Done"?(active?.theme?.accent || "#356e5a"):key==="Backspace"?"#cbd5e1":"white", color:key==="Done"?"white":"#111827", border:"1px solid #b4bbc4", borderRadius:6, fontSize: key.length>5?12:17, fontWeight:600}}>
+                  style={{flex:key==="Space"?5:1, minWidth:workspaceVisible ? 34 : 0, height:44, background:key==="Done"?(active?.theme?.accent || "#356e5a"):key==="Backspace"?"#cbd5e1":"white", color:key==="Done"?"white":"#111827", border:"1px solid #b4bbc4", borderRadius:6, fontSize: key.length>5?12:17, fontWeight:600}}>
                   {key==="Shift"?(shift?"⇧":"↑"):key==="Backspace"?"⌫":key==="Space"?"space":key}
                 </button>
               ))}

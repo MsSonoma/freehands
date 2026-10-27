@@ -806,24 +806,13 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     scheduleMathSnapshot()
   }, [scheduleMathSnapshot])
 
-  const toggleManualScratch = useCallback(() => {
-    if (snapshotServiceRef.current?.writesFenced) return
-    commitManualScratchUi({ ...manualScratchUiRef.current, visible: !manualScratchUiRef.current.visible })
-  }, [commitManualScratchUi])
-
+  // The learner workspace belongs to the Math keyboard tab, not an independent panel.
   useEffect(() => {
-    sonomaKeyboard.setWorkspaceDock({
-      label: 'Mr. Slate Keyboard',
-      visible: manualScratchUi.visible && (phase === 'active' || phase === 'test'),
-      onToggle: toggleManualScratch,
-      onHide: () => {
-        if (manualScratchUiRef.current.visible) {
-          commitManualScratchUi({ ...manualScratchUiRef.current, visible: false })
-        }
-      },
-    })
+    sonomaKeyboard.setWorkspaceDock(
+      phase === 'active' || phase === 'test' ? { label: 'Mr. Slate Keyboard' } : null
+    )
     return () => sonomaKeyboard.setWorkspaceDock(null)
-  }, [sonomaKeyboard.setWorkspaceDock, manualScratchUi.visible, phase, toggleManualScratch, commitManualScratchUi])
+  }, [sonomaKeyboard.setWorkspaceDock, phase])
 
   const replayTranscriptLine = useCallback((line) => {
     const text = String(line?.text || '').trim()
@@ -2530,7 +2519,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       </header>
       {exitError && <div role="alert" style={{ padding: '8px 18px', color: C.red, fontSize: 12 }}>{exitError}</div>}
 
-      {manualScratchUi.visible && (phase === 'active' || phase === 'test') && sonomaKeyboard.workspacePortal && createPortal(
+      {(phase === 'active' || phase === 'test') && sonomaKeyboard.active?.layout === 'math' && sonomaKeyboard.workspacePortal && createPortal(
         <div data-slate-manual-scratch style={{ margin: 0 }}>
           <SlateManualScratch
             draft={manualScratchUi}
@@ -2605,13 +2594,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
           {(phase === 'active' || (isAssessment && currentAssessment)) && (
             <button type="button" data-sonoma-keyboard-toggle
-              data-slate-manual-math-toggle={!isAssessment ? '' : undefined}
-              data-slate-test-manual-math-toggle={isAssessment ? '' : undefined}
-              aria-expanded={manualScratchUi.visible}
-              onClick={toggleManualScratch}
+              data-slate-math-keyboard-tab
+              onClick={() => sonomaKeyboard.showMathTab({
+                label: 'Mr. Slate Keyboard', background: '#1e293b', color: '#e2e8f0', accent: '#d97706',
+              })}
               disabled={snapshotServiceRef.current?.writesFenced}
+              aria-label="Open Math keyboard tab"
               style={{ alignSelf: 'flex-start', minHeight: 38, padding: '8px 14px', background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-              {manualScratchUi.visible ? 'HIDE MY MATH WORKSPACE' : 'SHOW MY MATH WORKSPACE'}
+              MATH KEYBOARD
             </button>
           )}
 

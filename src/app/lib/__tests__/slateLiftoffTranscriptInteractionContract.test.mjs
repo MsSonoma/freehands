@@ -146,7 +146,7 @@ test('independent test questions and response tools live in the shared transcrip
   assert.doesNotMatch(tail, /data-slate-test-math-toggle/)
   assert.match(tail, /<VerticalMathWorkspace[\s\S]*phase="test"/)
   assert.doesNotMatch(tail, /data-slate-test-manual-math-toggle/)
-  assert.match(slate, /data-slate-test-manual-math-toggle/)
+  assert.match(slate, /data-slate-math-keyboard-tab/)
   assert.doesNotMatch(tail, /<SlateManualScratch/)
   assert.match(slate, /createPortal\(/)
   assert.match(tail, /submitAssessmentAnswer/)
