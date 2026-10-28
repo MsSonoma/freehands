@@ -4,6 +4,7 @@ import {
   assembleWebbCompositionEssay,
   buildWebbCompositionPlan,
   WEBB_COMPOSITION_PROTOCOL_VERSION,
+  PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION,
   compositionPlanViolations,
   compositionSlotSource,
   findNearDuplicateAcceptedSentence,
@@ -33,6 +34,23 @@ const learnerNotes = {
   6: { text: 'it is more believable when theirs more sources', provenance: 'learner-message', sourceMessageId: 'u6' },
 }
 
+const BLUEPRINT = {
+  controllingIdea: 'Historians build a fuller understanding of the past by examining different kinds of evidence, recognizing source limits, and comparing support across sources.',
+  discourseMode: 'explanation',
+  closingGoal: 'close by synthesizing why comparing multiple kinds of evidence produces a fuller account of the past',
+  bodyUnits: OBJECTIVES.map((objective, index) => ({
+    id: `body-${index + 1}`,
+    objective,
+    clue: `history concept ${index + 1}`,
+    rhetoricalJob: index === 0
+      ? 'establish the kinds of evidence historians can examine'
+      : `develop the next distinct evidence-reasoning step ${index + 1}`,
+    connection: index === 0
+      ? 'establishes what counts as evidence before the paragraph explains how historians evaluate it'
+      : `builds on the preceding evidence idea by adding a distinct reason historians need the next step ${index + 1}`,
+  })),
+}
+
 const PLAN = {
   protocolVersion: 'webb-composition-v1',
   controllingIdea: 'Historians understand the past by examining and comparing evidence.',
@@ -46,7 +64,7 @@ const PLAN = {
 }
 
 test('new composition plan adds structural framing around every objective-derived body sentence', () => {
-  const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes)
+  const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes, BLUEPRINT)
   assert.equal(plan.protocolVersion, WEBB_COMPOSITION_PROTOCOL_VERSION)
   assert.deepEqual(compositionPlanViolations(plan, OBJECTIVES.length), [])
   assert.equal(plan.slots.length, OBJECTIVES.length + 2)
@@ -59,7 +77,7 @@ test('new composition plan adds structural framing around every objective-derive
 })
 
 test('topic and conclusion are structural while every body slot exposes its learner note', () => {
-  const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes)
+  const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes, BLUEPRINT)
   assert.deepEqual(compositionSlotSource(plan.slots[0], OBJECTIVES, learnerNotes), { objectives: [], notes: [] })
   assert.deepEqual(compositionSlotSource(plan.slots.at(-1), OBJECTIVES, learnerNotes), { objectives: [], notes: [] })
   for (let slotIndex = 1; slotIndex < plan.slots.length - 1; slotIndex += 1) {
@@ -145,7 +163,7 @@ test('v2 in-progress essays migrate without losing accepted prose and restore th
     },
   }, OBJECTIVES)
 
-  assert.equal(restored.compositionPlan.protocolVersion, WEBB_COMPOSITION_PROTOCOL_VERSION)
+  assert.equal(restored.compositionPlan.protocolVersion, PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION)
   assert.equal(restored.compositionPlan.slots.length, OBJECTIVES.length + 2)
   assert.equal(restored.acceptedSentences[0].text, 'Old topic sentence.')
   assert.equal(restored.acceptedSentences[0].objectiveIndex, null)
@@ -204,7 +222,7 @@ test('plan-writing no longer calls a second planner or merges, omits, or reorder
   let modelCalls = 0
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ action: 'plan-writing', lesson: { title: 'Questioning Historical Evidence', subject: 'social studies', grade: 5 }, objectives: OBJECTIVES, learnerNotes }),
+    body: JSON.stringify({ action: 'plan-writing', lesson: { title: 'Questioning Historical Evidence', subject: 'social studies', grade: 5 }, objectives: OBJECTIVES, learnerNotes, blueprint: BLUEPRINT }),
   }), { apiKey: 'offline-test', callModel: async () => { modelCalls += 1; throw new Error('composition planning must be deterministic') } })
   assert.equal(response.status, 200)
   assert.equal(modelCalls, 0)
@@ -255,7 +273,7 @@ test('conclusion position fit does not require new factual information', async (
 })
 
 test('writing evaluation treats topic and conclusion as structural roles rather than note conversions', async () => {
-  const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes)
+  const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes, BLUEPRINT)
   for (const index of [0, plan.slots.length - 1]) {
     const source = compositionSlotSource(plan.slots[index], OBJECTIVES, learnerNotes)
     const response = await POST(new Request('http://localhost/api/webb-objectives', {
@@ -280,7 +298,7 @@ test('writing evaluation treats topic and conclusion as structural roles rather 
 })
 
 test('one-sentence slot rejects two learner sentences even when the semantic grader says yes', async () => {
-  const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes)
+  const plan = buildWebbCompositionPlan(OBJECTIVES, learnerNotes, BLUEPRINT)
   const index = 2
   const source = compositionSlotSource(plan.slots[index], OBJECTIVES, learnerNotes)
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
@@ -325,7 +343,21 @@ test('Emma regression: every mastered objective remains a body sentence between 
   const notes = Object.fromEntries(objectives.map((_, index) => [
     index, { text: 'Learner research note ' + index, provenance: 'learner-message', sourceMessageId: 'note-' + index },
   ]))
-  const plan = buildWebbCompositionPlan(objectives, notes)
+  const blueprint = {
+    controllingIdea: 'Maps and geographic patterns help explain how places and people are organized.',
+    discourseMode: 'explanation',
+    closingGoal: 'close by connecting maps, regions, and settlement patterns to understanding places',
+    bodyUnits: objectives.map((objective, index) => ({
+      id: `body-${index + 1}`,
+      objective,
+      clue: `geography concept ${index + 1}`,
+      rhetoricalJob: `develop geographic idea ${index + 1}`,
+      connection: index === 0
+        ? 'establishes how maps help explain place before adding specific geographic patterns'
+        : `extends the geographic explanation with a distinct related idea ${index + 1}`,
+    })),
+  }
+  const plan = buildWebbCompositionPlan(objectives, notes, blueprint)
   const sentences = [
     "It's important to know about maps, regions, and human settlement.",
     'Maps help people understand a place.',

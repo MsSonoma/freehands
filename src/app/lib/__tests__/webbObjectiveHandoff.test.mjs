@@ -5,12 +5,12 @@ import { evaluateWebbObjectives } from '../webbObjectiveEvaluation.mjs'
 import { createLearnerNote, evaluationSource } from '../webbLearnerEvidence.mjs'
 import { classifyWebbObjectiveAttempt, addWebbAssistance, WEBB_ASSISTANCE_TYPES } from '../webbMasteryModel.mjs'
 import { WEBB_SNAPSHOT_VERSION, migrateWebbSnapshot, createWritingAttempt, assembleLearnerEssay } from '../webbLearningModel.mjs'
-import { emptyWebbObjectiveState, mergeWebbObjectiveResult, reconcileWebbObjectiveState, webbObjectiveProgress, createWebbObjectiveQueue } from '../webbObjectiveState.mjs'
+import { emptyWebbObjectiveState, mergeWebbObjectiveResult, reconcileWebbObjectiveState, webbObjectiveProgress, createWebbObjectiveQueue, applyWebbNoteReadiness } from '../webbObjectiveState.mjs'
 
 const AUTHOR = 'The learner understands that The Magic Finger was written by Roald Dahl.'
 const NARRATOR = 'The learner understands that the narrator is a girl.'
 const OBJECTIVES = [AUTHOR, NARRATOR]
-const judgment = (objectiveIndex = 0, accuracy = 'correct', sentenceOk = true, evidenceKind = 'meaning') => JSON.stringify({ evaluations: [{ objectiveIndex, accuracy, sentenceOk, evidenceKind }] })
+const judgment = (objectiveIndex = 0, accuracy = 'correct', sentenceOk = true, evidenceKind = 'meaning', noteReady = true) => JSON.stringify({ evaluations: [{ objectiveIndex, accuracy, sentenceOk, noteReady, evidenceKind }] })
 const noJudgments = JSON.stringify({ evaluations: [] })
 const teacher = (content, id = 'a1') => ({ role: 'assistant', content, id })
 const learner = (content, id = 'u1') => ({ role: 'user', content, id })
@@ -27,15 +27,35 @@ const GENERATION_LESSON = {
   ],
 }
 
-const VALID_GENERATED_PLAN = {
-  objectives: [
+const blueprintFor = (rows, {
+  controllingIdea = 'A responsible response to a problem develops through connected choices, evidence, and a final lesson.',
+  discourseMode = 'explanation',
+  closingGoal = 'close by connecting the evidence to the lesson about responsibility',
+} = {}) => ({
+  controlling_idea: controllingIdea,
+  discourse_mode: discourseMode,
+  closing_goal: closingGoal,
+  body_units: rows.map((row, index) => ({
+    id: `body-${index + 1}`,
+    atomic_focus: row.atomic_focus,
+    objective: row.objective,
+    rhetorical_job: index === 0
+      ? 'establish the first substantive idea the explanation needs'
+      : `develop body idea ${index + 1} in the explanation`,
+    connection_from_previous: index === 0
+      ? 'establishes the starting point that the later body sequence develops'
+      : `builds on the preceding body idea by adding a distinct needed part of the explanation ${index + 1}`,
+  })),
+  objectives: rows,
+})
+
+const VALID_GENERATED_PLAN = blueprintFor([
     { atomic_focus: 'central problem', objective: 'The learner can explain the central problem the character faces.' },
     { atomic_focus: 'first attempt', objective: 'The learner can explain what the character tries first.' },
     { atomic_focus: 'turning clue', objective: 'The learner can explain what clue changes the search.' },
     { atomic_focus: 'supporting event', objective: 'The learner can identify the event that best supports the lesson about responsibility.' },
     { atomic_focus: 'responsibility theme', objective: 'The learner can explain the lesson the story suggests about responsibility.' },
-  ],
-}
+])
 
 async function generateThroughRoute(modelOutputs, onCall = null) {
   let calls = 0
@@ -205,24 +225,20 @@ test('model failure does not mutate supplied learning state', async () => {
 })
 
 test('objective generation repairs bundled draft rows and exposes only the ordered objective strings', async () => {
-  const bundled = {
-    objectives: [
+  const bundled = blueprintFor([
       { atomic_focus: 'character and problem', objective: 'The learner can explain who the main character is and what problem the character faces.' },
       { atomic_focus: 'first attempt', objective: 'The learner can explain what the character tries first.' },
       { atomic_focus: 'turning clue', objective: 'The learner can explain what clue changes the search.' },
       { atomic_focus: 'resolution', objective: 'The learner can explain how the problem is solved.' },
       { atomic_focus: 'lesson and evidence', objective: 'The learner can explain the lesson about responsibility and identify the event that supports it.' },
-    ],
-  }
-  const repaired = {
-    objectives: [
+  ])
+  const repaired = blueprintFor([
       { atomic_focus: 'central problem', objective: 'The learner can explain the central problem the character faces.' },
       { atomic_focus: 'first attempt', objective: 'The learner can explain what the character tries first.' },
       { atomic_focus: 'turning clue', objective: 'The learner can explain what clue changes the search.' },
       { atomic_focus: 'supporting event', objective: 'The learner can identify the event that best supports the lesson about responsibility.' },
       { atomic_focus: 'responsibility theme', objective: 'The learner can explain the lesson the story suggests about responsibility.' },
-    ],
-  }
+  ])
   let calls = 0
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -254,17 +270,20 @@ test('objective generation repairs bundled draft rows and exposes only the order
   assert.equal(calls, 2)
   assert.deepEqual(data.objectives, repaired.objectives.map(row => row.objective))
   assert.deepEqual(data.clues, repaired.objectives.map(row => row.atomic_focus))
-  assert.equal(Object.prototype.hasOwnProperty.call(data, 'roles'), false)
+  assert.equal(data.blueprint.controllingIdea, repaired.controlling_idea)
+  assert.equal(data.blueprint.discourseMode, repaired.discourse_mode)
+  assert.equal(data.blueprint.closingGoal, repaired.closing_goal)
+  assert.deepEqual(data.blueprint.bodyUnits.map(unit => unit.objective), repaired.objectives.map(row => row.objective))
 })
 
 test('objective generation repairs an initial plan with too few objectives', async () => {
-  const tooFew = { objectives: VALID_GENERATED_PLAN.objectives.slice(0, 4) }
+  const tooFew = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
   const { response, calls } = await generateThroughRoute([tooFew, VALID_GENERATED_PLAN], ({ index, system, user, responseFormat }) => {
     assert.equal(responseFormat?.type, 'json_object')
     if (index === 1) {
       assert.match(system, /failed the atomic mastery-objective validator/i)
       const repairInput = JSON.parse(user)
-      assert.match(repairInput.validator_violations.join(' '), /invalid objective count/i)
+      assert.match(repairInput.validator_violations.join(' '), /5 to 8 body units/i)
       assert.equal(repairInput.draft_plan, null)
       assert.equal(typeof repairInput.raw_draft, 'string')
     }
@@ -275,12 +294,12 @@ test('objective generation repairs an initial plan with too few objectives', asy
 })
 
 test('objective generation repairs an initial plan with too many objectives', async () => {
-  const tooMany = { objectives: [
+  const tooMany = blueprintFor([
     ...VALID_GENERATED_PLAN.objectives,
     ...Array.from({ length: 4 }, (_, index) => ({
       atomic_focus: `extra ${index}`, objective: `The learner can explain extra detail ${index}.`,
     })),
-  ] }
+  ])
   const { response, calls } = await generateThroughRoute([tooMany, VALID_GENERATED_PLAN])
   assert.equal(response.status, 200)
   assert.equal(calls, 2)
@@ -301,9 +320,9 @@ test('objective generation repairs malformed JSON before failing lesson startup'
 })
 
 test('objective generation makes one fresh regeneration after a failed repair', async () => {
-  const tooFew = { objectives: VALID_GENERATED_PLAN.objectives.slice(0, 4) }
+  const tooFew = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
   const { response, calls } = await generateThroughRoute([tooFew, '{still invalid', VALID_GENERATED_PLAN], ({ index, system }) => {
-    if (index === 2) assert.match(system, /Start over and return one fresh complete mastery map/i)
+    if (index === 2) assert.match(system, /Start over and return one fresh complete composition blueprint/i)
   })
   assert.equal(response.status, 200)
   assert.equal(calls, 3)
@@ -311,7 +330,7 @@ test('objective generation makes one fresh regeneration after a failed repair', 
 })
 
 test('objective generation fails cleanly only after generation, repair, and fresh regeneration are all invalid', async () => {
-  const tooFew = { objectives: VALID_GENERATED_PLAN.objectives.slice(0, 4) }
+  const tooFew = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
   const { response, calls } = await generateThroughRoute([tooFew, '{still invalid', tooFew])
   assert.equal(response.status, 500)
   assert.equal(calls, 3)
@@ -569,4 +588,121 @@ test('legacy recovery binds each response chronologically rather than asking the
   assert.deepEqual(result.newlyCompleted, [0, 1])
   assert.equal(result.learnerNotes[0].sourceMessageId, 'u1')
   assert.equal(result.learnerNotes[1].sourceMessageId, 'u2')
+})
+
+
+test('v4 mastery can succeed while a context-dependent answer is withheld from writing notes', async () => {
+  const objective = 'The learner can determine whether a detail directly answers the research question.'
+  const bodyUnit = {
+    id: 'body-1',
+    objective,
+    clue: 'relevant evidence',
+    rhetoricalJob: 'move from evaluating sources to selecting evidence that answers the question',
+    connection: 'uses the focused question to decide which evidence belongs in the research',
+  }
+  const conversation = [
+    { role: 'assistant', content: 'Does this detail directly answer the research question?', id: 'a-note-1', objectiveIndex: 0, objectivePrompt: 'Does this detail directly answer the research question?' },
+    { role: 'user', content: 'Hunting In winter can make Bears cold, which is why they have thick fur.', id: 'u-note-1' },
+  ]
+  const result = await evaluateWebbObjectives({
+    objectives: [objective],
+    conversation,
+    blueprint: { bodyUnits: [bodyUnit] },
+    priorPromptExposure: { 0: false },
+    callModel: async (system, user) => {
+      assert.match(system, /noteReady/i)
+      const input = JSON.parse(user)
+      assert.equal(input.remaining_objectives[0].body_unit.rhetoricalJob, bodyUnit.rhetoricalJob)
+      return JSON.stringify({ evaluations: [{
+        objectiveIndex: 0,
+        accuracy: 'correct',
+        sentenceOk: true,
+        noteReady: false,
+        evidenceKind: 'meaning',
+      }] })
+    },
+  })
+
+  assert.deepEqual(result.newlyCompleted, [0])
+  assert.deepEqual(result.learnerNotes, {})
+  assert.equal(result.objectiveEvidence[0].comprehension, 'demonstrated')
+  assert.equal(result.objectiveEvidence[0].latestAttempt.noteReady, false)
+
+  const state = mergeWebbObjectiveResult([objective], emptyWebbObjectiveState(), result, conversation)
+  const progress = webbObjectiveProgress([objective], state)
+  assert.equal(progress.allObjectivesMet, true)
+  assert.equal(progress.writingReady, false)
+  assert.deepEqual(progress.missingNoteIndices, [0])
+})
+
+test('legacy preflight rejects bear-detail and paraphrasing-example notes without erasing mastery', async () => {
+  const objectives = [
+    'The learner can determine whether a detail directly answers the research question.',
+    "The learner can distinguish paraphrasing from copying by recognizing that paraphrasing restates a source's idea in original wording.",
+  ]
+  const learnerNotes = {
+    0: {
+      objectiveIndex: 0,
+      text: 'Hunting In winter can make Bears cold, which is why they have thick fur.',
+      accuracy: 'correct',
+      provenance: 'learner-message',
+    },
+    1: {
+      objectiveIndex: 1,
+      text: 'Polar bears wait by breathing holes to hunt seals.',
+      accuracy: 'correct',
+      provenance: 'learner-message',
+    },
+  }
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      action: 'validate-notes',
+      objectives,
+      learnerNotes,
+      blueprint: {
+        bodyUnits: objectives.map((objective, index) => ({
+          id: `body-${index + 1}`,
+          objective,
+          rhetoricalJob: index === 0 ? 'select evidence that answers the question' : 'explain how source ideas are restated in original wording',
+          connection: index === 0 ? 'moves into evidence selection' : 'moves from selecting evidence to recording it in original words',
+        })),
+      },
+    }),
+  }), {
+    apiKey: 'offline-test',
+    callModel: async (system, user, _maxTokens, _temperature, responseFormat) => {
+      assert.match(system, /NOT a mastery re-grade/i)
+      assert.equal(responseFormat?.type, 'json_object')
+      const input = JSON.parse(user)
+      assert.equal(input.notes[0].learnerNote, learnerNotes[0].text)
+      assert.equal(input.notes[1].learnerNote, learnerNotes[1].text)
+      return JSON.stringify({ evaluations: [
+        { objectiveIndex: 0, noteReady: false },
+        { objectiveIndex: 1, noteReady: false },
+      ] })
+    },
+  })
+
+  assert.equal(response.status, 200)
+  const validation = await response.json()
+  assert.deepEqual(validation.invalidIndices, [0, 1])
+
+  const state = {
+    coveredObj: [0, 1],
+    understoodObj: [0, 1],
+    learnerNotes,
+    objectiveEvidence: {
+      0: { objective: objectives[0], comprehension: 'demonstrated', mastery: 'mastered', attempts: [{ comprehension: 'demonstrated', noteReady: true }] },
+      1: { objective: objectives[1], comprehension: 'demonstrated', mastery: 'mastered', attempts: [{ comprehension: 'demonstrated', noteReady: true }] },
+    },
+  }
+  const repaired = applyWebbNoteReadiness(state, validation)
+  assert.deepEqual(repaired.understoodObj, [0, 1])
+  assert.equal(repaired.objectiveEvidence[0].mastery, 'mastered')
+  assert.equal(repaired.objectiveEvidence[1].mastery, 'mastered')
+  assert.deepEqual(repaired.learnerNotes, {})
+  assert.equal(repaired.objectiveEvidence[0].attempts[0].noteReady, false)
+  assert.equal(repaired.objectiveEvidence[1].attempts[0].noteReady, false)
 })

@@ -136,9 +136,9 @@ test('writing guidance contract asks for learner retry and forbids supplied pros
   assert.match(positionInstructions, /slot fit: no/i)
   assert.match(positionInstructions, /sentence 2 of 3/i)
   assert.match(positionInstructions, /accepted learner-written sentences before this one are context only/i)
-  assert.match(positionInstructions, /specific problem/i)
+  assert.match(positionInstructions, /exactly ONE problem|one selected problem/i)
   const positionFallback = sanitizeWritingGuidance('', positionEvaluation, positionContext)
-  assert.match(positionFallback, /does not add the new idea this part needs/i)
+  assert.match(positionFallback, /wrong job|new idea|research note/i)
   const privateContext = { slot: { role: 'topic', focus: 'how historians compare evidence to understand the past' }, controllingIdea: 'Historians compare evidence to understand the past' }
   const leaked = sanitizeWritingGuidance('Think about historians compare evidence to understand the past.', {}, privateContext)
   assert.doesNotMatch(leaked, /historians compare evidence to understand the past/i)
@@ -291,4 +291,50 @@ test('completed essay stage survives refresh without forcing a deliberately clos
   assert.equal(restored.writingMode, false)
   assert.equal(restored.essay, 'First. Second.')
   assert.equal(restored.essayMode, false)
+})
+
+
+test('writing retry exposes only the highest-priority problem when several checks fail', () => {
+  const reply = sanitizeWritingGuidance('', {
+    accuracy: 'partial',
+    sentenceOk: false,
+    slotFit: false,
+    positionFit: false,
+    addsNewInformation: false,
+    paragraphFit: false,
+  }, { slot: { role: 'body' } })
+
+  assert.match(reply, /does not show the idea this part is about/i)
+  assert.doesNotMatch(reply, /complete sentence/i)
+  assert.doesNotMatch(reply, /repeats|already said/i)
+  assert.doesNotMatch(reply, /wrong job/i)
+  assert.doesNotMatch(reply, /connect to the paragraph/i)
+})
+
+
+test('v10 snapshot migration preserves the retained pre-instruction composition blueprint', () => {
+  const compositionBlueprint = {
+    blueprintVersion: 'webb-blueprint-v1',
+    controllingIdea: 'Research moves from a focused question to relevant, traceable evidence.',
+    discourseMode: 'process',
+    closingGoal: 'close by connecting the research steps into a responsible process',
+    bodyUnits: [
+      { id: 'body-1', objective: 'Focus the question.', clue: 'focused question', rhetoricalJob: 'establish the starting question', connection: 'starts the research process' },
+      { id: 'body-2', objective: 'Evaluate the author.', clue: 'source author', rhetoricalJob: 'begin source evaluation', connection: 'evaluates a source after the question is focused' },
+    ],
+  }
+  const restored = migrateWebbSnapshot({
+    snapshotVersion: WEBB_SNAPSHOT_VERSION,
+    objectives: ['Focus the question.', 'Evaluate the author.'],
+    objectiveClues: ['focused question', 'source author'],
+    compositionBlueprint,
+    understoodObj: [],
+    coveredObj: [],
+    objectiveEvidence: {},
+    learnerNotes: {},
+    writingAttempts: {},
+    acceptedSentences: {},
+    writingMode: false,
+  })
+  assert.deepEqual(restored.compositionBlueprint, compositionBlueprint)
 })

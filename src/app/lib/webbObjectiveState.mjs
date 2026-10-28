@@ -83,6 +83,33 @@ export function mergeWebbObjectiveResult(objectives, current, result, conversati
   }, conversation)
 }
 
+export function applyWebbNoteReadiness(state = {}, { readyIndices = [], invalidIndices = [] } = {}) {
+  const ready = new Set((Array.isArray(readyIndices) ? readyIndices : []).map(learnerMessageIndex).filter(index => index !== null))
+  const invalid = new Set((Array.isArray(invalidIndices) ? invalidIndices : []).map(learnerMessageIndex).filter(index => index !== null))
+  const learnerNotes = { ...(state.learnerNotes || {}) }
+  const objectiveEvidence = { ...(state.objectiveEvidence || {}) }
+
+  for (const index of ready) {
+    if (learnerNotes[index]) learnerNotes[index] = { ...learnerNotes[index], noteReady: true }
+  }
+
+  for (const index of invalid) {
+    delete learnerNotes[index]
+    const evidence = objectiveEvidence[index]
+    if (!evidence) continue
+    const markAttempt = attempt => attempt?.comprehension === 'demonstrated'
+      ? { ...attempt, noteReady: false }
+      : attempt
+    objectiveEvidence[index] = {
+      ...evidence,
+      attempts: (evidence.attempts || []).map(markAttempt),
+      latestAttempt: evidence.latestAttempt ? markAttempt(evidence.latestAttempt) : evidence.latestAttempt,
+    }
+  }
+
+  return { ...state, learnerNotes, objectiveEvidence }
+}
+
 export function webbObjectiveProgress(objectives = [], state = {}) {
   const understood = new Set(validIndices(state.understoodObj, objectives))
   const remainingIndices = objectives.map((_, index) => index).filter(index => !understood.has(index))

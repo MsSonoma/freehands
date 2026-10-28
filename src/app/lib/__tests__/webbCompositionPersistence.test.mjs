@@ -55,7 +55,7 @@ function requestBody(overrides = {}) {
     status: 'final',
     objectives: ['Explain historical evidence.', 'Explain source comparison.'],
     learnerNotes: {
-      0: { text: 'evidence can be documents', provenance: 'learner-message', sourceMessageId: 'u1' },
+      0: { text: 'evidence can be documents', provenance: 'learner-message', sourceMessageId: 'u1', objectivePrompt: 'What kinds of evidence can historians use?', objectivePromptSourceMessageId: 'a1', noteReady: true },
       1: { text: 'compare sources to see more sides', provenance: 'learner-message', sourceMessageId: 'u2' },
     },
     compositionPlan: PLAN,
@@ -88,6 +88,9 @@ test('final composition is assembled server-side from learner-authored slot reco
   assert.notEqual(result.composition.essay, 'Caller supplied text must never be trusted.')
   assert.equal(stored.status, 'final')
   assert.equal(stored.accepted_sentences[2].sourceMessageId, 'w3')
+  assert.equal(stored.research_notes[0].note.objectivePrompt, 'What kinds of evidence can historians use?')
+  assert.equal(stored.research_notes[0].note.objectivePromptSourceMessageId, 'a1')
+  assert.equal(stored.research_notes[0].note.noteReady, true)
 })
 
 test('final composition rejects a generated sentence instead of laundering it into learner work', async () => {

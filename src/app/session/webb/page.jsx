@@ -16,7 +16,7 @@ import { detectProductHelp, getProductHelpFeature, getProductHelpScript, product
 import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 import {
   emptyWebbObjectiveState, reconcileWebbObjectiveState, mergeWebbObjectiveResult,
-  webbObjectiveProgress, createWebbObjectiveQueue,
+  webbObjectiveProgress, createWebbObjectiveQueue, applyWebbNoteReadiness,
 } from '@/app/lib/webbObjectiveState.mjs'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
@@ -192,6 +192,7 @@ function WebbPageInner() {
   const transcriptManualScrollRef = useRef(false)
   // The scroll effect reads objectives.length during render, so initialize it first.
   const [objectives,         setObjectives]        = useState([])  // string[]
+  const [compositionBlueprint, setCompositionBlueprint] = useState(null) // retained pre-instruction Webb v4 architecture
   useEffect(() => {
     const el = transcriptRef.current
     if (!el) return
@@ -611,8 +612,10 @@ function WebbPageInner() {
         if (Object.keys(saved.acceptedSentences || {}).length || Object.keys(saved.objectiveEvidence || {}).length) {
           throw new Error('The saved learning goals are missing. Your writing is preserved; please ask your facilitator to review this session.')
         }
-        saved.objectives = await generateObjectives(selectedLesson)
-        saved.objectiveClues = saved.objectives.clues || saved.objectives.map((_, index) => `Goal ${index + 1}`)
+        const generated = await generateObjectives(selectedLesson)
+        saved.objectives = generated
+        saved.objectiveClues = generated.clues || generated.map((_, index) => `Goal ${index + 1}`)
+        saved.compositionBlueprint = generated.blueprint || null
       }
       if (run !== runGenerationRef.current) return
       if (!Array.isArray(saved.objectiveClues) || saved.objectiveClues.length !== saved.objectives.length) {
@@ -644,15 +647,33 @@ function WebbPageInner() {
       setTranscript(saved.transcript || [])
       setObjectives(saved.objectives || [])
       setObjectiveClues(saved.objectiveClues || (saved.objectives || []).map((_, index) => `Goal ${index + 1}`))
+      setCompositionBlueprint(saved.compositionBlueprint || null)
       priorObjectiveExposureRef.current = Object.fromEntries((saved.objectives || []).map((_, index) => [index, true]))
       await loadPriorObjectiveExposure(saved.objectives || [], selectedLesson)
       if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
-      const restored = reconcileWebbObjectiveState(saved.objectives, saved, saved.chatMessages || [])
+      let restored = reconcileWebbObjectiveState(saved.objectives, saved, saved.chatMessages || [])
+      let composition = restoreWebbCompositionState({ ...saved, ...restored }, saved.objectives)
+      restored = await validateLegacyWritingNotes(
+        saved.objectives,
+        restored,
+        saved.compositionBlueprint || null,
+        composition.compositionPlan || saved.compositionPlan || null,
+        composition.acceptedSentences || {},
+      )
+      const validatedProgress = webbObjectiveProgress(saved.objectives, restored)
+      if (composition.webbStage === WEBB_SESSION_STAGES.WRITING && validatedProgress.missingNoteIndices.length > 0) {
+        composition = {
+          ...composition,
+          webbStage: WEBB_SESSION_STAGES.RESEARCH,
+          writingMode: false,
+          writingSubphase: WEBB_WRITING_SUBPHASES.IDLE,
+          pendingWritingReview: null,
+        }
+      }
       commitLearningState(restored)
       announcedNotesRef.current = new Set(Object.entries(rawSaved.learnerNotes || {}).map(([index, note]) => index + ':' + note.text))
       pendingNoteAnnouncementsRef.current = []
       queueNewNotes(rawSaved, restored, saved.objectives)
-      const composition = restoreWebbCompositionState({ ...saved, ...restored }, saved.objectives)
       webbStageRef.current = composition.webbStage
       pendingWritingReviewRef.current = composition.pendingWritingReview
       writingResumeReplayRef.current = false
@@ -698,7 +719,7 @@ function WebbPageInner() {
       const progress = webbObjectiveProgress(saved.objectives, restored)
       const restoredTarget = Number.isInteger(saved.objectiveTargetIndex) && progress.remainingIndices.includes(saved.objectiveTargetIndex)
         ? saved.objectiveTargetIndex
-        : (progress.remainingIndices[0] ?? null)
+        : (progress.remainingIndices[0] ?? progress.missingNoteIndices[0] ?? null)
       objectiveTargetRef.current = restoredTarget
       snapshotRef.current = { ...snapshotRef.current, objectiveTargetIndex: restoredTarget }
       if (composition.webbStage === WEBB_SESSION_STAGES.RESEARCH) {
@@ -738,7 +759,7 @@ function WebbPageInner() {
   snapshotRef.current = {
     snapshotVersion: WEBB_SNAPSHOT_VERSION,
     webbSessionStartedAt: webbSessionStartRef.current,
-    selectedLesson, chatMessages, transcript, objectives, objectiveClues,
+    selectedLesson, chatMessages, transcript, objectives, objectiveClues, compositionBlueprint,
     objectiveTargetIndex: objectiveTargetRef.current,
     ...learningStateRef.current,
     webbStage: webbStageRef.current,
@@ -754,7 +775,7 @@ function WebbPageInner() {
   useEffect(() => {
     if (webbExecutionFencedRef.current || offerResume || phase !== PHASE.CHATTING || !selectedLesson) return
     snapshotSaveRef.current()
-  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, objectiveClues, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, compositionPlan, essay, essayMode, responseTurn, playMilestones, activePlayBreak, webbGoldenKeySuspended])
+  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, objectiveClues, compositionBlueprint, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, compositionPlan, essay, essayMode, responseTurn, playMilestones, activePlayBreak, webbGoldenKeySuspended])
 
   submitWritingAttemptRef.current = submitWritingAttempt
   useEffect(() => {
@@ -2047,6 +2068,7 @@ function WebbPageInner() {
     result.clues = Array.isArray(data.clues) && data.clues.length === result.length
       ? data.clues
       : result.map((_, index) => `Goal ${index + 1}`)
+    result.blueprint = data.blueprint && typeof data.blueprint === 'object' ? data.blueprint : null
     return result
   }, [])
 
@@ -2066,6 +2088,38 @@ function WebbPageInner() {
     }
   }, [])
 
+  async function validateLegacyWritingNotes(objectiveList, state, blueprint = compositionBlueprint, plan = compositionPlan, accepted = acceptedSentences) {
+    const acceptedObjectiveIndices = new Set()
+    if (Array.isArray(plan?.slots)) {
+      plan.slots.forEach((slot, slotIndex) => {
+        if (slot?.role !== 'body' || accepted?.[slotIndex]?.provenance !== 'learner-message') return
+        for (const objectiveIndex of slot.sourceObjectiveIndices || []) acceptedObjectiveIndices.add(objectiveIndex)
+      })
+    }
+
+    const notesToValidate = {}
+    ;(objectiveList || []).forEach((_, objectiveIndex) => {
+      const note = state?.learnerNotes?.[objectiveIndex]
+      if (!note || note.noteReady === true || acceptedObjectiveIndices.has(objectiveIndex)) return
+      notesToValidate[objectiveIndex] = note
+    })
+    if (!Object.keys(notesToValidate).length) return state
+
+    const res = await fetch('/api/webb-objectives', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'validate-notes',
+        objectives: objectiveList,
+        learnerNotes: notesToValidate,
+        blueprint,
+      }),
+    })
+    if (!res.ok) throw new Error('Mrs. Webb could not verify the saved writing notes yet.')
+    const data = await res.json()
+    return applyWebbNoteReadiness(state, data)
+  }
+
   async function prepareCompositionPlan() {
     const res = await fetch('/api/webb-objectives', {
       method: 'POST',
@@ -2075,6 +2129,7 @@ function WebbPageInner() {
         lesson: selectedLesson,
         objectives,
         learnerNotes: learnerNotesRef.current,
+        blueprint: compositionBlueprint,
       }),
     })
     if (!res.ok) throw new Error('Mrs. Webb could not prepare the writing plan yet.')
@@ -2302,6 +2357,7 @@ function WebbPageInner() {
           priorPromptExposure: priorObjectiveExposureRef.current,
           targetObjectiveIndex: Number.isInteger(targetObjectiveIndex) ? targetObjectiveIndex : null,
           conversation: updatedMessages, lesson: selectedLesson, quick: !recoverNotes, recoverNotes,
+          blueprint: compositionBlueprint,
         }),
       })
       if (!active()) return null
@@ -2370,6 +2426,7 @@ function WebbPageInner() {
     setPageError('')
     setObjectives([])
     setObjectiveClues([])
+    setCompositionBlueprint(null)
     objectiveTargetRef.current = null
     commitLearningState(emptyWebbObjectiveState())
     setNewlySavedNote(null)
@@ -2406,9 +2463,11 @@ function WebbPageInner() {
 
     let startupObjectives
     let startupObjectiveClues
+    let startupCompositionBlueprint
     try {
       startupObjectives = await generateObjectives(lesson)
       startupObjectiveClues = startupObjectives.clues || startupObjectives.map((_, index) => `Goal ${index + 1}`)
+      startupCompositionBlueprint = startupObjectives.blueprint || null
       if (run !== runGenerationRef.current) return
     } catch (cause) {
       if (run !== runGenerationRef.current) return
@@ -2443,6 +2502,7 @@ function WebbPageInner() {
       objectiveTargetRef.current = startupObjectives.length ? 0 : null
       setObjectives(startupObjectives)
       setObjectiveClues(startupObjectiveClues)
+      setCompositionBlueprint(startupCompositionBlueprint)
       await loadPriorObjectiveExposure(startupObjectives, lesson)
     } catch (cause) {
       if (run !== runGenerationRef.current) return
@@ -2684,9 +2744,7 @@ function WebbPageInner() {
       })
       if (!checked || !active()) return
       const { progress, data: checkData } = checked
-      if (progress.allObjectivesMet && !progress.writingReady) {
-        throw new Error('You have completed the learning goals. A saved note still needs recovery; retry without repeating your answer.')
-      }
+      const missingNoteIndex = progress.missingNoteIndices[0] ?? null
       const researchMidpointThreshold = midpointThreshold(currentObjectives.length)
       const researchMidpointPlayDue = !progress.allObjectivesMet
         && !!researchMidpointThreshold
@@ -2705,7 +2763,8 @@ function WebbPageInner() {
         && !playMilestonesRef.current?.['research-midpoint']
         && progress.understoodCount >= researchMidpointThreshold
       const firstRemainingIndex = progress.remainingIndices[0]
-      objectiveTargetRef.current = firstRemainingIndex ?? null
+      const activePromptIndex = firstRemainingIndex ?? missingNoteIndex
+      objectiveTargetRef.current = activePromptIndex ?? null
       const evaluatedTargetIndex = Number.isInteger(targetObjectiveIndex)
         ? targetObjectiveIndex
         : (Object.keys(checkData.evaluationStatus || {}).map(Number).find(Number.isInteger) ?? firstRemainingIndex)
@@ -2722,6 +2781,9 @@ function WebbPageInner() {
           completedObjectives: progress.completedObjectives,
           allObjectivesMet: progress.allObjectivesMet,
           writingReady: progress.writingReady,
+          noteCaptureIndex: missingNoteIndex,
+          noteCaptureObjective: Number.isInteger(missingNoteIndex) ? currentObjectives[missingNoteIndex] : '',
+          noteCaptureBodyUnit: Number.isInteger(missingNoteIndex) ? (compositionBlueprint?.bodyUnits?.[missingNoteIndex] || null) : null,
           deferTransitionForPlay: transitionPlayDue,
           deferQuestionForPlay: researchMidpointPlayDue,
           masteryStatus,
@@ -2732,7 +2794,7 @@ function WebbPageInner() {
       const data = await res.json()
       if (!active()) return
       if (typeof data.reply !== 'string' || !data.reply.trim()) throw new Error('Mrs. Webb did not return a reply. Please retry.')
-      const assistantMsg = objectivePromptMessage(data.reply, firstRemainingIndex, progress.remainingObjectives[0], data.objectivePrompt, {
+      const assistantMsg = objectivePromptMessage(data.reply, activePromptIndex, Number.isInteger(activePromptIndex) ? currentObjectives[activePromptIndex] : '', data.objectivePrompt, {
         id: crypto.randomUUID(), createdAt: new Date().toISOString(),
       })
       const finalHistory = [...nextHistory, assistantMsg]
@@ -3235,7 +3297,22 @@ function WebbPageInner() {
   async function handleStartWriting() {
     if (webbExecutionFencedRef.current || chatLoading || writingStartBusy || checkError || storageError || activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
     if (webbPacingSettings.playTimesEnabled && webbPacingSettings.transitionEnabled && !playMilestonesRef.current?.['research-to-writing']) return
-    if (writingEvaluating || !hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return
+    if (writingEvaluating) return
+    try {
+      const beforeValidation = learningStateRef.current
+      const validated = await validateLegacyWritingNotes(objectives, beforeValidation, compositionBlueprint, compositionPlan, acceptedSentences)
+      if (validated !== beforeValidation) {
+        commitLearningState(validated)
+        saveLearningSnapshot({ learnerNotes: validated.learnerNotes, objectiveEvidence: validated.objectiveEvidence })
+      }
+      if (!hasAllWritingReadyNotes(objectives, validated.learnerNotes)) {
+        await completeResearchTurn(chatMessages, objectives, { recoverNotes: true })
+        return
+      }
+    } catch (error) {
+      setCompositionSaveError(error?.message || 'Mrs. Webb could not verify the saved writing notes yet.')
+      return
+    }
     let activePlan = compositionPlan?.slots?.length ? compositionPlan : null
     if (!activePlan && Object.keys(acceptedSentences || {}).length === 0) {
       setWritingStartBusy(true)

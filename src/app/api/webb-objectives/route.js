@@ -15,6 +15,12 @@ import {
   normalizeWebbCompositionPlan,
   writingSentenceSimilarity,
 } from '../../lib/webbCompositionModel.mjs'
+import {
+  cluesFromWebbBlueprint,
+  normalizeWebbCompositionBlueprint,
+  objectivesFromWebbBlueprint,
+  webbCompositionBlueprintViolations,
+} from '../../lib/webbCompositionBlueprint.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL, aiModelTemperature } from '../../lib/aiModel.js'
@@ -59,22 +65,33 @@ function isSafeObjectiveClue(value) {
   return true
 }
 
-function parseGeneratedObjectives(raw) {
+function parseGeneratedBlueprint(raw) {
   let parsed
-  try { parsed = JSON.parse(String(raw || '')) } catch { throw new Error('Objective planner returned invalid JSON') }
-  const rows = parsed?.objectives
-  if (!Array.isArray(rows) || rows.length < 5 || rows.length > 8) throw new Error('Objective planner returned an invalid objective count')
-  const normalized = rows.map((row) => {
-    const atomicFocus = String(row?.atomic_focus || '').trim().slice(0, 240)
-    const objective = String(row?.objective || '').trim().slice(0, 600)
-    if (!atomicFocus || !objective) throw new Error('Objective planner returned an incomplete objective')
-    if (!isSafeObjectiveClue(atomicFocus)) throw new Error('Objective planner returned an unsafe retrieval clue')
-    return { atomic_focus: atomicFocus, objective }
+  try { parsed = JSON.parse(String(raw || '')) } catch { throw new Error('Blueprint planner returned invalid JSON') }
+  const sourceUnits = Array.isArray(parsed?.body_units)
+    ? parsed.body_units
+    : (Array.isArray(parsed?.bodyUnits) ? parsed.bodyUnits : [])
+  const blueprint = normalizeWebbCompositionBlueprint({
+    controllingIdea: parsed?.controlling_idea ?? parsed?.controllingIdea,
+    discourseMode: parsed?.discourse_mode ?? parsed?.discourseMode,
+    closingGoal: parsed?.closing_goal ?? parsed?.closingGoal,
+    bodyUnits: sourceUnits.map((row, index) => ({
+      id: row?.id || `body-${index + 1}`,
+      objective: row?.objective,
+      clue: row?.atomic_focus ?? row?.clue,
+      rhetoricalJob: row?.rhetorical_job ?? row?.rhetoricalJob,
+      connection: row?.connection_from_previous ?? row?.connection,
+    })),
   })
-  if (new Set(normalized.map(row => row.objective.toLocaleLowerCase())).size !== normalized.length) {
-    throw new Error('Objective planner returned duplicate objectives')
+  const violations = webbCompositionBlueprintViolations(blueprint)
+  if (violations.length) throw new Error('Blueprint planner returned an invalid structure: ' + violations.join('; '))
+  for (const unit of blueprint.bodyUnits) {
+    if (!isSafeObjectiveClue(unit.clue)) throw new Error('Blueprint planner returned an unsafe retrieval clue')
   }
-  return normalized
+  if (new Set(blueprint.bodyUnits.map(unit => unit.objective.toLocaleLowerCase())).size !== blueprint.bodyUnits.length) {
+    throw new Error('Blueprint planner returned duplicate objectives')
+  }
+  return blueprint
 }
 
 function objectivePlanViolations(rows) {
@@ -103,10 +120,10 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
 
   const system = [
     "You are a curriculum designer creating the mastery map for a learner-led Mrs. Webb lesson.",
-    "Before writing any objectives, silently draft a coherent short essay ABOUT what this lesson teaches. Choose the discourse pattern that fits the content, such as explanation, chronology, cause and effect, compare and contrast, process, literary response, report, or argument. This hidden essay is planning only and is never shown to the learner.",
+    "First design one coherent private composition blueprint ABOUT what this lesson teaches. Choose the discourse pattern that fits the content, such as explanation, chronology, cause and effect, compare and contrast, process, literary response, report, or argument. This blueprint is instructional architecture only and is never shown to the learner as prose.",
     "Current Mrs. Webb always writes from mastered lesson notes. She does not switch into a separate composition assignment that requires a new topic, opinion, story, example, or other content that was not learned and saved during research.",
     "If the source lesson asks the learner to produce a different kind of writing, such as an opinion paragraph or narrative, observe the knowledge and skill the lesson teaches and make the hidden essay ABOUT that learned material. For example, a lesson about opinion paragraphs can produce an essay explaining how opinion paragraphs work. Do not invent an unrelated opinion for the learner to write.",
-    "Then reverse-engineer that hidden essay into 5 to 8 ATOMIC core comprehension objectives. Each objective must represent exactly one sentence-worth of essential BODY content and must assess ONE central idea, relationship, process, or skill only.",
+    "Then derive 5 to 8 ATOMIC core comprehension objectives from that blueprint. Each objective must represent exactly one sentence-worth of essential BODY content and must assess ONE central idea, relationship, process, or skill only.",
     "The returned objective order is authoritative for later writing. The learner will earn exactly one learner-authored note for each objective and later turn exactly that note into exactly one BODY sentence in the same order. A separate topic sentence and a separate concluding sentence will be added around those body sentences. The later planner will not merge, omit, reorder, or invent objective content.",
     "Objective 1 is the first substantive body idea after the separate topic sentence. It must contribute learned content rather than merely announce what the paragraph will discuss.",
     "Every later objective must intentionally advance the essay body from the objectives before it. Put prerequisites before dependent ideas, causes before consequences, events in meaningful chronology when chronology matters, supporting evidence before interpretation, and explanation before significance. Avoid conceptual ricochet.",
@@ -118,18 +135,20 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
     "Keep objective text content-focused and student-facing, normally as \"The learner can explain...\", \"The learner can describe...\", \"The learner can compare...\", or \"The learner understands...\". Do not put later writing instructions inside the objective text.",
     "For each row, atomic_focus is also the learner-facing retrieval clue. It must be a short 2 to 6 word concept label, not a sentence and not a proposition that can be lightly rewritten into the answer.",
     "A retrieval clue may name the territory (for example, a person, event, process, theme, category, or broad concept), but it must not state the tested relationship, cause, effect, definition, comparison result, sequence result, or other answer-bearing predicate.",
-    "Return only valid JSON in this exact shape: {\"objectives\":[{\"atomic_focus\":\"short retrieval clue\",\"objective\":\"The learner can explain...\"}]}.",
+    "For every body unit, rhetorical_job must state what that idea contributes to the whole composition, and connection_from_previous must state WHY this unit follows what came before. Mere ordering language such as next objective, next goal, or continues the essay is invalid.",
+    "Return the blueprint itself. controlling_idea is the coherent proposition or explanation the whole composition develops. discourse_mode names the organizational pattern. closing_goal states what the conclusion should synthesize without supplying learner prose.",
+    "Return only valid JSON in this exact shape: {\"controlling_idea\":\"...\",\"discourse_mode\":\"explanation\",\"closing_goal\":\"...\",\"body_units\":[{\"id\":\"body-1\",\"atomic_focus\":\"short retrieval clue\",\"objective\":\"The learner can explain...\",\"rhetorical_job\":\"...\",\"connection_from_previous\":\"...\"}]}.",
   ].join(' ')
   const user = `Lesson: "${title}" - ${subject}, ${grade}.\n\nAssessment questions:\n${allQ.map((q, i) => `${i + 1}. ${q}`).join('\n')}`
   const invoke = callModel || ((systemPrompt, userPrompt, maxTokens, temperature, responseFormat) => callGPT(apiKey, systemPrompt, userPrompt, maxTokens, temperature, responseFormat))
   const responseFormat = { type: 'json_object' }
   const validate = (candidate) => {
     try {
-      const plan = parseGeneratedObjectives(candidate)
-      const violations = objectivePlanViolations(plan)
+      const plan = parseGeneratedBlueprint(candidate)
+      const violations = objectivePlanViolations(plan.bodyUnits)
       return violations.length ? { ok: false, plan, violations } : { ok: true, plan, violations: [] }
     } catch (error) {
-      return { ok: false, plan: null, violations: [String(error?.message || 'Objective planner output was invalid')] }
+      return { ok: false, plan: null, violations: [String(error?.message || 'Blueprint planner output was invalid')] }
     }
   }
 
@@ -138,18 +157,18 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
   if (!validation.ok) {
     const repairSystem = [
       system,
-      `You are repairing a draft that failed the atomic mastery-objective validator. Return the COMPLETE corrected mastery map, not commentary.`,
-      `The draft may have malformed JSON, the wrong number of rows, duplicate objectives, or non-atomic objectives.`,
+      `You are repairing a draft that failed the atomic mastery-objective validator. Return the COMPLETE corrected composition blueprint, not commentary.`,
+      `The draft may have malformed JSON, the wrong number of body units, duplicate objectives, non-atomic objectives, or broken rhetorical relationships.`,
       `Do not preserve a bad row merely because its facts are true. One row must equal one independently gradable comprehension target.`,
     ].join(' ')
     raw = await invoke(repairSystem, JSON.stringify({ lesson: { title, subject, grade }, assessment_questions: allQ, raw_draft: raw, draft_plan: validation.plan, validator_violations: validation.violations }), 900, 0.05, responseFormat)
     validation = validate(raw)
   }
   if (!validation.ok) {
-    raw = await invoke(`${system} Previous attempts failed deterministic validation. Start over and return one fresh complete mastery map.`, user, 900, 0.05, responseFormat)
+    raw = await invoke(`${system} Previous attempts failed deterministic validation. Start over and return one fresh complete composition blueprint.`, user, 900, 0.05, responseFormat)
     validation = validate(raw)
   }
-  if (!validation.ok) throw new Error(`Objective planner remained invalid after recovery: ${validation.violations.join('; ')}`)
+  if (!validation.ok) throw new Error(`Blueprint planner remained invalid after recovery: ${validation.violations.join('; ')}`)
   return validation.plan
 }
 
@@ -195,9 +214,55 @@ async function generateObjectiveClues(apiKey, lesson, objectives, callModel = nu
   }
 }
 
-function generateCompositionPlan(_apiKey, _lesson, objectives, learnerNotes, _callModel = null) {
-  return buildWebbCompositionPlan(objectives, learnerNotes)
+function generateCompositionPlan(_apiKey, _lesson, objectives, learnerNotes, blueprint = null, _callModel = null) {
+  return buildWebbCompositionPlan(objectives, learnerNotes, blueprint)
 }
+async function validateLearnerNotes(apiKey, { objectives = [], learnerNotes = {}, blueprint = null }, callModel = null) {
+  const rows = (Array.isArray(objectives) ? objectives : [])
+    .map((objective, objectiveIndex) => {
+      const note = learnerNotes?.[objectiveIndex]
+      const text = note?.provenance === 'learner-message' ? String(note?.text || '').trim() : ''
+      if (!text) return null
+      return {
+        objectiveIndex,
+        objective: String(objective || '').trim(),
+        bodyUnit: blueprint?.bodyUnits?.[objectiveIndex] || null,
+        learnerNote: text,
+      }
+    })
+    .filter(Boolean)
+  if (!rows.length) return { evaluations: [], readyIndices: [], invalidIndices: [] }
+
+  const system = [
+    'Judge whether each exact learner-authored note is usable later as a standalone writing note. This is NOT a mastery re-grade.',
+    'A note is ready only when its own words, without relying on the earlier question or conversation, express the central proposition the assigned objective/body unit needs to explain.',
+    'A context-dependent example can have demonstrated understanding while still being NOT ready as a standalone note. For example, a paraphrased fact does not by itself explain what paraphrasing is, and an example detail does not by itself explain how to decide whether evidence is relevant.',
+    'Do not demand polished grammar or adult wording. A short child-written statement is ready when the needed idea is actually present.',
+    'Do not rewrite or repair any note.',
+    'Return only JSON: {"evaluations":[{"objectiveIndex":0,"noteReady":true}]}. Include every supplied row exactly once.',
+  ].join(' ')
+  const invoke = callModel || ((systemPrompt, userPrompt, maxTokens, temperature, responseFormat) => callGPT(apiKey, systemPrompt, userPrompt, maxTokens, temperature, responseFormat))
+  const raw = await invoke(system, JSON.stringify({ notes: rows }), 500, 0, { type: 'json_object' })
+  let parsed
+  try { parsed = JSON.parse(String(raw || '')) } catch { throw new Error('Note readiness evaluator returned invalid JSON') }
+  const evaluations = Array.isArray(parsed?.evaluations) ? parsed.evaluations : []
+  if (evaluations.length !== rows.length) throw new Error('Note readiness evaluator returned an incomplete result')
+  const allowed = new Set(rows.map(row => row.objectiveIndex))
+  const seen = new Set()
+  const normalized = evaluations.map(row => {
+    if (!Number.isInteger(row?.objectiveIndex) || !allowed.has(row.objectiveIndex) || seen.has(row.objectiveIndex) || typeof row.noteReady !== 'boolean') {
+      throw new Error('Note readiness evaluator returned an invalid result')
+    }
+    seen.add(row.objectiveIndex)
+    return { objectiveIndex: row.objectiveIndex, noteReady: row.noteReady }
+  })
+  return {
+    evaluations: normalized,
+    readyIndices: normalized.filter(row => row.noteReady).map(row => row.objectiveIndex),
+    invalidIndices: normalized.filter(row => !row.noteReady).map(row => row.objectiveIndex),
+  }
+}
+
 function hasIncompatibleEssayPositionCue(text, role) {
   const value = String(text || '').trim().toLowerCase()
   if (role === 'topic') return /^(?:finally|lastly|in conclusion|to conclude|ultimately|overall)\b/.test(value)
@@ -234,20 +299,20 @@ async function checkWriting(apiKey, input, callModel = null) {
   const duplicate = role === 'body' ? deterministicDuplicate(input?.text, priorSentences) : null
   const system = [
     "You evaluate exactly one learner-authored essay sentence for its role in this paragraph. Judge five facts independently.",
-    "(1) CONCEPT_FIT: correct, partial, or incorrect. For a body sentence, learner research is the authoritative content boundary and the sentence must accurately express that assigned research. For a topic sentence, judge whether it accurately introduces the overall subject and big idea of the lesson/paragraph; it does not need to restate the first research note. For a conclusion, judge whether it accurately closes or synthesizes the ideas already developed in the accepted paragraph; it does not need to restate the final research note and must not add a new unsupported fact.",
+    "(1) CONCEPT_FIT: correct, partial, or incorrect. For a body sentence, the assigned body-unit focus/objective defines the idea this sentence must express; the learner-authored research note is evidence and a wording source, not a replacement objective. The sentence must accurately express the body-unit idea while remaining supported by that learner note. For a topic sentence, judge whether it accurately introduces the overall subject and big idea of the lesson/paragraph; it does not need to restate the first research note. For a conclusion, judge whether it accurately closes or synthesizes the ideas already developed in the accepted paragraph; it does not need to restate the final research note and must not add a new unsupported fact.",
     "(2) SENTENCE_OK: yes only when the learner submitted exactly one complete coherent sentence usable verbatim. Two or more sentences must be no.",
     "(3) SLOT_FIT: yes only when the sentence performs its exact rhetorical role. A topic sentence should tell the reader what the paragraph will be about. A body sentence must develop its assigned research note. A conclusion should bring the paragraph's established ideas to a clear ending without starting a new topic.",
     "(4) ADDS_NEW_INFORMATION: for a body slot, yes only when it advances the paragraph instead of restating an accepted sentence. For a topic or conclusion, framing or synthesis is allowed and does not need to add a new fact.",
     "(5) PARAGRAPH_FIT: yes only when accepting it makes the paragraph more coherent overall rather than causing a topic jump, contradiction, orphaned example, or unnecessary repetition.",
     "A simple child-written sentence can be excellent. Do not require a transition word, sophisticated style, or adult-level polish.",
     "Never reward a sentence merely because it is a good example of the writing skill being studied. Judge whether it belongs in THIS essay and performs THIS role.",
-    "Research notes are evidence and a content boundary for body sentences, not wording to copy. Never rewrite, correct, complete, or suggest wording.",
+    "Research notes are learner-authored evidence for body sentences, not wording to copy and not permission to change the planned body-unit idea. Never rewrite, correct, complete, or suggest wording.",
     "Reply exactly CONCEPT_FIT|SENTENCE_OK|SLOT_FIT|ADDS_NEW_INFORMATION|PARAGRAPH_FIT where CONCEPT_FIT is correct, partial, or incorrect and all other fields are yes or no.",
   ].join(' ')
   const user = JSON.stringify({
     instructional_context: input?.lesson || {},
     controlling_idea: String(input?.controllingIdea || ''),
-    slot: { id: slot.id || null, role, focus: slot.focus || '', connection: slot.connection || '', sourceObjectiveIndices: slot.sourceObjectiveIndices || [] },
+    slot: { id: slot.id || null, role, focus: slot.focus || '', rhetoricalJob: slot.rhetoricalJob || '', connection: slot.connection || '', sourceObjectiveIndices: slot.sourceObjectiveIndices || [] },
     source_objectives: role === 'body' && Array.isArray(input?.sourceObjectives) ? input.sourceObjectives : [],
     learner_research_notes: role === 'body' && Array.isArray(input?.sourceNotes) ? input.sourceNotes : [],
     prior_accepted_learner_sentences: priorSentences,
@@ -325,10 +390,11 @@ export async function POST(req, deps = {}) {
         const clues = await generateObjectiveClues(apiKey, lesson, objectives, deps.callModel || null)
         return NextResponse.json({ objectives, clues, revisit: true })
       }
-      const objectivePlan = await generateObjectives(apiKey, buildInstructionalLessonView(body.lesson || {}), deps.callModel || null)
+      const blueprint = await generateObjectives(apiKey, buildInstructionalLessonView(body.lesson || {}), deps.callModel || null)
       return NextResponse.json({
-        objectives: objectivePlan.map(row => row.objective),
-        clues: objectivePlan.map(row => row.atomic_focus),
+        blueprint,
+        objectives: objectivesFromWebbBlueprint(blueprint),
+        clues: cluesFromWebbBlueprint(blueprint),
       })
     }
 
@@ -338,6 +404,15 @@ export async function POST(req, deps = {}) {
       return NextResponse.json({ clues })
     }
 
+    if (body.action === 'validate-notes') {
+      const result = await validateLearnerNotes(apiKey, {
+        objectives: body.objectives || [],
+        learnerNotes: body.learnerNotes || {},
+        blueprint: body.blueprint || null,
+      }, deps.callModel || null)
+      return NextResponse.json(result)
+    }
+
     if (body.action === 'check') {
       const result = await evaluateWebbObjectives({
         callModel: deps.callModel || ((...args) => callGPT(apiKey, ...args)),
@@ -345,6 +420,7 @@ export async function POST(req, deps = {}) {
         coveredIndices: body.coveredIndices || [], legacyNoteReadyIndices: body.noteReadyIndices, conversation: body.conversation || [],
         lesson: buildInstructionalLessonView(body.lesson || {}), quick: body.quick === true, objectiveEvidence: body.objectiveEvidence || {},
         priorPromptExposure: body.priorPromptExposure || {}, recoverNotes: body.recoverNotes === true,
+        blueprint: body.blueprint || null,
         targetObjectiveIndex: Number.isInteger(body.targetObjectiveIndex) ? body.targetObjectiveIndex : null,
       })
       return NextResponse.json(result)
@@ -352,7 +428,7 @@ export async function POST(req, deps = {}) {
 
     if (body.action === 'plan-writing') {
       const objectives = Array.isArray(body.objectives) ? body.objectives.map(value => String(value || '').trim()).filter(Boolean).slice(0, 12) : []
-      const compositionPlan = await generateCompositionPlan(apiKey, buildInstructionalLessonView(body.lesson || {}), objectives, body.learnerNotes || {}, deps.callModel || null)
+      const compositionPlan = await generateCompositionPlan(apiKey, buildInstructionalLessonView(body.lesson || {}), objectives, body.learnerNotes || {}, body.blueprint || null, deps.callModel || null)
       return NextResponse.json({ compositionPlan })
     }
 

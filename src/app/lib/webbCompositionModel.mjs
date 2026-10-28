@@ -1,5 +1,12 @@
-export const WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v3-structural-frame'
-export const PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v2-objective-blueprint'
+import {
+  blueprintMatchesObjectives,
+  normalizeWebbCompositionBlueprint,
+  webbCompositionBlueprintViolations,
+} from './webbCompositionBlueprint.mjs'
+
+export const WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v4-blueprint'
+export const PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v3-structural-frame'
+export const OBJECTIVE_BLUEPRINT_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v2-objective-blueprint'
 export const LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v1'
 
 function clean(value) {
@@ -16,10 +23,19 @@ export function normalizeWebbCompositionPlan(raw, objectiveCount = 0) {
   const requestedProtocol = clean(input.protocolVersion || input.protocol_version)
   const protocolVersion = [
     LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION,
+    OBJECTIVE_BLUEPRINT_WEBB_COMPOSITION_PROTOCOL_VERSION,
     PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION,
     WEBB_COMPOSITION_PROTOCOL_VERSION,
   ].includes(requestedProtocol) ? requestedProtocol : WEBB_COMPOSITION_PROTOCOL_VERSION
-  const controllingIdea = clean(input.controllingIdea || input.controlling_idea).slice(0, 500)
+  const controllingIdea = clean(input.controllingIdea || input.controlling_idea).slice(0, 700)
+  const discourseMode = clean(input.discourseMode || input.discourse_mode).slice(0, 100).toLowerCase()
+  const closingGoal = clean(input.closingGoal || input.closing_goal).slice(0, 500)
+  const bodyUnits = normalizeWebbCompositionBlueprint({
+    controllingIdea,
+    discourseMode,
+    closingGoal,
+    bodyUnits: Array.isArray(input.bodyUnits) ? input.bodyUnits : [],
+  }).bodyUnits
   const rows = Array.isArray(input.slots) ? input.slots : []
   const slots = rows.map((row, index) => {
     const role = clean(row?.role).toLowerCase()
@@ -30,21 +46,64 @@ export function normalizeWebbCompositionPlan(raw, objectiveCount = 0) {
       role,
       focus: clean(row?.focus).slice(0, 320),
       connection: clean(row?.connection).slice(0, 500),
+      rhetoricalJob: clean(row?.rhetoricalJob || row?.rhetorical_job).slice(0, 320),
       sourceObjectiveIndices,
     }
   })
-  return { protocolVersion, controllingIdea, slots }
+  return { protocolVersion, controllingIdea, discourseMode, closingGoal, bodyUnits, slots }
 }
 
-export function buildWebbCompositionPlan(objectives = [], learnerNotes = {}) {
+export function buildWebbCompositionPlan(objectives = [], learnerNotes = {}, blueprint = null) {
   const list = Array.isArray(objectives) ? objectives.map(value => clean(value)).filter(Boolean) : []
   if (list.length < 2) throw new Error('Composition planning requires at least two mastery objectives')
   const missingNotes = list
     .map((_, objectiveIndex) => objectiveIndex)
     .filter(objectiveIndex => learnerNotes?.[objectiveIndex]?.provenance !== 'learner-message' || !clean(learnerNotes?.[objectiveIndex]?.text))
   if (missingNotes.length) throw new Error('Composition planning requires one learner-authored note for every mastery objective')
+
+  const normalizedBlueprint = normalizeWebbCompositionBlueprint(blueprint || {})
+  const blueprintViolations = webbCompositionBlueprintViolations(normalizedBlueprint)
+  const useBlueprint = blueprintViolations.length === 0 && blueprintMatchesObjectives(normalizedBlueprint, list)
+
+  if (useBlueprint) {
+    return {
+      protocolVersion: WEBB_COMPOSITION_PROTOCOL_VERSION,
+      controllingIdea: normalizedBlueprint.controllingIdea,
+      discourseMode: normalizedBlueprint.discourseMode,
+      closingGoal: normalizedBlueprint.closingGoal,
+      bodyUnits: normalizedBlueprint.bodyUnits,
+      slots: [
+        {
+          id: 'topic',
+          role: 'topic',
+          focus: normalizedBlueprint.controllingIdea,
+          connection: 'frames the composition before the learner develops the planned body sequence',
+          sourceObjectiveIndices: [],
+        },
+        ...normalizedBlueprint.bodyUnits.map((unit, index) => ({
+          id: unit.id || ('objective-' + (index + 1)),
+          role: 'body',
+          focus: unit.objective,
+          connection: unit.connection,
+          rhetoricalJob: unit.rhetoricalJob,
+          sourceObjectiveIndices: [index],
+        })),
+        {
+          id: 'conclusion',
+          role: 'conclusion',
+          focus: normalizedBlueprint.closingGoal,
+          connection: 'synthesizes the body sequence without replacing a mastery objective',
+          sourceObjectiveIndices: [],
+        },
+      ],
+    }
+  }
+
+  // Legacy rescue only. Existing v1-v3 sessions never had a retained blueprint,
+  // so preserve their objective order and previously accepted writing instead of
+  // pretending a v4 blueprint can be reconstructed after instruction.
   return {
-    protocolVersion: WEBB_COMPOSITION_PROTOCOL_VERSION,
+    protocolVersion: PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION,
     controllingIdea: list.join(' ').slice(0, 500),
     slots: [
       {
@@ -60,7 +119,7 @@ export function buildWebbCompositionPlan(objectives = [], learnerNotes = {}) {
         focus: objective,
         connection: index === 0
           ? 'begins the essay body with the first mastered idea'
-          : 'continues the essay body in the objective order established before instruction',
+          : 'continues the legacy objective order without reinterpreting learner evidence',
         sourceObjectiveIndices: [index],
       })),
       {
@@ -102,7 +161,7 @@ export function compositionPlanViolations(plan, objectiveCount = 0) {
   if (normalized.protocolVersion === LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION) {
     return [...new Set(legacyCompositionPlanViolations(normalized, objectiveCount))]
   }
-  if (normalized.protocolVersion === PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION) {
+  if (normalized.protocolVersion === OBJECTIVE_BLUEPRINT_WEBB_COMPOSITION_PROTOCOL_VERSION) {
     const violations = []
     const { slots } = normalized
     if (!normalized.controllingIdea) violations.push('missing controlling idea')
@@ -119,6 +178,15 @@ export function compositionPlanViolations(plan, objectiveCount = 0) {
   }
   const violations = []
   const { slots } = normalized
+  if (normalized.protocolVersion === WEBB_COMPOSITION_PROTOCOL_VERSION) {
+    violations.push(...webbCompositionBlueprintViolations({
+      controllingIdea: normalized.controllingIdea,
+      discourseMode: normalized.discourseMode,
+      closingGoal: normalized.closingGoal,
+      bodyUnits: normalized.bodyUnits,
+    }))
+    if (normalized.bodyUnits.length !== objectiveCount) violations.push('blueprint body-unit count must match mastery objectives')
+  }
   if (!normalized.controllingIdea) violations.push('missing controlling idea')
   if (slots.length !== objectiveCount + 2) violations.push('composition must contain a topic sentence, one body sentence per mastery objective, and a conclusion')
   for (let index = 0; index < slots.length; index += 1) {
@@ -150,6 +218,7 @@ export function compositionResearchSnapshot(objectives = [], learnerNotes = {}) 
         text: clean(note.text),
         sourceMessageId: note.sourceMessageId || null,
         sourceMessageCreatedAt: note.sourceMessageCreatedAt || null,
+        noteReady: note.noteReady !== false,
         ...(clean(note.objectivePrompt) ? {
           objectivePrompt: clean(note.objectivePrompt),
           objectivePromptSourceMessageIndex: Number.isInteger(note.objectivePromptSourceMessageIndex) ? note.objectivePromptSourceMessageIndex : null,

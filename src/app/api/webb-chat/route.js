@@ -49,7 +49,7 @@ function buildResearchSystem(lesson, targetObjective, media) {
   return lines.join('\n')
 }
 
-function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, deferTransitionForPlay = false, deferQuestionForPlay = false, resumeAfterPlay = false) {
+function buildSystem(lesson, media, remainingObjectives, assessmentPush = false, allObjectivesMet = false, masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, noteCaptureObjective = '', noteCaptureBodyUnit = null, deferTransitionForPlay = false, deferQuestionForPlay = false, resumeAfterPlay = false) {
   const title   = lesson?.title   || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade   = lesson?.grade   ? `Grade ${lesson.grade}` : 'elementary/middle school'
@@ -73,6 +73,21 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
 
   if (writingMode) {
     lines.push(`\n${buildWritingGuidanceInstructions(writingNote, writingEvaluation || {}, { objective: writingObjective, objectiveIndex: writingObjectiveIndex, totalObjectives: writingTotalObjectives, priorSentences: writingPriorSentences, slot: writingSlot, controllingIdea: writingControllingIdea, sourceNotes: writingSourceNotes })}`)
+    return lines.filter(Boolean).join('\n')
+  }
+
+  if (allObjectivesMet && writingReady === false && String(noteCaptureObjective || '').trim()) {
+    const noteUnit = noteCaptureBodyUnit && typeof noteCaptureBodyUnit === 'object' ? noteCaptureBodyUnit : {}
+    lines.push(
+      `\nThe learner has ALREADY demonstrated comprehension of this concept: "${noteCaptureObjective}". Do not test or re-grade mastery.`,
+      `The application needs one learner-authored standalone note for later writing because the earlier answer only demonstrated the idea in context.`,
+      noteUnit.rhetoricalJob ? `Private writing purpose: "${String(noteUnit.rhetoricalJob)}".` : '',
+      noteUnit.connection ? `Private connection in the composition: "${String(noteUnit.connection)}".` : '',
+      `Ask ONE short, concrete, age-appropriate question that lets the learner state the central idea needed for that note in their own words.`,
+      `Ask for only one thing. Do not bundle an explanation with an example, comparison, evidence, or second task.`,
+      `Do not reteach the answer first, do not give a model sentence, and do not tell the learner what words to use.`,
+      `Acknowledge briefly that they already understood it, then ask the single note-capture question. Keep the whole reply to 2 short sentences.`,
+    )
     return lines.filter(Boolean).join('\n')
   }
 
@@ -211,7 +226,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, deferTransitionForPlay = false, deferQuestionForPlay = false, resumeAfterPlay = false } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, noteCaptureObjective = '', noteCaptureBodyUnit = null, deferTransitionForPlay = false, deferQuestionForPlay = false, resumeAfterPlay = false } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -291,7 +306,7 @@ export async function POST(req) {
     }
 
     const oaiMessages = [
-      { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, writingSlot, writingControllingIdea, writingSourceNotes, completedObjectives, writingReady, deferTransitionForPlay, deferQuestionForPlay, resumeAfterPlay)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
+      { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, writingSlot, writingControllingIdea, writingSourceNotes, completedObjectives, writingReady, noteCaptureObjective, noteCaptureBodyUnit, deferTransitionForPlay, deferQuestionForPlay, resumeAfterPlay)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
       { role: 'system', content: structuredObjectiveReplyInstruction() },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
     ]

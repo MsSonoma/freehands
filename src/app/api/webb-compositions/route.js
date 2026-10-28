@@ -44,7 +44,14 @@ function cleanLearnerNotes(notes = {}, objectiveCount = 0) {
       text,
       sourceMessageId: note.sourceMessageId || null,
       sourceMessageCreatedAt: note.sourceMessageCreatedAt || null,
+      ...(String(note.objectivePrompt || '').trim() ? {
+        objectivePrompt: String(note.objectivePrompt).trim().slice(0, 1000),
+        objectivePromptSourceMessageIndex: Number.isInteger(note.objectivePromptSourceMessageIndex) ? note.objectivePromptSourceMessageIndex : null,
+        objectivePromptSourceMessageId: note.objectivePromptSourceMessageId || null,
+        objectivePromptSourceMessageCreatedAt: note.objectivePromptSourceMessageCreatedAt || null,
+      } : {}),
       accuracy: note.accuracy === 'correct' ? 'correct' : null,
+      noteReady: note.noteReady !== false,
       provenance: 'learner-message',
     }
   }

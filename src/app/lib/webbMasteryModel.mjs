@@ -227,6 +227,7 @@ export function classifyWebbObjectiveAttempt({
     text: String(learnerMessage.content ?? ''),
     accuracy,
     sentenceOk: evaluation?.sentenceOk === true,
+    noteReady: evaluation?.noteReady !== false,
     evidenceKind,
     covered,
     comprehension,

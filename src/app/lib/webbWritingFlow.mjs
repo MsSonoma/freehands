@@ -19,6 +19,7 @@ export function isWritingReadyNote(note) {
   return (
     note.provenance === 'learner-message'
     && note.accuracy === 'correct'
+    && note.noteReady !== false
     && String(note.text || '').trim().length > 0
   )
 }

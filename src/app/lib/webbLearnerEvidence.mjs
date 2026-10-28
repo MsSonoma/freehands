@@ -54,7 +54,7 @@ export function objectivePromptBeforeLearner(conversation, sourceMessageIndex, o
 }
 
 export function createLearnerNote({ objectiveIndex, evaluation, conversation, capturedAt }) {
-  if (evaluation?.accuracy !== 'correct') return null
+  if (evaluation?.accuracy !== 'correct' || evaluation?.noteReady === false) return null
   const source = evaluationSource(conversation, evaluation)
   const objectivePrompt = source ? objectivePromptBeforeLearner(conversation, source.index, objectiveIndex) : null
   if (!source) return null
@@ -71,6 +71,7 @@ export function createLearnerNote({ objectiveIndex, evaluation, conversation, ca
       objectivePromptSourceMessageCreatedAt: objectivePrompt.sourceMessageCreatedAt,
     } : {}),
     accuracy: 'correct',
+    noteReady: true,
     sentenceReadyAtCapture: evaluation.sentenceOk === true,
     capturedAt: capturedAt || new Date().toISOString(),
     assistance: 'mrs-webb-research-conversation',
@@ -81,6 +82,7 @@ export function createLearnerNote({ objectiveIndex, evaluation, conversation, ca
 /** Recover only an already-qualified attempt whose exact original words exist. */
 export function noteFromQualifiedAttempt({ objectiveIndex, objective, attempt, conversation }) {
   if (attempt?.accuracy !== 'correct' || attempt.comprehension !== 'demonstrated'
+    || attempt.noteReady === false
     || (attempt.reproduction && attempt.evidenceKind !== 'fixed_fact')
     || attempt.answerRequested || attempt.objective !== objective) return null
   let index = learnerMessageIndex(attempt.sourceMessageIndex)
@@ -94,7 +96,7 @@ export function noteFromQualifiedAttempt({ objectiveIndex, objective, attempt, c
   if (!source || source.text !== attempt.text) return null
   return createLearnerNote({
     objectiveIndex, conversation,
-    evaluation: { accuracy: 'correct', sentenceOk: attempt.sentenceOk, sourceMessageIndex: index },
+    evaluation: { accuracy: 'correct', sentenceOk: attempt.sentenceOk, noteReady: attempt.noteReady !== false, sourceMessageIndex: index },
     capturedAt: attempt.occurredAt,
   })
 }

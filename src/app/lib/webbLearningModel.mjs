@@ -3,10 +3,10 @@ import {
   assembleWebbCompositionEssay,
   buildWebbCompositionPlan,
   nextCompositionSlotIndex,
-  PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION,
+  OBJECTIVE_BLUEPRINT_WEBB_COMPOSITION_PROTOCOL_VERSION,
 } from './webbCompositionModel.mjs'
 
-export const WEBB_SNAPSHOT_VERSION = 9
+export const WEBB_SNAPSHOT_VERSION = 10
 
 export const WEBB_SESSION_STAGES = Object.freeze({
   RESEARCH: 'research',
@@ -162,7 +162,7 @@ function upgradePreviousCompositionSnapshot(snapshot = {}, objectives = []) {
     || snapshot?.essayMode === true
     || String(snapshot?.essay || '').trim().length > 0
   if (finalized
-    || protocolVersion !== PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION
+    || protocolVersion !== OBJECTIVE_BLUEPRINT_WEBB_COMPOSITION_PROTOCOL_VERSION
     || !Array.isArray(plan?.slots)
     || plan.slots.length !== list.length) return snapshot
 
@@ -345,20 +345,30 @@ function writingPositionRole(context = {}) {
 
 function safeWritingRetry(evaluation = {}, context = {}) {
   const role = writingPositionRole(context)
-  if (evaluation.sentenceOk === true && evaluation.addsNewInformation === false) {
-    return 'This sentence says something you already said. What new idea does this part need? Try again in your own words.'
+  const concept = String(evaluation.accuracy || evaluation.conceptFit || '').trim().toLowerCase()
+
+  if (concept && concept !== 'correct') {
+    if (role === 'topic') return "This opening does not show the paragraph's big idea yet. Think about what the whole paragraph is about, then try that one idea again."
+    if (role === 'conclusion') return "This ending does not close the idea your paragraph developed yet. Think about the point you already explained, then try the ending again."
+    return 'This sentence does not show the idea this part is about yet. Look at your research note, then try that one idea again in your own words.'
   }
-  if (evaluation.sentenceOk === true && evaluation.paragraphFit === false) {
-    return 'This sentence makes sense by itself, but it does not fit smoothly with the sentences around it. Look at the sentence before it, then try again in your own words.'
+  if (evaluation.sentenceOk === false) {
+    return 'You have the idea. Now make just that idea one complete sentence in your own words.'
   }
-  if (evaluation.accuracy === 'correct' && evaluation.sentenceOk === true && evaluation.positionFit === false) {
-    if (role === 'topic') return "Your sentence is complete, but a topic sentence should tell the reader the big idea of the whole paragraph. Think about that big idea, then try again in your own words."
-    if (role === 'conclusion') return 'Your sentence is complete, but a conclusion should finish the paragraph\'s big idea instead of starting something new. Look back at what you explained, then try again in your own words.'
-    return 'Your idea is correct, but this sentence does not add the new idea this part needs. Look at what you already said. What new information belongs here? Try again in your own words.'
+  if (evaluation.addsNewInformation === false) {
+    return 'This sentence repeats something you already said. What new idea does this part add? Try only that idea again.'
   }
-  if (role === 'topic') return 'Try the topic sentence again. Make it one complete thought that tells the reader what the whole paragraph will explain, using your own words.'
-  if (role === 'conclusion') return 'Try the conclusion again. Make it one complete thought that closes the ideas you already developed, using your own words.'
-  return 'Reread your sentence. Does it match your research, add a new idea, and make a complete sentence? Fix what is missing, then try again in your own words.'
+  if (evaluation.slotFit === false || evaluation.positionFit === false) {
+    if (role === 'topic') return "Your sentence is complete, but the opening needs to tell the reader the big idea of the whole paragraph. Try only that job again."
+    if (role === 'conclusion') return "Your sentence is complete, but the ending needs to close the paragraph's big idea. Try only that job again."
+    return 'Your idea is correct, but it is doing the wrong job in this part of the paragraph. Use the idea from this part of your research and try again.'
+  }
+  if (evaluation.paragraphFit === false) {
+    return 'This sentence makes sense by itself, but it does not connect to the paragraph here. Think about the sentence just before it, then try this connection again.'
+  }
+  if (role === 'topic') return "Try the topic sentence again. Tell the reader the one big idea the whole paragraph will explain."
+  if (role === 'conclusion') return "Try the conclusion again. Close the same big idea the paragraph already explained."
+  return 'Try again in your own words. Use the one idea in this research note and make it one complete sentence.'
 }
 
 export function buildWritingGuidanceInstructions(note, evaluation = {}, context = {}) {
@@ -377,17 +387,20 @@ export function buildWritingGuidanceInstructions(note, evaluation = {}, context 
     `The research stage is finished. You are coaching one learner-authored sentence in a planned paragraph.`,
     controllingIdea ? `The paragraph's private controlling idea is: "${controllingIdea}". Do not give this wording to the learner; use it only to guide questions.` : '',
     slot?.focus ? `This sentence's private composition focus is: "${String(slot.focus)}". Its role is ${role}.` : `The structural role is ${role}.`,
+    slot?.rhetoricalJob ? `Its private rhetorical job is: "${String(slot.rhetoricalJob)}".` : '',
+    slot?.connection ? `Its private connection to the preceding composition is: "${String(slot.connection)}".` : '',
     role === 'body'
-      ? (sourceNotes.length ? `The learner-authored research for this body sentence is the authoritative content boundary: ${JSON.stringify(sourceNotes)}.` : `This body slot has no bound learner note; do not invent factual content.`)
+      ? (sourceNotes.length ? `The planned body-unit focus is authoritative for WHAT this sentence needs to express. The learner-authored research note supplies the learner's evidence and wording source: ${JSON.stringify(sourceNotes)}. Do not substitute a different idea merely because the note contains an example.` : `This body slot has no bound learner note; do not invent factual content.`)
       : role === 'topic'
         ? `A topic sentence is a structural opening, not a conversion of one research note. Use the lesson context and paragraph's big idea to judge whether it tells the reader what the paragraph will explain.`
         : role === 'conclusion'
           ? `A conclusion is a structural ending, not a conversion of one research note. Use the accepted paragraph ideas to judge whether it closes the same thought without adding a new fact.`
           : (sourceNotes.length ? `The learner-authored research for this legacy writing slot is the authoritative content boundary: ${JSON.stringify(sourceNotes)}.` : `This legacy writing slot has no bound learner note; do not invent factual content.`),
-    `The evaluator found concept fit: ${evaluation.accuracy || evaluation.conceptFit || 'partial'}; sentence readiness: ${evaluation.sentenceOk ? 'yes' : 'no'}; slot fit: ${evaluation.slotFit === false || evaluation.positionFit === false ? 'no' : 'yes'}; adds distinct information: ${evaluation.addsNewInformation === false ? 'no' : 'yes'}; paragraph fit: ${evaluation.paragraphFit === false ? 'no' : 'yes'}. Treat those judgments as authoritative.`,
+    `The evaluator found concept fit: ${evaluation.accuracy || evaluation.conceptFit || 'unknown'}; sentence readiness: ${evaluation.sentenceOk === false ? 'no' : 'yes'}; slot fit: ${evaluation.slotFit === false || evaluation.positionFit === false ? 'no' : 'yes'}; adds distinct information: ${evaluation.addsNewInformation === false ? 'no' : 'yes'}; paragraph fit: ${evaluation.paragraphFit === false ? 'no' : 'yes'}. Treat those judgments as authoritative.`,
+    `Choose exactly ONE problem to discuss, using this priority: concept accuracy first; then sentence completeness; then repetition; then rhetorical-role fit; then paragraph connection. Stop at the first failing item. Do not mention, hint at, or ask the learner to repair any lower-priority issue in the same response.`,
     Number.isInteger(index) && Number.isInteger(total) && total > 0 ? `This is sentence ${index + 1} of ${total}.` : '',
     priorSentences.length ? `The accepted learner-written sentences before this one are context only: ${JSON.stringify(priorSentences)}.` : '',
-    `Guide the learner to notice the specific problem, then ask for another attempt in their own words. For a topic sentence, help them identify the big idea the whole paragraph will explain; do not refer to a first research note. For a body sentence, keep the sentence anchored to its assigned learner note. For a conclusion, help them close the ideas already developed in the paragraph without introducing a new fact; do not refer to a final research note.`,
+    `Guide the learner to notice only that one selected problem, then ask for another attempt in their own words. Ask for one thing only. For a topic sentence, help them identify the big idea the whole paragraph will explain; do not refer to a first research note. For a body sentence, keep the sentence anchored to its assigned learner note. For a conclusion, help them close the ideas already developed in the paragraph without introducing a new fact; do not refer to a final research note.`,
     `Never write, dictate, complete, rewrite, or offer a model sentence for the learner. Do not say "write" followed by suggested prose. The words accepted into the essay must come from the learner.`,
     `Use 2-3 short, warm sentences, no markdown.`,
   ].filter(Boolean).join('\n')
@@ -528,7 +541,7 @@ function migrateWebbSnapshotLegacy(saved = {}) {
   }
 }
 
-/** v9 preserves durable state and upgrades in-progress v2 composition slots without rewriting completed essays. */
+/** v10 preserves the retained Webb blueprint and upgrades in-progress v2 composition slots without rewriting completed essays. */
 export function migrateWebbSnapshot(saved = {}) {
   const restored = migrateWebbSnapshotLegacy(saved)
   const reconciled = {

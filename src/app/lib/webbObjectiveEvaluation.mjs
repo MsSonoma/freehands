@@ -13,12 +13,13 @@ const JUDGMENT_INSTRUCTIONS = [
   'Use partial only when an ESSENTIAL part of the central concept is missing, ambiguous, or incomplete. A brief but semantically sufficient child answer is correct, not partial.',
   'A fragment may be ACCURACY "correct" when it contains the central concept. A name alone can answer who, using the preceding question as context.',
   'Independently set sentenceOk true only for a complete, coherent sentence usable verbatim in the essay with at most minor spelling, capitalization or punctuation issues. Fragments and single names have sentenceOk false. Do not repair or supply prose.',
+  'Independently set noteReady true only when learner_response can stand alone as a learner-authored note that expresses the central proposition needed by the supplied body_unit. A context-dependent example may prove comprehension while noteReady is false if the words themselves do not state what the body unit needs to explain. Do not rewrite the response to make it note-ready.',
   'Use evidenceKind fixed_fact only for identification of a name, title, date, quantity, or another single fixed factual answer. Such tasks do not require synonyms. Use meaning for definitions, reasoning, comparisons, explanations, processes and applications.',
   'Do not change an incorrect answer to correct based on the kind of task. Do not cherry-pick a true fragment out of a materially contradictory response.',
-  'Return only JSON: {"evaluations":[{"objectiveIndex":0,"accuracy":"correct","sentenceOk":true,"evidenceKind":"fixed_fact"}]}. Use the exact objectiveIndex supplied in remaining_objectives. Include only objectives addressed by learner_response, once each. Return {"evaluations":[]} when none is addressed.',
+  'Return only JSON: {"evaluations":[{"objectiveIndex":0,"accuracy":"correct","sentenceOk":true,"noteReady":true,"evidenceKind":"fixed_fact"}]}. Use the exact objectiveIndex supplied in remaining_objectives. Include only objectives addressed by learner_response, once each. Return {"evaluations":[]} when none is addressed.',
 ].join(' ')
 
-function parseJudgments(raw, candidates, sourceMessageIndex) {
+function parseJudgments(raw, candidates, sourceMessageIndex, { requireNoteReady = false } = {}) {
   let parsed
   try { parsed = JSON.parse(raw) } catch { throw new Error('The learning evaluator returned invalid judgments.') }
   if (!parsed || !Array.isArray(parsed.evaluations)) throw new Error('The learning evaluator returned no judgments.')
@@ -30,13 +31,17 @@ function parseJudgments(raw, candidates, sourceMessageIndex) {
     // Objective selection belongs to the application. Ignore any model attempt to award a different objective.
     if (!allowed.has(row.objectiveIndex)) continue
     if (seen.has(row.objectiveIndex) || !['correct', 'partial', 'incorrect'].includes(row.accuracy)
-      || typeof row.sentenceOk !== 'boolean' || !['fixed_fact', 'meaning'].includes(row.evidenceKind)) {
+      || typeof row.sentenceOk !== 'boolean'
+      || (requireNoteReady && typeof row.noteReady !== 'boolean')
+      || (!requireNoteReady && row.noteReady !== undefined && typeof row.noteReady !== 'boolean')
+      || !['fixed_fact', 'meaning'].includes(row.evidenceKind)) {
       throw new Error('The learning evaluator returned invalid judgments.')
     }
     seen.add(row.objectiveIndex)
     // The trusted source is bound here, never chosen or rewritten by the model.
     accepted.push({ objectiveIndex: row.objectiveIndex, accuracy: row.accuracy,
-      sentenceOk: row.sentenceOk, evidenceKind: row.evidenceKind, sourceMessageIndex })
+      sentenceOk: row.sentenceOk, noteReady: typeof row.noteReady === 'boolean' ? row.noteReady : true,
+      evidenceKind: row.evidenceKind, sourceMessageIndex })
   }
   return accepted
 }
@@ -46,7 +51,7 @@ export async function evaluateWebbObjectives({
   callModel, objectives = [], completedIndices = [], understoodIndices = null,
   coveredIndices = [], legacyNoteReadyIndices = null, conversation = [], lesson = {},
   quick = false, objectiveEvidence: priorObjectiveEvidence = {}, priorPromptExposure = {},
-  recoverNotes = false, targetObjectiveIndex = null,
+  recoverNotes = false, targetObjectiveIndex = null, blueprint = null,
 } = {}) {
   const suppliedUnderstood = Array.isArray(understoodIndices) ? understoodIndices
     : (Array.isArray(legacyNoteReadyIndices) ? legacyNoteReadyIndices : completedIndices)
@@ -67,6 +72,7 @@ export async function evaluateWebbObjectives({
   }
   const evaluationStatus = {}
   const sentenceQuality = {}
+  const noteReadiness = {}
   const finish = () => {
     const newlyUnderstood = [...understood].filter(index => !suppliedUnderstood.includes(index))
     return {
@@ -75,7 +81,7 @@ export async function evaluateWebbObjectives({
       newlyUnderstood, newlyCompleted: newlyUnderstood,
       learnerNotes: state.learnerNotes,
       qualifyingText: Object.fromEntries(Object.entries(state.learnerNotes).map(([index, note]) => [index, note.text])),
-      objectiveEvidence: state.objectiveEvidence, evaluationStatus, sentenceQuality,
+      objectiveEvidence: state.objectiveEvidence, evaluationStatus, sentenceQuality, noteReadiness,
     }
   }
   if (!candidates().length) return finish()
@@ -100,14 +106,20 @@ export async function evaluateWebbObjectives({
     const contextStart = Math.max(0, sourceMessageIndex - (quick ? 8 : 30))
     const raw = await callModel(JUDGMENT_INSTRUCTIONS, JSON.stringify({
       instructional_context: lesson,
-      remaining_objectives: remaining.map(({ obj, i }) => ({ objectiveIndex: i, objective: obj })),
+      remaining_objectives: remaining.map(({ obj, i }) => ({
+        objectiveIndex: i,
+        objective: obj,
+        body_unit: blueprint?.bodyUnits?.[i] || null,
+      })),
       context_before_response: conversation.slice(contextStart, sourceMessageIndex)
         .filter(message => ['user', 'assistant'].includes(message?.role) && typeof message.content === 'string')
         .map(({ role, content }) => ({ role, content })),
       learner_response: source.text,
     }), 800, 0, { type: 'json_object' })
     if (!String(raw || '').trim()) throw new Error('The learning evaluator returned no result.')
-    for (const evaluation of parseJudgments(raw, remaining, sourceMessageIndex)) {
+    for (const evaluation of parseJudgments(raw, remaining, sourceMessageIndex, {
+      requireNoteReady: Array.isArray(blueprint?.bodyUnits) && blueprint.bodyUnits.length > 0,
+    })) {
       const index = evaluation.objectiveIndex
       const classification = classifyWebbObjectiveAttempt({
         objectiveIndex: index, objective: objectives[index], evaluation, conversation,
@@ -121,13 +133,13 @@ export async function evaluateWebbObjectives({
       if (!attempt) throw new Error('The learner judgment did not retain its source.')
       evaluationStatus[index] = attempt.reproduction && attempt.comprehension !== 'demonstrated' ? 'reproduced' : attempt.accuracy
       sentenceQuality[index] = attempt.sentenceOk === true
+      noteReadiness[index] = evaluation.noteReady === true
       if (classification.coverage === 'covered' && !state.coveredObj.includes(index)) state.coveredObj.push(index)
       if (attempt.comprehension === 'demonstrated') {
         const note = createLearnerNote({ objectiveIndex: index,
-          evaluation: { ...evaluation, accuracy: attempt.accuracy, sentenceOk: attempt.sentenceOk }, conversation })
-        if (!note) throw new Error('The qualified learner response could not be captured.')
+          evaluation: { ...evaluation, accuracy: attempt.accuracy, sentenceOk: attempt.sentenceOk, noteReady: evaluation.noteReady }, conversation })
         understood.add(index)
-        state.learnerNotes[index] = note
+        if (note) state.learnerNotes[index] = note
       }
     }
   }
