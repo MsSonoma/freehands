@@ -190,6 +190,8 @@ function WebbPageInner() {
   const [chatLoading, setChatLoading]       = useState(false)
   const transcriptRef                       = useRef(null)
   const transcriptManualScrollRef = useRef(false)
+  // The scroll effect reads objectives.length during render, so initialize it first.
+  const [objectives,         setObjectives]        = useState([])  // string[]
   useEffect(() => {
     const el = transcriptRef.current
     if (!el) return
@@ -214,7 +216,6 @@ function WebbPageInner() {
   }, [sonomaKeyboard.keyboardHeight, transcript.length, objectives.length, phase])
 
   // ── Research objectives ──────────────────────────────────────────────
-  const [objectives,         setObjectives]        = useState([])  // string[]
   const [objectiveClues,     setObjectiveClues]    = useState([])  // learner-facing retrieval cues; full objectives reveal only after mastery
   const [learningState, setLearningState] = useState(emptyWebbObjectiveState)
   const { coveredObj, understoodObj, objectiveEvidence, learnerNotes } = learningState
