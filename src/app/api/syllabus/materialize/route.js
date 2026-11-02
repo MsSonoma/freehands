@@ -9,7 +9,7 @@ import { verifyFacilitatorLessonAccess } from '../../../lib/serverLessonAccess.m
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-export const maxDuration = 60
+export const maxDuration = 180
 
 function validLineageId(value) {
   const text = String(value || '').trim()

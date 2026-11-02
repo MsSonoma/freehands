@@ -13,7 +13,7 @@ import {
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
-export const maxDuration = 60 // Extended timeout for OpenAI lesson generation
+export const maxDuration = 180 // Allow the selected reasoning model to finish a full lesson
 
 async function readUserAndTier(request, { createClientImpl = null } = {}){
   try {
@@ -199,7 +199,7 @@ ${difficultyCalibration}
 Return ONLY valid JSON. No markdown, no code blocks, no commentary.`
 }
 
-async function callModel(prompt, { timeoutMs = 55000 } = {}){
+async function callModel(prompt, { timeoutMs = 150000 } = {}){
   // Use existing Ms. Sonoma OpenAI provider where available; fallback to a minimal stub
   const key = process.env.OPENAI_API_KEY
   const url = 'https://api.openai.com/v1/chat/completions'
@@ -253,7 +253,7 @@ async function callModel(prompt, { timeoutMs = 55000 } = {}){
   }
   
   const controller = new AbortController()
-  const timeoutId = setTimeout(() => controller.abort(), Math.max(1000, Math.min(55000, Number(timeoutMs) || 55000))) // One request, within the route's 60-second ceiling
+  const timeoutId = setTimeout(() => controller.abort(), Math.max(1000, Math.min(150000, Number(timeoutMs) || 150000))) // Leave room for validation and durable storage within the 180-second route
   
   try {
     const res = await fetch(url, { 
@@ -301,9 +301,9 @@ async function generateReviewedLesson({ title, subject, difficulty, grade, descr
   const prompt = buildPrompt({ title, subject, difficulty, grade, description, notes, vocab, curriculumTargets })
   const generated = await modelCall(prompt)
   const lesson = normalizedGeneratedLesson(generated, { title, subject, difficulty, grade, description, curriculumTargets }, userId, rng)
-  // The first model request owns most of the function's 60-second budget.
+  // The first model request owns most of the function's 180-second budget.
   // Never risk an otherwise usable lesson by waiting for an extra repair.
-  const repairTest = Date.now() - startedAt < 36000
+  const repairTest = Date.now() - startedAt < 155000
     ? async (repairPrompt) => modelCall(repairPrompt, { timeoutMs: 12000 })
     : null
   return improveGeneratedLessonAssessment(lesson, { repairTest })
