@@ -6,7 +6,7 @@ import { SyllabusError, validateLearnerId } from '../../../lib/syllabus/schema.m
 import { normalizeLessonKey } from '../../../lib/lessonKeyNormalization.js'
 import { verifyFacilitatorLessonAccess } from '../../../lib/serverLessonAccess.mjs'
 import { normalizeInstructionalTeacher } from '../../../lib/syllabus/instructionalTeacher.mjs'
-import { resolveSyllabusExecution, createSyllabusExecutionProof, SYLLABUS_EXECUTION_COOKIE, PROOF_TTL_SECONDS } from '../../../lib/syllabus/executionAuthorization.server.mjs'
+import { resolveSyllabusExecution } from '../../../lib/syllabus/executionAuthorization.server.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -46,18 +46,24 @@ export async function POST(request, deps = {}) {
       lessonKey: source.scope.lessonKey,
       unapprovedError: 'Review and approve this lesson before starting a new attempt.' })
     if (!access?.ok) throw new SyllabusError(access?.error || 'This lesson needs review before restarting.', 409, 'LESSON_REVIEW_REQUIRED')
-    const makeId = deps.randomUUID || randomUUID
-    const occurrenceId = `restart:${makeId()}`
-    const scope = { facilitatorId: context.user.id, learnerId, lessonKey: source.scope.lessonKey,
-      occurrenceId, instructionalTeacher: teacher, today: source.calendar.today, restart: true }
-    const secret = deps.proofSecret || process.env.SUPABASE_SERVICE_ROLE_KEY
-    // Prepare proof before changing the active attempt, so missing configuration never closes it.
-    const proof = createSyllabusExecutionProof(scope, secret, now)
-    await (deps.releasePreviousAttempt || releasePreviousAttempt)(context.admin, learnerId, source.scope.lessonKey, now)
-    const response = NextResponse.json({ ok: true, occurrenceId, lessonKey: scope.lessonKey, instructionalTeacher: teacher })
-    response.cookies.set(SYLLABUS_EXECUTION_COOKIE, proof, {
-      httpOnly: true, sameSite: 'strict', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: PROOF_TTL_SECONDS,
+    const createIntent = deps.createRestartIntent || (async (values) => {
+      const { data, error } = await context.admin.from('syllabus_restart_intents')
+        .insert(values).select('id').single()
+      if (error) throw error
+      return data
     })
+    const restartId = (deps.randomUUID || randomUUID)()
+    const scheduledDate = source.calendar.today
+    const intent = await createIntent({ id: restartId, facilitator_id: context.user.id,
+      learner_id: learnerId, lesson_key: source.scope.lessonKey,
+      instructional_teacher: teacher, scheduled_date: scheduledDate,
+      source_occurrence_id: sourceOccurrenceId })
+    if (!intent?.id) throw new Error('The restarted lesson was not saved.')
+    // Historical evidence remains; the new learner-facing occurrence has its own ID.
+    // A failure to release a live session must remain visible to the facilitator.
+    await (deps.releasePreviousAttempt || releasePreviousAttempt)(context.admin, learnerId, source.scope.lessonKey, now)
+    const response = NextResponse.json({ ok: true, occurrenceId: `restart:${intent.id}`,
+      lessonKey: source.scope.lessonKey, instructionalTeacher: teacher, scheduledDate })
     return response
   } catch (error) {
     const status = error instanceof SyllabusError ? error.status : 500

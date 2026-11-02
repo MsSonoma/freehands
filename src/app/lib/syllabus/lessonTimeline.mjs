@@ -93,7 +93,7 @@ function intentOccurrenceId(intent) {
 }
 
 export function composeSyllabusLessonTimeline({
-  activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], sessions = [], sessionEvents = [],
+  activeRevision = {}, forecastItems = [], associations = [], approvedLessons = {}, schedules = [], restartIntents = [], sessions = [], sessionEvents = [],
   legacyActivities = [], noSchoolDates = [], intentSourceDates = [], lessonMetadata = [], slateAssignments = [], slateCompletions = [], slateEvidenceReports = [], slateReviewReports = [], removedOccurrences = [],
   today = new Date().toISOString().slice(0, 10),
   timeZone = 'UTC',
@@ -240,6 +240,16 @@ export function composeSyllabusLessonTimeline({
       scheduleIntents.push({ kind: 'scheduled', key, row, planned_date: isoDate(row.scheduled_date), sort_order: Number(row.sort_order || 0) })
     }
   }
+  // Restarts are independent educator-authored attempts. Never reconcile them
+  // into the original scheduled/forecast occurrence for this lesson.
+  for (const row of restartIntents || []) {
+    if (!validDate(row?.scheduled_date)) continue
+    const key = resolveKey(row.lesson_key)
+    if (key) {
+      ensureMetadata(key, row)
+      scheduleIntents.push({ kind: 'restart', key, row, planned_date: isoDate(row.scheduled_date), sort_order: 0 })
+    }
+  }
   const forecastIntents = []
   for (const row of forecastItems || []) {
     if (!row?.lesson_key || !validDate(row?.planned_date)) continue
@@ -257,7 +267,7 @@ export function composeSyllabusLessonTimeline({
     row?.metadata?.forecast_item_id,
     row?.metadata?.forecast_lineage_id,
   ].map(clean).filter(Boolean)
-  for (const schedule of scheduleIntents) {
+  for (const schedule of scheduleIntents.filter((intent) => intent.kind === 'scheduled')) {
     const candidates = forecastIntents.filter((forecast) => forecast.key === schedule.key && !consumedForecasts.has(forecast))
     const identities = new Set(rowIdentities(schedule.row))
     let match = identities.size
@@ -449,7 +459,7 @@ export function composeSyllabusLessonTimeline({
       is_deliberate_repeat: latestCompletionByKey.has(intent.key),
       reconciled_forecast_id: intent.reconciled_forecast_id || null,
       original_scheduled_date: intent.kind === 'scheduled' ? intent.planned_date : null,
-      assigned_instructional_teacher: details.assigned_instructional_teacher || 'sonoma',
+      assigned_instructional_teacher: intent.kind === 'restart' ? intent.row.instructional_teacher : (details.assigned_instructional_teacher || 'sonoma'),
     })
   }
 

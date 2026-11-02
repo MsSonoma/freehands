@@ -26,6 +26,7 @@ import {
   shouldAutoShowLearnerTutorial,
 } from '@/app/learn/demoLearner.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { beginFreshProtectedAttempt } from '@/app/lib/syllabus/executionClient.js'
 import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, isReviewTeacher, normalizeReviewTeacherSelection, reviewTeacherIcon, reviewTeacherLabel, reviewTeacherSelectionIcon, reviewTeacherSelectionLabel } from '@/app/lib/reviewTeacher.js'
 import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '@/app/learn/snapshotProgress.mjs'
 import { resolveLearnerSyllabusPresentation } from '@/app/lib/syllabus/learnerPresentation.mjs'
@@ -754,6 +755,7 @@ function LessonsPageInner(){
       setSessionLoading(true)
       const lessonKey = `${subject}/${fileBaseName}`
       try { sessionStorage.setItem('webb_pending_lesson_key', lessonKey) } catch {}
+      if (String(syllabusOccurrence?.occurrence_id || '').startsWith('restart:')) beginFreshProtectedAttempt()
       router.push(buildInstructionalSessionRoute({ learnerId, subject, fileName: fileBaseName, instructionalTeacher: currentTeacher, occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '' }))
       return
     }
@@ -767,6 +769,7 @@ function LessonsPageInner(){
       goldenKey: goldenKeysEnabled === true && launchHasGoldenKey,
       occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '',
     })
+    if (String(syllabusOccurrence?.occurrence_id || '').startsWith('restart:')) beginFreshProtectedAttempt()
     router.push(withKey)
   }
 

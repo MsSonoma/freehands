@@ -1835,3 +1835,19 @@ test('durable Mr. Slate completions project as supplemental history on the local
   assert.deepEqual(slate.map((item) => item.title), ['Fractions', 'Fractions'])
   assert.equal(slate.every((item) => item.actual_kind == null), true)
 })
+
+test('facilitator restart is a separate learner-visible occurrence with its chosen teacher', () => {
+  const restartId = '99999999-9999-4999-8999-999999999999'
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION, today: '2026-09-07',
+    forecastItems: [forecastLesson()],
+    associations: [association({ readiness_state: 'available', instructional_teacher: 'sonoma' })],
+    restartIntents: [{ id: restartId, lesson_key: 'generated/fractions.json', instructional_teacher: 'webb',
+      scheduled_date: '2026-09-07', source_occurrence_id: 'syllabus:forecast-1', created_at: '2026-09-07T11:00:00Z' }],
+  })
+  const restarted = items.find(item => item.occurrence_id === `restart:${restartId}`)
+  assert.ok(restarted)
+  assert.equal(restarted.lesson_key, 'generated/fractions.json')
+  assert.equal(restarted.assigned_instructional_teacher, 'webb')
+  assert.ok(items.find(item => item.occurrence_id === 'syllabus:forecast-1'))
+})

@@ -32,22 +32,6 @@ export async function POST(request, deps = {}) {
     if (!lessonKey) throw new SyllabusError('A lessonKey is required')
     const now = deps.now || new Date()
     const repository = deps.repository || createSyllabusRepository(context.admin)
-    // The facilitator may start a new, signed attempt without changing earlier evidence.
-    const restartSecret = deps.proofSecret || process.env.SUPABASE_SERVICE_ROLE_KEY
-    const restartProof = readSyllabusExecutionProof(cookieValue(request, SYLLABUS_EXECUTION_COOKIE), restartSecret, now)
-    const restartTeacher = String(body?.instructionalTeacher || '').trim().toLowerCase()
-    if (String(body?.occurrenceId || '').startsWith('restart:')
-        && restartProof?.restart === true
-        && executionProofMatches(restartProof, {
-          facilitatorId: context.user.id, learnerId, lessonKey,
-          occurrenceId: String(body.occurrenceId), instructionalTeacher: restartTeacher,
-          today: restartProof.today,
-        })) {
-      return NextResponse.json({ ok: true, authorization: 'facilitator_restart',
-        occurrenceId: restartProof.occurrenceId, resumeBrowserSessionId: null,
-        lessonKey: restartProof.lessonKey, instructionalTeacher: restartProof.instructionalTeacher,
-        today: restartProof.today })
-    }
     const decision = await resolveSyllabusExecution({
       repository,
       admin: context.admin,

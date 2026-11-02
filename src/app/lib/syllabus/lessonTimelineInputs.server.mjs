@@ -191,7 +191,7 @@ export async function loadSyllabusTimelineInputs({
   includeSlateEvidence = false,
 } = {}) {
   const optionalList = async (name, ...args) => typeof repository[name] === 'function' ? repository[name](...args) : []
-  const [forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, slateEvidence, removedOccurrences] = await Promise.all([
+  const [forecastItems, associations, slateAssignments, slateCompletions, schedules, sessions, sessionEvents, legacyActivities, noSchoolDates, slateEvidence, removedOccurrences, restartIntents] = await Promise.all([
     repository.listForecastItems(activeRevision.id),
     optionalList('listLessonAssociations', facilitatorId, learner.id),
     optionalList('listSlateAssignments', facilitatorId, learner.id),
@@ -205,6 +205,7 @@ export async function loadSyllabusTimelineInputs({
       ? loadSlateEvidenceInputs({ repository, facilitatorId, learnerId: learner.id })
       : { slateEvidenceReports: [], slateReviewReports: [] },
     optionalList('listLessonOccurrenceRemovals', facilitatorId, learner.id),
+    optionalList('listSyllabusRestartIntents', facilitatorId, learner.id, activeRevision.effective_from),
   ])
   const removedSessionIds = removedTimelineSessionIds(removedOccurrences)
   const visibleSessions = (sessions || []).filter((row) => !removedSessionIds.has(clean(row?.id)))
@@ -244,5 +245,5 @@ export async function loadSyllabusTimelineInputs({
     sessionEvents: visibleEvents,
     verifyLessonAccess,
   })
-  return { forecastItems: visibleForecastItems, associations, slateAssignments, slateCompletions: visibleSlateCompletions, schedules: visibleSchedules, sessions: visibleSessions, evidenceSessions: sessions, sessionEvents: visibleEvents, legacyActivities: visibleLegacyActivities, noSchoolDates, intentSourceDates, lessonMetadata, removedOccurrences, ...slateEvidence }
+  return { forecastItems: visibleForecastItems, associations, slateAssignments, slateCompletions: visibleSlateCompletions, schedules: visibleSchedules, restartIntents, sessions: visibleSessions, evidenceSessions: sessions, sessionEvents: visibleEvents, legacyActivities: visibleLegacyActivities, noSchoolDates, intentSourceDates, lessonMetadata, removedOccurrences, ...slateEvidence }
 }

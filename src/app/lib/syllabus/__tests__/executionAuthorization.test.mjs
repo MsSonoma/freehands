@@ -984,3 +984,24 @@ test('transactional session-start migration locks, checks, replaces, and restric
   assert.doesNotMatch(migration, /drop index[^\n]*unique_active_lesson_session/i)
   assert.doesNotMatch(migration, /p_(?:raw_)?pin\b/i)
 })
+
+test('persistent restarted occurrence authorizes the learner with the selected teacher', async () => {
+  const teacher = 'webb'
+  const restartId = '88888888-8888-4888-8888-888888888888'
+  const prior = forecast('today', 'math/today.json', '2026-08-23')
+  const repo = {
+    ...repository({ forecast: [prior] }),
+    async listSyllabusRestartIntents() {
+      return [{ id: restartId, lesson_key: prior.lesson_key, instructional_teacher: teacher,
+        scheduled_date: '2026-08-23', source_occurrence_id: 'syllabus:today', created_at: '2026-08-23T15:00:00Z' }]
+    },
+  }
+  const resolved = await resolveSyllabusExecution({ repository: repo,
+    facilitatorId: FACILITATOR, learnerId: LEARNER,
+    lessonKey: prior.lesson_key, occurrenceId: `restart:${restartId}`,
+    now: new Date('2026-08-23T16:00:00Z'),
+  })
+  assert.equal(resolved.instructionalTeacher, teacher)
+  assert.equal(resolved.scope.occurrenceId, `restart:${restartId}`)
+  assert.equal(resolved.allowedWithoutPin, true)
+})

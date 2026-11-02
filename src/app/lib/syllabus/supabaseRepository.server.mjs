@@ -449,7 +449,14 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to load learner lesson association')
       return data || null
     },
-    async listLessonSchedule(facilitatorId, learnerId, effectiveFrom) {
+    async listSyllabusRestartIntents(facilitatorId, learnerId, effectiveFrom) {
+      const { data, error } = await admin.from('syllabus_restart_intents').select('*')
+        .eq('facilitator_id', facilitatorId).eq('learner_id', learnerId)
+        .gte('scheduled_date', String(effectiveFrom || '').slice(0, 10))
+        .order('created_at')
+      throwOn(error, 'Failed to load restarted lessons')
+      return data || []
+    },    async listLessonSchedule(facilitatorId, learnerId, effectiveFrom) {
       const { data, error } = await admin.from('lesson_schedule').select('*')
         .eq('learner_id', learnerId)
         .or(`facilitator_id.eq.${facilitatorId},facilitator_id.is.null`)

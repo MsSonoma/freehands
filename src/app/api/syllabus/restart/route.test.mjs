@@ -1,9 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { POST as restart } from './route.js'
-import { POST as authorize } from '../execution/route.js'
-import { POST as start } from '../execution/start/route.js'
-import { readSyllabusExecutionProof, executionProofMatches } from '../../../lib/syllabus/executionAuthorization.server.mjs'
 
 const owner = '11111111-1111-4111-8111-111111111111'
 const learner = '22222222-2222-4222-8222-222222222222'
@@ -20,61 +17,26 @@ function makeRequest(teacher = 'webb') {
   })
 }
 
-test('restart grants a distinct signed attempt and preserves the original lesson key', async () => {
+test('restart saves a new learner-facing occurrence without launching a facilitator session', async () => {
   const operations = []
   const response = await restart(makeRequest(), {
-    requestContext, now, proofSecret, randomUUID: () => attempt,
-    repository: {},
-    verifyFacilitatorLessonAccess: async () => ({ ok: true }),
-    resolveSyllabusExecution: async ({ learnerId, lessonKey: requested, occurrenceId }) => {
-      assert.equal(learnerId, learner)
-      assert.equal(requested, lessonKey)
-      assert.equal(occurrenceId, 'syllabus:existing')
-      return { scope: { lessonKey }, calendar: { today: '2026-11-02' } }
-    },
-    releasePreviousAttempt: async (_admin, learnerId, previousKey) => {
-      operations.push([learnerId, previousKey])
-    },
+    requestContext, now, randomUUID: () => attempt,
+    repository: {}, verifyFacilitatorLessonAccess: async () => ({ ok: true }),
+    resolveSyllabusExecution: async () => ({ scope: { lessonKey }, calendar: { today: '2026-11-02' } }),
+    createRestartIntent: async (record) => { operations.push({ type: 'save', record }); return { id: record.id } },
+    releasePreviousAttempt: async () => { operations.push({ type: 'release' }) },
   })
   assert.equal(response.status, 200)
   const data = await response.json()
-  assert.equal(data.lessonKey, lessonKey)
   assert.equal(data.occurrenceId, `restart:${attempt}`)
+  assert.equal(data.scheduledDate, '2026-11-02')
   assert.equal(data.instructionalTeacher, 'webb')
-  assert.deepEqual(operations, [[learner, lessonKey]])
-  const cookie = response.cookies.get('syllabus_execution')?.value
-  const proof = readSyllabusExecutionProof(cookie, proofSecret, now)
-  assert.equal(proof?.restart, true)
-  assert.equal(executionProofMatches(proof, {
-    facilitatorId: owner, learnerId: learner, lessonKey,
-    occurrenceId: data.occurrenceId, instructionalTeacher: 'webb', today: '2026-11-02',
-  }), true)
-
-  const authorizeResponse = await authorize(new Request('https://example.invalid/api/syllabus/execution', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `syllabus_execution=${cookie}` },
-    body: JSON.stringify({ learnerId: learner, lessonKey, occurrenceId: data.occurrenceId, instructionalTeacher: 'webb' }),
-  }), { requestContext, now, proofSecret, repository: {} })
-  assert.equal(authorizeResponse.status, 200)
-  assert.equal((await authorizeResponse.json()).resumeBrowserSessionId, null)
-  const freshBrowserSessionId = '44444444-4444-4444-8444-444444444444'
-  let startedWith = null
-  const started = await start(new Request('https://example.invalid/api/syllabus/execution/start', {
-    method: 'POST', headers: { 'Content-Type': 'application/json', Cookie: `syllabus_execution=${cookie}` },
-    body: JSON.stringify({ learnerId: learner, lessonId: lessonKey,
-      browserSessionId: freshBrowserSessionId, occurrenceId: data.occurrenceId, instructionalTeacher: 'webb' }),
-  }), { requestContext, now, proofSecret,
-    repository: { findOwnedLearner: async () => ({ id: learner }) },
-    startSessionTransaction: async (_admin, values) => {
-      startedWith = values
-      return { id: '55555555-5555-4555-8555-555555555555', conflict: false }
-    },
-  })
-  assert.equal(started.status, 200)
-  assert.equal(startedWith.p_browser_session_id, freshBrowserSessionId)
-  assert.equal(startedWith.p_syllabus_occurrence_id, data.occurrenceId)
-  assert.equal(startedWith.p_instructional_teacher, 'webb')
+  assert.equal(operations[0].record.lesson_key, lessonKey)
+  assert.equal(operations[0].record.instructional_teacher, 'webb')
+  assert.equal(operations[0].record.learner_id, learner)
+  assert.deepEqual(operations.map(item => item.type), ['save', 'release'])
+  assert.equal(response.cookies.get('syllabus_execution'), undefined)
 })
-
 test('invalid teacher does not release existing progress', async () => {
   let changed = false
   const response = await restart(makeRequest('other'), {

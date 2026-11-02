@@ -4,7 +4,6 @@ import { forecastCarryLessonKey, lessonGenerationPresentation } from '@/app/lib/
 import { syllabusRecoveryGuidance } from '@/app/lib/syllabus/recoveryGuidance.mjs'
 import { useEffect, useState } from 'react'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
-import { beginFreshProtectedAttempt } from '@/app/lib/syllabus/executionClient.js'
 import { makeEditableLessonVersion } from '@/app/lib/syllabus/lessonVersioning.mjs'
 import { useRouter } from 'next/navigation'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
@@ -468,11 +467,9 @@ export default function FacilitatorSyllabusLessonOverlay({
         failure.code = result.code
         throw failure
       }
-      await ensureStartAccess()
-      beginFreshProtectedAttempt()
-      const { subject, fileName } = splitLessonKey(result.lessonKey || item.lesson_key)
-      router.push(buildInstructionalSessionRoute({ learnerId, subject, fileName,
-        instructionalTeacher: teacher, occurrenceId: result.occurrenceId }))
+      setMessage(`${instructionalTeacherLabel(teacher)} is ready for the learner to restart this lesson from their Syllabus.`)
+      await refreshAfterChange()
+      setCoreBusy('')
     } catch (error) {
       setRestartNeedsReview(error?.code === 'LESSON_REVIEW_REQUIRED')
       setCoreError(error?.message || 'The previous lesson is preserved. Choose a teacher and try again.')
