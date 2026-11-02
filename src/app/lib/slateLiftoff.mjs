@@ -38,6 +38,9 @@ export const LIFTOFF_DIAGNOSTIC_CATEGORIES = Object.freeze([
 const EVIDENCE = new Set(Object.values(LIFTOFF_EVIDENCE_STATES))
 const ACTIONS = new Set(LIFTOFF_ACTION_TYPES)
 const DIAGNOSTICS = new Set(LIFTOFF_DIAGNOSTIC_CATEGORIES)
+const LANGUAGE_PROBE_MODES = new Set(['standard', 'variant', 'anchor_recovery'])
+const LANGUAGE_ANCHOR_SOURCES = new Set(['discovered', 'facilitator'])
+const LANGUAGE_STATUSES = new Set(['unobserved', 'anchor_observed', 'language_sensitive', 'flexibility_observed'])
 
 function clean(value, max = 500) {
   return String(value || '').trim().slice(0, max)
@@ -102,6 +105,27 @@ function unique(values = []) {
   return [...new Set((Array.isArray(values) ? values : []).map((value) => clean(value, 120)).filter(Boolean))]
 }
 
+function normalizeLanguageProbe(raw = {}) {
+  const mode = LANGUAGE_PROBE_MODES.has(raw?.mode) ? raw.mode : 'standard'
+  const anchorSource = LANGUAGE_ANCHOR_SOURCES.has(raw?.anchorSource) ? raw.anchorSource : null
+  return { mode, anchorSource }
+}
+
+function normalizeLanguageAccess(raw = {}) {
+  const discoveredAnchor = raw?.discoveredAnchor?.prompt ? {
+    prompt: clean(raw.discoveredAnchor.prompt, 1200), demandType: clean(raw.discoveredAnchor.demandType, 80),
+    criterion: clean(raw.discoveredAnchor.criterion, 800), sourceTurn: Math.max(0, Number(raw.discoveredAnchor.sourceTurn) || 0),
+  } : null
+  const facilitatorAnchor = raw?.facilitatorAnchor?.text ? {
+    text: clean(raw.facilitatorAnchor.text, 1200), sourceTurn: Math.max(0, Number(raw.facilitatorAnchor.sourceTurn) || 0),
+  } : null
+  const status = LANGUAGE_STATUSES.has(raw?.status) ? raw.status : (discoveredAnchor ? 'anchor_observed' : 'unobserved')
+  const lastProbe = raw?.lastProbe && ['variant', 'anchor_recovery'].includes(raw.lastProbe.mode)
+    ? { mode: raw.lastProbe.mode, turn: Math.max(0, Number(raw.lastProbe.turn) || 0), result: clean(raw.lastProbe.result, 80) || null } : null
+  return Object.assign(raw && typeof raw === 'object' ? raw : {}, { version: 'language-probe-v1', discoveredAnchor, facilitatorAnchor,
+    activeAnchorSource: facilitatorAnchor ? 'facilitator' : (discoveredAnchor ? 'discovered' : null), status, lastProbe })
+}
+
 function normalizeImportance(value) {
   const n = Number(value)
   return Number.isFinite(n) ? Math.max(1, Math.min(5, Math.round(n))) : 3
@@ -127,6 +151,8 @@ export function normalizeLiftoffComponentMap(raw = []) {
       lastDiagnostic: null,
       lastEvidence: null,
       revealedToLearner: false,
+      languageAccess: normalizeLanguageAccess(),
+      verification: { active: false, reason: null, startedAtTurn: null },
     })
   }
   const validIds = new Set(components.map((component) => component.id))
@@ -146,6 +172,7 @@ export function normalizeLiftoffAction(raw = {}, componentIds = []) {
     withheldComponentIds: filterIds(raw?.withheldComponentIds),
     supportedComponentIds: filterIds(raw?.supportedComponentIds),
     problem: normalizeLiftoffProblem(raw?.problem),
+    wordingProbe: normalizeLanguageProbe(raw?.wordingProbe),
     reason: clean(raw?.reason, 600),
   }
 }
@@ -205,12 +232,13 @@ export function liftoffReleaseReady(state) {
   const essential = (state?.components || []).filter((component) => component.essential !== false)
   if (!essential.length) return false
   const componentsIndependent = essential.every((component) => [LIFTOFF_EVIDENCE_STATES.INDEPENDENT, LIFTOFF_EVIDENCE_STATES.RETAINED].includes(component.evidenceState))
-  return componentsIndependent && state?.integrationConfirmed === true && state?.variationConfirmed === true
+  const verificationClear = essential.every((component) => component?.verification?.active !== true)
+  return componentsIndependent && verificationClear && state?.integrationConfirmed === true && state?.variationConfirmed === true
 }
 
 export function applyLiftoffTurn(state, rawTurn = {}) {
   const previous = state || createLiftoffState([])
-  const byId = new Map((previous.components || []).map((component) => [component.id, { ...component }]))
+  const byId = new Map((previous.components || []).map((component) => [component.id, { ...component, languageAccess: component.languageAccess || normalizeLanguageAccess(), verification: component.verification || { active: false, reason: null, startedAtTurn: null } }]))
   const observations = (Array.isArray(rawTurn?.observations) ? rawTurn.observations : []).filter((observation) => {
     if (rawTurn?.evidenceValidated === true) return observation?.accepted === true
     const result = clean(observation?.result, 80).toLowerCase()
@@ -235,7 +263,26 @@ export function applyLiftoffTurn(state, rawTurn = {}) {
       ? observation.diagnostic
       : (DIAGNOSTICS.has(rawTurn?.diagnosis?.category) ? rawTurn.diagnosis.category : 'unknown')
     const previousEvidenceState = component.evidenceState
-    component.evidenceState = nextEvidenceState(component.evidenceState, observation)
+    const result = clean(observation?.result, 80).toLowerCase()
+    const earned = ['independent', 'retained'].includes(previousEvidenceState)
+    const checking = component.verification?.active === true
+    const confirmed = result === 'independent_success' && observation?.independent === true
+    if ((result === 'failure' && earned && !checking) || (checking && confirmed)) component.evidenceState = previousEvidenceState
+    else component.evidenceState = nextEvidenceState(component.evidenceState, observation)
+    if (result === 'failure' && earned && !checking) component.verification = { active: true, reason: previous.currentAction?.wordingProbe?.mode === 'variant' ? 'language_variation' : 'contradictory_response', startedAtTurn: Number(previous.turnNumber || 0) + 1 }
+    else if (checking && (confirmed || result === 'failure')) component.verification = { active: false, reason: null, startedAtTurn: null }
+    const access = normalizeLanguageAccess(component.languageAccess)
+    const contract = currentProblem?.responseContract
+    const unaided = confirmed && observation?.basis === 'asked_target' && (!observation?.supportLevel || observation.supportLevel === 'none') && contract?.targetComponentId === id
+    if (unaided && currentProblem?.prompt && !access.discoveredAnchor) {
+      access.discoveredAnchor = { prompt: currentProblem.prompt, demandType: contract.demandType, criterion: contract.criterion, sourceTurn: Number(previous.turnNumber || 0) + 1 }
+      access.activeAnchorSource = access.facilitatorAnchor ? 'facilitator' : 'discovered'
+      if (access.status === 'unobserved') access.status = 'anchor_observed'
+    }
+    const wordingMode = previous.currentAction?.wordingProbe?.mode || 'standard'
+    if (wordingMode === 'variant' && contract?.targetComponentId === id && confirmed) access.status = 'flexibility_observed'
+    if (wordingMode === 'anchor_recovery' && contract?.targetComponentId === id && confirmed) access.status = 'language_sensitive'
+    if (['variant', 'anchor_recovery'].includes(wordingMode) && contract?.targetComponentId === id) access.lastProbe = { mode: wordingMode, turn: Number(previous.turnNumber || 0) + 1, result: confirmed ? 'success' : (result === 'failure' ? 'miss' : result || null) }
     component.revealedToLearner = component.revealedToLearner === true
       || ['independent', 'retained'].includes(previousEvidenceState)
       || ['independent', 'retained'].includes(component.evidenceState)
@@ -322,6 +369,8 @@ export function liftoffStateForModel(state) {
       evidenceState: component.evidenceState,
       lastDiagnostic: component.lastDiagnostic,
       lastEvidence: component.lastEvidence,
+      languageAccess: component.languageAccess,
+      verification: component.verification,
     })),
     currentAction: state?.currentAction || null,
     recentProblemHistory: (state?.problemHistory || []).slice(-12),

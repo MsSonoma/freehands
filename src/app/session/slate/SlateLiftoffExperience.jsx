@@ -1468,8 +1468,22 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setMathWorkingNotes(scoped)
     scheduleMathSnapshot()
   }, [busy, lineHelpBusy, lineHelpTarget, phase, scheduleMathSnapshot])
+  const saveLanguageAnchor = useCallback(async (component) => {
+    if (phase !== 'active' || !component?.id) return
+    const existing = component.languageAccess?.facilitatorAnchor?.text || component.languageAccess?.discoveredAnchor?.prompt || ''
+    const wording = window.prompt(`Language anchor for ${component.name || 'this skill'}`, existing)
+    if (!wording?.trim()) return
+    const approved = await requestFacilitatorPinException({ title: 'Facilitator language anchor', message: 'Enter the Facilitator PIN to set this wording for Mr. Slate' })
+    if (!approved) return
+    component.languageAccess = { ...(component.languageAccess || {}), facilitatorAnchor: { text: wording.trim(), sourceTurn: Number(liftoffRef.current?.turnNumber || 0) }, activeAnchorSource: 'facilitator' }
+    const current = liftoffRef.current
+    const next = { ...current, components: [...(current?.components || [])] }
+    liftoffRef.current = next
+    setLiftoff(next)
+    await persistLiftoffSnapshot({ phase: 'active', liftoff: next })
+  }, [persistLiftoffSnapshot, phase])
   const essentialComponents = components.filter((component) => component.essential !== false)
-  const demonstratedComponents = essentialComponents.filter((component) => ['independent', 'retained'].includes(component.evidenceState))
+  const demonstratedComponents = essentialComponents.filter((component) => component.revealedToLearner === true || ['independent', 'retained'].includes(component.evidenceState))
   const revealedComponents = essentialComponents.filter((component) => component.revealedToLearner === true || ['independent', 'retained'].includes(component.evidenceState))
   const currentAssessmentItems = testItems
   const currentAssessment = currentAssessmentItems[assessmentIndex] || null
@@ -2754,7 +2768,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             return (
               <div key={component.id} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 10, borderTop: `1px solid ${C.border}`, padding: '9px 0' }}>
                 <strong style={{ fontSize: 12 }}>{currentlyDemonstrated ? '? ' : '? '}{component.name}</strong>
-                {!currentlyDemonstrated && <span style={{ color: C.yellow, fontSize: 10, whiteSpace: 'nowrap' }}>CHECKING AGAIN</span>}
+                <span style={{ display: 'flex', alignItems: 'center', gap: 8 }}>{(component.verification?.active === true || !currentlyDemonstrated) && <span style={{ color: C.yellow, fontSize: 10, whiteSpace: 'nowrap' }}>CHECKING AGAIN</span>}<button type="button" onClick={() => void saveLanguageAnchor(component)} style={{ fontSize: 10, fontWeight: 800, padding: '4px 7px' }}>LANGUAGE</button></span>
               </div>
             )
           }) : <div style={{ color: C.muted, fontSize: 12, lineHeight: 1.5 }}>Skills will appear here after you demonstrate them.</div>}

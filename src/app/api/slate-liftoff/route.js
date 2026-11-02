@@ -101,6 +101,7 @@ function baseMethod() {
     'Maintain a cumulative view of demonstrated component evidence across turns. A missing detail in one answer is not a failure of previously demonstrated understanding.',
     'When an answer establishes part of the target, acknowledge that part briefly and ask a focused follow-up about what remains uncertain; do not restart the whole question or ask for a polished restatement.',
     'If a real misconception contradicts earlier evidence, diagnose and recheck the affected component. Do not erase unrelated earned evidence.',
+    'Each component may carry languageAccess with a discovered or facilitator-supplied wording anchor. A facilitator anchor has presentation priority, but neither kind of anchor is evidence by itself.',
     'Distinguish answers obtained with cues or teaching from unaided demonstrations. Before release, independently check the essential skill on meaningfully varied material without giving away the targeted reasoning.',
     'An integrated objective may ultimately demand coordination of multiple steps, but the learner may demonstrate those steps across a coherent sequence rather than recite a bullet list.',
     'Respect dependencies: upstream errors can make downstream work look wrong.',
@@ -305,6 +306,8 @@ Important:
 - "procedure_released" is only a request to the application. The application will reject release unless every essential component is independent and both integration and variation have been confirmed.
 - For probe, reprobe, isolate, or integrate, nextAction must contain a problem object with prompt and deterministic instanceKey.
 - The next problem must not repeat the current problem or any recentProblemHistory item. Same underlying quantities and relationships means the same instance even if reworded.
+- Prefer a facilitator language anchor over a discovered anchor for recovery wording, but never treat an anchor as correctness evidence.
+- Wording variation keeps the same target and cognitive demand on a fresh instance. It is not transfer variation and must not set varied or variationEvidence.
 - learnerMessage contains feedback or teaching only. Do not include the next problem there and do not call anything fresh, new, or different.
 
 Return exactly:
@@ -340,6 +343,7 @@ Return exactly:
     "withheldComponentIds": [],
     "supportedComponentIds": [],
     "problem": { "prompt": "exact next learner problem when this action asks for one", "instanceKey": "deterministic key for its underlying instance", "responseContract": { "targetComponentId": "same single target id", "demandType": "one demand type", "criterion": "the single learner-visible demand" } },
+    "wordingProbe": { "mode": "standard|variant|anchor_recovery", "anchorSource": "discovered|facilitator|none" },
     "reason": "why this next absence or restoration of help is useful"
   },
   "sessionDecision": "continue|procedure_released"

@@ -75,7 +75,7 @@ test('independent evidence requires a meaningful transfer condition before relea
   assert.equal(state.components.find((component) => component.id === 'choose').evidenceState, 'independent')
 })
 
-test('a contradictory failure destabilizes prior independence instead of erasing history', () => {
+test('a first contradiction opens verification before prior independence can be removed', () => {
   let state = createLiftoffState(MAP)
   state = applyLiftoffTurn(state, {
     observations: [{
@@ -104,7 +104,7 @@ test('a contradictory failure destabilizes prior independence instead of erasing
     }],
     nextAction: { type: 'isolate', targetComponentIds: ['choose'] },
   })
-  assert.equal(state.components[0].evidenceState, 'unstable')
+  assert.equal(state.components[0].evidenceState, 'independent')
 })
 
 test('possible slips do not automatically destroy stable independence', () => {
@@ -334,7 +334,7 @@ test('next action is marked non-fresh when it reuses an answered problem', () =>
   assert.equal(state.problemHistory.length, 1)
 })
 
-test('earned skills stay revealed if later evidence becomes unstable', () => {
+test('earned skills stay revealed while contradictory evidence is being rechecked', () => {
   let state = createLiftoffState(MAP, {
     type: 'probe',
     targetComponentIds: ['choose'],
@@ -376,7 +376,7 @@ test('earned skills stay revealed if later evidence becomes unstable', () => {
     nextAction: { type: 'teach', targetComponentIds: ['choose'] },
   })
 
-  assert.equal(state.components[0].evidenceState, 'unstable')
+  assert.equal(state.components[0].evidenceState, 'independent')
   assert.equal(state.components[0].revealedToLearner, true)
 })
 
