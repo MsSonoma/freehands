@@ -791,6 +791,7 @@ function SessionPageV2Inner() {
   const [baselineMessage, setBaselineMessage] = useState('');
   const [baselineSubmitting, setBaselineSubmitting] = useState(false);
   const baselineInstructionTargetRef = useRef(null);
+  const startDiscussionAfterBaselineRef = useRef(false);
   const baselineResponsesRef = useRef([]);
   
   const [comprehensionState, setComprehensionState] = useState('idle');
@@ -5732,6 +5733,7 @@ function SessionPageV2Inner() {
       eventBus: eventBusRef.current,
       learnerName: learnerName,
       lessonTitle: lessonTitle,
+      openingGreetingAlreadyPlayed: startDiscussionAfterBaselineRef.current,
       lessonData: instructionalLessonView || lessonData,
       grade: (learnerProfile?.grade || lessonData?.grade || '').toString(),
       // Resume: pass saved conversation history so the overview is skipped
@@ -5777,7 +5779,8 @@ function SessionPageV2Inner() {
       if (Array.isArray(data.objectiveClues))  setDiscussionObjectiveClues(data.objectiveClues);
       if (Array.isArray(data.completedIndices)) setDiscussionCompletedIndices(data.completedIndices);
       // Auto-start on resume: skip the 'Begin Discussion' button when prefetch completes
-      if (data.state === 'ready' && isDiscussionResume) {
+      if (data.state === 'ready' && (isDiscussionResume || startDiscussionAfterBaselineRef.current)) {
+        startDiscussionAfterBaselineRef.current = false;
         audioEngineRef.current?.initialize().catch(() => {});
         discussionPhaseRef.current?.start();
       }
@@ -7527,9 +7530,14 @@ function SessionPageV2Inner() {
     setBaselineIndex(startIndex);
     setBaselineAnswer('');
     setBaselineMessage("Before we start, I want to see what you already know. It's completely okay if you don't know this yet.");
+    setBaselineState(savedResponses.length === 0 ? 'greeting' : 'awaiting-response');
+    if (savedResponses.length === 0) {
+      const learnerName = (typeof window !== 'undefined' ? localStorage.getItem('learner_name') : null) || 'friend';
+      await speakBaselineText(`Hello, ${learnerName}. Before we begin our lesson, I have two questions to see what you already know. It's okay if you don't know the answers yet.`);
+    }
     setBaselineState('awaiting-response');
     await presentBaselineItem(startIndex, selectedItems[startIndex], { speak: true });
-  }, [presentBaselineItem]);
+  }, [presentBaselineItem, speakBaselineText]);
 
   const handleBaselineRepeat = useCallback(async () => {
     const item = baselinePlanRef.current?.selectedItems?.[baselineIndexRef.current];
@@ -7754,6 +7762,9 @@ function SessionPageV2Inner() {
       ? (options?.startPhase || null)
       : (options?.startPhase || resumePhaseRef.current);
     const target = normalizeResumePhase(resolvedPhase);
+    // The session's initial Begin also authorizes the first discussion start.
+    // Do not require a second Begin after the baseline assessment.
+    startDiscussionAfterBaselineRef.current = !target || target === 'idle';
     let assessmentIsolation = assessmentIsolationRef.current;
     try {
       assessmentIsolation = await resolveAssessmentIsolation();
@@ -9807,6 +9818,10 @@ function SessionPageV2Inner() {
                     {prompt}
                   </div>
                   <textarea
+                    data-sonoma-input
+                    inputMode="none"
+                    onPointerDown={(event) => openSonomaTextInput(event, setBaselineAnswer)}
+                    onFocus={(event) => openSonomaTextInput(event, setBaselineAnswer)}
                     value={baselineAnswer}
                     onChange={(event) => setBaselineAnswer(event.target.value)}
                     placeholder={"Type your answer, or write I don't know."}
@@ -9901,7 +9916,7 @@ function SessionPageV2Inner() {
             const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
             const needBeginTest = (currentPhase === 'test' && (!testState || testState === 'idle'));
             if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest) || openingActionActive || showWords) return null;
-            if (baselineState === 'awaiting-response' || retentionState === 'awaiting-response') return null;
+            if (baselineState === 'greeting' || baselineState === 'awaiting-response' || retentionState === 'awaiting-response') return null;
             // Hide Begin while the play-time-expired countdown is running — clicking Begin
             // at this point would restart the play timer and give double time.
             if (showPlayTimeExpired) return null;

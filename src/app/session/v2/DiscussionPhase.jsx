@@ -76,6 +76,7 @@ export class DiscussionPhase {
     this.#lessonTitle = options.lessonTitle || 'this topic';
     this.#lessonData  = buildInstructionalLessonView(options.lessonData) || null;
     this.#grade       = options.grade       || '';
+    this.openingGreetingAlreadyPlayed = Boolean(options.openingGreetingAlreadyPlayed);
 
     if (!this.#audioEngine) throw new Error('DiscussionPhase requires audioEngine');
     if (!this.#eventBus)    throw new Error('DiscussionPhase requires eventBus');
@@ -490,6 +491,11 @@ export class DiscussionPhase {
       }
     } catch (err) {
       console.warn('[DiscussionPhase] Failed to fetch overview:', err);
+    }
+    if (this.openingGreetingAlreadyPlayed) {
+      // The baseline already greeted the learner. Keep the lesson overview, not a second hello.
+      overviewText = overviewText.replace(/^(?:hi|hello|hey|good morning|good afternoon)\b[^.!?]*[.!?]\s*/i, '').trim();
+      if (!overviewText) overviewText = `Let's explore ${this.#lessonTitle} together!`;
     }
     return overviewText;
   }
