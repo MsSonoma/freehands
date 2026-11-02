@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto'
+
 function normalizeFrameworkGrade(value) {
   const raw = String(value || '').trim().toUpperCase().replace(/^GRADE\s*/i, '').replace(/(?:ST|ND|RD|TH)$/i, '')
   if (!raw) return ''
@@ -147,6 +149,18 @@ export function createSyllabusRepository(admin) {
         p_generation_input_hash: generationInputHash,
       })
       throwOn(error, 'Failed to claim forecast materialization')
+      return data
+    },
+    async restartChangedMaterialization(receipt, generationInputHash) {
+      const replacementId = randomUUID()
+      const { data, error } = await admin.from('syllabus_forecast_materializations')
+        .update({ id: replacementId, generation_input_hash: generationInputHash,
+          status: 'generating', storage_path: null, generator_completed_at: null,
+          quota_charged_at: null, last_error: null, updated_at: new Date().toISOString() })
+        .eq('id', receipt.id).eq('generation_input_hash', receipt.generation_input_hash)
+        .eq('status', 'recovery_required').is('lesson_key', null)
+        .select('*').maybeSingle()
+      throwOn(error, 'Failed to restart changed lesson generation')
       return data
     },
     async claimRecoveryMaterialization(receiptId) {

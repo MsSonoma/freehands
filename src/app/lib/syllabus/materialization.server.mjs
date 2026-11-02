@@ -273,12 +273,18 @@ export async function materializeForecastOccurrence({
   }
   const inputHash = generationHash({ learnerId, activeRevision, item, learner })
   const claim = await repository.claimForecastMaterialization({ syllabusId: syllabus.id, lineageId: item.lineage_id, generationInputHash: inputHash })
-  const receipt = claim?.receipt
+  let receipt = claim?.receipt
   if (!receipt?.id) throw new SyllabusError('Materialization could not be reserved', 500, 'MATERIALIZATION_CLAIM_FAILED')
-  if (receipt.generation_input_hash !== inputHash) {
-    throw new SyllabusError('This forecast intent changed after a lesson artifact was generated. Review the current concept before binding.', 409, 'MATERIALIZATION_INPUT_CHANGED')
-  }
   let generationClaimed = claim.claimed === true
+  if (receipt.generation_input_hash !== inputHash) {
+    if (!retryRecovery || receipt.lesson_key || receipt.status !== 'recovery_required') {
+      throw new SyllabusError('This lesson request changed. Retry generation from the current Syllabus entry.', 409, 'MATERIALIZATION_INPUT_CHANGED')
+    }
+    const replacement = await repository.restartChangedMaterialization?.(receipt, inputHash)
+    if (!replacement) throw new SyllabusError('This lesson changed during retry. Refresh and retry.', 409, 'MATERIALIZATION_CONFLICT')
+    receipt = replacement
+    generationClaimed = true
+  }
   if (!generationClaimed && retryRecovery && receipt.status === 'recovery_required' && !receipt.lesson_key) {
     generationClaimed = typeof repository.claimRecoveryMaterialization === 'function'
       && await repository.claimRecoveryMaterialization(receipt.id)

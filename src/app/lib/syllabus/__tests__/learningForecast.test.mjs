@@ -1111,6 +1111,35 @@ test('facilitator retry reclaims an interrupted generation and produces a review
   assert.equal(repository.state.receipts[0].status, 'bound')
 })
 
+test('retry replaces only an unbound interrupted receipt when generation instructions changed', async () => {
+  const repository = forecastRepository({ forecast: [item({ origin: 'learning_forecast' })] })
+  const obsolete = { id: 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee', syllabus_id: SYLLABUS,
+    lineage_id: LINEAGE_A, generation_input_hash: 'outdated', lesson_key: null, status: 'recovery_required' }
+  repository.state.receipts.push(obsolete)
+  repository.claimForecastMaterialization = async () => ({ claimed: false, receipt: structuredClone(repository.state.receipts[0]) })
+  let replaced = false
+  repository.restartChangedMaterialization = async (receipt, hash) => {
+    assert.equal(receipt.id, obsolete.id)
+    replaced = true
+    const next = { ...receipt, id: 'ffffffff-ffff-4fff-8fff-ffffffffffff', generation_input_hash: hash, status: 'generating' }
+    repository.state.receipts[0] = next
+    return structuredClone(next)
+  }
+  const result = await materializeForecastOccurrence({
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A,
+    expectedActiveRevisionId: ACTIVE, retryRecovery: true, now: NOW,
+    setInferenceSuppressed: preserveInferenceSuppression,
+    generateLesson: async ({ materializationOperation }) => {
+      assert.equal(materializationOperation.id, 'ffffffff-ffff-4fff-8fff-ffffffffffff')
+      assert.equal(materializationOperation.recoverOnly, false)
+      return { lessonKey: 'generated/syllabus-materialization-ffffffff-ffff-4fff-8fff-ffffffffffff.json' }
+    },
+  })
+  assert.equal(replaced, true)
+  assert.equal(result.lesson_key, 'generated/syllabus-materialization-ffffffff-ffff-4fff-8fff-ffffffffffff.json')
+  assert.equal(repository.state.receipts[0].status, 'bound')
+})
+
 test('missing authoritative learner grade fails before adoption or generation', async () => {
   const repository = forecastRepository({ forecast: [] })
   const proposal = await createLearningForecastProposal({
