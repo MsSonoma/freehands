@@ -265,7 +265,7 @@ export default function SlateReviewExperience({ runId }) {
               <button style={styles.ghost} disabled={busy} onClick={() => assist('repeat')}>REPEAT</button>
               {item.content?.has_help && <button style={styles.ghost} disabled={busy} onClick={() => assist('answer_reveal')}>SHOW ANSWER</button>}
             </div>
-            <button style={styles.primary} disabled={busy || !response.trim()} onClick={submit}>
+            <button style={styles.primary} disabled={busy || !response.trim()} data-sonoma-submit onClick={submit}>
               {busy ? 'SAVING...' : 'CHECK ANSWER'}
             </button>
           </div>

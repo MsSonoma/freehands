@@ -5307,7 +5307,7 @@ function StudentInput({ onSend, onActivity, loading, compact = false }) {
       />
       <button
         type="button"
-        onClick={submit}
+        data-sonoma-submit onClick={submit}
         disabled={loading || !value.trim()}
         style={{
           ...primaryBtn,

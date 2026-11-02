@@ -2174,7 +2174,7 @@ ${rows}
                     }}
                   />
                   <button
-                    onClick={onTextSubmit}
+                    data-sonoma-submit onClick={onTextSubmit}
                     disabled={isJudging}
                     style={{ ...btnBase, background: C.accent, border: `1px solid ${C.accent}`, color: C.accentContrast, borderRadius: 6, padding: '10px 18px', fontSize: 13, fontWeight: 800, opacity: isJudging ? 0.5 : 1, cursor: isJudging ? 'not-allowed' : 'pointer' }}
                   >

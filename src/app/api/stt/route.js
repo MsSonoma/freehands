@@ -4,9 +4,11 @@
 import { NextResponse } from 'next/server'
 import fs from 'fs'
 import path from 'path'
+import { recognizeSpeechWithRetry, speechErrorCode, isRetryableSpeechError } from './recognitionRetry.mjs'
 
 // Use explicit Node.js runtime (not edge) because Google SDK requires Node environment
 export const runtime = 'nodejs'
+export const maxDuration = 60
 
 let cachedSpeechClient = null
 
@@ -58,6 +60,8 @@ async function getSpeechClient() {
 }
 
 export async function POST(req) {
+  const startedAt = Date.now()
+  let stage = 'request'
   try {
     const contentType = req.headers.get('content-type') || ''
     if (!contentType.toLowerCase().includes('multipart/form-data')) {
@@ -75,6 +79,7 @@ export async function POST(req) {
     }
     const arrayBuffer = await file.arrayBuffer()
     const audioBytes = Buffer.from(arrayBuffer).toString('base64')
+    stage = 'speech-client'
     const client = await getSpeechClient()
     // Determine encoding from the browser recorder container.
     let encoding = undefined
@@ -91,15 +96,26 @@ export async function POST(req) {
         encoding,
       }
     }
-    const [response] = await client.recognize(request)
+    stage = 'recognition'
+    const [response] = await recognizeSpeechWithRetry(client, request)
     const transcript = (response.results || [])
       .map(r => r.alternatives && r.alternatives[0] && r.alternatives[0].transcript || '')
       .filter(Boolean)
       .join(' ')
       .trim()
+    if (!transcript) {
+      // HTTP 200 with empty results is distinct from a transport or permission failure.
+      console.warn('[stt] no transcript', { bytes: file.size, mediaType, durationMs: Date.now() - startedAt })
+    }
     return NextResponse.json({ transcript })
   } catch (err) {
-    // Google Speech error
-    return NextResponse.json({ error: 'Transcription failed.' }, { status: 500 })
+    // Never log transcripts, recorded audio, or credentials.
+    const code = speechErrorCode(err)
+    const temporary = isRetryableSpeechError(err)
+    console.error('[stt] request failed', { stage, googleCode: code, durationMs: Date.now() - startedAt })
+    return NextResponse.json({
+      error: temporary ? 'Speech service temporarily unavailable. Please try again.' : 'Transcription failed.',
+      code: temporary ? 'STT_TEMPORARY' : 'STT_FAILED',
+    }, { status: temporary ? 503 : 500 })
   }
 }

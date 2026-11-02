@@ -72,6 +72,7 @@ import { detectProductHelp, getProductHelpFeature, getProductHelpScript } from '
 import TypingConversationContext from '../components/TypingConversationContext';
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport';
 import { useSonomaKeyboard } from '../../components/SonomaKeyboard';
+import AutoGrowingSonomaTextarea from '../../components/AutoGrowingSonomaTextarea';
 import { isMicrophoneCapturing } from '../utils/microphoneSession';
 import { measureSonomaLandscapeRoom, resolveSonomaKeyboardClearance } from './sonomaKeyboardLayout.mjs';
 import SessionVisualAidsCarousel from '../components/SessionVisualAidsCarousel';
@@ -9355,12 +9356,11 @@ function SessionPageV2Inner() {
 
             const renderInputRow = (placeholder, onEnterSend) => (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
-                <input
+                <AutoGrowingSonomaTextarea
                   ref={openingActionInputRef}
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
-                  type="text"
                   value={openingActionInput}
                   onChange={(e) => setOpeningActionInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -9390,12 +9390,11 @@ function SessionPageV2Inner() {
                   <div style={{ ...cardStyle, padding: '8px 12px' }}>
                     <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 8 }}>
                       <div style={{ flex: '1 1 220px', minWidth: 0 }}>
-                        <input
+                        <AutoGrowingSonomaTextarea
                           ref={openingActionInputRef}
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
-                          type="text"
                           value={openingActionInput}
                           onChange={(e) => setOpeningActionInput(e.target.value)}
                           onKeyDown={(e) => {
@@ -9412,7 +9411,7 @@ function SessionPageV2Inner() {
                       </div>
 
                       <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, justifyContent: 'flex-end', maxWidth: '100%' }}>
-                        <button
+                        <button data-sonoma-submit
                           type="button"
                           style={{ ...baseBtn, whiteSpace: 'nowrap', background: '#111827', color: '#fff', padding: '8px 12px', opacity: openingActionBusy ? 0.6 : 1, cursor: openingActionBusy ? 'not-allowed' : 'pointer' }}
                           onClick={handleOpeningAskSubmit}
@@ -9501,12 +9500,11 @@ function SessionPageV2Inner() {
                     <div style={{ ...cardStyle, padding: '8px 12px' }}>
                       <div style={{ marginBottom: 6, fontSize: '0.85rem', color: '#6b7280' }}>What would you like the poem to be about?</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <input
+                        <AutoGrowingSonomaTextarea
                           ref={openingActionInputRef}
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
-                          type="text"
                           value={openingActionInput}
                           onChange={(e) => setOpeningActionInput(e.target.value)}
                           onKeyDown={(e) => {
@@ -9517,7 +9515,7 @@ function SessionPageV2Inner() {
                           placeholder="e.g., dinosaurs, space, friendship..."
                           style={{ flex: 1, padding: '8px 12px', border: '1px solid #d1d5db', borderRadius: 8, fontSize: 16 }}
                         />
-                        <button type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningPoemSubmit} disabled={!openingActionInput.trim()}>
+                        <button data-sonoma-submit type="button" style={{ ...baseBtn, background: '#10b981', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningPoemSubmit} disabled={!openingActionInput.trim()}>
                           Send
                         </button>
                         {showSuggestions && (
@@ -9605,12 +9603,11 @@ function SessionPageV2Inner() {
                           <div style={{ fontSize: '0.85rem', color: '#6b7280', marginBottom: 6 }}>{promptText}</div>
                         )}
                         <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                          <input
+                          <AutoGrowingSonomaTextarea
                             ref={openingActionInputRef}
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
-                            type="text"
                             value={openingActionInput}
                             onChange={(e) => setOpeningActionInput(e.target.value)}
                             onKeyDown={(e) => {
@@ -9621,7 +9618,7 @@ function SessionPageV2Inner() {
                             placeholder="Your answer..."
                             style={{ flex: 1, border: '1px solid #d1d5db', borderRadius: 8, padding: '8px 10px', fontSize: 16 }}
                           />
-                          <button type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningStoryContinue} disabled={!openingActionInput.trim()}>
+                          <button data-sonoma-submit type="button" style={{ ...baseBtn, background: '#2563eb', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningStoryContinue} disabled={!openingActionInput.trim()}>
                             Send
                           </button>
                           <button type="button" style={{ ...baseBtn, background: '#ef4444', color: '#fff', padding: '8px 12px' }} onClick={handleOpeningActionCancel}>
@@ -9654,12 +9651,11 @@ function SessionPageV2Inner() {
                       )}
                     </div>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                      <input
+                      <AutoGrowingSonomaTextarea
                         ref={openingActionInputRef}
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
-                        type="text"
                         value={openingActionInput}
                         onChange={(e) => setOpeningActionInput(e.target.value)}
                         onKeyDown={(e) => {
@@ -9676,7 +9672,7 @@ function SessionPageV2Inner() {
                       <button
                         type="button"
                         style={{ ...baseBtn, background: '#2563eb', color: '#fff', padding: '8px 12px', opacity: canSubmit ? 1 : 0.6, cursor: canSubmit ? 'pointer' : 'not-allowed' }}
-                        onClick={handleOpeningFillInFunSubmit}
+                        data-sonoma-submit onClick={handleOpeningFillInFunSubmit}
                         disabled={!canSubmit}
                       >
                         Submit
@@ -9788,7 +9784,7 @@ function SessionPageV2Inner() {
                     </button>
                     <button
                       type="button"
-                      onClick={handleRetentionSubmit}
+                      data-sonoma-submit onClick={handleRetentionSubmit}
                       disabled={retentionSubmitting}
                       style={{
                         background: '#c7442e',
@@ -9841,7 +9837,7 @@ function SessionPageV2Inner() {
                   }}>
                     {prompt}
                   </div>
-                  <textarea
+                  <AutoGrowingSonomaTextarea
                     data-sonoma-input
                     inputMode="none"
                     onPointerDown={(event) => openSonomaTextInput(event, setBaselineAnswer)}
@@ -9882,7 +9878,7 @@ function SessionPageV2Inner() {
                     </button>
                     <button
                       type="button"
-                      onClick={handleBaselineSubmit}
+                      data-sonoma-submit onClick={handleBaselineSubmit}
                       disabled={baselineSubmitting}
                       style={{
                         background: '#c7442e',
@@ -10242,8 +10238,7 @@ function SessionPageV2Inner() {
                   </div>
                 );
               })()}
-              <input
-                type="text"
+              <AutoGrowingSonomaTextarea
                 placeholder="Type your answer..."
                 value={selectedExerciseAnswer}
                 data-sonoma-input
@@ -10269,7 +10264,7 @@ function SessionPageV2Inner() {
                   }
                 }}
               />
-              <button
+              <button data-sonoma-submit
                 type="button"
                 disabled={!selectedExerciseAnswer.trim()}
                 style={{
@@ -10315,8 +10310,7 @@ function SessionPageV2Inner() {
               padding: '4px 12px',
               marginBottom: 4,
             }}>
-              <input
-                type="text"
+              <AutoGrowingSonomaTextarea
                 placeholder="Share your thoughts..."
                 value={discussionResponse}
                 data-sonoma-input
@@ -10341,7 +10335,7 @@ function SessionPageV2Inner() {
                   }
                 }}
               />
-              <button
+              <button data-sonoma-submit
                 type="button"
                 disabled={!discussionResponse.trim()}
                 style={{
@@ -10617,11 +10611,10 @@ function SessionPageV2Inner() {
                         <path d="M12 21v-4" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                       </svg>
                     </button>
-                    <input
+                    <AutoGrowingSonomaTextarea
                       ref={answerInputRef}
                       data-sonoma-input
                       inputMode="none"
-                      type="text"
                       placeholder="Type your answer..."
                       value={currentValue}
                       style={{
@@ -10645,7 +10638,7 @@ function SessionPageV2Inner() {
                     />
                     <button
                       type="button"
-                      onClick={onSubmit}
+                      data-sonoma-submit onClick={onSubmit}
                       disabled={!canSubmit}
                       style={{
                         background: canSubmit ? '#c7442e' : '#9ca3af',

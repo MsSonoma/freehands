@@ -6,13 +6,14 @@ import WebbDictationButton from "../session/webb/WebbDictationButton";
 import { insertDictationAtSelection } from "./sonomaDictationInsertion.mjs";
 import { isTranscriptTapGesture } from "./sonomaTranscriptGesture.mjs";
 import dockStyles from "./SonomaKeyboardDock.module.css";
+import { isSonomaSubmitTarget } from "./sonomaAnswerField.mjs";
 
 const KeyboardContext = createContext(null);
 const rows = {
-  text: ["qwertyuiop".split(""), "asdfghjkl".split(""), ["Shift", ..."zxcvbnm", "Backspace"], ["123", "Math", "More", ",", "Space", ".", "?", "←", "→", "Done"]],
-  number: [["1","2","3"], ["4","5","6"], ["7","8","9"], ["-","0","."], ["ABC","Math","More","←","→","Backspace","Done"]],
-  math: [["7","8","9","÷","/"], ["4","5","6","×","*"], ["1","2","3","+","−"], ["0",".","=","(",")"], ["ABC","More","←","→","Backspace","Done"]],
-  symbols: [["!","@","#","$","%","^","&"], ["_","~",":",";","\u0027","\u0022","?"], ["[","]","{","}","<",">","|"], ["\\","°","±","√","π","²","³"], ["ABC","Math","123","Space","←","→","Backspace","Done"]],
+  text: ["qwertyuiop".split(""), "asdfghjkl".split(""), ["Shift", ..."zxcvbnm", "Backspace"], ["123", "Math", "More", ",", "Space", ".", "?", "←", "→"]],
+  number: [["1","2","3"], ["4","5","6"], ["7","8","9"], ["-","0","."], ["ABC","Math","More","←","→","Backspace"]],
+  math: [["7","8","9","÷","/"], ["4","5","6","×","*"], ["1","2","3","+","−"], ["0",".","=","(",")"], ["ABC","More","←","→","Backspace"]],
+  symbols: [["!","@","#","$","%","^","&"], ["_","~",":",";","\u0027","\u0022","?"], ["[","]","{","}","<",">","|"], ["\\","°","±","√","π","²","³"], ["ABC","Math","123","Space","←","→","Backspace"]],
 };
 
 function isTouchScreen() {
@@ -52,6 +53,8 @@ export function SonomaKeyboardProvider({ children }) {
       // A second finger means the first touch is not a tap.
       if (pendingTranscriptPointer) pendingTranscriptPointer.dragged = true;
       if (event.target.closest?.("[data-sonoma-keyboard], [data-sonoma-input], [data-sonoma-keyboard-toggle]")) return;
+      // Keep Send alive through its click instead of dismissing on pointer-down.
+      if (isSonomaSubmitTarget(event.target)) return;
       // Caption scroll arrows must work without dismissing the keyboard.
       if (event.target.closest?.("[data-sonoma-transcript-scroll]")) return;
       const transcript = event.target.closest?.("[data-sonoma-transcript]");
@@ -161,7 +164,6 @@ export function SonomaKeyboardProvider({ children }) {
   const press = (key) => {
     const entry = activeRef.current;
     if (!entry) return;
-    if (key === "Done") { close(); return; }
     if (key === "Shift") { setShift((v) => !v); return; }
     const nextLayout = { "123": "number", "Math": "math", "More": "symbols", "ABC": "text" }[key];
     if (nextLayout) {
@@ -215,9 +217,9 @@ export function SonomaKeyboardProvider({ children }) {
           {(rows[layout] || rows.text).map((row, rowIndex) => (
             <div key={rowIndex} style={{display:"flex", justifyContent:"center", gap:4, margin:"4px auto", maxWidth:740, minWidth: workspaceVisible ? 280 : undefined}}>
               {row.map((key) => (
-                <button key={key} type="button" disabled={!active?.ref?.current?.isConnected && !["ABC", "Math", "More", "123", "Done"].includes(key)} onPointerDown={(e)=>e.preventDefault()} onClick={()=>press(key)}
+                <button key={key} type="button" disabled={!active?.ref?.current?.isConnected && !["ABC", "Math", "More", "123"].includes(key)} onPointerDown={(e)=>e.preventDefault()} onClick={()=>press(key)}
                   aria-label={key === "Space" ? "Space" : key}
-                  style={{flex:key==="Space"?5:1, minWidth:workspaceVisible ? 34 : 0, height:44, background:key==="Done"?(active?.theme?.accent || "#356e5a"):key==="Backspace"?"#cbd5e1":"white", color:key==="Done"?"white":"#111827", border:"1px solid #b4bbc4", borderRadius:6, fontSize: key.length>5?12:17, fontWeight:600}}>
+                  style={{flex:key==="Space"?5:1, minWidth:workspaceVisible ? 34 : 0, height:44, background:key==="Backspace"?"#cbd5e1":"white", color:"#111827", border:"1px solid #b4bbc4", borderRadius:6, fontSize: key.length>5?12:17, fontWeight:600}}>
                   {key==="Shift"?(shift?"⇧":"↑"):key==="Backspace"?"⌫":key==="Space"?"space":key}
                 </button>
               ))}

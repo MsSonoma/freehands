@@ -354,7 +354,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
         }}
         aria-label="Send response"
   disabled={sendDisabled}
-  onClick={handleSend}
+  data-sonoma-submit onClick={handleSend}
       >
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
           <path d="M22 2L11 13" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
