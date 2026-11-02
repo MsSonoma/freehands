@@ -53,6 +53,7 @@ export class DiscussionPhase {
   #objectives        = [];
   #objectiveClues    = [];
   #completedIndices  = [];
+  #facilitatorOverrides = {};
   #unacknowledgedObjectiveIndices = new Set();
   #chatHistory       = [];   // { role: 'user'|'assistant', content: string }[]
   #audioEndListener  = null;
@@ -99,6 +100,8 @@ export class DiscussionPhase {
         ? [...options.resumeCompletedIndices]
         : [];
     }
+    this.#facilitatorOverrides = options.resumeFacilitatorObjectiveOverrides && typeof options.resumeFacilitatorObjectiveOverrides === 'object'
+      ? { ...options.resumeFacilitatorObjectiveOverrides } : {};
     const pendingAwards = Array.isArray(options.resumePendingObjectiveAnnouncements)
       ? options.resumePendingObjectiveAnnouncements : [];
     this.#unacknowledgedObjectiveIndices = new Set(pendingAwards.map(row => row?.index).filter(Number.isInteger));
@@ -117,6 +120,7 @@ export class DiscussionPhase {
   get state()               { return this.#state; }
   get completedObjectives() { return this.#completedIndices.length; }
   get totalObjectives()     { return this.#objectives.length; }
+  get facilitatorOverrides() { return { ...this.#facilitatorOverrides }; }
   get learnerName()         { return this.#learnerName; }
   get lessonTitle()         { return this.#lessonTitle; }
   get replyCheckpoint()     { return this.#replyCheckpoint ? { ...this.#replyCheckpoint } : null; }
@@ -224,6 +228,33 @@ export class DiscussionPhase {
     try { this.#audioEngine.stop(); } catch {}
     this.#removeAudioEndListener();
     this.#playSentence(this.#currentSentenceKey);
+  }
+
+  fulfillObjectiveByFacilitator(index) {
+    if (this.#destroyed || this.#state === 'complete' || !Number.isInteger(index) ||
+        index < 0 || index >= this.#objectives.length || this.#completedIndices.includes(index)) return false;
+    // Invalidate any pending grader/model request before changing the authoritative
+    // objective set; stale AI results cannot replace this educator decision.
+    ++this.#submitGen;
+    this.#pendingReply = null;
+    this.#removeAudioEndListener();
+    try { this.#audioEngine.stop(); } catch {}
+    this.#replyCheckpoint = null;
+    this.#eventBus.emit('discussionReplyStage', null);
+    const record = { source: 'facilitator', objective: this.#objectives[index], approvedAt: new Date().toISOString() };
+    this.#facilitatorOverrides[index] = record;
+    this.#completedIndices = [...new Set([...this.#completedIndices, index])].sort((a, b) => a - b);
+    this.#unacknowledgedObjectiveIndices.add(index);
+    this.#eventBus.emit('discussionObjectiveComplete', {
+      newlyCompleted: [index], completedIndices: [...this.#completedIndices],
+      completedCount: this.#completedIndices.length, totalCount: this.#objectives.length,
+      objectiveText: this.#objectives[index], objectives: [...this.#objectives],
+      source: 'facilitator', facilitatorOverrides: { ...this.#facilitatorOverrides },
+    });
+    this.#state = this.#completedIndices.length >= this.#objectives.length ? 'awaiting-objective-ack' : 'chatting';
+    this.#emitStateChange();
+    if (this.#state === 'chatting') this.#emitLearnerTurnReady('discussion');
+    return true;
   }
 
   acknowledgeObjectiveAward(index) {
@@ -569,6 +600,7 @@ export class DiscussionPhase {
       objectives:          [...this.#objectives],
       objectiveClues:      [...this.#objectiveClues],
       completedIndices:    [...this.#completedIndices],
+      facilitatorOverrides: { ...this.#facilitatorOverrides },
     });
   }
 

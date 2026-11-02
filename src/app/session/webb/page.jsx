@@ -16,7 +16,7 @@ import { detectProductHelp, getProductHelpFeature, getProductHelpScript, product
 import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 import {
   emptyWebbObjectiveState, reconcileWebbObjectiveState, mergeWebbObjectiveResult,
-  webbObjectiveProgress, createWebbObjectiveQueue, applyWebbNoteReadiness,
+  webbObjectiveProgress, createWebbObjectiveQueue, applyWebbNoteReadiness, fulfillWebbObjectiveByFacilitator,
 } from '@/app/lib/webbObjectiveState.mjs'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
@@ -249,6 +249,8 @@ function WebbPageInner() {
   const [newlySavedNote,  setNewlySavedNote] = useState(null) // {idx, text} — drives tablet toast
   const [expandedObj,        setExpandedObj]       = useState(null) // number|null — accordion open index
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
+  const [objectiveOverrideBusy, setObjectiveOverrideBusy] = useState(false)
+  const [objectiveOverrideError, setObjectiveOverrideError] = useState('')
   const [showFullObjectives, setShowFullObjectives] = useState(false) // facilitator-only full objective reveal
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
@@ -3011,6 +3013,40 @@ function WebbPageInner() {
   function closeObjectivesPanel() {
     setShowObjectives(false)
     setShowFullObjectives(false)
+    setObjectiveOverrideError('')
+  }
+
+  async function unlockWebbObjectives() {
+    if (objectiveOverrideBusy || showFullObjectives) return
+    setObjectiveOverrideBusy(true)
+    setObjectiveOverrideError('')
+    try {
+      const pin = await requestFacilitatorPinException({
+        title: 'Facilitator PIN required',
+        message: 'Unlock all full objectives and educator fulfillment controls.',
+      })
+      if (pin) setShowFullObjectives(true)
+    } finally {
+      setObjectiveOverrideBusy(false)
+    }
+  }
+
+  function facilitatorFulfillWebbObjective(index) {
+    if (!showObjectives || !showFullObjectives || objectiveOverrideBusy || webbExecutionFencedRef.current) return
+    if (phase !== PHASE.CHATTING || !selectedLesson || !objectives[index]) return
+    if (chatLoading || writingEvaluating) {
+      setObjectiveOverrideError('Wait for Mrs. Webb to finish the current response before approving a goal.')
+      return
+    }
+    if (!window.confirm('Mark this objective fulfilled by the facilitator? This does not create a learner research note.')) return
+    objectiveQueueRef.current.invalidate()
+    const next = fulfillWebbObjectiveByFacilitator(objectives, learningStateRef.current, index)
+    if (!next) return
+    commitLearningState(next)
+    const saved = saveLearningSnapshot({ objectives, selectedLesson })
+    if (!saved) setObjectiveOverrideError('The override could not be saved. Keep this session open.')
+    objectiveTargetRef.current = objectives.findIndex((_, i) => !next.understoodObj.includes(i))
+    console.info('[Webb] facilitator objective fulfillment', { index, saved: Boolean(saved) })
   }
 
   // ── Research mode: close overlay, Webb navigates to the best media or teaches directly ──
@@ -4757,7 +4793,7 @@ function WebbPageInner() {
       {showObjectives && createPortal(
         <div
           style={{
-            position: 'fixed', inset: 0, zIndex: 1000,
+            position: 'fixed', inset: 0, zIndex: 12000,
             background: 'rgba(0,0,0,0.65)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: 20,
@@ -4790,11 +4826,7 @@ function WebbPageInner() {
                     type="button"
                     onClick={async (e) => {
                       e.stopPropagation()
-                      const pin = await requestFacilitatorPinException({
-                        title: 'Facilitator PIN required',
-                        message: 'Enter the Facilitator PIN to view the full learning objectives.',
-                      })
-                      if (pin) setShowFullObjectives(true)
+                      await unlockWebbObjectives()
                     }}
                     style={{ marginTop: 6, padding: 0, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}
                   >Facilitator: show full objectives</button>
@@ -4842,6 +4874,7 @@ function WebbPageInner() {
             </div>
             {/* Objectives list — accordion */}
             <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
+              {objectiveOverrideError && <div role='alert' style={{ padding: '8px 20px', color: '#fca5a5' }}>{objectiveOverrideError}</div>}
               {objectives.map((obj, i) => {
                 const noteReady = isWritingReadyNote(learnerNotes[i])
                 const done = understoodObj.includes(i)
@@ -4852,7 +4885,7 @@ function WebbPageInner() {
                     {/* Header row */}
                     <button
                       type="button"
-                      onClick={() => setExpandedObj(open ? null : i)}
+                      onClick={() => { if (!showFullObjectives && !done) void unlockWebbObjectives(); else setExpandedObj(open ? null : i) }}
                       style={{
                         width: '100%', background: 'none', border: 'none', cursor: 'pointer',
                         display: 'flex', alignItems: 'flex-start', gap: 10,
@@ -4868,6 +4901,20 @@ function WebbPageInner() {
                       }}>{learnerText}</span>
                       <span style={{ color: '#475569', fontSize: 11, flexShrink: 0, marginTop: 2 }}>{open ? '▲' : '▼'}</span>
                     </button>
+                    {showFullObjectives && !done && (
+                      <div style={{ padding: '0 20px 10px 46px' }}>
+                        <button type="button" onClick={() => facilitatorFulfillWebbObjective(i)} disabled={objectiveOverrideBusy}
+                          style={{ background: '#334155', color: '#fff', border: '1px solid #94a3b8', borderRadius: 8,
+                          padding: '7px 10px', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
+                          Mark fulfilled by facilitator
+                        </button>
+                      </div>
+                    )}
+                    {showFullObjectives && learningState.facilitatorOverrides?.[i] && (
+                      <div style={{ padding: '0 20px 10px 46px', color: '#cbd5e1', fontSize: 12 }}>
+                        Fulfilled by facilitator (not AI-graded). A research note may still be required for writing.
+                      </div>
+                    )}
                     {/* Expanded content */}
                     {open && (
                       <div style={{ padding: '0 20px 14px', paddingLeft: 46 }}>

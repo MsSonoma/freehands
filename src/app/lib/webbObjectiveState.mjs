@@ -2,7 +2,7 @@ import { isSourceVerifiedNote, learnerMessageIndex, noteFromQualifiedAttempt } f
 import { isWritingReadyNote, hasAllWritingReadyNotes } from './webbWritingFlow.mjs'
 
 export function emptyWebbObjectiveState() {
-  return { coveredObj: [], understoodObj: [], objectiveEvidence: {}, learnerNotes: {} }
+  return { coveredObj: [], understoodObj: [], objectiveEvidence: {}, learnerNotes: {}, facilitatorOverrides: {} }
 }
 
 function validIndices(values, objectives) {
@@ -37,7 +37,7 @@ export function reconcileWebbObjectiveState(objectives = [], state = {}, convers
   return {
     coveredObj: [...covered].sort((a, b) => a - b),
     understoodObj: [...understood].sort((a, b) => a - b),
-    learnerNotes, objectiveEvidence,
+    learnerNotes, objectiveEvidence, facilitatorOverrides: { ...(state.facilitatorOverrides || {}) },
   }
 }
 
@@ -79,10 +79,22 @@ export function mergeWebbObjectiveResult(objectives, current, result, conversati
   return reconcileWebbObjectiveState(objectives, {
     coveredObj: [...(current.coveredObj || []), ...result.newlyCovered],
     understoodObj: [...(current.understoodObj || []), ...result.newlyUnderstood],
-    objectiveEvidence: evidence, learnerNotes: notes,
+    objectiveEvidence: evidence, learnerNotes: notes, facilitatorOverrides: { ...(current.facilitatorOverrides || {}) },
   }, conversation)
 }
 
+/** Record an educator-authored fulfillment without inventing a learner attempt or research note. */
+export function fulfillWebbObjectiveByFacilitator(objectives = [], state = {}, index, approvedAt = new Date().toISOString()) {
+  if (!Number.isInteger(index) || index < 0 || index >= objectives.length || !objectives[index]) return null
+  if ((state.understoodObj || []).includes(index)) return null
+  const entry = { source: 'facilitator', objective: objectives[index], approvedAt }
+  return reconcileWebbObjectiveState(objectives, {
+    ...state,
+    understoodObj: [...(state.understoodObj || []), index],
+    coveredObj: [...(state.coveredObj || []), index],
+    facilitatorOverrides: { ...(state.facilitatorOverrides || {}), [index]: entry },
+  })
+}
 export function applyWebbNoteReadiness(state = {}, { readyIndices = [], invalidIndices = [] } = {}) {
   const ready = new Set((Array.isArray(readyIndices) ? readyIndices : []).map(learnerMessageIndex).filter(index => index !== null))
   const invalid = new Set((Array.isArray(invalidIndices) ? invalidIndices : []).map(learnerMessageIndex).filter(index => index !== null))

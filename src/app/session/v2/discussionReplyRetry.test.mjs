@@ -233,3 +233,37 @@ test('learner award UI requires explicit acknowledgement and persists the pendin
   assert.match(page, /acknowledgeObjectiveAward\(current\.index\)/);
   assert.doesNotMatch(page, /setTimeout\(\(\) => setNewlyCompletedDiscussionObj\(null\)/);
 });
+
+test('facilitator award is distinct from AI credit, survives duplicate actions, and gates completion', async () => {
+  await withFakeApis({ replies: [], objectives: ['Explain the idea', 'Apply the idea'] }, async ({ phase, events, getChecks }) => {
+    assert.equal(phase.fulfillObjectiveByFacilitator(5), false)
+    assert.equal(phase.fulfillObjectiveByFacilitator(0), true)
+    assert.equal(phase.fulfillObjectiveByFacilitator(0), false)
+    assert.deepEqual(events.filter(e => e.name === 'discussionObjectiveComplete').map(e => e.data.source), ['facilitator'])
+    assert.equal(phase.facilitatorOverrides[0].objective, 'Explain the idea')
+    assert.equal(phase.completedObjectives, 1)
+    assert.equal(getChecks(), 0, 'facilitator credit is not an AI grading call')
+    assert.equal(phase.fulfillObjectiveByFacilitator(1), true)
+    assert.equal(phase.state, 'awaiting-objective-ack')
+    assert.equal(events.filter(e => e.name === 'discussionComplete').length, 0)
+    phase.acknowledgeObjectiveAward(0)
+    assert.equal(phase.state, 'awaiting-objective-ack')
+    phase.acknowledgeObjectiveAward(1)
+    assert.equal(phase.state, 'complete')
+  })
+})
+
+test('a stale objective-check response cannot remove facilitator credit', async () => {
+  let resolveBody
+  const delayedBody = new Promise(resolve => { resolveBody = resolve })
+  await withFakeApis({ replies: [], check: delayedBody }, async ({ phase, events }) => {
+    const pending = phase.submitMessage('This is my answer')
+    await new Promise(resolve => setImmediate(resolve))
+    assert.equal(phase.fulfillObjectiveByFacilitator(0), true)
+    resolveBody({ newlyCompleted: [], evaluationStatus: {} })
+    await pending
+    assert.equal(phase.completedObjectives, 1)
+    assert.equal(phase.facilitatorOverrides[0].source, 'facilitator')
+    assert.equal(events.filter(e => e.name === 'discussionObjectiveComplete').length, 1)
+  })
+})

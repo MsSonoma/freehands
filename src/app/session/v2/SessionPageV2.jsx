@@ -946,6 +946,9 @@ function SessionPageV2Inner() {
   const [discussionActivityIndex, setDiscussionActivityIndex] = useState(0);
   const [discussionObjectivesInfo, setDiscussionObjectivesInfo] = useState({ completed: 0, total: 0 });
   const [discussionObjectivesList, setDiscussionObjectivesList] = useState([]);
+  const [discussionFacilitatorOverrides, setDiscussionFacilitatorOverrides] = useState({});
+  const [discussionOverrideBusy, setDiscussionOverrideBusy] = useState(false);
+  const [discussionOverrideError, setDiscussionOverrideError] = useState('');
   const [discussionObjectiveClues, setDiscussionObjectiveClues] = useState([]);
   const [discussionCompletedIndices, setDiscussionCompletedIndices] = useState([]);
   const [showDiscussionObjectives, setShowDiscussionObjectives] = useState(false);
@@ -5767,6 +5770,7 @@ function SessionPageV2Inner() {
     if (isDiscussionResume) setDiscussionResuming(true);
     const savedDiscData = snapshotServiceRef.current?.snapshot?.phaseData?.discussion;
     const pendingAwards = isDiscussionResume ? restoreDiscussionAwards(savedDiscData?.objectiveAnnouncements) : [];
+    setDiscussionFacilitatorOverrides(isDiscussionResume ? (savedDiscData?.facilitatorObjectiveOverrides || {}) : {});
     discussionAwardQueueRef.current = pendingAwards;
     discussionAwardVisibleLogRef.current.clear();
     setNewlyCompletedDiscussionObj(pendingAwards[0] || null);
@@ -5794,6 +5798,7 @@ function SessionPageV2Inner() {
       resumeSentenceKey: resumeSentenceKey,
       resumeReplyCheckpoint: isDiscussionResume ? savedDiscData?.replyCheckpoint : null,
       resumePendingObjectiveAnnouncements: pendingAwards,
+      resumeFacilitatorObjectiveOverrides: isDiscussionResume ? savedDiscData?.facilitatorObjectiveOverrides : null,
     });
     
 
@@ -5831,6 +5836,7 @@ function SessionPageV2Inner() {
       if (Array.isArray(data.objectives))      setDiscussionObjectivesList(data.objectives);
       if (Array.isArray(data.objectiveClues))  setDiscussionObjectiveClues(data.objectiveClues);
       if (Array.isArray(data.completedIndices)) setDiscussionCompletedIndices(data.completedIndices);
+      if (data.facilitatorOverrides) setDiscussionFacilitatorOverrides(data.facilitatorOverrides);
       // Auto-start on resume: skip the 'Begin Discussion' button when prefetch completes
       if (data.state === 'ready' && (isDiscussionResume || startDiscussionAfterBaselineRef.current)) {
         startDiscussionAfterBaselineRef.current = false;
@@ -5889,7 +5895,7 @@ function SessionPageV2Inner() {
     
     const unsubObjectiveComplete = eventBusRef.current.on('discussionObjectiveComplete', (data) => {
       const queue = queueDiscussionAwards(discussionAwardQueueRef.current, data.newlyCompleted,
-        Array.isArray(data.objectives) ? data.objectives : [], data.completedIndices);
+        Array.isArray(data.objectives) ? data.objectives : [], data.completedIndices, data.source);
       discussionAwardQueueRef.current = queue;
       setNewlyCompletedDiscussionObj(queue[0] || null);
       // The learner's utterance was snapshotted before the async objective
@@ -5902,8 +5908,9 @@ function SessionPageV2Inner() {
             phaseOverride: 'discussion',
             completedObjectiveIndices: [...data.completedIndices],
             objectiveAnnouncements: queue,
+            facilitatorObjectiveOverrides: data.facilitatorOverrides || discussionPhaseRef.current?.facilitatorOverrides || {},
             sentenceKey: null,
-          }).catch(() => {});
+          }).catch(() => { if (data.source === 'facilitator') setDiscussionOverrideError('The award was recorded but could not be saved. Do not refresh.'); });
         }
       }
     });
@@ -8034,6 +8041,28 @@ function SessionPageV2Inner() {
 
   // Objective credit and the learner's acknowledgement are separate durable events.
   // Never advance the final discussion until every announced goal is acknowledged.
+  const unlockDiscussionObjectives = useCallback(async () => {
+    if (discussionOverrideBusy || showFullDiscussionObjectives) return;
+    setDiscussionOverrideBusy(true);
+    setDiscussionOverrideError('');
+    try {
+      const pin = await requestFacilitatorPinException({
+        title: 'Facilitator PIN required',
+        message: 'Unlock all full learning objectives and educator fulfillment controls.',
+      });
+      if (pin) setShowFullDiscussionObjectives(true);
+    } finally {
+      setDiscussionOverrideBusy(false);
+    }
+  }, [discussionOverrideBusy, showFullDiscussionObjectives]);
+
+  const facilitatorFulfillDiscussionObjective = useCallback((index) => {
+    if (!showDiscussionObjectives || !showFullDiscussionObjectives || discussionOverrideBusy) return;
+    if (currentPhaseRef.current !== 'discussion' || !discussionObjectivesList[index]) return;
+    if (!window.confirm('Mark this objective fulfilled by the facilitator? Your judgment is recorded separately from AI grading.')) return;
+    const ok = discussionPhaseRef.current?.fulfillObjectiveByFacilitator(index);
+    if (!ok) setDiscussionOverrideError('The objective could not be updated. Please try again.');
+  }, [showDiscussionObjectives, showFullDiscussionObjectives, discussionOverrideBusy, discussionObjectivesList]);
   const acknowledgeDiscussionObjectiveNotice = useCallback(async () => {
     if (discussionAwardAcknowledgingRef.current) return;
     const current = discussionAwardQueueRef.current[0];
@@ -8046,6 +8075,7 @@ function SessionPageV2Inner() {
         phaseOverride: 'discussion',
         completedObjectiveIndices: [...discussionCompletedIndicesRef.current],
         objectiveAnnouncements: remaining,
+        facilitatorObjectiveOverrides: discussionPhaseRef.current?.facilitatorOverrides || {},
       });
       discussionAwardQueueRef.current = remaining;
       setNewlyCompletedDiscussionObj(remaining[0] || null);
@@ -10955,7 +10985,7 @@ function SessionPageV2Inner() {
             padding: '20px 22px', boxShadow: '0 10px 38px rgba(0,0,0,0.24)',
             border: '2px solid #c7442e', textAlign: 'center' }}>
             <div style={{ color: '#c7442e', fontSize: 13, fontWeight: 850, letterSpacing: 1, textTransform: 'uppercase' }}>
-              Goal Reached!
+              {newlyCompletedDiscussionObj.source === 'facilitator' ? 'Facilitator awarded this goal' : 'Goal Reached!'}
             </div>
             {newlyCompletedDiscussionObj.text && (
               <p style={{ color: '#374151', fontSize: 16, lineHeight: 1.5, margin: '12px 0' }}>
@@ -10979,7 +11009,7 @@ function SessionPageV2Inner() {
       {showDiscussionObjectives && (
         <div
           style={{
-            position: 'fixed', inset: 0, zIndex: 2000,
+            position: 'fixed', inset: 0, zIndex: 12000,
             background: 'rgba(0,0,0,0.45)',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: 20,
@@ -11046,6 +11076,7 @@ function SessionPageV2Inner() {
                 borderRadius: '0 2px 2px 0',
               }} />
             </div>
+            {discussionOverrideError && <div role='alert' style={{ color: '#b91c1c', padding: '8px 20px' }}>{discussionOverrideError}</div>}
             {/* Objectives list */}
             <div style={{ overflowY: 'auto', padding: '8px 0 16px' }}>
               {discussionObjectivesList.length === 0 ? (
@@ -11060,11 +11091,22 @@ function SessionPageV2Inner() {
                     borderBottom: '1px solid #f3f4f6',
                   }}>
                     <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{done ? '\u2705' : '\u2B1C'}</span>
-                    <span style={{
+                    <button type="button" onClick={() => { if (!showFullDiscussionObjectives && !done) void unlockDiscussionObjectives(); }} style={{
+                      background: "none", border: "none", padding: 0, textAlign: "left", cursor: !showFullDiscussionObjectives && !done ? "pointer" : "default",
                       color: done ? '#111827' : '#9ca3af',
                       fontSize: 13, lineHeight: 1.5,
                       transition: 'color 0.3s',
-                    }}>{learnerText}</span>
+                    }}>{learnerText}</button>
+                    {showFullDiscussionObjectives && !done && (
+                      <button type="button" onClick={() => facilitatorFulfillDiscussionObjective(i)} disabled={discussionOverrideBusy}
+                        style={{ background: '#334155', color: '#fff', border: 'none', borderRadius: 8,
+                          padding: '6px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
+                        Mark fulfilled
+                      </button>
+                    )}
+                    {showFullDiscussionObjectives && discussionFacilitatorOverrides[i] && (
+                      <span style={{ fontSize: 11, color: '#475569' }}>Facilitator fulfilled</span>
+                    )}
                   </div>
                 );
               })}

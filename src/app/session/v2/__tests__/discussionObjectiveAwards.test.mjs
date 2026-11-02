@@ -22,3 +22,10 @@ test('refresh restores only pending valid awards, not previously acknowledged on
   assert.deepEqual(restored.map(item => item.index), [2]);
   assert.deepEqual(restoreDiscussionAwards([{ index: -1 }, { index: 4 }, { index: 1 }, { index: 1 }], 3).map(a => a.index), [1]);
 });
+
+test('facilitator notice source stays distinguishable after refresh', () => {
+  const awards = queueDiscussionAwards([], [0], ['Explain photosynthesis'], [0], 'facilitator');
+  assert.equal(awards[0].source, 'facilitator');
+  assert.equal(restoreDiscussionAwards(JSON.parse(JSON.stringify(awards)))[0].source, 'facilitator');
+  assert.deepEqual(queueDiscussionAwards(awards, [0], ['Explain photosynthesis'], [0], 'ai'), awards);
+});

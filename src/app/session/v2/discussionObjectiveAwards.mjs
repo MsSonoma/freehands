@@ -6,11 +6,11 @@ export function restoreDiscussionAwards(value, total = 0) {
     const index = row?.index;
     if (!Number.isInteger(index) || index < 0 || (total > 0 && index >= total) || seen.has(index)) return [];
     seen.add(index);
-    return [{ index, text: String(row?.text || ''), completedCount: Number(row?.completedCount || 0), totalCount: Number(row?.totalCount || total || 0), awardedAt: Number.isFinite(row?.awardedAt) ? row.awardedAt : null }];
+    return [{ index, text: String(row?.text || ''), completedCount: Number(row?.completedCount || 0), totalCount: Number(row?.totalCount || total || 0), awardedAt: Number.isFinite(row?.awardedAt) ? row.awardedAt : null, source: row?.source === 'facilitator' ? 'facilitator' : 'ai' }];
   });
 }
 
-export function queueDiscussionAwards(queue, indices, objectives, completedIndices) {
+export function queueDiscussionAwards(queue, indices, objectives, completedIndices, source = 'ai') {
   const entries = restoreDiscussionAwards(queue, Array.isArray(objectives) ? objectives.length : 0);
   const seen = new Set(entries.map(item => item.index));
   const available = new Set(Array.isArray(completedIndices) ? completedIndices : []);
@@ -19,7 +19,7 @@ export function queueDiscussionAwards(queue, indices, objectives, completedIndic
   let earnedCount = available.size - newAwards.length;
   for (const index of newAwards) {
     earnedCount += 1;
-    entries.push({ index, text: String(objectives[index] || ''), completedCount: earnedCount, totalCount: objectives.length, awardedAt: Date.now() });
+    entries.push({ index, text: String(objectives[index] || ''), completedCount: earnedCount, totalCount: objectives.length, awardedAt: Date.now(), source: source === 'facilitator' ? 'facilitator' : 'ai' });
   }
   return entries;
 }
