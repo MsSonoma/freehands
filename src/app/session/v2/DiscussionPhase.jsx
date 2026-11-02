@@ -53,6 +53,7 @@ export class DiscussionPhase {
   #objectives        = [];
   #objectiveClues    = [];
   #completedIndices  = [];
+  #unacknowledgedObjectiveIndices = new Set();
   #chatHistory       = [];   // { role: 'user'|'assistant', content: string }[]
   #audioEndListener  = null;
   #destroyed         = false;
@@ -98,6 +99,9 @@ export class DiscussionPhase {
         ? [...options.resumeCompletedIndices]
         : [];
     }
+    const pendingAwards = Array.isArray(options.resumePendingObjectiveAnnouncements)
+      ? options.resumePendingObjectiveAnnouncements : [];
+    this.#unacknowledgedObjectiveIndices = new Set(pendingAwards.map(row => row?.index).filter(Number.isInteger));
     const savedReply = options.resumeReplyCheckpoint;
     if (savedReply && ['feedback', 'awaiting-next', 'question', 'question-complete'].includes(savedReply.stage) &&
         typeof savedReply.feedback === 'string' && typeof savedReply.question === 'string') {
@@ -222,8 +226,28 @@ export class DiscussionPhase {
     this.#playSentence(this.#currentSentenceKey);
   }
 
+  acknowledgeObjectiveAward(index) {
+    if (!this.#unacknowledgedObjectiveIndices.has(index)) return;
+    this.#unacknowledgedObjectiveIndices.delete(index);
+    if (this.#state === 'awaiting-objective-ack' && this.#unacknowledgedObjectiveIndices.size === 0) {
+      this.#finishDiscussion();
+    }
+  }
+
+  #finishDiscussion() {
+    if (this.#destroyed || this.#state === 'complete') return;
+    if (this.#unacknowledgedObjectiveIndices.size > 0) {
+      this.#state = 'awaiting-objective-ack';
+      this.#emitStateChange();
+      return;
+    }
+    this.#state = 'complete';
+    this.#emitStateChange();
+    this.#eventBus.emit('discussionComplete', {});
+  }
+
   nextReplyPart() {
-    if (this.#destroyed || this.#state !== 'awaiting-next' || !this.#replyCheckpoint?.question) return;
+    if (this.#destroyed || this.#unacknowledgedObjectiveIndices.size > 0 || this.#state !== 'awaiting-next' || !this.#replyCheckpoint?.question) return;
     const text = this.#replyCheckpoint.question;
     // Persist the transition before the question enters the visible transcript.
     this.#setReplyStage('question');
@@ -245,6 +269,7 @@ export class DiscussionPhase {
 
   async submitMessage(userText) {
     // Allow sending while Ms. Sonoma is speaking — stops TTS and starts new turn
+    if (this.#unacknowledgedObjectiveIndices.size > 0) return;
     if (this.#state === 'awaiting-response') {
       try { this.#audioEngine.stop(); } catch {}
     } else if (this.#state !== 'chatting') {
@@ -274,6 +299,7 @@ export class DiscussionPhase {
     // Check objectives against recent conversation
     let newlyCompleted = [];
     let objectiveStatus = null;
+    const objectiveCheckStartedAt = Date.now();
     if (this.#objectives.length > 0) {
       try {
         const res = await fetch(WEBB_OBJECTIVES_URL, {
@@ -291,10 +317,14 @@ export class DiscussionPhase {
         if (gen !== this.#submitGen || this.#destroyed) return;
         if (res.ok) {
           const data = await res.json();
+          // A help interruption, skip, or replacement turn can occur while JSON parses.
+          // Never apply points if we would then drop the corresponding award event.
+          if (gen !== this.#submitGen || this.#destroyed) return;
           if (Array.isArray(data.newlyCompleted) && data.newlyCompleted.length) {
-            newlyCompleted = data.newlyCompleted;
+            newlyCompleted = [...new Set(data.newlyCompleted.filter(index =>
+              Number.isInteger(index) && index >= 0 && index < this.#objectives.length && !this.#completedIndices.includes(index)))];
+            newlyCompleted.forEach(index => this.#unacknowledgedObjectiveIndices.add(index));
             this.#completedIndices = [...new Set([...this.#completedIndices, ...newlyCompleted])];
-            this.#emitStateChange();
           }
           const firstRemainingIndex = this.#objectives.findIndex((_, i) => !this.#completedIndices.includes(i));
           if (firstRemainingIndex >= 0) objectiveStatus = data.evaluationStatus?.[firstRemainingIndex] || null;
@@ -305,6 +335,13 @@ export class DiscussionPhase {
     }
 
     if (gen !== this.#submitGen || this.#destroyed) return;
+    if (this.#objectives.length > 0) {
+      // Diagnostic: only evaluation latency and award count, never the learner response.
+      console.info('[DiscussionPhase] objective evaluation finished', {
+        durationMs: Date.now() - objectiveCheckStartedAt,
+        newAwards: newlyCompleted.length,
+      });
+    }
 
     if (newlyCompleted.length > 0) {
       this.#eventBus.emit('discussionObjectiveComplete', {
@@ -313,7 +350,10 @@ export class DiscussionPhase {
         totalCount:      this.#objectives.length,
         newlyCompleted,
         objectiveText:   this.#objectives[newlyCompleted[0]] ?? null,
+        objectives: [...this.#objectives],
       });
+      // Announce the award before exposing updated counts to the UI.
+      this.#emitStateChange();
     }
 
     const allMet = this.#objectives.length > 0 &&
@@ -437,9 +477,7 @@ export class DiscussionPhase {
     this.#setupAudioEndListener(() => {
       if (gen !== this.#submitGen || this.#destroyed) return;
       if (pending.allMet) {
-        this.#state = 'complete';
-        this.#emitStateChange();
-        this.#eventBus.emit('discussionComplete', {});
+        this.#finishDiscussion();
       } else {
         this.#state = 'chatting';
         this.#emitStateChange();
@@ -454,9 +492,7 @@ export class DiscussionPhase {
       this.#removeAudioEndListener();
       if (gen !== this.#submitGen || this.#destroyed) return;
       if (pending.allMet) {
-        this.#state = 'complete';
-        this.#emitStateChange();
-        this.#eventBus.emit('discussionComplete', {});
+        this.#finishDiscussion();
       } else {
         this.#state = 'chatting';
         this.#emitStateChange();
@@ -480,7 +516,10 @@ export class DiscussionPhase {
     this.#eventBus.emit('discussionMessage', { role: 'user', text: user, kind, featureId })
     this.#chatHistory.push({ role: 'assistant', content: assistant, kind, featureId })
     this.#eventBus.emit('discussionMessage', { role: 'assistant', text: assistant, kind, featureId })
-    this.#state = this.#replyCheckpoint?.stage === 'awaiting-next' ? 'awaiting-next' : 'chatting'
+    const finalAwardPending = this.#objectives.length > 0 &&
+      this.#completedIndices.length >= this.#objectives.length && this.#unacknowledgedObjectiveIndices.size > 0;
+    this.#state = finalAwardPending ? 'awaiting-objective-ack' :
+      this.#replyCheckpoint?.stage === 'awaiting-next' ? 'awaiting-next' : 'chatting'
     this.#emitStateChange()
   }
 
@@ -493,9 +532,7 @@ export class DiscussionPhase {
     try { this.#audioEngine.stop(); } catch {}
     this.#removeAudioEndListener();
     this.#eventBus.emit('learnerTurnEnded', { phase: 'discussion', turnKind: 'discussion', reason: 'skip' });
-    this.#state = 'complete';
-    this.#emitStateChange();
-    this.#eventBus.emit('discussionComplete', {});
+    this.#finishDiscussion();
   }
 
   destroy() {
@@ -638,7 +675,9 @@ export class DiscussionPhase {
           allMet,
         };
       }
-      this.#state = unansweredTurn ? 'reply-unavailable' : 'chatting';
+      const waitingForFinalAward = !unansweredTurn && this.#objectives.length > 0 &&
+        this.#completedIndices.length >= this.#objectives.length && this.#unacknowledgedObjectiveIndices.size > 0;
+      this.#state = unansweredTurn ? 'reply-unavailable' : waitingForFinalAward ? 'awaiting-objective-ack' : 'chatting';
       this.#emitStateChange();
       // Emit greetingPlaying so SessionPageV2 starts/validates the work timer
       this.#eventBus.emit('greetingPlaying', { greetingText: '' });

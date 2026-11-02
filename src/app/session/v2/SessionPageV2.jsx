@@ -72,6 +72,7 @@ import { detectProductHelp, getProductHelpFeature, getProductHelpScript } from '
 import TypingConversationContext from '../components/TypingConversationContext';
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport';
 import { useSonomaKeyboard } from '../../components/SonomaKeyboard';
+import { restoreDiscussionAwards, queueDiscussionAwards, acknowledgeDiscussionAward } from './discussionObjectiveAwards.mjs';
 import AutoGrowingSonomaTextarea from '../../components/AutoGrowingSonomaTextarea';
 import { isMicrophoneCapturing } from '../utils/microphoneSession';
 import { measureSonomaLandscapeRoom, resolveSonomaKeyboardClearance } from './sonomaKeyboardLayout.mjs';
@@ -945,7 +946,11 @@ function SessionPageV2Inner() {
   const [discussionCompletedIndices, setDiscussionCompletedIndices] = useState([]);
   const [showDiscussionObjectives, setShowDiscussionObjectives] = useState(false);
   const [showFullDiscussionObjectives, setShowFullDiscussionObjectives] = useState(false);
-  const [newlyCompletedDiscussionObj, setNewlyCompletedDiscussionObj] = useState(null); // {text, completedCount, totalCount}
+  const [newlyCompletedDiscussionObj, setNewlyCompletedDiscussionObj] = useState(null); // current acknowledged-only learner award
+  const discussionAwardQueueRef = useRef([]);
+  const discussionAwardAcknowledgingRef = useRef(false);
+  const discussionAwardVisibleLogRef = useRef(new Set());
+  const [discussionAwardSaving, setDiscussionAwardSaving] = useState(false);
   const [wordsReminderSpeaking, setWordsReminderSpeaking] = useState(false);
   const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState({ type: 'overview', index: 0, total: 0, text: '', waitingForNext: false });
 
@@ -5731,6 +5736,10 @@ function SessionPageV2Inner() {
     const isDiscussionResume = resumePhaseRef.current === 'discussion' && transcriptLinesRef.current.length > 0;
     if (isDiscussionResume) setDiscussionResuming(true);
     const savedDiscData = snapshotServiceRef.current?.snapshot?.phaseData?.discussion;
+    const pendingAwards = isDiscussionResume ? restoreDiscussionAwards(savedDiscData?.objectiveAnnouncements) : [];
+    discussionAwardQueueRef.current = pendingAwards;
+    discussionAwardVisibleLogRef.current.clear();
+    setNewlyCompletedDiscussionObj(pendingAwards[0] || null);
     // Sentence-level resume: present when refreshed mid-overview/vocab (null means chat-level resume)
     const resumeSentenceKey = (isDiscussionResume && typeof savedDiscData?.sentenceKey === 'string' && savedDiscData.sentenceKey)
       ? savedDiscData.sentenceKey
@@ -5754,6 +5763,7 @@ function SessionPageV2Inner() {
       // Sentence-level resume: replay at the exact sentence that was active on refresh
       resumeSentenceKey: resumeSentenceKey,
       resumeReplyCheckpoint: isDiscussionResume ? savedDiscData?.replyCheckpoint : null,
+      resumePendingObjectiveAnnouncements: pendingAwards,
     });
     
 
@@ -5780,6 +5790,7 @@ function SessionPageV2Inner() {
         'playing-reply-feedback': 'playing-reply-feedback',
         'awaiting-next': 'awaiting-next',
         'playing-reply-question': 'playing-reply-question',
+        'awaiting-objective-ack': 'awaiting-objective-ack',
         'complete':           'complete',
       };
       setDiscussionState(stateMap[data.state] || data.state);
@@ -5847,11 +5858,10 @@ function SessionPageV2Inner() {
     });
     
     const unsubObjectiveComplete = eventBusRef.current.on('discussionObjectiveComplete', (data) => {
-      setNewlyCompletedDiscussionObj({
-        text:           data.objectiveText ?? null,
-        completedCount: data.completedCount,
-        totalCount:     data.totalCount,
-      });
+      const queue = queueDiscussionAwards(discussionAwardQueueRef.current, data.newlyCompleted,
+        Array.isArray(data.objectives) ? data.objectives : [], data.completedIndices);
+      discussionAwardQueueRef.current = queue;
+      setNewlyCompletedDiscussionObj(queue[0] || null);
       // The learner's utterance was snapshotted before the async objective
       // evaluation. Persist newly earned mastery even when the model reply fails.
       if (Array.isArray(data.completedIndices)) {
@@ -5859,7 +5869,9 @@ function SessionPageV2Inner() {
         setDiscussionCompletedIndices([...data.completedIndices]);
         if (snapshotServiceRef.current) {
           snapshotServiceRef.current.saveProgress('discussion-objective', {
+            phaseOverride: 'discussion',
             completedObjectiveIndices: [...data.completedIndices],
+            objectiveAnnouncements: queue,
             sentenceKey: null,
           }).catch(() => {});
         }
@@ -5868,7 +5880,7 @@ function SessionPageV2Inner() {
 
     const unsubGreetingComplete = eventBusRef.current.on('greetingComplete', () => {
       addEvent('Overview complete — entering discussion chat');
-      setDiscussionState(phase.state === 'reply-unavailable' ? 'reply-unavailable' : 'chatting');
+      setDiscussionState(phase.state === 'reply-unavailable' ? 'reply-unavailable' : phase.state === 'awaiting-objective-ack' ? 'awaiting-objective-ack' : 'chatting');
     });
     
     const unsubLearnerTurnReady = eventBusRef.current.on('learnerTurnReady', (data) => {
@@ -7972,12 +7984,47 @@ function SessionPageV2Inner() {
     }
   }, [startSession]);
 
-  // Auto-dismiss the objective complete toast after 3.5s
+  const canShowDiscussionAwardNotice = Boolean(newlyCompletedDiscussionObj &&
+    ['awaiting-next', 'chatting', 'reply-unavailable', 'awaiting-objective-ack'].includes(discussionState) &&
+    !openingActionActive && !showWords && !showDiscussionObjectives && !sonomaHelpHoldActive &&
+    !showTakeoverDialog && !showGames && !showVisualAids);
+
   useEffect(() => {
-    if (!newlyCompletedDiscussionObj) return;
-    const t = setTimeout(() => setNewlyCompletedDiscussionObj(null), 3500);
-    return () => clearTimeout(t);
-  }, [newlyCompletedDiscussionObj]);
+    if (!canShowDiscussionAwardNotice) return;
+    const award = newlyCompletedDiscussionObj;
+    if (discussionAwardVisibleLogRef.current.has(award.index)) return;
+    discussionAwardVisibleLogRef.current.add(award.index);
+    // Diagnostic timing only. No learner answer, transcript, or objective text in logs.
+    console.info('[DiscussionPhase] goal notice visible', {
+      index: award.index,
+      awardToVisibleMs: Number.isFinite(award.awardedAt) ? Date.now() - award.awardedAt : null,
+      pending: discussionAwardQueueRef.current.length,
+    });
+  }, [canShowDiscussionAwardNotice, newlyCompletedDiscussionObj]);
+
+  // Objective credit and the learner's acknowledgement are separate durable events.
+  // Never advance the final discussion until every announced goal is acknowledged.
+  const acknowledgeDiscussionObjectiveNotice = useCallback(async () => {
+    if (discussionAwardAcknowledgingRef.current) return;
+    const current = discussionAwardQueueRef.current[0];
+    if (!current) return;
+    discussionAwardAcknowledgingRef.current = true;
+    setDiscussionAwardSaving(true);
+    const remaining = acknowledgeDiscussionAward(discussionAwardQueueRef.current, current.index);
+    try {
+      await snapshotServiceRef.current?.saveProgress('discussion-objective-acknowledged', {
+        phaseOverride: 'discussion',
+        completedObjectiveIndices: [...discussionCompletedIndicesRef.current],
+        objectiveAnnouncements: remaining,
+      });
+      discussionAwardQueueRef.current = remaining;
+      setNewlyCompletedDiscussionObj(remaining[0] || null);
+      discussionPhaseRef.current?.acknowledgeObjectiveAward(current.index);
+    } finally {
+      discussionAwardAcknowledgingRef.current = false;
+      setDiscussionAwardSaving(false);
+    }
+  }, []);
 
   const handleSessionTakeover = useCallback(async (pinCode) => {
     const trackingLearnerId = sessionLearnerIdRef.current || learnerProfile?.id || null;
@@ -10132,7 +10179,7 @@ function SessionPageV2Inner() {
 
           {/* Feedback is a complete learner-controlled moment. Next reveals the
               follow-up question; raising a hand stays available before and after. */}
-          {currentPhase === 'discussion' && discussionState === 'awaiting-next' && !openingActionActive && !showWords && (
+          {currentPhase === 'discussion' && discussionState === 'awaiting-next' && !newlyCompletedDiscussionObj && !openingActionActive && !showWords && (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 12px' }}>
               <button
                 type="button"
@@ -10854,47 +10901,38 @@ function SessionPageV2Inner() {
         />
       )}
 
-      {/* Discussion objective complete toast */}
-      {newlyCompletedDiscussionObj && (() => {
-        const { text, completedCount, totalCount } = newlyCompletedDiscussionObj;
-        return (
-          <div style={{
-            position: 'fixed',
-            bottom: 90, left: '50%',
-            transform: 'translateX(-50%)',
-            zIndex: 1999,
-            width: 'min(88vw, 340px)',
-            pointerEvents: 'none',
-          }}>
-            <div style={{
-              background: '#fff',
-              borderRadius: 16,
-              padding: '14px 18px',
-              boxShadow: '0 8px 32px rgba(199,68,46,0.18), 0 0 0 2px #c7442e',
-            }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: text ? 8 : 0 }}>
-                <span style={{ fontSize: 20 }}>✅</span>
-                <span style={{ color: '#c7442e', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase' }}>Goal Reached!</span>
-              </div>
-              {text && (
-                <p style={{ color: '#374151', fontSize: 13, lineHeight: 1.6, margin: '0 0 10px', fontStyle: 'italic' }}>
-                  &ldquo;{text}&rdquo;
-                </p>
-              )}
-              <div style={{ display: 'flex', gap: 5, flexWrap: 'wrap' }}>
-                {Array.from({ length: totalCount }).map((_, i) => (
-                  <div key={i} style={{
-                    width: 10, height: 10, borderRadius: '50%',
-                    background: i < completedCount ? '#c7442e' : '#e5e7eb',
-                    transition: 'background 0.3s',
-                  }} />
-                ))}
-              </div>
+      {/* Mastery feedback is never timed away. It is queued through refresh and
+          presented at a pause, above the Sonoma keyboard, until acknowledged. */}
+      {canShowDiscussionAwardNotice && (
+        <div role="dialog" aria-modal="true" aria-label="Learning goal reached" style={{
+          position: 'fixed', inset: 0, zIndex: 12050,
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          padding: 16, background: 'rgba(15,23,42,0.25)',
+        }}>
+          <div style={{ width: 'min(92vw, 390px)', background: '#fff', borderRadius: 16,
+            padding: '20px 22px', boxShadow: '0 10px 38px rgba(0,0,0,0.24)',
+            border: '2px solid #c7442e', textAlign: 'center' }}>
+            <div style={{ color: '#c7442e', fontSize: 13, fontWeight: 850, letterSpacing: 1, textTransform: 'uppercase' }}>
+              Goal Reached!
             </div>
+            {newlyCompletedDiscussionObj.text && (
+              <p style={{ color: '#374151', fontSize: 16, lineHeight: 1.5, margin: '12px 0' }}>
+                {newlyCompletedDiscussionObj.text}
+              </p>
+            )}
+            <p style={{ color: '#475569', fontWeight: 700, margin: '10px 0 18px' }}>
+              {newlyCompletedDiscussionObj.completedCount} of {newlyCompletedDiscussionObj.totalCount} goals completed
+            </p>
+            <button type="button" disabled={discussionAwardSaving}
+              onClick={() => { void acknowledgeDiscussionObjectiveNotice(); }}
+              style={{ padding: '12px 28px', background: '#c7442e', color: '#fff', border: 'none',
+                borderRadius: 10, fontSize: 16, fontWeight: 750,
+                cursor: discussionAwardSaving ? 'wait' : 'pointer' }}>
+              {discussionAwardSaving ? 'Saving...' : 'Got it'}
+            </button>
           </div>
-        );
-      })()}
-
+        </div>
+      )}
       {/* Discussion objectives overlay */}
       {showDiscussionObjectives && (
         <div

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
 import { readFileSync } from 'node:fs'
+import { splitSonomaDiscussionReply } from './splitSonomaDiscussionReply.mjs'
 
 const source = readFileSync(new URL('./DiscussionPhase.jsx', import.meta.url), 'utf8')
   .replace(/^import [^\r\n]+[\r\n]*/gm, '')
@@ -8,8 +9,9 @@ const source = readFileSync(new URL('./DiscussionPhase.jsx', import.meta.url), '
 const Phase = new Function(
   'fetchTTS',
   'buildInstructionalLessonView',
+  'splitSonomaDiscussionReply',
   source + '\nreturn DiscussionPhase',
-)(async () => null, lesson => lesson)
+)(async () => null, lesson => lesson, splitSonomaDiscussionReply)
 
 function bus() {
   const listeners = new Map()
@@ -40,7 +42,7 @@ function audio() {
   }
 }
 
-async function withFakeApis({ replies, check = { newlyCompleted: [], evaluationStatus: ['partial'] }, history = [{ role: 'assistant', content: 'Welcome.' }], resumeCompletedIndices = [] }, run) {
+async function withFakeApis({ replies, check = { newlyCompleted: [], evaluationStatus: ['partial'] }, history = [{ role: 'assistant', content: 'Welcome.' }], resumeCompletedIndices = [], resumePendingObjectiveAnnouncements = [], objectives = ['Describe the main idea'] }, run) {
   const originalFetch = globalThis.fetch
   const requests = []
   let checks = 0
@@ -48,7 +50,7 @@ async function withFakeApis({ replies, check = { newlyCompleted: [], evaluationS
     const body = JSON.parse(options?.body || '{}')
     if (url === '/api/webb-objectives') {
       if (body.action === 'generate') {
-        return { ok: true, json: async () => ({ objectives: ['Describe the main idea'], clues: ['Main idea'] }) }
+        return { ok: true, json: async () => ({ objectives, clues: objectives.map((_, i) => 'Goal ' + (i + 1)) }) }
       }
       checks += 1
       return { ok: true, json: async () => check }
@@ -71,6 +73,7 @@ async function withFakeApis({ replies, check = { newlyCompleted: [], evaluationS
     learnerName: 'Test Learner',
     resumeHistory: history,
     resumeCompletedIndices,
+    resumePendingObjectiveAnnouncements,
   })
   try {
     await phase.prefetch()
@@ -118,6 +121,8 @@ test('retry cannot complete discussion before valid model speech, and never re-a
     assert.equal(events.filter(e => e.name === 'discussionComplete').length, 0)
 
     await phase.retryReply()
+    assert.equal(phase.state, 'awaiting-objective-ack')
+    phase.acknowledgeObjectiveAward(0)
     assert.equal(phase.state, 'complete')
     assert.equal(getChecks(), 1)
     assert.equal(events.filter(e => e.name === 'discussionObjectiveComplete').length, 1)
@@ -152,3 +157,79 @@ test('source contracts require a visible retry and forbid the generic fallback s
   assert.match(exercise, /requestSonomaTextReply/)
   assert.doesNotMatch(source, /Great thinking! Can you tell me more about what you've learned/)
 })
+
+test('an award during discussion feedback blocks Next until acknowledged', async () => {
+  await withFakeApis({
+    objectives: ['Main idea', 'Another idea'],
+    check: { newlyCompleted: [0], evaluationStatus: { 1: 'partial' } },
+    replies: [ok('That is correct. What is another idea?')],
+  }, async ({ phase, events }) => {
+    await phase.submitMessage('I understand the main idea.');
+    // The audio harness completes speech on the microtask queue.
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(phase.completedObjectives, 1);
+    assert.equal(events.filter(e => e.name === 'discussionObjectiveComplete').length, 1);
+    assert.equal(phase.state, 'awaiting-next');
+    phase.nextReplyPart();
+    assert.equal(phase.state, 'awaiting-next');
+    phase.acknowledgeObjectiveAward(0);
+    phase.nextReplyPart();
+    assert.equal(phase.activeReplySegmentText, 'What is another idea?');
+  });
+});
+
+test('resume with final pending award waits for learner acknowledgement', async () => {
+  await withFakeApis({
+    replies: [],
+    history: [{ role: 'assistant', content: 'You have mastered this objective.' }],
+    resumeCompletedIndices: [0],
+    resumePendingObjectiveAnnouncements: [{ index: 0, text: 'Describe the main idea', completedCount: 1, totalCount: 1 }],
+  }, async ({ phase, events }) => {
+    assert.equal(phase.state, 'awaiting-objective-ack');
+    assert.equal(events.filter(e => e.name === 'discussionComplete').length, 0);
+    phase.acknowledgeObjectiveAward(0);
+    assert.equal(phase.state, 'complete');
+    assert.equal(events.filter(e => e.name === 'discussionComplete').length, 1);
+  });
+});
+
+test('stale grading JSON cannot credit an objective without its award notification', async () => {
+  let resolveCheck;
+  const delayedCheck = new Promise(resolve => { resolveCheck = resolve; });
+  await withFakeApis({ replies: [], check: delayedCheck }, async ({ phase, events }) => {
+    const pendingTurn = phase.submitMessage('My science explanation.');
+    await new Promise(resolve => setImmediate(resolve));
+    // Product-help interleaves while the evaluator response body is still loading.
+    phase.recordSyntheticExchange('Please help', 'Here is more help.');
+    resolveCheck({ newlyCompleted: [0], evaluationStatus: {} });
+    await pendingTurn;
+    assert.equal(phase.completedObjectives, 0);
+    assert.equal(events.filter(e => e.name === 'discussionObjectiveComplete').length, 0);
+  });
+});
+
+test('help and Skip cannot silently bypass an earned final-goal notice', async () => {
+  await withFakeApis({ replies: [ok('You have mastered the lesson.')], check: { newlyCompleted: [0], evaluationStatus: {} } },
+    async ({ phase, events }) => {
+      await phase.submitMessage('A correct explanation.');
+      await new Promise(resolve => setImmediate(resolve));
+      assert.equal(phase.state, 'awaiting-objective-ack');
+      phase.recordSyntheticExchange('Can I ask?', 'Of course.');
+      assert.equal(phase.state, 'awaiting-objective-ack');
+      phase.skip();
+      assert.equal(phase.state, 'awaiting-objective-ack');
+      assert.equal(events.filter(e => e.name === 'discussionComplete').length, 0);
+      phase.acknowledgeObjectiveAward(0);
+      assert.equal(phase.state, 'complete');
+      assert.equal(events.filter(e => e.name === 'discussionComplete').length, 1);
+    });
+});
+
+test('learner award UI requires explicit acknowledgement and persists the pending queue', () => {
+  const page = readFileSync(new URL('./SessionPageV2.jsx', import.meta.url), 'utf8');
+  assert.match(page, /role="dialog" aria-modal="true" aria-label="Learning goal reached"/);
+  assert.match(page, /objectiveAnnouncements: queue/);
+  assert.match(page, /objectiveAnnouncements: remaining/);
+  assert.match(page, /acknowledgeObjectiveAward\(current\.index\)/);
+  assert.doesNotMatch(page, /setTimeout\(\(\) => setNewlyCompletedDiscussionObj\(null\)/);
+});
