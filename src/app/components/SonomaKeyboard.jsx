@@ -208,19 +208,6 @@ export function SonomaKeyboardProvider({ children }) {
       {children}
       {active && (
         <div ref={panelRef} data-sonoma-keyboard role="group" aria-label="Sonoma on-screen keyboard" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:10000, background:active?.theme?.background || (workspaceVisible ? "#1e293b" : "#e8e8eb"), color:active?.theme?.color || (workspaceVisible ? "#e2e8f0" : "#111827"), padding:"8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left))", boxShadow:"0 -5px 24px #0003", touchAction:"manipulation" }}>
-          <div style={{display:"flex", justifyContent:"space-between", maxWidth:740, margin:"0 auto 5px", alignItems:"center"}}>
-            <span style={{fontSize:12,color:active?.theme?.color || (workspaceVisible ? "#e2e8f0" : "#374151"),fontWeight:700}}>{active?.theme?.label || workspaceDock?.label || "Sonoma Keyboard"}</span>
-            <div style={{display:"inline-flex",alignItems:"center",gap:8}}>
-
-              <span style={{display: active ? undefined : "none"}} onPointerDown={(event) => event.preventDefault()}>
-                <WebbDictationButton
-                  onBeforeRecord={prepareDictation}
-                  onTranscript={applyDictation}
-                />
-              </span>
-              <button type="button" onPointerDown={(e)=>e.preventDefault()} onClick={close} aria-label="Close keyboard" style={{padding:"5px 12px",borderRadius:7}}>Close</button>
-            </div>
-          </div>
           <div className={workspaceVisible ? dockStyles.layout : undefined}>
             {workspaceVisible && <div id="sonoma-keyboard-workspace" data-sonoma-keyboard-workspace className={dockStyles.workspace}><div ref={setWorkspacePortal} className={dockStyles.workspaceScroll} /></div>}
             <div className={workspaceVisible ? dockStyles.pad : undefined}>
@@ -234,6 +221,11 @@ export function SonomaKeyboardProvider({ children }) {
                   {key==="Shift"?(shift?"⇧":"↑"):key==="Backspace"?"⌫":key==="Space"?"space":key}
                 </button>
               ))}
+              {rowIndex === (rows[layout] || rows.text).length - 1 && (
+                <span style={{display:"inline-flex", flex:"0 0 44px", height:44, alignItems:"center", justifyContent:"center", minWidth:0}} onPointerDown={(event) => event.preventDefault()}>
+                  <WebbDictationButton onBeforeRecord={prepareDictation} onTranscript={applyDictation} />
+                </span>
+              )}
             </div>
           ))}
             </div>
