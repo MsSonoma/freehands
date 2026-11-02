@@ -24,7 +24,7 @@ test('safe persisted status maintains the one lesson identity without exposing e
 test('interrupted generation offers an actionable retry without enabling concept edits', () => {
   assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'recovery_required' }).blocked, false)
   assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'recovery_required' }).action, 'Retry generation')
-  assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'recovery_required' }).canEdit, false)
+  assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'recovery_required' }).canEdit, true)
   assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'generating' }).action, 'Resume generation')
   assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'generating' }).canEdit, false)
 })

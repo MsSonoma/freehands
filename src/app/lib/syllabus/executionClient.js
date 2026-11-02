@@ -21,6 +21,15 @@ export function getProtectedBrowserSessionId() {
   return value
 }
 
+// A deliberate facilitator restart must not pick up the former attempt snapshot.
+export function beginFreshProtectedAttempt() {
+  if (typeof window === 'undefined') return null
+  const id = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null
+  if (!id) throw new Error('A fresh lesson session could not be prepared on this device.')
+  try { localStorage.setItem('lesson_session_id', id) } catch {}
+  try { sessionStorage.setItem('lesson_session_id', id) } catch {}
+  return id
+}
 async function accessToken() {
   if (!hasSupabaseEnv()) throw new Error('Secure lesson authorization is unavailable.')
   const { data } = await getSupabaseClient().auth.getSession()

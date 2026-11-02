@@ -1,8 +1,11 @@
 'use client'
 
 import { forecastCarryLessonKey, lessonGenerationPresentation } from '@/app/lib/syllabus/lessonGenerationState.mjs'
+import { syllabusRecoveryGuidance } from '@/app/lib/syllabus/recoveryGuidance.mjs'
 import { useEffect, useState } from 'react'
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs'
+import { beginFreshProtectedAttempt } from '@/app/lib/syllabus/executionClient.js'
+import { makeEditableLessonVersion } from '@/app/lib/syllabus/lessonVersioning.mjs'
 import { useRouter } from 'next/navigation'
 import LessonHistoryOverlay from '@/app/components/syllabus/LessonHistoryOverlay'
 import LessonRevisionDialog from '@/app/components/LessonRevisionDialog'
@@ -184,6 +187,8 @@ export default function FacilitatorSyllabusLessonOverlay({
   const [slateTeacher, setSlateTeacher] = useState('slate')
   const [revisionOpen, setRevisionOpen] = useState(false)
   const [repeatMode, setRepeatMode] = useState(false)
+  const [restartTeacher, setRestartTeacher] = useState('sonoma')
+  const [restartNeedsReview, setRestartNeedsReview] = useState(false)
   const [learnerLessonBound, setLearnerLessonBound] = useState(false)
   const [removalBusy, setRemovalBusy] = useState('')
   const [removeDialogOpen, setRemoveDialogOpen] = useState(false)
@@ -220,6 +225,8 @@ export default function FacilitatorSyllabusLessonOverlay({
     setSlateTeacher(normalizeReviewTeacherSelection(item.review_teacher))
     setRevisionOpen(false)
     setRepeatMode(false)
+    setRestartTeacher(normalizeInstructionalTeacher(item.assigned_instructional_teacher || selection.assignedTeacher || item.actual_instructional_teacher || item.instructional_teacher) || 'sonoma')
+    setRestartNeedsReview(false)
     setLearnerLessonBound(false)
     setRemovalBusy('')
     setRemoveDialogOpen(false)
@@ -440,6 +447,38 @@ export default function FacilitatorSyllabusLessonOverlay({
     }
   }
 
+  async function restartWithTeacher() {
+    const teacher = normalizeInstructionalTeacher(restartTeacher)
+    if (!coreAuthority || !teacher || isDraft) return
+    setCoreBusy('restart')
+    setRestartNeedsReview(false)
+    setCoreError('')
+    setMessage('')
+    try {
+      const response = await fetch('/api/syllabus/restart', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ learnerId, lessonKey: item.lesson_key,
+          occurrenceId,
+          instructionalTeacher: teacher }),
+      })
+      const result = await response.json().catch(() => ({}))
+      if (!response.ok || !result.occurrenceId) {
+        const failure = new Error(result.error || 'Could not prepare a fresh lesson attempt.')
+        failure.code = result.code
+        throw failure
+      }
+      await ensureStartAccess()
+      beginFreshProtectedAttempt()
+      const { subject, fileName } = splitLessonKey(result.lessonKey || item.lesson_key)
+      router.push(buildInstructionalSessionRoute({ learnerId, subject, fileName,
+        instructionalTeacher: teacher, occurrenceId: result.occurrenceId }))
+    } catch (error) {
+      setRestartNeedsReview(error?.code === 'LESSON_REVIEW_REQUIRED')
+      setCoreError(error?.message || 'The previous lesson is preserved. Choose a teacher and try again.')
+      setCoreBusy('')
+    }
+  }
   async function handleTeacherChange(nextTeacher) {
     const teacher = normalizeInstructionalTeacher(nextTeacher)
     if (!teacher || !teacherEditable) return
@@ -831,6 +870,30 @@ export default function FacilitatorSyllabusLessonOverlay({
     }
   }
 
+  async function reviseAsNewVersion() {
+    if (!coreAuthority || !String(item.lesson_key).startsWith('generated/')) return
+    setCoreBusy('revision-copy')
+    setCoreError('')
+    try {
+      const originalResponse = await fetch(`/api/facilitator/lessons/get?${new URLSearchParams({ file: item.lesson_key })}`, {
+        cache: 'no-store', headers: { Authorization: `Bearer ${accessToken}` },
+      })
+      const original = await originalResponse.json().catch(() => ({}))
+      if (!originalResponse.ok || !original?.title) throw new Error(original.error || 'Could not load this lesson to revise it.')
+      const copy = makeEditableLessonVersion(original, item.lesson_key)
+      const createResponse = await fetch('/api/facilitator/lessons/create', {
+        method: 'POST', headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lesson: copy }),
+      })
+      const created = await createResponse.json().catch(() => ({}))
+      if (!createResponse.ok || !created.lessonKey) throw new Error(created.error || 'Could not create an editable version.')
+      router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(created.lessonKey)}`)
+    } catch (cause) {
+      setCoreError(cause?.message || 'The original lesson is unchanged. Try creating a revised version again.')
+      setCoreBusy('')
+    }
+  }
+
   function editLesson() {
     if (!canEditOwnedLesson) return
     router.push(`/facilitator/lessons/edit?key=${encodeURIComponent(item.lesson_key)}`)
@@ -910,7 +973,7 @@ export default function FacilitatorSyllabusLessonOverlay({
           </section> : <>
           {item.description && <p className={styles.description}>{item.description}</p>}
           {message && <div className={styles.statusMessage} role="status">{message}</div>}
-          {coreError && <div className={styles.errorMessage} role="alert">{coreError}</div>}
+          {coreError && <div className={styles.errorMessage} role="alert"><p>{syllabusRecoveryGuidance(coreError)}</p><button type="button" onClick={() => void onChanged?.()}>Refresh lesson</button>{isConcept && canChangeIntent && typeof onCreateOwnLesson === "function" && <button type="button" onClick={() => beginConceptEdit("forecast-own")}>Create your own lesson</button>}{restartNeedsReview && <button type="button" onClick={() => { onClose?.(); if (typeof onOpenLesson === "function") onOpenLesson(item, selection); else router.push(buildLessonGeneratorReviewHref({ learnerId, lessonKey: item.lesson_key, source: workflowSource, plannedDate: dateOnly(item.planned_date), occurrenceId, expectedActiveRevisionId: activeRevisionId })) }}>Review and approve lesson</button>}</div>}
           <dl className={styles.meta}>
             {isLesson && item.lesson_key && <><div><dt>Teacher</dt><dd>{instructionalTeacherLabel(displayTeacher)}</dd></div><div><dt>Status</dt><dd>{displayStatus}</dd></div></>}
             {isLesson && item.lesson_key && retentionAnnotation && <div><dt>Retention</dt><dd>{['retained', 'demonstrated'].includes(String(retentionAnnotation.state || '')) ? 'Completed' : (retentionAnnotation.label || 'Recorded')}</dd></div>}
@@ -1011,10 +1074,21 @@ export default function FacilitatorSyllabusLessonOverlay({
             {canPrintMaterials && <button type="button" onClick={() => { setPrintOpen(true); setPrintError('') }}>Print</button>}
             {schedulingAvailable && <button type="button" disabled={coreBusy === 'schedule'} onClick={openSchedule}>{localExplicitSchedule ? 'Reschedule' : 'Schedule'}</button>}
             {canRegenerateOwnedLesson && <button type="button" onClick={() => setRevisionOpen(true)}>Regenerate with changes</button>}
+            {isLesson && coreAuthority && String(item.lesson_key || '').startsWith('generated/') && <button type="button" title="Creates a separate draft. The earlier lesson and its evidence remain intact; approve and choose the new version when ready." disabled={Boolean(coreBusy)} onClick={() => void reviseAsNewVersion()}>{coreBusy === 'revision-copy' ? 'Preparing version...' : 'Revise as new version'}</button>}
             {canEditOwnedLesson && <button type="button" onClick={editLesson}>{isDraft ? 'Edit draft' : 'Edit lesson'}</button>}
             {isLesson && item.lesson_key && !isDraft && item.historical_record !== true && (typeof onScheduleSlate === 'function' || canScheduleSlateCore) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={openSlateScheduler}>Schedule Daily Review</button>}
             {isSlateAssignment && (typeof onRemoveSlateSchedule === 'function' || coreAuthority) && <button type="button" disabled={slateBusy || coreBusy === 'slate'} onClick={() => void removeSlateSchedule()}>Remove scheduled session</button>}
-            {canRepeat && <button type="button" onClick={() => void handleRepeat()}>Retry lesson</button>}
+            {isLesson && item.lesson_key && !isDraft && coreAuthority && <div className={styles.secondaryActions}>
+              <label>Restart with teacher
+                <select aria-label="Teacher for new lesson attempt" value={restartTeacher} disabled={coreBusy === 'restart'} onChange={(event) => setRestartTeacher(event.target.value)}>
+                  <option value="sonoma">Ms. Sonoma</option>
+                  <option value="slate">Mr. Slate</option>
+                  <option value="webb">Mrs. Webb</option>
+                </select>
+              </label>
+              <button type="button" disabled={Boolean(coreBusy)} onClick={() => void restartWithTeacher()}>{coreBusy === 'restart' ? 'Preparing restart...' : 'Restart lesson'}</button>
+            </div>}
+            {canRepeat && !coreAuthority && <button type="button" onClick={() => void handleRepeat()}>Retry lesson</button>}
             {canRemoveExactOccurrence && <button type="button" disabled={Boolean(removalBusy)} onClick={() => { setRemovalChoice('keep'); setRemoveDialogOpen(true) }}>{removalBusy === 'occurrence' ? 'Removing...' : 'Remove lesson'}</button>}
             {canRemoveFromLearner && <button type="button" disabled={Boolean(removalBusy)} onClick={() => void removeLessonFromLearner()}>{removalBusy === 'learner' ? 'Removing...' : 'Remove lesson from learner'}</button>}
           </div>

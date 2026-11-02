@@ -11,7 +11,7 @@ export function isUngeneratedSyllabusLesson(item) {
 }
 export function lessonGenerationPresentation(item, { busy = false, recoveryRequired = false } = {}) {
   const state = recoveryRequired ? 'recovery_required' : busy ? 'generating' : item?.generation_status || ''
-  if (state === 'recovery_required') return { label: 'Generation interrupted', action: 'Retry generation', canEdit: false, blocked: false }
+  if (state === 'recovery_required') return { label: 'Generation interrupted', action: 'Retry generation', canEdit: true, blocked: false }
   if (state === 'generation_failed') return { label: 'Generation failed - retry', action: 'Retry generation', canEdit: true, blocked: false }
   if (['generating', 'generated', 'binding_failed'].includes(state)) return { label: busy ? 'Generating lesson...' : 'Generation needs to finish', action: busy ? 'Generating...' : 'Resume generation', canEdit: false, blocked: busy }
   if (forecastCarryLessonKey(item)) return { label: 'Forecast suggestion - unfinished lesson', action: 'Carry lesson forward', canEdit: true, blocked: false }

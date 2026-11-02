@@ -267,8 +267,17 @@ test('generation with changes handles an already-selected lesson in place withou
 })
 
 
+test('educator can revise an unapproved concept after interrupted generation', async () => {
+  const original = concept({ origin: 'learning_forecast' })
+  const repo = repository([original])
+  repo.findForecastMaterialization = async () => ({ status: 'recovery_required', lesson_key: null })
+  const updated = await editFacilitatorConcept({ repository: repo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE,
+    lineageId: original.lineage_id, title: 'New educator title', description: 'Updated teaching instructions.', now: NOW, today: '2026-08-31' })
+  assert.equal(updated.forecast_items.find(row => row.lineage_id === original.lineage_id)?.title, 'New educator title')
+})
+
 test('an in-flight or ambiguous generation cannot be rewritten through custom lesson editing', async () => {
-  for (const status of ['generating', 'generated', 'binding_failed', 'recovery_required']) {
+  for (const status of ['generating', 'generated', 'binding_failed']) {
     const repo = repository([concept({ origin: 'learning_forecast' })])
     repo.findForecastMaterialization = async () => ({ status, lesson_key: null })
     await assert.rejects(editFacilitatorConcept({ repository: repo, facilitatorId: FACILITATOR, learnerId: LEARNER, expectedActiveRevisionId: ACTIVE,

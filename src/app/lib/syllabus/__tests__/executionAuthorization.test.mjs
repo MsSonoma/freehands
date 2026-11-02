@@ -138,6 +138,27 @@ test('today Syllabus occurrence is authorized without legacy availability or Cal
   assert.equal(decision.resumeBrowserSessionId, null)
 })
 
+test('an authorized restarted attempt resumes under its actual new teacher, not the older lesson assignment', async () => {
+  const browserSessionId = 'f4f4f4f4-f4f4-4f4f-8f4f-f4f4f4f4f4f4'
+  const sessionId = 'e5e5e5e5-e5e5-4e5e-8e5e-e5e5e5e5e5e5'
+  const restartOccurrence = 'restart:a6a6a6a6-a6a6-4a6a-8a6a-a6a6a6a6a6a6'
+  const lessonKey = 'math/today.json'
+  const decision = await resolveSyllabusExecution({
+    repository: repository({
+      forecast: [forecast('today', lessonKey, '2026-08-23')],
+      sessions: [{ id: sessionId, session_id: browserSessionId, learner_id: LEARNER,
+        lesson_id: lessonKey, instructional_teacher: 'webb', started_at: '2026-08-23T15:50:00Z', last_activity_at: '2026-08-23T15:55:00Z' }],
+      events: [{ id: 'd7d7d7d7-d7d7-4d7d-8d7d-d7d7d7d7d7d7', session_id: sessionId,
+        learner_id: LEARNER, lesson_id: lessonKey, event_type: 'started',
+        occurred_at: '2026-08-23T15:50:00Z', metadata: { syllabus_occurrence_id: restartOccurrence } }],
+    }),
+    facilitatorId: FACILITATOR, learnerId: LEARNER,
+    lessonKey, occurrenceId: restartOccurrence, now: new Date('2026-08-23T16:00:00Z'),
+  })
+  assert.equal(decision.instructionalTeacher, 'webb')
+  assert.equal(decision.scope.occurrenceId, restartOccurrence)
+})
+
 const CHURN_OLD_ID = 'b2b2b2b2-b2b2-4b2b-8b2b-b2b2b2b2b2b2'
 const CHURN_CURRENT_ID = 'c3c3c3c3-c3c3-4c3c-8c3c-c3c3c3c3c3c3'
 const CHURN_LINEAGE_ID = 'd4d4d4d4-d4d4-4d4d-8d4d-d4d4d4d4d4d4'

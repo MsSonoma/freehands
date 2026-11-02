@@ -204,7 +204,11 @@ export async function resolveSyllabusExecution({
   }
   const isToday = clean(occurrence.planned_date).slice(0, 10) === calendar.today
   const completedRepeat = occurrence.actual_kind === 'completed'
-  const instructionalTeacher = normalizeInstructionalTeacher(occurrence.assigned_instructional_teacher || occurrence.instructional_teacher) || DEFAULT_INSTRUCTIONAL_TEACHER
+  const instructionalTeacher = normalizeInstructionalTeacher(
+    requestedOccurrenceId.startsWith('restart:') && occurrence.placement_kind === 'actual'
+      ? occurrence.actual_instructional_teacher
+      : (occurrence.assigned_instructional_teacher || occurrence.instructional_teacher)
+  ) || DEFAULT_INSTRUCTIONAL_TEACHER
   const resolvedFromSourceOccurrence = sourceMatches.length > 0 && occurrence === continuedSource
   const resumeBrowserSessionId = resolvedFromSourceOccurrence
     && occurrence?.placement_kind === 'actual'

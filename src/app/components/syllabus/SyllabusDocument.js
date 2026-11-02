@@ -535,7 +535,7 @@ export default function SyllabusDocument({
         </div>
         {!contentLoading && isForecastWeek && role === 'facilitator' && (forecastBusy || forecastError || (!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage)) && <div className={styles.forecastStatus}>
           {forecastBusy && <p role="status">Preparing lesson suggestions for the coming seven days...</p>}
-          {!forecastBusy && forecastError && <div role="alert"><p>Lesson suggestions could not be prepared. Your existing lessons are unchanged.</p>{onRetryForecast && <button type="button" disabled={planningBusy} onClick={onRetryForecast}>Retry forecast</button>}</div>}
+          {!forecastBusy && forecastError && <div role="alert"><p>Lesson suggestions could not be prepared. Your existing lessons are unchanged.</p>{onRetryForecast && <button type="button" disabled={planningBusy} onClick={onRetryForecast}>Retry forecast</button>}{dayAction && <button type="button" onClick={() => dayAction(today)}>Plan a lesson yourself</button>}</div>}
           {!forecastBusy && !forecastError && projectedForecast.length === 0 && forecastMessage && <p>{forecastMessage}</p>}
         </div>}
       </section>

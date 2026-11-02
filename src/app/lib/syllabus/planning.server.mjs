@@ -137,7 +137,7 @@ export async function editFacilitatorConcept({ repository, facilitatorId, learne
   if (matches.length !== 1 || matches[0].lesson_key || String(matches[0].planned_date).slice(0, 10) < today) throw new SyllabusError('This concept is unavailable for editing.', 409, 'CONCEPT_NOT_EDITABLE')
   if (typeof repository.findForecastMaterialization === 'function') {
     const receipt = await repository.findForecastMaterialization(current.syllabus.id, lineageId)
-    if (receipt && (receipt.lesson_key || receipt.status !== 'generation_failed')) throw new SyllabusError('Finish recovery for this lesson before changing it.', 409, 'MATERIALIZATION_RECOVERY_REQUIRED')
+    if (receipt && (receipt.lesson_key || !['generation_failed', 'recovery_required'].includes(receipt.status))) throw new SyllabusError('Finish recovery for this lesson before changing it.', 409, 'MATERIALIZATION_RECOVERY_REQUIRED')
   }
   const fields = conceptFields({ title, description })
   const original = matches[0]
@@ -194,7 +194,7 @@ export async function replaceLearningForecastConcept({ repository, facilitatorId
   await assertInstructionalDateOpen(repository, facilitatorId, learnerId, String(selected.planned_date).slice(0, 10))
   if (typeof repository.findForecastMaterialization === 'function') {
     const receipt = await repository.findForecastMaterialization(current.syllabus.id, lineageId)
-    if (receipt && (receipt.lesson_key || receipt.status !== 'generation_failed')) throw new SyllabusError('Finish recovery for this lesson before changing it.', 409, 'MATERIALIZATION_RECOVERY_REQUIRED')
+    if (receipt && (receipt.lesson_key || !['generation_failed', 'recovery_required'].includes(receipt.status))) throw new SyllabusError('Finish recovery for this lesson before changing it.', 409, 'MATERIALIZATION_RECOVERY_REQUIRED')
   }
   const requestedChange = clean(changeRequest, 2000)
   const authorizedReports = reports || await loadReports({ repository, facilitatorId, learnerId, resolveLesson })
