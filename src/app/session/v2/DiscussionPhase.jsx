@@ -63,6 +63,7 @@ export class DiscussionPhase {
   #playRequested      = false;
   #overviewSentences  = [];        // string[]
   #vocabItems         = [];        // { term, definition }[]
+  #wordsReminderText  = '';
   #transitionText     = '';        // spoken after last vocab before chat opens
   #sentenceAudios     = new Map(); // key → base64 audio
   #currentSentenceKey = null;      // 'ov:N' | 'voc:N' | 'trans:0'
@@ -145,12 +146,14 @@ export class DiscussionPhase {
     }
 
     this.#vocabItems = (this.#lessonData?.vocab || []).slice(0, 10);
+    this.#wordsReminderText = 'Remember, you can always review these terms and get help understanding them with the "words" button.';
     this.#transitionText = `Do you have any questions? What do you already know about ${this.#lessonTitle}?`;
 
     // Prefetch all TTS audio in parallel
     const allItems = [
       ...this.#overviewSentences.map((t, i) => ({ key: `ov:${i}`, text: t })),
       ...this.#vocabItems.map((v, i) => ({ key: `voc:${i}`, text: `${v.term}: ${v.definition}.` })),
+      ...(this.#vocabItems.length ? [{ key: 'rem:0', text: this.#wordsReminderText }] : []),
       { key: 'trans:0', text: this.#transitionText },
     ];
     await Promise.all(allItems.map(async ({ key, text }) => {
@@ -509,7 +512,7 @@ export class DiscussionPhase {
       const key = this.#resumeSentenceKey;
       this.#resumeSentenceKey = null;
       this.#currentSentenceKey = key;
-      this.#state = key.startsWith('voc:') ? 'playing-vocab' : 'playing-overview';
+      this.#state = (key.startsWith('voc:') || key === 'rem:0') ? 'playing-vocab' : 'playing-overview';
       this.#emitStateChange();
       this.#eventBus.emit('greetingPlaying', { greetingText: '' });
       this.#playSentence(key, { addToHistory: false });
@@ -595,6 +598,7 @@ export class DiscussionPhase {
   #getNextKey(key) {
     if (!key) return null;
     if (key === 'trans:0') return null;
+    if (key === 'rem:0') return 'trans:0';
     if (key.startsWith('ov:')) {
       const idx = parseInt(key.slice(3), 10);
       if (idx + 1 < this.#overviewSentences.length) return `ov:${idx + 1}`;
@@ -603,11 +607,12 @@ export class DiscussionPhase {
     } else {
       const idx = parseInt(key.slice(4), 10);
       if (idx + 1 < this.#vocabItems.length) return `voc:${idx + 1}`;
-      return 'trans:0';
+      return 'rem:0';
     }
   }
 
   #getSentenceForKey(key) {
+    if (key === 'rem:0') return { type: 'words-reminder', index: 0, total: 1, text: this.#wordsReminderText };
     if (key === 'trans:0') {
       return { type: 'transition', index: 0, total: 1, text: this.#transitionText };
     }

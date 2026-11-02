@@ -945,6 +945,7 @@ function SessionPageV2Inner() {
   const [showDiscussionObjectives, setShowDiscussionObjectives] = useState(false);
   const [showFullDiscussionObjectives, setShowFullDiscussionObjectives] = useState(false);
   const [newlyCompletedDiscussionObj, setNewlyCompletedDiscussionObj] = useState(null); // {text, completedCount, totalCount}
+  const [wordsReminderSpeaking, setWordsReminderSpeaking] = useState(false);
   const [discussionSentenceInfo, setDiscussionSentenceInfo] = useState({ type: 'overview', index: 0, total: 0, text: '', waitingForNext: false });
 
   // Learner-turn response pacing is intentionally separate from work/play timers and mastery evidence.
@@ -5808,6 +5809,7 @@ function SessionPageV2Inner() {
     // discussionSentenceChange — track current sentence for Repeat/Next UI
     const unsubSentenceChange = eventBusRef.current.on('discussionSentenceChange', (data) => {
       setDiscussionSentenceInfo(data);
+      setWordsReminderSpeaking(data.type === 'words-reminder' && !data.waitingForNext);
     });
 
     // Subscribe to events (capture unsubs so we can cleanly tear down)
@@ -8820,7 +8822,8 @@ function SessionPageV2Inner() {
                   placeItems: 'center',
                   borderRadius: 999,
                   cursor: 'pointer',
-                  boxShadow: '0 2px 8px rgba(124,58,237,0.32)',
+                  boxShadow: wordsReminderSpeaking ? '0 0 0 4px rgba(196,181,253,0.95), 0 0 24px 10px rgba(167,139,250,0.85)' : '0 2px 8px rgba(124,58,237,0.32)',
+                  transition: 'box-shadow 180ms ease',
                   fontSize: 'clamp(13px, 2.2vw, 16px)',
                   fontWeight: 800,
                 }}
