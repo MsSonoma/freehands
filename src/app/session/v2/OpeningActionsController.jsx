@@ -51,6 +51,7 @@ export class OpeningActionsController {
   #difficulty;
 
   #actionNonce = 0;
+  #helpSpeechNonce = 0;
   #askHistory = [];
   #studyHistory = [];
   #interactionId = null;
@@ -96,6 +97,7 @@ export class OpeningActionsController {
    */
   async startAsk() {
     this.#actionNonce += 1;
+    this.#stopHelpSpeech();
     this.#currentAction = 'ask';
     this.#askHistory = [];
     this.#interactionId = makeInteractionId();
@@ -104,13 +106,14 @@ export class OpeningActionsController {
       stage: 'awaiting-input', // 'awaiting-input' | 'confirming' | 'generating' | 'complete'
       question: '',
       answer: '',
+      history: [],
       interactionId: this.#interactionId,
       turnIndex: 0,
     };
 
     this.#eventBus.emit('openingActionStart', { action: 'ask', type: 'ask', phase: this.#phase });
     const greeting = 'I\'m listening. What would you like to know?';
-    await this.#audioEngine.speak(greeting);
+    void this.#speakStudy(greeting);
     return { success: true, message: 'Ask action started', interactionId: this.#interactionId };
   }
   
@@ -188,12 +191,15 @@ export class OpeningActionsController {
       this.#actionState.diagnostic = diagnostic;
       this.#actionState.strategy = strategy;
       this.#actionState.stage = 'complete';
+      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') return { success: false, cancelled: true };
       this.#askHistory.push({ role: 'user', content: String(question || '') }, { role: 'assistant', content: answer });
-
-      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') return { success: false, cancelled: true };
-      try { await this.#audioEngine.speak(answer); } catch {}
-      if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') return { success: false, cancelled: true };
-      try { await this.#audioEngine.speak('Do you have any more questions?'); } catch {}
+      this.#actionState.history = [...this.#askHistory];
+      const followUp = 'Do you have any more questions?';
+      this.#askHistory.push({ role: 'assistant', content: followUp });
+      this.#actionState.history = [...this.#askHistory];
+      // Return the answer to the panel now, not after TTS has finished. Each
+      // visible sentence can interrupt the full response for targeted replay.
+      void this.#speakStudy(`${answer} ${followUp}`);
 
       return { success: true, answer, diagnostic, strategy, interactionId: this.#interactionId, turnIndex };
     } catch (err) {
@@ -204,9 +210,10 @@ export class OpeningActionsController {
       this.#actionState.diagnostic = diagnostic;
       this.#actionState.strategy = 'other';
       this.#actionState.stage = 'complete';
-      this.#askHistory.push({ role: 'user', content: String(question || '') }, { role: 'assistant', content: fallback });
       if (nonce !== this.#actionNonce || this.#currentAction !== 'ask') return { success: false, cancelled: true };
-      try { await this.#audioEngine.speak(fallback); } catch {}
+      this.#askHistory.push({ role: 'user', content: String(question || '') }, { role: 'assistant', content: fallback });
+      this.#actionState.history = [...this.#askHistory];
+      void this.#speakStudy(fallback);
       return { success: true, answer: fallback, diagnostic, strategy: 'other', interactionId: this.#interactionId, turnIndex, degraded: true };
     }
   }
@@ -228,6 +235,8 @@ export class OpeningActionsController {
     this.#actionState.question = userText;
     this.#actionState.answer = assistantText;
     this.#actionState.stage = 'complete';
+    this.#actionState.history = [...this.#askHistory];
+    this.#stopHelpSpeech();
     return { success: true, answer: assistantText };
   }
 
@@ -236,7 +245,8 @@ export class OpeningActionsController {
 
     // Invalidate any in-flight ask work/speech.
     this.#actionNonce += 1;
-    
+    this.#stopHelpSpeech();
+
     this.#eventBus.emit('openingActionCancel', {
       action: 'ask',
       type: 'ask',
@@ -255,7 +265,8 @@ export class OpeningActionsController {
 
     // Invalidate any in-flight ask work/speech.
     this.#actionNonce += 1;
-    
+    this.#stopHelpSpeech();
+
     this.#eventBus.emit('openingActionComplete', {
       action: 'ask',
       type: 'ask',
@@ -269,17 +280,43 @@ export class OpeningActionsController {
   /**
    * Start Riddle action
    */
+  #stopHelpSpeech() {
+    this.#helpSpeechNonce += 1;
+    try { this.#studyAudioEngine?.stop?.(); } catch {}
+  }
+
+  // Ask, Study, and tap-to-replay share exactly one interruptible help audio path.
+  // A slow TTS response may never restart a line after the learner taps another.
   async #speakStudy(text) {
     const spoken = String(text || '').trim();
     const engine = this.#studyAudioEngine;
-    if (!spoken || !engine) return;
-    if (typeof engine.speak === 'function') {
-      await engine.speak(spoken);
-      return;
-    }
+    if (!spoken || !engine || !['ask', 'study'].includes(this.#currentAction)) return false;
+    this.#stopHelpSpeech();
+    const speechNonce = this.#helpSpeechNonce;
+    const actionNonce = this.#actionNonce;
     let audioBase64 = null;
-    try { audioBase64 = await fetchTTS(spoken); } catch {}
-    if (typeof engine.playAudio === 'function') await engine.playAudio(audioBase64, [spoken]);
+    try { audioBase64 = await fetchTTS(spoken); } catch (error) {
+      console.warn('[OpeningActionsController] Help TTS unavailable:', error);
+    }
+    if (speechNonce !== this.#helpSpeechNonce || actionNonce !== this.#actionNonce ||
+        !['ask', 'study'].includes(this.#currentAction)) return false;
+    try {
+      if (typeof engine.playAudio === 'function') await engine.playAudio(audioBase64 || '', [spoken]);
+      else if (typeof engine.speak === 'function') await engine.speak(spoken);
+    } catch (error) {
+      console.warn('[OpeningActionsController] Help playback failed:', error);
+    }
+    return speechNonce === this.#helpSpeechNonce && actionNonce === this.#actionNonce;
+  }
+
+  replayHelpSentence(sentence) {
+    const spoken = String(sentence || '').trim();
+    if (!['ask', 'study'].includes(this.#currentAction) || !spoken) return false;
+    // Only actual Ms. Sonoma response text may be replayed; this is not a new model turn.
+    const history = this.#currentAction === 'ask' ? this.#askHistory : this.#studyHistory;
+    if (!history.some(turn => turn.role === 'assistant' && String(turn.content || '').includes(spoken))) return false;
+    void this.#speakStudy(spoken);
+    return true;
   }
 
   setPhase(phase) {
@@ -299,6 +336,7 @@ export class OpeningActionsController {
     if (!normalizedTarget.text && !normalizedTarget.term) return { success: false, error: 'Study target required' };
 
     this.#actionNonce += 1;
+    this.#stopHelpSpeech();
     this.#currentAction = 'study';
     this.#studyHistory = [];
     this.#interactionId = makeInteractionId();
@@ -430,7 +468,7 @@ export class OpeningActionsController {
   completeStudy() {
     if (this.#currentAction !== 'study') return;
     this.#actionNonce += 1;
-    try { this.#studyAudioEngine?.stop?.(); } catch {}
+    this.#stopHelpSpeech();
     this.#eventBus.emit('openingActionComplete', {
       action: 'study',
       type: 'study',
@@ -1119,7 +1157,7 @@ export class OpeningActionsController {
    */
   destroy() {
     this.#actionNonce += 1;
-    try { this.#studyAudioEngine?.stop?.(); } catch {}
+    this.#stopHelpSpeech();
     this.#currentAction = null;
     this.#actionState = {};
     this.#studyHistory = [];
@@ -1133,9 +1171,7 @@ export class OpeningActionsController {
 
     // Invalidate any in-flight action work/speech.
     this.#actionNonce += 1;
-    if (this.#currentAction === 'study') {
-      try { this.#studyAudioEngine?.stop?.(); } catch {}
-    }
+    if (this.#currentAction === 'study' || this.#currentAction === 'ask') this.#stopHelpSpeech();
     this.#eventBus.emit('openingActionCancel', {
       action: this.#currentAction,
       type: this.#currentAction,

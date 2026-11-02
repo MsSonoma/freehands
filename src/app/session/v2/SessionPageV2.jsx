@@ -65,6 +65,8 @@ import { createAssessmentPdf, shareOrPreviewPdf as shareOrPreviewAssessmentPdf }
 import CaptionPanel from '../components/CaptionPanel';
 import SonomaBackgroundMusicControl from '../components/SonomaBackgroundMusicControl';
 import StudyPanel from './StudyPanel';
+import HelpReplaySentence from './HelpReplaySentence';
+import { splitHelpSentences } from './helpSentenceReplay.mjs';
 import VocabularyPanel from './VocabularyPanel';
 import { normalizeLessonVocabulary, getVocabularyTerms, buildVocabularyPromptChunk } from '@/app/lib/lessonVocabulary.mjs';
 import FeatureHelpToast from '../components/FeatureHelpToast';
@@ -632,6 +634,8 @@ function SessionPageV2Inner() {
   const captionReplayRequestRef = useRef(0);
   const studyAudioEngineRef = useRef(null);
   const studyResumeMainAudioRef = useRef(false);
+  const askResumeMainAudioRef = useRef(false);
+  const askExitAudioTokenRef = useRef(0);
   const wordsResumeMainAudioRef = useRef(false);
   const eventBusRef = useRef(null); // Shared EventBus for all services
   const orchestratorRef = useRef(null);
@@ -1786,6 +1790,16 @@ function SessionPageV2Inner() {
       cancelled = true;
     };
   }, [subjectParam, visualAidsLessonKey]);
+
+  const stopTranscriptReplayAudio = useCallback(() => {
+    captionReplayRequestRef.current += 1;
+    const replay = captionReplayAudioRef.current;
+    captionReplayAudioRef.current = null;
+    if (replay) {
+      try { replay.pause(); } catch {}
+      try { replay.src = ''; } catch {}
+    }
+  }, []);
 
   const stopAudioSafe = useCallback((options = {}) => {
     const force = options?.force === true;
@@ -3800,48 +3814,6 @@ function SessionPageV2Inner() {
     }, 500);
   }, [currentPhase, lessonKey, stopAudioSafe]);
 
-  // Opening actions helpers
-  const speakSystemLine = useCallback(async (text) => {
-    const spoken = String(text ?? '').trim();
-    if (!spoken) return false;
-    if (!audioEngineRef.current) return false;
-
-    // Prefer AudioEngine.speak when available (OpeningActionsController provides a shim)
-    if (typeof audioEngineRef.current.speak === 'function') {
-      try {
-        await audioEngineRef.current.speak(spoken);
-        return true;
-      } catch (err) {
-        console.warn('[SessionPageV2] speakSystemLine via speak() failed:', err);
-      }
-    }
-
-    try {
-      const audioBase64 = await fetchTTS(spoken);
-      await audioEngineRef.current.playAudio(audioBase64, [spoken]);
-      return true;
-    } catch (err) {
-      console.warn('[SessionPageV2] speakSystemLine playback failed:', err);
-      return false;
-    }
-  }, []);
-
-  const speakSystemLineHardened = useCallback(async (text) => {
-    const spoken = String(text ?? '').trim();
-    if (!spoken) return false;
-
-    // Try twice to handle race conditions right after a stop.
-    const ok1 = await speakSystemLine(spoken);
-    if (ok1) return true;
-
-    await new Promise((r) => setTimeout(r, 80));
-    const ok2 = await speakSystemLine(spoken);
-    if (!ok2) {
-      console.warn('[SessionPageV2] speakSystemLineHardened failed to speak:', spoken);
-    }
-    return ok2;
-  }, [speakSystemLine]);
-
   const persistSonomaResponseTurn = useCallback((turn, phaseOverride = null) => {
     const service = snapshotServiceRef.current;
     const phase = phaseOverride || turn?.phase || currentPhaseRef.current;
@@ -4199,10 +4171,19 @@ function SessionPageV2Inner() {
       closeStudyAction();
       return;
     }
-    if (openingActionType === 'ask') endSonomaHelpHold();
     const controller = openingActionsControllerRef.current;
-    stopAudioSafe({ force: true });
-    if (controller?.cancelCurrent) controller.cancelCurrent();
+    const wasAsk = openingActionType === 'ask';
+    askExitAudioTokenRef.current += 1;
+    askExitSpeechLockRef.current = false;
+    if (!wasAsk) stopAudioSafe({ force: true });
+    controller?.cancelCurrent?.();
+    if (wasAsk) {
+      endSonomaHelpHold();
+      try { studyAudioEngineRef.current?.stop?.(); } catch {}
+      const resume = askResumeMainAudioRef.current;
+      askResumeMainAudioRef.current = false;
+      if (resume) void audioEngineRef.current?.resume?.();
+    }
     setOpeningActionActive(false);
     setOpeningActionType(null);
     setOpeningActionState({});
@@ -4591,6 +4572,9 @@ function SessionPageV2Inner() {
     if (!controller || !['discussion', 'teaching', 'comprehension', 'exercise', 'worksheet'].includes(phase)) return;
 
     beginSonomaHelpHold();
+    askExitAudioTokenRef.current += 1;
+    askExitSpeechLockRef.current = false;
+    stopTranscriptReplayAudio();
     const wordsHadMainAudio = wordsResumeMainAudioRef.current === true;
     wordsResumeMainAudioRef.current = false;
     setShowWords(false);
@@ -4623,7 +4607,7 @@ function SessionPageV2Inner() {
       if (shouldResume) void mainAudio?.resume?.();
       setOpeningActionError('Study is unavailable right now.');
     }
-  }, [beginSonomaHelpHold, currentPhase, endSonomaHelpHold, syncOpeningActionState, teachingStage]);
+  }, [beginSonomaHelpHold, currentPhase, endSonomaHelpHold, stopTranscriptReplayAudio, syncOpeningActionState, teachingStage]);
 
   const handleStudySubmit = useCallback(async (mode = 'typed') => {
     const controller = openingActionsControllerRef.current;
@@ -4688,20 +4672,34 @@ function SessionPageV2Inner() {
     const controller = openingActionsControllerRef.current;
     if (!controller || openingActionBusy) return;
     beginSonomaHelpHold();
+    askExitAudioTokenRef.current += 1;
+    askExitSpeechLockRef.current = false;
+    stopTranscriptReplayAudio();
+    const mainAudio = audioEngineRef.current;
+    const isDiscussion = normalizePhaseAlias(currentPhaseRef.current) === 'discussion';
+    const wasPlaying = !!mainAudio?.isPlaying && !isDiscussion;
+    askResumeMainAudioRef.current = wasPlaying;
+    if (wasPlaying) {
+      try { mainAudio.pause(); } catch {}
+    }
     askReturnQuestionRef.current = getActiveFlowQuestionText();
-    if (normalizePhaseAlias(currentPhaseRef.current) === 'discussion') discussionPhaseRef.current?.pauseForHelp();
+    if (isDiscussion) discussionPhaseRef.current?.pauseForHelp();
     setOpeningActionError('');
     setOpeningActionBusy(true);
     try {
+      try { await studyAudioEngineRef.current?.initialize?.(); } catch {}
       await controller.startAsk();
     } catch (err) {
       endSonomaHelpHold();
+      const resume = askResumeMainAudioRef.current;
+      askResumeMainAudioRef.current = false;
+      if (resume) void mainAudio?.resume?.();
       console.error('[SessionPageV2] Ask start error:', err);
       setOpeningActionError('Ask is unavailable right now. Try again.');
     } finally {
       setOpeningActionBusy(false);
     }
-  }, [beginSonomaHelpHold, endSonomaHelpHold, openingActionBusy, getActiveFlowQuestionText]);
+  }, [beginSonomaHelpHold, endSonomaHelpHold, openingActionBusy, getActiveFlowQuestionText, stopTranscriptReplayAudio]);
 
   const handleOpeningAskSubmit = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -4829,23 +4827,32 @@ function SessionPageV2Inner() {
   const handleOpeningAskDone = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
     const askReminder = askReturnQuestionRef.current;
-    // Stop any playing audio before completing
-    stopAudioSafe({ force: true });
+    const token = ++askExitAudioTokenRef.current;
+    askExitSpeechLockRef.current = true;
+    // Ask now speaks through the help engine; the main lesson remains paused.
     controller?.completeAsk?.();
-
     askAnswerShortcutLoadingRef.current = false;
     setAskAnswerShortcutLoading(false);
-
+    const resume = askResumeMainAudioRef.current;
+    askResumeMainAudioRef.current = false;
+    askReturnQuestionRef.current = '';
     if (askReminder) {
-      askExitSpeechLockRef.current = true;
       try {
-        await speakSystemLineHardened(askReminder);
-      } finally {
-        askExitSpeechLockRef.current = false;
+        const audio = await fetchTTS(askReminder);
+        if (token === askExitAudioTokenRef.current) {
+          await studyAudioEngineRef.current?.playAudio(audio || '', [askReminder]);
+        }
+      } catch (err) {
+        console.warn('[SessionPageV2] Ask reminder playback unavailable:', err);
       }
     }
-    askReturnQuestionRef.current = '';
-  }, [stopAudioSafe, speakSystemLineHardened]);
+    if (token === askExitAudioTokenRef.current) {
+      askExitSpeechLockRef.current = false;
+      if (resume) {
+        try { await audioEngineRef.current?.resume?.(); } catch {}
+      }
+    }
+  }, []);
 
   const handleOpeningRiddleHint = useCallback(async () => {
     const controller = openingActionsControllerRef.current;
@@ -5178,6 +5185,16 @@ function SessionPageV2Inner() {
     // Subscribe to AudioEngine events
     engine.on('start', (data) => {
       addEvent('ðŸŽ¬ AudioEngine START');
+      if (openingActionActiveRef.current && ['ask', 'study'].includes(openingActionsControllerRef.current?.getState?.()?.action)) {
+        // An async lesson TTS result may arrive after Ask/Study has opened.
+        // Hold it rather than speaking over Ms. Sonoma's help response.
+        try { engine.pause(); } catch {}
+        setTimeout(() => {
+          if (openingActionActiveRef.current && ['ask', 'study'].includes(openingActionsControllerRef.current?.getState?.()?.action)) {
+            try { engine.pause(); } catch {}
+          }
+        }, 50);
+      }
       captionReplayRequestRef.current += 1;
       if (captionReplayAudioRef.current) {
         try { captionReplayAudioRef.current.pause(); } catch {}
@@ -5625,7 +5642,15 @@ function SessionPageV2Inner() {
     if (!lessonData || !audioReady || !audioEngineRef.current || !eventBusRef.current) return;
 
     const studyEngine = new AudioEngine({ videoElement: videoRef.current });
+    studyEngine.setMuted?.(audioEngineRef.current?.isMuted === true);
     studyAudioEngineRef.current = studyEngine;
+    // The main transcript and Ask/Study are separate players. Help takes audio
+    // ownership until it finishes; a detached transcript replay cannot keep talking.
+    const onHelpAudioStart = () => {
+      stopTranscriptReplayAudio();
+      try { audioEngineRef.current?.pause?.(); } catch {}
+    };
+    studyEngine.on('start', onHelpAudioStart);
     const openingController = new OpeningActionsController(
       eventBusRef.current,
       audioEngineRef.current,
@@ -5685,6 +5710,7 @@ function SessionPageV2Inner() {
       try { unsubComplete?.(); } catch {}
       try { unsubCancel?.(); } catch {}
       try { openingController.destroy(); } catch {}
+      studyEngine.off('start', onHelpAudioStart);
       try { studyEngine.stop(); } catch {}
       studyAudioEngineRef.current = null;
       openingActionsControllerRef.current = null;
@@ -5695,7 +5721,11 @@ function SessionPageV2Inner() {
       setOpeningActionError('');
       setOpeningActionBusy(false);
     };
-  }, [lessonData, audioReady, beginSonomaHelpHold, endSonomaHelpHold]);
+  }, [lessonData, audioReady, beginSonomaHelpHold, endSonomaHelpHold, stopTranscriptReplayAudio]);
+
+  useEffect(() => {
+    studyAudioEngineRef.current?.setMuted?.(isMuted);
+  }, [isMuted, audioReady]);
 
   useEffect(() => {
     openingActionsControllerRef.current?.setPhase?.(normalizePhaseAlias(currentPhase));
@@ -9091,6 +9121,7 @@ function SessionPageV2Inner() {
             error={openingActionError}
             onSubmit={() => handleStudySubmit('typed')}
             onQuickAction={handleStudySubmit}
+            onReplaySentence={(sentence) => openingActionsControllerRef.current?.replayHelpSentence(sentence)}
             onClose={closeStudyAction}
             inputRef={openingActionInputRef}
           />
@@ -9493,9 +9524,20 @@ function SessionPageV2Inner() {
                         </button>
                       </div>
                     </div>
-                    {data.answer ? (
-                      <div style={{ marginTop: 6, fontSize: '0.85rem', fontWeight: 600 }}>
-                        Answer: <span style={{ fontWeight: 400 }}>{data.answer}</span>
+                    {Array.isArray(data.history) && data.history.length > 0 ? (
+                      <div aria-label="Ask conversation" style={{ marginTop: 8, maxHeight: '25vh', overflowY: 'auto', display: 'grid', gap: 6 }}>
+                        {data.history.map((turn, index) => (
+                          <div key={`${turn.role}-${index}`} style={{ fontSize: 14, lineHeight: 1.5,
+                            background: turn.role === 'user' ? '#f1f5f9' : '#fff',
+                            borderRadius: 8, padding: '7px 9px', color: '#111827' }}>
+                            <strong>{turn.role === 'user' ? 'You' : 'Ms. Sonoma'}:</strong>{' '}
+                            {turn.role === 'user' ? (turn.content || '') :
+                              splitHelpSentences(turn.content).map((sentence, sentenceIndex) => (
+                                <HelpReplaySentence key={sentenceIndex} text={sentence} theme="ask"
+                                  onReplay={(text) => openingActionsControllerRef.current?.replayHelpSentence(text)} />
+                              ))}
+                          </div>
+                        ))}
                       </div>
                     ) : null}
                     {errorText}

@@ -1,4 +1,7 @@
-﻿'use client';
+'use client';
+
+import HelpReplaySentence from './HelpReplaySentence';
+import { splitHelpSentences } from './helpSentenceReplay.mjs';
 
 export default function StudyPanel({
   state = {},
@@ -8,6 +11,7 @@ export default function StudyPanel({
   error = '',
   onSubmit,
   onQuickAction,
+  onReplaySentence,
   onClose,
   inputRef,
 }) {
@@ -45,7 +49,11 @@ export default function StudyPanel({
         ) : history.map((turn, index) => (
           <div key={`${turn.role || 'turn'}-${index}`} style={{ marginBottom: 9, display: 'flex', justifyContent: turn.role === 'user' ? 'flex-end' : 'flex-start' }}>
             <div style={{ maxWidth: '88%', padding: '8px 10px', borderRadius: 10, background: turn.role === 'user' ? '#fee2e2' : '#fff', border: turn.role === 'user' ? '1px solid #fecaca' : '1px solid #e5e7eb', color: '#111827', whiteSpace: 'pre-wrap' }}>
-              <strong style={{ color: turn.role === 'user' ? '#991b1b' : '#92400e' }}>{turn.role === 'user' ? 'You' : 'Ms. Sonoma'}:</strong>{' '}{turn.content || turn.text || ''}
+              <strong style={{ color: turn.role === 'user' ? '#991b1b' : '#92400e' }}>{turn.role === 'user' ? 'You' : 'Ms. Sonoma'}:</strong>{' '}
+              {turn.role === 'user' ? (turn.content || turn.text || '') :
+                splitHelpSentences(turn.content || turn.text).map((sentence, sentenceIndex) => (
+                  <HelpReplaySentence key={sentenceIndex} text={sentence} onReplay={onReplaySentence} />
+                ))}
             </div>
           </div>
         ))}
