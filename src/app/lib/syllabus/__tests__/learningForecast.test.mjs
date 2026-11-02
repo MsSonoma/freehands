@@ -1079,6 +1079,38 @@ test('true materialization ambiguity enters recovery-required without blind rege
   assert.equal(repository.state.receipts[0].lesson_key, null)
 })
 
+test('facilitator retry reclaims an interrupted generation and produces a reviewable draft', async () => {
+  const repository = forecastRepository({ forecast: [item({ origin: 'learning_forecast' })] })
+  const receiptId = 'eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee'
+  repository.claimForecastMaterialization = async ({ syllabusId, lineageId, generationInputHash }) => {
+    const existing = repository.state.receipts.find((row) => row.id === receiptId)
+    if (existing) return { claimed: false, receipt: structuredClone(existing) }
+    const receipt = { id: receiptId, syllabus_id: syllabusId, lineage_id: lineageId, generation_input_hash: generationInputHash, lesson_key: null, status: 'recovery_required' }
+    repository.state.receipts.push(receipt)
+    return { claimed: false, receipt: structuredClone(receipt) }
+  }
+  let claims = 0
+  repository.claimRecoveryMaterialization = async (id) => {
+    claims++
+    const receipt = repository.state.receipts.find((row) => row.id === id)
+    if (receipt?.status !== 'recovery_required') return false
+    receipt.status = 'generating'
+    return true
+  }
+  const result = await materializeForecastOccurrence({
+    setInferenceSuppressed: preserveInferenceSuppression,
+    repository, facilitatorId: FACILITATOR, learnerId: LEARNER, lineageId: LINEAGE_A,
+    expectedActiveRevisionId: ACTIVE, retryRecovery: true, now: NOW,
+    generateLesson: async ({ materializationOperation }) => {
+      assert.equal(materializationOperation.recoverOnly, false)
+      return { lessonKey: 'generated/syllabus-materialization-eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee.json' }
+    },
+  })
+  assert.equal(claims, 1)
+  assert.equal(result.lesson_key, 'generated/syllabus-materialization-eeeeeeee-eeee-4eee-8eee-eeeeeeeeeeee.json')
+  assert.equal(repository.state.receipts[0].status, 'bound')
+})
+
 test('missing authoritative learner grade fails before adoption or generation', async () => {
   const repository = forecastRepository({ forecast: [] })
   const proposal = await createLearningForecastProposal({

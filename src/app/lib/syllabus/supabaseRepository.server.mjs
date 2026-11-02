@@ -149,6 +149,14 @@ export function createSyllabusRepository(admin) {
       throwOn(error, 'Failed to claim forecast materialization')
       return data
     },
+    async claimRecoveryMaterialization(receiptId) {
+      const { data, error } = await admin.from('syllabus_forecast_materializations')
+        .update({ status: 'generating', last_error: null, updated_at: new Date().toISOString() })
+        .eq('id', receiptId).eq('status', 'recovery_required').is('lesson_key', null)
+        .select('id').maybeSingle()
+      throwOn(error, 'Failed to retry lesson generation')
+      return Boolean(data?.id)
+    },
     async listForecastMaterializationStates(syllabusId) {
       const { data, error } = await admin.from('syllabus_forecast_materializations')
         .select('lineage_id,status').eq('syllabus_id', syllabusId)

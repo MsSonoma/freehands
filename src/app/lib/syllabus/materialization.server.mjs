@@ -110,6 +110,7 @@ export async function materializeForecastOccurrence({
   expectedActiveRevisionId,
   proposalRevisionId = null,
   existingLesson = null,
+  retryRecovery = false,
   generateLesson,
   setInferenceSuppressed = setLessonAssociationInferenceSuppressed,
   now = new Date(),
@@ -277,6 +278,14 @@ export async function materializeForecastOccurrence({
   if (receipt.generation_input_hash !== inputHash) {
     throw new SyllabusError('This forecast intent changed after a lesson artifact was generated. Review the current concept before binding.', 409, 'MATERIALIZATION_INPUT_CHANGED')
   }
+  let generationClaimed = claim.claimed === true
+  if (!generationClaimed && retryRecovery && receipt.status === 'recovery_required' && !receipt.lesson_key) {
+    generationClaimed = typeof repository.claimRecoveryMaterialization === 'function'
+      && await repository.claimRecoveryMaterialization(receipt.id)
+    if (!generationClaimed) throw new SyllabusError('Another retry is already in progress. Refresh this lesson before retrying.', 409, 'MATERIALIZATION_CONFLICT')
+  } else if (!generationClaimed && retryRecovery && receipt.status === 'generating') {
+    throw new SyllabusError('Lesson generation is already in progress. Refresh this lesson shortly.', 409, 'MATERIALIZATION_CONFLICT')
+  }
   let lessonKey = clean(receipt.lesson_key)
 
   if (!lessonKey) {
@@ -301,7 +310,7 @@ export async function materializeForecastOccurrence({
           syllabusId: syllabus.id,
           lineageId: item.lineage_id,
           generationInputHash: inputHash,
-          recoverOnly: claim.claimed !== true,
+          recoverOnly: !generationClaimed,
         },
       })
       lessonKey = clean(result?.lessonKey)

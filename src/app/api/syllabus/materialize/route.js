@@ -84,6 +84,7 @@ export async function POST(request, deps = {}) {
       expectedActiveRevisionId: body?.expectedActiveRevisionId,
       proposalRevisionId: body?.proposalRevisionId || null,
       existingLesson,
+      retryRecovery: body?.retryRecovery === true,
       generateLesson,
       now: deps.now || new Date(),
       fallbackTimeZone: context.user?.user_metadata?.timezone,

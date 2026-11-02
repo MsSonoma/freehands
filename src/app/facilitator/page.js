@@ -564,7 +564,7 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
   async function materializeForecast(item, { proposal = null, existingLessonKey = '', expectedActiveRevisionId = syllabus?.active_revision?.id } = {}) {
     const lineageId = item?.lineage_id
     const resolvedExistingLessonKey = existingLessonKey || forecastCarryLessonKey(item)
-    if (!lineageId || materializationRequest.current || recoveryRequiredLineages.has(lineageId)) return false
+    if (!lineageId || materializationRequest.current) return false
     const request = { learnerId, lineageId }
     materializationRequest.current = request
     const requestedLearnerId = learnerId
@@ -581,6 +581,7 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
           expectedActiveRevisionId,
           ...(proposal ? { proposalRevisionId: proposal.proposal_revision.id } : {}),
           ...(resolvedExistingLessonKey ? { existingLessonKey: resolvedExistingLessonKey } : {}),
+          retryRecovery: recoveryRequiredLineages.has(lineageId) || item?.generation_status === 'recovery_required',
         }),
       })
       const json = await response.json()
@@ -591,6 +592,7 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
         }
         throw new Error(json.error || (resolvedExistingLessonKey ? 'Could not carry this lesson into the forecast date' : 'Could not generate this forecast lesson'))
       }
+      setRecoveryRequiredLineages((current) => { const next = new Set(current); next.delete(lineageId); return next })
       if (!applySyllabusSnapshot(json.syllabus, requestedLearnerId)) await loadCurrent(requestedLearnerId)
       return true
     } catch (cause) {

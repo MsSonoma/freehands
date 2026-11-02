@@ -21,8 +21,10 @@ test('safe persisted status maintains the one lesson identity without exposing e
   assert.equal(isUngeneratedSyllabusLesson(ready), false)
   assert.equal(withLessonGenerationStates([ready], [{ lineage_id: item.lineage_id, status: 'bound' }])[0].readiness_state, 'draft')
 })
-test('ambiguous recovery blocks changes while an interrupted request offers deterministic resume', () => {
-  assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'recovery_required' }).blocked, true)
+test('interrupted generation offers an actionable retry without enabling concept edits', () => {
+  assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'recovery_required' }).blocked, false)
+  assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'recovery_required' }).action, 'Retry generation')
+  assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'recovery_required' }).canEdit, false)
   assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'generating' }).action, 'Resume generation')
   assert.equal(lessonGenerationPresentation({ ...item, generation_status: 'generating' }).canEdit, false)
 })

@@ -122,7 +122,7 @@ test('follow-up migration makes recovery explicit and quota finalization atomic 
   assert.doesNotMatch(sql, /interval|older than|delete from public\.syllabus_forecast_materializations/i)
   const materialization = fs.readFileSync('src/app/lib/syllabus/materialization.server.mjs', 'utf8')
   const generator = fs.readFileSync('src/app/api/facilitator/lessons/generate/route.js', 'utf8')
-  assert.match(materialization, /recoverOnly: claim\.claimed !== true/)
+  assert.match(materialization, /recoverOnly: !generationClaimed/)
   assert.match(generator, /upsert: false/)
   assert.doesNotMatch(`${materialization}\n${generator}`, /lesson_schedule|scheduleLesson/)
 })
