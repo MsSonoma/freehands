@@ -33,6 +33,22 @@ test('47 times 26 exposes exact partial products and distinct carry sets', () =>
   assert.equal(verticalMathAddressCatalog(problem).operation, 'multiplication')
 })
 
+test('paper layout keeps carries above factors and partial products in one contiguous stack', () => {
+  const problem = buildVerticalMultiplicationProblem(['47', '26'])
+  assert.deepEqual(problem.layout.map((item) => item.rowId || item.id), [
+    'multiply_carry.1',
+    'multiply_carry.2',
+    'operand.1',
+    'operand.2',
+    'factor_rule',
+    'sum_carry',
+    'partial.1',
+    'partial.2',
+    'result_rule',
+    'result',
+  ])
+})
+
 test('123 times 405 retains the zero middle partial as two zero cells', () => {
   const problem = buildVerticalMultiplicationProblem(['123', '405'])
   assert.equal(problem.answer, '49815')

@@ -295,6 +295,15 @@ export default function VerticalMathWorkspace({
             ? 'Sum carry'
             : ''
       : null
+    const carryShift = isMultiplication && row.role === 'multiplication_carry'
+      ? Math.max(0, Number(row.rowIndex || 1) - 1)
+      : 0
+    const displayedCells = carryShift
+      ? row.cells.map((targetCell, targetIndex) => ({
+        targetCell,
+        cell: targetIndex - carryShift >= 0 ? row.cells[targetIndex - carryShift] : null,
+      }))
+      : row.cells.map((cell) => ({ targetCell: cell, cell }))
     return <>
       <div className={[
         styles.mathRow,
@@ -307,15 +316,19 @@ export default function VerticalMathWorkspace({
         data-decimal-row={anyDecimalHidden && row.kind !== 'work' ? row.id : undefined}>
         {multiplicationLabel !== null && <span className={styles.rowLabel} aria-hidden="true">{multiplicationLabel}</span>}
         {operatorNode(symbol, isDesignatedOperatorRow)}
-        {row.cells.map((cell) => <span className={styles.cellWrapper} role="cell" key={cell.id}
-          data-slot={cell.slot}>
-          {partialScratchCellNode(row, cell, decimalConcealed)}
-          {workingNoteNode(cell)}
-          {anyDecimalHidden
-            ? decimalDot(row, cell)
-            : isMultiplication
-              ? !isCoefficientWorkRow && row.decimalPlaces > 0 && cell.place === 0 && <span className={styles.multiplicationDecimal} aria-hidden="true">.</span>
-              : cell.place === 0 && problem.fractionDigits > 0 && <span className={row.kind === 'work' ? styles.decimalGhost : styles.decimal} aria-hidden="true">.</span>}
+        {displayedCells.map(({ targetCell, cell }) => <span className={styles.cellWrapper} role="cell"
+          key={row.id + ':' + targetCell.slot} data-slot={targetCell.slot}>
+          {cell
+            ? <>
+              {partialScratchCellNode(row, cell, decimalConcealed)}
+              {workingNoteNode(cell)}
+              {anyDecimalHidden
+                ? decimalDot(row, cell)
+                : isMultiplication
+                  ? !isCoefficientWorkRow && row.decimalPlaces > 0 && cell.place === 0 && <span className={styles.multiplicationDecimal} aria-hidden="true">.</span>
+                  : cell.place === 0 && problem.fractionDigits > 0 && <span className={row.kind === 'work' ? styles.decimalGhost : styles.decimal} aria-hidden="true">.</span>}
+            </>
+            : <span className={[styles.cell, styles.padding].join(' ')} aria-hidden="true" />}
         </span>)}
       </div>
       {decimalChoices(row, isMultiplication && !operatorHidden)}
@@ -384,12 +397,37 @@ export default function VerticalMathWorkspace({
     ? [...problem.rows.map((row) => ({ type: 'row', rowId: row.id })), { type: 'rule', id: 'result-rule' }, { type: 'row', rowId: problem.resultRow.id }]
     : normalLayout
 
+  function multiplicationWorkRowIsVisible(row) {
+    const explicitlyPresented = row.cells.some((cell) =>
+      !hidden.has(cell.id) || editable.has(cell.id) || highlighted.has(cell.id))
+    if (explicitlyPresented) return true
+    if (!embeddedScratch) return false
+    if (row.role === 'partial_product') {
+      // One multiplier digit has no separate partial-product addition stage:
+      // the learner writes the product directly on the result line.
+      return (problem.partialRows?.length || 0) > 1
+    }
+    if (row.role === 'multiplication_carry' || row.role === 'sum_carry') {
+      return row.cells.some((cell) => noteSlotByCell.has(cell.id))
+    }
+    return true
+  }
+
+  const multiplicationHasVisibleBottomWork = problem.operation === 'multiplication' &&
+    workRows.some((row) => ['partial_product', 'sum_carry'].includes(row.role) && multiplicationWorkRowIsVisible(row))
+
   function layoutNode(item, index) {
-    if (item.type === 'rule') return <div className={styles.mathRule} aria-hidden="true" key={item.id || 'rule-' + index} />
+    if (item.type === 'rule') {
+      if (problem.operation === 'multiplication' && item.id === 'result_rule' && !multiplicationHasVisibleBottomWork) {
+        return null
+      }
+      return <div className={styles.mathRule} aria-hidden="true" key={item.id || 'rule-' + index} />
+    }
     const row = rowsById.get(item.rowId)
     if (!row) return null
     if (problem.operation === 'subtraction' && row.id === 'regroup' &&
       !row.cells.some((cell) => (!hidden.has(cell.id) && cell.value !== null) || editable.has(cell.id))) return null
+    if (problem.operation === 'multiplication' && row.kind === 'work' && !multiplicationWorkRowIsVisible(row)) return null
     const className = row.id === problem.resultRow.id
       ? styles.answerRow
       : (row.kind === 'work' && row.role !== 'partial_product' ? styles.workRow : '')

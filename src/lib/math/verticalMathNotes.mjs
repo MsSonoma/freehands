@@ -53,9 +53,29 @@ export function listVerticalMathWorkingNoteSlots(problem, view) {
   }
 
   if (problem.operation === 'multiplication') {
+    const multiplicandSlots = new Set(
+      (problem.rows?.[0]?.cells || [])
+        .filter((cell) => cell.place !== null && cell.value !== null && cell.slot > 0)
+        .map((cell) => cell.slot),
+    )
+    const needsPartialSum = Array.isArray(problem.partialRows) && problem.partialRows.length > 1
+
     return workRowsOf(problem)
       .filter((row) => row.role === 'multiplication_carry' || row.role === 'sum_carry')
-      .flatMap((row) => row.cells.filter((cell) => cell.place !== null && scratchable(cell)).map((cell) => ({
+      .flatMap((row) => row.cells.filter((cell) => {
+        if (cell.place === null || !scratchable(cell)) return false
+        if (row.role === 'sum_carry') {
+          // A one-digit multiplier has no partial-product addition step. For
+          // longer multipliers, addition carries can only land to the left of
+          // the rightmost working column.
+          return needsPartialSum && cell.slot > 0
+        }
+        // Canonical multiplication carry rows are stored in shifted product
+        // columns. On paper the carry is written above the next multiplicand
+        // digit, so translate the physical slot back by this partial's shift.
+        const shift = Math.max(0, Number(row.rowIndex || 1) - 1)
+        return multiplicandSlots.has(cell.slot - shift)
+      }).map((cell) => ({
         key: row.id + '.' + String(cell.id).split('.').at(-1),
         cellId: cell.id,
         rowId: row.id,

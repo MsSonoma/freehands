@@ -190,21 +190,19 @@ export function buildVerticalMultiplicationProblem(rawOperands) {
   }
   workRows.push(sumCarryRow)
 
+  // Match the paper layout learners normally see: multiplication carries sit
+  // above the factors, then the factors, then one contiguous partial-product
+  // stack. Carries used while adding partial products belong above that stack,
+  // not between the partials and the final answer.
   const layout = [
+    ...multiplicationCarryRows.map((row) => ({ type: 'row', rowId: row.id })),
     ...rows.map((row) => ({ type: 'row', rowId: row.id })),
     { type: 'rule', id: 'factor_rule' },
-  ]
-  for (let index = 0; index < partialRows.length; index++) {
-    layout.push(
-      { type: 'row', rowId: multiplicationCarryRows[index].id },
-      { type: 'row', rowId: partialRows[index].id },
-    )
-  }
-  layout.push(
     { type: 'row', rowId: sumCarryRow.id },
+    ...partialRows.map((row) => ({ type: 'row', rowId: row.id })),
     { type: 'rule', id: 'result_rule' },
     { type: 'row', rowId: resultRow.id },
-  )
+  ]
 
   const locations = Object.values(cellsById)
     .filter((cell) => cell.value !== null || cell.kind === 'result')

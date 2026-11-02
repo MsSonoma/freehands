@@ -39,12 +39,23 @@ test('subtraction overlays every visible top digit for direct and chained regrou
   ])
 })
 
-test('multiplication has distinct scratch slots for each carry step and sum carries', () => {
+test('multiplication carry notes use conventional top-of-digit positions and only add a sum row when needed', () => {
   const found = slots(buildVerticalMultiplicationProblem(['47', '26']))
-  assert(found.some((slot) => slot.key.startsWith('multiply_carry.1.')))
-  assert(found.some((slot) => slot.key.startsWith('multiply_carry.2.')))
-  assert(found.some((slot) => slot.key.startsWith('sum_carry.')))
+  assert.deepEqual(found.map((slot) => slot.key), [
+    'multiply_carry.1.tens',
+    'multiply_carry.2.hundreds',
+    'sum_carry.thousands',
+    'sum_carry.hundreds',
+    'sum_carry.tens',
+  ])
   assert.equal(new Set(found.map((slot) => slot.key)).size, found.length)
+
+  const singleDigit = slots(buildVerticalMultiplicationProblem(['47', '6']))
+  assert.deepEqual(singleDigit.map((slot) => slot.key), ['multiply_carry.1.tens'])
+  assert.equal(singleDigit.some((slot) => slot.key.startsWith('sum_carry.')), false)
+
+  const oneByOne = slots(buildVerticalMultiplicationProblem(['7', '6']))
+  assert.deepEqual(oneByOne, [])
 })
 
 test('notes are digits-only, two digits maximum, explicitly keyed, and bounded', () => {
