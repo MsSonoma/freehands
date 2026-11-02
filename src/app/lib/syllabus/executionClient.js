@@ -3,8 +3,50 @@
 import { getSupabaseClient, hasSupabaseEnv } from '../supabaseClient.js'
 import { startLessonSession } from '../sessionTracking.js'
 
+// The browser identity is stable for one restart occurrence, not for every
+// lesson with the same file name. Never rotate again when that attempt resumes.
+export function prepareProtectedBrowserSessionForOccurrence({ learnerId, lessonKey, occurrenceId, resumeExisting = false, startedAt = null, existingBrowserSessionId = null } = {}) {
+  if (typeof window === 'undefined' || !String(occurrenceId || '').startsWith('restart:') || !learnerId || !lessonKey) return null
+  const scope = `${learnerId}:${lessonKey}:${occurrenceId}`
+  const key = `protected_restart_browser:${scope}`
+  const startedKey = `protected_restart_started_at:${scope}`
+  let value = null
+  try { value = localStorage.getItem(key) } catch {}
+  if (!value) {
+    if (resumeExisting && startedAt) {
+      value = /^[0-9a-f-]{36}$/i.test(String(existingBrowserSessionId || '')) ? String(existingBrowserSessionId) : null
+      if (!value) try { value = localStorage.getItem('lesson_session_id') } catch {}
+    }
+    if (!value) value = typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : null
+    if (value) try { localStorage.setItem(key, value) } catch {}
+  }
+  if (startedAt) try { localStorage.setItem(startedKey, String(startedAt)) } catch {}
+  if (value) {
+    try { localStorage.setItem('lesson_session_id', value) } catch {}
+    try { sessionStorage.setItem('lesson_session_id', value) } catch {}
+  }
+  return value
+}
+
+function restartScopeFromLocation() {
+  if (typeof window === 'undefined' || !window.location?.pathname?.startsWith('/session')) return null
+  const query = new URLSearchParams(window.location.search || '')
+  const occurrenceId = query.get('occurrenceId')
+  if (!String(occurrenceId || '').startsWith('restart:')) return null
+  const learnerId = query.get('learnerId')
+  const lessonKey = query.get('lessonKey') || (query.get('subject') && query.get('lesson')
+    ? `${query.get('subject')}/${query.get('lesson')}` : '')
+  if (!learnerId || !lessonKey) return null
+  const canonicalKey = lessonKey.endsWith('.json') ? lessonKey : `${lessonKey}.json`
+  return { learnerId, lessonKey: canonicalKey, occurrenceId }
+}
 export function getProtectedBrowserSessionId() {
   if (typeof window === 'undefined') return null
+  const restartScope = restartScopeFromLocation()
+  if (restartScope) {
+    const attemptId = prepareProtectedBrowserSessionForOccurrence(restartScope)
+    if (attemptId) return attemptId
+  }
   const key = 'lesson_session_id'
   let value = null
   try { value = localStorage.getItem(key) } catch {}

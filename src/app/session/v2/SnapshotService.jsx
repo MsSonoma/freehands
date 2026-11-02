@@ -19,12 +19,16 @@
 
 import { shouldUseAccountPersistence } from '@/app/learn/demoLearner.mjs';
 import { newestSnapshot } from '@/app/lib/snapshotTakeoverHandoff.mjs';
+import { canAdoptLegacyRestartSnapshot } from '@/app/lib/syllabus/restartSnapshotScope.mjs';
 
 export class SnapshotService {
   // Private state
   #sessionId = null;
   #learnerId = null;
   #lessonKey = null;
+  #occurrenceId = null;
+  #resumeStartedAt = null;
+  #instructionalTeacher = null;
   #supabaseClient = null;
   #forceLocalStorage = false;
   #executionSessionId = null;
@@ -87,6 +91,17 @@ export class SnapshotService {
     this.#sessionId = options.sessionId;
     this.#learnerId = options.learnerId;
     this.#lessonKey = options.lessonKey;
+    // The occurrence is part of the persisted identity for facilitator restarts.
+    const routeOccurrence = typeof window !== 'undefined'
+      ? new URLSearchParams(window.location?.search || '').get('occurrenceId') : null;
+    const requestedOccurrence = String(options.occurrenceId || routeOccurrence || '');
+    this.#occurrenceId = requestedOccurrence.startsWith('restart:') ? requestedOccurrence : null;
+    if (this.#occurrenceId && typeof window !== 'undefined') {
+      try { this.#resumeStartedAt = localStorage.getItem(`protected_restart_started_at:${this.#learnerId}:${this.#lessonKey}:${this.#occurrenceId}`); } catch {}
+      const pathname = window.location?.pathname || '';
+      this.#instructionalTeacher = pathname.startsWith('/session/slate') ? 'slate'
+        : pathname.startsWith('/session/webb') ? 'webb' : 'sonoma';
+    }
     this.#supabaseClient = options.supabaseClient;
     this.#forceLocalStorage = !shouldUseAccountPersistence(options.learnerId);
     
@@ -114,7 +129,8 @@ export class SnapshotService {
   }
 
   #buildSnapshotApiUrl() {
-    return `/api/snapshots?learner_id=${encodeURIComponent(this.#learnerId)}&lesson_key=${encodeURIComponent(this.#lessonKey)}`;
+    const base = `/api/snapshots?learner_id=${encodeURIComponent(this.#learnerId)}&lesson_key=${encodeURIComponent(this.#lessonKey)}`;
+    return this.#occurrenceId ? `${base}&syllabus_occurrence_id=${encodeURIComponent(this.#occurrenceId)}` : base;
   }
 
   async #fetchSnapshotFromServer() {
@@ -155,6 +171,7 @@ export class SnapshotService {
           learner_id: this.#learnerId,
           lesson_key: this.#lessonKey,
           data: snapshot,
+          ...(this.#occurrenceId ? { syllabus_occurrence_id: this.#occurrenceId } : {}),
           ...(this.#executionSessionId && this.#executionBrowserSessionId ? {
             require_execution_owner: true,
             execution_session_id: this.#executionSessionId,
@@ -182,10 +199,11 @@ export class SnapshotService {
 
     try {
       const baseUrl = this.#buildSnapshotApiUrl();
+      const occurrenceQuery = this.#occurrenceId ? `&syllabus_occurrence_id=${encodeURIComponent(this.#occurrenceId)}` : '';
       const ownershipQuery = this.#executionSessionId && this.#executionBrowserSessionId
         ? `&require_execution_owner=1&execution_session_id=${encodeURIComponent(this.#executionSessionId)}&browser_session_id=${encodeURIComponent(this.#executionBrowserSessionId)}`
         : '';
-      const url = `${baseUrl}${ownershipQuery}`;
+      const url = `${baseUrl}${ownershipQuery}${occurrenceQuery}`;
       const resp = await fetch(url, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
@@ -286,6 +304,7 @@ export class SnapshotService {
         : (this.#snapshot?.featureState || null);
 
       const snapshot = {
+        ...(this.#occurrenceId ? { syllabusOccurrenceId: this.#occurrenceId } : {}),
         sessionId: this.#sessionId,
         learnerId: this.#learnerId,
         lessonKey: this.#lessonKey,
@@ -368,6 +387,7 @@ export class SnapshotService {
         : (this.#snapshot?.featureState || null);
 
       const snapshot = {
+        ...(this.#occurrenceId ? { syllabusOccurrenceId: this.#occurrenceId } : {}),
         sessionId: this.#sessionId,
         learnerId: this.#learnerId,
         lessonKey: this.#lessonKey,
@@ -411,7 +431,7 @@ export class SnapshotService {
     this.#deleteFromLocalStorage();
 
     // Clear common legacy/variant keys too.
-    if (typeof window !== 'undefined') {
+    if (typeof window !== 'undefined' && !this.#occurrenceId) {
       const keys = [
         `atomic_snapshot:${this.#learnerId}:${this.#lessonKey}`,
         `atomic_snapshot:${this.#learnerId}:${this.#lessonKey}.json`,
@@ -481,6 +501,7 @@ export class SnapshotService {
           source_execution_session_id: sourceExecutionSessionId || this.#executionSessionId,
           source_browser_session_id: sourceBrowserSessionId || this.#executionBrowserSessionId,
           data: snapshot,
+          ...(this.#occurrenceId ? { syllabus_occurrence_id: this.#occurrenceId } : {}),
         }),
       });
       const result = await resp.json().catch(() => null);
@@ -575,22 +596,39 @@ export class SnapshotService {
   
   // Private: LocalStorage fallback (for testing without Supabase)
   #getLocalStorageKey() {
-    return `atomic_snapshot:${this.#learnerId}:${this.#lessonKey}`;
+    const base = `atomic_snapshot:${this.#learnerId}:${this.#lessonKey}`;
+    return this.#occurrenceId ? `${base}:${this.#occurrenceId}` : base;
   }
   
   #loadFromLocalStorage() {
     try {
       if (typeof window === 'undefined') return null;
-      const key = this.#getLocalStorageKey();
-      const json = localStorage.getItem(key);
-      if (!json) return null;
-      return JSON.parse(json);
+      const raw = localStorage.getItem(this.#getLocalStorageKey());
+      if (raw) {
+        const current = JSON.parse(raw);
+        if (this.#occurrenceId && current?.syllabusOccurrenceId !== this.#occurrenceId) return null;
+        return current;
+      }
+      if (!this.#occurrenceId) return null;
+      // One-time, non-destructive upgrade for an attempt begun before this fix.
+      // Do not import a prior teacher's snapshot merely because the browser ID
+      // was reused. It must postdate the exact attempt start and match teacher.
+      const legacyRaw = localStorage.getItem(`atomic_snapshot:${this.#learnerId}:${this.#lessonKey}`);
+      if (!legacyRaw) return null;
+      const legacy = JSON.parse(legacyRaw);
+      if (!canAdoptLegacyRestartSnapshot(legacy, {
+        learnerId: this.#learnerId, lessonKey: this.#lessonKey,
+        occurrenceId: this.#occurrenceId, browserSessionId: this.#sessionId,
+        startedAt: this.#resumeStartedAt, teacher: this.#instructionalTeacher,
+      })) return null;
+      const adopted = { ...legacy, syllabusOccurrenceId: this.#occurrenceId };
+      this.#saveToLocalStorage(adopted);
+      return adopted;
     } catch (err) {
       console.error('[SnapshotService] LocalStorage load error:', err);
       return null;
     }
   }
-  
   #saveToLocalStorage(snapshot) {
     try {
       if (typeof window === 'undefined') return;

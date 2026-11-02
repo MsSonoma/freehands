@@ -26,7 +26,8 @@ import {
   shouldAutoShowLearnerTutorial,
 } from '@/app/learn/demoLearner.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
-import { beginFreshProtectedAttempt } from '@/app/lib/syllabus/executionClient.js'
+import { prepareProtectedBrowserSessionForOccurrence } from '@/app/lib/syllabus/executionClient.js'
+import { instructionalTeacherForOccurrence } from '@/app/lib/syllabus/occurrenceTeacher.mjs'
 import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, isReviewTeacher, normalizeReviewTeacherSelection, reviewTeacherIcon, reviewTeacherLabel, reviewTeacherSelectionIcon, reviewTeacherSelectionLabel } from '@/app/lib/reviewTeacher.js'
 import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '@/app/learn/snapshotProgress.mjs'
 import { resolveLearnerSyllabusPresentation } from '@/app/lib/syllabus/learnerPresentation.mjs'
@@ -729,7 +730,7 @@ function LessonsPageInner(){
     const thisLessonKey = `${subject}/${fileBaseName}`
     const currentTeacher = isDemoLearnerId(learnerId)
       ? 'sonoma'
-      : (syllabusOccurrence?.assigned_instructional_teacher || syllabusOccurrence?.instructional_teacher || 'sonoma')
+      : instructionalTeacherForOccurrence(syllabusOccurrence)
     const goldenKeyTeacherEligible = currentTeacher === 'sonoma' || currentTeacher === 'webb'
     let launchHasGoldenKey = goldenKeyTeacherEligible && activeGoldenKeys[thisLessonKey] === true
     if (goldenKeyTeacherEligible && goldenKeysEnabled === true && goldenKeySelected && learnerId && learnerId !== 'demo') {
@@ -755,7 +756,7 @@ function LessonsPageInner(){
       setSessionLoading(true)
       const lessonKey = `${subject}/${fileBaseName}`
       try { sessionStorage.setItem('webb_pending_lesson_key', lessonKey) } catch {}
-      if (String(syllabusOccurrence?.occurrence_id || '').startsWith('restart:')) beginFreshProtectedAttempt()
+      if (String(syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '').startsWith('restart:')) prepareProtectedBrowserSessionForOccurrence({ learnerId, lessonKey: syllabusOccurrence?.lesson_key || thisLessonKey, occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id, resumeExisting: syllabusOccurrence?.actual_kind === 'in_progress', startedAt: syllabusOccurrence?.started_at || null, existingBrowserSessionId: syllabusOccurrence?.actual_browser_session_id || null })
       router.push(buildInstructionalSessionRoute({ learnerId, subject, fileName: fileBaseName, instructionalTeacher: currentTeacher, occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '' }))
       return
     }
@@ -769,7 +770,7 @@ function LessonsPageInner(){
       goldenKey: goldenKeysEnabled === true && launchHasGoldenKey,
       occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '',
     })
-    if (String(syllabusOccurrence?.occurrence_id || '').startsWith('restart:')) beginFreshProtectedAttempt()
+    if (String(syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id || '').startsWith('restart:')) prepareProtectedBrowserSessionForOccurrence({ learnerId, lessonKey: syllabusOccurrence?.lesson_key || thisLessonKey, occurrenceId: syllabusOccurrence?.execution_occurrence_id || syllabusOccurrence?.occurrence_id, resumeExisting: syllabusOccurrence?.actual_kind === 'in_progress', startedAt: syllabusOccurrence?.started_at || null, existingBrowserSessionId: syllabusOccurrence?.actual_browser_session_id || null })
     router.push(withKey)
   }
 
@@ -955,7 +956,7 @@ function LessonsPageInner(){
     const executionOccurrenceId = resumeExistingWork && item?.source_occurrence_id
       ? item.source_occurrence_id
       : (item?.occurrence_id || '')
-    const subject = lesson.isGenerated ? 'generated' : (lesson.subject || lessonKey.split('/')[0] || 'general')
+    const subject = lessonKey.includes('/') ? lessonKey.split('/')[0] : (lesson.isGenerated ? 'generated' : (lesson.subject || 'general'))
     setSelectedLesson({
       l: lesson,
       subject,
@@ -1719,7 +1720,7 @@ function LessonsPageInner(){
             const ent = featuresForTier(planTier)
             const cap = ent.lessonsPerDay
             const capped = !isDemo && Number.isFinite(cap) && todaysCount >= cap
-            const assignedInstructionalTeacher = isDemo ? 'sonoma' : (syllabusItem?.assigned_instructional_teacher || syllabusItem?.instructional_teacher || l.instructional_teacher || 'sonoma')
+            const assignedInstructionalTeacher = isDemo ? 'sonoma' : instructionalTeacherForOccurrence(syllabusItem, l)
             const assignedReviewTeacher = normalizeReviewTeacherSelection(syllabusItem?.review_teacher)
             const isSlateSyllabusAssignment = syllabusItem?.item_type === 'slate_assignment'
             const learnerChoosesReviewTeacher = isSlateSyllabusAssignment && assignedReviewTeacher === 'learner'

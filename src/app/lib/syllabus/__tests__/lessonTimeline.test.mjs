@@ -1851,3 +1851,39 @@ test('facilitator restart is a separate learner-visible occurrence with its chos
   assert.equal(restarted.assigned_instructional_teacher, 'webb')
   assert.ok(items.find(item => item.occurrence_id === 'syllabus:forecast-1'))
 })
+
+test('facilitator restart archives the released Slate attempt without masking ongoing Sonoma work', () => {
+  const lessonKey = 'generated/fractions.json'
+  const restartId = '99999999-9999-4999-8999-999999999999'
+  const oldId = 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa'
+  const liveId = 'bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb'
+  const browser = 'cccccccc-cccc-4ccc-8ccc-cccccccccccc'
+  const items = composeSyllabusLessonTimeline({
+    activeRevision: REVISION, today: '2026-09-07',
+    forecastItems: [forecastLesson()],
+    associations: [association({ readiness_state: 'available', instructional_teacher: 'slate' })],
+    restartIntents: [{ id: restartId, lesson_key: lessonKey, instructional_teacher: 'sonoma',
+      scheduled_date: '2026-09-07', source_occurrence_id: `actual:${oldId}`,
+      created_at: '2026-09-07T11:10:00Z' }],
+    sessions: [
+      { id: oldId, session_id: browser, learner_id: 'learner-1', lesson_id: lessonKey,
+        instructional_teacher: 'slate', started_at: '2026-09-07T10:00:00Z', ended_at: '2026-09-07T11:00:00Z' },
+      { id: liveId, session_id: browser, learner_id: 'learner-1', lesson_id: lessonKey,
+        instructional_teacher: 'sonoma', started_at: '2026-09-07T12:00:00Z', ended_at: null },
+    ],
+    sessionEvents: [
+      { session_id: oldId, lesson_id: lessonKey, event_type: 'started', occurred_at: '2026-09-07T10:00:00Z',
+        metadata: { syllabus_occurrence_id: 'syllabus:forecast-1' } },
+      { session_id: oldId, lesson_id: lessonKey, event_type: 'restarted', occurred_at: '2026-09-07T11:00:00Z',
+        metadata: { reason: 'facilitator_restart' } },
+      { session_id: liveId, lesson_id: lessonKey, event_type: 'started', occurred_at: '2026-09-07T12:00:00Z',
+        metadata: { syllabus_occurrence_id: `restart:${restartId}` } },
+    ],
+  })
+  assert.equal(items.some(item => item.occurrence_id === `actual:${oldId}`), false)
+  const current = items.find(item => item.occurrence_id === `actual:${liveId}`)
+  assert.ok(current, 'the live Sonoma attempt must remain visible')
+  assert.equal(current.actual_instructional_teacher, 'sonoma')
+  assert.equal(current.source_occurrence_id, `restart:${restartId}`)
+  assert.equal(current.actual_kind, 'in_progress')
+})

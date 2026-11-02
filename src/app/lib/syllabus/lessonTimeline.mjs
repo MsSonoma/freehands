@@ -394,7 +394,17 @@ export function composeSyllabusLessonTimeline({
     }
   }
 
-  const output = instructionalActuals.map((actual) => {
+  // A facilitator restart supersedes its previous incomplete attempt in the
+  // active weekly Syllabus. Preserve the source session, events, and evidence
+  // in history; it must not reappear as a second active Slate lesson.
+  const supersededActuals = new Set((restartIntents || [])
+    .map((intent) => clean(intent?.source_occurrence_id))
+    .filter((id) => id.startsWith('actual:')))
+  const visibleInstructionalActuals = instructionalActuals.filter((actual) => !(
+    actual.terminalReason === 'facilitator_restart'
+    && supersededActuals.has(`actual:${actual.id}`)
+  ))
+  const output = visibleInstructionalActuals.map((actual) => {
     const details = metadata.get(actual.key) || defaultMetadata(actual.key)
     const capacity = actualCapacity.get(actual)
     return {

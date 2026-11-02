@@ -188,6 +188,11 @@ async function dbDeleteSnapshot(db, userId, learnerId, lessonKey) {
   return { ok: true };
 }
 
+function restartSnapshotOccurrence(value) {
+  const candidate = String(value || '').trim().toLowerCase();
+  return /^restart:[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(candidate)
+    ? candidate : null;
+}
 function normalizeUuid(value) {
   const normalized = String(value || '').trim().toLowerCase();
   return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(normalized)
@@ -203,7 +208,7 @@ async function verifySnapshotExecutionOwner(svc, { learnerId, executionSessionId
   }
   const { data, error } = await svc
     .from('lesson_sessions')
-    .select('id, learner_id, session_id, ended_at, ended_reason')
+    .select('id, learner_id, lesson_id, session_id, ended_at, ended_reason')
     .eq('id', rowId)
     .eq('learner_id', learnerId)
     .maybeSingle();
@@ -218,6 +223,15 @@ async function verifySnapshotExecutionOwner(svc, { learnerId, executionSessionId
   return { ok: false, state: 'ended', endedReason: data.ended_reason || 'ended', session: data };
 }
 
+// A browser can have several attempts for the same lesson. A session may
+// read/write/delete only the checkpoint for its own started occurrence.
+async function sessionOwnsRestartOccurrence(svc, session, occurrenceId) {
+  if (!svc || !session?.id || !occurrenceId) return false;
+  const { data, error } = await svc.from('lesson_session_events').select('metadata')
+    .eq('session_id', session.id).eq('event_type', 'started')
+    .order('occurred_at', { ascending: false }).limit(1).maybeSingle();
+  return !error && String(data?.metadata?.syllabus_occurrence_id || '') === occurrenceId;
+}
 function snapshotOwnershipLost(result) {
   return NextResponse.json({
     ok: false,
@@ -432,6 +446,21 @@ export async function GET(req) {
     const lessonKey = url.searchParams.get('lesson_key') || url.searchParams.get('lessonKey');
     if (!learnerId || !lessonKey) return NextResponse.json({ snapshot: null });
 
+    // Restart attempts have separate checkpoints; never read another teacher's
+    // lesson-scoped snapshot in place of this occurrence's actual progress.
+    const requestedOccurrence = url.searchParams.get('syllabus_occurrence_id') || '';
+    if (requestedOccurrence.startsWith('restart:')) {
+      const occurrenceId = restartSnapshotOccurrence(requestedOccurrence);
+      if (!occurrenceId) return NextResponse.json({ error: 'Invalid lesson attempt' }, { status: 400 });
+      if (!await userOwnsSnapshotLearner(db, learnerId)) return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
+      const { svc } = getClients() || {};
+      if (!svc) return NextResponse.json({ error: 'Saved lesson progress is temporarily unavailable' }, { status: 503 });
+      const result = await svc.from('learner_restart_snapshots').select('data')
+        .eq('user_id', user.id).eq('learner_id', learnerId)
+        .eq('lesson_key', lessonKey).eq('occurrence_id', occurrenceId).maybeSingle();
+      if (result.error) return NextResponse.json({ error: 'Saved lesson progress is temporarily unavailable' }, { status: 503 });
+      return NextResponse.json({ snapshot: result.data?.data || null });
+    }
     // Try DB
     const res = await dbGetSnapshot(db, user.id, learnerId, lessonKey);
     if (!res.error) return NextResponse.json({ snapshot: res.data || null });
@@ -483,9 +512,16 @@ export async function POST(req) {
     const requireExecutionOwner = body?.require_execution_owner === true;
     const executionSessionId = body?.execution_session_id;
     const browserSessionId = body?.browser_session_id;
+    const requestedRestartOccurrence = String(body?.syllabus_occurrence_id || '');
+    const restartOccurrenceId = requestedRestartOccurrence.startsWith('restart:')
+      ? restartSnapshotOccurrence(requestedRestartOccurrence) : null;
+    if (requestedRestartOccurrence.startsWith('restart:') && !restartOccurrenceId) {
+      return NextResponse.json({ ok: false, code: 'INVALID_RESTART_OCCURRENCE' }, { status: 400 });
+    }
     if (!learner_id || !lesson_key || !data) {
       return NextResponse.json({ error: 'learner_id, lesson_key, data required' }, { status: 400 });
     }
+    let verifiedExecutionSession = null;
     if (requireExecutionOwner) {
       const { svc } = getClients() || {};
       if (!svc) {
@@ -497,6 +533,30 @@ export async function POST(req) {
         browserSessionId,
       });
       if (!ownership.ok) return snapshotOwnershipLost(ownership);
+      verifiedExecutionSession = ownership.session;
+    }
+    if (restartOccurrenceId) {
+      if (!requireExecutionOwner || verifiedExecutionSession?.lesson_id !== lesson_key) {
+        return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_OWNER_REQUIRED' }, { status: 403 });
+      }
+      const { svc: ownershipService } = getClients() || {};
+      if (!await sessionOwnsRestartOccurrence(ownershipService, verifiedExecutionSession, restartOccurrenceId)) {
+        return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_SCOPE_MISMATCH' }, { status: 409 });
+      }
+      if (!await userOwnsSnapshotLearner(db, learner_id)) {
+        return NextResponse.json({ ok: false, code: 'FORBIDDEN' }, { status: 403 });
+      }
+      if (data.syllabusOccurrenceId && data.syllabusOccurrenceId !== restartOccurrenceId) {
+        return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_SCOPE_MISMATCH' }, { status: 409 });
+      }
+      const { svc } = getClients() || {};
+      if (!svc) return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_STORAGE_UNAVAILABLE' }, { status: 503 });
+      const { error } = await svc.from('learner_restart_snapshots').upsert({
+        user_id: user.id, learner_id, lesson_key, occurrence_id: restartOccurrenceId,
+        data: { ...data, syllabusOccurrenceId: restartOccurrenceId }, updated_at: new Date().toISOString(),
+      }, { onConflict: 'user_id,learner_id,lesson_key,occurrence_id' });
+      if (error) return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_PERSIST_FAILED' }, { status: 503 });
+      return NextResponse.json({ ok: true, occurrenceId: restartOccurrenceId });
     }
     const payload = normalizeSnapshotShape(data);
 
@@ -553,10 +613,17 @@ export async function DELETE(req) {
     const learnerId = url.searchParams.get('learner_id') || url.searchParams.get('learnerId');
     const lessonKey = url.searchParams.get('lesson_key') || url.searchParams.get('lessonKey');
     const requireExecutionOwner = url.searchParams.get('require_execution_owner') === '1';
+    const requestedRestartOccurrence = url.searchParams.get('syllabus_occurrence_id') || '';
+    const restartOccurrenceId = requestedRestartOccurrence.startsWith('restart:')
+      ? restartSnapshotOccurrence(requestedRestartOccurrence) : null;
+    if (requestedRestartOccurrence.startsWith('restart:') && !restartOccurrenceId) {
+      return NextResponse.json({ ok: false, code: 'INVALID_RESTART_OCCURRENCE' }, { status: 400 });
+    }
     const executionSessionId = url.searchParams.get('execution_session_id');
     const browserSessionId = url.searchParams.get('browser_session_id');
     if (!learnerId || !lessonKey) return NextResponse.json({ ok: true });
 
+    let verifiedExecutionSession = null;
     if (requireExecutionOwner) {
       const { svc } = getClients() || {};
       if (!svc) {
@@ -569,6 +636,7 @@ export async function DELETE(req) {
         allowCompleted: true,
       });
       if (!ownership.ok) return snapshotOwnershipLost(ownership);
+      verifiedExecutionSession = ownership.session;
 
       // A completed execution may delete only the snapshot it actually produced.
       // If a newer execution already saved progress under the lesson-scoped key,
@@ -580,6 +648,20 @@ export async function DELETE(req) {
           return snapshotOwnershipLost({ state: 'newer_snapshot_present', endedReason: 'completed' });
         }
       }
+    }
+    // A restart completion cannot erase a different attempt's saved checkpoint.
+    if (restartOccurrenceId) {
+      if (!requireExecutionOwner || verifiedExecutionSession?.lesson_id !== lessonKey) return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_OWNER_REQUIRED' }, { status: 403 });
+      const { svc: ownershipService } = getClients() || {};
+      if (!await sessionOwnsRestartOccurrence(ownershipService, verifiedExecutionSession, restartOccurrenceId)) return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_SCOPE_MISMATCH' }, { status: 409 });
+      if (!await userOwnsSnapshotLearner(db, learnerId)) return NextResponse.json({ ok: false, code: 'FORBIDDEN' }, { status: 403 });
+      const { svc } = getClients() || {};
+      if (!svc) return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_STORAGE_UNAVAILABLE' }, { status: 503 });
+      const { error } = await svc.from('learner_restart_snapshots').delete()
+        .eq('user_id', user.id).eq('learner_id', learnerId)
+        .eq('lesson_key', lessonKey).eq('occurrence_id', restartOccurrenceId);
+      if (error) return NextResponse.json({ ok: false, code: 'RESTART_SNAPSHOT_DELETE_FAILED' }, { status: 503 });
+      return NextResponse.json({ ok: true });
     }
     const del = await dbDeleteSnapshot(db, user.id, learnerId, lessonKey);
     if (del.ok) return NextResponse.json({ ok: true });

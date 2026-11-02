@@ -182,7 +182,9 @@ test('learner home is canonical, clears stale preference, and legacy route redir
   assert.match(legacyPage, /redirect\('\/learn'\)/)
   assert.match(home, /localStorage\.removeItem\('selected_teacher'\)/)
   assert.doesNotMatch(home, /localStorage\.getItem\('selected_teacher'\)|setSelectedTeacher|value=\{selectedTeacher\}/)
-  assert.match(home, /syllabusOccurrence\?\.assigned_instructional_teacher/)
+  // The occurrence-aware selector must prefer the teacher who taught the active
+  // attempt over an old lesson-level assignment.
+  assert.match(home, /instructionalTeacherForOccurrence\(syllabusOccurrence\)/)
 })
 
 test('lesson association GET rejects a malformed lesson key with the canonical client error', async () => {

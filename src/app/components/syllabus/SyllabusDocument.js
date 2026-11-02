@@ -11,6 +11,7 @@ import {
   syllabusItemState,
 } from '@/app/lib/syllabus/timeline.mjs'
 import { instructionalTeacherIcon, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
+import { instructionalTeacherForOccurrence } from '@/app/lib/syllabus/occurrenceTeacher.mjs'
 import { normalizeReviewTeacher, normalizeReviewTeacherSelection, reviewTeacherIcon, reviewTeacherLabel, reviewTeacherSelectionIcon, reviewTeacherSelectionLabel } from '@/app/lib/reviewTeacher.js'
 import { canAddLessonToSyllabusDay } from '@/app/lib/syllabus/syllabusScheduling.mjs'
 import { learnerNowViewportKey, shouldEstablishLearnerNowViewport } from '@/app/lib/syllabus/learnerPresentation.mjs'
@@ -114,7 +115,7 @@ function monthItemTeacherText(item = {}) {
     return reviewTeacherText(entries)
   }
   if (item.item_type === 'review' || item.item_type === 'slate_assignment') return reviewTeacherTextForItem(item)
-  const teacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'
+  const teacher = instructionalTeacherForOccurrence(item)
   return `${instructionalTeacherIcon(teacher)} ${instructionalTeacherLabel(teacher)}`
 }
 
@@ -310,7 +311,7 @@ export default function SyllabusDocument({
     }
     const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
     const occurrenceKey = item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`
-    const assignedTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.assigned_instructional_teacher || item.instructional_teacher) || 'sonoma'
+    const assignedTeacher = instructionalTeacherForOccurrence(item)
     const historicalActivityAllowed = item.historical_record !== true && item.placement_kind !== 'actual'
     const teacherEditable = Boolean(item.lesson_key)
       && item.placement_kind !== 'actual'
@@ -337,7 +338,7 @@ export default function SyllabusDocument({
     }
     const state = syllabusItemState({ item: match, today, hasProgress: currentLesson.hasProgress })
     const occurrenceKey = match.occurrence_id || match.id || `${match.lineage_id}-${match.planned_date}`
-    const assignedTeacher = normalizeInstructionalTeacher(match.actual_instructional_teacher || match.assigned_instructional_teacher || match.instructional_teacher) || 'sonoma'
+    const assignedTeacher = instructionalTeacherForOccurrence(match)
     const historicalActivityAllowed = match.historical_record !== true && match.placement_kind !== 'actual'
     const teacherEditable = Boolean(match.lesson_key)
       && match.placement_kind !== 'actual'
@@ -487,7 +488,7 @@ export default function SyllabusDocument({
             }
             const state = syllabusItemState({ item, today, hasProgress: currentLesson.hasProgress })
             const occurrenceKey = item.occurrence_id || item.id || `${item.lineage_id}-${item.planned_date}`
-            const resolvedTeacher = normalizeInstructionalTeacher(item.actual_instructional_teacher || item.assigned_instructional_teacher || item.instructional_teacher)
+            const resolvedTeacher = instructionalTeacherForOccurrence(item)
             const assignedTeacher = resolvedTeacher || 'sonoma'
             const historicalActivityAllowed = item.historical_record !== true && item.placement_kind !== 'actual'
             const teacherEditable = role === 'facilitator'
