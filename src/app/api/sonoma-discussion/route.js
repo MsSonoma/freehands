@@ -61,6 +61,7 @@ function buildChatSystem(lesson, remainingObjectives = [], allObjectivesMet = fa
     `Your style:`,
     `- Friendly, patient, and age-appropriate.`,
     `- Keep replies short — 2 to 4 sentences — they are read aloud.`,
+    `- When giving feedback followed by another question, finish the feedback as its own complete sentence. Put the ONE next question in a separate sentence ending with a question mark. The learner can raise a hand between these two spoken parts.`,
     `- Write in natural spoken language: no markdown, no bullet points.`,
     `- Ask what the student already knows; build on it with Socratic questioning.`,
     `- Celebrate curiosity and effort.`,

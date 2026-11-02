@@ -4146,6 +4146,9 @@ function SessionPageV2Inner() {
       }
     };
 
+    if (currentPhase === 'discussion') {
+      return discussionPhaseRef.current?.activeReplySegmentText || '';
+    }
     if (currentPhase === 'comprehension' && currentComprehensionQuestion) {
       return formatProblem(currentComprehensionQuestion);
     }
@@ -4226,7 +4229,9 @@ function SessionPageV2Inner() {
     };
 
     let problemBody = '';
-    if (currentPhase === 'comprehension' && currentComprehensionQuestion) {
+    if (currentPhase === 'discussion') {
+      problemBody = discussionPhaseRef.current?.activeReplySegmentText || '';
+    } else if (currentPhase === 'comprehension' && currentComprehensionQuestion) {
       problemBody = formatProblem(currentComprehensionQuestion);
     } else if (currentPhase === 'exercise' && currentExerciseQuestion) {
       problemBody = formatProblem(currentExerciseQuestion);
@@ -4678,6 +4683,7 @@ function SessionPageV2Inner() {
     if (!controller || openingActionBusy) return;
     beginSonomaHelpHold();
     askReturnQuestionRef.current = getActiveFlowQuestionText();
+    if (normalizePhaseAlias(currentPhaseRef.current) === 'discussion') discussionPhaseRef.current?.pauseForHelp();
     setOpeningActionError('');
     setOpeningActionBusy(true);
     try {
@@ -5746,6 +5752,7 @@ function SessionPageV2Inner() {
         : [],
       // Sentence-level resume: replay at the exact sentence that was active on refresh
       resumeSentenceKey: resumeSentenceKey,
+      resumeReplyCheckpoint: isDiscussionResume ? savedDiscData?.replyCheckpoint : null,
     });
     
 
@@ -5769,6 +5776,9 @@ function SessionPageV2Inner() {
         'playing-vocab':      'playing-vocab',
         'chatting':           'chatting',
         'awaiting-response':  'awaiting-response',
+        'playing-reply-feedback': 'playing-reply-feedback',
+        'awaiting-next': 'awaiting-next',
+        'playing-reply-question': 'playing-reply-question',
         'complete':           'complete',
       };
       setDiscussionState(stateMap[data.state] || data.state);
@@ -5802,10 +5812,20 @@ function SessionPageV2Inner() {
           // Save the sentence key so sentence-level resume can restart at the right position.
           // Returns null when in chat/awaiting state — indicating chat-level resume instead.
           sentenceKey: discussionPhaseRef.current?.currentSentenceKey ?? null,
+          replyCheckpoint: discussionPhaseRef.current?.replyCheckpoint ?? null,
         }).catch(() => {});
       }
     });
 
+    // Persist the exact split-turn position so refresh never discards a pending question.
+    const unsubReplyStage = eventBusRef.current.on('discussionReplyStage', (checkpoint) => {
+      if (snapshotServiceRef.current) {
+        snapshotServiceRef.current.saveProgress('discussion-reply-stage', {
+          phaseOverride: 'discussion',
+          replyCheckpoint: checkpoint,
+        }).catch(() => {});
+      }
+    });
     // discussionSentenceChange — track current sentence for Repeat/Next UI
     const unsubSentenceChange = eventBusRef.current.on('discussionSentenceChange', (data) => {
       setDiscussionSentenceInfo(data);
@@ -5868,6 +5888,7 @@ function SessionPageV2Inner() {
       try { unsubStateChange?.(); } catch {}
       try { unsubMessage?.(); } catch {}
       try { unsubSentenceChange?.(); } catch {}
+      try { unsubReplyStage?.(); } catch {}
       try { unsubGreetingPlaying?.(); } catch {}
       try { unsubGreetingComplete?.(); } catch {}
       try { unsubObjectiveComplete?.(); } catch {}
@@ -10113,6 +10134,20 @@ function SessionPageV2Inner() {
             </div>
           )}
 
+          {/* Feedback is a complete learner-controlled moment. Next reveals the
+              follow-up question; raising a hand stays available before and after. */}
+          {currentPhase === 'discussion' && discussionState === 'awaiting-next' && !openingActionActive && !showWords && (
+            <div style={{ display: 'flex', justifyContent: 'center', padding: '8px 12px' }}>
+              <button
+                type="button"
+                onClick={() => discussionPhaseRef.current?.nextReplyPart()}
+                aria-label="Next question"
+                style={{ padding: '12px 28px', background: '#2563eb', color: '#fff', border: 'none', borderRadius: 10, fontSize: '1rem', fontWeight: 700, cursor: 'pointer' }}
+              >
+                Next
+              </button>
+            </div>
+          )}
           {/* Teaching controls (footer) */}
           {currentPhase === 'teaching' && !openingActionActive && !showWords && (
             <div style={{

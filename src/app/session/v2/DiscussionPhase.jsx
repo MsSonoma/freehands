@@ -24,6 +24,7 @@
 'use client';
 
 import { fetchTTS } from './services';
+import { splitSonomaDiscussionReply } from './splitSonomaDiscussionReply.mjs';
 import { buildInstructionalLessonView } from '@/app/lib/masteryEvidence/assessmentIsolation.js';
 
 const WEBB_OBJECTIVES_URL   = '/api/webb-objectives';
@@ -56,7 +57,9 @@ export class DiscussionPhase {
   #audioEndListener  = null;
   #destroyed         = false;
   #submitGen         = 0;     // incremented on each submitMessage; used to abort stale async chains
-  #pendingReply      = null;  // exact learner turn and mastery context retained until reply
+  #pendingReply      = null; // learner turn and mastery context retained until reply
+  #replyCheckpoint   = null; // feedback -> Next -> question, restored across refresh
+  #resumeReplyCheckpoint = null; // checkpoint restored after prefetch
 
   // Sentence-by-sentence playback
   #prefetchDone       = false;
@@ -95,6 +98,11 @@ export class DiscussionPhase {
         ? [...options.resumeCompletedIndices]
         : [];
     }
+    const savedReply = options.resumeReplyCheckpoint;
+    if (savedReply && ['feedback', 'awaiting-next', 'question', 'question-complete'].includes(savedReply.stage) &&
+        typeof savedReply.feedback === 'string' && typeof savedReply.question === 'string') {
+      this.#resumeReplyCheckpoint = { stage: savedReply.stage, feedback: savedReply.feedback, question: savedReply.question };
+    }
     // Sentence-level resume: replay at the exact sentence that was playing on refresh
     if (typeof options.resumeSentenceKey === 'string' && options.resumeSentenceKey) {
       this.#resumeSentenceKey = options.resumeSentenceKey;
@@ -107,6 +115,12 @@ export class DiscussionPhase {
   get totalObjectives()     { return this.#objectives.length; }
   get learnerName()         { return this.#learnerName; }
   get lessonTitle()         { return this.#lessonTitle; }
+  get replyCheckpoint()     { return this.#replyCheckpoint ? { ...this.#replyCheckpoint } : null; }
+  get activeReplySegmentText() {
+    const reply = this.#replyCheckpoint;
+    if (!reply) return '';
+    return ['feedback', 'awaiting-next'].includes(reply.stage) ? reply.feedback : reply.question;
+  }
   // Returns the active sentence key ONLY while playing overview/vocab (null during chat or other states)
   get currentSentenceKey()  {
     return (this.#state === 'playing-overview' || this.#state === 'playing-vocab')
@@ -208,6 +222,27 @@ export class DiscussionPhase {
     this.#playSentence(this.#currentSentenceKey);
   }
 
+  nextReplyPart() {
+    if (this.#destroyed || this.#state !== 'awaiting-next' || !this.#replyCheckpoint?.question) return;
+    const text = this.#replyCheckpoint.question;
+    // Persist the transition before the question enters the visible transcript.
+    this.#setReplyStage('question');
+    this.#chatHistory.push({ role: 'assistant', content: text });
+    this.#eventBus.emit('discussionMessage', { role: 'assistant', text });
+    void this.#playReplyPart(text, this.#submitGen, 'question');
+  }
+
+  pauseForHelp() {
+    if (!['playing-reply-feedback', 'playing-reply-question'].includes(this.#state)) return;
+    const feedback = this.#state === 'playing-reply-feedback';
+    this.#removeAudioEndListener();
+    try { this.#audioEngine.stop(); } catch {}
+    this.#setReplyStage(feedback ? 'awaiting-next' : 'question-complete');
+    this.#state = feedback ? 'awaiting-next' : 'chatting';
+    this.#emitStateChange();
+    if (!feedback) this.#emitLearnerTurnReady('discussion');
+  }
+
   async submitMessage(userText) {
     // Allow sending while Ms. Sonoma is speaking — stops TTS and starts new turn
     if (this.#state === 'awaiting-response') {
@@ -226,6 +261,8 @@ export class DiscussionPhase {
     // Bump generation — any in-flight async chain from a previous call will bail out
     const gen = ++this.#submitGen;
     this.#pendingReply = null;
+    this.#replyCheckpoint = null;
+    this.#eventBus.emit('discussionReplyStage', null);
 
     this.#state = 'awaiting-response';
     this.#emitStateChange();
@@ -310,6 +347,41 @@ export class DiscussionPhase {
     await this.#deliverPendingReply(gen);
   }
 
+  #setReplyStage(stage) {
+    if (this.#replyCheckpoint) this.#replyCheckpoint = { ...this.#replyCheckpoint, stage };
+    this.#eventBus.emit('discussionReplyStage', this.replyCheckpoint);
+  }
+
+  async #playReplyPart(text, gen, part) {
+    if (this.#destroyed || gen !== this.#submitGen) return;
+    const playingState = part === 'feedback' ? 'playing-reply-feedback' : 'playing-reply-question';
+    this.#setReplyStage(part);
+    this.#state = playingState;
+    this.#emitStateChange();
+    let audio = null;
+    try { audio = await fetchTTS(text); } catch (error) {
+      console.warn('[DiscussionPhase] Split reply TTS unavailable:', error);
+    }
+    if (this.#destroyed || gen !== this.#submitGen || this.#state !== playingState) return;
+    let finished = false;
+    const finish = () => {
+      if (finished || this.#destroyed || gen !== this.#submitGen || this.#state !== playingState) return;
+      finished = true;
+      this.#removeAudioEndListener();
+      const isFeedback = part === 'feedback';
+      this.#setReplyStage(isFeedback ? 'awaiting-next' : 'question-complete');
+      this.#state = isFeedback ? 'awaiting-next' : 'chatting';
+      this.#emitStateChange();
+      if (!isFeedback) this.#emitLearnerTurnReady('discussion');
+    };
+    this.#setupAudioEndListener(finish);
+    try { await this.#audioEngine.playAudio(audio || '', [text]); }
+    catch (error) {
+      console.warn('[DiscussionPhase] Split reply playback unavailable:', error);
+      finish();
+    }
+  }
+
   async #deliverPendingReply(gen) {
     const pending = this.#pendingReply;
     if (!pending) return;
@@ -341,6 +413,16 @@ export class DiscussionPhase {
     }
 
     this.#pendingReply = null;
+    const parts = pending.allMet ? null : splitSonomaDiscussionReply(replyText);
+    if (parts) {
+      this.#replyCheckpoint = { stage: 'feedback', feedback: parts.feedback, question: parts.question };
+      this.#chatHistory.push({ role: 'assistant', content: parts.feedback });
+      this.#eventBus.emit('discussionMessage', { role: 'assistant', text: parts.feedback });
+      await this.#playReplyPart(parts.feedback, gen, 'feedback');
+      return;
+    }
+    this.#replyCheckpoint = null;
+    this.#eventBus.emit('discussionReplyStage', null);
     this.#chatHistory.push({ role: 'assistant', content: replyText });
     this.#eventBus.emit('discussionMessage', { role: 'assistant', text: replyText });
 
@@ -398,7 +480,7 @@ export class DiscussionPhase {
     this.#eventBus.emit('discussionMessage', { role: 'user', text: user, kind, featureId })
     this.#chatHistory.push({ role: 'assistant', content: assistant, kind, featureId })
     this.#eventBus.emit('discussionMessage', { role: 'assistant', text: assistant, kind, featureId })
-    this.#state = 'chatting'
+    this.#state = this.#replyCheckpoint?.stage === 'awaiting-next' ? 'awaiting-next' : 'chatting'
     this.#emitStateChange()
   }
 
@@ -406,6 +488,8 @@ export class DiscussionPhase {
     if (this.#state === 'complete') return;
     ++this.#submitGen;
     this.#pendingReply = null;
+    this.#replyCheckpoint = null;
+    this.#eventBus.emit('discussionReplyStage', null);
     try { this.#audioEngine.stop(); } catch {}
     this.#removeAudioEndListener();
     this.#eventBus.emit('learnerTurnEnded', { phase: 'discussion', turnKind: 'discussion', reason: 'skip' });
@@ -519,6 +603,21 @@ export class DiscussionPhase {
       return;
     }
 
+    // Restore a paused feedback/Next/question turn without asking the model again.
+    if (this.#resumeReplyCheckpoint) {
+      const saved = this.#resumeReplyCheckpoint;
+      this.#resumeReplyCheckpoint = null;
+      this.#replyCheckpoint = saved;
+      this.#eventBus.emit('discussionReplyStage', this.replyCheckpoint);
+      if (saved.stage === 'awaiting-next' || saved.stage === 'question-complete') {
+        this.#state = saved.stage === 'awaiting-next' ? 'awaiting-next' : 'chatting';
+        this.#emitStateChange();
+        if (saved.stage === 'question-complete') this.#emitLearnerTurnReady('discussion-resume');
+      } else {
+        void this.#playReplyPart(saved.stage === 'feedback' ? saved.feedback : saved.question, this.#submitGen, saved.stage);
+      }
+      return;
+    }
     // Chat-level resume: conversation history pre-loaded — skip the overview and re-enter chatting directly
     if (this.#chatHistory.length > 0) {
       const unansweredTurn = this.#chatHistory[this.#chatHistory.length - 1]?.role === 'user';
