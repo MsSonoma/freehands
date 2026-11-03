@@ -2766,6 +2766,19 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={{ color: C.muted, fontSize: 12 }}>{isAssessment ? phase.toUpperCase() : statusText}</span>
+          {(phase === 'active' || phase === 'test') && (
+            <button type="button" data-sonoma-keyboard-toggle data-slate-keyboard-toggle
+              onClick={() => sonomaKeyboard.toggleKeyboard({
+                label: 'Mr. Slate Keyboard', background: '#1e293b', color: '#e2e8f0', accent: '#d97706',
+              })}
+              disabled={snapshotServiceRef.current?.writesFenced}
+              aria-label={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
+              aria-pressed={Boolean(sonomaKeyboard.active)}
+              title={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
+              style={{ minWidth: 36, minHeight: 36, flexShrink: 0, padding: '3px 7px',
+                background: C.surface, color: C.accent, border: `1px solid ${C.border}`,
+                borderRadius: 8, fontSize: 23, lineHeight: 1, cursor: 'pointer' }}>⌨</button>
+          )}
           <div ref={musicControlRef} style={{ position: 'relative', display: 'inline-grid' }}>
             {musicVolumeOpen && (
               <div role="dialog" aria-label="Mr. Slate background music volume" onContextMenu={(event) => event.preventDefault()} style={{ position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 210, padding: '10px 12px', background: C.surface, color: C.text, border: `1px solid ${C.border}`, borderRadius: 6, boxShadow: '0 10px 28px rgba(0,0,0,0.4)', zIndex: 50 }}>
@@ -2856,19 +2869,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
               }}
             />
           </div>
-
-          {(phase === 'active' || (isAssessment && currentAssessment)) && (
-            <button type="button" data-sonoma-keyboard-toggle
-              data-slate-math-keyboard-tab
-              onClick={() => sonomaKeyboard.showMathTab({
-                label: 'Mr. Slate Keyboard', background: '#1e293b', color: '#e2e8f0', accent: '#d97706',
-              })}
-              disabled={snapshotServiceRef.current?.writesFenced}
-              aria-label="Open Math keyboard tab"
-              style={{ alignSelf: 'flex-start', minHeight: 38, padding: '8px 14px', background: C.surface, color: C.accent, border: `1px solid ${C.border}`, borderRadius: 8, fontFamily: C.font, fontWeight: 800, cursor: 'pointer' }}>
-              MATH KEYBOARD
-            </button>
-          )}
 
           {assessmentWrittenAnswerMode && (
             <form

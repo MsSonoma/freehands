@@ -27,12 +27,14 @@ export function SonomaKeyboardProvider({ children }) {
   const [workspaceDock, setWorkspaceDock] = useState(null);
   const [workspacePortal, setWorkspacePortal] = useState(null);
   const lastOutsideInputRef = useRef(null);
+  const lastKeyboardEntryRef = useRef(null);
 
   const panelRef = useRef(null);
   const activeRef = useRef(null);
   const dictationTargetRef = useRef(null);
   activeRef.current = active;
   const close = useCallback(() => {
+    if (activeRef.current) lastKeyboardEntryRef.current = activeRef.current;
     lastOutsideInputRef.current = null;
     dictationTargetRef.current = null;
     setActive(null);
@@ -40,7 +42,9 @@ export function SonomaKeyboardProvider({ children }) {
     setKeyboardHeight(0);
   }, []);
   const open = useCallback((config) => {
-    if (!isTouchScreen() && !(workspaceDock && config?.layout === "math")) return;
+    // Desktop inputs open the keyboard only after an explicit keyboard toggle,
+    // or for the existing Math workspace; touch behavior stays automatic.
+    if (!isTouchScreen() && !(workspaceDock && (config?.layout === "math" || activeRef.current))) return;
     const field = config?.ref?.current;
     if (field?.isConnected && !panelRef.current?.contains(field)) lastOutsideInputRef.current = config;
     setActive(config);
@@ -121,14 +125,19 @@ export function SonomaKeyboardProvider({ children }) {
     if (!workspaceDock && active && !active.ref?.current?.isConnected) close();
   }, [workspaceDock, active, close]);
 
-  // Open the Math keyboard tab even when a test question has no answer field.
-  const showMathTab = useCallback((theme) => {
+  // Manual keyboard toggle is independent of the selected tab. Reopen on the
+  // previous tab and restore a connected input, if one is still available.
+  const toggleKeyboard = useCallback((theme) => {
+    if (activeRef.current) { close(); return; }
     if (!isTouchScreen() && !workspaceDock) return;
-    setActive((current) => current?.ref?.current?.isConnected
-      ? { ...current, layout: "math" }
-      : { ref: { current: null }, onChange: () => {}, layout: "math", theme });
+    const previous = lastKeyboardEntryRef.current;
+    const field = previous?.ref?.current;
+    const usable = field?.isConnected && !field.disabled && !field.readOnly;
+    setActive(usable
+      ? { ...previous, theme: previous.theme || theme }
+      : { ref: { current: null }, onChange: () => {}, layout: previous?.layout || "text", theme });
     setShift(false);
-  }, [workspaceDock]);
+  }, [close, workspaceDock]);
 
   // Reuse the existing STT recorder; keep the input and insertion point from the moment dictation begins.
   const prepareDictation = useCallback(() => {
@@ -206,7 +215,7 @@ export function SonomaKeyboardProvider({ children }) {
   const layout = active?.layout || "text";
   const workspaceVisible = Boolean(active && workspaceDock && layout === "math");
   return (
-    <KeyboardContext.Provider value={{ open, close, showMathTab, active, keyboardHeight, setWorkspaceDock, workspacePortal }}>
+    <KeyboardContext.Provider value={{ open, close, toggleKeyboard, active, keyboardHeight, setWorkspaceDock, workspacePortal }}>
       {children}
       {active && (
         <div ref={panelRef} data-sonoma-keyboard role="group" aria-label="Sonoma on-screen keyboard" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:10000, background:active?.theme?.background || (workspaceVisible ? "#1e293b" : "#e8e8eb"), color:active?.theme?.color || (workspaceVisible ? "#e2e8f0" : "#111827"), padding:"8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left))", boxShadow:"0 -5px 24px #0003", touchAction:"manipulation" }}>

@@ -20,10 +20,21 @@ test('My Math Workspace appears once and only inside the Math keyboard tab', () 
   assert.ok(keyboard.includes('{workspaceVisible && <div id="sonoma-keyboard-workspace"'))
 })
 
-test('Math tab owns the workspace; there is no separate workspace show or hide control', () => {
-  assert.match(slate, /data-slate-math-keyboard-tab/)
-  assert.match(slate, /onClick=\{\(\) => sonomaKeyboard\.showMathTab\(/)
-  assert.match(slate, /aria-label="Open Math keyboard tab"/)
+test('general keyboard toggle lives in the existing header without taking transcript or keyboard height', () => {
+  assert.match(slate, /data-slate-keyboard-toggle/)
+  assert.match(slate, /onClick=\{\(\) => sonomaKeyboard\.toggleKeyboard\(/)
+  assert.match(slate, /aria-label=\{sonomaKeyboard\.active \? 'Hide keyboard' : 'Show keyboard'\}/)
+  const headerStart = slate.indexOf('<header style={{ minHeight: 58')
+  const headerEnd = slate.indexOf('</header>', headerStart)
+  const toggle = slate.indexOf('data-slate-keyboard-toggle')
+  assert.ok(headerStart >= 0 && toggle > headerStart && toggle < headerEnd,
+    'toggle must be in the existing session header, not a separate transcript row')
+  assert.doesNotMatch(slate, /data-slate-math-keyboard-tab|MATH KEYBOARD/)
+  assert.match(keyboard, /const toggleKeyboard = useCallback/)
+  assert.match(keyboard, /if \(activeRef\.current\) \{ close\(\); return; \}/)
+  assert.match(keyboard, /layout: previous\?\.layout \|\| "text"/)
+  assert.match(keyboard, /value=\{\{ open, close, toggleKeyboard, active, keyboardHeight/)
+
   assert.match(keyboard, /const nextLayout = \{ "123": "number", "Math": "math", "More": "symbols", "ABC": "text" \}\[key\]/)
   assert.doesNotMatch(slate, /toggleManualScratch|data-slate-manual-math-toggle|data-slate-test-manual-math-toggle/)
   assert.doesNotMatch(keyboard, /toggleWorkspaceDock|Hide my math|My math workspace"<\/button>/)
