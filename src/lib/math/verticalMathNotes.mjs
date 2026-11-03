@@ -21,7 +21,7 @@ function visibleTopCells(problem) {
  * Public scratch slots are derived from visible layout structure, never from
  * solved carry/regroup values. Teacher-controlled work cells take precedence.
  */
-export function listVerticalMathWorkingNoteSlots(problem, view) {
+export function listVerticalMathWorkingNoteSlots(problem, view, { paperCarry = false } = {}) {
   if (!problem || !view) return []
   const hidden = new Set(Array.isArray(view.hidden) ? view.hidden : [])
   const editable = new Set(Array.isArray(view.editable) ? view.editable : [])
@@ -61,7 +61,10 @@ export function listVerticalMathWorkingNoteSlots(problem, view) {
     const needsPartialSum = Array.isArray(problem.partialRows) && problem.partialRows.length > 1
 
     return workRowsOf(problem)
-      .filter((row) => row.role === 'multiplication_carry' || row.role === 'sum_carry')
+      // Paper scratch work reuses the same carry positions for each multiplier
+      // digit. Keep the per-step canonical rows for teaching and grading.
+      .filter((row) => row.role === 'sum_carry' ||
+        (row.role === 'multiplication_carry' && (!paperCarry || row.rowIndex === 1)))
       .flatMap((row) => row.cells.filter((cell) => {
         if (cell.place === null || !scratchable(cell)) return false
         if (row.role === 'sum_carry') {
@@ -80,7 +83,7 @@ export function listVerticalMathWorkingNoteSlots(problem, view) {
         cellId: cell.id,
         rowId: row.id,
         place: cell.place,
-        label: (row.role === 'sum_carry' ? 'Sum carry' : 'Multiplication carry step ' + row.rowIndex) +
+        label: (row.role === 'sum_carry' ? 'Sum carry' : paperCarry ? 'Reusable multiplication carry' : 'Multiplication carry step ' + row.rowIndex) +
           ' working note for ' + String(cell.id).split('.').at(-1) + ' place',
       })))
   }

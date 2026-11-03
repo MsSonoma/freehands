@@ -68,7 +68,7 @@ export default function SlateManualScratch({
       problem={model.problem} view={model.session.view} onViewChange={setView}
       notes={draft.notes} onNotesChange={(notes) =>
         onChange({ ...draft, notes: sanitizeVerticalMathWorkingNotes(notes) })}
-      phase={phase} embeddedScratch showCheck={false} showFullAnswerInputs={false}
+      phase={phase} embeddedScratch paperCarry showCheck={false} showFullAnswerInputs={false}
       onOpenNumberPad={openScratchMathTab}
       operationChoices={options} onOperationChange={setOperation}
       scratchPartialEntries={draft.partialEntries || {}}

@@ -108,3 +108,34 @@ test('incorrect notes do not enter the view or affect answer evaluation in teach
   assert.deepEqual(after, before)
   assert.deepEqual(entered.view.entries, { 'result.tens': '7', 'result.ones': '3' })
 })
+
+
+test('MMW reuses one carry row for each multiplication digit and lets learners overwrite it', () => {
+  const problem = buildVerticalMultiplicationProblem(['47', '326'])
+  const view = createVerticalMathView(problem)
+  const canonical = listVerticalMathWorkingNoteSlots(problem, view)
+  assert.ok(canonical.some((slot) => slot.key.startsWith('multiply_carry.2.')))
+  assert.ok(canonical.some((slot) => slot.key.startsWith('multiply_carry.3.')))
+
+  const paper = listVerticalMathWorkingNoteSlots(problem, view, { paperCarry: true })
+  const multiplication = paper.filter((slot) => slot.key.startsWith('multiply_carry.'))
+  assert.deepEqual(multiplication.map((slot) => slot.key), ['multiply_carry.1.tens'])
+  assert.ok(multiplication.every((slot) => slot.label.includes('Reusable multiplication carry')))
+  assert.ok(paper.some((slot) => slot.key.startsWith('sum_carry.')))
+  assert.ok(paper.every((slot) => !slot.key.startsWith('multiply_carry.2.') && !slot.key.startsWith('multiply_carry.3.')))
+  assert.equal(paper.some((slot) => Object.hasOwn(slot, 'value')), false)
+
+  const validKeys = paper.map((slot) => slot.key)
+  const key = 'multiply_carry.1.tens'
+  let notes = updateVerticalMathWorkingNote({}, key, '4', { validKeys })
+  notes = updateVerticalMathWorkingNote(notes, key, '', { validKeys })
+  notes = updateVerticalMathWorkingNote(notes, key, '1', { validKeys })
+  assert.deepEqual(notes, { [key]: '1' })
+  const snapshot = createVerticalMathWorkingNotes('paper-multiplication', notes, { validKeys })
+  assert.deepEqual(restoreVerticalMathWorkingNotes(JSON.parse(JSON.stringify(snapshot)), {
+    activityId: 'paper-multiplication', validKeys,
+  }).notes, notes)
+  assert.deepEqual(
+    sanitizeVerticalMathWorkingNotes({ ...notes, 'multiply_carry.2.hundreds': '2' }, { validKeys }), notes,
+  )
+})

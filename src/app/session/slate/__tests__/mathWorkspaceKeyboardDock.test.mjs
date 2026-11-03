@@ -62,3 +62,13 @@ test('saved scratch work and teaching/test answer transfer remain unchanged', ()
   assert.match(slate, /setAnswer\(\(current\) => insertSlateMathResult\(current, result\)\)/)
   assert.match(manual, /showCheck=\{false\}/)
 })
+
+
+test('MMW has a single erasable multiplication carry row; lesson math keeps canonical carry rows', () => {
+  const renderer = fs.readFileSync(new URL('../../../../components/math/VerticalMathWorkspace.jsx', import.meta.url), 'utf8')
+  assert.match(manual, /phase=\{phase\} embeddedScratch paperCarry/)
+  assert.match(renderer, /const singlePaperCarry = embeddedScratch && paperCarry && problem.operation === 'multiplication'/)
+  assert.match(renderer, /if \(singlePaperCarry && row.role === 'multiplication_carry' && row.rowIndex !== 1\) return null/)
+  assert.match(renderer, /singlePaperCarry \? 'Carry' : 'Carry ' \+ row.rowIndex/)
+  assert.doesNotMatch(slate, /<VerticalMathWorkspace[^>]*paperCarry/)
+})

@@ -3,6 +3,7 @@ import test from 'node:test'
 import { buildSlateManualScratch, initialSlateManualScratch, restoreSlateManualScratch, slateManualOperationChoices } from '../slateManualScratch.mjs'
 import { enterVerticalMathCell } from '../../../lib/math/verticalMath.mjs'
 import { updateMathSessionView } from '../../../lib/math/mathSession.mjs'
+import { listVerticalMathWorkingNoteSlots, updateVerticalMathWorkingNote } from '../../../lib/math/verticalMathNotes.mjs'
 
 test('unprompted workspace starts collapsed and waits for learner-entered numbers', () => {
   const draft = initialSlateManualScratch()
@@ -74,4 +75,22 @@ test('My Math Workspace retains multiplier-dependent partial entries across refr
     ...saved, operation: 'addition',
   }, 'manual', 'teaching').partialEntries, {})
   assert.deepEqual(restoreSlateManualScratch({ ...draft }, 'manual', 'test').partialEntries, {})
+})
+
+
+test('MMW uses one replaceable carry entry across multiplier digits and keeps it on resume', () => {
+  const draft = { ...initialSlateManualScratch(), visible: true,
+    operation: 'multiplication', operands: ['47', '326'] }
+  const built = buildSlateManualScratch(draft, 'manual-carry', 'teaching')
+  const noteKeys = listVerticalMathWorkingNoteSlots(built.problem, built.session.view, { paperCarry: true })
+    .filter((slot) => slot.rowId.startsWith('multiply_carry.'))
+    .map((slot) => slot.key)
+  assert.deepEqual(noteKeys, ['multiply_carry.1.tens'])
+  let notes = updateVerticalMathWorkingNote({}, noteKeys[0], '4', { validKeys: noteKeys })
+  notes = updateVerticalMathWorkingNote(notes, noteKeys[0], '1', { validKeys: noteKeys })
+  const resumed = restoreSlateManualScratch(
+    JSON.parse(JSON.stringify({ ...draft, notes })), 'manual-carry', 'teaching',
+  )
+  assert.deepEqual(resumed.notes, { [noteKeys[0]]: '1' })
+  assert.equal(buildSlateManualScratch(resumed, 'manual-carry', 'teaching').problem.operation, 'multiplication')
 })

@@ -23,7 +23,7 @@ const SCRATCH_SYMBOLS = { addition: '+', subtraction: '\u2212', multiplication: 
 export default function VerticalMathWorkspace({
   problem, view, onViewChange, onCellSelect, selectedLocation = null, phase = 'teaching', onCheck,
   showCheck = true, showFullAnswerInputs = true, notes, onNotesChange,
-  embeddedScratch = false, footer = null, onOperationChange = null, operationChoices = [],
+  embeddedScratch = false, paperCarry = false, footer = null, onOperationChange = null, operationChoices = [],
   scratchPartialEntries = {}, onScratchPartialEntriesChange = null,
   onOpenNumberPad = null,
 }) {
@@ -49,6 +49,7 @@ export default function VerticalMathWorkspace({
 
   const isTest = phase === 'test'
   const isDivision = problem.operation === 'division' && problem.layout?.type === 'long_division'
+  const singlePaperCarry = embeddedScratch && paperCarry && problem.operation === 'multiplication'
   const hidden = new Set(view.hidden)
   const editable = new Set(view.editable)
   const highlighted = new Set(view.highlighted)
@@ -61,8 +62,8 @@ export default function VerticalMathWorkspace({
   )
   const workRows = problem.workRows || (problem.carryRow ? [problem.carryRow] : [])
   const noteSlots = useMemo(
-    () => listVerticalMathWorkingNoteSlots(problem, view),
-    [problem, view.hidden, view.editable],
+    () => listVerticalMathWorkingNoteSlots(problem, view, { paperCarry: singlePaperCarry }),
+    [problem, view.hidden, view.editable, singlePaperCarry],
   )
   const validNoteKeys = useMemo(() => noteSlots.map((slot) => slot.key), [noteSlots])
   const workingNotes = sanitizeVerticalMathWorkingNotes(
@@ -288,7 +289,7 @@ export default function VerticalMathWorkspace({
     const decimalConcealed = hidden.has(row.id + '.decimal')
     const multiplicationLabel = isMultiplication && !operatorHidden
       ? row.role === 'multiplication_carry'
-        ? 'Carry ' + row.rowIndex
+        ? (singlePaperCarry ? 'Carry' : 'Carry ' + row.rowIndex)
         : row.role === 'partial_product'
           ? 'Partial ' + row.rowIndex
           : row.role === 'sum_carry'
@@ -310,7 +311,7 @@ export default function VerticalMathWorkspace({
         problem.operation === 'subtraction' && row.id === 'operand.1' && noteSlots.length
           ? styles.replacementTargetRow
           : '',
-      ].filter(Boolean).join(' ')} role="row" aria-label={operatorHidden ? 'Number row' : (row.label || row.id)}
+      ].filter(Boolean).join(' ')} role="row" aria-label={operatorHidden ? 'Number row' : (singlePaperCarry && row.role === 'multiplication_carry' ? 'Carry' : row.label || row.id)}
         data-row-id={row.id} data-row-role={operatorHidden ? undefined : (row.role || row.kind)}
         data-decimal-mode={anyDecimalHidden && row.kind !== 'work' ? 'overlay' : undefined}
         data-decimal-row={anyDecimalHidden && row.kind !== 'work' ? row.id : undefined}>
@@ -427,6 +428,8 @@ export default function VerticalMathWorkspace({
     if (!row) return null
     if (problem.operation === 'subtraction' && row.id === 'regroup' &&
       !row.cells.some((cell) => (!hidden.has(cell.id) && cell.value !== null) || editable.has(cell.id))) return null
+    // MMW uses one erasable carry row, not a fresh row per multiplier digit.
+    if (singlePaperCarry && row.role === 'multiplication_carry' && row.rowIndex !== 1) return null
     if (problem.operation === 'multiplication' && row.kind === 'work' && !multiplicationWorkRowIsVisible(row)) return null
     const className = row.id === problem.resultRow.id
       ? styles.answerRow
