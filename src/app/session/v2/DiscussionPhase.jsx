@@ -277,6 +277,16 @@ export class DiscussionPhase {
     this.#eventBus.emit('discussionComplete', {});
   }
 
+  /** Reword an unpresented discussion question, preserving the graded learner turn. */
+  replaceQueuedQuestion(expected, replacement) {
+    if (this.#destroyed || this.#state !== 'awaiting-next' ||
+        !this.#replyCheckpoint?.question || this.#replyCheckpoint.question !== expected ||
+        typeof replacement !== 'string' || replacement.trim().length < 12) return false;
+    this.#replyCheckpoint = { ...this.#replyCheckpoint, question: replacement.trim(),
+      facilitatorReplaced: true };
+    this.#eventBus.emit('discussionReplyStage', this.replyCheckpoint);
+    return true;
+  }
   nextReplyPart() {
     if (this.#destroyed || this.#unacknowledgedObjectiveIndices.size > 0 || this.#state !== 'awaiting-next' || !this.#replyCheckpoint?.question) return;
     const text = this.#replyCheckpoint.question;

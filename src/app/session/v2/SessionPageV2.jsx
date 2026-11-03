@@ -56,6 +56,10 @@ import { buildAcceptableList, judgeAnswer } from './judging';
 import { deriveCorrectAnswerText } from '../utils/questionFormatting';
 import { getSnapshotStorageKey } from '../utils/snapshotPersistenceUtils';
 import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate';
+import FacilitatorOverrideModal from '@/app/components/FacilitatorOverrideModal';
+import { previewFacilitatorQuestion, createFacilitatorSourceRevision } from '@/app/lib/facilitatorOverrideClient';
+import { resolveFacilitatorQuestionSource, canCreateFacilitatorSourceRevision } from '@/app/lib/facilitatorOverrideProvenance.mjs';
+import { normalizeFacilitatorQuestionCandidate } from '@/app/lib/facilitatorOverrideQuestion.mjs';
 import { upsertMedal } from '@/app/lib/medalsClient';
 import { appendTranscriptSegment, updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient';
 import { getStoredAssessments, saveAssessments, clearAssessments } from '../assessment/assessmentStore';
@@ -841,6 +845,9 @@ function SessionPageV2Inner() {
     testStateRef.current = testState;
   }, [testState]);
   const [currentTestQuestion, setCurrentTestQuestion] = useState(null);
+  const [questionOverridePhase, setQuestionOverridePhase] = useState(null);
+  const [discussionQuestionOverrideOpen, setDiscussionQuestionOverrideOpen] = useState(false);
+  const [questionOverrideError, setQuestionOverrideError] = useState('');
   const [testScore, setTestScore] = useState(0);
   const [testQuestionIndex, setTestQuestionIndex] = useState(0);
   const [testTotalQuestions, setTestTotalQuestions] = useState(0);
@@ -948,6 +955,7 @@ function SessionPageV2Inner() {
   const [discussionObjectivesList, setDiscussionObjectivesList] = useState([]);
   const [discussionFacilitatorOverrides, setDiscussionFacilitatorOverrides] = useState({});
   const [discussionOverrideBusy, setDiscussionOverrideBusy] = useState(false);
+  const [discussionUniversalOverride, setDiscussionUniversalOverride] = useState(-1);
   const [discussionOverrideError, setDiscussionOverrideError] = useState('');
   const [discussionObjectiveClues, setDiscussionObjectiveClues] = useState([]);
   const [discussionCompletedIndices, setDiscussionCompletedIndices] = useState([]);
@@ -4317,6 +4325,7 @@ function SessionPageV2Inner() {
   }, []);
 
   const prepareMasteryEligibility = useCallback(async (questions = [], phaseSets = null) => {
+    const generation = questionReplacementGenerationRef.current;
     try {
       const identities = [];
       for (const item of questions || []) {
@@ -4327,6 +4336,7 @@ function SessionPageV2Inner() {
         itemIdentities: identities,
       });
       if (prior && !prior.ok) {
+        if (generation !== questionReplacementGenerationRef.current) return;
         masteryEligibilityRef.current = {
           ok: false,
           reason: INDEPENDENCE_REASONS.PRIOR_EXPOSURE,
@@ -4344,13 +4354,15 @@ function SessionPageV2Inner() {
         phaseSets,
         priorExposedKeys: prior?.exposedKeys || [],
       });
-      masteryEligibilityRef.current = {
+      if (generation !== questionReplacementGenerationRef.current) return;
+        masteryEligibilityRef.current = {
         ok: true,
         itemIdentities: identities,
         ...context,
       };
     } catch {
-      masteryEligibilityRef.current = {
+      if (generation !== questionReplacementGenerationRef.current) return;
+        masteryEligibilityRef.current = {
         ok: false,
         reason: INDEPENDENCE_REASONS.IDENTITY_UNAVAILABLE,
         itemIdentities: [],
@@ -8041,28 +8053,142 @@ function SessionPageV2Inner() {
 
   // Objective credit and the learner's acknowledgement are separate durable events.
   // Never advance the final discussion until every announced goal is acknowledged.
-  const unlockDiscussionObjectives = useCallback(async () => {
-    if (discussionOverrideBusy || showFullDiscussionObjectives) return;
-    setDiscussionOverrideBusy(true);
-    setDiscussionOverrideError('');
-    try {
-      const pin = await requestFacilitatorPinException({
-        title: 'Facilitator PIN required',
-        message: 'Unlock all full learning objectives and educator fulfillment controls.',
-      });
-      if (pin) setShowFullDiscussionObjectives(true);
-    } finally {
-      setDiscussionOverrideBusy(false);
+  const facilitatorFulfillDiscussionObjective = useCallback(async (index) => {
+    if (currentPhaseRef.current !== 'discussion' || !discussionObjectivesList[index] || executionFencedRef.current) return false;
+    const phase = discussionPhaseRef.current;
+    const ok = phase?.fulfillObjectiveByFacilitator(index);
+    if (!ok) {
+      setDiscussionOverrideError('The objective could not be updated. Please try again.');
+      return false;
     }
-  }, [discussionOverrideBusy, showFullDiscussionObjectives]);
-
-  const facilitatorFulfillDiscussionObjective = useCallback((index) => {
-    if (!showDiscussionObjectives || !showFullDiscussionObjectives || discussionOverrideBusy) return;
-    if (currentPhaseRef.current !== 'discussion' || !discussionObjectivesList[index]) return;
-    if (!window.confirm('Mark this objective fulfilled by the facilitator? Your judgment is recorded separately from AI grading.')) return;
-    const ok = discussionPhaseRef.current?.fulfillObjectiveByFacilitator(index);
-    if (!ok) setDiscussionOverrideError('The objective could not be updated. Please try again.');
-  }, [showDiscussionObjectives, showFullDiscussionObjectives, discussionOverrideBusy, discussionObjectivesList]);
+    const saved = await snapshotServiceRef.current?.saveProgress('facilitator-discussion-goal', {
+      phaseOverride: 'discussion', completedObjectiveIndices: [...discussionCompletedIndicesRef.current],
+      facilitatorObjectiveOverrides: phase?.facilitatorOverrides || {},
+      objectiveAnnouncements: [...discussionAwardQueueRef.current],
+    });
+    if (!saved || saved.success === false || saved.blocked === true) {
+      setDiscussionOverrideError('The goal was credited locally, but its save was not confirmed. Do not refresh.');
+      return false;
+    }
+    setDiscussionOverrideError('');
+    return true;
+  }, [discussionObjectivesList]);
+  const questionOverrideContext = {
+    comprehension: { phase: comprehensionPhaseRef.current, question: currentComprehensionQuestion },
+    exercise: { phase: exercisePhaseRef.current, question: currentExerciseQuestion },
+    worksheet: { phase: worksheetPhaseRef.current, question: currentWorksheetQuestion },
+    test: { phase: testPhaseRef.current, question: currentTestQuestion },
+  };
+  const openedQuestion = questionOverrideContext[questionOverridePhase]?.question || null;
+  const openedQuestionSource = openedQuestion ? resolveFacilitatorQuestionSource(lessonData, openedQuestion) : null;
+  const canReviseOpenedQuestionSource = canCreateFacilitatorSourceRevision(lessonKey, openedQuestionSource);
+  const replaceSonomaQuestion = async ({ target, feedback, pin, proposal, commit }) => {
+    const context = questionOverrideContext[questionOverridePhase];
+    if (!context?.phase || !context.question || !target ||
+        String(context.question.id || '') !== String(target.id || '')) {
+      throw new Error('The active question changed. Close the override and try again.');
+    }
+    if (!commit) return previewFacilitatorQuestion({
+      pin, teacher: 'sonoma', phase: questionOverridePhase, original: context.question,
+      feedback, grade: lessonData?.grade || '',
+    });
+    const controller = context.phase;
+    const original = controller.currentQuestion;
+    if (controller.state !== 'awaiting-answer' || !original || String(original.id) !== String(target.id)) {
+      throw new Error('Only the current unanswered question can be replaced.');
+    }
+    if ([comprehensionStateRef.current, exerciseStateRef.current, worksheetStateRef.current, testStateRef.current].some((_, i) =>
+      ['comprehension','exercise','worksheet','test'][i] === questionOverridePhase && _ !== 'awaiting-answer')) {
+      throw new Error('Wait for this question to finish before applying the replacement.');
+    }
+    const replacement = normalizeFacilitatorQuestionCandidate(original, { ...proposal, replacementId: globalThis.crypto?.randomUUID?.() || Date.now().toString() });
+    if (!replacement) throw new Error('The proposed replacement failed validation. Nothing was changed.');
+    if (!controller.replacePendingQuestion(original.id, replacement, { silent: true })) throw new Error('The question advanced before replacement. Nothing was changed.');
+    const save = await snapshotServiceRef.current?.saveProgress('facilitator-question-replacement', {
+      phaseOverride: questionOverridePhase, questions: controller.questions,
+      nextQuestionIndex: controller.currentQuestionIndex, score: controller.score, answers: controller.answers,
+      questionReplacement: { originalQuestionId: original.id || null, replacementQuestionId: replacement.id,
+        approvedAt: new Date().toISOString(), source: 'facilitator', scope: 'instance', feedback },
+    });
+    if (!save || save?.success === false || save?.blocked === true) {
+      controller.replacePendingQuestion(replacement.id, original, { silent: true });
+      throw new Error('The replacement was not saved. The original question has been restored.');
+    }
+    controller.announceCurrentQuestionReplacement();
+    const setters = { comprehension: setCurrentComprehensionQuestion, exercise: setCurrentExerciseQuestion,
+      worksheet: setCurrentWorksheetQuestion, test: setCurrentTestQuestion };
+    setters[questionOverridePhase]?.(replacement);
+    if (questionOverridePhase === 'test') {
+      // A new assessment item has a different identity and exposure history.
+      // Fail closed until its independent-eligibility and isolation checks finish.
+      const generation = ++questionReplacementGenerationRef.current;
+      masteryEligibilityRef.current = {
+        ok: false, reason: INDEPENDENCE_REASONS.IDENTITY_UNAVAILABLE, itemIdentities: [],
+        priorExposedKeys: new Set(), baselineIdentityKeys: new Set(), instructionalExposureKeys: new Set(),
+      };
+      assessmentIsolationRef.current = { status: ASSESSMENT_ISOLATION_STATUSES.UNAVAILABLE };
+      const sets = { ...(buildAllPhaseSets() || {}), test: controller.questions };
+      void Promise.all([
+        prepareMasteryEligibility(controller.questions, sets),
+        analyzeAssessmentIsolation({ lessonKey, lessonId, lessonData, phaseSets: sets }),
+      ]).then(([, isolation]) => {
+        if (generation !== questionReplacementGenerationRef.current) return;
+        assessmentIsolationRef.current = isolation;
+      }).catch(() => {
+        if (generation !== questionReplacementGenerationRef.current) return;
+        masteryEligibilityRef.current = {
+          ok: false, reason: INDEPENDENCE_REASONS.IDENTITY_UNAVAILABLE, itemIdentities: [],
+          priorExposedKeys: new Set(), baselineIdentityKeys: new Set(), instructionalExposureKeys: new Set(),
+        };
+        assessmentIsolationRef.current = { status: ASSESSMENT_ISOLATION_STATUSES.UNAVAILABLE };
+      });
+    }
+    appendTranscriptLine({ text: replacement.question, role: 'assistant',
+      kind: 'facilitator_question_replacement', phase: questionOverridePhase,
+      replacesQuestionId: original.id || null }, { immediate: true });
+    setQuestionOverrideError('');
+    return true;
+  };
+  const reviseSonomaQuestionSource = async ({ target, feedback, pin, proposal }) => {
+    const current = questionOverrideContext[questionOverridePhase];
+    const source = current?.question ? resolveFacilitatorQuestionSource(lessonData, current.question) : null;
+    if (!canCreateFacilitatorSourceRevision(lessonKey, source) ||
+        String(current.question.id || '') !== String(target?.id || '') ||
+        current.phase?.state !== 'awaiting-answer') {
+      throw new Error('The source question is no longer an editable exact match.');
+    }
+    const result = await createFacilitatorSourceRevision({ pin, lessonKey,
+      field: source.field, index: source.index, original: source.original, proposal, feedback });
+    return { ...result, instanceApplied: false };
+  };
+  const queuedDiscussionQuestion = discussionState === 'awaiting-next'
+    ? discussionPhaseRef.current?.replyCheckpoint?.question || '' : '';
+  const regenerateSonomaDiscussionQuestion = async ({ target, feedback, pin, proposal, commit }) => {
+    const phase = discussionPhaseRef.current;
+    if (!phase || phase.state !== 'awaiting-next' ||
+        !phase.replyCheckpoint?.question || phase.replyCheckpoint.question !== target?.question) {
+      throw new Error('The discussion has moved on. Open the override for the current question.');
+    }
+    if (!commit) return previewFacilitatorQuestion({
+      teacher: 'sonoma', phase: 'discussion', pin, feedback, grade: lessonData?.grade || '',
+      original: { id: target.id, question: target.question, type: 'shortanswer' },
+    });
+    const replacement = normalizeFacilitatorQuestionCandidate({ id: target.id, question: target.question,
+      type: 'shortanswer' }, { ...proposal, replacementId: globalThis.crypto?.randomUUID?.() || String(Date.now()) });
+    if (!replacement || !phase.replaceQueuedQuestion(target.question, replacement.question)) {
+      throw new Error('The proposed question could not replace the pending discussion question.');
+    }
+    const saved = await snapshotServiceRef.current?.saveProgress('facilitator-discussion-question', {
+      phaseOverride: 'discussion', replyCheckpoint: phase.replyCheckpoint,
+      discussionQuestionRevision: { original: target.question, replacement: replacement.question,
+        approvedAt: new Date().toISOString(), feedback },
+    });
+    if (!saved || saved?.success === false || saved?.blocked) {
+      phase.replaceQueuedQuestion(replacement.question, target.question);
+      throw new Error('The replacement was not saved. The original question has been restored.');
+    }
+    return true;
+  };
   const acknowledgeDiscussionObjectiveNotice = useCallback(async () => {
     if (discussionAwardAcknowledgingRef.current) return;
     const current = discussionAwardQueueRef.current[0];
@@ -11005,7 +11131,51 @@ function SessionPageV2Inner() {
           </div>
         </div>
       )}
-      {/* Discussion objectives overlay */}
+      <FacilitatorOverrideModal
+        open={discussionUniversalOverride >= 0 && showDiscussionObjectives}
+        onClose={() => setDiscussionUniversalOverride(-1)} teacher="Ms. Sonoma"
+        selectedIndex={Math.max(0, discussionUniversalOverride)}
+        targets={discussionObjectivesList.map((text, i) => ({
+          id: `discussion-goal-${i}`, text, completed: discussionCompletedIndices.includes(i),
+          source: discussionFacilitatorOverrides[i] ? 'facilitator' : 'ai',
+        }))}
+        onOutcome={facilitatorFulfillDiscussionObjective}
+        busy={discussionOverrideBusy}
+      />      {['comprehension', 'exercise', 'worksheet', 'test'].includes(currentPhase) &&
+        questionOverrideContext[currentPhase]?.question && (
+        <button type="button" onClick={() => {
+          audioEngineRef.current?.pause?.();
+          setQuestionOverrideError('');
+          setQuestionOverridePhase(currentPhase);
+        }} style={{ position: 'fixed', right: 12, top: 82, zIndex: 2500,
+          padding: '8px 11px', borderRadius: 9, border: '1px solid #94a3b8',
+          background: '#fff', color: '#334155', fontSize: 12, fontWeight: 700 }}>
+          Facilitator: question
+        </button>
+      )}
+      {questionOverrideError && <div role="alert" style={{ position: 'fixed', top: 130, right: 12, zIndex: 2501, color: '#991b1b', background: '#fff', padding: 8 }}>{questionOverrideError}</div>}
+      <FacilitatorOverrideModal
+        open={Boolean(questionOverridePhase && openedQuestion)}
+        onClose={() => setQuestionOverridePhase(null)} teacher="Ms. Sonoma"
+        targetType="question"
+        targets={openedQuestion ? [{ ...openedQuestion, text: openedQuestion.question }] : []}
+        onRegenerate={replaceSonomaQuestion}
+        allowSourceRevision={canReviseOpenedQuestionSource}
+        onSourceRevision={reviseSonomaQuestionSource}
+      />      {currentPhase === 'discussion' && queuedDiscussionQuestion && !discussionQuestionOverrideOpen && (
+        <button type="button" onClick={() => setDiscussionQuestionOverrideOpen(true)}
+          style={{ position: 'fixed', top: 82, right: 12, zIndex: 2500,
+            border: '1px solid #94a3b8', background: '#fff', color: '#334155',
+            borderRadius: 8, padding: '8px 11px', fontSize: 12, fontWeight: 700 }}>
+          Facilitator: next question
+        </button>
+      )}
+      <FacilitatorOverrideModal
+        open={discussionQuestionOverrideOpen && !!queuedDiscussionQuestion && currentPhase === 'discussion'}
+        onClose={() => setDiscussionQuestionOverrideOpen(false)} teacher="Ms. Sonoma" targetType="question"
+        targets={queuedDiscussionQuestion ? [{ id: 'discussion-pending-question', question: queuedDiscussionQuestion }] : []}
+        onRegenerate={regenerateSonomaDiscussionQuestion}
+      />      {/* Discussion objectives overlay */}
       {showDiscussionObjectives && (
         <div
           style={{
@@ -11014,7 +11184,7 @@ function SessionPageV2Inner() {
             display: 'flex', alignItems: 'center', justifyContent: 'center',
             padding: 20,
           }}
-          onClick={() => { setShowDiscussionObjectives(false); setShowFullDiscussionObjectives(false); }}
+          onClick={() => { setShowDiscussionObjectives(false); setShowFullDiscussionObjectives(false); setDiscussionUniversalOverride(-1); }}
         >
           <div
             style={{
@@ -11037,27 +11207,10 @@ function SessionPageV2Inner() {
               <div>
                 <div style={{ color: '#c7442e', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
                 <div style={{ color: '#6b7280', fontSize: 12 }}>{discussionObjectivesInfo.completed} of {discussionObjectivesInfo.total} completed</div>
-                {!showFullDiscussionObjectives && (
-                  <button
-                    type="button"
-                    onClick={async (e) => {
-                      e.stopPropagation();
-                      const pin = await requestFacilitatorPinException({
-                        title: 'Facilitator PIN required',
-                        message: 'Enter the Facilitator PIN to view the full learning objectives.',
-                      });
-                      if (pin) setShowFullDiscussionObjectives(true);
-                    }}
-                    style={{
-                      marginTop: 6, padding: 0, background: 'none', border: 'none',
-                      color: '#6b7280', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit',
-                    }}
-                  >Facilitator: show full objectives</button>
-                )}
               </div>
               <button
                 type="button"
-                onClick={() => { setShowDiscussionObjectives(false); setShowFullDiscussionObjectives(false); }}
+                onClick={() => { setShowDiscussionObjectives(false); setShowFullDiscussionObjectives(false); setDiscussionUniversalOverride(-1); }}
                 style={{
                   background: '#f3f4f6', border: 'none', color: '#6b7280',
                   borderRadius: 8, width: 32, height: 32, cursor: 'pointer',
@@ -11083,7 +11236,7 @@ function SessionPageV2Inner() {
                 <div style={{ color: '#9ca3af', fontSize: 13, padding: '16px 20px' }}>Loading objectives…</div>
               ) : discussionObjectivesList.map((obj, i) => {
                 const done = discussionCompletedIndices.includes(i);
-                const learnerText = (showFullDiscussionObjectives || done) ? obj : (discussionObjectiveClues[i] || `Goal ${i + 1}`);
+                const learnerText = done ? obj : (discussionObjectiveClues[i] || `Goal ${i + 1}`);
                 return (
                   <div key={i} style={{
                     display: 'flex', alignItems: 'flex-start', gap: 10,
@@ -11091,23 +11244,13 @@ function SessionPageV2Inner() {
                     borderBottom: '1px solid #f3f4f6',
                   }}>
                     <span style={{ fontSize: 15, flexShrink: 0, marginTop: 1 }}>{done ? '\u2705' : '\u2B1C'}</span>
-                    <button type="button" onClick={() => { if (!showFullDiscussionObjectives && !done) void unlockDiscussionObjectives(); }} style={{
-                      background: "none", border: "none", padding: 0, textAlign: "left", cursor: !showFullDiscussionObjectives && !done ? "pointer" : "default",
-                      color: done ? '#111827' : '#9ca3af',
-                      fontSize: 13, lineHeight: 1.5,
-                      transition: 'color 0.3s',
+                    <button type="button" onClick={() => setDiscussionUniversalOverride(i)} style={{
+                      background: 'none', border: 'none', padding: 0, flex: 1, textAlign: 'left',
+                      cursor: 'pointer', color: done ? '#111827' : '#6b7280', fontSize: 13, lineHeight: 1.5,
                     }}>{learnerText}</button>
-                    {showFullDiscussionObjectives && !done && (
-                      <button type="button" onClick={() => facilitatorFulfillDiscussionObjective(i)} disabled={discussionOverrideBusy}
-                        style={{ background: '#334155', color: '#fff', border: 'none', borderRadius: 8,
-                          padding: '6px 10px', cursor: 'pointer', fontSize: 11, fontWeight: 700 }}>
-                        Mark fulfilled
-                      </button>
-                    )}
-                    {showFullDiscussionObjectives && discussionFacilitatorOverrides[i] && (
+                    {discussionFacilitatorOverrides[i] && (
                       <span style={{ fontSize: 11, color: '#475569' }}>Facilitator fulfilled</span>
-                    )}
-                  </div>
+                    )}</div>
                 );
               })}
             </div>

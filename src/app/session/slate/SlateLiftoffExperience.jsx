@@ -5,6 +5,10 @@ import { useRouter } from 'next/navigation'
 import { createPortal } from 'react-dom'
 import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
+import FacilitatorOverrideModal from '@/app/components/FacilitatorOverrideModal'
+import { previewFacilitatorQuestion, createFacilitatorSourceRevision } from '@/app/lib/facilitatorOverrideClient'
+import { resolveFacilitatorQuestionSource, canCreateFacilitatorSourceRevision } from '@/app/lib/facilitatorOverrideProvenance.mjs'
+import { normalizeFacilitatorQuestionCandidate } from '@/app/lib/facilitatorOverrideQuestion.mjs'
 import {
   getProtectedBrowserSessionId,
   startProtectedInstructionalSession,
@@ -46,6 +50,9 @@ import {
   isResumableSlateLiftoffSnapshot,
   LIFTOFF_PROTOCOL_VERSION,
   liftoffReleaseReady,
+  facilitatorFulfillLiftoffComponent,
+  normalizeLiftoffProblem,
+  isLiftoffProblemFresh,
 } from '@/app/lib/slateLiftoff.mjs'
 import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
 import WebbDictationButton from '../webb/WebbDictationButton'
@@ -282,6 +289,10 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [resumeChoiceBusy, setResumeChoiceBusy] = useState(false)
   const [lesson, setLesson] = useState(null)
   const [liftoff, setLiftoff] = useState(null)
+  const [slateOverrideIndex, setSlateOverrideIndex] = useState(-1)
+  const [slateQuestionOverrideOpen, setSlateQuestionOverrideOpen] = useState(false)
+  const [slateTestOverrideOpen, setSlateTestOverrideOpen] = useState(false)
+  const [slateOverrideError, setSlateOverrideError] = useState('')
   const [slateText, setSlateText] = useState('')
   const [introTeaching, setIntroTeaching] = useState(null)
   const [introSpeechPlaying, setIntroSpeechPlaying] = useState(false)
@@ -1482,6 +1493,100 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setLiftoff(next)
     await persistLiftoffSnapshot({ phase: 'active', liftoff: next })
   }, [persistLiftoffSnapshot, phase])
+  const fulfillSlateObjective = async (index) => {
+    if (phase !== 'active' || busy || lineHelpBusy || snapshotServiceRef.current?.writesFenced) return false
+    const current = liftoffRef.current
+    const selected = (current?.components || []).filter(row => row.essential !== false)[index]
+    if (!selected) return false
+    const next = facilitatorFulfillLiftoffComponent(current, selected.id)
+    if (!next) return false
+    const saved = await persistLiftoffSnapshot({ phase: 'active', liftoff: next })
+    if (!saved || saved?.success === false || snapshotServiceRef.current?.writesFenced) {
+      setSlateOverrideError('The approval could not be saved. No credit was applied.')
+      return false
+    }
+    liftoffRef.current = next
+    setLiftoff(next)
+    setSlateOverrideError('')
+    return true
+  }
+  const regenerateSlateProbe = async ({ target, feedback, pin, proposal, commit }) => {
+    const current = liftoffRef.current
+    const existing = current?.currentAction?.problem
+    if (phase !== 'active' || questionPending || pendingAdvance || introTeaching || busy || lineHelpBusy ||
+        submitLockRef.current || snapshotServiceRef.current?.writesFenced ||
+        existing?.math || !existing?.prompt || existing.prompt !== target?.question) {
+      throw new Error('The current Liftoff question is not available for replacement.')
+    }
+    if (!commit) return previewFacilitatorQuestion({
+      teacher: 'slate', phase: 'liftoff', pin, feedback,
+      original: { id: existing.instanceKey || existing.fingerprint, question: existing.prompt,
+        type: 'shortanswer', objectiveId: current.currentAction?.targetComponentIds?.[0] || null },
+      grade: lesson?.grade || '',
+    })
+    const nextProblem = normalizeLiftoffProblem({ ...existing,
+      prompt: proposal?.question,
+      instanceKey: `facilitator-${globalThis.crypto?.randomUUID?.() || Date.now()}`,
+      responseContract: existing.responseContract,
+    })
+    if (!nextProblem || !isLiftoffProblemFresh(nextProblem, current.problemHistory || [])) {
+      throw new Error('The proposed question repeats prior work or fails Liftoff validation.')
+    }
+    const next = {
+      ...current, currentAction: { ...current.currentAction, problem: nextProblem },
+      trace: [...(current.trace || []), { turn: current.turnNumber, event: 'facilitator_question_replaced',
+        originalPrompt: existing.prompt, replacementPrompt: nextProblem.prompt, approvedAt: new Date().toISOString() }].slice(-80),
+    }
+    const saved = await persistLiftoffSnapshot({ phase: 'active', liftoff: next, slateText: nextProblem.prompt })
+    if (!saved || saved?.success === false || snapshotServiceRef.current?.writesFenced) {
+      throw new Error('The question was not saved. Nothing was changed.')
+    }
+    liftoffRef.current = next
+    setLiftoff(next)
+    setSlateText(nextProblem.prompt)
+    appendTranscript('assistant', `The facilitator replaced this question. ${nextProblem.prompt}`, { kind: 'facilitator_question_replacement' })
+    return true
+  }
+  const slateTestQuestionSource = currentAssessment ? resolveFacilitatorQuestionSource(lesson, currentAssessment) : null
+  const reviseSlateTestQuestionSource = async ({ target, feedback, pin, proposal }) => {
+    const original = testItems[assessmentIndex]
+    const source = original ? resolveFacilitatorQuestionSource(lesson, original) : null
+    if (phase !== 'test' || !original || questionText(original) !== target?.question ||
+        !canCreateFacilitatorSourceRevision(lessonKey, source) || busy || assessmentSubmitLockRef.current) {
+      throw new Error('The test question no longer matches an editable source.')
+    }
+    const result = await createFacilitatorSourceRevision({ pin, lessonKey, field: source.field,
+      index: source.index, original: source.original, proposal, feedback })
+    return { ...result, instanceApplied: false }
+  }
+  const regenerateSlateTestQuestion = async ({ target, feedback, pin, proposal, commit }) => {
+    const item = testItems[assessmentIndex]
+    if (phase !== 'test' || busy || assessmentSubmitLockRef.current || assessmentMathPendingRef.current ||
+        snapshotServiceRef.current?.writesFenced || !item || questionText(item) !== target?.question ||
+        testResults.length > assessmentIndex) {
+      throw new Error('This test question is no longer eligible for replacement.')
+    }
+    if (!commit) return previewFacilitatorQuestion({
+      teacher: 'slate', phase: 'independent-test', pin, feedback,
+      original: { ...item, question: questionText(item), type: item.type || item.sourceType || 'shortanswer' },
+      grade: lesson?.grade || '',
+    })
+    const replacement = normalizeFacilitatorQuestionCandidate(item, { ...proposal,
+      replacementId: globalThis.crypto?.randomUUID?.() || String(Date.now()) })
+    if (!replacement) throw new Error('The replacement failed question validation.')
+    const nextItems = [...testItems]
+    nextItems[assessmentIndex] = replacement
+    const alignment = validateSlateTestAlignment({ lesson, liftoff, testItems: nextItems })
+    if (!alignment.ok) throw new Error('The replacement does not meet the independent test alignment rules. Nothing was changed.')
+    const saved = await persistLiftoffSnapshot({ phase: 'test', testItems: nextItems, assessmentIndex, testResults })
+    if (!saved || saved?.success === false || snapshotServiceRef.current?.writesFenced) {
+      throw new Error('The replacement could not be saved. Nothing was changed.')
+    }
+    testItemsRef.current = nextItems
+    setTestItems(nextItems)
+    setAssessmentAnswer('')
+    return true
+  }
   const essentialComponents = components.filter((component) => component.essential !== false)
   const demonstratedComponents = essentialComponents.filter((component) => component.revealedToLearner === true || ['independent', 'retained'].includes(component.evidenceState))
   const revealedComponents = essentialComponents.filter((component) => component.revealedToLearner === true || ['independent', 'retained'].includes(component.evidenceState))
@@ -2360,7 +2465,38 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
           <SlateIndependentTestReport items={testResults} percentage={finalPercentage} />
           <p style={{ color: C.muted }}>This independent test was completed without help during the test. Partial answers receive half a point; only correct answers establish independent mastery evidence.</p>
           <button onClick={() => router.push('/learn')} style={{ padding: '12px 20px', cursor: 'pointer', fontWeight: 800 }}>Back to lessons</button>
-          <audio ref={audioRef} style={{ display: 'none' }} />
+          <FacilitatorOverrideModal
+         open={slateTestOverrideOpen && phase === 'test'}
+         onClose={() => setSlateTestOverrideOpen(false)} teacher="Mr. Slate"
+         targetType="question"
+         targets={currentAssessment ? [{ ...currentAssessment, text: questionText(currentAssessment), question: questionText(currentAssessment) }] : []}
+         onRegenerate={regenerateSlateTestQuestion}
+         allowSourceRevision={canCreateFacilitatorSourceRevision(lessonKey, slateTestQuestionSource)}
+         onSourceRevision={reviseSlateTestQuestionSource}
+         busy={busy || !!snapshotServiceRef.current?.writesFenced}
+       />       <FacilitatorOverrideModal
+         open={slateQuestionOverrideOpen && phase === 'active'}
+         onClose={() => setSlateQuestionOverrideOpen(false)} teacher="Mr. Slate"
+         targetType="question"
+         targets={liftoff?.currentAction?.problem?.prompt ? [{
+           id: liftoff.currentAction.problem.instanceKey || liftoff.currentAction.problem.fingerprint,
+           question: liftoff.currentAction.problem.prompt,
+         }] : []}
+         onRegenerate={regenerateSlateProbe}
+         busy={busy || lineHelpBusy || questionPending || !!snapshotServiceRef.current?.writesFenced}
+       />       <FacilitatorOverrideModal
+         open={slateOverrideIndex >= 0 && phase === 'active'}
+         onClose={() => setSlateOverrideIndex(-1)} teacher="Mr. Slate"
+         selectedIndex={Math.max(0, slateOverrideIndex)}
+         targets={essentialComponents.map((component) => ({
+           id: component.id, text: `${component.name}${component.description ? `: ${component.description}` : ''}`,
+           completed: Boolean(liftoff?.facilitatorFulfillments?.[component.id]) ||
+             ['independent', 'retained'].includes(component.evidenceState),
+           source: liftoff?.facilitatorFulfillments?.[component.id] ? 'facilitator' : 'ai',
+         }))}
+         onOutcome={fulfillSlateObjective} busy={busy || lineHelpBusy || !!snapshotServiceRef.current?.writesFenced}
+       />
+       <audio ref={audioRef} style={{ display: 'none' }} />
         </div>
       </div>
     )
@@ -2762,7 +2898,25 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             {phase === 'test' && <div style={{ color: C.muted, fontSize: 12, marginTop: 5 }}>Test {Math.min(assessmentIndex + 1, currentAssessmentItems.length)}/{currentAssessmentItems.length}</div>}
           </div>
 
-          <div style={{ color: C.muted, fontSize: 10, letterSpacing: 1.2, fontWeight: 900, marginBottom: 8 }}>EARNED SKILLS</div>
+           {phase === 'test' && currentAssessment && !assessmentMathSpec && !busy && (
+             <button type="button" onClick={() => setSlateTestOverrideOpen(true)}
+               style={{ width: '100%', background: C.surface2, color: C.accent,
+                 border: `1px solid ${C.border}`, borderRadius: 8, minHeight: 40, marginBottom: 8, fontWeight: 800 }}>
+               FACILITATOR: REPLACE TEST QUESTION
+             </button>
+           )}           {phase === 'active' && !introTeaching && !questionPending && !busy &&
+             !liftoff?.currentAction?.problem?.math && !!liftoff?.currentAction?.problem?.prompt && (
+             <button type="button" onClick={() => setSlateQuestionOverrideOpen(true)}
+               style={{ width: '100%', background: C.surface2, color: C.accent,
+                 border: `1px solid ${C.border}`, borderRadius: 8, minHeight: 40, marginBottom: 8, fontWeight: 800 }}>
+               FACILITATOR: REPLACE THIS QUESTION
+             </button>
+           )}           {phase === 'active' && <button type="button" onClick={() => setSlateOverrideIndex(0)}
+             style={{ width: '100%', background: C.surface2, border: `1px solid ${C.border}`, borderRadius: 8,
+               color: C.accent, minHeight: 40, marginBottom: 12, fontWeight: 800, cursor: 'pointer' }}>
+             VIEW ALL LEARNING OBJECTIVES (FACILITATOR)
+           </button>}
+           {slateOverrideError && <p role="alert" style={{ color: '#fca5a5', fontSize: 12 }}>{slateOverrideError}</p>}          <div style={{ color: C.muted, fontSize: 10, letterSpacing: 1.2, fontWeight: 900, marginBottom: 8 }}>EARNED SKILLS</div>
           {revealedComponents.length > 0 ? revealedComponents.map((component) => {
             const currentlyDemonstrated = ['independent', 'retained'].includes(component.evidenceState)
             return (

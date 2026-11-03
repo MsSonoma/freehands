@@ -28,6 +28,10 @@ import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { recordSlateCompletion } from '@/app/lib/slateCompletionClient'
 import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
+import FacilitatorOverrideModal from '@/app/components/FacilitatorOverrideModal'
+import { previewFacilitatorQuestion, createFacilitatorSourceRevision } from '@/app/lib/facilitatorOverrideClient'
+import { resolveFacilitatorQuestionSource, canCreateFacilitatorSourceRevision } from '@/app/lib/facilitatorOverrideProvenance.mjs'
+import { normalizeFacilitatorQuestionCandidate } from '@/app/lib/facilitatorOverrideQuestion.mjs'
 import { authorizeProtectedOccurrence } from '@/app/lib/syllabus/executionClient'
 import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
 import { reviewTeacherCssVariables, reviewTeacherDesign } from '@/app/lib/reviewTeacherDesign.mjs'
@@ -448,6 +452,8 @@ function SlateDrillInner() {
   const [qCount, setQCount] = useState(0)
   const [secondsLeft, setSecondsLeft] = useState(QUESTION_SECONDS)
   const [currentQ, setCurrentQ] = useState(null)
+  const [slateReviewOverrideOpen, setSlateReviewOverrideOpen] = useState(false)
+  const [slateReviewOverrideError, setSlateReviewOverrideError] = useState('')
   const [userAnswer, setUserAnswer] = useState('')
   const [lastResult, setLastResult] = useState(null)
   const [soundOn, setSoundOn] = useState(true)
@@ -994,6 +1000,63 @@ function SlateDrillInner() {
   }, [])
 
   // Display a question
+  const slateReviewQuestionSource = currentQ ? resolveFacilitatorQuestionSource(lessonData, currentQ) : null
+  const reviseSlateReviewQuestionSource = async ({ target, feedback, pin, proposal }) => {
+    const current = currentQRef.current
+    const source = current ? resolveFacilitatorQuestionSource(lessonDataRef.current, current) : null
+    if (phaseRef.current !== 'asking' || !current || current.question !== target?.question ||
+        !canCreateFacilitatorSourceRevision(lessonKeyRef.current, source)) {
+      throw new Error('This question no longer matches its editable source.')
+    }
+    const result = await createFacilitatorSourceRevision({ pin, lessonKey: lessonKeyRef.current,
+      field: source.field, index: source.index, original: source.original, proposal, feedback })
+    return { ...result, instanceApplied: false }
+  }
+  const regenerateSlateReviewQuestion = async ({ target, feedback, pin, proposal, commit }) => {
+    const original = currentQRef.current
+    if (phaseRef.current !== 'asking' || isJudgingRef.current || !original ||
+        String(original.id || '') !== String(target?.id || '') || original.question !== target.question) {
+      throw new Error('The current review question changed. Try again.')
+    }
+    if (!commit) return previewFacilitatorQuestion({
+      teacher: 'slate', phase: routeRunPurpose, pin, original, feedback,
+      grade: lessonDataRef.current?.grade || '',
+    })
+    const replacement = normalizeFacilitatorQuestionCandidate(original, {
+      ...proposal, replacementId: globalThis.crypto?.randomUUID?.() || String(Date.now()),
+    })
+    if (!replacement) throw new Error('The proposed question failed validation.')
+    const sourceField = original.sourceRole
+    const sourceItems = lessonDataRef.current?.[sourceField]
+    if (!Array.isArray(sourceItems)) throw new Error('Original question source is unavailable for a safe instance edit.')
+    const sourceIndex = sourceItems.findIndex(q =>
+      String(q.id || '') === String(original.id || '') && q.question === original.question)
+    if (sourceIndex < 0) throw new Error('This question does not match its source. Nothing was changed.')
+    const patchedItems = [...sourceItems]
+    patchedItems[sourceIndex] = replacement
+    const nextLesson = { ...lessonDataRef.current, [sourceField]: patchedItems }
+    const nextPool = poolRef.current.map(q => q === original || (q.id === original.id && q.question === original.question) ? replacement : q)
+    const nextDeck = deckRef.current.map(q => q === original || (q.id === original.id && q.question === original.question) ? replacement : q)
+    const previousLesson = lessonDataRef.current
+    try {
+      const stored = JSON.parse(localStorage.getItem('slate_session') || '{}')
+      localStorage.setItem('slate_session', JSON.stringify({ ...stored, lessonData: nextLesson, lessonKey: lessonKeyRef.current,
+        authorizedOccurrenceId: authorizedOccurrenceRef.current, reviewTeacher: reviewTeacherId, score, qCount,
+        drillTranscript: drillTranscriptRef.current }))
+    } catch { throw new Error('The replacement could not be saved locally. Nothing was changed.') }
+    if (audioEl.current) { try { audioEl.current.pause(); audioEl.current.src = '' } catch {} }
+    lessonDataRef.current = nextLesson
+    setLessonData(nextLesson)
+    poolRef.current = nextPool
+    deckRef.current = nextDeck
+    currentQRef.current = replacement
+    setCurrentQ(replacement)
+    setUserAnswer('')
+    setSecondsLeft(settingsRef.current.questionSecs)
+    recordQuestionPresented(replacement)
+    setSlateReviewOverrideError('')
+    return true
+  }
   const showQuestion = useCallback((q, skipAudio = false) => {
     isJudgingRef.current = false
     setIsJudging(false)
@@ -1268,7 +1331,7 @@ function SlateDrillInner() {
     if (pagePhase !== 'asking') return
     clearInterval(timerInterval.current)
     timerInterval.current = setInterval(() => {
-      if (slateIsSpeakingRef.current || isJudgingRef.current) return // pause while Slate is talking or judging
+      if (slateIsSpeakingRef.current || isJudgingRef.current || slateReviewOverrideOpen) return // pause while speaking, judging or facilitator editing
       setSecondsLeft(s => {
         if (s <= 1) {
           clearInterval(timerInterval.current)
@@ -1279,7 +1342,7 @@ function SlateDrillInner() {
       })
     }, 1000)
     return () => clearInterval(timerInterval.current)
-  }, [pagePhase, currentQ, handleResult])
+  }, [pagePhase, currentQ, handleResult, slateReviewOverrideOpen])
 
   // Text answer submission
   const onTextSubmit = useCallback(async () => {
@@ -1958,7 +2021,16 @@ ${rows}
   return (
     <div data-review-teacher={reviewTeacherId} style={{ ...reviewCssVars, fontFamily: reviewDesign.fontFamily, background: reviewDesign.page, color: reviewDesign.text, height: '100dvh', display: 'flex', flexDirection: 'column' }}>
 
-      {/* Header bar */}
+      <FacilitatorOverrideModal
+        open={slateReviewOverrideOpen && pagePhase === 'asking'}
+        onClose={() => setSlateReviewOverrideOpen(false)} teacher={reviewTeacher.label}
+        targetType="question" targets={currentQ ? [{ ...currentQ, text: currentQ.question }] : []}
+        onRegenerate={regenerateSlateReviewQuestion}
+        allowSourceRevision={canCreateFacilitatorSourceRevision(lessonKeyRef.current, slateReviewQuestionSource)}
+        onSourceRevision={reviseSlateReviewQuestionSource}
+        busy={isJudging}
+      />
+      {slateReviewOverrideError && <p role="alert" style={{ color: '#b91c1c', padding: 8 }}>{slateReviewOverrideError}</p>}      {/* Header bar */}
       <div style={{
         background: reviewDesign.header,
         borderBottom: `1px solid ${isWebbDesign ? reviewDesign.header : reviewDesign.border}`,
@@ -1977,6 +2049,12 @@ ${rows}
           </div>
         </div>
 
+        {pagePhase === 'asking' && currentQ && <button type="button"
+          onClick={() => { if (audioEl.current) { try { audioEl.current.pause() } catch {} }; setSlateReviewOverrideOpen(true) }}
+          style={{ minHeight: 36, padding: '6px 10px', border: `1px solid ${reviewDesign.border}`,
+            background: reviewDesign.surface, color: reviewDesign.text, borderRadius: 8, fontSize: 11, fontWeight: 800 }}>
+          FACILITATOR: QUESTION
+        </button>}
         <ScorePips score={score} goal={settings.scoreGoal} />
 
         <div style={{ display: 'flex', gap: 8 }}>

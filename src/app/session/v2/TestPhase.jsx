@@ -471,6 +471,32 @@ export class TestPhase {
   }
   
   // Getters
+  /** Replace only the current unanswered question. Prior learner evidence is immutable. */
+  replacePendingQuestion(expectedId, proposal, { silent = false } = {}) {
+    const original = this.#questions[this.#currentQuestionIndex];
+    if (this.#state !== 'awaiting-answer' || !original || !proposal?.question ||
+        String(original.id || '') !== String(expectedId || '') ||
+        this.#answers.some(row => Number(row.questionIndex) === this.#currentQuestionIndex)) return false;
+    this.#questionPlaybackToken++;
+    this.#questions = [...this.#questions];
+    this.#questions[this.#currentQuestionIndex] = { ...proposal };
+    try { this.#audioEngine.stop(); } catch {}
+    if (!silent) this.announceCurrentQuestionReplacement();
+    return true;
+  }
+
+  announceCurrentQuestionReplacement() {
+    const question = this.#questions[this.#currentQuestionIndex];
+    if (this.#state !== 'awaiting-answer' || !question) return false;
+    this.#emit('questionStart', {
+      questionIndex: this.#currentQuestionIndex, question,
+      totalQuestions: this.#questions.length, facilitatorReplacement: true,
+    });
+    this.#emit('questionReady', { questionIndex: this.#currentQuestionIndex, question });
+    this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+    return true;
+  }
+  get questions() { return [...this.#questions]; }
   get state() {
     return this.#state;
   }

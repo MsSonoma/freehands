@@ -1,4 +1,4 @@
-import assert from 'node:assert/strict'
+﻿import assert from 'node:assert/strict'
 import fs from 'node:fs'
 import path from 'node:path'
 import test from 'node:test'
@@ -9,7 +9,10 @@ const facilitator = fs.readFileSync(path.resolve('src/app/components/syllabus/Fa
 test('learner Liftoff view hides the diagnostic responsibility map and reasons', () => {
   assert.doesNotMatch(learner, /RESPONSIBILITY MAP/)
   assert.doesNotMatch(learner, /Why this move/)
-  assert.doesNotMatch(learner, /component\.description/)
+  const facilitatorModalStart = learner.indexOf('<FacilitatorOverrideModal')
+  assert.ok(facilitatorModalStart >= 0)
+  assert.doesNotMatch(learner.slice(0, facilitatorModalStart), /component\.description/)
+  assert.match(learner.slice(facilitatorModalStart), /component\.description/)
   assert.doesNotMatch(learner, /component\.dependencies/)
 })
 

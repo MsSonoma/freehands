@@ -28,6 +28,9 @@ import { applyGoldenKeyToLesson, finalizeGoldenKeyForSession } from '@/app/lib/g
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { createWebbAttentionNotification, recordWebbPacingEvent } from '@/app/lib/webbPacingClient'
 import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate'
+import FacilitatorOverrideModal from '@/app/components/FacilitatorOverrideModal'
+import { previewFacilitatorQuestion } from '@/app/lib/facilitatorOverrideClient'
+import { normalizeFacilitatorQuestionCandidate } from '@/app/lib/facilitatorOverrideQuestion.mjs'
 import { endLessonSession } from '@/app/lib/sessionTracking'
 import { useSessionTracking } from '@/app/hooks/useSessionTracking'
 import { getProtectedBrowserSessionId, startProtectedInstructionalSession } from '@/app/lib/syllabus/executionClient'
@@ -250,6 +253,8 @@ function WebbPageInner() {
   const [expandedObj,        setExpandedObj]       = useState(null) // number|null — accordion open index
   const [showObjectives,     setShowObjectives]    = useState(false) // objectives panel overlay
   const [objectiveOverrideBusy, setObjectiveOverrideBusy] = useState(false)
+  const [webbUniversalOverride, setWebbUniversalOverride] = useState(-1)
+  const [webbQuestionOverrideOpen, setWebbQuestionOverrideOpen] = useState(false)
   const [objectiveOverrideError, setObjectiveOverrideError] = useState('')
   const [showFullObjectives, setShowFullObjectives] = useState(false) // facilitator-only full objective reveal
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
@@ -3013,42 +3018,76 @@ function WebbPageInner() {
   function closeObjectivesPanel() {
     setShowObjectives(false)
     setShowFullObjectives(false)
+    setWebbUniversalOverride(-1)
     setObjectiveOverrideError('')
   }
 
-  async function unlockWebbObjectives() {
-    if (objectiveOverrideBusy || showFullObjectives) return
-    setObjectiveOverrideBusy(true)
-    setObjectiveOverrideError('')
-    try {
-      const pin = await requestFacilitatorPinException({
-        title: 'Facilitator PIN required',
-        message: 'Unlock all full objectives and educator fulfillment controls.',
-      })
-      if (pin) setShowFullObjectives(true)
-    } finally {
-      setObjectiveOverrideBusy(false)
-    }
-  }
-
-  function facilitatorFulfillWebbObjective(index) {
-    if (!showObjectives || !showFullObjectives || objectiveOverrideBusy || webbExecutionFencedRef.current) return
-    if (phase !== PHASE.CHATTING || !selectedLesson || !objectives[index]) return
+  async function facilitatorFulfillWebbObjective(index) {
+    if (!showObjectives || webbExecutionFencedRef.current) return false
+    if (phase !== PHASE.CHATTING || !selectedLesson || !objectives[index]) return false
     if (chatLoading || writingEvaluating) {
       setObjectiveOverrideError('Wait for Mrs. Webb to finish the current response before approving a goal.')
-      return
+      return false
     }
-    if (!window.confirm('Mark this objective fulfilled by the facilitator? This does not create a learner research note.')) return
     objectiveQueueRef.current.invalidate()
     const next = fulfillWebbObjectiveByFacilitator(objectives, learningStateRef.current, index)
-    if (!next) return
+    if (!next) return false
     commitLearningState(next)
     const saved = saveLearningSnapshot({ objectives, selectedLesson })
-    if (!saved) setObjectiveOverrideError('The override could not be saved. Keep this session open.')
+    if (!saved) {
+      setObjectiveOverrideError('The override could not be saved. Keep this session open.')
+      return false
+    }
     objectiveTargetRef.current = objectives.findIndex((_, i) => !next.understoodObj.includes(i))
     console.info('[Webb] facilitator objective fulfillment', { index, saved: Boolean(saved) })
+    return true
   }
+  const activeWebbResearchQuestion = (() => {
+    if (phase !== PHASE.CHATTING || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || writingMode) return null
+    const lastIndex = chatMessages.length - 1
+    const last = chatMessages[lastIndex]
+    if (last?.role !== 'assistant' || !String(last.content || '').includes('?')) return null
+    const fragments = String(last.content).match(/[^.!?]*\?/g) || []
+    const question = String(fragments[fragments.length - 1] || '').trim()
+    if (!question) return null
+    return { id: last.id || `webb-chat-${lastIndex}`, question, messageIndex: lastIndex, originalContent: last.content }
+  })()
 
+  async function regenerateWebbResearchQuestion({ target, feedback, pin, proposal, commit }) {
+    const current = chatMessages[target?.messageIndex]
+    if (phase !== PHASE.CHATTING || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH ||
+        chatLoading || writingEvaluating || webbExecutionFencedRef.current ||
+        !activeWebbResearchQuestion || target?.question !== activeWebbResearchQuestion.question ||
+        current?.role !== 'assistant' || current.content !== target.originalContent) {
+      throw new Error('Mrs. Webb has moved on from that question. Open the override again.')
+    }
+    if (!commit) return previewFacilitatorQuestion({
+      teacher: 'webb', phase: 'research', pin, feedback,
+      original: { id: target.id, question: target.question, type: 'shortanswer',
+        objectiveId: objectiveTargetRef.current >= 0 ? `objective-${objectiveTargetRef.current}` : null },
+      grade: selectedLesson?.grade || '',
+    })
+    const replacement = normalizeFacilitatorQuestionCandidate({
+      id: target.id, question: target.question, type: 'shortanswer',
+    }, { ...proposal, replacementId: globalThis.crypto?.randomUUID?.() || String(Date.now()) })
+    if (!replacement) throw new Error('This question did not pass the replacement checks.')
+    const nextMessage = {
+      role: 'assistant', content: replacement.question, kind: 'facilitator_question_replacement',
+      replacesMessageId: target.id, id: replacement.id, createdAt: new Date().toISOString(),
+    }
+    const nextHistory = [...chatMessages, nextMessage]
+    const nextTranscript = [...transcript, { role: 'assistant', text: replacement.question,
+      kind: 'facilitator_question_replacement', replacesMessageId: target.id }]
+    const saved = saveLearningSnapshot({ chatMessages: nextHistory, transcript: nextTranscript })
+    if (!saved) throw new Error('The replacement could not be saved. Nothing was changed.')
+    skipTTS()
+    commitResponseTurn(null)
+    setChatMessages(nextHistory)
+    setTranscript(nextTranscript)
+    setActiveIndex(nextTranscript.length - 1)
+    speakText(replacement.question)
+    return true
+  }
   // ── Research mode: close overlay, Webb navigates to the best media or teaches directly ──
   // Priority: (A) video with chapters → seek to best chapter → play → Socratic
   //           (B) article available   → targeted highlight+scroll → Socratic
@@ -4790,7 +4829,28 @@ function WebbPageInner() {
       )}
 
       {/* ── Objective tablet toast ──────────────────────────────────── */}
-      {showObjectives && createPortal(
+      <FacilitatorOverrideModal
+        open={webbUniversalOverride >= 0 && showObjectives}
+        onClose={() => setWebbUniversalOverride(-1)} teacher="Mrs. Webb"
+        selectedIndex={Math.max(0, webbUniversalOverride)}
+        targets={objectives.map((text, i) => ({ id: `webb-goal-${i}`, text,
+          completed: understoodObj.includes(i), source: learningState.facilitatorOverrides?.[i] ? 'facilitator' : 'ai',
+        }))}
+        onOutcome={facilitatorFulfillWebbObjective} busy={objectiveOverrideBusy}
+      />      {activeWebbResearchQuestion && !chatLoading && !webbQuestionOverrideOpen && (
+        <button type="button" onClick={() => { skipTTS(); setWebbQuestionOverrideOpen(true) }}
+          style={{ position: 'fixed', right: 12, top: 82, zIndex: 2000,
+            border: '1px solid #64748b', borderRadius: 8, padding: '8px 10px',
+            background: '#0f172a', color: '#fff', fontSize: 12, fontWeight: 700 }}>
+          Facilitator: question
+        </button>
+      )}
+      <FacilitatorOverrideModal
+        open={webbQuestionOverrideOpen && Boolean(activeWebbResearchQuestion)}
+        onClose={() => setWebbQuestionOverrideOpen(false)} teacher="Mrs. Webb" targetType="question"
+        targets={activeWebbResearchQuestion ? [activeWebbResearchQuestion] : []}
+        onRegenerate={regenerateWebbResearchQuestion} busy={chatLoading || writingEvaluating}
+      />      {showObjectives && createPortal(
         <div
           style={{
             position: 'fixed', inset: 0, zIndex: 12000,
@@ -4821,16 +4881,6 @@ function WebbPageInner() {
               <div>
                 <div style={{ color: '#0d9488', fontWeight: 800, fontSize: 11, letterSpacing: 1.5, textTransform: 'uppercase', marginBottom: 2 }}>Learning Goals</div>
                 <div style={{ color: '#94a3b8', fontSize: 12 }}>{understoodCount} of {objectives.length} understood; {writingReadyCount} notes saved</div>
-                {!showFullObjectives && (
-                  <button
-                    type="button"
-                    onClick={async (e) => {
-                      e.stopPropagation()
-                      await unlockWebbObjectives()
-                    }}
-                    style={{ marginTop: 6, padding: 0, background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', fontSize: 11, fontWeight: 700, fontFamily: 'inherit' }}
-                  >Facilitator: show full objectives</button>
-                )}
               </div>
               <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
                 {/* Gear button — settings */}
@@ -4878,14 +4928,14 @@ function WebbPageInner() {
               {objectives.map((obj, i) => {
                 const noteReady = isWritingReadyNote(learnerNotes[i])
                 const done = understoodObj.includes(i)
-                const learnerText = (showFullObjectives || done) ? obj : (objectiveClues[i] || `Goal ${i + 1}`)
+                const learnerText = done ? obj : (objectiveClues[i] || `Goal ${i + 1}`)
                 const open = expandedObj === i
                 return (
                   <div key={i} style={{ borderBottom: '1px solid #1e293b' }}>
                     {/* Header row */}
                     <button
                       type="button"
-                      onClick={() => { if (!showFullObjectives && !done) void unlockWebbObjectives(); else setExpandedObj(open ? null : i) }}
+                      onClick={() => setWebbUniversalOverride(i)}
                       style={{
                         width: '100%', background: 'none', border: 'none', cursor: 'pointer',
                         display: 'flex', alignItems: 'flex-start', gap: 10,
@@ -4901,21 +4951,11 @@ function WebbPageInner() {
                       }}>{learnerText}</span>
                       <span style={{ color: '#475569', fontSize: 11, flexShrink: 0, marginTop: 2 }}>{open ? '▲' : '▼'}</span>
                     </button>
-                    {showFullObjectives && !done && (
-                      <div style={{ padding: '0 20px 10px 46px' }}>
-                        <button type="button" onClick={() => facilitatorFulfillWebbObjective(i)} disabled={objectiveOverrideBusy}
-                          style={{ background: '#334155', color: '#fff', border: '1px solid #94a3b8', borderRadius: 8,
-                          padding: '7px 10px', fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer' }}>
-                          Mark fulfilled by facilitator
-                        </button>
-                      </div>
-                    )}
-                    {showFullObjectives && learningState.facilitatorOverrides?.[i] && (
+                    {learningState.facilitatorOverrides?.[i] && (
                       <div style={{ padding: '0 20px 10px 46px', color: '#cbd5e1', fontSize: 12 }}>
-                        Fulfilled by facilitator (not AI-graded). A research note may still be required for writing.
+                        Fulfilled by facilitator. A research note may still be needed for writing.
                       </div>
-                    )}
-                    {/* Expanded content */}
+                    )}                    {/* Expanded content */}
                     {open && (
                       <div style={{ padding: '0 20px 14px', paddingLeft: 46 }}>
                         {noteReady ? (

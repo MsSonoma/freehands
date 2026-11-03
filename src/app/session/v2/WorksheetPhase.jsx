@@ -513,6 +513,34 @@ export class WorksheetPhase {
   }
   
   // Getters
+  /** Replace only the current unanswered question. Prior learner evidence is immutable. */
+  replacePendingQuestion(expectedId, proposal, { silent = false } = {}) {
+    const original = this.#questions[this.#currentQuestionIndex];
+    if (this.#state !== 'awaiting-answer' || !original || !proposal?.question ||
+        String(original.id || '') !== String(expectedId || '') ||
+        this.#answers.some(row => Number(row.questionIndex) === this.#currentQuestionIndex)) return false;
+    this.#learnerTurnToken++;
+    this.#cancelLearnerTurnReady();
+    this.#questions = [...this.#questions];
+    this.#questions[this.#currentQuestionIndex] = { ...proposal };
+    this.#wrongAttempts.delete(String(original.id || this.#currentQuestionIndex));
+    try { this.#audioEngine.stop(); } catch {}
+    if (!silent) this.announceCurrentQuestionReplacement();
+    return true;
+  }
+
+  announceCurrentQuestionReplacement() {
+    const question = this.#questions[this.#currentQuestionIndex];
+    if (this.#state !== 'awaiting-answer' || !question) return false;
+    this.#emit('questionStart', {
+      questionIndex: this.#currentQuestionIndex, question,
+      totalQuestions: this.#questions.length, facilitatorReplacement: true,
+    });
+    this.#emit('questionReady', { questionIndex: this.#currentQuestionIndex, question });
+    this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
+    return true;
+  }
+  get questions() { return [...this.#questions]; }
   get state() {
     return this.#state;
   }
@@ -575,11 +603,13 @@ export class WorksheetPhase {
     if (!audioBase64) {
       // Cache miss - fetch synchronously
       audioBase64 = await fetchTTS(formattedQuestion);
+      if (this.#questions[this.#currentQuestionIndex] !== question || this.#state !== 'awaiting-answer') return;
       if (audioBase64) {
         ttsCache.set(formattedQuestion, audioBase64);
       }
     }
     
+    if (this.#questions[this.#currentQuestionIndex] !== question || this.#state !== 'awaiting-answer') return;
     // Prefetch next question in background (eliminates wait on Next click)
     const nextIndex = this.#currentQuestionIndex + 1;
     if (nextIndex < this.#questions.length) {

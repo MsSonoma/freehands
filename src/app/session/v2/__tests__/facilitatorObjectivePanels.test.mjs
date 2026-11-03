@@ -4,24 +4,35 @@ import { readFileSync } from 'node:fs';
 
 const sonoma = readFileSync(new URL('../SessionPageV2.jsx', import.meta.url), 'utf8');
 const webb = readFileSync(new URL('../../webb/page.jsx', import.meta.url), 'utf8');
+const slate = readFileSync(new URL('../../slate/SlateLiftoffExperience.jsx', import.meta.url), 'utf8');
+const shared = readFileSync(new URL('../../../components/FacilitatorOverrideModal.jsx', import.meta.url), 'utf8');
 
-test('Sonoma objective hint requests a verified PIN before unlocking full goals', () => {
-  assert.match(sonoma, /const unlockDiscussionObjectives = useCallback/);
-  assert.match(sonoma, /const pin = await requestFacilitatorPinException/);
-  assert.match(sonoma, /if \(pin\) setShowFullDiscussionObjectives\(true\)/);
-  assert.match(sonoma, /!showFullDiscussionObjectives && !done\) void unlockDiscussionObjectives\(\)/);
-  assert.match(sonoma, /showFullDiscussionObjectives && !done &&/);
-  assert.match(sonoma, /facilitatorFulfillDiscussionObjective\(i\)/);
-  assert.match(sonoma, /setShowFullDiscussionObjectives\(false\)/);
+test('shared facilitator overlay requests server-verified PIN before revealing goals or applying decisions', () => {
+  assert.match(shared, /requestFacilitatorPinException\(/);
+  assert.match(shared, /if \(pin\) \{ pinRef.current = pin; setAuthorized\(true\); \}/);
+  assert.match(shared, /if \(!authorized \|\| working \|\| busy \|\| !selected\) return;/);
+  assert.match(shared, /'What went wrong\? \(required\)'|What went wrong\? \(required\)/);
+  assert.match(shared, /Proposed replacement, not yet applied/);
 });
 
-test('Webb objective hint requires the same PIN and facilitator-only fulfillment panel', () => {
-  assert.match(webb, /async function unlockWebbObjectives\(\)/);
-  assert.match(webb, /const pin = await requestFacilitatorPinException/);
-  assert.match(webb, /if \(pin\) setShowFullObjectives\(true\)/);
-  assert.match(webb, /!showFullObjectives && !done\) void unlockWebbObjectives\(\)/);
-  assert.match(webb, /showFullObjectives && !done &&/);
-  assert.match(webb, /facilitatorFulfillWebbObjective\(i\)/);
+test('Sonoma objectives use shared modal and preserve native award handler', () => {
+  assert.match(sonoma, /onClick=\{\(\) => setDiscussionUniversalOverride\(i\)\}/);
+  assert.match(sonoma, /<FacilitatorOverrideModal/);
+  assert.match(sonoma, /onOutcome=\{facilitatorFulfillDiscussionObjective\}/);
+  assert.match(sonoma, /fulfillObjectiveByFacilitator\(index\)/);
+  assert.match(sonoma, /setShowDiscussionObjectives\(false\)/);
+});
+
+test('Webb objectives use shared modal without inventing a learner note', () => {
+  assert.match(webb, /onClick=\{\(\) => setWebbUniversalOverride\(i\)\}/);
+  assert.match(webb, /onOutcome=\{facilitatorFulfillWebbObjective\}/);
+  assert.match(webb, /fulfillWebbObjectiveByFacilitator\(objectives, learningStateRef.current, index\)/);
   assert.match(webb, /objectiveQueueRef\.current\.invalidate\(\)/);
-  assert.match(webb, /setShowFullObjectives\(false\)/);
+});
+
+test('Slate objectives use the same modal and distinct educator provenance', () => {
+  assert.match(slate, /setSlateOverrideIndex\(0\)/);
+  assert.match(slate, /facilitatorFulfillLiftoffComponent\(current, selected.id\)/);
+  assert.match(slate, /onOutcome=\{fulfillSlateObjective\}/);
+  assert.match(slate, /persistLiftoffSnapshot\(\{ phase: 'active', liftoff: next \}\)/);
 });

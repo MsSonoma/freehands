@@ -267,3 +267,22 @@ test('a stale objective-check response cannot remove facilitator credit', async 
     assert.equal(events.filter(e => e.name === 'discussionObjectiveComplete').length, 1)
   })
 })
+
+test('facilitator can replace only the unpresented discussion question without regrading', async () => {
+  await withFakeApis({
+    objectives: ['Understand the idea', 'Compare two effects'],
+    replies: [ok('That makes sense. Why is the sky blue?')],
+  }, async ({ phase, events, getChecks }) => {
+    await phase.submitMessage('Here is my explanation.');
+    await new Promise(resolve => setImmediate(resolve));
+    assert.equal(phase.state, 'awaiting-next');
+    assert.equal(phase.replaceQueuedQuestion('not the question', 'Why does light scatter?'), false);
+    assert.equal(phase.replaceQueuedQuestion('Why is the sky blue?', 'Explain how sunlight scatters in the sky?'), true);
+    assert.equal(phase.replyCheckpoint.question, 'Explain how sunlight scatters in the sky?');
+    phase.nextReplyPart();
+    await new Promise(resolve => setImmediate(resolve));
+    assert.ok(events.some(e => e.name === 'discussionMessage' && e.data.text === 'Explain how sunlight scatters in the sky?'));
+    assert.equal(getChecks(), 1);
+    assert.equal(phase.completedObjectives, 0);
+  });
+});

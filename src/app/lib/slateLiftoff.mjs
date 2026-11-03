@@ -185,6 +185,7 @@ export function createLiftoffState(componentMap = [], initialAction = {}, { prio
   return {
     protocolVersion: LIFTOFF_PROTOCOL_VERSION,
     components,
+    facilitatorFulfillments: {},
     currentAction,
     problemHistory,
     trace: [],
@@ -228,11 +229,25 @@ function nextEvidenceState(previous, observation = {}) {
   return EVIDENCE.has(previous) ? previous : LIFTOFF_EVIDENCE_STATES.UNOBSERVED
 }
 
+/** Separate educator approval from the independent evidence state. */
+export function facilitatorFulfillLiftoffComponent(state, componentId, approvedAt = new Date().toISOString()) {
+  const component = (state?.components || []).find(row => row.id === componentId && row.essential !== false)
+  if (!component || state?.facilitatorFulfillments?.[componentId]) return null
+  return {
+    ...state,
+    facilitatorFulfillments: {
+      ...(state?.facilitatorFulfillments || {}),
+      [componentId]: { source: 'facilitator', objective: component.name, approvedAt },
+    },
+    trace: [...(state?.trace || []), { turn: Number(state?.turnNumber || 0), event: 'facilitator_objective_fulfilled', componentId }].slice(-80),
+  }
+}
 export function liftoffReleaseReady(state) {
   const essential = (state?.components || []).filter((component) => component.essential !== false)
   if (!essential.length) return false
-  const componentsIndependent = essential.every((component) => [LIFTOFF_EVIDENCE_STATES.INDEPENDENT, LIFTOFF_EVIDENCE_STATES.RETAINED].includes(component.evidenceState))
-  const verificationClear = essential.every((component) => component?.verification?.active !== true)
+  const approved = state?.facilitatorFulfillments || {}
+  const componentsIndependent = essential.every((component) => Boolean(approved[component.id]) || [LIFTOFF_EVIDENCE_STATES.INDEPENDENT, LIFTOFF_EVIDENCE_STATES.RETAINED].includes(component.evidenceState))
+  const verificationClear = essential.every((component) => Boolean(approved[component.id]) || component?.verification?.active !== true)
   return componentsIndependent && verificationClear && state?.integrationConfirmed === true && state?.variationConfirmed === true
 }
 
@@ -359,6 +374,7 @@ export function applyLiftoffTurn(state, rawTurn = {}) {
 export function liftoffStateForModel(state) {
   return {
     protocolVersion: state?.protocolVersion || LIFTOFF_PROTOCOL_VERSION,
+    facilitatorFulfillments: { ...(state?.facilitatorFulfillments || {}) },
     components: (state?.components || []).map((component) => ({
       id: component.id,
       name: component.name,
