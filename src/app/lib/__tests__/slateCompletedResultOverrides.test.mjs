@@ -55,3 +55,11 @@ test('shared facilitator PIN overlay and server authority protect recorded grade
   assert.match(route, /slate_test_result_overrides/)
   assert.doesNotMatch(route, /\.update\(/)
 })
+
+test('active Slate test source derives from initialized assessment state (no render-time temporal dead zone)', () => {
+  const assessmentItems = liftoff.indexOf('const currentAssessmentItems = testItems')
+  const currentItem = liftoff.indexOf('const currentAssessment = currentAssessmentItems[assessmentIndex] || null')
+  const sourceLookup = liftoff.indexOf('const slateTestQuestionSource = currentAssessment ?')
+  assert.ok(assessmentItems >= 0 && currentItem > assessmentItems && sourceLookup > currentItem,
+    'assessment variables must be initialized before the FacOR source lookup runs during render')
+})

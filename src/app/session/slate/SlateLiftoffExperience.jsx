@@ -1650,6 +1650,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     appendTranscript('assistant', `The facilitator replaced this question. ${nextProblem.prompt}`, { kind: 'facilitator_question_replacement' })
     return true
   }
+  const currentAssessmentItems = testItems
+  const currentAssessment = currentAssessmentItems[assessmentIndex] || null
   const slateTestQuestionSource = currentAssessment ? resolveFacilitatorQuestionSource(lesson, currentAssessment) : null
   const reviseSlateTestQuestionSource = async ({ target, feedback, pin, proposal }) => {
     const original = testItems[assessmentIndex]
@@ -1693,8 +1695,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const essentialComponents = components.filter((component) => component.essential !== false)
   const demonstratedComponents = essentialComponents.filter((component) => component.revealedToLearner === true || ['independent', 'retained'].includes(component.evidenceState))
   const revealedComponents = essentialComponents.filter((component) => component.revealedToLearner === true || ['independent', 'retained'].includes(component.evidenceState))
-  const currentAssessmentItems = testItems
-  const currentAssessment = currentAssessmentItems[assessmentIndex] || null
   assessmentIndexRef.current = assessmentIndex
   const assessmentMathResolution = useMemo(
     () => phase === 'test' && currentAssessment ? resolveSlateTestMath(currentAssessment) : { kind: 'text' },
