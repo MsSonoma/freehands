@@ -32,6 +32,7 @@ export function buildSlateTestReportFromEvents(events = [], recordedPercentage =
     const row = byQuestion.get(index) || { index }
     if (event.event_type === 'item_presented') {
       row.question = String(event?.payload?.item?.question || '')
+      if (event?.payload?.item && typeof event.payload.item === 'object') row.item = event.payload.item
     }
     if (event.event_type === 'answer_evaluated') {
       row.answer = String(event?.payload?.response_value ?? '')
@@ -53,5 +54,47 @@ export function buildSlateTestReportFromEvents(events = [], recordedPercentage =
   return {
     items, legacy, score,
     percentage: Number.isFinite(recorded) ? recorded : score.percentage,
+  }
+}
+
+/**
+ * Keep independent judgments immutable. Facilitator decisions are a separate
+ * append-only review layer, never evidence of an independent demonstration.
+ */
+export function applySlateTestResultOverrides(report, decisions = []) {
+  if (!report || !Array.isArray(report.items)) return report
+  const ordered = [...(Array.isArray(decisions) ? decisions : [])]
+    .sort((a, b) => String(a.created_at || '').localeCompare(String(b.created_at || '')) ||
+      String(a.id || '').localeCompare(String(b.id || '')))
+  const byQuestion = new Map()
+  for (const row of ordered) {
+    const index = Number(row.question_index)
+    if (!Number.isInteger(index) || index < 0) continue
+    const entry = byQuestion.get(index) || {}
+    if (row.action === 'grade' && ['correct', 'partial', 'incorrect'].includes(row.corrected_status)) {
+      entry.grade = row
+    } else if (row.action === 'question') entry.question = row
+    byQuestion.set(index, entry)
+  }
+  const items = report.items.map((item, position) => {
+    const index = Number.isInteger(item.index) ? item.index : position
+    const review = byQuestion.get(index)
+    return {
+      ...item,
+      ...(review?.grade ? { facilitatorGradeReview: review.grade } : {}),
+      ...(review?.question ? { facilitatorQuestionReview: review.question } : {}),
+    }
+  })
+  const adjustedItems = items.map(item => {
+    const status = item.facilitatorGradeReview?.corrected_status
+    if (!['correct', 'partial', 'incorrect'].includes(status)) return item
+    return { ...item, judgmentStatus: status, correct: status === 'correct' }
+  })
+  const adjustedScore = summarizeSlateTestResults(adjustedItems)
+  return {
+    ...report, items, adjustedScore,
+    adjustedPercentage: adjustedScore.complete ? adjustedScore.percentage : null,
+    gradeReviewed: items.some(row => Boolean(row.facilitatorGradeReview)),
+    facilitatorReviewed: items.some(row => Boolean(row.facilitatorGradeReview || row.facilitatorQuestionReview)),
   }
 }
