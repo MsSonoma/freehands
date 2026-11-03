@@ -4,7 +4,7 @@ import { useRouter } from 'next/navigation'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { getMedalsForLearner, emojiForTier } from '@/app/lib/medalsClient'
-import { ensurePinAllowed, ensureFacilitatorPinException } from '@/app/lib/pinGate'
+import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import LoadingProgress from '@/components/LoadingProgress'
 import GoldenKeyCounter from '@/app/learn/GoldenKeyCounter'
 import { getActiveLessonSession } from '@/app/lib/sessionTracking'
@@ -26,7 +26,7 @@ import {
   shouldAutoShowLearnerTutorial,
 } from '@/app/learn/demoLearner.mjs'
 import { buildInstructionalSessionRoute, instructionalTeacherLabel, normalizeInstructionalTeacher } from '@/app/lib/syllabus/instructionalTeacher.mjs'
-import { prepareProtectedBrowserSessionForOccurrence } from '@/app/lib/syllabus/executionClient.js'
+import { authorizeProtectedOccurrence, prepareProtectedBrowserSessionForOccurrence } from '@/app/lib/syllabus/executionClient.js'
 import { instructionalTeacherForOccurrence } from '@/app/lib/syllabus/occurrenceTeacher.mjs'
 import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, isReviewTeacher, normalizeReviewTeacherSelection, reviewTeacherIcon, reviewTeacherLabel, reviewTeacherSelectionIcon, reviewTeacherSelectionLabel } from '@/app/lib/reviewTeacher.js'
 import { bindSnapshotsToSyllabusOccurrences, selectSnapshotForRestore, snapshotCandidateLessons, snapshotHasMeaningfulProgress } from '@/app/learn/snapshotProgress.mjs'
@@ -1777,13 +1777,21 @@ function LessonsPageInner(){
                 || syllabusState === 'incomplete_historical'
                 || (syllabusState === 'in_progress' && !plannedToday)
               if (syllabusItem && requiresSyllabusPin && !syllabusExceptionApproved) {
-                const completed = syllabusState === 'completed_historical'
-                const allowed = await ensureFacilitatorPinException({
-                  message: completed
-                    ? `You already completed ${l.title || 'this lesson'}. Enter the Facilitator PIN to do it again.`
-                    : `This lesson is not the current scheduled lesson. Enter the Facilitator PIN to start it now.`,
-                })
-                if (!allowed) return
+                try {
+                  // Authorize the exact execution rather than verifying and discarding the PIN.
+                  // A short-lived scoped HttpOnly proof lets the destination lesson reuse
+                  // this approval without prompting the facilitator a second time.
+                  await authorizeProtectedOccurrence({
+                    learnerId,
+                    lessonKey,
+                    occurrenceId: syllabusItem.execution_occurrence_id || syllabusItem.occurrence_id || '',
+                    instructionalTeacher: assignedInstructionalTeacher,
+                    requestPin: requestFacilitatorPinException,
+                  })
+                } catch (cause) {
+                  setSyllabusLaunchError(cause?.message || 'This lesson was not authorized.')
+                  return
+                }
               }
               // PIN gate for lessons not currently active (not approved/scheduled)
               if (!syllabusItem && !activeSet.has(lessonKey) && !syllabusExceptionApproved) {

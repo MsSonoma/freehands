@@ -171,3 +171,14 @@ test('learner Syllabus lesson overlay offers Golden Keys for both instructional 
   assert.match(source, /applyGoldenKeyToLesson\(\{ learnerId, lessonKey: thisLessonKey \}\)/)
   assert.match(source, /if \(currentTeacher === 'webb'\)/)
 })
+
+test('off-day and completed syllabus launches preauthorize the selected execution instead of discarding a PIN', () => {
+  const source = fs.readFileSync(path.resolve('src/app/learn/LearnerHome.js'), 'utf8')
+  const launch = source.slice(source.indexOf('const handleStartLesson = async () => {'), source.indexOf('// PIN gate for lessons not currently active'))
+  assert.match(launch, /syllabusState === 'completed_historical'/)
+  assert.match(launch, /syllabusState === 'future_unfinished'/)
+  assert.match(launch, /syllabusState === 'incomplete_historical'/)
+  assert.match(launch, /await authorizeProtectedOccurrence\(\{[\s\S]*?learnerId,[\s\S]*?lessonKey,[\s\S]*?occurrenceId: syllabusItem\.execution_occurrence_id \|\| syllabusItem\.occurrence_id \|\| '',[\s\S]*?instructionalTeacher: assignedInstructionalTeacher,[\s\S]*?requestPin: requestFacilitatorPinException/)
+  assert.doesNotMatch(launch, /ensureFacilitatorPinException|facilitatorSectionActive|sessionStorage\.setItem\(.*pin|localStorage\.setItem\(.*pin/i)
+  assert.match(source, /authorizeProtectedOccurrence, prepareProtectedBrowserSessionForOccurrence/)
+})

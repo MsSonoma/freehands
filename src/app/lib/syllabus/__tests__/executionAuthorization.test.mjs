@@ -486,6 +486,50 @@ test('direct session authorization PIN-gates future and completed historical occ
   assert.equal((await completed.json()).reason, 'completed_repeat')
 })
 
+
+test('an off-day syllabus launch PIN approves the exact destination request without a second prompt', async () => {
+  const lessonKey = 'math/future.json'
+  const repo = repository({ forecast: [
+    forecast('future-first', lessonKey, '2026-08-25'),
+    forecast('future-second', lessonKey, '2026-08-26'),
+  ] })
+  let pinChecks = 0
+  const deps = {
+    requestContext: { user: { id: FACILITATOR }, admin: {} },
+    repository: repo,
+    now: new Date('2026-08-23T16:00:00Z'),
+    proofSecret: 'test-secret',
+    verifyFacilitatorPinForUser: async (_admin, _user, pin) => { pinChecks += 1; return pin === '2468' },
+  }
+  const scope = { learnerId: LEARNER, lessonKey, occurrenceId: 'syllabus:future-first' }
+  const beforePin = await authorizeExecution(request(scope), deps)
+  assert.equal(beforePin.status, 409)
+  assert.equal((await beforePin.json()).code, 'SYLLABUS_EXECUTION_PIN_REQUIRED')
+
+  const approved = await authorizeExecution(request({ ...scope, exceptionPin: '2468' }), deps)
+  assert.equal(approved.status, 200)
+  assert.equal((await approved.json()).authorization, 'fresh_pin')
+  const cookie = (approved.headers.get('set-cookie') || '').split(';')[0]
+  assert.match(cookie, /^syllabus_execution=/)
+
+  const inLesson = await authorizeExecution(request(scope, cookie), deps)
+  assert.equal(inLesson.status, 200)
+  assert.equal((await inLesson.json()).authorization, 'scoped_pin_proof')
+  assert.equal(pinChecks, 1, 'the destination must not require the facilitator PIN again')
+
+  const otherOccurrence = await authorizeExecution(request({
+    ...scope, occurrenceId: 'syllabus:future-second',
+  }, cookie), deps)
+  assert.equal(otherOccurrence.status, 409, 'approval must not carry to a different occurrence')
+  assert.equal((await otherOccurrence.json()).code, 'SYLLABUS_EXECUTION_PIN_REQUIRED')
+
+  const expired = await authorizeExecution(request(scope, cookie), {
+    ...deps, now: new Date('2026-08-23T16:03:00Z'),
+  })
+  assert.equal(expired.status, 409, 'the scoped authorization must expire')
+  assert.equal(pinChecks, 1)
+})
+
 test('historical continuation authorizes and launches with the canonical source occurrence', async () => {
   const original = forecast('resume-source', 'math/resume.json', '2026-08-20')
   const resumeRepository = repository({
