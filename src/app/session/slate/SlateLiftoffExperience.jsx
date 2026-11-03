@@ -18,7 +18,7 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient.js'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { recordSlateLiftoffEvidence } from '@/app/lib/slateLiftoffClient.js'
 import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
-import { summarizeSlateTestResults, slateTestResultStatus } from '@/app/lib/slateTestGradeReport.mjs'
+import { summarizeSlateTestResults } from '@/app/lib/slateTestGradeReport.mjs'
 import SlateIndependentTestReport from './SlateIndependentTestReport'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
@@ -312,12 +312,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [testPrintBusy, setTestPrintBusy] = useState(false)
   const [testPrintError, setTestPrintError] = useState('')
   const [finalPercentage, setFinalPercentage] = useState(null)
-  const [completedRecordId, setCompletedRecordId] = useState(null)
-  const [completedReport, setCompletedReport] = useState(null)
-  const [resultReviewTarget, setResultReviewTarget] = useState(null)
-  const [resultReviewKind, setResultReviewKind] = useState(null)
-  const [resultReviewError, setResultReviewError] = useState('')
-  const [resultReviewsUnavailable, setResultReviewsUnavailable] = useState(false)
   const [soundOn, setSoundOn] = useState(true)
   const [musicMuted, setMusicMuted] = useState(false)
   const [musicVolume, setMusicVolume] = useState(SLATE_MUSIC_DEFAULT_VOLUME)
@@ -396,8 +390,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const assessmentMathFingerprintRef = useRef('')
   const assessmentIndexRef = useRef(0)
   const finishOwnershipRef = useRef(null)
-  const completionSettledRef = useRef(false)
-  const resultMarkerKey = `slate-results-open:${learnerId}:${lessonKey}:${occurrenceId}`
   const snapshotTimerRef = useRef(null)
   const persistRef = useRef(null)
   const liftoffRef = useRef(null)
@@ -613,87 +605,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }, SLATE_MUSIC_LONG_PRESS_MS)
   }, [clearMusicLongPress])
 
-
-  const loadCompletedReport = useCallback(async (expectedExecutionId = '') => {
-    const { data: { session: authSession } } = await getSupabaseClient().auth.getSession()
-    if (!authSession?.access_token) throw new Error('Sign in to view the saved test results.')
-    const params = new URLSearchParams({ learnerId, lessonKey, occurrenceId })
-    const response = await fetch('/api/slate-liftoff/records?' + params, {
-      headers: { Authorization: 'Bearer ' + authSession.access_token }, cache: 'no-store',
-    })
-    const payload = await response.json().catch(() => null)
-    if (!response.ok) throw new Error(payload?.error || 'Could not retrieve the completed assessment.')
-    const record = (payload?.records || []).find(row =>
-      (!expectedExecutionId || row.execution_session_id === expectedExecutionId) &&
-      row.syllabus_occurrence_id === occurrenceId && row.lesson_key === lessonKey)
-    if (!record) return null
-    setCompletedRecordId(record.id)
-    setCompletedReport(record.test_report || null)
-    setResultReviewsUnavailable(Boolean(record.result_overrides_unavailable || record.test_report_unavailable))
-    setFinalPercentage(record.independent_test_percentage)
-    if (record.test_report?.items?.length) setTestResults(record.test_report.items)
-    return record
-  }, [learnerId, lessonKey, occurrenceId])
-
-  const saveCompletedReview = useCallback(async ({ action, row, feedback, pin, correctedStatus, proposal, sourceRevisionLessonKey }) => {
-    if (!completedRecordId || !row || !['correct', 'partial', 'incorrect'].includes(slateTestResultStatus(row))) {
-      throw new Error('The verified completed assessment is not available for review.')
-    }
-    const { data: { session: authSession } } = await getSupabaseClient().auth.getSession()
-    if (!authSession?.access_token) throw new Error('Sign in to record a facilitator decision.')
-    const response = await fetch('/api/slate-liftoff/records/overrides', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + authSession.access_token },
-      body: JSON.stringify({
-        recordId: completedRecordId, questionIndex: row.index,
-        originalQuestion: row.question, action, feedback, pin, correctedStatus, proposal, sourceRevisionLessonKey,
-      }),
-    })
-    const body = await response.json().catch(() => null)
-    if (!response.ok || !body?.ok) throw new Error(body?.error || 'The facilitator decision could not be saved.')
-    await loadCompletedReport()
-    setResultReviewError('')
-    return true
-  }, [completedRecordId, loadCompletedReport])
-
-  const correctCompletedGrade = async (_index, _target, decision) =>
-    saveCompletedReview({ action: 'grade', row: resultReviewTarget, ...decision })
-
-  const regenerateCompletedQuestion = async ({ feedback, pin, proposal, commit }) => {
-    const row = resultReviewTarget
-    if (!row) throw new Error('No completed question is selected.')
-    if (!commit) {
-      const source = resolveFacilitatorQuestionSource(lesson, { question: row.question })
-      const original = testItems[row.index] || source?.original || row.item || { question: row.question, expectedAny: [row.expected].filter(Boolean) }
-      return previewFacilitatorQuestion({
-        teacher: 'slate', phase: 'completed-test-review', pin, feedback,
-        original: { ...original, question: row.question }, grade: lesson?.grade || '',
-      })
-    }
-    return saveCompletedReview({ action: 'question', row, feedback, pin, proposal })
-  }
-
-  const reviseCompletedQuestionSource = async ({ feedback, pin, proposal }) => {
-    const row = resultReviewTarget
-    const source = row ? resolveFacilitatorQuestionSource(lesson, { question: row.question }) : null
-    if (!row || !canCreateFacilitatorSourceRevision(lessonKey, source)) {
-      throw new Error('A verified file-authored source is required for a new lesson revision.')
-    }
-    const receipt = await createFacilitatorSourceRevision({
-      pin, lessonKey, field: source.field, index: source.index, original: source.original, proposal, feedback,
-    })
-    await saveCompletedReview({
-      action: 'question', row, feedback, pin, proposal,
-      sourceRevisionLessonKey: receipt?.newDraft?.lessonKey || null,
-    })
-    return { ...receipt, instanceApplied: false }
-  }
-
-  const closeCompletedResults = useCallback(() => {
-    try { localStorage.removeItem(resultMarkerKey) } catch {}
-    router.push('/learn')
-  }, [resultMarkerKey, router])
-
   const restoreLiftoffSnapshot = useCallback((snapshot, activeSession, loadedLesson) => {
     if (!canRestoreLiftoffSnapshot(snapshot, { occurrenceId, executionSessionId: activeSession?.id })) return false
     const feature = snapshot.featureState
@@ -816,7 +727,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const persistLiftoffSnapshot = useCallback(async (overrides = {}) => {
     const service = snapshotServiceRef.current
     const activeSession = sessionRef.current
-    if (!service || !activeSession?.id || service.writesFenced || completionSettledRef.current) return false
+    if (!service || !activeSession?.id || service.writesFenced) return false
     const phaseValue = overrides.phase ?? phase
     const liftoffValue = overrides.liftoff ?? liftoff
     const slateTextValue = Object.prototype.hasOwnProperty.call(overrides, 'slateText') ? overrides.slateText : slateText
@@ -1258,18 +1169,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         )) || meta?.lessons?.[0]
         if (!metaResponse.ok || !loadedLesson) throw new Error('This lesson could not be loaded for Liftoff.')
 
-        const savedResultExecution = (() => { try { return localStorage.getItem(resultMarkerKey) || '' } catch { return '' } })()
-        if (savedResultExecution) {
-          setLesson(loadedLesson)
-          const recovered = await loadCompletedReport(savedResultExecution)
-          if (!recovered?.test_report?.items?.length) {
-            throw new Error('The completed lesson is saved, but its independent results could not be verified yet. Please reopen this page after the evidence becomes available.')
-          }
-          completionSettledRef.current = true
-          setPhase('complete')
-          return
-        }
-
         // Unlike the older Daily Review route, Liftoff used to restore immediately.
         // Pause before starting a protected execution so a refresh offers the same choice.
         let resumeDecision = 'resume'
@@ -1391,7 +1290,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       resumeChoiceRef.current = null
       resolve?.('cancelled')
     }
-  }, [appendTranscript, initializeCanonicalMasteryEvidence, learnerId, lessonKey, occurrenceId, restoreLiftoffSnapshot, loadCompletedReport, resultMarkerKey])
+  }, [appendTranscript, initializeCanonicalMasteryEvidence, learnerId, lessonKey, occurrenceId, restoreLiftoffSnapshot])
 
   // Play only the first visible teaching sentence on mount. The learner
   // advances every later sentence; no next question is revealed automatically.
@@ -1413,11 +1312,9 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   }, [phase, speak])
 
   useEffect(() => {
-    if (!session?.id || !browserSessionIdRef.current || completionSettledRef.current || phase === 'complete') return undefined
+    if (!session?.id || !browserSessionIdRef.current) return undefined
     const timer = setInterval(() => {
-      if (completionSettledRef.current) return
       heartbeatLessonSession(session.id, learnerId, browserSessionIdRef.current).then((status) => {
-        if (completionSettledRef.current) return
         if (status?.ok && status.active === false) {
           const reason = String(status.endedReason || status.state || 'ended')
           snapshotServiceRef.current?.fenceWrites?.(reason)
@@ -1435,7 +1332,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       }).catch(() => {})
     }, 30000)
     return () => clearInterval(timer)
-  }, [learnerId, session?.id, phase])
+  }, [learnerId, session?.id])
 
   useEffect(() => {
     const math = phase === 'active' ? liftoff?.currentAction?.problem?.math : null
@@ -1500,7 +1397,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     const flush = () => {
       if (snapshotTimerRef.current) clearTimeout(snapshotTimerRef.current)
       snapshotTimerRef.current = null
-      if (!completionSettledRef.current) void persistRef.current?.()
+      void persistRef.current?.()
     }
     window.addEventListener('pagehide', flush)
     return () => {
@@ -2296,9 +2193,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         test_points: score.points, test_total: score.total, test_partial: score.partial },
     })
     if (!completed) throw new Error('The lesson assessment finished, but the protected Syllabus completion could not be verified.')
-    completionSettledRef.current = true
-    // Never reopen a finished execution as a new test, even if later trace writes fail.
-    try { localStorage.setItem(resultMarkerKey, activeSession.id) } catch {}
     if (!stillOwns()) return
 
     try {
@@ -2310,7 +2204,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
     let liftoffEvidenceSaved = false
     try {
-      const recorded = await recordSlateLiftoffEvidence({
+      await recordSlateLiftoffEvidence({
         learnerId,
         lessonKey,
         occurrenceId: activeSession.occurrenceId || occurrenceId,
@@ -2321,7 +2215,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         liftoff,
       })
       liftoffEvidenceSaved = true
-      setCompletedRecordId(recorded?.id || null)
     } catch (e) {
       console.error('[Slate Liftoff] durable responsibility trace save failed', e)
     }
@@ -2351,9 +2244,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setSlateText(completionText)
     appendTranscript('assistant', completionText)
     setPhase('complete')
-    if (liftoffEvidenceSaved) void loadCompletedReport(activeSession.id).catch((error) => setResultReviewError(error?.message || 'Could not load facilitator review options.'))
     void speak(completionText)
-  }, [appendTranscript, learnerId, lesson?.subject, lesson?.title, lessonKey, liftoff, occurrenceId, speak, loadCompletedReport, resultMarkerKey])
+  }, [appendTranscript, learnerId, lesson?.subject, lesson?.title, lessonKey, liftoff, occurrenceId, speak])
 
   const submitAssessmentAnswer = useCallback(async (choiceValue = null) => {
     const item = currentAssessment
@@ -2564,47 +2456,48 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     )
   }
 
-
   if (phase === 'complete') {
-    const selectedReviewSource = resultReviewTarget ? resolveFacilitatorQuestionSource(lesson, { question: resultReviewTarget.question }) : null
     return (
-      <div data-slate-completed-results style={{ height: 'calc(100dvh - clamp(56px, 9svh, 72px))', minHeight: 0, background: C.bg, color: C.text, fontFamily: C.font, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
-        <header style={{ flexShrink: 0, borderBottom: `1px solid ${C.border}`, padding: '10px 16px', display: 'flex', gap: 12, justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
-          <strong>MR. SLATE · INDEPENDENT TEST RESULTS</strong>
-          <button type="button" onClick={closeCompletedResults} style={{ padding: '10px 16px', cursor: 'pointer', fontWeight: 800 }}>CLOSE RESULTS</button>
-        </header>
-        <main data-slate-results-scroll style={{ flex: '1 1 auto', minHeight: 0, overflowY: 'auto', overscrollBehavior: 'contain', WebkitOverflowScrolling: 'touch', padding: '16px 20px 48px' }}>
-          <div style={{ width: '100%', maxWidth: 760, margin: '0 auto' }}>
-            <ReviewTeacherVideoStage teacher="slate" ref={videoRef} />
-            <h1 style={{ fontSize: 24 }}>Independent Test Results</h1>
-            <SlateIndependentTestReport items={testResults} percentage={finalPercentage}
-              report={completedReport}
-              reviewsUnavailable={resultReviewsUnavailable || !completedRecordId}
-              onGradeReview={completedRecordId && !resultReviewsUnavailable ? (row) => { setResultReviewTarget(row); setResultReviewKind('grade'); setResultReviewError('') } : null}
-              onQuestionReview={completedRecordId && !resultReviewsUnavailable ? (row) => { setResultReviewTarget(row); setResultReviewKind('question'); setResultReviewError('') } : null}
-            />
-            {resultReviewError && <p role="alert" style={{ color: C.red, fontWeight: 700 }}>{resultReviewError}</p>}
-            <p style={{ color: C.muted }}>This independent test was completed without help during the test. Partial answers receive half a point; only correct answers establish independent mastery evidence. Facilitator changes are recorded separately.</p>
-          </div>
-        </main>
-        <footer style={{ flexShrink: 0, padding: '10px 16px', borderTop: `1px solid ${C.border}`, background: C.bg, textAlign: 'right' }}>
-          <button type="button" onClick={closeCompletedResults} style={{ padding: '10px 18px', cursor: 'pointer', fontWeight: 800 }}>CLOSE RESULTS</button>
-        </footer>
-        <FacilitatorOverrideModal
-          open={resultReviewKind === 'grade'} onClose={() => setResultReviewKind(null)}
-          teacher="Mr. Slate" targetType="result"
-          targets={resultReviewTarget ? [{ ...resultReviewTarget, text: resultReviewTarget.question }] : []}
-          onOutcome={correctCompletedGrade}
-        />
-        <FacilitatorOverrideModal
-          open={resultReviewKind === 'question'} onClose={() => setResultReviewKind(null)}
-          teacher="Mr. Slate" targetType="question"
-          targets={resultReviewTarget ? [{ ...resultReviewTarget, text: resultReviewTarget.question }] : []}
-          onRegenerate={regenerateCompletedQuestion}
-          allowSourceRevision={canCreateFacilitatorSourceRevision(lessonKey, selectedReviewSource)}
-          onSourceRevision={reviseCompletedQuestionSource}
-        />
-        <audio ref={audioRef} style={{ display: 'none' }} />
+      <div style={{ minHeight: '100vh', background: C.bg, color: C.text, display: 'grid', placeItems: 'center', padding: 24, fontFamily: C.font }}>
+        <div style={{ maxWidth: 760, width: '100%', textAlign: 'center' }}>
+          <ReviewTeacherVideoStage teacher="slate" ref={videoRef} />
+          <h1>Independent Test Results</h1>
+          <SlateIndependentTestReport items={testResults} percentage={finalPercentage} />
+          <p style={{ color: C.muted }}>This independent test was completed without help during the test. Partial answers receive half a point; only correct answers establish independent mastery evidence.</p>
+          <button onClick={() => router.push('/learn')} style={{ padding: '12px 20px', cursor: 'pointer', fontWeight: 800 }}>Back to lessons</button>
+          <FacilitatorOverrideModal
+         open={slateTestOverrideOpen && phase === 'test'}
+         onClose={() => setSlateTestOverrideOpen(false)} teacher="Mr. Slate"
+         targetType="question"
+         targets={currentAssessment ? [{ ...currentAssessment, text: questionText(currentAssessment), question: questionText(currentAssessment) }] : []}
+         onRegenerate={regenerateSlateTestQuestion}
+         allowSourceRevision={canCreateFacilitatorSourceRevision(lessonKey, slateTestQuestionSource)}
+         onSourceRevision={reviseSlateTestQuestionSource}
+         busy={busy || !!snapshotServiceRef.current?.writesFenced}
+       />       <FacilitatorOverrideModal
+         open={slateQuestionOverrideOpen && phase === 'active'}
+         onClose={() => setSlateQuestionOverrideOpen(false)} teacher="Mr. Slate"
+         targetType="question"
+         targets={liftoff?.currentAction?.problem?.prompt ? [{
+           id: liftoff.currentAction.problem.instanceKey || liftoff.currentAction.problem.fingerprint,
+           question: liftoff.currentAction.problem.prompt,
+         }] : []}
+         onRegenerate={regenerateSlateProbe}
+         busy={busy || lineHelpBusy || questionPending || !!snapshotServiceRef.current?.writesFenced}
+       />       <FacilitatorOverrideModal
+         open={slateOverrideIndex >= 0 && phase === 'active'}
+         onClose={() => setSlateOverrideIndex(-1)} teacher="Mr. Slate"
+         selectedIndex={Math.max(0, slateOverrideIndex)}
+         targets={essentialComponents.map((component) => ({
+           id: component.id, text: `${component.name}${component.description ? `: ${component.description}` : ''}`,
+           completed: Boolean(liftoff?.facilitatorFulfillments?.[component.id]) ||
+             ['independent', 'retained'].includes(component.evidenceState),
+           source: liftoff?.facilitatorFulfillments?.[component.id] ? 'facilitator' : 'ai',
+         }))}
+         onOutcome={fulfillSlateObjective} busy={busy || lineHelpBusy || !!snapshotServiceRef.current?.writesFenced}
+       />
+       <audio ref={audioRef} style={{ display: 'none' }} />
+        </div>
       </div>
     )
   }
@@ -2728,37 +2621,6 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
   return (
     <div className={styles.sessionShell} style={{ background: C.bg, color: C.text, fontFamily: C.font, display: 'flex', flexDirection: 'column', ...(sonomaKeyboard.keyboardHeight > 0 ? { height: `calc(100dvh - ${sonomaKeyboard.keyboardHeight}px)`, minHeight: 0, overflowY: 'auto' } : {}) }}>
-          <FacilitatorOverrideModal
-         open={slateTestOverrideOpen && phase === 'test'}
-         onClose={() => setSlateTestOverrideOpen(false)} teacher="Mr. Slate"
-         targetType="question"
-         targets={currentAssessment ? [{ ...currentAssessment, text: questionText(currentAssessment), question: questionText(currentAssessment) }] : []}
-         onRegenerate={regenerateSlateTestQuestion}
-         allowSourceRevision={canCreateFacilitatorSourceRevision(lessonKey, slateTestQuestionSource)}
-         onSourceRevision={reviseSlateTestQuestionSource}
-         busy={busy || !!snapshotServiceRef.current?.writesFenced}
-       />       <FacilitatorOverrideModal
-         open={slateQuestionOverrideOpen && phase === 'active'}
-         onClose={() => setSlateQuestionOverrideOpen(false)} teacher="Mr. Slate"
-         targetType="question"
-         targets={liftoff?.currentAction?.problem?.prompt ? [{
-           id: liftoff.currentAction.problem.instanceKey || liftoff.currentAction.problem.fingerprint,
-           question: liftoff.currentAction.problem.prompt,
-         }] : []}
-         onRegenerate={regenerateSlateProbe}
-         busy={busy || lineHelpBusy || questionPending || !!snapshotServiceRef.current?.writesFenced}
-       />       <FacilitatorOverrideModal
-         open={slateOverrideIndex >= 0 && phase === 'active'}
-         onClose={() => setSlateOverrideIndex(-1)} teacher="Mr. Slate"
-         selectedIndex={Math.max(0, slateOverrideIndex)}
-         targets={essentialComponents.map((component) => ({
-           id: component.id, text: `${component.name}${component.description ? `: ${component.description}` : ''}`,
-           completed: Boolean(liftoff?.facilitatorFulfillments?.[component.id]) ||
-             ['independent', 'retained'].includes(component.evidenceState),
-           source: liftoff?.facilitatorFulfillments?.[component.id] ? 'facilitator' : 'ai',
-         }))}
-         onOutcome={fulfillSlateObjective} busy={busy || lineHelpBusy || !!snapshotServiceRef.current?.writesFenced}
-       />
       <header style={{ minHeight: 58, padding: '10px 18px', borderBottom: `1px solid ${C.border}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12 }}>
         <div>
           <div style={{ fontWeight: 900, letterSpacing: 1 }}>MR. SLATE · LIFTOFF</div>

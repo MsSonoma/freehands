@@ -36,3 +36,12 @@ test('Slate objectives use the same modal and distinct educator provenance', () 
   assert.match(slate, /onOutcome=\{fulfillSlateObjective\}/);
   assert.match(slate, /persistLiftoffSnapshot\(\{ phase: 'active', liftoff: next \}\)/);
 });
+
+test('FacOR dialog and objective selector stay inside narrow viewports', () => {
+  assert.match(shared, /gridTemplateColumns: 'minmax\(0,1fr\)'/);
+  assert.match(shared, /boxSizing: 'border-box', width: '100%', maxWidth: 560, minWidth: 0/);
+  assert.match(shared, /overflowY: 'auto', overflowX: 'hidden', overflowWrap: 'anywhere'/);
+  assert.match(shared, /id="override-target"[^\n]*boxSizing: 'border-box', width: '100%', maxWidth: '100%', minWidth: 0/);
+  assert.match(shared, /full\.length > 34 \? `\$\{full\.slice\(0, 31\)\}\.\.\.` : full/);
+  assert.match(shared, /\{text \|\| 'No material available'\}/);
+});

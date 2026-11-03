@@ -1015,8 +1015,6 @@ export default function FacilitatorSyllabusLessonOverlay({
                 <SlateIndependentTestReport
                   items={liftoffRecord.test_report.items}
                   percentage={liftoffRecord.test_report.percentage}
-                  report={liftoffRecord.test_report}
-                  reviewsUnavailable={Boolean(liftoffRecord.result_overrides_unavailable)}
                   legacy={liftoffRecord.test_report.legacy}
                   compact
                 />

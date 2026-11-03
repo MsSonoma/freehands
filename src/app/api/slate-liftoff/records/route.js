@@ -3,7 +3,7 @@ import { NextResponse } from 'next/server.js'
 import { normalizeLessonKey } from '@/app/lib/lessonKeyNormalization.js'
 import { getSyllabusRequestContext } from '@/app/lib/syllabus/request.server.mjs'
 import { validateLearnerId } from '@/app/lib/syllabus/schema.mjs'
-import { buildSlateTestReportFromEvents, applySlateTestResultOverrides } from '@/app/lib/slateTestGradeReport.mjs'
+import { buildSlateTestReportFromEvents } from '@/app/lib/slateTestGradeReport.mjs'
 
 export const dynamic = 'force-dynamic'
 export const runtime = 'nodejs'
@@ -77,24 +77,9 @@ export async function GET(request, deps = {}) {
       if (!grouped.has(id)) grouped.set(id, [])
       grouped.get(id).push(event)
     }
-    const reviewQuery = await admin.from('slate_test_result_overrides')
-      .select('*').eq('facilitator_id', context.user.id)
-      .in('record_id', records.map(row => row.id))
-      .order('created_at', { ascending: true }).limit(2000)
-    const reviewsUnavailable = Boolean(reviewQuery.error)
-    const reviewsByRecord = new Map()
-    for (const review of reviewQuery.data || []) {
-      const key = String(review.record_id)
-      if (!reviewsByRecord.has(key)) reviewsByRecord.set(key, [])
-      reviewsByRecord.get(key).push(review)
-    }
     return NextResponse.json({ records: records.map(row => ({
       ...row,
-      ...(reviewsUnavailable ? { result_overrides_unavailable: true } : {}),
-      test_report: applySlateTestResultOverrides(
-        buildSlateTestReportFromEvents(grouped.get(String(row.execution_session_id)) || [], row.independent_test_percentage),
-        reviewsByRecord.get(String(row.id)) || [],
-      ),
+      test_report: buildSlateTestReportFromEvents(grouped.get(String(row.execution_session_id)) || [], row.independent_test_percentage),
     })) })
   } catch (error) {
     return NextResponse.json({ error: error?.message || 'Could not load Liftoff instructional evidence' }, { status: Number.isInteger(error?.status) ? error.status : 500 })
