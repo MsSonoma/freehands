@@ -28,6 +28,7 @@ export default function SessionTimer({
   totalMinutes = 5, 
   phaseProgress = 0,
   isPaused = false,
+  countUp = false,
   elapsedSeconds: externalElapsed = null,
   remainingSeconds: externalRemaining = null,
   onTimeUp,
@@ -186,8 +187,9 @@ export default function SessionTimer({
     : totalSeconds - elapsedSeconds;
   
   // remainingSeconds can now exceed totalSeconds when elapsedSeconds is negative (time added)
-  const minutes = Math.floor(Math.max(0, remainingSeconds) / 60);
-  const seconds = Math.max(0, remainingSeconds) % 60;
+  const displaySeconds = countUp ? Math.max(0, Math.floor(externalElapsed ?? elapsedSeconds)) : Math.max(0, remainingSeconds);
+  const minutes = Math.floor(displaySeconds / 60);
+  const seconds = displaySeconds % 60;
 
   // Report remaining time to parent (for external displays like games overlay)
   useEffect(() => {
@@ -198,7 +200,7 @@ export default function SessionTimer({
 
   // Pace color is phase-local: compare work completed within THIS timer's phase/block
   // against elapsed time on THIS timer. Whole-lesson progress must never affect this color.
-  const color = getTimerPaceColor({
+  const color = countUp ? '#f8fafc' : getTimerPaceColor({
     timerType,
     elapsedSeconds,
     totalSeconds,
@@ -219,7 +221,7 @@ export default function SessionTimer({
   // Build timer tooltip (type description only — gear button has its own tooltip)
   const tooltipText = timerType === 'play'
     ? 'Play time (for games before work)'
-    : 'Work time (complete phase tasks)';
+    : countUp ? 'Response time elapsed (count up). A stall is counted only after facilitator escalation.' : 'Work time (complete phase tasks)';
 
   // Flash animation for play timer during last minute
   const shouldFlash = timerType === 'play' && remainingSeconds > 0 && remainingSeconds <= 60;

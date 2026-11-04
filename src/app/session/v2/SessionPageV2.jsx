@@ -137,6 +137,7 @@ import {
   sonomaResponseElapsedSeconds,
 } from './sonomaResponsePacing.mjs';
 import { createSonomaAttentionNotification, recordSonomaPacingEvent } from '@/app/lib/sonomaResponsePacingClient.js';
+import { createWorkTimerReward, restoreWorkTimerReward, recordWorkTimerStall, correctWorkTimerStall, getWorkTimerRewardStatus } from '@/app/session/utils/workTimerModes.mjs';
 
 const SESSION_TUTORIAL_STEPS = [
   {
@@ -187,7 +188,7 @@ const SESSION_TUTORIAL_STEPS = [
 ];
 
 // Test Review UI Component (matches V1)
-function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, onOverrideAnswer, onCompleteReview, openReviewKeyboard, isMobileLandscape, isMobilePortrait, footerHeight }) {
+function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseCompletions, workTimeRemaining, goldenKeysEnabled, workReward, onOverrideAnswer, onCompleteReview, openReviewKeyboard, isMobileLandscape, isMobilePortrait, footerHeight }) {
   const { score, totalQuestions, percentage, grade: letterGrade, answers } = testGrade;
   const [reviewDrafts, setReviewDrafts] = useState({});
   const [reviewError, setReviewError] = useState('');
@@ -267,9 +268,11 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
     }
   })();
 
+  const countUpRewardStatus = workReward?.settings?.style === 'countup' ? getWorkTimerRewardStatus(workReward) : null;
   const meetsGoldenKey = (() => {
     try {
       if (!goldenKeysEnabled) return false;
+      if (countUpRewardStatus) return countUpRewardStatus.eligible;
       const status = timerService?.getGoldenKeyStatus?.();
       if (status && typeof status.eligible === 'boolean') return status.eligible;
       return onTimeCount >= 3;
@@ -316,10 +319,12 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
         <div style={{ fontWeight: 800 }}>Work timers</div>
         {goldenKeysEnabled ? (
           <div style={{ fontWeight: 700, color: meetsGoldenKey ? '#065f46' : '#7f1d1d' }}>
-            {meetsGoldenKey ? 'Golden key eligible (3+ on-time work timers)' : 'Golden key not yet met (needs 3 on-time work timers)'}
+            {countUpRewardStatus
+              ? `Golden Key ${meetsGoldenKey ? 'eligible' : 'not eligible'} (${countUpRewardStatus.stallCount} stalls, ${countUpRewardStatus.allowance} allowed)`
+              : (meetsGoldenKey ? 'Golden key eligible (3+ on-time work timers)' : 'Golden key not yet met (needs 3 on-time work timers)')}
           </div>
         ) : null}
-        {!isMobilePortrait && (
+        {!isMobilePortrait && !countUpRewardStatus && (
           <>
             <div style={{ fontSize: 13, color: '#4b5563' }}>Play timers are ignored here.</div>
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 6 }}>
@@ -352,7 +357,7 @@ function TestReviewUI({ testGrade, generatedTest, timerService, workPhaseComplet
             </div>
           </>
         )}
-        {isMobilePortrait && (
+        {isMobilePortrait && !countUpRewardStatus && (
           <div style={{ fontSize: 13, color: '#4b5563' }}>{onTimeCount} of {workPhases.length} phases on time · Play timers excluded</div>
         )}
       </div>
@@ -936,7 +941,7 @@ function SessionPageV2Inner() {
       if (goldenKeysEnabledRef.current === false) return;
       const status = timer.getGoldenKeyStatus?.();
       if (status && typeof status.eligible === 'boolean') {
-        setGoldenKeyEligible(status.eligible);
+        setGoldenKeyEligible(sonomaWorkRewardRef.current?.settings?.style === 'countup' ? getWorkTimerRewardStatus(sonomaWorkRewardRef.current).eligible : status.eligible);
       }
     } catch {}
   }, []);
@@ -972,6 +977,11 @@ function SessionPageV2Inner() {
   // Learner-turn response pacing is intentionally separate from work/play timers and mastery evidence.
   const [sonomaResponseTurn, setSonomaResponseTurn] = useState(null);
   const sonomaResponseTurnRef = useRef(null);
+  const [sonomaResponseElapsedDisplay, setSonomaResponseElapsedDisplay] = useState(0);
+  const [sonomaWorkReward, setSonomaWorkReward] = useState(null);
+  const sonomaWorkRewardRef = useRef(null);
+  const sonomaWorkRewardLessonKeyRef = useRef(null);
+  const [sonomaStallOverrideOpen, setSonomaStallOverrideOpen] = useState(false);
   const [sonomaHelpHoldActive, setSonomaHelpHoldActive] = useState(false);
   const sonomaPacingBlockedRef = useRef(false);
   const sonomaPacingHelpHoldRef = useRef(false);
@@ -1963,6 +1973,12 @@ function SessionPageV2Inner() {
         sessionLearnerIdRef.current = learner.id;
         learnerProfileRef.current = learner;
         setLearnerProfile(learner);
+        if (!sonomaWorkRewardRef.current || sonomaWorkRewardLessonKeyRef.current !== goldenKeyLessonKey) {
+          const reward = createWorkTimerReward(learner, 'sonoma');
+          sonomaWorkRewardLessonKeyRef.current = goldenKeyLessonKey;
+          sonomaWorkRewardRef.current = reward;
+          setSonomaWorkReward(reward);
+        }
 
         // Per-learner TTS unskippable flag
         const unskippable = learner.tts_unskippable === true;
@@ -2492,6 +2508,17 @@ function SessionPageV2Inner() {
 
           setResumePhase(resumePhaseName);
           resumePhaseRef.current = resumePhaseName;
+          // The latest phase checkpoint retains the full lesson reward ledger.
+          const rewardSnapshots = Object.values(snapshot?.phaseData || {})
+            .filter(row => row?.workTimerReward)
+            .sort((a, b) => Date.parse(a.lastActionAt || 0) - Date.parse(b.lastActionAt || 0));
+          const savedReward = rewardSnapshots.at(-1)?.workTimerReward || null;
+          if (savedReward) {
+            const restoredReward = restoreWorkTimerReward(savedReward,
+              sonomaWorkRewardRef.current || createWorkTimerReward(learnerProfileRef.current || {}, 'sonoma'), 'sonoma');
+            sonomaWorkRewardRef.current = restoredReward;
+            setSonomaWorkReward(restoredReward);
+          }
           const restoredResponseTurn = resumePhaseName ? snapshot?.phaseData?.[resumePhaseName]?.responsePacing : null;
           if (restoredResponseTurn?.id && restoredResponseTurn?.startedAt) {
             sonomaResponseTurnRef.current = restoredResponseTurn;
@@ -2499,6 +2526,12 @@ function SessionPageV2Inner() {
           } else {
             sonomaResponseTurnRef.current = null;
             setSonomaResponseTurn(null);
+          }
+          if (restoredResponseTurn?.escalated && sonomaWorkRewardRef.current?.settings?.style === 'countup') {
+            const recoveredReward = recordWorkTimerStall(sonomaWorkRewardRef.current,
+              restoredResponseTurn, sonomaResponseElapsedSeconds(restoredResponseTurn, Date.now()));
+            sonomaWorkRewardRef.current = recoveredReward;
+            setSonomaWorkReward(recoveredReward);
           }
 
           const isBeginningPhase = !resumePhaseName || resumePhaseName === 'idle';
@@ -2672,6 +2705,7 @@ function SessionPageV2Inner() {
 
     const unsubGoldenKey = eventBus.on('goldenKeyEligible', (data) => {
       if (goldenKeysEnabledRef.current === false) return;
+      if (sonomaWorkRewardRef.current?.settings?.style === 'countup') return;
       const eligible = data?.eligible === true;
       setGoldenKeyEligible(eligible);
       if (eligible) addEvent('🔑 Golden Key earned!');
@@ -3268,8 +3302,8 @@ function SessionPageV2Inner() {
       setShowGames(false);
       setShowFullscreenPlayTimer(false);
       setShowPlayWithSonomaMenu(false);
-    } else if (mode === 'work') {
-      // Work time exceeded - track for golden key
+    } else if (mode === 'work' && sonomaWorkRewardRef.current?.settings?.style !== 'countup') {
+      // Only countdown lessons treat elapsed work time as a limit.
       addEvent(`â±ï¸ Work time exceeded for ${phaseName}`);
     }
   }, [getCurrentPhaseName, currentTimerMode]);
@@ -3838,8 +3872,21 @@ function SessionPageV2Inner() {
   const commitSonomaResponseTurn = useCallback((turn, { persist = true, phaseOverride = null } = {}) => {
     sonomaResponseTurnRef.current = turn || null;
     setSonomaResponseTurn(turn || null);
+    setSonomaResponseElapsedDisplay(turn ? sonomaResponseElapsedSeconds(turn, Date.now()) : 0);
     if (persist) persistSonomaResponseTurn(turn || null, phaseOverride);
   }, [persistSonomaResponseTurn]);
+
+  const commitSonomaWorkReward = useCallback((reward) => {
+    if (!reward || executionFencedRef.current) return;
+    sonomaWorkRewardRef.current = reward;
+    setSonomaWorkReward(reward);
+    const phase = currentPhaseRef.current;
+    if (snapshotServiceRef.current && phase && phase !== 'complete' && phase !== 'idle') {
+      void snapshotServiceRef.current.saveProgress('sonoma-work-reward', {
+        phaseOverride: phase, workTimerReward: reward,
+      }).catch(() => {});
+    }
+  }, []);
 
   const getSonomaPacingContext = useCallback(() => ({
     learnerId: sessionLearnerIdRef.current || learnerProfileRef.current?.id || null,
@@ -4025,6 +4072,10 @@ function SessionPageV2Inner() {
       ? current
       : { ...current, reminderStage: 5, escalated: true };
     if (staged !== current) commitSonomaResponseTurn(staged);
+    if (sonomaWorkRewardRef.current?.settings?.style === 'countup') {
+      const nextReward = recordWorkTimerStall(sonomaWorkRewardRef.current, staged, elapsedSeconds);
+      if (nextReward !== sonomaWorkRewardRef.current) commitSonomaWorkReward(nextReward);
+    }
 
     if (sonomaPacingHelpHoldRef.current) return;
     sonomaNotificationInFlightRef.current = true;
@@ -4059,7 +4110,7 @@ function SessionPageV2Inner() {
     }).finally(() => {
       sonomaNotificationInFlightRef.current = false;
     });
-  }, [appendTranscriptLine, commitSonomaResponseTurn, getSonomaPacingContext, sendSonomaPacingEvent, speakSonomaAttentionLine]);
+  }, [appendTranscriptLine, commitSonomaResponseTurn, commitSonomaWorkReward, getSonomaPacingContext, sendSonomaPacingEvent, speakSonomaAttentionLine]);
 
   const sonomaPacingBlocked = Boolean(
     sonomaHelpHoldActive
@@ -4096,11 +4147,12 @@ function SessionPageV2Inner() {
     if (!sonomaResponseTurn?.id) return undefined;
     const tick = () => {
       const current = sonomaResponseTurnRef.current;
+      setSonomaResponseElapsedDisplay(current ? sonomaResponseElapsedSeconds(current, Date.now()) : 0);
       if (!current || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing() || current.pauseStartedAt || executionFencedRef.current) return;
       const nowMs = Date.now();
       if (isSonomaActivitySnoozed(current, nowMs)) return;
       const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
-      const dueStage = sonomaReminderStageForElapsed(elapsedSeconds);
+      const dueStage = sonomaReminderStageForElapsed(elapsedSeconds, sonomaWorkRewardRef.current?.settings?.reminderIntervalMin ?? 2);
       const deliveredStage = Number(current.reminderStage || 0);
       if (dueStage <= deliveredStage && !(deliveredStage >= 5 && !current.notificationDelivered)) return;
       if (dueStage >= 5) {
@@ -5502,16 +5554,18 @@ function SessionPageV2Inner() {
         window.__PREVENT_SNAPSHOT_SAVE__ = true;
       }
       
-      // Show golden key status
+      // Report the selected reward rule, not the countdown rule in count-up lessons.
       if (goldenKeysEnabledRef.current !== false && timerServiceRef.current) {
-        const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
-        if (goldenKey.eligible) {
-          addEvent(`ðŸ”‘ Golden Key Earned! (${goldenKey.onTimeCompletions}/3 on-time)`);
-        } else {
-          addEvent(`ðŸ”‘ Golden Key not earned (${goldenKey.onTimeCompletions}/3 on-time)`);
-        }
+        const workReward = sonomaWorkRewardRef.current;
+        const goldenKey = workReward?.settings?.style === 'countup'
+          ? getWorkTimerRewardStatus(workReward)
+          : timerServiceRef.current.getGoldenKeyStatus();
+        const details = goldenKey.style === 'countup'
+          ? `${goldenKey.stallCount} stalls, ${goldenKey.allowance} allowed`
+          : `${goldenKey.onTimeCompletions}/3 on-time work phases`;
+        addEvent(`Golden Key ${goldenKey.eligible ? 'eligible' : 'not earned'} (${details})`);
       }
-      
+
       // Delete snapshot (session finished)
       if (snapshotServiceRef.current) {
         snapshotServiceRef.current.deleteSnapshot().then(() => {
@@ -5581,7 +5635,9 @@ function SessionPageV2Inner() {
       // Finalize Golden Key inventory against the exact completed execution.
       // The server transaction is idempotent, so retries cannot double-award or double-consume.
       const earnedKey = (goldenKeysEnabledRef.current !== false)
-        ? (timerServiceRef.current?.getGoldenKeyStatus()?.eligible || false)
+        ? (sonomaWorkRewardRef.current?.settings?.style === 'countup'
+          ? getWorkTimerRewardStatus(sonomaWorkRewardRef.current).eligible
+          : (timerServiceRef.current?.getGoldenKeyStatus()?.eligible || false))
         : false;
       let awardedKey = false;
       const finalizeLearnerId = learnerProfileRef.current?.id || learnerProfile?.id || null;
@@ -6053,7 +6109,7 @@ function SessionPageV2Inner() {
       
       // If play-dependent-on-work is on and discussion timer expired, show overlay before comprehension.
       console.log('[WorkDependent] discussion: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + discussionOnTime);
-      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !discussionOnTime) {
+      if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && playDependentOnWorkRef.current && playTimersEnabledRef.current && !discussionOnTime) {
         workExpiredNextPhaseRef.current = 'comprehension';
         setWorkExpiredNextPhase('comprehension');
         pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onTeachingComplete();
@@ -6257,7 +6313,7 @@ function SessionPageV2Inner() {
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
       // and show the skip-play overlay so the learner knows play is skipped.
       console.log('[WorkDependent] comprehension: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + comprehensionOnTime);
-      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !comprehensionOnTime) {
+      if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && playDependentOnWorkRef.current && playTimersEnabledRef.current && !comprehensionOnTime) {
         workExpiredNextPhaseRef.current = 'exercise';
         setWorkExpiredNextPhase('exercise');
         pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onComprehensionComplete();
@@ -6495,7 +6551,7 @@ function SessionPageV2Inner() {
         if (time) {
           exerciseOnTime = time.onTime;
           const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
-          addEvent(`Exercise completed in ${time.formatted} ${status}`);
+          if (sonomaWorkRewardRef.current?.settings?.style !== 'countup') addEvent(`Exercise completed in ${time.formatted} ${status}`);
           setWorkPhaseCompletions(prev => ({ ...prev, exercise: time.onTime }));
           setWorkTimeRemaining(prev => ({ ...prev, exercise: time.remaining / 60 }));
         }
@@ -6517,7 +6573,7 @@ function SessionPageV2Inner() {
       
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
       console.log('[WorkDependent] exercise: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + exerciseOnTime);
-      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !exerciseOnTime) {
+      if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && playDependentOnWorkRef.current && playTimersEnabledRef.current && !exerciseOnTime) {
         workExpiredNextPhaseRef.current = 'worksheet';
         setWorkExpiredNextPhase('worksheet');
         pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onExerciseComplete();
@@ -6748,7 +6804,7 @@ function SessionPageV2Inner() {
         if (time) {
           worksheetOnTime = time.onTime;
           const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
-          addEvent(`â±ï¸ Worksheet completed in ${time.formatted} ${status}`);
+          if (sonomaWorkRewardRef.current?.settings?.style !== 'countup') addEvent(`â±ï¸ Worksheet completed in ${time.formatted} ${status}`);
           setWorkPhaseCompletions(prev => ({ ...prev, worksheet: time.onTime }));
           setWorkTimeRemaining(prev => ({ ...prev, worksheet: time.remaining / 60 }));
         }
@@ -6770,7 +6826,7 @@ function SessionPageV2Inner() {
       
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
       console.log('[WorkDependent] worksheet: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + worksheetOnTime);
-      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && !worksheetOnTime) {
+      if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && playDependentOnWorkRef.current && playTimersEnabledRef.current && !worksheetOnTime) {
         workExpiredNextPhaseRef.current = 'test';
         setWorkExpiredNextPhase('test');
         pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onWorksheetComplete();
@@ -7036,13 +7092,13 @@ function SessionPageV2Inner() {
         const time = timerServiceRef.current.getWorkPhaseTime('test');
         if (time) {
           const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
-          addEvent(`â±ï¸ Test completed in ${time.formatted} ${status}`);
+          if (sonomaWorkRewardRef.current?.settings?.style !== 'countup') addEvent(`â±ï¸ Test completed in ${time.formatted} ${status}`);
           setWorkPhaseCompletions(prev => ({ ...prev, test: time.onTime }));
           setWorkTimeRemaining(prev => ({ ...prev, test: time.remaining / 60 }));
         }
         
         const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
-        if (goldenKey.eligible) {
+        if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && goldenKey.eligible) {
           addEvent('Golden Key Earned! 3 on-time completions!');
         }
       }
@@ -7075,14 +7131,14 @@ function SessionPageV2Inner() {
         const time = timerServiceRef.current.getWorkPhaseTime('test');
         if (time) {
           const status = time.onTime ? 'âœ… On time!' : 'â° Time exceeded';
-          addEvent(`â±ï¸ Test completed in ${time.formatted} ${status}`);
+          if (sonomaWorkRewardRef.current?.settings?.style !== 'countup') addEvent(`â±ï¸ Test completed in ${time.formatted} ${status}`);
           setWorkPhaseCompletions(prev => ({ ...prev, test: time.onTime }));
           setWorkTimeRemaining(prev => ({ ...prev, test: time.remaining / 60 }));
         }
         
         // Check golden key status
         const goldenKey = timerServiceRef.current.getGoldenKeyStatus();
-        if (goldenKey.eligible) {
+        if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && goldenKey.eligible) {
           addEvent('ðŸ”‘ Golden Key Earned! 3 on-time completions!');
         }
       }
@@ -8969,16 +9025,23 @@ function SessionPageV2Inner() {
                 key={`phase-timer-${getCurrentPhaseName()}-${currentTimerMode[getCurrentPhaseName()]}-${timerRefreshKey}`}
                 phase={getCurrentPhaseName()}
                 timerType={currentTimerMode[getCurrentPhaseName()]}
+                countUp={currentTimerMode[getCurrentPhaseName()] === 'work' && sonomaWorkReward?.settings?.style === 'countup'}
                 totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}
                 goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
                 phaseProgress={calculateTimerProgress(getCurrentPhaseName())}
                 isPaused={timerPaused}
-                elapsedSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayElapsed : workTimerDisplayElapsed}
-                remainingSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayRemaining : workTimerDisplayRemaining}
+                elapsedSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayElapsed : (sonomaWorkReward?.settings?.style === 'countup' ? sonomaResponseElapsedDisplay : workTimerDisplayElapsed)}
+                remainingSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayRemaining : (sonomaWorkReward?.settings?.style === 'countup' ? 0 : workTimerDisplayRemaining)}
                 onPauseToggle={handleTimerPauseToggle}
                 lessonKey={lessonKey}
                 onTimerClick={handleTimerClick}
               />
+              {sonomaWorkReward?.settings?.style === 'countup' && sonomaWorkReward.stalls.some(row => !sonomaWorkReward.corrections.some(c => c.turnId === row.turnId)) && (
+                <button type="button" onClick={() => setSonomaStallOverrideOpen(true)}
+                  style={{ display: 'block', marginTop: 5, padding: '6px 8px', background: '#fff', color: '#334155', border: '1px solid #94a3b8', borderRadius: 7, fontSize: 11, fontWeight: 700 }}>
+                  FacOR: Correct stall
+                </button>
+              )}
             </div>
           )}
           
@@ -9261,6 +9324,7 @@ function SessionPageV2Inner() {
             workPhaseCompletions={workPhaseCompletions}
             workTimeRemaining={workTimeRemaining}
             goldenKeysEnabled={goldenKeysEnabled !== false}
+            workReward={sonomaWorkReward}
             onOverrideAnswer={handleTestOverrideAnswer}
             onCompleteReview={skipTestReview}
             openReviewKeyboard={openSonomaTextInput}
@@ -10252,6 +10316,11 @@ function SessionPageV2Inner() {
                             setResumePhase(null);
                             resetTranscriptState();
                             try { timerServiceRef.current?.reset?.(); } catch {}
+                            const freshReward = createWorkTimerReward(learnerProfileRef.current || {}, 'sonoma');
+                            sonomaWorkRewardRef.current = freshReward;
+                            setSonomaWorkReward(freshReward);
+                            setSonomaResponseElapsedDisplay(0);
+                            setSonomaStallOverrideOpen(false);
                             setCurrentTimerMode({ discussion: null, comprehension: null, exercise: null, worksheet: null, test: null });
                             setTimerRefreshKey(k => k + 1);
                             baselinePlanRef.current = null;
@@ -11131,6 +11200,23 @@ function SessionPageV2Inner() {
           </div>
         </div>
       )}
+      <FacilitatorOverrideModal
+        open={sonomaStallOverrideOpen}
+        onClose={() => setSonomaStallOverrideOpen(false)}
+        teacher="Ms. Sonoma" targetType="stall"
+        targets={(sonomaWorkReward?.stalls || [])
+          .filter(row => !(sonomaWorkReward?.corrections || []).some(c => c.turnId === row.turnId))
+          .map(row => ({ id: row.turnId, text: `${row.stage || 'Lesson'} response stall at ${Math.floor(row.elapsedSeconds / 60)}m ${row.elapsedSeconds % 60}s` }))}
+        onOutcome={(_index, row, { feedback }) => {
+          const current = sonomaWorkRewardRef.current;
+          const next = correctWorkTimerStall(current, row?.id, feedback);
+          if (!next || next === current) return false;
+          commitSonomaWorkReward(next);
+          const turn = { id: row.id, phase: currentPhaseRef.current, turnKind: 'facilitator-correction' };
+          sendSonomaPacingEvent('facilitator_stall_corrected', turn, 0, { eventSuffix: 'stall-correction', metadata: { reason: feedback } });
+          return true;
+        }}
+      />
       <FacilitatorOverrideModal
         open={discussionUniversalOverride >= 0 && showDiscussionObjectives}
         onClose={() => setDiscussionUniversalOverride(-1)} teacher="Ms. Sonoma"

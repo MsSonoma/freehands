@@ -24,8 +24,8 @@ export default function FacilitatorOverrideModal({
   const [sourceReceipt, setSourceReceipt] = useState(null);
   const [correctedStatus, setCorrectedStatus] = useState('correct');
   useEffect(() => {
-    if (!open) { pinRef.current = null; setAuthorized(false); setProposal(null); setFeedback(''); setScope('instance'); setAction(targetType === 'question' ? 'regenerate' : (targetType === 'result' ? 'grade' : 'outcome')); setCorrectedStatus('correct'); setError(''); setSourceReceipt(null); }
-    else { setIndex(selectedIndex); setProposal(null); setAction(targetType === 'question' ? 'regenerate' : (targetType === 'result' ? 'grade' : 'outcome')); setCorrectedStatus('correct'); setFeedback(''); setScope('instance'); setError(''); setSourceReceipt(null); }
+    if (!open) { pinRef.current = null; setAuthorized(false); setProposal(null); setFeedback(''); setScope('instance'); setAction(targetType === 'stall' ? 'stall' : (targetType === 'question' ? 'regenerate' : (targetType === 'result' ? 'grade' : 'outcome'))); setCorrectedStatus('correct'); setError(''); setSourceReceipt(null); }
+    else { setIndex(selectedIndex); setProposal(null); setAction(targetType === 'stall' ? 'stall' : (targetType === 'question' ? 'regenerate' : (targetType === 'result' ? 'grade' : 'outcome'))); setCorrectedStatus('correct'); setFeedback(''); setScope('instance'); setError(''); setSourceReceipt(null); }
   }, [open, selectedIndex, targetType]);
   useEffect(() => {
     if (!open || authorized) return;
@@ -50,12 +50,17 @@ export default function FacilitatorOverrideModal({
   const submit = async () => {
     if (!authorized || working || busy || !selected) return;
     setError('');
-    if ((action === 'regenerate' || action === 'grade') && feedback.trim().length < 8) {
+    if ((action === 'regenerate' || action === 'grade' || action === 'stall') && feedback.trim().length < 8) {
       setError('Explain what went wrong so the new material can correct it.'); return;
     }
     setWorking(true);
     try {
-      if (action === 'grade') {
+      if (action === 'stall') {
+        if (typeof onOutcome !== 'function') throw new Error('Stall corrections are unavailable.');
+        const result = await onOutcome(index, selected, { feedback: feedback.trim(), pin: pinRef.current });
+        if (result === false) throw new Error('The stall correction could not be saved.');
+        onClose?.();
+      } else if (action === 'grade') {
         if (typeof onOutcome !== 'function') throw new Error('Result corrections are unavailable.');
         const result = await onOutcome(index, selected, { correctedStatus, feedback: feedback.trim(), pin: pinRef.current });
         if (result === false) throw new Error('The facilitator result correction could not be saved.');
@@ -90,7 +95,7 @@ export default function FacilitatorOverrideModal({
     <div role="presentation" onPointerDown={(e) => e.stopPropagation()} style={{ position: 'fixed', inset: 0, zIndex: 30000, background: 'rgba(8,15,29,.68)', display: 'grid', gridTemplateColumns: 'minmax(0,1fr)', placeItems: 'center', boxSizing: 'border-box', padding: 14, overflowX: 'hidden' }}>
       <section role="dialog" aria-modal="true" aria-label="Facilitator Override" style={{ background: '#fff', color: '#1f2937', boxSizing: 'border-box', width: '100%', maxWidth: 560, minWidth: 0, maxHeight: '90dvh', overflowY: 'auto', overflowX: 'hidden', overflowWrap: 'anywhere', borderRadius: 16, padding: 22, boxShadow: '0 18px 50px rgba(0,0,0,.28)', fontFamily: 'Roboto, sans-serif' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 12, minWidth: 0 }}>
-          <div style={{ minWidth: 0, flex: '1 1 auto' }}><strong style={{ fontSize: 19 }}>Facilitator Override</strong><div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{teacher} · {targetType === 'objective' ? 'Learning objectives' : targetType === 'result' ? 'Completed test result' : 'Question'}</div></div>
+          <div style={{ minWidth: 0, flex: '1 1 auto' }}><strong style={{ fontSize: 19 }}>Facilitator Override</strong><div style={{ fontSize: 12, color: '#64748b', marginTop: 4 }}>{teacher} · {targetType === 'objective' ? 'Learning objectives' : targetType === 'result' ? 'Completed test result' : targetType === 'stall' ? 'Recorded response stall' : 'Question'}</div></div>
           <button type="button" onClick={onClose} aria-label="Close facilitator override" style={{ ...button, background: '#f1f5f9' }}>Close</button>
         </div>
         {!authorized ? <p>Waiting for facilitator verification…</p> : <>
@@ -107,11 +112,17 @@ export default function FacilitatorOverrideModal({
           <div style={{ background: '#f1f5f9', padding: 14, borderRadius: 10, marginTop: 14, whiteSpace: 'pre-wrap' }}>{text || 'No material available'}</div>
           {selected?.source === 'facilitator' && <p style={{ fontSize: 12, color: '#475569' }}>Already fulfilled by facilitator.</p>}
           <div style={{ display: 'grid', gap: 8, marginTop: 16 }}>
+            {targetType === 'stall' && <label><input type="radio" checked={action === 'stall'} onChange={() => setAction('stall')} /> Correct this recorded stall</label>}
             {targetType === 'result' && <label><input type="radio" checked={action === 'grade'} onChange={() => { setAction('grade'); setProposal(null); }} /> Correct the recorded grading decision</label>}
             {targetType === 'objective' && <label><input type="radio" checked={action === 'outcome'} onChange={() => { setAction('outcome'); setProposal(null); }} /> Mark fulfilled by facilitator</label>}
             {canGenerate && <label><input type="radio" checked={action === 'regenerate'} onChange={() => { setAction('regenerate'); setProposal(null); }} /> Regenerate {targetType === 'objective' ? 'objective' : 'question'}</label>}
           </div>
-          {action === 'grade' && <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+          {action === 'stall' && <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
+             <label htmlFor="override-stall-reason" style={{ fontWeight: 700 }}>Why should this stall not count? (required)</label>
+             <textarea id="override-stall-reason" rows={3} value={feedback} onChange={event => setFeedback(event.target.value)} placeholder="Describe the interruption or other reason for correcting the stall." style={{ boxSizing: 'border-box', width: '100%', border: '1px solid #94a3b8', borderRadius: 8, padding: 10, font: 'inherit' }} />
+             <p style={{ fontSize: 12, color: '#475569', margin: 0 }}>The original timer event remains in the record. The facilitator correction is stored separately.</p>
+           </div>}
+           {action === 'grade' && <div style={{ display: 'grid', gap: 8, marginTop: 14 }}>
             <label htmlFor="override-result-grade" style={{ fontWeight: 700 }}>Facilitator judgment</label>
             <select id="override-result-grade" value={correctedStatus} onChange={(event) => setCorrectedStatus(event.target.value)} style={{ padding: 10, borderRadius: 8, border: '1px solid #94a3b8', background: '#fff', color: '#111827' }}>
               <option value="correct">Correct (1 point)</option><option value="partial">Partial (half point)</option><option value="incorrect">Not credited (0 points)</option>
@@ -138,7 +149,7 @@ export default function FacilitatorOverrideModal({
           <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 8, marginTop: 18, flexWrap: 'wrap' }}>
             <button type="button" style={{ ...button, background: '#e2e8f0' }} onClick={onClose}>Cancel</button>
             <button type="button" disabled={!sourceReceipt && (!selected || !authorized || busy || working || (action === 'outcome' && alreadyDone) || (action === 'regenerate' && !canGenerate))} onClick={() => sourceReceipt ? onClose?.() : void submit()} style={{ ...button, background: '#9f3a2b', color: '#fff', opacity: busy || working ? 0.6 : 1 }}>
-              {sourceReceipt ? 'Close' : working ? 'Working…' : action === 'outcome' ? 'Confirm fulfillment' : action === 'grade' ? 'Save facilitator correction' : proposal ? (scope === 'source' ? 'Create new lesson version' : 'Approve replacement') : 'Generate preview'}
+              {sourceReceipt ? 'Close' : working ? 'Working…' : action === 'outcome' ? 'Confirm fulfillment' : action === 'stall' ? 'Save stall correction' : action === 'grade' ? 'Save facilitator correction' : proposal ? (scope === 'source' ? 'Create new lesson version' : 'Approve replacement') : 'Generate preview'}
             </button>
           </div>
         </>}

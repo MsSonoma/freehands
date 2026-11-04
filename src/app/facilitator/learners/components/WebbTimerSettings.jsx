@@ -41,7 +41,7 @@ export default function WebbTimerSettings({ value, onChange }) {
       <div style={{ marginBottom: 12 }}>
         <div style={{ fontWeight: 800, color: '#0f766e', fontSize: 16 }}>Mrs. Webb timers</div>
         <p style={{ margin: '5px 0 0', color: '#6b7280', fontSize: 12, lineHeight: 1.45 }}>
-          Mrs. Webb measures each learner response separately. Her response clock counts up and never fails a learner for running out of time.
+          Mrs. Webb measures each learner response separately for pacing reminders. Select the work timer and Golden Key method above; elapsed response time never prevents mastery.
         </p>
       </div>
 
@@ -60,7 +60,7 @@ export default function WebbTimerSettings({ value, onChange }) {
           disabled={!responseOn}
         />
         <p style={{ margin: 0, color: '#64748b', fontSize: 11, lineHeight: 1.45, opacity: responseOn ? 1 : 0.55 }}>
-          Four increasingly direct reminders are spoken. If there is still no response after the fifth interval, Mrs. Webb silently creates one facilitator notification for that turn.
+          Four increasingly direct reminders are spoken. If there is still no response after the fifth interval, Mrs. Webb silently creates one facilitator notification for that turn. Turning these reminders off also disables the response work timer and Golden Key earning for this teacher.
         </p>
       </div>
 

@@ -11,6 +11,7 @@ const EVENT_TYPES = new Set([
   'response_reminder',
   'response_received',
   'facilitator_escalated',
+  'facilitator_stall_corrected',
 ])
 
 function isUuid(value) {

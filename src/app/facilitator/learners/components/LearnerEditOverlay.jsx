@@ -10,6 +10,7 @@ import {
 } from '@/app/session/utils/phaseTimerDefaults';
 import { InlineExplainer } from '@/components/FacilitatorHelp';
 import WebbTimerSettings from './WebbTimerSettings';
+import WorkTimerStyleSettings from './WorkTimerStyleSettings';
 
 const GRADES = ['K', ...Array.from({length: 12}, (_, i) => String(i + 1))];
 const TARGETS = Array.from({length: 18}, (_, i) => String(i + 3)); // 3-20
@@ -67,7 +68,12 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [savingPlayDependentOnWork, setSavingPlayDependentOnWork] = useState(false);
 	const [showDependentTooltip, setShowDependentTooltip] = useState(false);
 	const [phaseTimers, setPhaseTimers] = useState(getDefaultPhaseTimers());
+	const [sonomaWorkTimerSettings, setSonomaWorkTimerSettings] = useState({ style: 'countdown', stallAllowance: '2', reminderIntervalMin: '2' });
 	const [webbTimerSettings, setWebbTimerSettings] = useState({
+		style: 'countup',
+		stallAllowance: '2',
+		researchWorkMin: '30',
+		writingWorkMin: '45',
 		responsePacingEnabled: true,
 		reminderIntervalMin: '2',
 		playTimesEnabled: true,
@@ -122,7 +128,16 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPlayTimersEnabled(learner.play_timers_enabled !== false);
 		setPlayDependentOnWork(learner.play_dependent_on_work === true);
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
+		setSonomaWorkTimerSettings({
+			style: learner.sonoma_work_timer_style === 'countup' ? 'countup' : 'countdown',
+			stallAllowance: String(learner.sonoma_stall_allowance ?? 2),
+			reminderIntervalMin: String(learner.sonoma_response_reminder_interval_min ?? 2),
+		});
 		setWebbTimerSettings({
+			style: learner.webb_work_timer_style === 'countdown' ? 'countdown' : 'countup',
+			stallAllowance: String(learner.webb_stall_allowance ?? 2),
+			researchWorkMin: String(learner.webb_research_work_min ?? 30),
+			writingWorkMin: String(learner.webb_writing_work_min ?? 45),
 			responsePacingEnabled: learner.webb_response_pacing_enabled !== false,
 			reminderIntervalMin: String(learner.webb_response_reminder_interval_min ?? 2),
 			playTimesEnabled: learner.webb_play_times_enabled !== false,
@@ -206,6 +221,13 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				auto_advance_phases: autoAdvancePhases,
 				slate_settings: slateSettings,
 				...phaseTimers,
+				sonoma_work_timer_style: sonomaWorkTimerSettings.style === 'countup' ? 'countup' : 'countdown',
+				sonoma_stall_allowance: Math.max(0, Math.min(99, Number(sonomaWorkTimerSettings.stallAllowance || 0))),
+				sonoma_response_reminder_interval_min: Math.max(1, Math.min(30, Number(sonomaWorkTimerSettings.reminderIntervalMin || 2))),
+				webb_work_timer_style: webbTimerSettings.style === 'countdown' ? 'countdown' : 'countup',
+				webb_stall_allowance: Math.max(0, Math.min(99, Number(webbTimerSettings.stallAllowance || 0))),
+				webb_research_work_min: Math.max(1, Math.min(240, Number(webbTimerSettings.researchWorkMin || 30))),
+				webb_writing_work_min: Math.max(1, Math.min(240, Number(webbTimerSettings.writingWorkMin || 45))),
 				webb_response_pacing_enabled: webbTimerSettings.responsePacingEnabled !== false,
 				webb_response_reminder_interval_min: Math.max(1, Math.min(30, Number(webbTimerSettings.reminderIntervalMin || 2))),
 				webb_play_times_enabled: webbTimerSettings.playTimesEnabled !== false,
@@ -1113,6 +1135,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 
 						{activeTab === 'timers' && (
 							<div>
+								<WorkTimerStyleSettings teacher="sonoma" value={sonomaWorkTimerSettings} onChange={setSonomaWorkTimerSettings} />
 						{/* Info note with explanation */}
 						<div style={{
 							background: '#eff6ff',
@@ -1327,6 +1350,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 									</div>
 								))}
 
+							<WorkTimerStyleSettings teacher="webb" value={webbTimerSettings} onChange={setWebbTimerSettings} />
 							<WebbTimerSettings value={webbTimerSettings} onChange={setWebbTimerSettings} />
 
 							{/* Golden Key Bonus */}

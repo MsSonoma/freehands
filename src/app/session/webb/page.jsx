@@ -27,6 +27,7 @@ import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
 import { applyGoldenKeyToLesson, finalizeGoldenKeyForSession } from '@/app/lib/goldenKeyClient'
 import { featuresForTier, resolveEffectiveTier } from '@/app/lib/entitlements'
 import { createWebbAttentionNotification, recordWebbPacingEvent } from '@/app/lib/webbPacingClient'
+import { createWorkTimerReward, restoreWorkTimerReward, recordWorkTimerStall, recordWebbWorkTurn, correctWorkTimerStall, getWorkTimerRewardStatus, normalizeWorkTimerSettings } from '@/app/session/utils/workTimerModes.mjs'
 import { ensurePinAllowed, requestFacilitatorPinException } from '@/app/lib/pinGate'
 import FacilitatorOverrideModal from '@/app/components/FacilitatorOverrideModal'
 import { previewFacilitatorQuestion } from '@/app/lib/facilitatorOverrideClient'
@@ -277,6 +278,9 @@ function WebbPageInner() {
   const webbPlanEnt = featuresForTier(webbPlanTier)
   const [responseTurn, setResponseTurn] = useState(null)
   const responseTurnRef = useRef(null)
+  const [webbWorkReward, setWebbWorkReward] = useState(null)
+  const webbWorkRewardRef = useRef(null)
+  const [webbStallOverrideOpen, setWebbStallOverrideOpen] = useState(false)
   const [responseElapsedSeconds, setResponseElapsedSeconds] = useState(0)
   const [showWorkTimerControls, setShowWorkTimerControls] = useState(false)
   const lastLearnerActivityRef = useRef(0)
@@ -291,7 +295,15 @@ function WebbPageInner() {
   const [webbGoldenKeySuspended, setWebbGoldenKeySuspended] = useState(false)
   const [webbPlayActivity, setWebbPlayActivity] = useState('')
   const [webbPlayActivityBusy, setWebbPlayActivityBusy] = useState(false)
-  const webbPacingSettings = normalizeWebbPacingSettings(learnerProfile || {})
+  const webbPacingSettings = normalizeWebbPacingSettings({
+    ...(learnerProfile || {}),
+    // The active lesson freezes its timer rules, even if learner settings change in another tab.
+    webb_response_reminder_interval_min: webbWorkReward?.settings?.reminderIntervalMin ??
+      learnerProfile?.webb_response_reminder_interval_min,
+    webb_response_pacing_enabled: webbWorkReward?.settings?.enabled ?? learnerProfile?.webb_response_pacing_enabled,
+  })
+  const webbWorkSettings = webbWorkReward?.settings || normalizeWorkTimerSettings(learnerProfile || {}, 'webb')
+  const webbIsCountdown = webbWorkSettings.style === 'countdown'
 
   function commitLearningState(next) {
     learningStateRef.current = next
@@ -527,6 +539,11 @@ function WebbPageInner() {
         .then(profile => {
           if (cancelled) return
           setLearnerProfile(profile || null)
+          if (!webbWorkRewardRef.current) {
+            const reward = createWorkTimerReward(profile || {}, 'webb')
+            webbWorkRewardRef.current = reward
+            setWebbWorkReward(reward)
+          }
           if (profile?.name) learnerName.current = profile.name
         })
         .catch(error => { console.warn('[Webb pacing] Learner settings load failed:', error?.message || error) })
@@ -694,7 +711,17 @@ function WebbPageInner() {
       setEssay(composition.essay || null)
       setEssayMode(!!composition.essayMode)
       const restoredPacing = saved.webbPacing && typeof saved.webbPacing === 'object' ? saved.webbPacing : {}
+      let restoredWorkReward = restoreWorkTimerReward(restoredPacing.workTimerReward,
+        webbWorkRewardRef.current || createWorkTimerReward(learnerProfile || {}, 'webb'), 'webb')
+      webbWorkRewardRef.current = restoredWorkReward
+      setWebbWorkReward(restoredWorkReward)
       const restoredTurn = restoredPacing.responseTurn?.id ? restoredPacing.responseTurn : null
+      if (restoredTurn?.escalated && restoredWorkReward.settings.style === 'countup') {
+        restoredWorkReward = recordWorkTimerStall(restoredWorkReward,
+          restoredTurn, getResponseElapsedSeconds(restoredTurn, Date.now()))
+        webbWorkRewardRef.current = restoredWorkReward
+        setWebbWorkReward(restoredWorkReward)
+      }
       const restoredGoldenKeySuspended = restoredPacing.goldenKeySuspended === true
       setWebbGoldenKeySuspended(restoredGoldenKeySuspended)
       responseTurnRef.current = restoredTurn
@@ -716,7 +743,7 @@ function WebbPageInner() {
       activePlayBreakRef.current = restoredBreak
       setActivePlayBreak(restoredBreak)
       pendingPlayMilestoneRef.current = null
-      snapshotRef.current = { ...saved, ...restored, ...composition, selectedLesson, webbPacing: { responseTurn: restoredTurn, playMilestones: restoredMilestones, activePlayBreak: restoredBreak, goldenKeySuspended: restoredGoldenKeySuspended } }
+      snapshotRef.current = { ...saved, ...restored, ...composition, selectedLesson, webbPacing: { responseTurn: restoredTurn, playMilestones: restoredMilestones, activePlayBreak: restoredBreak, goldenKeySuspended: restoredGoldenKeySuspended, workTimerReward: restoredWorkReward } }
       setPhase(PHASE.CHATTING)
       setOfferResume(false)
       const resumeLk = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id
@@ -1065,6 +1092,13 @@ function WebbPageInner() {
     }
   }
 
+  function commitWebbWorkReward(next) {
+    if (!next || webbExecutionFencedRef.current) return
+    webbWorkRewardRef.current = next
+    setWebbWorkReward(next)
+    persistWebbPacing({ workTimerReward: next })
+  }
+
   function commitResponseTurn(next) {
     responseTurnRef.current = next
     setResponseTurn(next)
@@ -1083,7 +1117,11 @@ function WebbPageInner() {
   function handleWebbWorkElapsedUpdate(nextElapsedSeconds) {
     const current = responseTurnRef.current
     if (!current) return
-    const elapsed = Math.max(0, Number(nextElapsedSeconds || 0))
+    const recorded = (webbWorkRewardRef.current?.turnTimes || [])
+      .filter(item => item.stage === current.stage)
+      .reduce((total, item) => total + (Number(item.elapsedSeconds) || 0), 0)
+    const elapsed = Math.max(0, Number(nextElapsedSeconds || 0) -
+      (webbWorkRewardRef.current?.settings?.style === 'countdown' ? recorded : 0))
     let next = setWebbResponseElapsedSeconds(current, elapsed, Date.now())
     const reminderStage = reminderStageForElapsed(elapsed, webbPacingSettings.reminderIntervalMin)
     next = {
@@ -1149,6 +1187,7 @@ function WebbPageInner() {
       playMilestones: Object.prototype.hasOwnProperty.call(overrides, 'playMilestones') ? overrides.playMilestones : playMilestonesRef.current,
       activePlayBreak: Object.prototype.hasOwnProperty.call(overrides, 'activePlayBreak') ? overrides.activePlayBreak : activePlayBreakRef.current,
       goldenKeySuspended: Object.prototype.hasOwnProperty.call(overrides, 'goldenKeySuspended') ? overrides.goldenKeySuspended : webbGoldenKeySuspended,
+      workTimerReward: Object.prototype.hasOwnProperty.call(overrides, 'workTimerReward') ? overrides.workTimerReward : webbWorkRewardRef.current,
     }
     saveLearningSnapshot({ webbPacing: pacing })
   }
@@ -1186,6 +1225,10 @@ function WebbPageInner() {
     const current = responseTurnRef.current
     if (!current) return
     const elapsed = getResponseElapsedSeconds(current, Date.now())
+    if (webbWorkRewardRef.current?.settings?.style === 'countdown') {
+      const nextReward = recordWebbWorkTurn(webbWorkRewardRef.current, current, elapsed)
+      if (nextReward !== webbWorkRewardRef.current) commitWebbWorkReward(nextReward)
+    }
     emitWebbPacingEvent('response_received', `turn:${current.id}:response`, {
       turnId: current.id,
       elapsedSeconds: elapsed,
@@ -1274,6 +1317,10 @@ function WebbPageInner() {
     if (!current || current.escalated) return
     const next = { ...current, reminderStage: 5, escalated: true, notificationDelivered: current.notificationDelivered === true }
     commitResponseTurn(next)
+    if (webbWorkRewardRef.current?.settings?.style === 'countup') {
+      const nextReward = recordWorkTimerStall(webbWorkRewardRef.current, next, elapsed)
+      if (nextReward !== webbWorkRewardRef.current) commitWebbWorkReward(nextReward)
+    }
     emitWebbPacingEvent('facilitator_escalated', `turn:${current.id}:escalated`, {
       turnId: current.id,
       elapsedSeconds: elapsed,
@@ -1330,6 +1377,7 @@ function WebbPageInner() {
         goldenKeyConfiguredBonusMin: webbGoldenKeyConfiguredBonusMin,
         goldenKeyBonusMin: webbGoldenKeyActive ? webbGoldenKeyBonusMin : 0,
         goldenKeySuspended: webbGoldenKeySuspended,
+       workTimerReward: webbWorkRewardRef.current,
         isPaused: false,
         pausedAt: null,
         pausedRemainingSeconds: null,
@@ -1601,10 +1649,9 @@ function WebbPageInner() {
   useEffect(() => {
     if (!learnerProfileLoaded || !responseTurn?.id || !webbPacingSettings.responsePacingEnabled) return undefined
     const tick = () => {
-      const current = responseTurnRef.current
+      let current = responseTurnRef.current
       if (!current) return
-      const elapsed = getResponseElapsedSeconds(current, Date.now())
-      setResponseElapsedSeconds(elapsed)
+      const nowMs = Date.now()
       const interactionBlocked = phase !== PHASE.CHATTING
         || chatLoading
         || engineState === 'playing'
@@ -1612,9 +1659,23 @@ function WebbPageInner() {
         || !!activePlayBreakRef.current
         || !!pendingFeatureHelp
         || !!webbOwnershipEndedReason
-        || !!current.pauseStartedAt
-      if (interactionBlocked) return
-      if (isMicrophoneCapturing() || Date.now() - lastLearnerActivityRef.current < 60000) return
+        || isMicrophoneCapturing()
+      // Exclude teacher speech, media, microphone input and facilitator holds from
+      // both the elapsed clock and Golden Key thresholds, not just reminder speech.
+      const shouldPause = interactionBlocked || current.facilitatorPaused === true
+      if (shouldPause && !current.pauseStartedAt) {
+        current = pauseWebbResponseTurn(current, nowMs)
+        commitResponseTurn(current)
+        persistWebbPacing({ responseTurn: current })
+      } else if (!shouldPause && current.pauseStartedAt) {
+        current = resumeWebbResponseTurn(current, nowMs)
+        commitResponseTurn(current)
+        persistWebbPacing({ responseTurn: current })
+      }
+      const elapsed = getResponseElapsedSeconds(current, nowMs)
+      setResponseElapsedSeconds(elapsed)
+      if (shouldPause) return
+      if (nowMs - lastLearnerActivityRef.current < 60000) return
       if (current.escalated && Number(current.reminderStage || 0) >= 5) {
         if (!current.notificationDelivered) void deliverWebbEscalationNotification(current, elapsed)
         return
@@ -2464,6 +2525,9 @@ function WebbPageInner() {
     setActivePlayBreak(null)
     pendingPlayMilestoneRef.current = null
     setWebbGoldenKeySuspended(false)
+    const freshWorkReward = createWorkTimerReward(learnerProfile || {}, 'webb')
+    webbWorkRewardRef.current = freshWorkReward
+    setWebbWorkReward(freshWorkReward)
     setWebbPlayActivity('')
     setWebbPlayActivityBusy(false)
     webbSessionStartRef.current = new Date().toISOString()
@@ -3510,6 +3574,12 @@ function WebbPageInner() {
       ? assembleWebbCompositionEssay(compositionPlan, acceptedSentences)
       : assembleLearnerEssay(objectives, acceptedSentences)
     if (checkError || storageError || !essay || assembledEssay !== essay) return
+    if (webbWorkRewardRef.current?.settings?.style === 'countdown' && responseTurnRef.current) {
+      const active = responseTurnRef.current
+      const nextReward = recordWebbWorkTurn(webbWorkRewardRef.current, active,
+        getResponseElapsedSeconds(active, Date.now()))
+      if (nextReward !== webbWorkRewardRef.current) commitWebbWorkReward(nextReward)
+    }
     if (!saveLearningSnapshot()) return
     const tracked = canonicalSessionRef.current
     if (!tracked?.id) {
@@ -3547,7 +3617,9 @@ function WebbPageInner() {
           lessonKey: lk,
           executionSessionId: tracked.id,
           browserSessionId: getProtectedBrowserSessionId(),
-          awardEarnedKey: false,
+          awardEarnedKey: webbGoldenKeysEnabled && getWorkTimerRewardStatus(
+             webbWorkRewardRef.current || createWorkTimerReward(learnerProfile || {}, 'webb'),
+           ).eligible,
         })
       } catch (error) {
         console.warn('[Webb pacing] Golden Key finalization failed after completed lesson:', error?.message || error)
@@ -3956,8 +4028,15 @@ function WebbPageInner() {
     || (webbPacingSettings.playTimesEnabled
       && webbPacingSettings.transitionEnabled
       && !playMilestones?.['research-to-writing'])
-  const webbWorkTotalMinutes = Math.max(1, Number(webbPacingSettings.reminderIntervalMin || 2)) * 5
-  const webbWorkRemainingSeconds = Math.max(0, Math.round(webbWorkTotalMinutes * 60 - responseElapsedSeconds))
+  const webbCurrentStage = responseTurn?.stage === 'writing' ? 'writing' : 'research'
+  const webbWorkTotalMinutes = webbIsCountdown
+    ? (webbCurrentStage === 'writing' ? webbWorkSettings.writingWorkMin : webbWorkSettings.researchWorkMin)
+    : Math.max(1, Number(webbPacingSettings.reminderIntervalMin || 2)) * 5
+  const webbStageRecordedSeconds = (webbWorkReward?.turnTimes || [])
+    .filter(item => item.stage === webbCurrentStage)
+    .reduce((total, item) => total + (Number(item.elapsedSeconds) || 0), 0)
+  const webbWorkRemainingSeconds = Math.max(0, Math.round(webbWorkTotalMinutes * 60 -
+    responseElapsedSeconds - (webbIsCountdown ? webbStageRecordedSeconds : 0)))
   const activeWritingPlan = compositionPlan?.slots?.length ? compositionPlan : null
   const writingUnitCount = activeWritingPlan?.slots?.length || objectives.length
   const writingMidpointThreshold = midpointThreshold(writingUnitCount)
@@ -4096,10 +4175,19 @@ function WebbPageInner() {
               <WebbResponseTimer
                 turn={responseTurn}
                 elapsedSeconds={responseElapsedSeconds}
+                countdown={webbIsCountdown}
+                remainingSeconds={webbWorkRemainingSeconds}
                 settings={webbPacingSettings}
                 compact={keyboardCompact}
                 onClick={handleWebbWorkTimerOpen}
               />
+            )}
+            {isChatting && webbWorkReward?.settings?.style === 'countup' &&
+              webbWorkReward.stalls.some(row => !webbWorkReward.corrections.some(c => c.turnId === row.turnId)) && (
+              <button type="button" onClick={() => setWebbStallOverrideOpen(true)}
+                style={{ padding: '6px 8px', border: '1px solid #94a3b8', borderRadius: 7, background: '#fff', color: '#334155', fontSize: 11, fontWeight: 700 }}>
+                FacOR: Correct stall
+              </button>
             )}
             {isChatting && objectives.length > 0 && (
               <button
@@ -4830,6 +4918,24 @@ function WebbPageInner() {
 
       {/* ── Objective tablet toast ──────────────────────────────────── */}
       <FacilitatorOverrideModal
+        open={webbStallOverrideOpen}
+        onClose={() => setWebbStallOverrideOpen(false)}
+        teacher="Mrs. Webb" targetType="stall"
+        targets={(webbWorkReward?.stalls || [])
+          .filter(row => !(webbWorkReward?.corrections || []).some(c => c.turnId === row.turnId))
+          .map(row => ({ id: row.turnId, text: `${row.stage || 'Lesson'} response stall at ${Math.floor(row.elapsedSeconds / 60)}m ${row.elapsedSeconds % 60}s` }))}
+        onOutcome={(_index, row, { feedback }) => {
+          const current = webbWorkRewardRef.current
+          const next = correctWorkTimerStall(current, row?.id, feedback)
+          if (!next || next === current) return false
+          commitWebbWorkReward(next)
+          emitWebbPacingEvent('facilitator_stall_corrected', `turn:${row.id}:stall-correction`, {
+            turnId: row.id, metadata: { reason: feedback },
+          })
+          return true
+        }}
+      />
+      <FacilitatorOverrideModal
         open={webbUniversalOverride >= 0 && showObjectives}
         onClose={() => setWebbUniversalOverride(-1)} teacher="Mrs. Webb"
         selectedIndex={Math.max(0, webbUniversalOverride)}
@@ -5044,6 +5150,8 @@ function WebbPageInner() {
           <WebbResponseTimer
             turn={responseTurn}
             elapsedSeconds={responseElapsedSeconds}
+            countdown={webbIsCountdown}
+            remainingSeconds={webbWorkRemainingSeconds}
             settings={webbPacingSettings}
             compact={keyboardCompact}
             onClick={handleWebbWorkTimerOpen}

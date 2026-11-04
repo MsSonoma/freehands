@@ -78,13 +78,11 @@ export function sonomaResponseElapsedSeconds(turn, nowMs = Date.now()) {
   return Math.max(0, Math.floor(elapsedMs / 1000))
 }
 
-export function sonomaReminderStageForElapsed(elapsedSeconds) {
+export function sonomaReminderStageForElapsed(elapsedSeconds, intervalMinutes = 2) {
   const elapsed = Math.max(0, Number(elapsedSeconds || 0))
-  let stage = 0
-  for (let index = 0; index < SONOMA_RESPONSE_PACING_THRESHOLDS_SECONDS.length; index += 1) {
-    if (elapsed >= SONOMA_RESPONSE_PACING_THRESHOLDS_SECONDS[index]) stage = index + 1
-  }
-  return stage
+  const minutes = Math.max(1, Math.min(30, Number(intervalMinutes) || 2))
+  const intervalSeconds = minutes * 60
+  return Math.min(5, Math.max(0, Math.floor(elapsed / intervalSeconds)))
 }
 
 export function sonomaReminderForStage(stage, phase) {
