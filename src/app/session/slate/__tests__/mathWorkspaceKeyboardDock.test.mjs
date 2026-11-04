@@ -31,7 +31,8 @@ test('general keyboard toggle lives in the existing header without taking transc
     'toggle must be in the existing session header, not a separate transcript row')
   assert.doesNotMatch(slate, /data-slate-math-keyboard-tab|MATH KEYBOARD/)
   assert.match(keyboard, /const toggleKeyboard = useCallback/)
-  assert.match(keyboard, /if \(activeRef\.current\) \{ close\(\); return; \}/)
+  assert.match(keyboard, /if \(activeRef\.current && \(!preferredEntry/)
+  assert.match(keyboard, /activeRef\.current\.ref\?\.current === preferredEntry\.ref\?\.current/)
   assert.match(keyboard, /layout: previous\?\.layout \|\| "text"/)
   assert.match(keyboard, /value=\{\{ open, close, toggleKeyboard, active, keyboardHeight/)
 

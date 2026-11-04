@@ -4175,6 +4175,15 @@ function WebbPageInner() {
             </div>
           </div>
           <div style={{ display: 'flex', gap: keyboardCompact ? 6 : 8, alignItems: 'center' }}>
+            {isChatting && (
+              <button type="button" data-sonoma-keyboard-toggle data-ms-webb-keyboard-toggle
+                onClick={() => sonomaKeyboard.toggleKeyboard({ label: 'Mrs. Webb Keyboard', background: '#e4f2f0', color: '#134e4a', accent: C.accent })}
+                aria-label={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
+                aria-pressed={Boolean(sonomaKeyboard.active)}
+                title={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
+                style={{ ...headerBtn, minWidth: 36, minHeight: 36, flexShrink: 0, padding: '3px 7px', color: '#fff', fontSize: 22, lineHeight: 1 }}
+              >&#9000;</button>
+            )}
             {isChatting && responseTurn && (
               <WebbResponseTimer
                 turn={responseTurn}

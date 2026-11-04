@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom'
 import { WEBB_WRITING_SUBPHASES } from '@/app/lib/webbWritingFlow.mjs'
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import WebbDictationButton from './WebbDictationButton'
+import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
 
 function GuidanceTranscript({ text, compact = false, tight = false }) {
   if (!String(text || '').trim()) return null
@@ -84,9 +85,10 @@ export default function WebbWritingStudio({
   onLearnerActivity,
 }) {
   const inputRef = useRef(null)
+  const sonomaKeyboard = useSonomaKeyboard()
   const [essayPeek, setEssayPeek] = useState(false)
   const typingViewport = useTypingViewport({ preserveTouchFocus: true, blurDelayMs: 350 })
-  const keyboardCompact = typingViewport.typing
+  const keyboardCompact = typingViewport.typing || sonomaKeyboard.keyboardHeight > 0
   const keyboardTight = keyboardCompact && typingViewport.visualHeight > 0 && typingViewport.visualHeight < 280
   const blankCompleteRef = useRef(onBlankComplete)
 
@@ -161,6 +163,17 @@ export default function WebbWritingStudio({
       display: 'flex',
       flexDirection: 'column',
     }} data-ms-webb-writing-compact={keyboardCompact ? 'true' : 'false'}>
+      {!finalView && [WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(subphase) && (
+        <button type="button" data-sonoma-keyboard-toggle data-ms-webb-writing-keyboard-toggle
+          onClick={() => sonomaKeyboard.toggleKeyboard({ label: 'Mrs. Webb Keyboard', background: '#e4f2f0', color: '#134e4a', accent: '#0d9488' }, { ref: inputRef, layout: 'text', onChange: (next) => { onLearnerActivity?.(); onDraftChange?.(next) } })}
+          aria-label={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
+          aria-pressed={Boolean(sonomaKeyboard.active)}
+          title={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
+          style={{ position: 'absolute', top: keyboardCompact ? 4 : 12, left: keyboardCompact ? 5 : 14, zIndex: 8,
+            display: 'grid', placeItems: 'center', width: 36, height: 36, borderRadius: 9,
+            border: '1px solid #99f6e4', background: '#e4f2f0', color: '#0f766e', fontSize: 23, cursor: 'pointer' }}
+        >&#9000;</button>
+      )}
       {responseTimer && (
         <div style={{ position: 'absolute', top: keyboardCompact ? 4 : 12, right: keyboardCompact ? 5 : 14, zIndex: 8 }}>
           {responseTimer}
@@ -314,6 +327,9 @@ export default function WebbWritingStudio({
                 </div>
                 <textarea
                   ref={inputRef}
+                  data-sonoma-input
+                  inputMode="none"
+                  onPointerDown={(event) => sonomaKeyboard.open({ ref: { current: event.currentTarget }, layout: 'text', theme: { label: 'Mrs. Webb Keyboard', background: '#e4f2f0', color: '#134e4a', accent: '#0d9488' }, onChange: (next) => { onLearnerActivity?.(); onDraftChange?.(next) } })}
                   id="webb-writing-attempt"
                   value={currentDraft}
                   onChange={event => {

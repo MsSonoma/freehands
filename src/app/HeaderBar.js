@@ -7,6 +7,7 @@ import { useMemo, useCallback, useEffect, useState, useRef } from 'react';
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient';
 import { ensurePinAllowed, setInFacilitatorSection } from '@/app/lib/pinGate';
 import { acquirePageScrollLock } from '@/app/lib/scrollLock.mjs';
+import { useSonomaKeyboard } from './components/SonomaKeyboard';
 
 const FACILITATOR_MENU_ITEMS = Object.freeze([
   { label: 'Syllabus', href: '/facilitator', primary: true },
@@ -17,12 +18,13 @@ const FACILITATOR_MENU_ITEMS = Object.freeze([
 ]);
 export default function HeaderBar() {
 	const pathname = usePathname() || '/';
+	const sonomaKeyboard = useSonomaKeyboard();
 	const router = useRouter();
 	// Reserved left/right widths; keep smaller on session so center gets more space
 	const navWidth = useMemo(() => {
 		// On the session page, especially in portrait, reclaim width for the title
 		if (pathname.startsWith('/session')) {
-			return 'clamp(64px, 12vw, 120px)';
+			return 'clamp(82px, 15vw, 120px)';
 		}
 		return 'clamp(84px, 14vw, 160px)';
 	}, [pathname]);
@@ -608,7 +610,16 @@ export default function HeaderBar() {
 				</div>
 
 				{/* Right navigation */}
-				<nav style={{ width: navWidth, display:'flex', gap:16, justifyContent:'flex-end', alignItems:'center', position:'relative' }}>
+				<nav style={{ width: navWidth, display:'flex', gap: pathname === '/session' ? 6 : 16, justifyContent:'flex-end', alignItems:'center', position:'relative' }}>
+					{pathname === '/session' && (
+						<button type="button" data-sonoma-keyboard-toggle data-ms-sonoma-keyboard-toggle
+							onClick={() => sonomaKeyboard.toggleKeyboard({ label: 'Ms. Sonoma Keyboard', background: '#f8e9e5', color: '#722b21', accent: '#c7442e' })}
+							aria-label={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
+							aria-pressed={Boolean(sonomaKeyboard.active)}
+							title={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
+							style={{ display:'grid', placeItems:'center', flexShrink:0, width:36, height:36, padding:0, border:'1px solid #e8bdb5', borderRadius:10, background:'#fff1ee', color:'#c7442e', fontSize:23, cursor:'pointer' }}
+						>&#9000;</button>
+					)}
 					{showHamburger ? (
 						<>
 							<button

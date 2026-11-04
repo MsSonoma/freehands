@@ -1,5 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { usePathname } from "next/navigation";
 
 import { isTouchLikeDevice } from "../session/hooks/useTypingViewport";
 import WebbDictationButton from "../session/webb/WebbDictationButton";
@@ -21,6 +22,8 @@ function isTouchScreen() {
 }
 
 export function SonomaKeyboardProvider({ children }) {
+  const pathname = usePathname();
+  const lastPathnameRef = useRef(pathname);
   const [active, setActive] = useState(null);
   const [shift, setShift] = useState(false);
   const [keyboardHeight, setKeyboardHeight] = useState(0);
@@ -41,13 +44,20 @@ export function SonomaKeyboardProvider({ children }) {
     setShift(false);
     setKeyboardHeight(0);
   }, []);
+  useEffect(() => {
+    if (lastPathnameRef.current === pathname) return;
+    lastPathnameRef.current = pathname;
+    lastKeyboardEntryRef.current = null;
+    close();
+  }, [pathname, close]);
+
   const open = useCallback((config) => {
     // Desktop inputs open the keyboard only after an explicit keyboard toggle,
     // or for the existing Math workspace; touch behavior stays automatic.
-    if (!isTouchScreen() && !(workspaceDock && (config?.layout === "math" || activeRef.current))) return;
+    if (!isTouchScreen() && !activeRef.current && !(workspaceDock && config?.layout === "math")) return;
     const field = config?.ref?.current;
     if (field?.isConnected && !panelRef.current?.contains(field)) lastOutsideInputRef.current = config;
-    setActive(config);
+    setActive({ ...config, theme: config?.theme || activeRef.current?.theme });
     setShift(false);
   }, [workspaceDock]);
   useEffect(() => {
@@ -122,19 +132,24 @@ export function SonomaKeyboardProvider({ children }) {
 
   // A route change may remove the input that previously owned the keyboard.
   useEffect(() => {
-    if (!workspaceDock && active && !active.ref?.current?.isConnected) close();
+    if (!workspaceDock && active?.ref?.current && !active.ref.current.isConnected) close();
   }, [workspaceDock, active, close]);
 
   // Manual keyboard toggle is independent of the selected tab. Reopen on the
   // previous tab and restore a connected input, if one is still available.
-  const toggleKeyboard = useCallback((theme) => {
-    if (activeRef.current) { close(); return; }
-    if (!isTouchScreen() && !workspaceDock) return;
-    const previous = lastKeyboardEntryRef.current;
+  const toggleKeyboard = useCallback((theme, preferredEntry) => {
+    if (activeRef.current && (!preferredEntry || activeRef.current.ref?.current === preferredEntry.ref?.current)) { close(); return; }
+    // An explicit toggle can open the shared keyboard on desktop or touch.
+    const last = lastKeyboardEntryRef.current;
+    const previous = last?.theme?.label && last.theme.label !== theme?.label ? null : last;
     const field = previous?.ref?.current;
     const usable = field?.isConnected && !field.disabled && !field.readOnly;
-    setActive(usable
-      ? { ...previous, theme: previous.theme || theme }
+    const preferredField = preferredEntry?.ref?.current;
+    const preferredUsable = preferredField?.isConnected && !preferredField.disabled && !preferredField.readOnly;
+    setActive(preferredUsable
+      ? { ...preferredEntry, theme }
+      : usable
+        ? { ...previous, theme }
       : { ref: { current: null }, onChange: () => {}, layout: previous?.layout || "text", theme });
     setShift(false);
   }, [close, workspaceDock]);
