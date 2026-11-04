@@ -2,15 +2,15 @@
 
 import { formatWebbElapsed, responseTimerColor } from './webbPacing.mjs'
 
-export default function WebbResponseTimer({ turn, elapsedSeconds = 0, settings, compact = false, onClick = null, countdown = false, remainingSeconds = 0 }) {
+export default function WebbResponseTimer({ turn, elapsedSeconds = 0, pacingElapsedSeconds = elapsedSeconds, settings, compact = false, onClick = null, countdown = false, remainingSeconds = 0 }) {
   if (!turn || settings?.responsePacingEnabled === false) return null
-  const color = countdown ? (remainingSeconds <= 0 ? '#ef4444' : '#f8fafc') : responseTimerColor(elapsedSeconds, settings?.reminderIntervalMin)
+  const color = countdown ? (remainingSeconds <= 0 ? '#ef4444' : '#f8fafc') : responseTimerColor(pacingElapsedSeconds, settings?.reminderIntervalMin)
   const clockText = formatWebbElapsed(countdown ? remainingSeconds : elapsedSeconds)
   return (
     <button
       type="button"
       onClick={onClick}
-      title={onClick ? "Open Mrs. Webb work timer controls." : countdown ? "Research or writing work time remaining. Time never blocks lesson completion." : "Time since Mrs. Webb handed you the turn. Pacing reminders may lead to a facilitator notification."}
+      title={onClick ? "Open Mrs. Webb work timer controls." : countdown ? "Research or writing work time remaining. Time never blocks lesson completion." : "Time since this prompt was presented, including teacher speech. Pacing reminders count only the time the learner can respond."}
       aria-label={onClick ? `${countdown ? 'Work time remaining' : 'Response time elapsed'}: ${clockText}. Open timer controls.` : `${countdown ? 'Work time remaining' : 'Response time elapsed'}: ${clockText}`}
       style={{
         display: 'inline-flex',

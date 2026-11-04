@@ -74,6 +74,14 @@ export function resumeWebbResponseTurn(turn, nowMs = Date.now()) {
   }
 }
 
+// The visible count-up clock begins when the prompt/sentence is presented.
+// Response pacing remains separate and excludes teacher speech and holds.
+export function webbPromptElapsedSeconds(turn, nowMs = Date.now()) {
+  const startedAt = turn?.startedAt ? Date.parse(turn.startedAt) : NaN
+  if (!Number.isFinite(startedAt)) return 0
+  return Math.max(0, Math.floor((nowMs - startedAt) / 1000))
+}
+
 export function responseElapsedSeconds(turn, nowMs = Date.now()) {
   if (!turn?.startedAt) return 0
   const startedAt = Date.parse(turn.startedAt)

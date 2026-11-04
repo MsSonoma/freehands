@@ -16,6 +16,7 @@ import {
   setWebbPlayRemainingSeconds,
   webbPlayDurationSeconds,
   webbPlayRemainingSeconds,
+  webbPromptElapsedSeconds,
 } from '../webbPacing.mjs'
 
 test('normalizes Webb pacing settings with learner defaults and overrides', () => {
@@ -49,6 +50,21 @@ test('response elapsed time excludes paused time', () => {
   assert.equal(responseElapsedSeconds(turn, 121_000), 60)
   turn = resumeWebbResponseTurn(turn, 121_000)
   assert.equal(responseElapsedSeconds(turn, 181_000), 120)
+})
+
+test('visible sentence clock ticks from prompt start even while teacher speech pauses learner pacing', () => {
+  let turn = createWebbResponseTurn({ stage: 'writing', turnId: 'sentence-1', nowMs: 1_000 })
+  turn = pauseWebbResponseTurn(turn, 1_000)
+  assert.equal(webbPromptElapsedSeconds(turn, 1_000), 0)
+  assert.equal(webbPromptElapsedSeconds(turn, 4_000), 3)
+  assert.equal(responseElapsedSeconds(turn, 4_000), 0, 'teacher speech cannot count as a learner stall')
+  assert.equal(reminderStageForElapsed(responseElapsedSeconds(turn, 125_000), 2), 0)
+  turn = resumeWebbResponseTurn(turn, 4_000)
+  assert.equal(responseElapsedSeconds(turn, 6_000), 2)
+  assert.equal(webbPromptElapsedSeconds(turn, 6_000), 5)
+  const nextSentence = createWebbResponseTurn({ stage: 'writing', turnId: 'sentence-2', nowMs: 6_000 })
+  assert.equal(webbPromptElapsedSeconds(nextSentence, 6_000), 0)
+  assert.equal(webbPromptElapsedSeconds(nextSentence, 9_000), 3)
 })
 
 test('work timer controls can move the active response clock while preserving pause state', () => {

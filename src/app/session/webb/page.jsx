@@ -81,6 +81,7 @@ import {
   pauseWebbResponseTurn,
   reminderStageForElapsed,
   responseElapsedSeconds as getResponseElapsedSeconds,
+  webbPromptElapsedSeconds,
   resumeWebbResponseTurn,
   setWebbResponseElapsedSeconds,
   setWebbPlayGoldenKeyBonus,
@@ -282,6 +283,7 @@ function WebbPageInner() {
   const webbWorkRewardRef = useRef(null)
   const [webbStallOverrideOpen, setWebbStallOverrideOpen] = useState(false)
   const [responseElapsedSeconds, setResponseElapsedSeconds] = useState(0)
+  const [responsePromptElapsedSeconds, setResponsePromptElapsedSeconds] = useState(0)
   const [showWorkTimerControls, setShowWorkTimerControls] = useState(false)
   const lastLearnerActivityRef = useRef(0)
   const responseArmSignatureRef = useRef(null)
@@ -729,6 +731,7 @@ function WebbPageInner() {
       escalationNotificationLastAttemptRef.current = 0
       setResponseTurn(restoredTurn)
       setResponseElapsedSeconds(restoredTurn ? getResponseElapsedSeconds(restoredTurn, Date.now()) : 0)
+      setResponsePromptElapsedSeconds(restoredTurn ? webbPromptElapsedSeconds(restoredTurn, Date.now()) : 0)
       const restoredMilestones = restoredPacing.playMilestones && typeof restoredPacing.playMilestones === 'object' ? restoredPacing.playMilestones : {}
       playMilestonesRef.current = restoredMilestones
       setPlayMilestones(restoredMilestones)
@@ -1102,7 +1105,10 @@ function WebbPageInner() {
   function commitResponseTurn(next) {
     responseTurnRef.current = next
     setResponseTurn(next)
-    if (!next) setResponseElapsedSeconds(0)
+    if (!next) {
+      setResponseElapsedSeconds(0)
+      setResponsePromptElapsedSeconds(0)
+    }
   }
 
   async function handleWebbWorkTimerOpen() {
@@ -1213,6 +1219,7 @@ function WebbPageInner() {
     lastLearnerActivityRef.current = 0
     commitResponseTurn(turn)
     setResponseElapsedSeconds(0)
+    setResponsePromptElapsedSeconds(0)
     emitWebbPacingEvent('response_turn_started', `turn:${turn.id}:started`, {
       turnId: turn.id,
       reminderStage: 0,
@@ -1620,6 +1627,9 @@ function WebbPageInner() {
       || phase !== PHASE.CHATTING
       || chatLoading
       || engineState === 'playing'
+      || ttsBusyRef.current
+      || ttsQueueRef.current.length > 0
+      || !!ttsCurrentRef.current
       || !!mediaOverlay
       || !!activePlayBreak
       || !!pendingFeatureHelp
@@ -1655,6 +1665,9 @@ function WebbPageInner() {
       const interactionBlocked = phase !== PHASE.CHATTING
         || chatLoading
         || engineState === 'playing'
+        || ttsBusyRef.current
+        || ttsQueueRef.current.length > 0
+        || !!ttsCurrentRef.current
         || !!mediaOverlay
         || !!activePlayBreakRef.current
         || !!pendingFeatureHelp
@@ -1674,6 +1687,9 @@ function WebbPageInner() {
       }
       const elapsed = getResponseElapsedSeconds(current, nowMs)
       setResponseElapsedSeconds(elapsed)
+      // Display from presentation time, including teacher narration. Response
+      // eligibility remains based on 'elapsed', which excludes blocked time.
+      setResponsePromptElapsedSeconds(webbPromptElapsedSeconds(current, nowMs))
       if (shouldPause) return
       if (nowMs - lastLearnerActivityRef.current < 60000) return
       if (current.escalated && Number(current.reminderStage || 0) >= 5) {
@@ -1727,15 +1743,9 @@ function WebbPageInner() {
     if (last?.role !== 'assistant' || ['pacing', 'line_help'].includes(last?.kind) || !expectsLearnerResponse(last?.text)) return undefined
     const signature = `research:${transcript.length}:${last.text}`
     if (responseArmSignatureRef.current === signature) return undefined
-    let cancelled = false
-    void (async () => {
-      await waitForTTSIdle()
-      if (cancelled) return
-      if (webbExecutionFencedRef.current || responseTurnRef.current || activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
-      if (webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || hasAllWritingReadyNotes(objectives, learnerNotesRef.current)) return
-      startWebbResponseTurn('research', signature)
-    })()
-    return () => { cancelled = true }
+    // Begin the visible count-up as the teacher presents the prompt, not
+    // after TTS completes. The pacing clock pauses during teacher speech.
+    startWebbResponseTurn('research', signature)
   }, [learnerProfileLoaded, webbPacingSettings.responsePacingEnabled, phase, writingMode, chatLoading, transcript, objectives, mediaOverlay, activePlayBreak, pendingFeatureHelp]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
@@ -1746,16 +1756,9 @@ function WebbPageInner() {
     const attempts = Array.isArray(writingAttempts?.[writingIndex]) ? writingAttempts[writingIndex].length : 0
     const signature = `writing:${writingIndex}:${writingSubphase}:${attempts}`
     if (responseArmSignatureRef.current === signature) return undefined
-    let cancelled = false
-    void (async () => {
-      await waitForTTSIdle()
-      if (cancelled) return
-      if (webbExecutionFencedRef.current || responseTurnRef.current || activePlayBreakRef.current || pendingPlayMilestoneRef.current) return
-      if (webbStageRef.current !== WEBB_SESSION_STAGES.WRITING || !writingMode) return
-      if (![WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(writingSubphase)) return
-      startWebbResponseTurn('writing', signature)
-    })()
-    return () => { cancelled = true }
+    // A new sentence starts its stopwatch as the writing task appears.
+    // Speech remains excluded from the learner's reminder/stall calculation.
+    startWebbResponseTurn('writing', signature)
   }, [learnerProfileLoaded, webbPacingSettings.responsePacingEnabled, phase, writingMode, writingIndex, writingSubphase, writingAttempts, chatLoading, writingEvaluating, activePlayBreak, pendingFeatureHelp]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Like addMsg but tags the transcript entry with a passage index so the
@@ -2517,6 +2520,7 @@ function WebbPageInner() {
     escalationNotificationLastAttemptRef.current = 0
     setResponseTurn(null)
     setResponseElapsedSeconds(0)
+    setResponsePromptElapsedSeconds(0)
     responseArmSignatureRef.current = null
     lastLearnerActivityRef.current = 0
     playMilestonesRef.current = {}
@@ -4174,7 +4178,8 @@ function WebbPageInner() {
             {isChatting && responseTurn && (
               <WebbResponseTimer
                 turn={responseTurn}
-                elapsedSeconds={responseElapsedSeconds}
+                elapsedSeconds={webbIsCountdown ? responseElapsedSeconds : responsePromptElapsedSeconds}
+                pacingElapsedSeconds={responseElapsedSeconds}
                 countdown={webbIsCountdown}
                 remainingSeconds={webbWorkRemainingSeconds}
                 settings={webbPacingSettings}
@@ -5149,7 +5154,8 @@ function WebbPageInner() {
         responseTimer={responseTurn ? (
           <WebbResponseTimer
             turn={responseTurn}
-            elapsedSeconds={responseElapsedSeconds}
+            elapsedSeconds={webbIsCountdown ? responseElapsedSeconds : responsePromptElapsedSeconds}
+            pacingElapsedSeconds={responseElapsedSeconds}
             countdown={webbIsCountdown}
             remainingSeconds={webbWorkRemainingSeconds}
             settings={webbPacingSettings}

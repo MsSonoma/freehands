@@ -1,5 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
+import { readFileSync } from 'node:fs';
 import {
   createWorkTimerReward, restoreWorkTimerReward, recordWorkTimerStall,
   recordWebbWorkTurn, correctWorkTimerStall, getWorkTimerRewardStatus,
@@ -73,4 +74,23 @@ test('Sonoma reminder intervals stay configurable without changing the two-minut
 test('Webb does not earn a response timer reward when pacing is disabled', () => {
   const reward = createWorkTimerReward({ webb_response_pacing_enabled: false, webb_work_timer_style: 'countup' }, 'webb');
   assert.equal(getWorkTimerRewardStatus(reward).eligible, false);
+});
+
+test('Sonoma count-up display uses the active work-phase ticker, not the delayed learner response clock', () => {
+  const session = readFileSync(new URL('../v2/SessionPageV2.jsx', import.meta.url), 'utf8');
+  assert.match(session, /countUp=\{currentTimerMode\[getCurrentPhaseName\(\)\] === 'work'/);
+  assert.match(session, /elapsedSeconds=\{currentTimerMode\[getCurrentPhaseName\(\)\] === 'play' \? playTimerDisplayElapsed : workTimerDisplayElapsed\}/);
+  assert.doesNotMatch(session, /sonomaResponseElapsedDisplay/, 'work clock must tick during teacher sentences');
+});
+
+test('Webb response clock arms on presentation rather than waiting until speech finishes', () => {
+  const page = readFileSync(new URL('../webb/page.jsx', import.meta.url), 'utf8');
+  const researchStart = page.indexOf("const signature = `research:");
+  const researchEnd = page.indexOf("startWebbResponseTurn('research', signature)", researchStart);
+  const writingStart = page.indexOf("const signature = `writing:");
+  const writingEnd = page.indexOf("startWebbResponseTurn('writing', signature)", writingStart);
+  assert.ok(researchStart > 0 && researchEnd > researchStart);
+  assert.ok(writingStart > 0 && writingEnd > writingStart);
+  assert.doesNotMatch(page.slice(researchStart, researchEnd), /await waitForTTSIdle\(\)/);
+  assert.doesNotMatch(page.slice(writingStart, writingEnd), /await waitForTTSIdle\(\)/);
 });

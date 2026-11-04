@@ -977,7 +977,6 @@ function SessionPageV2Inner() {
   // Learner-turn response pacing is intentionally separate from work/play timers and mastery evidence.
   const [sonomaResponseTurn, setSonomaResponseTurn] = useState(null);
   const sonomaResponseTurnRef = useRef(null);
-  const [sonomaResponseElapsedDisplay, setSonomaResponseElapsedDisplay] = useState(0);
   const [sonomaWorkReward, setSonomaWorkReward] = useState(null);
   const sonomaWorkRewardRef = useRef(null);
   const sonomaWorkRewardLessonKeyRef = useRef(null);
@@ -3872,7 +3871,6 @@ function SessionPageV2Inner() {
   const commitSonomaResponseTurn = useCallback((turn, { persist = true, phaseOverride = null } = {}) => {
     sonomaResponseTurnRef.current = turn || null;
     setSonomaResponseTurn(turn || null);
-    setSonomaResponseElapsedDisplay(turn ? sonomaResponseElapsedSeconds(turn, Date.now()) : 0);
     if (persist) persistSonomaResponseTurn(turn || null, phaseOverride);
   }, [persistSonomaResponseTurn]);
 
@@ -4147,7 +4145,6 @@ function SessionPageV2Inner() {
     if (!sonomaResponseTurn?.id) return undefined;
     const tick = () => {
       const current = sonomaResponseTurnRef.current;
-      setSonomaResponseElapsedDisplay(current ? sonomaResponseElapsedSeconds(current, Date.now()) : 0);
       if (!current || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing() || current.pauseStartedAt || executionFencedRef.current) return;
       const nowMs = Date.now();
       if (isSonomaActivitySnoozed(current, nowMs)) return;
@@ -9030,7 +9027,7 @@ function SessionPageV2Inner() {
                 goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
                 phaseProgress={calculateTimerProgress(getCurrentPhaseName())}
                 isPaused={timerPaused}
-                elapsedSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayElapsed : (sonomaWorkReward?.settings?.style === 'countup' ? sonomaResponseElapsedDisplay : workTimerDisplayElapsed)}
+                elapsedSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayElapsed : workTimerDisplayElapsed}
                 remainingSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayRemaining : (sonomaWorkReward?.settings?.style === 'countup' ? 0 : workTimerDisplayRemaining)}
                 onPauseToggle={handleTimerPauseToggle}
                 lessonKey={lessonKey}
@@ -10319,7 +10316,6 @@ function SessionPageV2Inner() {
                             const freshReward = createWorkTimerReward(learnerProfileRef.current || {}, 'sonoma');
                             sonomaWorkRewardRef.current = freshReward;
                             setSonomaWorkReward(freshReward);
-                            setSonomaResponseElapsedDisplay(0);
                             setSonomaStallOverrideOpen(false);
                             setCurrentTimerMode({ discussion: null, comprehension: null, exercise: null, worksheet: null, test: null });
                             setTimerRefreshKey(k => k + 1);
