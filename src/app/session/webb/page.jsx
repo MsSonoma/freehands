@@ -10,6 +10,7 @@ import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
 import TimerControlOverlay from '../components/TimerControlOverlay'
 import { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
+import TeacherKeyboardMathWorkspace from '@/app/components/TeacherKeyboardMathWorkspace'
 import FeatureHelpToast from '../components/FeatureHelpToast'
 import WebbBackgroundMusicControl from './WebbBackgroundMusicControl'
 import { detectProductHelp, getProductHelpFeature, getProductHelpScript, productHelpHistoryMessage } from '@/app/lib/productHelp.mjs'
@@ -4113,6 +4114,15 @@ function WebbPageInner() {
       } : { width: '100%', height: '100dvh' }),
       display: 'flex', flexDirection: 'column', background: '#fff', fontFamily: 'system-ui, -apple-system, sans-serif', overflow: 'hidden', boxSizing: 'border-box',
     }}>
+      <TeacherKeyboardMathWorkspace
+        teacher="webb"
+        learnerId={routeLearnerId || learnerId || ''}
+        lessonKey={selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id || ''}
+        occurrenceId={canonicalSessionRef.current?.occurrenceId || routeOccurrenceId || ''}
+        phase="teaching"
+        enabled={isChatting && !offerResume && !webbExecutionFencedRef.current}
+        onLearnerActivity={noteWebbLearnerActivity}
+      />
       <FeatureHelpToast
         suggestion={pendingFeatureHelp?.suggestion || null}
         onConfirm={confirmFeatureHelp}

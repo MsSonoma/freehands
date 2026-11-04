@@ -14,11 +14,12 @@ const SIGNS = { addition: '+', subtraction: '\u2212', multiplication: '\u00d7', 
 
 export default function SlateManualScratch({
   draft, activityId, phase, onChange, onUseResult, disabled = false, allowTransfer = true,
+  keyboardTheme = null, transferEnabled = true,
 }) {
   const sonomaKeyboard = useSonomaKeyboard()
   const openScratchMathTab = (event, onChange) => sonomaKeyboard.open({
     ref: { current: event.currentTarget }, onChange, layout: 'math',
-    theme: { label: 'Mr. Slate Keyboard', background: '#1e293b', color: '#e2e8f0', accent: '#d97706' },
+    theme: keyboardTheme || { label: 'Mr. Slate Keyboard', background: '#1e293b', color: '#e2e8f0', accent: '#d97706' },
   })
   const model = useMemo(() => buildSlateManualScratch(draft, activityId, phase), [draft, activityId, phase])
   const options = useMemo(() => slateManualOperationChoices(draft.operands), [draft.operands])
@@ -75,7 +76,7 @@ export default function SlateManualScratch({
       onScratchPartialEntriesChange={(entries) => onChange({
         ...draft, partialEntries: sanitizeMultiplicationScratchEntries(model.problem, entries),
       })}
-      footer={allowTransfer && <button type="button" disabled={!result}
+      footer={allowTransfer && <button type="button" disabled={!result || !transferEnabled}
         onClick={() => onUseResult?.(result)}>USE THIS RESULT IN ANSWER</button>}
     />}
   </fieldset>

@@ -34,7 +34,7 @@ test('general keyboard toggle lives in the existing header without taking transc
   assert.match(keyboard, /if \(activeRef\.current && \(!preferredEntry/)
   assert.match(keyboard, /activeRef\.current\.ref\?\.current === preferredEntry\.ref\?\.current/)
   assert.match(keyboard, /layout: previous\?\.layout \|\| "text"/)
-  assert.match(keyboard, /value=\{\{ open, close, toggleKeyboard, active, keyboardHeight/)
+  assert.match(keyboard, /value=\{\{ open, close, toggleKeyboard, insertMathResult, canUseMathResult, active, keyboardHeight/)
 
   assert.match(keyboard, /const nextLayout = \{ "123": "number", "Math": "math", "More": "symbols", "ABC": "text" \}\[key\]/)
   assert.doesNotMatch(slate, /toggleManualScratch|data-slate-manual-math-toggle|data-slate-test-manual-math-toggle/)

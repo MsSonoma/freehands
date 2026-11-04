@@ -78,6 +78,7 @@ import { detectProductHelp, getProductHelpFeature, getProductHelpScript } from '
 import TypingConversationContext from '../components/TypingConversationContext';
 import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingViewport';
 import { useSonomaKeyboard } from '../../components/SonomaKeyboard';
+import TeacherKeyboardMathWorkspace from '../../components/TeacherKeyboardMathWorkspace';
 import { restoreDiscussionAwards, queueDiscussionAwards, acknowledgeDiscussionAward } from './discussionObjectiveAwards.mjs';
 import AutoGrowingSonomaTextarea from '../../components/AutoGrowingSonomaTextarea';
 import { isMicrophoneCapturing } from '../utils/microphoneSession';
@@ -609,6 +610,7 @@ function SessionPageV2Inner() {
     sonomaKeyboard.open({
       ref: { current: element },
       layout: 'text',
+      theme: { label: 'Ms. Sonoma Keyboard', background: '#f8e9e5', color: '#722b21', accent: '#c7442e' },
       onChange: (value) => { updateValue(value); noteSonomaLearnerActivity(); },
     });
   };
@@ -8889,6 +8891,17 @@ function SessionPageV2Inner() {
   
   return (
     <>
+      <TeacherKeyboardMathWorkspace
+        teacher="sonoma"
+        learnerId={learnerIdParam || learnerProfile?.id || ''}
+        lessonKey={goldenKeyLessonKey || lessonKey}
+        occurrenceId={authorizedOccurrenceId || occurrenceIdParam || ''}
+        phase={currentPhase === 'test' ? 'test' : 'teaching'}
+        enabled={executionAuthorization === 'allowed' && currentPhase !== 'complete' &&
+          currentPhase !== 'congrats' && Boolean(lessonId)}
+        disabled={Boolean(snapshotServiceRef.current?.writesFenced)}
+        onLearnerActivity={noteSonomaLearnerActivity}
+      />
       <FeatureHelpToast
         suggestion={pendingFeatureHelp?.suggestion || null}
         onConfirm={confirmFeatureHelp}

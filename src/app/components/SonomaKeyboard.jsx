@@ -8,6 +8,7 @@ import { insertDictationAtSelection } from "./sonomaDictationInsertion.mjs";
 import { isTranscriptTapGesture } from "./sonomaTranscriptGesture.mjs";
 import dockStyles from "./SonomaKeyboardDock.module.css";
 import { isSonomaSubmitTarget } from "./sonomaAnswerField.mjs";
+import { insertSlateMathResult } from "../lib/slateMathDraft.mjs";
 
 const KeyboardContext = createContext(null);
 const rows = {
@@ -146,13 +147,29 @@ export function SonomaKeyboardProvider({ children }) {
     const usable = field?.isConnected && !field.disabled && !field.readOnly;
     const preferredField = preferredEntry?.ref?.current;
     const preferredUsable = preferredField?.isConnected && !preferredField.disabled && !preferredField.readOnly;
-    setActive(preferredUsable
+    const entry = preferredUsable
       ? { ...preferredEntry, theme }
       : usable
         ? { ...previous, theme }
-      : { ref: { current: null }, onChange: () => {}, layout: previous?.layout || "text", theme });
+        : { ref: { current: null }, onChange: () => {}, layout: previous?.layout || "text", theme };
+    if (entry.ref?.current?.isConnected && !panelRef.current?.contains(entry.ref.current)) {
+      lastOutsideInputRef.current = entry;
+    }
+    setActive(entry);
     setShift(false);
   }, [close, workspaceDock]);
+
+  // Transfer only the learner-entered result to the most recently selected
+  // answer field. Workspace inputs inside the keyboard are never targets.
+  const insertMathResult = useCallback((result) => {
+    const entry = lastOutsideInputRef.current;
+    const field = entry?.ref?.current;
+    if (!field?.isConnected || field.disabled || field.readOnly || panelRef.current?.contains(field)) return false;
+    const next = insertSlateMathResult(field.value, result);
+    if (next === field.value) return false;
+    entry.onChange?.(next);
+    return true;
+  }, []);
 
   // Reuse the existing STT recorder; keep the input and insertion point from the moment dictation begins.
   const prepareDictation = useCallback(() => {
@@ -229,8 +246,11 @@ export function SonomaKeyboardProvider({ children }) {
   };
   const layout = active?.layout || "text";
   const workspaceVisible = Boolean(active && workspaceDock && layout === "math");
+  const mathResultField = lastOutsideInputRef.current?.ref?.current;
+  const canUseMathResult = Boolean(mathResultField?.isConnected && !mathResultField.disabled &&
+    !mathResultField.readOnly && !panelRef.current?.contains(mathResultField));
   return (
-    <KeyboardContext.Provider value={{ open, close, toggleKeyboard, active, keyboardHeight, setWorkspaceDock, workspacePortal }}>
+    <KeyboardContext.Provider value={{ open, close, toggleKeyboard, insertMathResult, canUseMathResult, active, keyboardHeight, setWorkspaceDock, workspacePortal }}>
       {children}
       {active && (
         <div ref={panelRef} data-sonoma-keyboard role="group" aria-label="Sonoma on-screen keyboard" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:10000, background:active?.theme?.background || (workspaceVisible ? "#1e293b" : "#e8e8eb"), color:active?.theme?.color || (workspaceVisible ? "#e2e8f0" : "#111827"), padding:"8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left))", boxShadow:"0 -5px 24px #0003", touchAction:"manipulation" }}>
