@@ -58,6 +58,7 @@ import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
 import WebbDictationButton from '../webb/WebbDictationButton'
 import { isMicrophoneCapturing } from '../utils/microphoneSession'
 import { SONOMA_RESPONSE_PACING_INTERVAL_SECONDS } from '../v2/sonomaResponsePacing.mjs'
+import { slateReminderIsDue, slateWorkspaceContentChanged } from '@/app/lib/slateReminderPacing.mjs'
 import CaptionPanel from '../components/CaptionPanel'
 import styles from './SlateLiftoffExperience.module.css'
 import VerticalMathWorkspace from '@/components/math/VerticalMathWorkspace'
@@ -345,11 +346,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const answerInputRef = useRef(null)
   const reminderActivityRef = useRef(Date.now())
   const reminderTurnRef = useRef('')
+  const reminderTurnStartedAtRef = useRef(Date.now())
   const reminderStageRef = useRef(0)
   const reminderLastAtRef = useRef(0)
+  const reminderSubmittedRef = useRef(false)
   const audioRef = useRef(null)
   const soundOnRef = useRef(true)
   const speechRequestRef = useRef(0)
+  const reminderSpeechRequestRef = useRef(0)
   const introSpeechRef = useRef(null)
   const introTeachingRef = useRef(null)
   const introAdvanceLockRef = useRef(false)
@@ -422,9 +426,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
   liftoffRef.current = liftoff
 
-  const speak = useCallback(async (text) => {
+  const speak = useCallback(async (text, { reminder = false } = {}) => {
     if (!soundOnRef.current || !text || !audioRef.current) return 'unavailable'
     const requestId = ++speechRequestRef.current
+    // Track which request owns the audio so submit only interrupts pestering.
+    reminderSpeechRequestRef.current = reminder ? requestId : 0
     try {
       const response = await fetch('/api/slate-tts', {
         method: 'POST',
@@ -446,13 +452,26 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       return result
     } catch {
       return 'unavailable'
+    } finally {
+      if (reminderSpeechRequestRef.current === requestId) reminderSpeechRequestRef.current = 0
     }
   }, [])
 
-  // The active question alone is a waiting turn; never remind during instruction,
-  // recording, ongoing typing, or assessment.
+  const stopReminderSpeech = useCallback(() => {
+    if (!reminderSpeechRequestRef.current ||
+        reminderSpeechRequestRef.current !== speechRequestRef.current) return
+    // Invalidates any still-fetching TTS, then stops already-playing reminder audio.
+    speechRequestRef.current += 1
+    reminderSpeechRequestRef.current = 0
+    audioRef.current?.pause()
+    try { videoRef.current?.pause?.() } catch {}
+  }, [])
+
+  // Remind only while an unanswered question is actually waiting for the learner.
+  // Editing earns a brief grace period, with a hard extension cap per question.
   useEffect(() => {
-    const activeQuestion = phase === 'active' && !introTeaching && !pendingAdvance && !questionPending && !busy && !lineHelpTarget
+    const activeQuestion = phase === 'active' && !introTeaching && !pendingAdvance && !questionPending &&
+      !busy && !lineHelpTarget && !submitLockRef.current
     if (!activeQuestion) {
       reminderTurnRef.current = ''
       reminderStageRef.current = 0
@@ -460,16 +479,27 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
     const key = String(liftoff?.turnNumber ?? liftoff?.currentAction?.id ?? slateText)
     if (key !== reminderTurnRef.current) {
+      const now = Date.now()
       reminderTurnRef.current = key
+      reminderTurnStartedAtRef.current = now
       reminderStageRef.current = 0
-      reminderLastAtRef.current = Date.now()
-      reminderActivityRef.current = Date.now()
+      reminderLastAtRef.current = now
+      reminderActivityRef.current = now
+      reminderSubmittedRef.current = false
     }
     const timer = window.setInterval(() => {
+      if (!reminderTurnRef.current) return
       const now = Date.now()
-      if (isMicrophoneCapturing() || now - reminderActivityRef.current < 60000) return
-      if (now - reminderLastAtRef.current < SONOMA_RESPONSE_PACING_INTERVAL_SECONDS * 1000) return
-      if (reminderStageRef.current >= 4 || !reminderTurnRef.current) return
+      if (!slateReminderIsDue({
+        nowMs: now,
+        turnStartedAtMs: reminderTurnStartedAtRef.current,
+        lastReminderAtMs: reminderLastAtRef.current,
+        lastActivityAtMs: reminderActivityRef.current,
+        stage: reminderStageRef.current,
+        intervalMs: SONOMA_RESPONSE_PACING_INTERVAL_SECONDS * 1000,
+        submitted: submitLockRef.current || reminderSubmittedRef.current,
+        microphoneCapturing: isMicrophoneCapturing(),
+      })) return
       reminderLastAtRef.current = now
       reminderStageRef.current += 1
       const message = [
@@ -479,7 +509,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         "We should get back to work. You can still ask me for help.",
       ][reminderStageRef.current - 1]
       appendTranscript('assistant', message, { kind: 'attention_reminder', pacingStage: reminderStageRef.current })
-      void speak(message)
+      void speak(message, { reminder: true })
     }, 1000)
     return () => window.clearInterval(timer)
   }, [phase, introTeaching, pendingAdvance, questionPending, busy, lineHelpTarget, liftoff?.turnNumber, liftoff?.currentAction?.id, slateText, appendTranscript, speak])
@@ -901,10 +931,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   }, [scheduleMathSnapshot])
 
   const commitManualScratchUi = useCallback((next) => {
+    if (phase === 'active' && slateWorkspaceContentChanged(manualScratchUiRef.current, next)) {
+      reminderActivityRef.current = Date.now()
+      stopReminderSpeech()
+    }
     manualScratchUiRef.current = next
     setManualScratchUi(next)
     scheduleMathSnapshot()
-  }, [scheduleMathSnapshot])
+  }, [phase, scheduleMathSnapshot, stopReminderSpeech])
 
   // The learner workspace belongs to the Math keyboard tab, not an independent panel.
   useEffect(() => {
@@ -2053,6 +2087,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       return
     }
     submitLockRef.current = true
+    reminderSubmittedRef.current = true
+    stopReminderSpeech()
     setBusy(true)
     try {
       let pending = null
@@ -2269,10 +2305,16 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       else if (activeMath) setMathError(cause?.message || 'Mr. Slate could not continue Liftoff. Your math work was kept.')
       else setError(cause?.message || 'Mr. Slate could not continue Liftoff.')
     } finally {
+      // A rejected/incomplete answer or completed help turn can be retried.
+      // A successfully advanced turn stays silent until its next question opens.
+      if (!pendingAdvanceRef.current && liftoffRef.current?.turnNumber === currentLiftoff.turnNumber) {
+        reminderSubmittedRef.current = false
+        reminderActivityRef.current = Date.now()
+      }
       setBusy(false)
       submitLockRef.current = false
     }
-  }, [answer, appendTranscript, busy, lesson, lineHelpBusy, lineHelpTarget, persistLiftoffSnapshot, phase, scheduleMathSnapshot, selectedMathTextLocation, speak])
+  }, [answer, appendTranscript, busy, lesson, lineHelpBusy, lineHelpTarget, persistLiftoffSnapshot, phase, scheduleMathSnapshot, selectedMathTextLocation, speak, stopReminderSpeech])
 
   const finishLesson = useCallback(async (results, { stillOwns = finishOwnershipRef.current || (() => true) } = {}) => {
     if (!stillOwns()) return
@@ -2812,6 +2854,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 setAssessmentAnswer(next)
                 scheduleMathSnapshot()
               } else {
+                reminderActivityRef.current = Date.now()
+                stopReminderSpeech()
                 setAnswer((current) => insertSlateMathResult(current, result))
                 if (answerInputRef.current) {
                   answerInputRef.current.focus({ preventScroll: true })
