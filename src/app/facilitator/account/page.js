@@ -4,6 +4,7 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { getPinPrefsLocal, setPinPrefsLocal } from '@/app/lib/pinGate'
 import { useAccessControl } from '@/app/hooks/useAccessControl'
 import GatedOverlay from '@/app/components/GatedOverlay'
+import SonomaPinInput from '@/app/components/SonomaPinInput'
 import SettingsOverlay from '@/components/SettingsOverlay'
 import { useRouter } from 'next/navigation'
 
@@ -985,24 +986,24 @@ function PinOverlay({ isOpen, onClose, email }) {
           {hasPin && (
             <div>
               <label style={{ display:'block', marginBottom:8, fontWeight:600, color:'#374151' }}>Current PIN</label>
-              <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="current-password"
-                value={currentPin} onChange={e=>setCurrentPin(e.target.value)}
+              <SonomaPinInput autoComplete="current-password"
+               value={currentPin} onValueChange={setCurrentPin}
                 style={{ padding:'8px 12px', border:'1px solid #e5e7eb', borderRadius:8, width: '100%', fontSize: 14 }} />
             </div>
           )}
           
           <div>
             <label style={{ display:'block', marginBottom:8, fontWeight:600, color:'#374151' }}>{hasPin ? 'New PIN' : 'Set PIN'}</label>
-            <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
-              value={pin} onChange={e=>setPin(e.target.value)}
+            <SonomaPinInput autoComplete="new-password"
+               value={pin} onValueChange={setPin}
               placeholder="4–8 digits"
               style={{ padding:'8px 12px', border:'1px solid #e5e7eb', borderRadius:8, width: '100%', fontSize: 14 }} />
           </div>
           
           <div>
             <label style={{ display:'block', marginBottom:8, fontWeight:600, color:'#374151' }}>Confirm PIN</label>
-            <input type="password" inputMode="numeric" pattern="[0-9]*" autoComplete="new-password"
-              value={pin2} onChange={e=>setPin2(e.target.value)}
+            <SonomaPinInput autoComplete="new-password"
+               value={pin2} onValueChange={setPin2}
               style={{ padding:'8px 12px', border:'1px solid #e5e7eb', borderRadius:8, width: '100%', fontSize: 14 }} />
           </div>
           

@@ -2,6 +2,7 @@
 'use client'
 
 import { useState } from 'react'
+import SonomaPinInput from '@/app/components/SonomaPinInput'
 
 export default function SessionTakeoverDialog({ 
   existingSession, 
@@ -128,14 +129,11 @@ export default function SessionTakeoverDialog({
             Enter your 4-8 digit PIN to continue:
           </label>
           
-          <input
+          <SonomaPinInput
             type="text"
-            inputMode="numeric"
-            pattern="[0-9]*"
             maxLength={8}
             value={pinCode}
-            onChange={(e) => {
-              const val = e.target.value.replace(/\D/g, '')
+            onValueChange={(val) => {
               setPinCode(val)
               setError('')
             }}

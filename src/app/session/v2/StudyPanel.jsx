@@ -1,6 +1,8 @@
 'use client';
 
 import HelpReplaySentence from './HelpReplaySentence';
+import { useCallback, useEffect, useRef } from 'react';
+import { shouldUseSonomaKeyboard, useSonomaKeyboard } from '../../components/SonomaKeyboard';
 import { splitHelpSentences } from './helpSentenceReplay.mjs';
 
 export default function StudyPanel({
@@ -15,6 +17,20 @@ export default function StudyPanel({
   onClose,
   inputRef,
 }) {
+  const sonomaKeyboard = useSonomaKeyboard();
+  const activeFieldRef = useRef(null);
+  const openStudyKeyboard = useCallback((event) => {
+    if (!shouldUseSonomaKeyboard() || busy) return;
+    const field = event.currentTarget;
+    activeFieldRef.current = field;
+    sonomaKeyboard.open({
+      ref: { current: field },
+      onChange: setInput,
+      layout: 'text',
+      theme: { label: 'Ms. Sonoma Keyboard', background: '#f8e9e5', color: '#722b21', accent: '#c7442e' },
+    });
+  }, [busy, setInput, sonomaKeyboard.open]);
+  useEffect(() => () => sonomaKeyboard.closeForInput(activeFieldRef.current), [sonomaKeyboard.closeForInput]);
   const data = state?.data || state || {};
   const target = data.target || {};
   const history = Array.isArray(data.history) ? data.history : [];
@@ -69,6 +85,10 @@ export default function StudyPanel({
           <input
             ref={inputRef}
             type="text"
+            data-sonoma-input
+            inputMode="none"
+            onPointerDown={openStudyKeyboard}
+            onFocus={openStudyKeyboard}
             value={input}
             onChange={(event) => setInput?.(event.target.value)}
             onKeyDown={(event) => {

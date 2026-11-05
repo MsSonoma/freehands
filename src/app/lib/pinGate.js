@@ -235,6 +235,8 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 			if (resolved) return;
 			resolved = true;
 			try { document.removeEventListener('keydown', onKeyDown, true); } catch {}
+			// A closed PIN dialog cannot leave an orphaned keyboard targeting its field.
+			try { window.dispatchEvent(new CustomEvent('ms:sonoma-keyboard:close', { detail: { field: input } })); } catch {}
 			try { overlay.remove(); } catch {}
 		};
 
@@ -258,13 +260,13 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 		// Elements
 		const overlay = document.createElement('div');
 		overlay.setAttribute('role', 'presentation');
-		overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,0.35);display:grid;place-items:center;';
+		overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483645;background:rgba(0,0,0,0.35);display:grid;place-items:center;padding:12px;padding-bottom:calc(12px + var(--sonoma-keyboard-height, 0px));box-sizing:border-box;';
 
 		const dialog = document.createElement('div');
 		dialog.setAttribute('role', 'dialog');
 		dialog.setAttribute('aria-modal', 'true');
 		dialog.setAttribute('aria-labelledby', 'ms-pin-title');
-		dialog.style.cssText = 'width:100%;max-width:360px;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,0.12);';
+		dialog.style.cssText = 'width:100%;max-width:360px;max-height:100%;overflow-y:auto;background:#fff;border:1px solid #e5e7eb;border-radius:12px;padding:16px;box-shadow:0 8px 30px rgba(0,0,0,0.12);';
 
 		const h3 = document.createElement('h3');
 		h3.id = 'ms-pin-title';
@@ -281,11 +283,13 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 		// Use type='text' instead of 'password' to prevent password manager detection
 		const input = document.createElement('input');
 		input.type = 'text';
-		input.inputMode = 'numeric';
+		input.inputMode = 'none';
 		input.autocomplete = 'off';
 		input.name = 'pin-' + Math.random().toString(36); // random name
 		input.pattern = '[0-9]*';
 		input.setAttribute('aria-label', 'Facilitator PIN');
+		input.setAttribute('data-sonoma-input', '');
+		input.setAttribute('data-sonoma-pin', '');
 		input.setAttribute('data-lpignore', 'true');
 		input.setAttribute('data-form-type', 'other');
 		input.setAttribute('data-1p-ignore', 'true');
@@ -305,6 +309,25 @@ function promptForPinMasked({ title = 'Enter PIN', message = 'Enter your PIN' } 
 			// Show dots for display
 			e.target.value = '•'.repeat(actualValue.length);
 		});
+
+		// The common React keyboard is reachable from this DOM-only PIN dialog
+		// through a narrowly scoped event. The actual PIN stays in this closure.
+		const openSonomaPinKeyboard = () => {
+			try {
+				window.dispatchEvent(new CustomEvent('ms:sonoma-keyboard:open', { detail: {
+					ref: { current: input },
+					layout: 'pin',
+					theme: { label: 'Facilitator PIN Keyboard', background: '#f8e9e5', color: '#722b21', accent: '#c7442e' },
+					getValue: () => actualValue,
+					onChange: (value) => {
+						actualValue = String(value || '').replace(/\D/g, '').slice(0, input.maxLength);
+						input.value = '•'.repeat(actualValue.length);
+					},
+				} }));
+			} catch {}
+		};
+		input.addEventListener('pointerdown', openSonomaPinKeyboard);
+		input.addEventListener('focus', openSonomaPinKeyboard);
 
 		const err = document.createElement('div');
 		err.setAttribute('role', 'alert');

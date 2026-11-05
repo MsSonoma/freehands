@@ -1,6 +1,7 @@
 'use client'
 import { useEffect, useState } from 'react'
 import { getSupabaseClient, hasSupabaseEnv } from '@/app/lib/supabaseClient'
+import SonomaPinInput from '@/app/components/SonomaPinInput'
 
 // Simple in-page PIN prompt for facilitator actions.
 // - If a PIN exists in localStorage (facilitator_pin), prompts for it and validates.
@@ -76,10 +77,9 @@ export default function FacilitatorPinPrompt({ onSuccess, onCancel }) {
             <input type="text" name="username" autoComplete="username" aria-hidden="true" tabIndex={-1} style={{ position:'absolute', width:1, height:1, padding:0, border:0, clip:'rect(0 0 0 0)', clipPath:'inset(50%)', overflow:'hidden', whiteSpace:'nowrap' }} />
             <label style={{ display:'block', marginBottom:8 }}>
               <span style={{ display:'block', fontSize:12, color:'#6b7280', marginBottom:4 }}>Enter PIN to continue</span>
-              <input
-                type="password"
+              <SonomaPinInput
                 value={pin}
-                onChange={e=>setPin(e.target.value)}
+                onValueChange={setPin}
                 autoComplete="current-password"
                 name="facilitator-current-password"
                 style={{ width:'100%', padding:'8px 10px', border:'1px solid #e5e7eb', borderRadius:8 }}
@@ -97,10 +97,9 @@ export default function FacilitatorPinPrompt({ onSuccess, onCancel }) {
             <input type="text" name="username" autoComplete="username" aria-hidden="true" tabIndex={-1} style={{ position:'absolute', width:1, height:1, padding:0, border:0, clip:'rect(0 0 0 0)', clipPath:'inset(50%)', overflow:'hidden', whiteSpace:'nowrap' }} />
             <label style={{ display:'block', marginBottom:8 }}>
               <span style={{ display:'block', fontSize:12, color:'#6b7280', marginBottom:4 }}>New PIN (min 4 digits)</span>
-              <input
-                type="password"
+              <SonomaPinInput
                 value={newPin}
-                onChange={e=>setNewPin(e.target.value)}
+                onValueChange={setNewPin}
                 autoComplete="new-password"
                 name="facilitator-new-password"
                 minLength={4}
@@ -109,10 +108,9 @@ export default function FacilitatorPinPrompt({ onSuccess, onCancel }) {
             </label>
             <label style={{ display:'block', marginBottom:8 }}>
               <span style={{ display:'block', fontSize:12, color:'#6b7280', marginBottom:4 }}>Confirm PIN</span>
-              <input
-                type="password"
+              <SonomaPinInput
                 value={confirmPin}
-                onChange={e=>setConfirmPin(e.target.value)}
+                onValueChange={setConfirmPin}
                 autoComplete="new-password"
                 name="facilitator-confirm-password"
                 minLength={4}

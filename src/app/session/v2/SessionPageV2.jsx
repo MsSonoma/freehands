@@ -9697,6 +9697,7 @@ function SessionPageV2Inner() {
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
+                  onFocus={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                   value={openingActionInput}
                   onChange={(e) => setOpeningActionInput(e.target.value)}
                   onKeyDown={(e) => {
@@ -9731,6 +9732,7 @@ function SessionPageV2Inner() {
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
+                  onFocus={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                           value={openingActionInput}
                           onChange={(e) => setOpeningActionInput(e.target.value)}
                           onKeyDown={(e) => {
@@ -9852,6 +9854,7 @@ function SessionPageV2Inner() {
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
+                  onFocus={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                           value={openingActionInput}
                           onChange={(e) => setOpeningActionInput(e.target.value)}
                           onKeyDown={(e) => {
@@ -9955,6 +9958,7 @@ function SessionPageV2Inner() {
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
+                  onFocus={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                             value={openingActionInput}
                             onChange={(e) => setOpeningActionInput(e.target.value)}
                             onKeyDown={(e) => {
@@ -10003,6 +10007,7 @@ function SessionPageV2Inner() {
                   data-sonoma-input
                   inputMode="none"
                   onPointerDown={(event) => openSonomaTextInput(event, setOpeningActionInput)}
+                  onFocus={(event) => openSonomaTextInput(event, setOpeningActionInput)}
                         value={openingActionInput}
                         onChange={(e) => setOpeningActionInput(e.target.value)}
                         onKeyDown={(e) => {
