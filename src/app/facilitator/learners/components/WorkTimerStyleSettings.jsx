@@ -17,19 +17,22 @@ export default function WorkTimerStyleSettings({ teacher, value, onChange }) {
     <strong style={{ fontSize: 16 }}>{label} work timer style</strong>
     <label style={{ display: 'grid', gap: 6, fontSize: 13, fontWeight: 700 }}>Timer method
       <select value={style} onChange={e => patch({ style: e.target.value })} style={{ ...numberStyle, fontWeight: 600 }}>
-        <option value="countdown">Count down: complete work checkpoints on time</option>
-        <option value="countup">Count up: allow a limited number of stalls</option>
+        <option value="countdown">Count down: short response window</option>
+        <option value="countup">Count up: time since the last response</option>
       </select>
     </label>
     {style === 'countup' ? <>
-      <p style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>Response time counts upward. Four reminders lead to a facilitator notification on the fifth interval. Each distinct escalated turn counts as one stall. Finishing the lesson with no more than the allowed number earns a Golden Key, when enabled.</p>
+      <p style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>The visible clock counts up from zero whenever the teacher presents a new sentence or the learner responds. Separate learner-response timing controls the four reminders and facilitator notification on the fifth interval. Each distinct escalated turn counts as one stall. Finishing with no more than the allowed stalls earns a Golden Key, when enabled.</p>
       <NumberSetting label="Maximum stalls allowed for Golden Key" value={settings.stallAllowance ?? 2} onChange={stallAllowance => patch({ stallAllowance })} min={0} max={99} />
       <NumberSetting label="Minutes between reminder levels" value={settings.reminderIntervalMin ?? 2} onChange={reminderIntervalMin => patch({ reminderIntervalMin })} min={1} max={30} />
     </> : isWebb ? <>
-      <p style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>Research and writing have independent work budgets. Time spent actively responding counts against each budget; AI speech and play breaks do not. Both stages must finish within their limits for a Golden Key. Time never prevents mastery or lesson completion.</p>
+      <p style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>The learner sees a short countdown that restarts with each response, not an intimidating whole-phase timer. Research and writing have separate reward budgets. Time spent actively responding counts against each budget; AI speech and play breaks do not. Both stages must finish within their limits for a Golden Key. Time never prevents mastery or lesson completion.</p>
       <NumberSetting label="Research work time" value={settings.researchWorkMin ?? 30} onChange={researchWorkMin => patch({ researchWorkMin })} min={1} max={240} unit="minutes" />
       <NumberSetting label="Writing work time" value={settings.writingWorkMin ?? 45} onChange={writingWorkMin => patch({ writingWorkMin })} min={1} max={240} unit="minutes" />
-    </> : <p style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>The existing phase work timers count down. Complete at least three work phases within their time limits to earn a Golden Key. The learning session can continue even when a timer expires.</p>}
+    </> : <p style={{ fontSize: 12, margin: 0, lineHeight: 1.5 }}>The learner sees a short countdown that restarts with each response. Behind the scenes, completing at least three work phases within their separate limits still earns a Golden Key. The visible clock never prevents learning from continuing.</p>}
+    {style === 'countdown' && (
+      <NumberSetting label="Short response countdown (minutes)" value={settings.reminderIntervalMin ?? 2} onChange={reminderIntervalMin => patch({ reminderIntervalMin })} min={1} max={30} />
+    )}
     <small style={{ color: '#475569' }}>Changes to these settings take effect on the next lesson, not in a lesson already underway.</small>
   </section>;
 }

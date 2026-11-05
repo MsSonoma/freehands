@@ -4,6 +4,7 @@ import { createPortal } from 'react-dom'
 import { useRouter, useSearchParams } from 'next/navigation'
 import WebbWritingStudio from './WebbWritingStudio'
 import WebbResponseTimer from './WebbResponseTimer'
+import useResponseIntervalClock from '../hooks/useResponseIntervalClock'
 import WebbDictationButton from './WebbDictationButton'
 import { isMicrophoneCapturing } from '../utils/microphoneSession'
 import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
@@ -82,7 +83,6 @@ import {
   pauseWebbResponseTurn,
   reminderStageForElapsed,
   responseElapsedSeconds as getResponseElapsedSeconds,
-  webbPromptElapsedSeconds,
   resumeWebbResponseTurn,
   setWebbResponseElapsedSeconds,
   setWebbPlayGoldenKeyBonus,
@@ -284,7 +284,6 @@ function WebbPageInner() {
   const webbWorkRewardRef = useRef(null)
   const [webbStallOverrideOpen, setWebbStallOverrideOpen] = useState(false)
   const [responseElapsedSeconds, setResponseElapsedSeconds] = useState(0)
-  const [responsePromptElapsedSeconds, setResponsePromptElapsedSeconds] = useState(0)
   const [showWorkTimerControls, setShowWorkTimerControls] = useState(false)
   const lastLearnerActivityRef = useRef(0)
   const responseArmSignatureRef = useRef(null)
@@ -307,6 +306,19 @@ function WebbPageInner() {
   })
   const webbWorkSettings = webbWorkReward?.settings || normalizeWorkTimerSettings(learnerProfile || {}, 'webb')
   const webbIsCountdown = webbWorkSettings.style === 'countdown'
+  // The learner's visible clock is per exchange, not an accumulated work phase.
+  const webbResponseClock = useResponseIntervalClock({
+    paused: phase !== PHASE.CHATTING || chatLoading || !!activePlayBreak || showWorkTimerControls,
+  })
+  const webbResponseWindowSeconds = Math.max(1, Number(webbWorkSettings.reminderIntervalMin || 2)) * 60
+  const webbResponseWindowRemainingSeconds = Math.max(0, webbResponseWindowSeconds - webbResponseClock.elapsedSeconds)
+  // A restored transcript or waiting turn does not have a fresh spoken-message
+  // event. Start a new visible exchange clock rather than revive phase time.
+  useEffect(() => {
+    if (phase !== PHASE.CHATTING || !learnerProfileLoaded || webbResponseClock.active) return
+    const last = transcript.at(-1)
+    if (responseTurn?.id || (last && ['assistant', 'user'].includes(last.role))) webbResponseClock.reset()
+  }, [phase, learnerProfileLoaded, responseTurn?.id, transcript, webbResponseClock.active, webbResponseClock.reset])
 
   function commitLearningState(next) {
     learningStateRef.current = next
@@ -732,7 +744,6 @@ function WebbPageInner() {
       escalationNotificationLastAttemptRef.current = 0
       setResponseTurn(restoredTurn)
       setResponseElapsedSeconds(restoredTurn ? getResponseElapsedSeconds(restoredTurn, Date.now()) : 0)
-      setResponsePromptElapsedSeconds(restoredTurn ? webbPromptElapsedSeconds(restoredTurn, Date.now()) : 0)
       const restoredMilestones = restoredPacing.playMilestones && typeof restoredPacing.playMilestones === 'object' ? restoredPacing.playMilestones : {}
       playMilestonesRef.current = restoredMilestones
       setPlayMilestones(restoredMilestones)
@@ -1024,6 +1035,7 @@ function WebbPageInner() {
   function addMsg(text, meta = {}) {
     const t = String(text || '').trim()
     if (!t) return
+    if (meta.kind !== 'pacing' && meta.kind !== 'attention_reminder') webbResponseClock.reset()
     setTranscript(prev => {
       const next = [...prev, { ...meta, text: t, role: 'assistant' }]
       setActiveIndex(next.length - 1)
@@ -1035,6 +1047,7 @@ function WebbPageInner() {
   function addStudentLine(text) {
     const t = String(text || '').trim()
     if (!t) return
+    webbResponseClock.reset()
     setTranscript(prev => [...prev, { text: t, role: 'user' }])
   }
 
@@ -1108,7 +1121,6 @@ function WebbPageInner() {
     setResponseTurn(next)
     if (!next) {
       setResponseElapsedSeconds(0)
-      setResponsePromptElapsedSeconds(0)
     }
   }
 
@@ -1219,8 +1231,8 @@ function WebbPageInner() {
     escalationNotificationLastAttemptRef.current = 0
     lastLearnerActivityRef.current = 0
     commitResponseTurn(turn)
+    webbResponseClock.reset()
     setResponseElapsedSeconds(0)
-    setResponsePromptElapsedSeconds(0)
     emitWebbPacingEvent('response_turn_started', `turn:${turn.id}:started`, {
       turnId: turn.id,
       reminderStage: 0,
@@ -1690,7 +1702,6 @@ function WebbPageInner() {
       setResponseElapsedSeconds(elapsed)
       // Display from presentation time, including teacher narration. Response
       // eligibility remains based on 'elapsed', which excludes blocked time.
-      setResponsePromptElapsedSeconds(webbPromptElapsedSeconds(current, nowMs))
       if (shouldPause) return
       if (nowMs - lastLearnerActivityRef.current < 60000) return
       if (current.escalated && Number(current.reminderStage || 0) >= 5) {
@@ -1767,6 +1778,7 @@ function WebbPageInner() {
   function addPassageMsg(text, passageIdx) {
     const t = String(text || '').trim()
     if (!t) return
+    webbResponseClock.reset()
     setTranscript(prev => {
       const next = [...prev, { text: t, role: 'assistant', passageIdx }]
       setActiveIndex(next.length - 1)
@@ -2490,6 +2502,7 @@ function WebbPageInner() {
     setPhase(PHASE.STARTING)
     setSelectedLesson(lesson)
     setTranscript([])
+    webbResponseClock.clear()
     setActiveIndex(-1)
     setChatMessages([])
     setVideoResource(null)
@@ -2521,7 +2534,6 @@ function WebbPageInner() {
     escalationNotificationLastAttemptRef.current = 0
     setResponseTurn(null)
     setResponseElapsedSeconds(0)
-    setResponsePromptElapsedSeconds(0)
     responseArmSignatureRef.current = null
     lastLearnerActivityRef.current = 0
     playMilestonesRef.current = {}
@@ -2645,6 +2657,7 @@ function WebbPageInner() {
     const sourceObjectiveIndex = slot.sourceObjectiveIndices?.length === 1 ? slot.sourceObjectiveIndices[0] : null
     const sourceObjective = sourceObjectiveIndex !== null ? (objectives[sourceObjectiveIndex] || '') : ''
     if (slot.role === 'body' && slot.sourceObjectiveIndices?.length && !slotSource.notes.length) return
+    webbResponseClock.reset()
     finishWebbResponseTurn(trimmed, 'writing-submitted')
     const totalSentences = activePlan?.slots?.length || objectives.length
     const priorSentences = Array.from({ length: slotIndex }, (_, index) => acceptedSentences?.[index]?.text)
@@ -4194,16 +4207,16 @@ function WebbPageInner() {
                 style={{ ...headerBtn, minWidth: 36, minHeight: 36, flexShrink: 0, padding: '3px 7px', color: '#fff', fontSize: 22, lineHeight: 1 }}
               >&#9000;</button>
             )}
-            {isChatting && responseTurn && (
+            {isChatting && webbResponseClock.active && !activePlayBreak && !essayMode && (
               <WebbResponseTimer
-                turn={responseTurn}
-                elapsedSeconds={webbIsCountdown ? responseElapsedSeconds : responsePromptElapsedSeconds}
+                turn={responseTurn || { id: 'display-interval' }}
+                elapsedSeconds={webbResponseClock.elapsedSeconds}
                 pacingElapsedSeconds={responseElapsedSeconds}
                 countdown={webbIsCountdown}
-                remainingSeconds={webbWorkRemainingSeconds}
+                remainingSeconds={webbResponseWindowRemainingSeconds}
                 settings={webbPacingSettings}
                 compact={keyboardCompact}
-                onClick={handleWebbWorkTimerOpen}
+                onClick={responseTurn ? handleWebbWorkTimerOpen : undefined}
               />
             )}
             {isChatting && webbWorkReward?.settings?.style === 'countup' &&
@@ -5170,16 +5183,16 @@ function WebbPageInner() {
         completionState={completionState}
         completionError={completionError}
         lessonCompleted={!!webbCompletionMap?.[selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id]?.completed}
-        responseTimer={responseTurn ? (
+        responseTimer={isChatting && webbResponseClock.active && !essayMode && !activePlayBreak ? (
           <WebbResponseTimer
-            turn={responseTurn}
-            elapsedSeconds={webbIsCountdown ? responseElapsedSeconds : responsePromptElapsedSeconds}
+            turn={responseTurn || { id: 'display-interval' }}
+            elapsedSeconds={webbResponseClock.elapsedSeconds}
             pacingElapsedSeconds={responseElapsedSeconds}
             countdown={webbIsCountdown}
-            remainingSeconds={webbWorkRemainingSeconds}
+            remainingSeconds={webbResponseWindowRemainingSeconds}
             settings={webbPacingSettings}
             compact={keyboardCompact}
-            onClick={handleWebbWorkTimerOpen}
+            onClick={responseTurn ? handleWebbWorkTimerOpen : undefined}
           />
         ) : null}
         storageWarning={storageError}

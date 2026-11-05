@@ -29,6 +29,8 @@ export default function SessionTimer({
   phaseProgress = 0,
   isPaused = false,
   countUp = false,
+  perResponseClock = false,
+  controlElapsedSeconds = null,
   elapsedSeconds: externalElapsed = null,
   remainingSeconds: externalRemaining = null,
   onTimeUp,
@@ -107,7 +109,7 @@ export default function SessionTimer({
 
   // Persist state to sessionStorage (but only after initialization to avoid overwriting adjustments)
   useEffect(() => {
-    if (startTime !== null && hasInitialized) {
+    if (!isPureDisplayMode && startTime !== null && hasInitialized) {
       sessionStorage.setItem(storageKey, JSON.stringify({
         elapsedSeconds,
         startTime,
@@ -115,7 +117,7 @@ export default function SessionTimer({
         totalMinutes: effectiveTotalMinutes // Store for validation
       }));
     }
-  }, [elapsedSeconds, startTime, pausedAt, storageKey, effectiveTotalMinutes, hasInitialized]);
+  }, [elapsedSeconds, startTime, pausedAt, storageKey, effectiveTotalMinutes, hasInitialized, isPureDisplayMode]);
 
   // Update elapsed time (self-timing mode only)
   useEffect(() => {
@@ -200,7 +202,7 @@ export default function SessionTimer({
 
   // Pace color is phase-local: compare work completed within THIS timer's phase/block
   // against elapsed time on THIS timer. Whole-lesson progress must never affect this color.
-  const color = countUp ? '#f8fafc' : getTimerPaceColor({
+  const color = perResponseClock || countUp ? '#f8fafc' : getTimerPaceColor({
     timerType,
     elapsedSeconds,
     totalSeconds,
@@ -211,7 +213,7 @@ export default function SessionTimer({
 
   const handleTimerClick = () => {
     if (onTimerClick) {
-      onTimerClick(elapsedSeconds);
+      onTimerClick(controlElapsedSeconds ?? elapsedSeconds);
     }
   };
 
@@ -221,7 +223,11 @@ export default function SessionTimer({
   // Build timer tooltip (type description only — gear button has its own tooltip)
   const tooltipText = timerType === 'play'
     ? 'Play time (for games before work)'
-    : countUp ? 'Response time elapsed (count up). A stall is counted only after facilitator escalation.' : 'Work time (complete phase tasks)';
+    : perResponseClock
+      ? (countUp
+        ? 'Time since the last response or spoken sentence. The clock resets with each exchange; stalls are evaluated separately.'
+        : 'Time remaining in the current short response window. It resets after each exchange. Phase reward records remain separate.')
+      : countUp ? 'Response time elapsed (count up).' : 'Work time (complete phase tasks)';
 
   // Flash animation for play timer during last minute
   const shouldFlash = timerType === 'play' && remainingSeconds > 0 && remainingSeconds <= 60;

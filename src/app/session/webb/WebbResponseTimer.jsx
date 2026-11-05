@@ -10,8 +10,8 @@ export default function WebbResponseTimer({ turn, elapsedSeconds = 0, pacingElap
     <button
       type="button"
       onClick={onClick}
-      title={onClick ? "Open Mrs. Webb work timer controls." : countdown ? "Research or writing work time remaining. Time never blocks lesson completion." : "Time since this prompt was presented, including teacher speech. Pacing reminders count only the time the learner can respond."}
-      aria-label={onClick ? `${countdown ? 'Work time remaining' : 'Response time elapsed'}: ${clockText}. Open timer controls.` : `${countdown ? 'Work time remaining' : 'Response time elapsed'}: ${clockText}`}
+      title={onClick ? "Open Mrs. Webb work timer controls." : countdown ? "Time remaining in this short response window. It resets for each exchange; it does not limit the entire research or writing phase." : "Time since the last teacher or learner response, including spoken sentences. Reminder and stall timing is calculated separately."}
+      aria-label={onClick ? `${countdown ? 'Response window remaining' : 'Response time elapsed'}: ${clockText}. Open timer controls.` : `${countdown ? 'Response window remaining' : 'Response time elapsed'}: ${clockText}`}
       style={{
         display: 'inline-flex',
         alignItems: 'center',

@@ -27,6 +27,7 @@ import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus';
 import { applyGoldenKeyToLesson, finalizeGoldenKeyForSession } from '@/app/lib/goldenKeyClient';
 import { loadPhaseTimersForLearner } from '../utils/phaseTimerDefaults';
 import SessionTimer from '../components/SessionTimer';
+import useResponseIntervalClock from '../hooks/useResponseIntervalClock';
 import { AudioEngine } from './AudioEngine';
 import { TeachingController } from './TeachingController';
 import { ComprehensionPhase } from './ComprehensionPhase';
@@ -1248,6 +1249,18 @@ function SessionPageV2Inner() {
   const [playTimerDisplayRemaining, setPlayTimerDisplayRemaining] = useState(0);
   const [workTimerDisplayElapsed, setWorkTimerDisplayElapsed] = useState(0);
   const [workTimerDisplayRemaining, setWorkTimerDisplayRemaining] = useState(0);
+  // The learner sees only the current conversational interval. TimerService
+  // continues keeping phase timing/evidence for reward rules and facilitator controls.
+  const sonomaResponseClock = useResponseIntervalClock({
+    paused: timerPaused || currentTimerMode[currentPhase === 'teaching' ? 'discussion' : currentPhase] !== 'work',
+  });
+  const sonomaResponseWindowSeconds = Math.max(1, Number(sonomaWorkReward?.settings?.reminderIntervalMin ?? 2)) * 60;
+  // Resume can restore a waiting learner turn without replaying its question.
+  // Restart the small visible clock locally rather than displaying a stale
+  // phase-long interval from before the refresh.
+  useEffect(() => {
+    if (sonomaResponseTurn?.id && !sonomaResponseClock.active) sonomaResponseClock.reset();
+  }, [sonomaResponseTurn?.id, sonomaResponseClock.active, sonomaResponseClock.reset]);
 
   useEffect(() => {
     currentTimerModeRef.current = currentTimerMode;
@@ -3959,6 +3972,7 @@ function SessionPageV2Inner() {
       try { audioEngineRef.current?.stop?.(); } catch {}
     }
     if ((data.reason || 'response') === 'response') {
+      sonomaResponseClock.reset();
       sendSonomaPacingEvent('response_received', turn, elapsedSeconds, {
         eventSuffix: 'response',
         metadata: { reason: 'response', reminderStageReached: turn.reminderStage || 0 },
@@ -3966,7 +3980,7 @@ function SessionPageV2Inner() {
     }
     commitSonomaResponseTurn(null, { phaseOverride: turn.phase });
     return { turn, elapsedSeconds };
-  }, [commitSonomaResponseTurn, sendSonomaPacingEvent]);
+  }, [commitSonomaResponseTurn, sendSonomaPacingEvent, sonomaResponseClock.reset]);
 
   const clearSonomaResponseTurn = useCallback((phase = null) => {
     const turn = sonomaResponseTurnRef.current;
@@ -5362,11 +5376,13 @@ function SessionPageV2Inner() {
       setTotalSentences(data.totalSentences);
       setSentenceIndex(0);
       setIsInSentenceMode(true);
+      sonomaResponseClock.reset();
     });
     
     controller.on('sentenceAdvance', (data) => {
       addEvent(`âž¡ï¸ Sentence ${data.index + 1}/${data.total}`);
       setSentenceIndex(data.index);
+      sonomaResponseClock.reset();
     });
     
     controller.on('sentenceComplete', (data) => {
@@ -5918,6 +5934,7 @@ function SessionPageV2Inner() {
 
     // discussionMessage — append each chat turn to the transcript and snap immediately
     const unsubMessage = eventBusRef.current.on('discussionMessage', (data) => {
+      if (!['attention_reminder', 'pacing'].includes(data.kind)) sonomaResponseClock.reset();
       appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant', kind: data.kind || null, featureId: data.featureId || null }, { immediate: true });
       // Save completed-objective state alongside each sentence so resume is accurate
       if (snapshotServiceRef.current) {
@@ -5943,12 +5960,14 @@ function SessionPageV2Inner() {
     });
     // discussionSentenceChange — track current sentence for Repeat/Next UI
     const unsubSentenceChange = eventBusRef.current.on('discussionSentenceChange', (data) => {
+      if (!data.waitingForNext) sonomaResponseClock.reset();
       setDiscussionSentenceInfo(data);
       setWordsReminderSpeaking(data.type === 'words-reminder' && !data.waitingForNext);
     });
 
     // Subscribe to events (capture unsubs so we can cleanly tear down)
     const unsubGreetingPlaying = eventBusRef.current.on('greetingPlaying', (data) => {
+      sonomaResponseClock.reset();
       addEvent(`ðŸ‘‹ Playing greeting: "${data.greetingText}"`);
       setDiscussionState('playing-greeting');
       
@@ -6236,6 +6255,7 @@ function SessionPageV2Inner() {
 
     // Subscribe to question events (required for footer Q&A wiring)
     phase.on('questionStart', (data) => {
+      sonomaResponseClock.reset();
       setCurrentComprehensionQuestion(data.question);
       setComprehensionTotalQuestions(data.totalQuestions);
     });
@@ -6507,6 +6527,7 @@ function SessionPageV2Inner() {
     });
 
     phase.on('questionReady', (data) => {
+      sonomaResponseClock.reset();
       recordEvidenceItemPresented('exercise', data);
     });
 
@@ -6531,6 +6552,7 @@ function SessionPageV2Inner() {
     
     // Conversational exercise messages -> transcript
     phase.on('exerciseConvMessage', (data) => {
+      sonomaResponseClock.reset();
       appendTranscriptLine({ text: data.text, role: data.role === 'user' ? 'user' : 'assistant' }, { immediate: true });
       if (data.role === 'user') {
         setSelectedExerciseAnswer('');
@@ -6742,6 +6764,7 @@ function SessionPageV2Inner() {
     
     // Subscribe to question events
     phase.on('questionStart', (data) => {
+      sonomaResponseClock.reset();
       addEvent(`ðŸ“ Worksheet ${data.questionIndex + 1}/${data.totalQuestions}`);
       setCurrentWorksheetQuestion(data.question);
       setWorksheetTotalQuestions(data.totalQuestions);
@@ -7031,6 +7054,7 @@ function SessionPageV2Inner() {
     
     // Subscribe to test events
     phase.on('questionStart', (data) => {
+      sonomaResponseClock.reset();
       addEvent(`ðŸ“ Test Question ${data.questionIndex + 1}/${data.totalQuestions}`);
       setCurrentTestQuestion(data.question);
       setTestQuestionIndex(data.questionIndex);
@@ -9036,12 +9060,16 @@ function SessionPageV2Inner() {
                 phase={getCurrentPhaseName()}
                 timerType={currentTimerMode[getCurrentPhaseName()]}
                 countUp={currentTimerMode[getCurrentPhaseName()] === 'work' && sonomaWorkReward?.settings?.style === 'countup'}
+                perResponseClock={currentTimerMode[getCurrentPhaseName()] === 'work'}
+                controlElapsedSeconds={workTimerDisplayElapsed}
                 totalMinutes={getCurrentPhaseTimerDuration(getCurrentPhaseName(), currentTimerMode[getCurrentPhaseName()])}
                 goldenKeyBonus={currentTimerMode[getCurrentPhaseName()] === 'play' && goldenKeysEnabledRef.current !== false ? goldenKeyBonus : 0}
                 phaseProgress={calculateTimerProgress(getCurrentPhaseName())}
                 isPaused={timerPaused}
-                elapsedSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayElapsed : workTimerDisplayElapsed}
-                remainingSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayRemaining : (sonomaWorkReward?.settings?.style === 'countup' ? 0 : workTimerDisplayRemaining)}
+                elapsedSeconds={currentTimerMode[getCurrentPhaseName()] === 'play' ? playTimerDisplayElapsed : sonomaResponseClock.elapsedSeconds}
+                remainingSeconds={currentTimerMode[getCurrentPhaseName()] === 'play'
+                  ? playTimerDisplayRemaining
+                  : Math.max(0, sonomaResponseWindowSeconds - sonomaResponseClock.elapsedSeconds)}
                 onPauseToggle={handleTimerPauseToggle}
                 lessonKey={lessonKey}
                 onTimerClick={handleTimerClick}

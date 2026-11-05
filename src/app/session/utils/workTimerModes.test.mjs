@@ -76,11 +76,27 @@ test('Webb does not earn a response timer reward when pacing is disabled', () =>
   assert.equal(getWorkTimerRewardStatus(reward).eligible, false);
 });
 
-test('Sonoma count-up display uses the active work-phase ticker, not the delayed learner response clock', () => {
+test('Sonoma displays only the current exchange clock while retaining phase evidence', () => {
   const session = readFileSync(new URL('../v2/SessionPageV2.jsx', import.meta.url), 'utf8');
   assert.match(session, /countUp=\{currentTimerMode\[getCurrentPhaseName\(\)\] === 'work'/);
-  assert.match(session, /elapsedSeconds=\{currentTimerMode\[getCurrentPhaseName\(\)\] === 'play' \? playTimerDisplayElapsed : workTimerDisplayElapsed\}/);
-  assert.doesNotMatch(session, /sonomaResponseElapsedDisplay/, 'work clock must tick during teacher sentences');
+  assert.match(session, /perResponseClock=\{currentTimerMode\[getCurrentPhaseName\(\)\] === 'work'/);
+  assert.match(session, /elapsedSeconds=\{currentTimerMode\[getCurrentPhaseName\(\)\] === 'play' \? playTimerDisplayElapsed : sonomaResponseClock\.elapsedSeconds\}/);
+  assert.match(session, /controlElapsedSeconds=\{workTimerDisplayElapsed\}/, 'facilitator controls still use authoritative work timing');
+  assert.match(session, /if \(!data\.waitingForNext\) sonomaResponseClock\.reset\(\)/, 'spoken sentences reset immediately');
+  assert.doesNotMatch(session, /sonomaResponseElapsedDisplay/, 'the delayed pacing clock must not own the display');
+});
+
+test('Webb displays per-response time even between learner turns', () => {
+  const page = readFileSync(new URL('../webb/page.jsx', import.meta.url), 'utf8');
+  assert.match(page, /elapsedSeconds=\{webbResponseClock\.elapsedSeconds\}/);
+  assert.match(page, /remainingSeconds=\{webbResponseWindowRemainingSeconds\}/);
+  assert.match(page, /webbResponseClock\.reset\(\)/);
+  assert.doesNotMatch(page, /responsePromptElapsedSeconds/);
+});
+
+test('session display never overwrites TimerService phase persistence', () => {
+  const timer = readFileSync(new URL('../components/SessionTimer.jsx', import.meta.url), 'utf8');
+  assert.match(timer, /if \(!isPureDisplayMode && startTime !== null && hasInitialized\)/);
 });
 
 test('Webb response clock arms on presentation rather than waiting until speech finishes', () => {
