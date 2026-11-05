@@ -9,6 +9,7 @@ import { isTranscriptTapGesture } from "./sonomaTranscriptGesture.mjs";
 import dockStyles from "./SonomaKeyboardDock.module.css";
 import { isSonomaSubmitTarget } from "./sonomaAnswerField.mjs";
 import { insertSlateMathResult } from "../lib/slateMathDraft.mjs";
+import { caretContrastColor, measureSonomaTextCaret, visibleCaretIndicator } from "./sonomaCaretIndicator.mjs";
 import {
   SPACE_TRACKPAD_HOLD_MS,
   isShortSpaceTap,
@@ -65,7 +66,50 @@ export function SonomaKeyboardProvider({ children }) {
   const spaceGestureRef = useRef(null);
   const suppressSpaceClickRef = useRef(false);
   const [spaceTrackpadActive, setSpaceTrackpadActive] = useState(false);
+  const [caretIndicator, setCaretIndicator] = useState(null);
+  const caretIndicatorTimerRef = useRef(null);
   activeRef.current = active;
+
+  const clearCaretIndicator = useCallback(() => {
+    if (caretIndicatorTimerRef.current !== null) window.clearTimeout(caretIndicatorTimerRef.current);
+    caretIndicatorTimerRef.current = null;
+    setCaretIndicator(null);
+  }, []);
+
+  const showCaretIndicator = useCallback((field, caret) => {
+    if (!field?.isConnected || field.dataset?.sonomaPin !== undefined) return;
+    if (caretIndicatorTimerRef.current !== null) window.clearTimeout(caretIndicatorTimerRef.current);
+    caretIndicatorTimerRef.current = null;
+    let point = measureSonomaTextCaret(field, caret);
+    if (!point) return;
+    const rect = field.getBoundingClientRect();
+    // If selection moved into a scrolled part of the field, reveal its row.
+    if (field.tagName === "TEXTAREA") {
+      const top = rect.top + 5;
+      const bottom = rect.bottom - 5;
+      if (point.y < top) field.scrollTop -= top - point.y;
+      else if (point.y + point.height > bottom) field.scrollTop += point.y + point.height - bottom;
+      point = measureSonomaTextCaret(field, caret) || point;
+    } else if (field.tagName === "INPUT") {
+      if (point.x < rect.left + 6) field.scrollLeft -= rect.left + 6 - point.x;
+      else if (point.x > rect.right - 6) field.scrollLeft += point.x - (rect.right - 6);
+      point = measureSonomaTextCaret(field, caret) || point;
+    }
+    const measured = visibleCaretIndicator(point, rect, {
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      keyboardTop: panelRef.current?.getBoundingClientRect().top ?? Infinity,
+    });
+    setCaretIndicator(measured ? { ...measured, color: caretContrastColor(window.getComputedStyle(field).backgroundColor) } : null);
+  }, []);
+
+  const lingerCaretIndicator = useCallback(() => {
+    if (caretIndicatorTimerRef.current !== null) window.clearTimeout(caretIndicatorTimerRef.current);
+    caretIndicatorTimerRef.current = window.setTimeout(() => {
+      caretIndicatorTimerRef.current = null;
+      setCaretIndicator(null);
+    }, 900);
+  }, []);
 
   const cancelSpaceGesture = useCallback(() => {
     const gesture = spaceGestureRef.current;
@@ -80,11 +124,13 @@ export function SonomaKeyboardProvider({ children }) {
   useEffect(() => () => {
     const gesture = spaceGestureRef.current;
     if (gesture?.holdTimer) window.clearTimeout(gesture.holdTimer);
+    if (caretIndicatorTimerRef.current !== null) window.clearTimeout(caretIndicatorTimerRef.current);
     spaceGestureRef.current = null;
   }, []);
 
   const close = useCallback(() => {
     cancelSpaceGesture();
+    clearCaretIndicator();
     // Never retain a PIN's sensitive getValue callback as the last keyboard entry.
     lastKeyboardEntryRef.current = activeRef.current?.layout === "pin" ? null : activeRef.current;
     lastOutsideInputRef.current = null;
@@ -92,7 +138,7 @@ export function SonomaKeyboardProvider({ children }) {
     setActive(null);
     setShift(false);
     setKeyboardHeight(0);
-  }, [cancelSpaceGesture]);
+  }, [cancelSpaceGesture, clearCaretIndicator]);
   useEffect(() => {
     if (lastPathnameRef.current === pathname) return;
     lastPathnameRef.current = pathname;
@@ -106,6 +152,7 @@ export function SonomaKeyboardProvider({ children }) {
 
   const open = useCallback((config) => {
     cancelSpaceGesture();
+    clearCaretIndicator();
     // Desktop inputs open the keyboard only after an explicit keyboard toggle,
     // or for the existing Math workspace; touch behavior stays automatic.
     if (!isTouchScreen() && !activeRef.current && !(workspaceDock && config?.layout === "math")) return;
@@ -114,7 +161,7 @@ export function SonomaKeyboardProvider({ children }) {
     else if (field?.isConnected && !panelRef.current?.contains(field)) lastOutsideInputRef.current = config;
     setActive({ ...config, theme: config?.theme || activeRef.current?.theme });
     setShift(false);
-  }, [workspaceDock, cancelSpaceGesture]);
+  }, [workspaceDock, cancelSpaceGesture, clearCaretIndicator]);
   // The PIN gate is a DOM dialog, not a React component. It requests this
   // application-owned keyboard through an event without exposing the PIN.
   useEffect(() => {
@@ -201,6 +248,16 @@ export function SonomaKeyboardProvider({ children }) {
     return () => { document.documentElement.style.removeProperty("--sonoma-keyboard-height"); };
   }, [keyboardHeight]);
 
+  // The normal text insertion caret needs an explicit high-contrast color.
+  // PINs retain the browser's native, masked-field presentation.
+  useEffect(() => {
+    const field = active?.ref?.current;
+    if (!field?.isConnected || active?.layout === "pin" || field.dataset?.sonomaPin !== undefined) return;
+    const previous = field.style.caretColor;
+    field.style.caretColor = caretContrastColor(window.getComputedStyle(field).backgroundColor);
+    return () => { field.style.caretColor = previous; };
+  }, [active]);
+
   // A route change may remove the input that previously owned the keyboard.
   useEffect(() => {
     if (!workspaceDock && active?.ref?.current && !active.ref.current.isConnected) close();
@@ -210,6 +267,7 @@ export function SonomaKeyboardProvider({ children }) {
   // previous tab and restore a connected input, if one is still available.
   const toggleKeyboard = useCallback((theme, preferredEntry) => {
     cancelSpaceGesture();
+    clearCaretIndicator();
     if (activeRef.current && (!preferredEntry || activeRef.current.ref?.current === preferredEntry.ref?.current)) { close(); return; }
     // An explicit toggle can open the shared keyboard on desktop or touch.
     const last = lastKeyboardEntryRef.current;
@@ -228,7 +286,7 @@ export function SonomaKeyboardProvider({ children }) {
     }
     setActive(entry);
     setShift(false);
-  }, [close, workspaceDock, cancelSpaceGesture]);
+  }, [close, workspaceDock, cancelSpaceGesture, clearCaretIndicator]);
 
   // Transfer only the learner-entered result to the most recently selected
   // answer field. Workspace inputs inside the keyboard are never targets.
@@ -274,6 +332,7 @@ export function SonomaKeyboardProvider({ children }) {
   }, []);
 
   const press = (key) => {
+    clearCaretIndicator();
     const entry = activeRef.current;
     if (!entry) return;
     if (key === "Shift") { setShift((v) => !v); return; }
@@ -324,6 +383,7 @@ export function SonomaKeyboardProvider({ children }) {
   const handleSpacePointerDown = (event) => {
     event.preventDefault(); // Leave focus in the learner's input, not the key.
     cancelSpaceGesture();
+    clearCaretIndicator();
     suppressSpaceClickRef.current = false;
     if (!event.isPrimary || (event.pointerType === "mouse" && event.button !== 0)) return;
     const entry = activeRef.current;
@@ -361,6 +421,7 @@ export function SonomaKeyboardProvider({ children }) {
       });
       try { field.setSelectionRange(startCaret, startCaret); } catch { cancelSpaceGesture(); return; }
       setSpaceTrackpadActive(true);
+      showCaretIndicator(field, startCaret);
     }, SPACE_TRACKPAD_HOLD_MS);
   };
 
@@ -386,7 +447,16 @@ export function SonomaKeyboardProvider({ children }) {
       wrapColumns: gesture.wrapColumns,
       lineStepPx: gesture.lineStepPx,
     });
-    try { field.setSelectionRange(caret, caret); } catch { cancelSpaceGesture(); }
+    try {
+      field.setSelectionRange(caret, caret);
+      if (gesture.lastCaret !== caret) {
+        gesture.lastCaret = caret;
+        showCaretIndicator(field, caret);
+      }
+    } catch {
+      cancelSpaceGesture();
+      clearCaretIndicator();
+    }
   };
 
   const handleSpacePointerUp = (event) => {
@@ -397,7 +467,10 @@ export function SonomaKeyboardProvider({ children }) {
     // Insert directly on release for reliable iOS taps, then suppress the
     // synthetic click that follows so a tap never produces two spaces.
     suppressSpaceClickRef.current = true;
+    const wasTrackpad = gesture.mode === "trackpad";
     cancelSpaceGesture();
+    if (wasTrackpad) lingerCaretIndicator();
+    else clearCaretIndicator();
     if (shouldInsertSpace) press("Space");
   };
 
@@ -406,6 +479,7 @@ export function SonomaKeyboardProvider({ children }) {
     if (!gesture || gesture.pointerId !== event.pointerId) return;
     suppressSpaceClickRef.current = true;
     cancelSpaceGesture();
+    clearCaretIndicator();
   };
 
   const handleSpaceClick = (event) => {
@@ -427,6 +501,18 @@ export function SonomaKeyboardProvider({ children }) {
   return (
     <KeyboardContext.Provider value={{ open, close, toggleKeyboard, insertMathResult, canUseMathResult, active, keyboardHeight, setWorkspaceDock, workspacePortal, closeForInput }}>
       {children}
+      {active && caretIndicator && (
+        <div data-sonoma-caret-indicator aria-hidden="true" style={{
+          position:"fixed", left:caretIndicator.left, top:caretIndicator.top, width:4,
+          height:caretIndicator.height, borderRadius:3, pointerEvents:"none",
+          background:caretIndicator.color, zIndex:2147483647,
+          boxShadow:"0 0 0 2px rgba(255,255,255,.96), 0 0 0 3px rgba(15,23,42,.55)",
+        }}>
+          <span style={{position:"absolute", left:-4, top:-3, width:12, height:7,
+            borderRadius:5, background:caretIndicator.color,
+            boxShadow:"0 0 0 2px rgba(255,255,255,.96)"}} />
+        </div>
+      )}
       {active && (
         <div ref={panelRef} data-sonoma-keyboard role="group" aria-label="Sonoma on-screen keyboard" style={{ position:"fixed", bottom:0, left:0, right:0, zIndex:2147483646, background:active?.theme?.background || (workspaceVisible ? "#1e293b" : "#e8e8eb"), color:active?.theme?.color || (workspaceVisible ? "#e2e8f0" : "#111827"), padding:"8px max(8px, env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) max(8px, env(safe-area-inset-left))", boxShadow:"0 -5px 24px #0003", touchAction:"manipulation" }}>
           <div className={workspaceVisible ? dockStyles.layout : undefined}>
