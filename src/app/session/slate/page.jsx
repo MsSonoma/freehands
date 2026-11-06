@@ -45,6 +45,8 @@ import {
 import SlateReviewExperience from './SlateReviewExperience'
 import SlateLiftoffExperience from './SlateLiftoffExperience'
 import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
+import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
+import { startSlateVideoDuringSpeech, requestSlateSpeechSource } from '@/app/lib/slateMediaRecovery.mjs'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { STAGE_6_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js'
 import { buildItemIdentity } from '@/app/lib/masteryEvidence/identity.js'
@@ -357,34 +359,47 @@ const tfBtnBase = {
 
 // --- TTS helper ---------------------------------------------------------------
 
-async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef, muted = false, teacher = 'slate') {
+const slateAudioOwners = new WeakMap()
+const slateVideoStops = new WeakMap()
+
+async function playSlateAudio(text, audioEl, videoEl, onDone, isSpeakingRef, muted = false, teacher = 'slate', onFailure = null, cachedSrc = '') {
   if (!text || !audioEl) { onDone?.(); return }
+  const owner = Symbol('slate-speech')
+  const previousStop = slateVideoStops.get(audioEl)
+  previousStop?.()
+  slateVideoStops.delete(audioEl)
+  try { audioEl.pause() } catch {}
+  slateAudioOwners.set(audioEl, owner)
+  const ownsClip = () => slateAudioOwners.get(audioEl) === owner
   if (isSpeakingRef) isSpeakingRef.current = true
-  const config = reviewTeacherConfig(teacher)
+  let result = 'unavailable'
+  let src = cachedSrc
   try {
-    const res = await fetch(config.tts, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-    })
-    if (!res.ok) { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.(); return }
-    const { audio } = await res.json()
-    if (!audio) { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.(); return }
-    audioEl.pause()
-    audioEl.src = audio.startsWith('data:') ? audio : `data:audio/mp3;base64,${audio}`
+    if (!src) {
+      src = await requestSlateSpeechSource(reviewTeacherConfig(teacher).tts, text)
+      if (!ownsClip()) return
+    }
+    if (!ownsClip()) return
+    audioEl.src = src
     audioEl.muted = muted
-    if (videoEl) { try { videoEl.play().catch(() => {}) } catch {} }
-    audioEl.onended = () => {
-      if (isSpeakingRef) isSpeakingRef.current = false
-      if (videoEl) { try { videoEl.pause() } catch {} }
-      onDone?.()
+    slateVideoStops.set(audioEl, startSlateVideoDuringSpeech(videoEl))
+    // Cached replay calls this synchronously from the user's tap, without
+    // waiting for another fetch and losing browser audio activation.
+    result = await playSlateSpeechUntilEnd(audioEl)
+    if (ownsClip() && !muted && ['unavailable', 'error', 'stalled'].includes(result)) {
+      onFailure?.({ text, src: result === 'error' ? '' : src })
     }
-    audioEl.onerror = () => {
+  } catch {
+    if (ownsClip() && !muted) onFailure?.({ text, src: '' })
+  } finally {
+    if (ownsClip()) {
+      const stop = slateVideoStops.get(audioEl)
+      slateVideoStops.delete(audioEl)
+      stop?.()
       if (isSpeakingRef) isSpeakingRef.current = false
-      onDone?.()
+      if (result !== 'pause' && result !== 'abort') onDone?.()
     }
-    audioEl.play().catch(() => { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.() })
-  } catch { if (isSpeakingRef) isSpeakingRef.current = false; onDone?.() }
+  }
 }
 
 // --- Main inner component ----------------------------------------------------
@@ -457,6 +472,7 @@ function SlateDrillInner() {
   const [userAnswer, setUserAnswer] = useState('')
   const [lastResult, setLastResult] = useState(null)
   const [soundOn, setSoundOn] = useState(true)
+  const [voiceRetryNeeded, setVoiceRetryNeeded] = useState(false)
   const [slateMusicMuted, setSlateMusicMuted] = useState(false)
   const [slateMusicVolume, setSlateMusicVolume] = useState(SLATE_MUSIC_DEFAULT_VOLUME)
   const [slateMusicVolumeOpen, setSlateMusicVolumeOpen] = useState(false)
@@ -518,12 +534,38 @@ function SlateDrillInner() {
   const timerInterval = useRef(null)
   const feedbackTimeout = useRef(null)
   const audioEl = useRef(null)
+  const voiceReplayRef = useRef(null)
+  const pendingDrillSpeechRef = useRef(null)
   const inputEl = useRef(null)
   const slateVideoRef = useRef(null)
   const slateIsSpeakingRef = useRef(false)
   const isJudgingRef = useRef(false)
   const consecutiveTimeoutsRef = useRef(0)
   const settingsRef = useRef(DEFAULT_SLATE_SETTINGS)
+
+  const rememberVoiceRetry = useCallback((clip) => {
+    if (!soundRef.current) return
+    voiceReplayRef.current = clip
+    setVoiceRetryNeeded(true)
+  }, [])
+
+  const playDrillSpeech = useCallback((text, onDone = null) => {
+    if (!audioEl.current || !slateVideoRef.current) return false
+    voiceReplayRef.current = null
+    setVoiceRetryNeeded(false)
+    void playSlateAudio(text, audioEl.current, slateVideoRef.current, onDone,
+      slateIsSpeakingRef, !soundRef.current, reviewTeacherId, rememberVoiceRetry)
+    return true
+  }, [rememberVoiceRetry, reviewTeacherId])
+
+  const retryDrillSpeech = useCallback(() => {
+    const clip = voiceReplayRef.current
+    if (!clip || !soundRef.current || !audioEl.current || !slateVideoRef.current) return
+    voiceReplayRef.current = null
+    setVoiceRetryNeeded(false)
+    void playSlateAudio(clip.text, audioEl.current, slateVideoRef.current, null,
+      slateIsSpeakingRef, false, reviewTeacherId, rememberVoiceRetry, clip.src)
+  }, [rememberVoiceRetry, reviewTeacherId])
 
   // Keep fast refs in sync
   useEffect(() => { soundRef.current = soundOn }, [soundOn])
@@ -838,7 +880,13 @@ function SlateDrillInner() {
   useEffect(() => () => {
     clearInterval(timerInterval.current)
     clearTimeout(feedbackTimeout.current)
-    if (audioEl.current) { audioEl.current.pause(); audioEl.current.src = '' }
+    const audio = audioEl.current
+    if (audio) {
+      slateAudioOwners.delete(audio)
+      slateVideoStops.get(audio)?.()
+      slateVideoStops.delete(audio)
+      try { audio.pause(); audio.src = '' } catch {}
+    }
   }, [])
 
   // Redirect to the canonical learner home when in list phase with no resume offer.
@@ -962,13 +1010,9 @@ function SlateDrillInner() {
       setSecondsLeft(settingsRef.current.questionSecs)
       phaseRef.current = 'asking'
       setPagePhase('asking')
+      // Let React mount the video and audio elements before first playback.
+      pendingDrillSpeechRef.current = { greeting: pick(reviewTeacherDialogue(reviewTeacherId).greeting), question: q.question }
       setTimeout(() => inputEl.current?.focus?.(), 80)
-      setTimeout(() => {
-        const m = !soundRef.current
-        playSlateAudio(pick(reviewTeacherDialogue(reviewTeacherId).greeting), audioEl.current, slateVideoRef.current, () => {
-          playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
-        }, slateIsSpeakingRef, m, reviewTeacherId)
-      }, 120)
     }
   }, [recordQuestionPresented, reviewTeacherId, routeLearnerId, routeOccurrenceId, routeRunPurpose])
 
@@ -1069,7 +1113,7 @@ function SlateDrillInner() {
     phaseRef.current = 'asking'
     setPagePhase('asking')
     setTimeout(() => inputEl.current?.focus?.(), 80)
-    if (!skipAudio) setTimeout(() => playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId), 120)
+    pendingDrillSpeechRef.current = skipAudio ? null : { question: q.question }
   }, [recordQuestionPresented, reviewTeacherId])
 
   // Start / restart the drill
@@ -1088,15 +1132,26 @@ function SlateDrillInner() {
     setTxStatus(null)
     const q = advanceDeck()
     if (q) {
-      showQuestion(q, true) // skipAudio — we chain greeting → question ourselves
-      setTimeout(() => {
-        const m = !soundRef.current
-        playSlateAudio(pick(reviewTeacherDialogue(reviewTeacherId).greeting), audioEl.current, slateVideoRef.current, () => {
-          playSlateAudio(q.question, audioEl.current, slateVideoRef.current, undefined, slateIsSpeakingRef, !soundRef.current, reviewTeacherId)
-        }, slateIsSpeakingRef, m, reviewTeacherId)
-      }, 120)
+      showQuestion(q, true) // Greeting and question are sequenced after media mounts.
+      pendingDrillSpeechRef.current = { greeting: pick(reviewTeacherDialogue(reviewTeacherId).greeting), question: q.question }
     }
   }, [advanceDeck, reviewTeacherId, showQuestion])
+
+  useEffect(() => {
+    if (pagePhase !== 'asking' || !audioEl.current || !slateVideoRef.current) return
+    const pending = pendingDrillSpeechRef.current
+    if (!pending || !currentQ || pending.question !== currentQ.question) return
+    pendingDrillSpeechRef.current = null
+    if (pending.greeting) {
+      playDrillSpeech(pending.greeting, () => {
+        if (phaseRef.current === 'asking' && currentQRef.current?.question === pending.question) {
+          playDrillSpeech(pending.question)
+        }
+      })
+    } else {
+      playDrillSpeech(pending.question)
+    }
+  }, [pagePhase, currentQ, playDrillSpeech])
 
   const recordSlateResponse = useCallback(async ({ q, correct, timeout, rawAnswer, correctAnswer }) => {
     const client = evidenceClientRef.current
@@ -2147,6 +2202,10 @@ ${rows}
               const next = !v
               soundRef.current = next
               if (audioEl.current) audioEl.current.muted = !next
+              if (!next) {
+                voiceReplayRef.current = null
+                setVoiceRetryNeeded(false)
+              }
               return next
             })}
             title={soundOn ? 'Mute voice' : 'Unmute voice'}
@@ -2154,6 +2213,10 @@ ${rows}
           >
             {soundOn ? '🔊' : '🔇'}
           </button>
+          {voiceRetryNeeded && soundOn && <button type="button" onClick={retryDrillSpeech}
+            aria-label="Replay Mr. Slate's voice" style={{ ...themedSoundBtn, color: reviewDesign.accent, fontWeight: 800 }}>
+            REPLAY VOICE
+          </button>}
           <button onClick={exitToLessons} style={themedDangerBtn}>EXIT</button>
         </div>
       </div>

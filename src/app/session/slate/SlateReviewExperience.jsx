@@ -8,6 +8,8 @@ import { actOnFollowUp, getFollowUpRun } from '@/app/lib/followUpsClient'
 import { normalizeReviewTeacher, reviewTeacherConfig } from '@/app/lib/reviewTeacher.js'
 import { reviewTeacherDesign } from '@/app/lib/reviewTeacherDesign.mjs'
 import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
+import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
+import { startSlateVideoDuringSpeech, requestSlateSpeechSource } from '@/app/lib/slateMediaRecovery.mjs'
 
 function reviewLabel(reviewType) {
   if (reviewType === 'weekly_review') return 'WEEKLY REVIEW'
@@ -23,13 +25,6 @@ function spokenQuestion(content = {}) {
   return `${question} ${spokenChoices}`
 }
 
-function audioSource(value) {
-  const audio = String(value || '').trim()
-  if (!audio) return ''
-  if (/^(data:|blob:|https?:)/i.test(audio)) return audio
-  return `data:audio/mp3;base64,${audio}`
-}
-
 export default function SlateReviewExperience({ runId }) {
   const router = useRouter()
   const sonomaKeyboard = useSonomaKeyboard()
@@ -40,10 +35,13 @@ export default function SlateReviewExperience({ runId }) {
   const [error, setError] = useState('')
   const [busy, setBusy] = useState(false)
   const [started, setStarted] = useState(false)
+  const [voiceRetryNeeded, setVoiceRetryNeeded] = useState(false)
   const presentingRef = useRef(null)
   const spokenItemRef = useRef('')
   const videoRef = useRef(null)
   const audioRef = useRef(null)
+  const voiceRetryRef = useRef(null)
+  const videoStopRef = useRef(null)
   const speechGenerationRef = useRef(0)
 
   const teacher = normalizeReviewTeacher(state?.run?.instructional_teacher)
@@ -52,54 +50,48 @@ export default function SlateReviewExperience({ runId }) {
 
   const stopSpeech = useCallback(() => {
     speechGenerationRef.current += 1
-    try {
-      if (audioRef.current) {
-        audioRef.current.pause()
-        audioRef.current.onended = null
-        audioRef.current.onerror = null
-      }
-    } catch {}
+    try { audioRef.current?.pause() } catch {}
     audioRef.current = null
-    try { videoRef.current?.pause?.() } catch {}
+    videoStopRef.current?.()
+    videoStopRef.current = null
   }, [])
 
-  const speakTeacher = useCallback(async (text) => {
+  const speakTeacher = useCallback(async (text, cachedSrc = '') => {
     const spoken = String(text || '').trim()
     if (!spoken) return
     stopSpeech()
     const generation = speechGenerationRef.current
+    voiceRetryRef.current = null
+    setVoiceRetryNeeded(false)
+    const queueRetry = (src = '') => {
+      if (speechGenerationRef.current !== generation) return
+      voiceRetryRef.current = { text: spoken, src }
+      setVoiceRetryNeeded(true)
+    }
     try {
-      const response = await fetch(teacherConfig.tts, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: spoken }),
-      })
-      if (!response.ok || speechGenerationRef.current !== generation) {
-        try { videoRef.current?.pause?.() } catch {}
-        return
+      let src = cachedSrc
+      if (!src) {
+        src = await requestSlateSpeechSource(teacherConfig.tts, spoken)
       }
-      const payload = await response.json().catch(() => ({}))
-      const src = audioSource(payload?.audio)
-      if (!src || speechGenerationRef.current !== generation) {
-        try { videoRef.current?.pause?.() } catch {}
-        return
+      if (speechGenerationRef.current !== generation) return
+      const audio = new Audio(src)
+      audioRef.current = audio
+      videoStopRef.current = startSlateVideoDuringSpeech(videoRef.current)
+      // When called from REPLAY VOICE with a cached clip, play() starts in
+      // the click handler before any asynchronous TTS request.
+      const result = await playSlateSpeechUntilEnd(audio)
+      if (speechGenerationRef.current !== generation) return
+      videoStopRef.current?.()
+      videoStopRef.current = null
+      if (audioRef.current === audio) audioRef.current = null
+      if (['unavailable', 'stalled', 'error'].includes(result)) {
+        queueRetry(result === 'error' ? '' : src)
       }
-
-      await new Promise((resolve) => {
-        const audio = new Audio(src)
-        audioRef.current = audio
-        const done = () => {
-          if (audioRef.current === audio) audioRef.current = null
-          try { videoRef.current?.pause?.() } catch {}
-          resolve()
-        }
-        audio.onended = done
-        audio.onerror = done
-        try { videoRef.current?.play?.().catch?.(() => {}) } catch {}
-        audio.play().catch(done)
-      })
     } catch {
-      try { videoRef.current?.pause?.() } catch {}
+      if (speechGenerationRef.current !== generation) return
+      videoStopRef.current?.()
+      videoStopRef.current = null
+      queueRetry()
     }
   }, [stopSpeech, teacherConfig.tts])
 
@@ -137,10 +129,7 @@ export default function SlateReviewExperience({ runId }) {
       silent.volume = 0
       silent.play().catch(() => {})
     } catch {}
-    try {
-      const play = videoRef.current?.play?.()
-      play?.catch?.(() => {})
-    } catch {}
+    // The video starts with speech once the question is actually presented.
     setStarted(true)
   }
   const assist = async (kind) => {
@@ -213,7 +202,14 @@ export default function SlateReviewExperience({ runId }) {
           <div style={styles.label}>{label}</div>
         </div>
       </div>
-      <button style={styles.headerGhost} onClick={() => router.push('/learn')}>BACK</button>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+        {voiceRetryNeeded && <button type="button" style={styles.headerGhost}
+          onClick={() => {
+            const retry = voiceRetryRef.current
+            if (retry) void speakTeacher(retry.text, retry.src)
+          }}>REPLAY VOICE</button>}
+        <button style={styles.headerGhost} onClick={() => router.push('/learn')}>BACK</button>
+      </div>
     </header>
 
     <div className="review-question-layout">

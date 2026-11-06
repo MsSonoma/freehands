@@ -27,6 +27,7 @@ import { separateLiftoffTranscriptQuestion, prepareSlateLiftoffAdvance, restoreS
 import { resolveSlateLineHelpTarget, slateLineHelpHistory } from '@/app/lib/slateLineHelp.mjs'
 import { advanceSlateIntroTeaching, createSlateIntroTeaching, restoreSlateIntroTeaching } from '@/app/lib/slateIntroTeaching.mjs'
 import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
+import { startSlateVideoDuringSpeech, requestSlateSpeechSource } from '@/app/lib/slateMediaRecovery.mjs'
 import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
 import { slateMathWorkspaceResult, insertSlateMathResult } from '@/app/lib/slateMathDraft.mjs'
 import { slateScratchSpec, slateScratchUiForQuestion } from '@/app/lib/slateMathScratch.mjs'
@@ -309,6 +310,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [resultReviewError, setResultReviewError] = useState('')
   const [resultReviewsUnavailable, setResultReviewsUnavailable] = useState(false)
   const [soundOn, setSoundOn] = useState(true)
+  const [speechRecoveryNeeded, setSpeechRecoveryNeeded] = useState(false)
   const [musicMuted, setMusicMuted] = useState(false)
   const [musicVolume, setMusicVolume] = useState(SLATE_MUSIC_DEFAULT_VOLUME)
   const [musicVolumeOpen, setMusicVolumeOpen] = useState(false)
@@ -341,6 +343,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const reminderLastAtRef = useRef(0)
   const reminderSubmittedRef = useRef(false)
   const audioRef = useRef(null)
+  const speechReplayRef = useRef(null)
+  const videoStopRef = useRef(null)
   const soundOnRef = useRef(true)
   const speechRequestRef = useRef(0)
   const reminderSpeechRequestRef = useRef(0)
@@ -416,36 +420,84 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
   liftoffRef.current = liftoff
 
+  const stopVideo = useCallback(() => {
+    const stop = videoStopRef.current
+    videoStopRef.current = null
+    stop?.()
+  }, [])
+
+  const queueSpeechReplay = useCallback((text, src, requestId) => {
+    if (!componentActiveRef.current || requestId !== speechRequestRef.current) return
+    speechReplayRef.current = { text, src }
+    setSpeechRecoveryNeeded(true)
+  }, [])
+
   const speak = useCallback(async (text, { reminder = false } = {}) => {
     if (!soundOnRef.current || !text || !audioRef.current) return 'unavailable'
     const requestId = ++speechRequestRef.current
-    // Track which request owns the audio so submit only interrupts pestering.
     reminderSpeechRequestRef.current = reminder ? requestId : 0
+    stopVideo()
+    try { audioRef.current.pause() } catch {}
+    if (!reminder) {
+      speechReplayRef.current = null
+      setSpeechRecoveryNeeded(false)
+    }
     try {
-      const response = await fetch('/api/slate-tts', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
-      })
-      const body = await response.json().catch(() => null)
-      if (!response.ok || !body?.audio || !soundOnRef.current || requestId !== speechRequestRef.current) return 'unavailable'
+      const src = await requestSlateSpeechSource('/api/slate-tts', text)
+      if (!soundOnRef.current || requestId !== speechRequestRef.current) return 'unavailable'
       const audio = audioRef.current
-      if (!audio) return 'unavailable'
-      audio.pause()
-      audio.src = String(body.audio).startsWith('data:') ? body.audio : `data:audio/mp3;base64,${body.audio}`
-      try { videoRef.current?.play?.().catch(() => {}) } catch {}
+      if (!audio) {
+        if (!reminder) queueSpeechReplay(text, null, requestId)
+        return 'unavailable'
+      }
+      audio.src = src
+      audio.muted = false
+      videoStopRef.current = startSlateVideoDuringSpeech(videoRef.current)
       if (!soundOnRef.current || requestId !== speechRequestRef.current) return 'unavailable'
       const result = await playSlateSpeechUntilEnd(audio)
-      if (requestId === speechRequestRef.current) {
-        try { videoRef.current?.pause?.() } catch {}
+      if (!reminder && ['error', 'unavailable', 'stalled'].includes(result)) {
+        queueSpeechReplay(text, result === 'error' ? null : src, requestId)
       }
       return result
     } catch {
+      if (!reminder) queueSpeechReplay(text, null, requestId)
       return 'unavailable'
     } finally {
+      if (requestId === speechRequestRef.current) stopVideo()
       if (reminderSpeechRequestRef.current === requestId) reminderSpeechRequestRef.current = 0
     }
-  }, [])
+  }, [queueSpeechReplay, stopVideo])
+
+  // The cached clip is played directly inside this click, before a new async
+  // fetch can lose Safari's user gesture. Lesson and question state stay put.
+  const retrySpeech = useCallback(() => {
+    const retry = speechReplayRef.current
+    if (!retry || !soundOnRef.current) return
+    if (!retry.src) {
+      void speak(retry.text)
+      return
+    }
+    const audio = audioRef.current
+    if (!audio) return
+    const requestId = ++speechRequestRef.current
+    reminderSpeechRequestRef.current = 0
+    stopVideo()
+    try { audio.pause() } catch {}
+    audio.src = retry.src
+    audio.muted = false
+    try { audio.currentTime = 0 } catch {}
+    setSpeechRecoveryNeeded(false)
+    videoStopRef.current = startSlateVideoDuringSpeech(videoRef.current)
+    void playSlateSpeechUntilEnd(audio).then((result) => {
+      if (!componentActiveRef.current || requestId !== speechRequestRef.current) return
+      stopVideo()
+      if (['error', 'unavailable', 'stalled'].includes(result)) {
+        queueSpeechReplay(retry.text, result === 'error' ? null : retry.src, requestId)
+      } else {
+        speechReplayRef.current = null
+      }
+    })
+  }, [queueSpeechReplay, speak, stopVideo])
 
   const stopReminderSpeech = useCallback(() => {
     if (!reminderSpeechRequestRef.current ||
@@ -454,8 +506,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     speechRequestRef.current += 1
     reminderSpeechRequestRef.current = 0
     audioRef.current?.pause()
-    try { videoRef.current?.pause?.() } catch {}
-  }, [])
+    stopVideo()
+  }, [stopVideo])
 
   // Remind only while an unanswered question is actually waiting for the learner.
   // Editing earns a brief grace period, with a hard extension cap per question.
@@ -510,9 +562,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (!next) {
       speechRequestRef.current += 1
       audioRef.current?.pause()
-      try { videoRef.current?.pause?.() } catch {}
+      stopVideo()
+      speechReplayRef.current = null
+      setSpeechRecoveryNeeded(false)
     }
-  }, [])
+  }, [stopVideo])
 
   const clearMusicLongPress = useCallback(() => {
     if (musicLongPressRef.current) {
@@ -982,13 +1036,13 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     const text = String(line?.text || '').trim()
     if (!text || busy || lineHelpBusy || phase === 'test') return
     try { audioRef.current?.pause?.() } catch {}
-    try { videoRef.current?.pause?.() } catch {}
+    stopVideo()
     // A rephrased transcript line still belongs to the original explanation.
     // Keep all follow-ups on that same source so successive requests have history.
     setLineHelpTarget(resolveSlateLineHelpTarget(transcriptRef.current, line, sourceIndex))
     setLineHelpInput('')
     setLineHelpError('')
-  }, [busy, lineHelpBusy, phase])
+  }, [busy, lineHelpBusy, phase, stopVideo])
 
   const closeLineHelp = useCallback(() => {
     if (lineHelpBusy) return
@@ -1539,8 +1593,9 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       componentActiveRef.current = false
       speechRequestRef.current += 1
       try { audioRef.current?.pause?.() } catch {}
+      stopVideo()
     }
-  }, [])
+  }, [stopVideo])
 
   useEffect(() => {
     if (!['complete', 'error'].includes(phase)) return
@@ -2902,6 +2957,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             </button>
           </div>
           <button type="button" onClick={toggleSpeech} aria-pressed={!soundOn} style={{ padding: '7px 10px', cursor: 'pointer' }}>{soundOn ? 'SPEECH ON' : 'SPEECH OFF'}</button>
+          {speechRecoveryNeeded && soundOn && <button type="button" onClick={retrySpeech} aria-label="Replay Mr. Slate's voice" style={{ padding: '7px 10px', cursor: 'pointer', fontWeight: 800, color: C.accent }}>REPLAY VOICE</button>}
           <button type="button" onClick={() => void handleExit()} disabled={busy || exiting || lineHelpBusy} aria-label="Exit Mr. Slate Liftoff" style={{ padding: '7px 10px', cursor: busy || exiting || lineHelpBusy ? 'not-allowed' : 'pointer', fontWeight: 800 }}>{exiting ? 'SAVING...' : 'EXIT'}</button>
         </div>
       </header>
