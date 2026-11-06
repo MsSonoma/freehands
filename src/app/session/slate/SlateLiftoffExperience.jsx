@@ -18,6 +18,7 @@ import { getSupabaseClient } from '@/app/lib/supabaseClient.js'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { recordSlateLiftoffEvidence } from '@/app/lib/slateLiftoffClient.js'
 import { slateMathAnswersEquivalent } from '@/app/lib/slateAnswerEquivalence.mjs'
+import { postSlateJudgmentWithRetry } from '@/app/lib/slateJudgmentRetry.mjs'
 import { summarizeSlateTestResults, slateTestResultStatus } from '@/app/lib/slateTestGradeReport.mjs'
 import SlateIndependentTestReport from './SlateIndependentTestReport'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
@@ -163,7 +164,7 @@ function normalizeAnswer(value) {
   return String(value || '').trim().toLowerCase().replace(/[^\w.\-\s]/g, '').replace(/\s+/g, ' ')
 }
 
-async function judgeAssessmentItem(item, answer) {
+async function judgeAssessmentItem(item, answer, { stillCurrent = () => true, onRetry = () => {} } = {}) {
   const type = questionType(item)
   if (type === 'truefalse') {
     const correct = String(answer).trim().toLowerCase() === String(Boolean(item.answer ?? item.correct))
@@ -203,27 +204,14 @@ async function judgeAssessmentItem(item, answer) {
   if (!reasoningRequired && slateMathAnswersEquivalent(learnerAnswer, expectedCandidates, { question: prompt })) {
     return { status: 'correct', reason: 'The numerical value is equivalent to the expected value.' }
   }
-  let response
-  try {
-    response = await fetch('/api/judge-short-answer', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        question: prompt,
-        learnerAnswer,
-        expectedAnswer,
-        expectedAny,
-        requiresReasoning: reasoningRequired,
-      }),
-    })
-  } catch {
-    throw new Error('Grading is temporarily unavailable. Your answer is saved; submit it again to retry.')
-  }
-  const body = await response.json().catch(() => null)
-  if (!response.ok || !['correct', 'partial', 'incorrect'].includes(body?.status) ||
-      typeof body?.reason !== 'string' || !body.reason.trim()) {
-    throw new Error('Grading is temporarily unavailable. Your answer is saved; submit it again to retry.')
-  }
+  const body = await postSlateJudgmentWithRetry({
+    url: '/api/judge-short-answer',
+    body: { question: prompt, learnerAnswer, expectedAnswer, expectedAny, requiresReasoning: reasoningRequired },
+    isValid: (result) => ['correct', 'partial', 'incorrect'].includes(result?.status) &&
+      typeof result?.reason === 'string' && Boolean(result.reason.trim()),
+    stillCurrent,
+    onRetry,
+  })
   return { status: body.status, reason: body.reason.trim() }
 }
 
@@ -342,6 +330,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [assessmentMathPending, setAssessmentMathPending] = useState(null)
   const [assessmentMathTextLocation, setAssessmentMathTextLocation] = useState('')
   const [assessmentMathError, setAssessmentMathError] = useState('')
+  const [judgmentRetryNotice, setJudgmentRetryNotice] = useState('')
 
   const answerInputRef = useRef(null)
   const reminderActivityRef = useRef(Date.now())
@@ -2087,6 +2076,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       return
     }
     submitLockRef.current = true
+    setJudgmentRetryNotice('')
     reminderSubmittedRef.current = true
     stopReminderSpeech()
     setBusy(true)
@@ -2191,7 +2181,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             requestId: submitted.submission.requestId,
             submittedRevision: submitted.submission.submittedRevision,
           })
-          await persistLiftoffSnapshot()
+          if (!await persistLiftoffSnapshot()) throw new Error('Your math answer could not be safely saved. Please submit it again.')
         }
       } else {
         // One learner answer, whether mentally calculated, written, or copied from scratch.
@@ -2213,10 +2203,9 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
 
       if (snapshotServiceRef.current?.writesFenced) return
       const submittedState = liftoffRef.current
-      const response = await fetch('/api/slate-liftoff', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
+      const turn = await postSlateJudgmentWithRetry({
+        url: '/api/slate-liftoff',
+        body: {
           mode: 'turn', lesson, state: submittedState,
           ...(pending
             ? (pending.learnerResponse ? { learnerResponse: pending.learnerResponse } : {})
@@ -2224,11 +2213,15 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
           ...(pending?.submission
             ? { mathSession: pending.mathSession, mathSubmission: pending.submission }
             : (pending?.mathSession ? { mathSession: pending.mathSession, mathWorkingNotes: pending.mathWorkingNotes } : {})),
-        }),
+        },
+        isValid: (result) => result?.ok === true && typeof result.learnerMessage === 'string' &&
+          Boolean(result.learnerMessage.trim()) && Boolean(result.nextAction),
+        stillCurrent: () => componentActiveRef.current && !snapshotServiceRef.current?.writesFenced &&
+          liftoffRef.current?.turnNumber === submittedState.turnNumber,
+        onRetry: () => setJudgmentRetryNotice('Mr. Slate is still checking your saved answer. Retrying automatically.'),
       })
+      setJudgmentRetryNotice('')
       if (snapshotServiceRef.current?.writesFenced) return
-      const turn = await response.json().catch(() => null)
-      if (!response.ok || !turn?.ok) throw new Error(turn?.error || 'Mr. Slate could not evaluate that step.')
       if (pending?.submission && !slateMathReceiptMatches({
         receipt: turn.mathReceipt,
         pending,
@@ -2305,6 +2298,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       else if (activeMath) setMathError(cause?.message || 'Mr. Slate could not continue Liftoff. Your math work was kept.')
       else setError(cause?.message || 'Mr. Slate could not continue Liftoff.')
     } finally {
+      setJudgmentRetryNotice('')
       // A rejected/incomplete answer or completed help turn can be retried.
       // A successfully advanced turn stays silent until its next question opens.
       if (!pendingAdvanceRef.current && liftoffRef.current?.turnNumber === currentLiftoff.turnNumber) {
@@ -2409,6 +2403,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       sessionRef.current?.id === executionSessionId && assessmentIndexRef.current === submittedIndex &&
       questionText(currentAssessmentItems[submittedIndex]) === submittedQuestion
     assessmentSubmitLockRef.current = true
+    setJudgmentRetryNotice('')
     setBusy(true)
     try {
       let pending = assessmentMathPendingRef.current
@@ -2462,7 +2457,11 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
         if (!await persistLiftoffSnapshot()) throw new Error('The test response could not be safely saved yet. Please submit it again.')
       }
       if (pending?.status === 'judge') {
-        const judgment = await judgeAssessmentItem(item, pending.answer)
+        const judgment = await judgeAssessmentItem(item, pending.answer, {
+          stillCurrent: () => componentActiveRef.current && stillOwnsItem(),
+          onRetry: () => setJudgmentRetryNotice('Mr. Slate is still checking your saved answer. Retrying automatically.'),
+        })
+        setJudgmentRetryNotice('')
         if (!stillOwnsItem()) return
         pending = {
           ...pending,
@@ -2543,6 +2542,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     } catch (cause) {
       setAssessmentMathError(cause?.message || 'The independent assessment could not continue.')
     } finally {
+      setJudgmentRetryNotice('')
       setBusy(false)
       assessmentSubmitLockRef.current = false
     }
@@ -2914,6 +2914,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             />
           </div>
 
+          {judgmentRetryNotice && isAssessment && <p role="status" style={{ color: C.muted, margin: '4px 0' }}>{judgmentRetryNotice}</p>}
           {assessmentWrittenAnswerMode && (
             <form
               data-slate-test-answer-form
@@ -2993,6 +2994,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
             </div>
           )}
 
+          {judgmentRetryNotice && phase === 'active' && <p role="status" style={{ color: C.muted, margin: '4px 0' }}>{judgmentRetryNotice}</p>}
           {phase === 'active' && !introTeaching && !pendingAdvance && (
             <form data-slate-primary-answer-form onSubmit={(event) => { event.preventDefault(); void submitLiftoffAnswer() }} style={{ position: 'sticky', bottom: 0, zIndex: 20, display: 'flex', flexWrap: 'wrap', gap: 10, alignItems: 'flex-end', width: '100%', maxWidth: '100%', padding: '10px 0', background: C.bg }}>
               <WebbDictationButton

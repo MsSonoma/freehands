@@ -7,6 +7,9 @@ import { NextResponse } from 'next/server'
 import { AI_MODEL, aiModelTemperature } from '@/app/lib/aiModel'
 import { parseShortAnswerJudgment } from '@/app/lib/shortAnswerJudgment.mjs'
 
+// Semantic evaluation may need a second model attempt for truncated output.
+export const maxDuration = 60
+
 const SYSTEM = [
   'Evaluate the learner response against the ACTUAL QUESTION. This is a child learning, not reciting a model answer.',
   'Judge the central concept and factual correctness. A reference answer is an example of a good answer, NOT an exhaustive required script.',

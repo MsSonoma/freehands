@@ -10,6 +10,12 @@
     },
     "src/app/api/counselor/route.js": {
       "maxDuration": 60
+    },
+    "src/app/api/slate-liftoff/route.js": {
+      "maxDuration": 60
+    },
+    "src/app/api/judge-short-answer/route.js": {
+      "maxDuration": 60
     }
   }
 }
