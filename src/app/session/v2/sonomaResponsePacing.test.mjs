@@ -13,6 +13,10 @@ import {
   resumeSonomaResponseTurn,
   sonomaReminderForStage,
   sonomaReminderStageForElapsed,
+  sonomaPlayDeadlineStage,
+  sonomaPlayDeadlineMessage,
+  sonomaPlayDependentReminder,
+  SONOMA_PLAY_BREAK_LOST_MESSAGE,
   sonomaResponseElapsedSeconds,
 } from './sonomaResponsePacing.mjs'
 
@@ -43,6 +47,28 @@ test('paper writing grace defers normal reminder and escalation stages', () => {
   const writingReminders = [1, 2, 3, 4].map(stage => sonomaReminderForStage(stage, 'test', 'paper-writing')).join(' ')
   assert.match(writingReminders, /Next/)
   assert.doesNotMatch(writingReminders, /answer when/)
+})
+
+test('dependent countdown warnings replace normal reminders for the final ten minutes', () => {
+  assert.equal(sonomaPlayDeadlineStage(601, 1800), 0)
+  assert.equal(sonomaPlayDeadlineStage(600, 1800), 1)
+  assert.equal(sonomaPlayDeadlineStage(421, 1800), 1)
+  assert.equal(sonomaPlayDeadlineStage(420, 1800), 2)
+  assert.equal(sonomaPlayDeadlineStage(300, 1800), 3)
+  assert.equal(sonomaPlayDeadlineStage(180, 1800), 4)
+  assert.equal(sonomaPlayDeadlineStage(60, 1800), 5)
+  assert.equal(sonomaPlayDeadlineStage(0, 1800), 0)
+  assert.equal(sonomaPlayDeadlineStage(120, 120), 4, 'short work phase starts at an appropriate warning')
+  assert.match(sonomaPlayDeadlineMessage(5), /finish.*on time/i)
+  assert.equal(sonomaPlayDeadlineMessage(6), '')
+})
+
+test('dependent count-up warnings replace notification language with play consequences', () => {
+  assert.match(sonomaPlayDependentReminder(4, 'exercise'), /next play break/)
+  assert.doesNotMatch(sonomaPlayDependentReminder(4, 'exercise'), /facilitator|administrator|notify/i)
+  assert.match(sonomaPlayDependentReminder(4, 'worksheet', 'paper-writing'), /press Next/)
+  assert.match(SONOMA_PLAY_BREAK_LOST_MESSAGE, /won't be available/)
+  assert.match(SONOMA_PLAY_BREAK_LOST_MESSAGE, /other play breaks/)
 })
 
 test('blocked time is excluded from learner response elapsed time', () => {

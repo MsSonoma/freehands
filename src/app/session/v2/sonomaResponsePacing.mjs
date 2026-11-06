@@ -31,6 +31,38 @@ export const SONOMA_RESPONSE_PACING_REMINDERS = Object.freeze({
   }),
 })
 
+// When dependent play is enabled, deadline warnings replace response reminders
+// during the final ten minutes. The last warning is at one minute remaining.
+export const SONOMA_PLAY_DEADLINE_WARNINGS = Object.freeze([
+  { remainingSeconds: 600, text: "There are ten minutes or less to finish this work. Keep going so there is time for your next play break." },
+  { remainingSeconds: 420, text: "About seven minutes or less remain. I'm getting a little concerned about our time. Stay focused so we can keep your next play break." },
+  { remainingSeconds: 300, text: "Five minutes or less left. We need to make progress now to finish in time for the next play break." },
+  { remainingSeconds: 180, text: "Less than three minutes remain. I'm concerned we may run out of time for the next play break. Let's keep working." },
+  { remainingSeconds: 60, text: "About one minute or less left. We must finish this work on time to keep the next play break. Please focus on finishing." },
+])
+
+export function sonomaPlayDeadlineStage(remainingSeconds, limitSeconds) {
+  const remaining = Number(remainingSeconds)
+  const limit = Number(limitSeconds)
+  if (!Number.isFinite(remaining) || !Number.isFinite(limit) || limit <= 0 || remaining <= 0 || remaining > 600) return 0
+  // Short phases begin at their current warning stage, not an impossible ten-minute mark.
+  const index = SONOMA_PLAY_DEADLINE_WARNINGS.findLastIndex(warning => remaining <= warning.remainingSeconds)
+  return index < 0 ? 0 : index + 1
+}
+
+export function sonomaPlayDeadlineMessage(stage) {
+  return SONOMA_PLAY_DEADLINE_WARNINGS[Number(stage) - 1]?.text || ''
+}
+
+export function sonomaPlayDependentReminder(stage, phase, turnKind) {
+  if (stage === 4) return turnKind === 'paper-writing'
+    ? "Keep writing and press Next when you're finished. If we don't keep working, there won't be enough time for the next play break."
+    : "We need to keep working. If we don't, there won't be enough time for the next play break."
+  return sonomaReminderForStage(stage, phase, turnKind)
+}
+
+export const SONOMA_PLAY_BREAK_LOST_MESSAGE = "The play break after this phase won't be available. Keep working so there's time for the other play breaks."
+
 export const SONOMA_RESPONSE_ACTIVITY_SNOOZE_MS = 60000
 
 function toMillis(value) {

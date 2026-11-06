@@ -136,13 +136,17 @@ import {
   pauseSonomaResponseTurn,
   resumeSonomaResponseTurn,
   sonomaReminderForStage,
+  sonomaPlayDependentReminder,
+  sonomaPlayDeadlineStage,
+  sonomaPlayDeadlineMessage,
+  SONOMA_PLAY_BREAK_LOST_MESSAGE,
   sonomaReminderStageForElapsed,
   normalizeSonomaPaperWritingMinutes,
   SONOMA_PAPER_WRITING_PROMPT,
   sonomaResponseElapsedSeconds,
 } from './sonomaResponsePacing.mjs';
 import { createSonomaAttentionNotification, recordSonomaPacingEvent } from '@/app/lib/sonomaResponsePacingClient.js';
-import { createWorkTimerReward, restoreWorkTimerReward, recordWorkTimerStall, correctWorkTimerStall, getWorkTimerRewardStatus } from '@/app/session/utils/workTimerModes.mjs';
+import { createWorkTimerReward, restoreWorkTimerReward, recordWorkTimerStall, forfeitNextPlayBreak, nextPlayBreakForfeited, correctWorkTimerStall, getWorkTimerRewardStatus } from '@/app/session/utils/workTimerModes.mjs';
 
 const SESSION_TUTORIAL_STEPS = [
   {
@@ -4047,7 +4051,7 @@ function SessionPageV2Inner() {
       try {
         const audio = await fetchTTS(spoken);
         const live = sonomaResponseTurnRef.current;
-        if (!live || live.id !== turnId || live.reminderStage < stage || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing()) return;
+        if (!live || live.id !== turnId || (stage > 100 ? live.deadlineWarningStage !== stage - 100 : (live.reminderStage < stage || (stage > 0 && live.deadlineWarningStage > 0))) || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing()) return;
         sonomaReminderAudioActiveRef.current = { turnId, stage };
         audioEngineRef.current?.playAudio(audio || '', [spoken]).catch(() => {
           if (sonomaReminderAudioActiveRef.current?.turnId === turnId) sonomaReminderAudioActiveRef.current = null;
@@ -4060,7 +4064,8 @@ function SessionPageV2Inner() {
     const current = sonomaResponseTurnRef.current;
     if (!current || stage < 1 || stage > 4 || stage <= Number(current.reminderStage || 0)) return;
     if (sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing() || isSonomaActivitySnoozed(current, Date.now())) return;
-    const text = sonomaReminderForStage(stage, current.phase, current.turnKind);
+    const dependencyActive = playDependentOnWorkRef.current && playTimersEnabledRef.current && current.phase !== 'test';
+    const text = dependencyActive ? sonomaPlayDependentReminder(stage, current.phase, current.turnKind) : sonomaReminderForStage(stage, current.phase, current.turnKind);
     if (!text) return;
     const nowMs = Date.now();
     const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
@@ -4081,12 +4086,27 @@ function SessionPageV2Inner() {
 
   const deliverSonomaFacilitatorEscalation = useCallback(() => {
     const current = sonomaResponseTurnRef.current;
-    if (!current || current.notificationDelivered || sonomaNotificationInFlightRef.current || sonomaPacingHelpHoldRef.current) return;
+    if (!current || current.notificationDelivered || current.playBreakForfeited || sonomaNotificationInFlightRef.current || sonomaPacingHelpHoldRef.current) return;
     const nowMs = Date.now();
     if (nowMs - sonomaNotificationLastAttemptRef.current < 15000) return;
     const reminderAt = Date.parse(String(current.lastReminderAt || ''));
     if (Number(current.reminderStage || 0) < 4 || !Number.isFinite(reminderAt) || nowMs - reminderAt < 60000) return;
 
+    const dependencyActive = playDependentOnWorkRef.current && playTimersEnabledRef.current && current.phase !== 'test';
+    if (dependencyActive && sonomaWorkRewardRef.current?.settings?.style === 'countup') {
+      const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
+      let reward = recordWorkTimerStall(sonomaWorkRewardRef.current, current, elapsedSeconds);
+      reward = forfeitNextPlayBreak(reward, current.phase);
+      if (reward !== sonomaWorkRewardRef.current) commitSonomaWorkReward(reward);
+      const delivered = { ...current, reminderStage: 5, escalated: true, playBreakForfeited: true };
+      commitSonomaResponseTurn(delivered);
+      appendTranscriptLine({ text: SONOMA_PLAY_BREAK_LOST_MESSAGE, role: 'assistant', phase: current.phase, kind: 'attention_reminder' }, { immediate: true });
+      sendSonomaPacingEvent('play_break_forfeited', delivered, elapsedSeconds, { eventSuffix: 'play-break-forfeited', metadata: { reminderText: SONOMA_PLAY_BREAK_LOST_MESSAGE } });
+      speakSonomaAttentionLine(SONOMA_PLAY_BREAK_LOST_MESSAGE, delivered.id, 5);
+      return;
+    }
+    // Dependent countdown mode handles its own final ten minutes rather than notifying a facilitator.
+    if (dependencyActive && sonomaWorkRewardRef.current?.settings?.style !== 'countup') return;
     const context = getSonomaPacingContext();
     if (!context.learnerId || !context.executionSessionId || !context.browserSessionId || executionFencedRef.current) return;
     const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
@@ -4169,8 +4189,41 @@ function SessionPageV2Inner() {
     if (!sonomaResponseTurn?.id) return undefined;
     const tick = () => {
       const current = sonomaResponseTurnRef.current;
-      if (!current || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing() || current.pauseStartedAt || executionFencedRef.current) return;
+      if (!current || current.playBreakForfeited || sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing() || current.pauseStartedAt || executionFencedRef.current) return;
       const nowMs = Date.now();
+      const dependentCountdown = playDependentOnWorkRef.current && playTimersEnabledRef.current
+        && sonomaWorkRewardRef.current?.settings?.style !== 'countup' && current.phase !== 'test';
+      const workTime = dependentCountdown && timerServiceRef.current?.currentWorkPhase === current.phase
+        ? timerServiceRef.current.getWorkPhaseTime(current.phase) : null;
+      if (workTime && workTime.remaining <= 600) {
+        // Deadline messages own this window exclusively; normal response reminders and
+        // facilitator escalation must not overlap with them.
+        const stage = sonomaPlayDeadlineStage(workTime.remaining, workTime.timeLimit);
+        const reward = sonomaWorkRewardRef.current;
+        const lastStage = Number(reward?.deadlineWarningStages?.[current.phase] || 0);
+        if (stage > lastStage) {
+          const text = sonomaPlayDeadlineMessage(stage);
+          if (text) {
+            const priorAudio = sonomaReminderAudioActiveRef.current;
+            if (priorAudio?.turnId === current.id) {
+              sonomaReminderAudioActiveRef.current = null;
+              try { audioEngineRef.current?.stop?.(); } catch {}
+            }
+            const next = { ...current, deadlineWarningStage: stage };
+            commitSonomaResponseTurn(next);
+            commitSonomaWorkReward({
+              ...reward,
+              deadlineWarningStages: { ...(reward?.deadlineWarningStages || {}), [current.phase]: stage },
+            });
+            appendTranscriptLine({ text, role: 'assistant', phase: current.phase, kind: 'attention_reminder' }, { immediate: true });
+            sendSonomaPacingEvent('play_deadline_warning', next, sonomaResponseElapsedSeconds(current, nowMs), {
+              eventSuffix: `deadline:${current.phase}:${stage}`, metadata: { reminderText: text, remainingSeconds: workTime.remaining },
+            });
+            speakSonomaAttentionLine(text, next.id, 100 + stage);
+          }
+        }
+        return;
+      }
       if (isSonomaActivitySnoozed(current, nowMs)) return;
       const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
       const graceMinutes = current.turnKind === 'paper-writing'
@@ -6165,7 +6218,7 @@ function SessionPageV2Inner() {
       
       // If play-dependent-on-work is on and discussion timer expired, show overlay before comprehension.
       console.log('[WorkDependent] discussion: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + discussionOnTime);
-      if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && playDependentOnWorkRef.current && playTimersEnabledRef.current && !discussionOnTime) {
+      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && ((sonomaWorkRewardRef.current?.settings?.style !== 'countup' && !discussionOnTime) || nextPlayBreakForfeited(sonomaWorkRewardRef.current, 'discussion'))) {
         workExpiredNextPhaseRef.current = 'comprehension';
         setWorkExpiredNextPhase('comprehension');
         pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onTeachingComplete();
@@ -6370,7 +6423,7 @@ function SessionPageV2Inner() {
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
       // and show the skip-play overlay so the learner knows play is skipped.
       console.log('[WorkDependent] comprehension: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + comprehensionOnTime);
-      if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && playDependentOnWorkRef.current && playTimersEnabledRef.current && !comprehensionOnTime) {
+      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && ((sonomaWorkRewardRef.current?.settings?.style !== 'countup' && !comprehensionOnTime) || nextPlayBreakForfeited(sonomaWorkRewardRef.current, 'comprehension'))) {
         workExpiredNextPhaseRef.current = 'exercise';
         setWorkExpiredNextPhase('exercise');
         pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onComprehensionComplete();
@@ -6631,7 +6684,7 @@ function SessionPageV2Inner() {
       
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
       console.log('[WorkDependent] exercise: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + exerciseOnTime);
-      if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && playDependentOnWorkRef.current && playTimersEnabledRef.current && !exerciseOnTime) {
+      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && ((sonomaWorkRewardRef.current?.settings?.style !== 'countup' && !exerciseOnTime) || nextPlayBreakForfeited(sonomaWorkRewardRef.current, 'exercise'))) {
         workExpiredNextPhaseRef.current = 'worksheet';
         setWorkExpiredNextPhase('worksheet');
         pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onExerciseComplete();
@@ -6892,7 +6945,7 @@ function SessionPageV2Inner() {
       
       // If play-dependent-on-work is on and work timer expired, defer orchestrator
       console.log('[WorkDependent] worksheet: dependentOnWork=' + playDependentOnWorkRef.current + ' playTimersEnabled=' + playTimersEnabledRef.current + ' onTime=' + worksheetOnTime);
-      if (sonomaWorkRewardRef.current?.settings?.style !== 'countup' && playDependentOnWorkRef.current && playTimersEnabledRef.current && !worksheetOnTime) {
+      if (playDependentOnWorkRef.current && playTimersEnabledRef.current && ((sonomaWorkRewardRef.current?.settings?.style !== 'countup' && !worksheetOnTime) || nextPlayBreakForfeited(sonomaWorkRewardRef.current, 'worksheet'))) {
         workExpiredNextPhaseRef.current = 'test';
         setWorkExpiredNextPhase('test');
         pendingPhaseCompletionRef.current = () => orchestratorRef.current?.onWorksheetComplete();
@@ -11179,7 +11232,7 @@ function SessionPageV2Inner() {
       {showWorkExpiredSkipPlay && workExpiredNextPhase && (
         <PlayTimeExpiredOverlay
           isOpen={showWorkExpiredSkipPlay}
-          variant="work-expired"
+          variant={sonomaWorkReward?.settings?.style === 'countup' ? 'play-forfeited' : 'work-expired'}
           phase={workExpiredNextPhase}
           lessonKey={lessonKey}
           isPaused={timerPaused}

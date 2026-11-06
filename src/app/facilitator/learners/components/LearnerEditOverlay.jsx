@@ -807,7 +807,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 														maxWidth: 320,
 														marginTop: 4
 													}}>
-														When on, completing the work phase in time activates the play portion for the <em>next</em> phase. If the work timer runs out before the phase is finished, the next phase's play portion is skipped and a 30-second countdown leads straight into the next phase's work.
+														When on, the next phase's play break depends on the current work phase. For countdown timers, the final ten minutes use increasingly urgent play-break warnings instead of ordinary pestering. Finishing late skips the next play break. For count-up timers, inactivity warnings replace facilitator-notification warnings; reaching the final warning skips the next play break. Later breaks remain available when their work phases qualify.
 													</div>
 												)}
 												{savingPlayDependentOnWork && (

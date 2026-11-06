@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import {
-  createWorkTimerReward, restoreWorkTimerReward, recordWorkTimerStall,
+  createWorkTimerReward, restoreWorkTimerReward, recordWorkTimerStall, forfeitNextPlayBreak, nextPlayBreakForfeited,
   recordWebbWorkTurn, correctWorkTimerStall, getWorkTimerRewardStatus,
   normalizeWorkTimerSettings,
 } from './workTimerModes.mjs';
@@ -24,6 +24,18 @@ test('count-up stall threshold is inclusive and unique per response turn', () =>
   const three = recordWorkTimerStall(two, { id: 'c' }, 600);
   assert.equal(getWorkTimerRewardStatus(three).eligible, false);
 });
+
+test('dependent count-up play forfeit is per-phase, idempotent and survives resume', () => {
+  const reward = createWorkTimerReward({ sonoma_work_timer_style: 'countup' })
+  const forfeited = forfeitNextPlayBreak(reward, 'discussion')
+  assert.equal(nextPlayBreakForfeited(forfeited, 'discussion'), true)
+  assert.equal(nextPlayBreakForfeited(forfeited, 'comprehension'), false)
+  assert.equal(forfeitNextPlayBreak(forfeited, 'discussion'), forfeited)
+  assert.equal(forfeitNextPlayBreak(forfeited, 'test'), forfeited, 'test has no next play break')
+  const restored = restoreWorkTimerReward(JSON.parse(JSON.stringify(forfeited)), createWorkTimerReward({}), 'sonoma')
+  assert.equal(nextPlayBreakForfeited(restored, 'discussion'), true)
+  assert.deepEqual(restored.deadlineWarningStages, {})
+})
 
 test('facilitator correction retains source event and reason, but no longer counts it', () => {
   const reward = recordWorkTimerStall(createWorkTimerReward({ webb_stall_allowance: 0 }, 'webb'), { id: 'turn-1', stage: 'writing' }, 600);
@@ -70,6 +82,20 @@ test('Sonoma reminder intervals stay configurable without changing the two-minut
   assert.equal(sonomaReminderStageForElapsed(300, 1), 5);
   assert.equal(sonomaReminderStageForElapsed(300, 3), 1);
 });
+
+test('dependent countdown warnings preempt pestering and count-up forfeits the actual next play', () => {
+  const session = readFileSync(new URL('../v2/SessionPageV2.jsx', import.meta.url), 'utf8')
+  const deadline = session.indexOf('if (workTime && workTime.remaining <= 600)')
+  const ordinary = session.indexOf('const dueStage = sonomaReminderStageForElapsed(', deadline)
+  assert.ok(deadline > 0 && ordinary > deadline)
+  assert.match(session.slice(deadline, ordinary), /speakSonomaAttentionLine\(text, next\.id, 100 \+ stage\);[\s\S]*?return;/)
+  for (const phase of ['discussion', 'comprehension', 'exercise', 'worksheet']) {
+    assert.match(session, new RegExp("nextPlayBreakForfeited\\(sonomaWorkRewardRef\\.current, '" + phase + "'\\)"))
+  }
+  assert.match(session, /forfeitNextPlayBreak\(reward, current\.phase\)/)
+  assert.match(session, /current\.playBreakForfeited/)
+  assert.doesNotMatch(session.slice(deadline, ordinary), /createSonomaAttentionNotification/)
+})
 
 test('Webb does not earn a response timer reward when pacing is disabled', () => {
   const reward = createWorkTimerReward({ webb_response_pacing_enabled: false, webb_work_timer_style: 'countup' }, 'webb');

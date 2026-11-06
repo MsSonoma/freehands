@@ -21,7 +21,7 @@ export function normalizeWorkTimerSettings(profile = {}, teacher = 'sonoma') {
 }
 
 export function createWorkTimerReward(profile = {}, teacher = 'sonoma') {
-  return { teacher, settings: normalizeWorkTimerSettings(profile, teacher), stalls: [], corrections: [], turnTimes: [], startedAt: new Date().toISOString() };
+  return { teacher, settings: normalizeWorkTimerSettings(profile, teacher), stalls: [], corrections: [], turnTimes: [], forfeitedPlayPhases: [], deadlineWarningStages: {}, startedAt: new Date().toISOString() };
 }
 
 export function restoreWorkTimerReward(snapshot, fallback, teacher = 'sonoma') {
@@ -36,8 +36,19 @@ export function restoreWorkTimerReward(snapshot, fallback, teacher = 'sonoma') {
     stalls: Array.isArray(snapshot.stalls) ? snapshot.stalls.filter(item => item && typeof item.turnId === 'string') : [],
     corrections: Array.isArray(snapshot.corrections) ? snapshot.corrections.filter(item => item && typeof item.turnId === 'string') : [],
     turnTimes: Array.isArray(snapshot.turnTimes) ? snapshot.turnTimes.filter(item => item && typeof item.turnId === 'string') : [],
+    forfeitedPlayPhases: Array.isArray(snapshot.forfeitedPlayPhases) ? snapshot.forfeitedPlayPhases.filter(phase => ['discussion', 'comprehension', 'exercise', 'worksheet'].includes(phase)) : [],
+    deadlineWarningStages: snapshot.deadlineWarningStages && typeof snapshot.deadlineWarningStages === 'object' && !Array.isArray(snapshot.deadlineWarningStages) ? snapshot.deadlineWarningStages : {},
     startedAt: snapshot.startedAt || fallback.startedAt,
   };
+}
+
+export function forfeitNextPlayBreak(reward, phase) {
+  if (!reward || !['discussion', 'comprehension', 'exercise', 'worksheet'].includes(phase) || reward.forfeitedPlayPhases?.includes(phase)) return reward;
+  return { ...reward, forfeitedPlayPhases: [...(reward.forfeitedPlayPhases || []), phase] };
+}
+
+export function nextPlayBreakForfeited(reward, phase) {
+  return reward?.forfeitedPlayPhases?.includes(phase) === true;
 }
 
 export function recordWorkTimerStall(reward, turn, elapsedSeconds = 0) {

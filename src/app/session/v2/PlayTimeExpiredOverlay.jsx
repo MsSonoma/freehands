@@ -44,7 +44,7 @@ export default function PlayTimeExpiredOverlay({
   onStartNow,
   variant = 'play-expired',
 }) {
-  const isWorkExpired = variant === 'work-expired';
+  const isWorkExpired = variant === 'work-expired' || variant === 'play-forfeited';
   const [countdown, setCountdown] = useState(WARNING_DURATION);
   const [pausedAt, setPausedAt] = useState(null);
   const intervalRef = useRef(null);
@@ -259,7 +259,7 @@ export default function PlayTimeExpiredOverlay({
           lineHeight: 1.2,
           textShadow: '0 2px 8px rgba(0,0,0,0.4)'
         }}>
-          {isWorkExpired ? 'Work Time Ran Out!' : 'Time to Get Back to Work!'}
+          {variant === 'play-forfeited' ? 'This Play Break Is Unavailable' : isWorkExpired ? 'Work Time Ran Out!' : 'Time to Get Back to Work!'}
         </h2>
 
         {/* Explanation */}
@@ -271,7 +271,7 @@ export default function PlayTimeExpiredOverlay({
           textShadow: '0 1px 4px rgba(0,0,0,0.3)'
         }}>
           {isWorkExpired
-            ? `Work time for the ${phaseDisplay} phase ran out, so play time for the next phase is skipped. Next phase work begins shortly!`
+            ? (variant === 'play-forfeited' ? `The play break before ${phaseDisplay} is unavailable because work stalled. Keep working to protect your other play breaks. The next work phase begins shortly!` : `Work time for the previous phase ran out, so play time before ${phaseDisplay} is skipped. The next work phase begins shortly!`)
             : `Your play time is up. Don't worry\u2014you'll be able to play again as soon as you finish the ${phaseDisplay} phase!`}
         </p>
 
