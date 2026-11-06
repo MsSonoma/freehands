@@ -2,6 +2,9 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import {
   SONOMA_RESPONSE_PACING_THRESHOLDS_SECONDS,
+  SONOMA_PAPER_WRITING_DEFAULT_MINUTES,
+  SONOMA_PAPER_WRITING_PROMPT,
+  normalizeSonomaPaperWritingMinutes,
   createSonomaResponseTurn,
   isSameSonomaTurnScope,
   isSonomaActivitySnoozed,
@@ -22,6 +25,24 @@ test('response pacing thresholds progress through four reminders and a fifth esc
   assert.equal(sonomaReminderStageForElapsed(480), 4)
   assert.equal(sonomaReminderStageForElapsed(600), 5)
   assert.equal(sonomaReminderStageForElapsed(900), 5)
+})
+
+test('paper writing grace defers normal reminder and escalation stages', () => {
+  assert.equal(SONOMA_PAPER_WRITING_DEFAULT_MINUTES, 2)
+  assert.match(SONOMA_PAPER_WRITING_PROMPT, /paper.*Next/i)
+  assert.equal(sonomaReminderStageForElapsed(119, 2, 2), 0)
+  assert.equal(sonomaReminderStageForElapsed(120, 2, 2), 0)
+  assert.equal(sonomaReminderStageForElapsed(239, 2, 2), 0)
+  assert.equal(sonomaReminderStageForElapsed(240, 2, 2), 1)
+  assert.equal(sonomaReminderStageForElapsed(720, 2, 2), 5)
+  assert.equal(sonomaReminderStageForElapsed(120, 2, 0), 1)
+  assert.equal(normalizeSonomaPaperWritingMinutes(), 2)
+  assert.equal(normalizeSonomaPaperWritingMinutes('0'), 0)
+  assert.equal(normalizeSonomaPaperWritingMinutes('31'), 30)
+  assert.equal(normalizeSonomaPaperWritingMinutes('invalid'), 2)
+  const writingReminders = [1, 2, 3, 4].map(stage => sonomaReminderForStage(stage, 'test', 'paper-writing')).join(' ')
+  assert.match(writingReminders, /Next/)
+  assert.doesNotMatch(writingReminders, /answer when/)
 })
 
 test('blocked time is excluded from learner response elapsed time', () => {
@@ -55,4 +76,7 @@ test('restored question turns match the same phase and question without conflati
   assert.equal(isSameSonomaTurnScope(turn, { phase: 'comprehension', questionIndex: 2, turnKind: 'retry' }), true)
   assert.equal(isSameSonomaTurnScope(turn, { phase: 'comprehension', questionIndex: 3 }), false)
   assert.equal(isSameSonomaTurnScope(turn, { phase: 'worksheet', questionIndex: 2 }), false)
+  const writing = createSonomaResponseTurn({ phase: 'test', questionIndex: 1, turnKind: 'paper-writing', turnId: 'paper' })
+  assert.equal(isSameSonomaTurnScope(writing, { phase: 'test', questionIndex: 1, turnKind: 'question' }), false)
+  assert.equal(isSameSonomaTurnScope(writing, { phase: 'test', questionIndex: 1, turnKind: 'paper-writing' }), true)
 })

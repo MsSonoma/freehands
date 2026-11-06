@@ -25,6 +25,7 @@ import { ttsCache } from '../utils/ttsCache';
 import { buildAcceptableList, judgeTestAnswer } from './judging';
 import { summarizeSlateTestResults } from '@/app/lib/slateTestGradeReport.mjs';
 import { normalizeSavedSonomaTestAnswers } from '@/app/lib/sonomaTestGradeReport.mjs';
+import { SONOMA_PAPER_WRITING_PROMPT } from './sonomaResponsePacing.mjs';
 import { deriveCorrectAnswerText, ensureQuestionMark, formatQuestionForSpeech, isFillInBlank, isMultipleChoice, isTrueFalse } from '../utils/questionFormatting';
 
 // Intro phrases for phase start (matches V1 pacing)
@@ -175,6 +176,11 @@ export class TestPhase {
       if (this.#timerMode === 'play') {
         this.#state = 'awaiting-go';
         this.#emit('stateChange', { state: 'awaiting-go', timerMode: this.#timerMode });
+        return;
+      }
+
+      if (this.#resumeState.awaitingWriting === true) {
+        this.#showPaperWritingPrompt();
         return;
       }
 
@@ -340,12 +346,7 @@ export class TestPhase {
           timerMode: this.#timerMode, reviewIndex: this.#reviewIndex,
         },
       });
-      if (this.#answers.length >= this.#questions.length) {
-        this.#enterReview();
-      } else {
-        this.#currentQuestionIndex++;
-        this.#playCurrentQuestion();
-      }
+      this.#showPaperWritingPrompt();
     } finally {
       this.#interactionInFlight = false;
     }
@@ -403,20 +404,14 @@ export class TestPhase {
       }
     });
     
-    const nextIndex = this.#currentQuestionIndex + 1;
-    this.#currentQuestionIndex = nextIndex;
-    if (nextIndex >= this.#questions.length) {
-      this.#enterReview();
-    } else {
-      this.#playCurrentQuestion();
-    }
+    this.#showPaperWritingPrompt();
     this.#interactionInFlight = false;
   }
 
   // Public API: Recover from a stuck state (e.g. TTS/API timeout).
   // Resets to awaiting-answer so the learner can re-submit without reloading.
   recover() {
-    if (this.#state === 'complete' || this.#state === 'idle' || this.#state === 'reviewing') return;
+    if (this.#state === 'complete' || this.#state === 'idle' || this.#state === 'reviewing' || this.#state === 'awaiting-writing') return;
     this.#cancelLearnerTurnReady();
     this.#questionPlaybackToken++;
     try { this.#audioEngine.stop(); } catch {}
@@ -645,7 +640,9 @@ export class TestPhase {
 
   #emitLearnerTurnReadyIfCurrent({ playbackToken, question, questionIndex, turnKind = 'question' }) {
     if (playbackToken !== this.#questionPlaybackToken) return;
-    if (this.#state !== 'awaiting-answer' || this.#currentQuestionIndex !== questionIndex || this.#interactionInFlight) return;
+    const expectedState = turnKind === 'paper-writing' ? 'awaiting-writing' : 'awaiting-answer';
+    if (this.#state !== expectedState || this.#currentQuestionIndex !== questionIndex ||
+        (this.#interactionInFlight && turnKind !== 'paper-writing')) return;
     this.#emit('learnerTurnReady', { phase: 'test', questionIndex, itemId: question?.id || null, question, turnKind });
   }
 
@@ -659,10 +656,66 @@ export class TestPhase {
     this.#audioEngine.on('end', this.#learnerTurnAudioEndListener);
   }
 
-  // Private: Question progression
-  #advanceQuestion() {
+  // Public API: The paper-writing pause is ended only by the learner's Next button.
+  continueAfterWriting() {
+    if (this.#state !== 'awaiting-writing' || this.#interactionInFlight) return false;
+    const question = this.#questions[this.#currentQuestionIndex];
+    this.#cancelLearnerTurnReady();
+    this.#questionPlaybackToken++;
+    this.#emit('learnerTurnEnded', {
+      phase: 'test', questionIndex: this.#currentQuestionIndex,
+      itemId: question?.id || null, turnKind: 'paper-writing', reason: 'response',
+    });
+    try { this.#audioEngine.stop(); } catch {}
     this.#currentQuestionIndex++;
-    this.#playCurrentQuestion();
+    this.#emit('requestSnapshotSave', {
+      trigger: 'test-paper-next',
+      data: {
+        nextQuestionIndex: this.#currentQuestionIndex,
+        awaitingWriting: false, score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions, answers: [...this.#answers],
+        timerMode: this.#timerMode, reviewIndex: this.#reviewIndex,
+      },
+    });
+    if (this.#currentQuestionIndex >= this.#questions.length) this.#enterReview();
+    else this.#playCurrentQuestion();
+    return true;
+  }
+
+  #showPaperWritingPrompt() {
+    const questionIndex = this.#currentQuestionIndex;
+    const question = this.#questions[questionIndex];
+    if (!question) return;
+    this.#cancelLearnerTurnReady();
+    const playbackToken = ++this.#questionPlaybackToken;
+    this.#state = 'awaiting-writing';
+    this.#emit('stateChange', { state: 'awaiting-writing', timerMode: this.#timerMode });
+    this.#emit('writingPrompt', { questionIndex, question, text: SONOMA_PAPER_WRITING_PROMPT });
+    this.#emit('requestSnapshotSave', {
+      trigger: 'test-paper-writing',
+      data: {
+        nextQuestionIndex: questionIndex,
+        awaitingWriting: true, score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions, answers: [...this.#answers],
+        timerMode: this.#timerMode, reviewIndex: this.#reviewIndex,
+      },
+    });
+    try { this.#audioEngine.stop(); } catch {}
+    void (async () => {
+      try {
+        const audio = await fetchTTS(SONOMA_PAPER_WRITING_PROMPT);
+        if (playbackToken !== this.#questionPlaybackToken || this.#state !== 'awaiting-writing') return;
+        this.#armLearnerTurnReady({ playbackToken, question, questionIndex, turnKind: 'paper-writing' });
+        this.#audioEngine.playAudio(audio || '', [SONOMA_PAPER_WRITING_PROMPT]).catch(() => {
+          this.#cancelLearnerTurnReady();
+          this.#emitLearnerTurnReadyIfCurrent({ playbackToken, question, questionIndex, turnKind: 'paper-writing' });
+        });
+      } catch {
+        this.#emitLearnerTurnReadyIfCurrent({ playbackToken, question, questionIndex, turnKind: 'paper-writing' });
+      }
+    })();
   }
   
   // Private: Enter review mode

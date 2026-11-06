@@ -69,6 +69,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 	const [showDependentTooltip, setShowDependentTooltip] = useState(false);
 	const [phaseTimers, setPhaseTimers] = useState(getDefaultPhaseTimers());
 	const [sonomaWorkTimerSettings, setSonomaWorkTimerSettings] = useState({ style: 'countdown', stallAllowance: '2', reminderIntervalMin: '2' });
+	const [sonomaPaperWritingMinutes, setSonomaPaperWritingMinutes] = useState('2');
 	const [webbTimerSettings, setWebbTimerSettings] = useState({
 		style: 'countup',
 		stallAllowance: '2',
@@ -128,6 +129,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 		setPlayTimersEnabled(learner.play_timers_enabled !== false);
 		setPlayDependentOnWork(learner.play_dependent_on_work === true);
 		setPhaseTimers({ ...getDefaultPhaseTimers(), ...loadPhaseTimersForLearner(learner) });
+		setSonomaPaperWritingMinutes(String(learner.sonoma_paper_writing_min ?? 2));
 		setSonomaWorkTimerSettings({
 			style: learner.sonoma_work_timer_style === 'countup' ? 'countup' : 'countdown',
 			stallAllowance: String(learner.sonoma_stall_allowance ?? 2),
@@ -224,6 +226,7 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 				sonoma_work_timer_style: sonomaWorkTimerSettings.style === 'countup' ? 'countup' : 'countdown',
 				sonoma_stall_allowance: Math.max(0, Math.min(99, Number(sonomaWorkTimerSettings.stallAllowance || 0))),
 				sonoma_response_reminder_interval_min: Math.max(1, Math.min(30, Number(sonomaWorkTimerSettings.reminderIntervalMin || 2))),
+				sonoma_paper_writing_min: Math.max(0, Math.min(30, Math.round(Number(sonomaPaperWritingMinutes) || 0))),
 				webb_work_timer_style: webbTimerSettings.style === 'countdown' ? 'countdown' : 'countup',
 				webb_stall_allowance: Math.max(0, Math.min(99, Number(webbTimerSettings.stallAllowance || 0))),
 				webb_research_work_min: Math.max(1, Math.min(240, Number(webbTimerSettings.researchWorkMin || 30))),
@@ -1136,6 +1139,13 @@ export default function LearnerEditOverlay({ isOpen, learner, onClose, onSave, o
 						{activeTab === 'timers' && (
 							<div>
 								<WorkTimerStyleSettings teacher="sonoma" value={sonomaWorkTimerSettings} onChange={setSonomaWorkTimerSettings} />
+								<div style={{ marginBottom: 16, padding: 12, border: '1px solid #d1d5db', borderRadius: 8 }}>
+									<label htmlFor="sonoma-paper-writing-min" style={{ display: 'block', fontWeight: 700, color: '#374151', marginBottom: 6 }}>Paper writing time per Worksheet/Test question (minutes)</label>
+									<input id="sonoma-paper-writing-min" type="number" min="0" max="30" step="1"
+										value={sonomaPaperWritingMinutes} onChange={(event) => setSonomaPaperWritingMinutes(event.target.value)}
+										style={{ width: 90, border: '1px solid #9ca3af', borderRadius: 6, padding: '8px 10px', background: '#fff', color: '#111827' }} />
+									<p style={{ fontSize: 12, color: '#4b5563', marginTop: 6, marginBottom: 0 }}>Default 2 minutes. Ms. Sonoma waits for Next after each answer; reminders only begin after this extra writing time. Set 0 to start reminders normally.</p>
+								</div>
 						{/* Info note with explanation */}
 						<div style={{
 							background: '#eff6ff',

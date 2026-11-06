@@ -1,5 +1,13 @@
 // Match Mrs. Webb's default two-minute spacing for every reminder and escalation.
 export const SONOMA_RESPONSE_PACING_INTERVAL_SECONDS = 120
+export const SONOMA_PAPER_WRITING_DEFAULT_MINUTES = 2
+export const SONOMA_PAPER_WRITING_PROMPT = "Now write your answer on your paper. Press Next when you're finished."
+
+export function normalizeSonomaPaperWritingMinutes(value) {
+  if (value === null || value === undefined || value === '') return SONOMA_PAPER_WRITING_DEFAULT_MINUTES
+  const parsed = Number(value)
+  return Number.isFinite(parsed) ? Math.max(0, Math.min(30, Math.round(parsed))) : SONOMA_PAPER_WRITING_DEFAULT_MINUTES
+}
 export const SONOMA_RESPONSE_PACING_THRESHOLDS_SECONDS = Object.freeze([120, 240, 360, 480, 600])
 
 export const SONOMA_RESPONSE_PACING_REMINDERS = Object.freeze({
@@ -8,6 +16,12 @@ export const SONOMA_RESPONSE_PACING_REMINDERS = Object.freeze({
     2: "If you're stuck, tell me what you need help with. It's important that you let me know.",
     3: "We need to keep an eye on how long the lesson is taking. Let's get back to work.",
     4: "We need to get back to work. If we don't continue, I'll have to let your facilitator know.",
+  }),
+  paperWriting: Object.freeze({
+    1: "Keep writing on your paper. Press Next when you're finished.",
+    2: "If you're still writing, that's okay. Press Next as soon as you're done.",
+    3: "We need to keep moving with the lesson. Please finish writing and press Next.",
+    4: "Please finish your writing and press Next. Otherwise I'll need to let your facilitator know.",
   }),
   test: Object.freeze({
     1: "I'm still here when you're ready to answer.",
@@ -78,18 +92,25 @@ export function sonomaResponseElapsedSeconds(turn, nowMs = Date.now()) {
   return Math.max(0, Math.floor(elapsedMs / 1000))
 }
 
-export function sonomaReminderStageForElapsed(elapsedSeconds, intervalMinutes = 2) {
-  const elapsed = Math.max(0, Number(elapsedSeconds || 0))
+export function sonomaReminderStageForElapsed(elapsedSeconds, intervalMinutes = 2, graceMinutes = 0) {
+  const elapsed = Math.max(0, Number(elapsedSeconds || 0) - normalizeGraceSeconds(graceMinutes))
   const minutes = Math.max(1, Math.min(30, Number(intervalMinutes) || 2))
   const intervalSeconds = minutes * 60
   return Math.min(5, Math.max(0, Math.floor(elapsed / intervalSeconds)))
 }
 
-export function sonomaReminderForStage(stage, phase) {
+function normalizeGraceSeconds(graceMinutes) {
+  const minutes = Number(graceMinutes)
+  return Number.isFinite(minutes) ? Math.max(0, Math.min(30, minutes)) * 60 : 0
+}
+
+export function sonomaReminderForStage(stage, phase, turnKind = 'question') {
   if (!Number.isFinite(Number(stage)) || stage < 1 || stage > 4) return ''
-  const group = String(phase || '').toLowerCase() === 'test'
-    ? SONOMA_RESPONSE_PACING_REMINDERS.test
-    : SONOMA_RESPONSE_PACING_REMINDERS.standard
+  const group = turnKind === 'paper-writing'
+    ? SONOMA_RESPONSE_PACING_REMINDERS.paperWriting
+    : (String(phase || '').toLowerCase() === 'test'
+      ? SONOMA_RESPONSE_PACING_REMINDERS.test
+      : SONOMA_RESPONSE_PACING_REMINDERS.standard)
   return group[Number(stage)] || ''
 }
 
@@ -100,7 +121,10 @@ export function isSameSonomaTurnScope(turn, candidate = {}) {
   const turnIndex = Number.isFinite(Number(turn.questionIndex)) ? Number(turn.questionIndex) : null
   if (String(turn.phase || '').trim().toLowerCase() !== phase) return false
   if (phase === 'discussion') return true
-  return candidateIndex === turnIndex
+  // A question's answer turn and the following paper-writing turn are distinct,
+  // even though they refer to the same question index.
+  const paperWriting = (kind) => String(kind || '') === 'paper-writing'
+  return candidateIndex === turnIndex && paperWriting(turn.turnKind) === paperWriting(candidate.turnKind)
 }
 
 export function markSonomaLearnerActivity(turn, nowMs = Date.now()) {

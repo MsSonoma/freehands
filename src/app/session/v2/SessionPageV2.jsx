@@ -137,6 +137,8 @@ import {
   resumeSonomaResponseTurn,
   sonomaReminderForStage,
   sonomaReminderStageForElapsed,
+  normalizeSonomaPaperWritingMinutes,
+  SONOMA_PAPER_WRITING_PROMPT,
   sonomaResponseElapsedSeconds,
 } from './sonomaResponsePacing.mjs';
 import { createSonomaAttentionNotification, recordSonomaPacingEvent } from '@/app/lib/sonomaResponsePacingClient.js';
@@ -1144,6 +1146,7 @@ function SessionPageV2Inner() {
   
   // Learner profile state (REQUIRED - no defaults)
   const [learnerProfile, setLearnerProfile] = useState(null);
+  const paperWritingGraceMinutes = normalizeSonomaPaperWritingMinutes(learnerProfile?.sonoma_paper_writing_min);
   const [learnerLoading, setLearnerLoading] = useState(true);
   const [learnerError, setLearnerError] = useState(null);
   // Per-learner TTS unskippable setting
@@ -1257,7 +1260,10 @@ function SessionPageV2Inner() {
   const sonomaResponseClock = useResponseIntervalClock({
     paused: timerPaused || currentTimerMode[currentPhase === 'teaching' ? 'discussion' : currentPhase] !== 'work',
   });
-  const sonomaResponseWindowSeconds = Math.max(1, Number(sonomaWorkReward?.settings?.reminderIntervalMin ?? 2)) * 60;
+  const sonomaResponseWindowSeconds = (
+    Math.max(1, Number(sonomaWorkReward?.settings?.reminderIntervalMin ?? 2))
+    + (sonomaResponseTurn?.turnKind === 'paper-writing' ? paperWritingGraceMinutes : 0)
+  ) * 60;
   // Resume can restore a waiting learner turn without replaying its question.
   // Restart the small visible clock locally rather than displaying a stale
   // phase-long interval from before the refresh.
@@ -4055,7 +4061,7 @@ function SessionPageV2Inner() {
     const current = sonomaResponseTurnRef.current;
     if (!current || stage < 1 || stage > 4 || stage <= Number(current.reminderStage || 0)) return;
     if (sonomaPacingBlockedRef.current || sonomaPacingHelpHoldRef.current || isMicrophoneCapturing() || isSonomaActivitySnoozed(current, Date.now())) return;
-    const text = sonomaReminderForStage(stage, current.phase);
+    const text = sonomaReminderForStage(stage, current.phase, current.turnKind);
     if (!text) return;
     const nowMs = Date.now();
     const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
@@ -4168,7 +4174,10 @@ function SessionPageV2Inner() {
       const nowMs = Date.now();
       if (isSonomaActivitySnoozed(current, nowMs)) return;
       const elapsedSeconds = sonomaResponseElapsedSeconds(current, nowMs);
-      const dueStage = sonomaReminderStageForElapsed(elapsedSeconds, sonomaWorkRewardRef.current?.settings?.reminderIntervalMin ?? 2);
+      const graceMinutes = current.turnKind === 'paper-writing'
+        ? normalizeSonomaPaperWritingMinutes(learnerProfileRef.current?.sonoma_paper_writing_min)
+        : 0;
+      const dueStage = sonomaReminderStageForElapsed(elapsedSeconds, sonomaWorkRewardRef.current?.settings?.reminderIntervalMin ?? 2, graceMinutes);
       const deliveredStage = Number(current.reminderStage || 0);
       if (dueStage <= deliveredStage && !(deliveredStage >= 5 && !current.notificationDelivered)) return;
       if (dueStage >= 5) {
@@ -6763,7 +6772,8 @@ function SessionPageV2Inner() {
         nextQuestionIndex: forceFresh ? 0 : (savedWorksheet?.nextQuestionIndex ?? savedWorksheet?.questionIndex ?? 0),
         score: forceFresh ? 0 : (savedWorksheet?.score || 0),
         answers: forceFresh ? [] : (savedWorksheet?.answers || []),
-        timerMode: forceFresh ? 'play' : (savedWorksheet?.timerMode || 'play')
+        timerMode: forceFresh ? 'play' : (savedWorksheet?.timerMode || 'play'),
+        awaitingWriting: !forceFresh && savedWorksheet?.awaitingWriting === true
       });
     }
     
@@ -6777,7 +6787,8 @@ function SessionPageV2Inner() {
         nextQuestionIndex: savedWorksheet.nextQuestionIndex ?? savedWorksheet.questionIndex ?? 0,
         score: savedWorksheet.score || 0,
         answers: savedWorksheet.answers || [],
-        timerMode: savedWorksheet.timerMode || 'work'
+        timerMode: savedWorksheet.timerMode || 'work',
+        awaitingWriting: savedWorksheet.awaitingWriting === true
       } : null
     });
     
@@ -6807,6 +6818,12 @@ function SessionPageV2Inner() {
       setLastWorksheetFeedback(null);
     });
     
+    phase.on('writingPrompt', (data) => {
+      sonomaKeyboard.close();
+      sonomaResponseClock.reset();
+      appendTranscriptLine({ text: data.text || SONOMA_PAPER_WRITING_PROMPT, role: 'assistant', phase: 'worksheet' }, { immediate: true });
+    });
+
     phase.on('questionReady', (data) => {
       setWorksheetState('awaiting-answer');
       addEvent('â“ Fill in the blank...');
@@ -7052,7 +7069,8 @@ function SessionPageV2Inner() {
         score: forceFresh ? 0 : (savedTest?.score || 0),
         answers: restoreAnswers,
         timerMode: forceFresh ? 'play' : (savedTest?.timerMode || 'play'),
-        reviewIndex: restoreReviewIndex
+        reviewIndex: restoreReviewIndex,
+        awaitingWriting: savedTest?.awaitingWriting === true
       });
     }
 
@@ -7067,7 +7085,8 @@ function SessionPageV2Inner() {
         score: savedTest.score || 0,
         answers: restoreAnswers,
         timerMode: savedTest.timerMode || 'work',
-        reviewIndex: restoreReviewIndex
+        reviewIndex: restoreReviewIndex,
+        awaitingWriting: savedTest.awaitingWriting === true
       } : null
     });
     
@@ -7098,6 +7117,12 @@ function SessionPageV2Inner() {
       setTestAnswer('');
     });
     
+    phase.on('writingPrompt', (data) => {
+      sonomaKeyboard.close();
+      sonomaResponseClock.reset();
+      appendTranscriptLine({ text: data.text || SONOMA_PAPER_WRITING_PROMPT, role: 'assistant', phase: 'test' }, { immediate: true });
+    });
+
     phase.on('questionReady', (data) => {
       setTestState('awaiting-answer');
       addEvent('â“ Answer the test question...');
@@ -9099,8 +9124,8 @@ function SessionPageV2Inner() {
                 Q {exerciseCurrentQuestionIndex + 1}/{exerciseTotalQuestions}
               </div>
             )}
-            {((currentPhase === 'worksheet' && worksheetState === 'awaiting-answer') ||
-              (currentPhase === 'test' && testState === 'awaiting-answer')) && (
+            {((currentPhase === 'worksheet' && ['awaiting-answer', 'awaiting-writing'].includes(worksheetState)) ||
+              (currentPhase === 'test' && ['awaiting-answer', 'awaiting-writing'].includes(testState))) && (
               <div style={videoQuestionCounterStyle}>
                 Question {currentPhase === 'worksheet' ? (worksheetScore + 1) : (testQuestionIndex + 1)}/{currentPhase === 'worksheet' ? worksheetTotalQuestions : testTotalQuestions}
               </div>
@@ -10852,6 +10877,25 @@ function SessionPageV2Inner() {
                 }}
               >
                 Retry reply
+              </button>
+            </div>
+          )}
+
+          {/* Write each Worksheet/Test answer on paper before proceeding. */}
+          {(['worksheet', 'test'].includes(currentPhase) &&
+            (currentPhase === 'worksheet' ? worksheetState : testState) === 'awaiting-writing' &&
+            !openingActionActive && !showWords) && (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, flexWrap: 'wrap', padding: '6px 12px' }}>
+              <span style={{ fontSize: 14, fontWeight: 600, color: '#374151', textAlign: 'center' }}>
+                Write your answer on your paper. {paperWritingGraceMinutes > 0 ? `You have ${paperWritingGraceMinutes} minute${paperWritingGraceMinutes === 1 ? '' : 's'} before reminders begin.` : 'Press Next when finished.'}
+              </span>
+              <button type="button" data-sonoma-writing-next
+                onClick={() => {
+                  if (currentPhase === 'worksheet') worksheetPhaseRef.current?.continueAfterWriting();
+                  else testPhaseRef.current?.continueAfterWriting();
+                }}
+                style={{ background: '#c7442e', color: '#fff', border: 'none', borderRadius: 8, padding: '10px 24px', minHeight: 44, fontWeight: 800, cursor: 'pointer' }}>
+                Next
               </button>
             </div>
           )}

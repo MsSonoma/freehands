@@ -25,6 +25,7 @@ import { ttsCache } from '../utils/ttsCache';
 import { buildAcceptableList, judgeAnswer } from './judging';
 import { deriveCorrectAnswerText, formatQuestionForSpeech } from '../utils/questionFormatting';
 import { HINT_FIRST, HINT_SECOND, pickHint } from '../utils/feedbackMessages';
+import { SONOMA_PAPER_WRITING_PROMPT } from './sonomaResponsePacing.mjs';
 
 // Praise phrases for correct answers (matches V1 engagement pattern)
 const PRAISE_PHRASES = [
@@ -189,6 +190,10 @@ export class WorksheetPhase {
         return;
       }
 
+      if (this.#resumeState.awaitingWriting === true) {
+        this.#showPaperWritingPrompt();
+        return;
+      }
       this.#state = 'awaiting-answer';
       this.#emit('stateChange', { state: 'awaiting-answer', timerMode: this.#timerMode });
       await this.#playCurrentQuestion();
@@ -362,8 +367,8 @@ export class WorksheetPhase {
         console.warn('[WorksheetPhase] Failed to play praise:', error);
       }
 
-      // Move to next question or complete
-      this.#advanceQuestion();
+      // The learner writes the answer on paper before choosing the next question.
+      this.#showPaperWritingPrompt();
       return;
     }
 
@@ -430,7 +435,7 @@ export class WorksheetPhase {
       correctAnswer: correctText
     });
 
-    this.#advanceQuestion();
+    this.#showPaperWritingPrompt();
   }
   
   // Public API: Skip question
@@ -496,13 +501,13 @@ export class WorksheetPhase {
       }
     });
     
-    this.#advanceQuestion();
+    this.#showPaperWritingPrompt();
   }
 
   // Public API: Recover from a stuck state (e.g. TTS/API timeout).
   // Resets to awaiting-answer so the learner can re-submit without reloading.
   recover() {
-    if (this.#state === 'complete' || this.#state === 'idle') return;
+    if (this.#state === 'complete' || this.#state === 'idle' || this.#state === 'awaiting-writing') return;
     this.#cancelLearnerTurnReady();
     this.#learnerTurnToken++;
     try { this.#audioEngine.stop(); } catch {}
@@ -626,10 +631,65 @@ export class WorksheetPhase {
     });
   }
   
-  // Private: Question progression
-  #advanceQuestion() {
+  // Public API: Only the learner's Next button advances beyond paper writing.
+  continueAfterWriting() {
+    if (this.#state !== 'awaiting-writing') return false;
+    const question = this.#questions[this.#currentQuestionIndex];
+    this.#cancelLearnerTurnReady();
+    this.#learnerTurnToken++;
+    this.#emit('learnerTurnEnded', {
+      phase: 'worksheet', questionIndex: this.#currentQuestionIndex,
+      itemId: question?.id || null, turnKind: 'paper-writing', reason: 'response',
+    });
+    try { this.#audioEngine.stop(); } catch {}
     this.#currentQuestionIndex++;
+    this.#emit('requestSnapshotSave', {
+      trigger: 'worksheet-paper-next',
+      data: {
+        nextQuestionIndex: this.#currentQuestionIndex,
+        awaitingWriting: false, score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions, answers: [...this.#answers],
+        timerMode: this.#timerMode,
+      },
+    });
     this.#playCurrentQuestion();
+    return true;
+  }
+
+  #showPaperWritingPrompt() {
+    const questionIndex = this.#currentQuestionIndex;
+    const question = this.#questions[questionIndex];
+    if (!question) return;
+    this.#cancelLearnerTurnReady();
+    const learnerTurnToken = ++this.#learnerTurnToken;
+    this.#state = 'awaiting-writing';
+    this.#emit('stateChange', { state: 'awaiting-writing', timerMode: this.#timerMode });
+    this.#emit('writingPrompt', { questionIndex, question, text: SONOMA_PAPER_WRITING_PROMPT });
+    this.#emit('requestSnapshotSave', {
+      trigger: 'worksheet-paper-writing',
+      data: {
+        nextQuestionIndex: questionIndex,
+        awaitingWriting: true, score: this.#score,
+        totalQuestions: this.#questions.length,
+        questions: this.#questions, answers: [...this.#answers],
+        timerMode: this.#timerMode,
+      },
+    });
+    try { this.#audioEngine.stop(); } catch {}
+    void (async () => {
+      try {
+        const audio = await fetchTTS(SONOMA_PAPER_WRITING_PROMPT);
+        if (learnerTurnToken !== this.#learnerTurnToken || this.#state !== 'awaiting-writing') return;
+        this.#armLearnerTurnReady({ learnerTurnToken, question, questionIndex, turnKind: 'paper-writing' });
+        this.#audioEngine.playAudio(audio || '', [SONOMA_PAPER_WRITING_PROMPT]).catch(() => {
+          this.#cancelLearnerTurnReady();
+          this.#emitLearnerTurnReadyIfCurrent({ learnerTurnToken, question, questionIndex, turnKind: 'paper-writing' });
+        });
+      } catch {
+        this.#emitLearnerTurnReadyIfCurrent({ learnerTurnToken, question, questionIndex, turnKind: 'paper-writing' });
+      }
+    })();
   }
   
   // Private: Completion
@@ -661,7 +721,8 @@ export class WorksheetPhase {
 
   #emitLearnerTurnReadyIfCurrent({ learnerTurnToken, question, questionIndex, turnKind = 'question' }) {
     if (learnerTurnToken !== this.#learnerTurnToken) return;
-    if (this.#state !== 'awaiting-answer' || this.#currentQuestionIndex !== questionIndex) return;
+    const expectedState = turnKind === 'paper-writing' ? 'awaiting-writing' : 'awaiting-answer';
+    if (this.#state !== expectedState || this.#currentQuestionIndex !== questionIndex) return;
     this.#emit('learnerTurnReady', { phase: 'worksheet', questionIndex, itemId: question?.id || null, question, turnKind });
   }
 
