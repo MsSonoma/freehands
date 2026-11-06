@@ -4251,8 +4251,8 @@ function WebbPageInner() {
       )}
 
       {/* Header */}
-      <div style={{ background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: keyboardCompact ? '6px 12px' : '10px 16px' }}>
+      <div data-ms-webb-session-header style={{ position: (writingMode || essayMode) ? 'relative' : undefined, zIndex: (writingMode || essayMode) ? 1500 : undefined, background: C.accentDark, color: '#fff', flexShrink: 0, boxShadow: '0 2px 8px rgba(0,0,0,0.18)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 6, padding: keyboardCompact ? '6px 12px' : '10px 16px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: keyboardCompact ? 8 : 10 }}>
             <span style={{ fontSize: keyboardCompact ? 21 : 24 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
             <div>
@@ -4266,12 +4266,19 @@ function WebbPageInner() {
           <div style={{ display: 'flex', gap: keyboardCompact ? 6 : 8, alignItems: 'center' }}>
             {isChatting && (
               <button type="button" data-sonoma-keyboard-toggle data-ms-webb-keyboard-toggle
-                onClick={() => sonomaKeyboard.toggleKeyboard({ label: 'Mrs. Webb Keyboard', background: '#e4f2f0', color: '#134e4a', accent: C.accent })}
+                onClick={() => sonomaKeyboard.toggleKeyboard({ label: 'Mrs. Webb Keyboard', background: '#e4f2f0', color: '#134e4a', accent: C.accent }, (writingMode || essayMode) ? { ref: { current: document.getElementById('webb-writing-attempt') }, layout: 'text', onChange: (next) => { noteWebbLearnerActivity(); setWritingDraft(next) } } : undefined)}
                 aria-label={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
                 aria-pressed={Boolean(sonomaKeyboard.active)}
                 title={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
                 style={{ ...headerBtn, minWidth: 36, minHeight: 36, flexShrink: 0, padding: '3px 7px', color: '#fff', fontSize: 22, lineHeight: 1 }}
               >&#9000;</button>
+            )}
+            {isChatting && <WebbBackgroundMusicControl compact={keyboardCompact} playTimerActive={!!activePlayBreak} />}
+            {isChatting && (
+              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute speech' : 'Mute speech'} aria-pressed={isMuted}
+                title={isMuted ? 'Unmute speech' : 'Mute speech'} style={keyboardCompact ? { ...headerBtn, padding: '5px 7px', fontSize: 11 } : headerBtn}>
+                {isMuted ? 'VOICE OFF' : 'VOICE ON'}
+              </button>
             )}
             {isChatting && webbResponseClock.active && !activePlayBreak && !essayMode && (
               <WebbResponseTimer
@@ -4386,13 +4393,7 @@ function WebbPageInner() {
                   </svg>
                 </button>
               )}
-              <WebbBackgroundMusicControl compact={keyboardCompact} playTimerActive={!!activePlayBreak} />
-              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={keyboardCompact ? { ...overlayBtnStyle, width: 34, height: 34 } : overlayBtnStyle}>
-                {isMuted
-                  ? <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
-                  : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
-                }
-              </button>
+
             </div>
 
             {/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
@@ -5259,18 +5260,6 @@ function WebbPageInner() {
         completionState={completionState}
         completionError={completionError}
         lessonCompleted={!!webbCompletionMap?.[selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id]?.completed}
-        responseTimer={isChatting && webbResponseClock.active && !essayMode && !activePlayBreak ? (
-          <WebbResponseTimer
-            turn={responseTurn || { id: 'display-interval' }}
-            elapsedSeconds={webbResponseClock.elapsedSeconds}
-            pacingElapsedSeconds={responseElapsedSeconds}
-            countdown={webbIsCountdown}
-            remainingSeconds={webbResponseWindowRemainingSeconds}
-            settings={webbPacingSettings}
-            compact={keyboardCompact}
-            onClick={responseTurn ? handleWebbWorkTimerOpen : undefined}
-          />
-        ) : null}
         storageWarning={storageError}
         onLearnerActivity={noteWebbLearnerActivity}
         onDraftChange={setWritingDraft}

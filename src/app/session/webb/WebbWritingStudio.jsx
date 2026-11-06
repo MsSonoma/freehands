@@ -1,4 +1,4 @@
-﻿'use client'
+'use client'
 
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
@@ -80,13 +80,14 @@ export default function WebbWritingStudio({
   onBlankComplete,
   onNextSentence,
   isLastSentence,
-  responseTimer = null,
+
   storageWarning = '',
   onLearnerActivity,
 }) {
   const inputRef = useRef(null)
   const sonomaKeyboard = useSonomaKeyboard()
   const [essayPeek, setEssayPeek] = useState(false)
+  const [headerBottom, setHeaderBottom] = useState(64)
   const typingViewport = useTypingViewport({ preserveTouchFocus: true, blurDelayMs: 350 })
   const keyboardCompact = typingViewport.typing || sonomaKeyboard.keyboardHeight > 0
   const keyboardTight = keyboardCompact && typingViewport.visualHeight > 0 && typingViewport.visualHeight < 280
@@ -114,6 +115,18 @@ export default function WebbWritingStudio({
     return () => clearTimeout(timer)
   }, [open, subphase, activeIndex])
 
+  // Keep the writing surface below the live, responsive session toolbar.
+  useEffect(() => {
+    if (!open || typeof document === 'undefined') return undefined
+    const header = document.querySelector('[data-ms-webb-session-header]')
+    if (!header) return undefined
+    const measure = () => setHeaderBottom(Math.max(0, header.getBoundingClientRect().bottom))
+    measure()
+    const observer = typeof ResizeObserver !== 'undefined' ? new ResizeObserver(measure) : null
+    observer?.observe(header)
+    window.addEventListener('resize', measure)
+    return () => { observer?.disconnect(); window.removeEventListener('resize', measure) }
+  }, [open, keyboardCompact])
   if (!open || typeof document === 'undefined') return null
 
   const currentNote = String(note?.text || '').trim()
@@ -150,10 +163,10 @@ export default function WebbWritingStudio({
     <div style={{
       position: 'fixed',
       ...(typingViewport.typing && typingViewport.visualHeight ? {
-        top: typingViewport.offsetTop, left: typingViewport.offsetLeft,
-        width: typingViewport.visualWidth || '100%', height: typingViewport.visualHeight,
+        top: Math.max(headerBottom, typingViewport.offsetTop), left: typingViewport.offsetLeft,
+        width: typingViewport.visualWidth || '100%', height: Math.max(0, typingViewport.visualHeight - Math.max(headerBottom, typingViewport.offsetTop)),
         right: 'auto', bottom: 'auto',
-      } : { inset: 0 }),
+      } : { top: headerBottom, left: 0, right: 0, bottom: 0 }),
       zIndex: 1400,
       background: '#f1eee7',
       overflowY: keyboardCompact && !keyboardTight ? 'hidden' : 'auto',
@@ -163,22 +176,6 @@ export default function WebbWritingStudio({
       display: 'flex',
       flexDirection: 'column',
     }} data-ms-webb-writing-compact={keyboardCompact ? 'true' : 'false'}>
-      {!finalView && [WEBB_WRITING_SUBPHASES.FOCUS, WEBB_WRITING_SUBPHASES.REVIEW].includes(subphase) && (
-        <button type="button" data-sonoma-keyboard-toggle data-ms-webb-writing-keyboard-toggle
-          onClick={() => sonomaKeyboard.toggleKeyboard({ label: 'Mrs. Webb Keyboard', background: '#e4f2f0', color: '#134e4a', accent: '#0d9488' }, { ref: inputRef, layout: 'text', onChange: (next) => { onLearnerActivity?.(); onDraftChange?.(next) } })}
-          aria-label={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
-          aria-pressed={Boolean(sonomaKeyboard.active)}
-          title={sonomaKeyboard.active ? 'Hide keyboard' : 'Show keyboard'}
-          style={{ position: 'absolute', top: keyboardCompact ? 4 : 12, left: keyboardCompact ? 5 : 14, zIndex: 8,
-            display: 'grid', placeItems: 'center', width: 36, height: 36, borderRadius: 9,
-            border: '1px solid #99f6e4', background: '#e4f2f0', color: '#0f766e', fontSize: 23, cursor: 'pointer' }}
-        >&#9000;</button>
-      )}
-      {responseTimer && (
-        <div style={{ position: 'absolute', top: keyboardCompact ? 4 : 12, right: keyboardCompact ? 5 : 14, zIndex: 8 }}>
-          {responseTimer}
-        </div>
-      )}
       {canPeekEssay && (
         <div style={{ width: keyboardCompact ? '100%' : 'min(92vw, 820px)', margin: keyboardCompact ? '0 auto 6px' : '0 auto 14px', display: 'flex', justifyContent: 'flex-end', flexShrink: 0 }}>
           <button
