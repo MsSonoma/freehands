@@ -9,6 +9,7 @@ import { isTranscriptTapGesture } from "./sonomaTranscriptGesture.mjs";
 import dockStyles from "./SonomaKeyboardDock.module.css";
 import { isSonomaSubmitTarget } from "./sonomaAnswerField.mjs";
 import { insertSlateMathResult } from "../lib/slateMathDraft.mjs";
+import { attachSonomaHoldSelectionGuard } from "./sonomaHoldSelectionGuard.mjs";
 import { caretContrastColor, measureSonomaTextCaret, visibleCaretIndicator } from "./sonomaCaretIndicator.mjs";
 import {
   SPACE_TRACKPAD_HOLD_MS,
@@ -51,6 +52,9 @@ function trackpadFieldMetrics(field) {
 
 export function SonomaKeyboardProvider({ children }) {
   const pathname = usePathname();
+  // One temporary selection guard for keyboard, volume and game controls.
+  // It never prevents the controls' own touch/pointer events.
+  useEffect(() => attachSonomaHoldSelectionGuard(document), []);
   const lastPathnameRef = useRef(pathname);
   const [active, setActive] = useState(null);
   const [shift, setShift] = useState(false);

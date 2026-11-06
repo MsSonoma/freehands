@@ -37,6 +37,34 @@ body {
   line-height: clamp(1.4, 1.1 + 0.3vw, 1.7);
 }
 
+/* A held button is an action, not text to select. Safari needs both
+   prefixed and standard rules, including the button's SVG/text children. */
+button, button *,
+[role="button"], [role="button"] *,
+[data-sonoma-game-target], [data-sonoma-game-target] * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* During a touch-and-hold on a control, prevent iOS Safari from selecting
+   unrelated lesson text elsewhere on the screen. Restored on release/cancel.
+   Never disable normal selection in actual learner/editable text fields. */
+html.ms-sonoma-control-held,
+html.ms-sonoma-control-held body,
+html.ms-sonoma-control-held body *:not(input):not(textarea):not([contenteditable]) {
+  -webkit-user-select: none !important;
+  user-select: none !important;
+  -webkit-touch-callout: none;
+}
+html.ms-sonoma-control-held body input,
+html.ms-sonoma-control-held body textarea,
+html.ms-sonoma-control-held body [contenteditable] {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
 /* Hide scrollbars when we want to prevent scroll bleed in custom containers */
 .scrollbar-hidden { -ms-overflow-style: none; scrollbar-width: none; }
 .scrollbar-hidden::-webkit-scrollbar { display: none; }

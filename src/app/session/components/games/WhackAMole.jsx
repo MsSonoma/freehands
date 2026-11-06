@@ -168,7 +168,9 @@ export default function WhackAMole({ onBack }) {
         {moles.map((mole, index) => (
           <div
             key={index}
+            data-sonoma-game-target
             onClick={() => whackMole(index)}
+            onContextMenu={(event) => event.preventDefault()}
             style={{
               width: '140px',
               height: '140px',
