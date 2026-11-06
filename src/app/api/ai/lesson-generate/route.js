@@ -126,7 +126,7 @@ Return ONLY a JSON object: {"items": [{"id": "baseline-1", "question": "...", "e
       test: {
         system: `You are an expert curriculum writer creating reserved held-out Test questions for elementary school lessons.
 Always return valid JSON as: {"items": [{"id": "reserved-test-1", "question": "...", "choices": ["choice 1", "choice 2", "choice 3", "choice 4"], "correct": 2, "expectedAny": ["answer"]}, ...]}
-Generate at least 6 items. Keep them distinct from baseline, instruction, worksheet, and practice items. Vary correct positions across 0, 1, 2, and 3; do not default answers to index 0.`,
+Generate at least 6 items. Every Test question must ask for exactly ONE independently gradable response target. No name-and-explain, claim-and-evidence, solve-and-justify, or lists of several responses. When assessing a justification, give the claim or result and ask only WHY; when assessing evidence, give the claim and request only one supporting detail. Each expectedAny variant answers the SAME one target. Keep them distinct from baseline, instruction, worksheet, and practice items. Vary correct positions across 0, 1, 2, and 3; do not default answers to index 0.`,
         user: `Given this lesson, generate at least 6 reserved held-out Test questions. They must not duplicate any baseline or instructional practice question. Vary where correct answers appear across the four choices.
 
 LESSON:
@@ -185,7 +185,7 @@ Return ONLY a JSON object: {"items": [{"question": "...", "answer": true}, ...]}
       shortanswer: {
         system: `You are an expert curriculum writer creating short answer questions for elementary school lessons.
 Always return valid JSON as: {"items": [{"question": "...", "expectedAny": ["answer1", "answer2"]}, ...]}
-Include 2-3 acceptable answer variants per question.`,
+Include 2-3 acceptable answer variants per question, each answering the SAME one target. Every question must request EXACTLY ONE independently gradable action: no mini-essays, naming AND explaining, claim AND defense, solution AND justification, or example AND naming. Supply the claim or answer in the question when asking only for evidence or reasoning.`,
         user: `Given this lesson, generate 2 short answer questions. Each should have 2-3 acceptable answer variants (students only need to match one). Questions should test understanding of key concepts at the appropriate grade level.
 
 LESSON:

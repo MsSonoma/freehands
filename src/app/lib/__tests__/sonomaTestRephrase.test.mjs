@@ -7,6 +7,7 @@ import {
   createTestRephraseInstruction,
   applyRephrasedTestQuestions,
   rephraseAssessmentTest,
+  hasMultipleResponseTargets,
   assessmentQuestionType,
   requestRephrasedAssessmentTest,
 } from '../../session/assessment/testRephrase.mjs'
@@ -267,4 +268,58 @@ test('a truncated full Test reply is retried in smaller batches without changing
     assert.deepEqual(item.expectedAny, sources[index].expectedAny)
     assert.deepEqual(item.choices, sources[index].choices)
   })
+})
+
+test('the actual November 5 historical-evidence prompts violate the single-response rule', () => {
+  const problems = [
+    'A shopkeeper wrote a letter while a fire was happening in 1912. In 2018, a historian wrote a chapter about the same fire. What type of source is each one, and what makes each source fit that type?',
+    'A mayor says in a speech that a new bridge will benefit the town. In a letter, a nearby farmer says building the bridge will make travel harder. State one way their views differ and explain how their jobs may have shaped those views.',
+    'Source A reports that boats from three regions came to the river port. Source B shows three trade routes joining at the port. What do these sources indicate about the port? Support your explanation with at least one specific detail.',
+  ]
+  for (const question of problems) assert.equal(hasMultipleResponseTargets(question), true, question)
+  for (const question of [
+    'The letter was written during the 1912 fire. Is it a primary or secondary source?',
+    'The mayor expects the bridge to help travel; the farmer expects it to hurt travel. What is one difference in their views?',
+    'The claim is that the river port linked several regions. Give one detail from Source A that supports this claim.',
+    'The historian used a source written in 1912. Explain why that source is considered firsthand evidence.',
+    'Why is the farmer concerned about the bridge?',
+  ]) assert.equal(hasMultipleResponseTargets(question), false, question)
+})
+
+test('compound rewritten short answers are rejected without altering the reference answer or four formats', () => {
+  const sources = selectTestRephraseSources(lesson(), 10, () => 0.34)
+  const response = paraphrase(sources)
+  const shortIndex = sources.findIndex(item => assessmentQuestionType(item) === 'short')
+  assert.ok(shortIndex >= 0)
+  const oldAnswer = structuredClone(sources[shortIndex].expectedAny)
+  response.items[shortIndex].question = 'Name the habitat and explain why it fits.'
+  assert.equal(applyRephrasedTestQuestions(sources, response), null)
+  assert.deepEqual(sources[shortIndex].expectedAny, oldAnswer)
+  assert.equal(sources.filter(item => assessmentQuestionType(item) === 'mc').length > 0, true)
+  assert.equal(sources.filter(item => assessmentQuestionType(item) === 'tf').length > 0, true)
+  assert.equal(sources.filter(item => assessmentQuestionType(item) === 'fib').length > 0, true)
+})
+
+test('compound full-deck response retries with one response target per item', async () => {
+  let calls = 0
+  const result = await rephraseAssessmentTest({
+    lessonData: lesson(), targetCount: 10, random: () => 0.34,
+    callModel: async instruction => {
+      calls++
+      const [, raw] = /Questions: (\[.*\])\.$/s.exec(instruction)
+      const items = JSON.parse(raw)
+      assert.match(instruction, /STRICT ONE-RESPONSE-TARGET RULE/)
+      assert.match(instruction, /objective/)
+      return { items: items.map(item => ({
+        id: item.id,
+        question: calls === 1 && item.format === 'short'
+          ? 'Name the habitat and explain why it fits.'
+          : 'Please answer this question: ' + item.question,
+      })) }
+    },
+  })
+  assert.equal(calls, 4)
+  assert.ok(result)
+  assert.equal(result.length, 10)
+  assert.ok(result.every(item => !hasMultipleResponseTargets(item.question)))
 })
