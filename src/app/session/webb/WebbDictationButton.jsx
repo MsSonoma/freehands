@@ -31,6 +31,9 @@ export default function WebbDictationButton({
   const [starting, setStarting] = useState(false)
   const startingRef = useRef(false)
   const mountedRef = useRef(true)
+  const requestTokenRef = useRef(0)
+  const disabledRef = useRef(disabled)
+  disabledRef.current = disabled
   const [uploading, setUploading] = useState(false)
   const [error, setError] = useState('')
   const recorderRef = useRef(null)
@@ -90,6 +93,8 @@ export default function WebbDictationButton({
   }, [onActivity, onTranscript])
 
   const stopRecording = useCallback(() => {
+    // Cancels microphone permission requests that have not resolved yet.
+    requestTokenRef.current += 1
     if (stopTimerRef.current) {
       clearTimeout(stopTimerRef.current)
       stopTimerRef.current = null
@@ -104,6 +109,7 @@ export default function WebbDictationButton({
   const startRecording = useCallback(async () => {
     if (disabled || recording || uploading || startingRef.current || recorderRef.current) return
     startingRef.current = true
+    const requestToken = ++requestTokenRef.current
     setStarting(true)
     setError('')
     try {
@@ -114,11 +120,15 @@ export default function WebbDictationButton({
       const mimeType = chooseWebbSpeechMimeType(MediaRecorder)
       if (!mimeType) throw new Error('Voice input unavailable')
       const stream = await getReusableMicrophoneStream()
-      if (!mountedRef.current) {
+      if (!mountedRef.current || disabledRef.current || requestToken !== requestTokenRef.current) {
         pauseReusableMicrophoneStream(stream)
         return
       }
       streamRef.current = stream
+      const releaseStream = () => {
+        if (streamRef.current === stream) streamRef.current = null
+        pauseReusableMicrophoneStream(stream)
+      }
       const recorder = new MediaRecorder(stream, { mimeType })
       recorderRef.current = recorder
       let recorderFailed = false
@@ -127,6 +137,10 @@ export default function WebbDictationButton({
         if (event.data?.size) chunksRef.current.push(event.data)
       }
       recorder.onstart = () => {
+        if (!mountedRef.current || disabledRef.current || requestToken !== requestTokenRef.current) {
+          try { recorder.stop() } catch {}
+          return
+        }
         onActivity?.()
         setRecording(true)
       }
@@ -134,18 +148,18 @@ export default function WebbDictationButton({
         recorderFailed = true
         if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
         stopTimerRef.current = null
-        recorderRef.current = null
+        if (recorderRef.current === recorder) recorderRef.current = null
         setRecording(false)
         setError('Recording failed. Tap mic to retry.')
-        cleanupStream()
+        releaseStream()
       }
       recorder.onstop = async () => {
         if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
         stopTimerRef.current = null
         const blob = new Blob(chunksRef.current, { type: recorder.mimeType || mimeType })
-        recorderRef.current = null
-        cleanupStream()
-        if (!recorderFailed && mountedRef.current) await transcribe(blob)
+        if (recorderRef.current === recorder) recorderRef.current = null
+        releaseStream()
+        if (!recorderFailed && mountedRef.current && !disabledRef.current) await transcribe(blob)
       }
       recorder.start()
       stopTimerRef.current = setTimeout(stopRecording, 30000)
@@ -165,10 +179,17 @@ export default function WebbDictationButton({
     else void startRecording()
   }, [recording, startRecording, stopRecording])
 
+  // Disabling input (e.g. while judging an answer) must not leave the mic
+  // recording or allow a late permission grant to turn it back on.
+  useEffect(() => {
+    if (disabled) stopRecording()
+  }, [disabled, stopRecording])
+
   useEffect(() => {
     mountedRef.current = true
     return () => {
       mountedRef.current = false
+      requestTokenRef.current += 1
       if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
       try { abortRef.current?.abort() } catch {}
       const recorder = recorderRef.current
