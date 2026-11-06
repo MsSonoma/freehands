@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import { mediaDurationLabel } from '@/app/lib/webbMedia.mjs'
 import { requestFacilitatorPinException } from '@/app/lib/pinGate'
+import WebbFacilitatorVideoReviewOverlay from './WebbFacilitatorVideoReviewOverlay'
 
 async function token() {
   const client = getSupabaseClient()
@@ -40,7 +41,7 @@ const card = { padding: 12, border: '1px solid #cbd5e1', borderRadius: 10, margi
 const btn = { border: '1px solid #94a3b8', borderRadius: 7, padding: '7px 10px', cursor: 'pointer', background: '#fff', color: '#0f172a' }
 const base = { display: 'grid', gap: 10, fontSize: 14, color: '#0f172a' }
 
-export function WebbMediaChoices({ rows, candidates, onDecision, onRequest, learner = false }) {
+export function WebbMediaChoices({ rows, candidates, onDecision, onRequest, onPreview, learner = false }) {
   const existing = new Map(rows.map((row) => [row.resource?.kind + ':' + row.resource?.id, row]))
   return <div style={{ display: 'grid', gap: 9 }}>
     {candidates.map((resource) => {
@@ -54,7 +55,8 @@ export function WebbMediaChoices({ rows, candidates, onDecision, onRequest, lear
         {resource.description && <p style={{ fontSize: 13, margin: '6px 0' }}>{resource.description}</p>}
         {resource.fitReason && <div style={{ fontSize: 12 }}>Fit: {resource.fitReason}</div>}
         {resource.ageNote && <div style={{ fontSize: 12 }}>Age: {resource.ageNote}</div>}
-        {!learner && resource.url && <a href={resource.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 6, fontSize: 13, color: '#0d9488' }}>Preview source before deciding</a>}
+        {!learner && resource.kind === 'video' && <button type="button" style={{ ...btn, marginTop: 8 }} onClick={() => onPreview?.(resource)}>Watch video and review</button>}
+        {!learner && resource.kind === 'article' && resource.url && <a href={resource.url} target="_blank" rel="noopener noreferrer" style={{ display: 'inline-block', marginTop: 6, fontSize: 13, color: '#0d9488' }}>Preview source before deciding</a>}
         {status?.status && <div style={{ fontSize: 12, fontWeight: 700, marginTop: 5 }}>{status.status === 'approved' ? 'Facilitator approved' : status.status === 'pending' ? 'Permission requested' : 'Not approved'}</div>}
         {learner ? (
           status?.status !== 'approved' && <button type="button" style={{ ...btn, marginTop: 7 }} disabled={status?.status === 'pending'} onClick={() => onRequest?.(resource)}>
@@ -78,6 +80,7 @@ export default function WebbMediaApprovalPanel({ learnerId, lessonKey, lesson })
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
   const [notice, setNotice] = useState('')
+  const [reviewVideo, setReviewVideo] = useState(null)
   const [seen, setSeen] = useState({ video: [], article: [] })
 
   useEffect(() => {
@@ -108,12 +111,17 @@ export default function WebbMediaApprovalPanel({ learnerId, lessonKey, lesson })
     finally { setBusy(false) }
   }
 
+  function openVideoReview(resource) {
+    setError('')
+    setReviewVideo(resource)
+  }
+
   async function decide(resource, status, workAllowed) {
     const pin = await requestFacilitatorPinException({
       title: 'Approve lesson media',
       message: 'Confirm your decision for ' + resource.title,
     })
-    if (!pin) return
+    if (!pin) return false
     setBusy(true); setError(''); setNotice('')
     try {
       const data = await webbMediaRequest({
@@ -122,8 +130,13 @@ export default function WebbMediaApprovalPanel({ learnerId, lessonKey, lesson })
       })
       setRows(data.rows)
       setNotice(status === 'approved' ? 'Approved. The learner can access this resource in the permitted time.' : 'Resource not approved.')
-    } catch (cause) { setError(cause.message) }
+      return true
+    } catch (cause) { setError(cause.message); return false }
     finally { setBusy(false) }
+  }
+
+  async function decideFromVideoReview(resource, status, workAllowed) {
+    if (await decide(resource, status, workAllowed)) setReviewVideo(null)
   }
 
   const pending = rows.filter((row) => row.status === 'pending')
@@ -132,7 +145,7 @@ export default function WebbMediaApprovalPanel({ learnerId, lessonKey, lesson })
     <p style={{ margin: 0 }}>Review and approve videos and articles. Search results and suitability ratings are suggestions, not content approval. Videos are for play time unless you explicitly allow them during work. Articles are for work-time reading.</p>
     {pending.length > 0 && <>
       <strong>Learner requests ({pending.length})</strong>
-      <WebbMediaChoices rows={rows} candidates={pending.map((r) => r.resource)} onDecision={decide} />
+      <WebbMediaChoices rows={rows} candidates={pending.map((r) => r.resource)} onDecision={decide} onPreview={openVideoReview} />
     </>}
     <label>Resource type
       <select value={kind} onChange={(e) => setKind(e.target.value)} style={{ marginLeft: 8 }}>
@@ -147,9 +160,17 @@ export default function WebbMediaApprovalPanel({ learnerId, lessonKey, lesson })
     <button type="button" style={btn} disabled={busy} onClick={() => void search()}>{busy ? 'Searching or saving...' : 'Find three ' + (kind === 'video' ? 'videos' : 'articles')}</button>
     {error && <p role="alert" style={{ color: '#b91c1c' }}>{error}</p>}
     {notice && <p role="status">{notice}</p>}
-    <WebbMediaChoices rows={rows} candidates={candidates[kind]} onDecision={decide} />
+    <WebbMediaChoices rows={rows} candidates={candidates[kind]} onDecision={decide} onPreview={openVideoReview} />
     <strong>Approved resources</strong>
-    <WebbMediaChoices rows={rows} candidates={rows.filter((row) => row.status === 'approved').map((row) => row.resource)} onDecision={decide} />
+    <WebbMediaChoices rows={rows} candidates={rows.filter((row) => row.status === 'approved').map((row) => row.resource)} onDecision={decide} onPreview={openVideoReview} />
     {rows.every((row) => row.status !== 'approved') && <p style={{ margin: 0 }}>No media approved yet.</p>}
+    {reviewVideo && <WebbFacilitatorVideoReviewOverlay
+      video={reviewVideo}
+      status={rows.find((row) => row.resource?.kind === 'video' && row.resource?.id === reviewVideo.id)?.status || ''}
+      busy={busy}
+      error={error}
+      onClose={() => setReviewVideo(null)}
+      onDecision={decideFromVideoReview}
+    />}
   </section>
 }
