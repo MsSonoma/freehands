@@ -47,10 +47,22 @@ export function detectsLearnerInformationRequest(text) {
   const normalized = normalizeText(text)
   if (!normalized) return false
   const value = normalized.replace(/^(?:um|uh|hmm|hm|well|sorry)\s+/, '')
+  if (/^(?:so|well|wait|but)?\s*i\s+(?:don't|do not)\s+understand\b/.test(value)) return true
   return /^(?:what|who|where|when|why|how)\s+(?:is|are|was|were|do|does|did|can|could|would|will|should)\b/.test(value)
     || /^(?:can|could|would|will)\s+you\s+(?:please\s+)?(?:explain|tell|show|define|teach|help|remind)\b/.test(value)
     || /^(?:please\s+)?(?:explain|define|teach|show)\s+(?:me\b|what\b|how\b|why\b|this\b|that\b|it\b)/.test(value)
     || /^(?:please\s+)?tell\s+me\s+(?:what|who|where|when|why|how|about)\b/.test(value)
+}
+
+export function detectsLearnerProcessFeedback(text) {
+  const value = normalizeText(text)
+  if (!value) return false
+  const gradingDispute = /\b(?:credit|graded|grading|unfair|accept|accepted|accepting)\b/.test(value)
+    && /\b(?:me|my|you|your|answer|answers|response)\b/.test(value)
+  const repeatedQuestion = /\byou\b.{0,90}\b(?:keep|kept|still|missing|repeat|holding)\b/.test(value)
+  const confusion = /\b(?:this|you|your|question|lesson|grading)\b.{0,65}\b(?:angry|frustrated|confused|confusing|upset)\b/.test(value)
+    || /^i\s+(?:am|feel|'m)\s+(?:very\s+)?(?:frustrated|confused|upset)\b/.test(value)
+  return gradingDispute || repeatedQuestion || confusion
 }
 
 export function detectsLearnerAcknowledgement(text) {
@@ -62,6 +74,7 @@ export function detectsLearnerAcknowledgement(text) {
 export function classifyWebbLearnerResponseEligibility(text) {
   if (detectsLearnerNonAnswer(text)) return { eligible: false, status: 'no_answer' }
   if (detectsLearnerInformationRequest(text)) return { eligible: false, status: 'information_request' }
+  if (detectsLearnerProcessFeedback(text)) return { eligible: false, status: 'feedback' }
   if (detectsLearnerAcknowledgement(text)) return { eligible: false, status: 'acknowledgement' }
   return { eligible: true, status: 'answer' }
 }
@@ -96,12 +109,22 @@ export function compareLearnerToAssistant({ learnerText, assistantText } = {}) {
     : { copied: false, kind: null, similarity }
 }
 
+// A question may supply a passage to interpret without supplying the answer.
+// The learner must be allowed to use the passage's facts in their main idea.
+export function isSourceInterpretationPrompt(message) {
+  const prompt = String(message?.objectivePrompt || message?.content || '')
+  return /\b(?:if|imagine|suppose)\b[\s\S]{0,200}\b(?:article|paragraph|passage|text|story)\b/i.test(prompt)
+    && /\b(?:what|which)\b[\s\S]{0,160}\b(?:main idea|important message|author's message)\b/i.test(prompt)
+    && !/\b(?:the main idea|the answer|the author's message)\s*(?:is|would be)\b/i.test(prompt)
+}
+
 export function findClearAnswerReproduction(conversation, sourceMessageIndex, { fixedFact = false } = {}) {
   const learner = conversation?.[sourceMessageIndex]
   if (!learner || learner.role !== 'user') return null
   for (let index = sourceMessageIndex - 1; index >= 0; index -= 1) {
     const assistant = conversation[index]
     if (assistant?.role !== 'assistant') continue
+    if (isSourceInterpretationPrompt(assistant)) continue
     const match = compareLearnerToAssistant({ learnerText: learner.content, assistantText: assistant.content })
     // A short supplied name or number still counts as exposure for independence.
     // Word boundaries prevent a value such as 3 from matching 13.

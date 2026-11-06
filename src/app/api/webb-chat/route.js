@@ -58,7 +58,7 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
     `You are currently helping a student explore: "${title}" (${subject}, ${grade}).`,
     buildLearnerLanguageGuidance({
       grade,
-      mode: ['no_answer', 'information_request', 'partial', 'incorrect'].includes(masteryStatus)
+      mode: ['no_answer', 'information_request', 'feedback', 'partial', 'incorrect'].includes(masteryStatus)
         ? LEARNER_LANGUAGE_MODES.RECOVERY
         : LEARNER_LANGUAGE_MODES.DEFAULT,
     }),
@@ -162,15 +162,20 @@ function buildSystem(lesson, media, remainingObjectives, assessmentPush = false,
     lines.push(
       `\nThe student has NOT yet demonstrated these learning goals (listed in priority order — work through them top to bottom):`,
       remainingObjectives.slice(0, 6).map((o, i) => `${i + 1}. ${o}`).join('\n'),
-      `IMPORTANT — End EVERY reply with ONE focused question that steers the student toward explaining goal #1 in their own words.`,
+      `IMPORTANT — End every reply with ONE focused question about goal #1. When handling feedback or a repeated definition, use ONE new concrete application instead of asking for the same wording again.`,
       `- Do NOT wait for a video or article. Ask about goal #1 in every response until the student demonstrates it.`,
       `- SELF-CHECK: Treat the remaining-goals list above as authoritative. Do NOT independently declare a goal complete, and do NOT move on merely because an answer is related or partial. Flexible child wording is welcome, but the meaning must be materially correct. If the latest answer is partial, vague, or contains a misconception, acknowledge what is right without calling the answer correct, briefly teach or correct the missing point, and ask the student to try again in their own words. Never praise an incorrect answer as correct. Stay on goal #1 until it disappears from the remaining-goals list.`,
+      `- Only the application records objective credit. If goal #1 is still listed, never claim you have awarded it, or apologize for not awarding it as if you could. If the definition was repeated, acknowledge its accuracy but ask ONE new, concrete application question. Do not ask the same definition again.`,
       `- Bridge naturally from what the student just said: "That's interesting! Can you also tell me..." or "Speaking of that, what do you know about..."`,
       `- Never use the words "objective", "goal", or "check". Sound warm and curious, not like a quiz.`,
     )
   }
 
-  if (masteryStatus === 'no_answer') {
+  if (masteryStatus === 'feedback') {
+    lines.push(
+      `\nThe learner is questioning the grading, repetition, or clarity of the lesson. This is feedback, NOT a wrong answer. Reply directly and respectfully to the specific concern, without defensiveness. Explain any distinction briefly, then ask ONE fresh, concrete example/application question if the current concept remains incomplete. Never demand the same definition again, claim to have granted unrecorded credit, or make the learner defend the objection.`,
+    )
+  } else if (masteryStatus === 'no_answer') {
     lines.push(
       `\nThe learner explicitly said they do not know or are not sure. This is not comprehension evidence. Stay on goal #1. Teach ONE small, useful piece of that idea in plain age-appropriate language, then ask ONE easier question about the same goal. Do not praise the non-answer as correct and do not move to another goal.`,
     )

@@ -21,7 +21,7 @@ import { detectProductHelp, getProductHelpFeature, getProductHelpScript, product
 import { buildLearnerLanguageGuidance, LEARNER_LANGUAGE_MODES } from '@/app/lib/learnerLanguage.mjs'
 import {
   emptyWebbObjectiveState, reconcileWebbObjectiveState, mergeWebbObjectiveResult,
-  webbObjectiveProgress, createWebbObjectiveQueue, applyWebbNoteReadiness, fulfillWebbObjectiveByFacilitator,
+  webbObjectiveProgress, shouldRecoverWebbNotes, createWebbObjectiveQueue, applyWebbNoteReadiness, fulfillWebbObjectiveByFacilitator,
 } from '@/app/lib/webbObjectiveState.mjs'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
@@ -2863,7 +2863,7 @@ function WebbPageInner() {
     saveLearningSnapshot({ chatMessages: nextHistory, objectives: currentObjectives })
     try {
       const priorProgress = webbObjectiveProgress(currentObjectives, learningStateRef.current)
-      const shouldRecoverNotes = recoverNotes || priorProgress.missingNoteIndices.length > 0
+      const shouldRecoverNotes = shouldRecoverWebbNotes(priorProgress, recoverNotes)
       const configuredTarget = objectiveTargetRef.current
       const targetObjectiveIndex = !shouldRecoverNotes && Number.isInteger(configuredTarget) && priorProgress.remainingIndices.includes(configuredTarget)
         ? configuredTarget
@@ -2900,7 +2900,7 @@ function WebbPageInner() {
         ? targetObjectiveIndex
         : (Object.keys(checkData.evaluationStatus || {}).map(Number).find(Number.isInteger) ?? firstRemainingIndex)
       const status = checkData.evaluationStatus?.[evaluatedTargetIndex]
-      const masteryStatus = ['partial', 'incorrect', 'reproduced', 'no_answer', 'information_request', 'acknowledgement'].includes(status) ? status : null
+      const masteryStatus = ['partial', 'incorrect', 'reproduced', 'no_answer', 'information_request', 'feedback', 'acknowledgement'].includes(status) ? status : null
       const lastUser = [...nextHistory].reverse().find(message => message.role === 'user')
       const answerRequested = detectsAnswerRequest(lastUser?.content || '')
       const res = await fetch('/api/webb-chat', {
@@ -2938,7 +2938,7 @@ function WebbPageInner() {
       }
       const assistanceType = answerRequested
         ? WEBB_ASSISTANCE_TYPES.ANSWER_REVEALED
-        : ['no_answer', 'information_request'].includes(masteryStatus)
+        : ['no_answer', 'information_request', 'feedback'].includes(masteryStatus)
           ? WEBB_ASSISTANCE_TYPES.DIRECT_TEACHING
           : ['partial', 'incorrect', 'reproduced'].includes(masteryStatus)
             ? WEBB_ASSISTANCE_TYPES.CORRECTION

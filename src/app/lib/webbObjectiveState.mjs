@@ -139,6 +139,11 @@ export function webbObjectiveProgress(objectives = [], state = {}) {
   }
 }
 
+// A missing essay note must not hijack checks for later, uncompleted learning goals.
+export function shouldRecoverWebbNotes(progress, requested = false) {
+  return requested === true || (progress?.allObjectivesMet === true && (progress?.missingNoteIndices?.length || 0) > 0)
+}
+
 /** All foreground/background checks share one queue; invalidated runs cannot publish. */
 export function createWebbObjectiveQueue() {
   let tail = Promise.resolve()
