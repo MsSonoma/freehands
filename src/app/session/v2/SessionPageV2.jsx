@@ -7425,7 +7425,9 @@ function SessionPageV2Inner() {
   };
 
   const beginInstruction = useCallback(async (target = null) => {
-    if (teachingControllerRef.current) {
+    // Teaching prefetch is useful for a new lesson, but causes needless AI/TTS
+    // traffic while resuming a later phase. Teaching itself can prefetch on entry.
+    if ((!target || target === 'idle') && teachingControllerRef.current) {
       try {
         teachingControllerRef.current.prefetchAll();
         addEvent('📄 Started background prefetch of teaching content');
