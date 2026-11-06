@@ -9,6 +9,7 @@ const header = read('HeaderBar.js')
 const keyboard = read('components/SonomaKeyboard.jsx')
 const webb = read('session/webb/page.jsx')
 const studio = read('session/webb/WebbWritingStudio.jsx')
+const music = read('session/webb/WebbBackgroundMusicControl.jsx')
 
 test('Ms. Sonoma exposes an accessible, branded header keyboard toggle', () => {
   assert.match(header, /data-ms-sonoma-keyboard-toggle/)
@@ -33,6 +34,27 @@ test('Mrs. Webb keeps one working keyboard, timer, music, and exit toolbar above
   assert.match(studio, /data-sonoma-input/)
   assert.match(studio, /onPointerDown=\{\(event\) => sonomaKeyboard\.open\(/)
   assert.match(keyboard, /const preferredUsable = preferredField\?\.isConnected/)
+})
+test('Mrs. Webb keeps original video audio buttons and adds writing-only header controls', () => {
+  // The established music and speech buttons remain on the video overlay.
+  assert.match(webb, /<WebbBackgroundMusicControl compact=\{keyboardCompact\} playTimerActive=/)
+  assert.match(webb, /writingToolbarTarget=\{isChatting && \(writingMode \|\| essayMode\) \? writingAudioTarget : null\}/)
+  assert.match(webb, /onClick=\{toggleMute\} aria-label=\{isMuted \? 'Unmute' : 'Mute'\}/)
+  assert.doesNotMatch(webb, /\{isChatting && <WebbBackgroundMusicControl/)
+
+  // Only the writing/finished-essay phase mounts a second set of controls in the header.
+  assert.match(webb, /\{isChatting && \(writingMode \|\| essayMode\) && \(\s*<div ref=\{setWritingAudioTarget\} data-ms-webb-writing-audio-slot/)
+  assert.match(webb, /\{isChatting && \(writingMode \|\| essayMode\) && \(\s*<button type="button" data-ms-webb-writing-voice-toggle/)
+  assert.match(music, /writingToolbarTarget && createPortal\(/)
+  assert.match(music, /data-ms-webb-writing-music-toggle/)
+  assert.match(music, /writingShowVolume && \(/)
+  assert.match(music, /onChange=\{handleVolumeChange\} aria-label="Writing background music volume"/)
+
+  // Both buttons operate the same music player; they must never create overlapping Audio instances.
+  assert.equal((webb.match(/<WebbBackgroundMusicControl /g) || []).length, 1)
+  assert.equal((music.match(/new Audio\(/g) || []).length, 1)
+  assert.match(music, /const nextMuted = !mutedRef\.current/)
+  assert.match(music, /onClick=\{toggleMusic\}/)
 })
 test('explicit toggle opens without a desktop math dock and keeps a manual no-input state', () => {
   assert.doesNotMatch(keyboard, /if \(!isTouchScreen\(\) && !workspaceDock\) return/)

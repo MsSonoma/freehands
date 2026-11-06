@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { lessonMusicTrackSrc, switchLessonMusicTrack } from '../utils/lessonMusic.mjs';
 
 const TRACK_SRC = '/media/Almost%20There.wav';
@@ -16,11 +17,12 @@ function clampVolume(value) {
   return Math.min(1, Math.max(0, number));
 }
 
-export default function WebbBackgroundMusicControl({ compact = false, playTimerActive = false }) {
+export default function WebbBackgroundMusicControl({ compact = false, playTimerActive = false, writingToolbarTarget = null }) {
   const trackSrc = lessonMusicTrackSrc(TRACK_SRC, playTimerActive);
   const activeTrackSrcRef = useRef(trackSrc);
   const audioRef = useRef(null);
   const controlRef = useRef(null);
+  const writingControlRef = useRef(null);
   const longPressTimerRef = useRef(null);
   const suppressNextClickRef = useRef(false);
   const mutedRef = useRef(false);
@@ -29,6 +31,7 @@ export default function WebbBackgroundMusicControl({ compact = false, playTimerA
   const [isMuted, setIsMuted] = useState(false);
   const [volume, setVolume] = useState(DEFAULT_VOLUME);
   const [showVolume, setShowVolume] = useState(false);
+  const [writingShowVolume, setWritingShowVolume] = useState(false);
 
   const clearLongPress = useCallback(() => {
     if (longPressTimerRef.current) {
@@ -95,16 +98,26 @@ export default function WebbBackgroundMusicControl({ compact = false, playTimerA
 
   useEffect(() => () => clearLongPress(), [clearLongPress]);
 
+  // The video button and writing button share one Audio instance.
   useEffect(() => {
-    if (!showVolume) return undefined;
+    if (!writingToolbarTarget) setWritingShowVolume(false);
+  }, [writingToolbarTarget]);
+
+  useEffect(() => {
+    if (!showVolume && !writingShowVolume) return undefined;
 
     const handleOutsidePointer = (event) => {
-      if (!controlRef.current?.contains(event.target)) {
+      if (!controlRef.current?.contains(event.target)
+        && !writingControlRef.current?.contains(event.target)) {
         setShowVolume(false);
+        setWritingShowVolume(false);
       }
     };
     const handleEscape = (event) => {
-      if (event.key === 'Escape') setShowVolume(false);
+      if (event.key === 'Escape') {
+        setShowVolume(false);
+        setWritingShowVolume(false);
+      }
     };
 
     document.addEventListener('pointerdown', handleOutsidePointer);
@@ -114,7 +127,7 @@ export default function WebbBackgroundMusicControl({ compact = false, playTimerA
       document.removeEventListener('pointerdown', handleOutsidePointer);
       document.removeEventListener('keydown', handleEscape);
     };
-  }, [showVolume]);
+  }, [showVolume, writingShowVolume]);
 
   const persistMuted = (muted) => {
     try {
@@ -176,27 +189,33 @@ export default function WebbBackgroundMusicControl({ compact = false, playTimerA
     }
   };
 
-  const handleContextMenu = (event) => {
+  const openVolumeFor = (surface) => {
+    setShowVolume(surface === 'video');
+    setWritingShowVolume(surface === 'writing');
+  };
+
+  const handleContextMenu = (event, surface = 'video') => {
     event.preventDefault();
     clearLongPress();
     suppressNextClickRef.current = false;
-    setShowVolume(true);
+    openVolumeFor(surface);
   };
 
-  const handlePointerDown = (event) => {
+  const handlePointerDown = (event, surface = 'video') => {
     if (event.button !== 0) return;
     clearLongPress();
     suppressNextClickRef.current = false;
     longPressTimerRef.current = setTimeout(() => {
       longPressTimerRef.current = null;
       suppressNextClickRef.current = true;
-      setShowVolume(true);
+      openVolumeFor(surface);
     }, LONG_PRESS_MS);
   };
 
   const buttonSize = compact ? 34 : 'clamp(34px, 6.2vw, 52px)';
 
   return (
+    <>
     <div ref={controlRef} style={{ position: 'relative', display: 'grid', placeItems: 'center' }}>
       {showVolume ? (
         <div
@@ -278,5 +297,56 @@ export default function WebbBackgroundMusicControl({ compact = false, playTimerA
         </svg>
       </button>
     </div>
+    {writingToolbarTarget && createPortal(
+      <div data-ms-webb-writing-music-control ref={writingControlRef}
+        style={{ position: 'relative', display: 'inline-grid', placeItems: 'center' }}>
+        {writingShowVolume && (
+          <div role="dialog" aria-label="Writing background music volume"
+            onContextMenu={(event) => event.preventDefault()}
+            style={{
+              position: 'absolute', top: 'calc(100% + 8px)', right: 0, width: 210,
+              padding: '12px 14px', background: '#fff', color: '#111827',
+              border: '1px solid #d1d5db', borderRadius: 12,
+              boxShadow: '0 10px 28px rgba(0,0,0,0.22)', zIndex: 30,
+            }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', gap: 10, marginBottom: 8 }}>
+              <span style={{ fontSize: 13, fontWeight: 800 }}>Music volume</span>
+              <span style={{ fontSize: 12, color: '#6b7280', fontVariantNumeric: 'tabular-nums' }}>
+                {Math.round(volume * 100)}%
+              </span>
+            </div>
+            <input type="range" min="0" max="1" step="0.01" value={volume}
+              onChange={handleVolumeChange} aria-label="Writing background music volume"
+              style={{ width: '100%', accentColor: '#0d9488', cursor: 'pointer' }} />
+            <div style={{ marginTop: 6, fontSize: 11, color: '#6b7280' }}>
+              Right-click or hold the music button for volume.
+            </div>
+          </div>
+        )}
+        <button type="button" data-ms-webb-writing-music-toggle
+          onClick={toggleMusic}
+          onContextMenu={(event) => handleContextMenu(event, 'writing')}
+          onPointerDown={(event) => handlePointerDown(event, 'writing')}
+          onPointerUp={clearLongPress}
+          onPointerCancel={clearLongPress}
+          onPointerLeave={clearLongPress}
+          aria-label={isMuted ? 'Turn writing background music on' : 'Turn writing background music off'}
+          aria-pressed={isMuted}
+          aria-haspopup="dialog"
+          aria-expanded={writingShowVolume}
+          title={isMuted ? 'Turn music on. Right-click or hold for volume.' : 'Turn music off. Right-click or hold for volume.'}
+          style={{
+            background: 'rgba(255,255,255,0.15)', color: '#fff',
+            border: '1px solid rgba(255,255,255,0.35)', borderRadius: 8,
+            padding: compact ? '5px 7px' : '7px 10px', minHeight: 34,
+            fontSize: compact ? 11 : 12, fontWeight: 750, cursor: 'pointer',
+            userSelect: 'none', touchAction: 'manipulation', whiteSpace: 'nowrap',
+          }}>
+          {isMuted ? 'MUSIC OFF' : 'MUSIC ON'}
+        </button>
+      </div>,
+      writingToolbarTarget
+    )}
+    </>
   );
 }

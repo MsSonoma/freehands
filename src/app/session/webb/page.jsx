@@ -267,6 +267,7 @@ function WebbPageInner() {
   const [offerResume,        setOfferResume]        = useState(false) // shown after lesson is selected, if a per-lesson snapshot exists
   const [resumeBusy,         setResumeBusy]         = useState(false)
   const [essayMode,          setEssayMode]         = useState(false) // finished essay view in the current Writing Studio
+  const [writingAudioTarget, setWritingAudioTarget] = useState(null) // writing-only music control portal target
   const [essay,              setEssay]             = useState(null)  // deterministic assembly of accepted learner sentences
   const [writingEvaluating,    setWritingEvaluating]   = useState(false) // writing evaluation in flight
   const [writingStartBusy,     setWritingStartBusy]    = useState(false)
@@ -4273,9 +4274,11 @@ function WebbPageInner() {
                 style={{ ...headerBtn, minWidth: 36, minHeight: 36, flexShrink: 0, padding: '3px 7px', color: '#fff', fontSize: 22, lineHeight: 1 }}
               >&#9000;</button>
             )}
-            {isChatting && <WebbBackgroundMusicControl compact={keyboardCompact} playTimerActive={!!activePlayBreak} />}
-            {isChatting && (
-              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute speech' : 'Mute speech'} aria-pressed={isMuted}
+            {isChatting && (writingMode || essayMode) && (
+              <div ref={setWritingAudioTarget} data-ms-webb-writing-audio-slot style={{ display: 'inline-grid' }} />
+            )}
+            {isChatting && (writingMode || essayMode) && (
+              <button type="button" data-ms-webb-writing-voice-toggle onClick={toggleMute} aria-label={isMuted ? 'Unmute speech' : 'Mute speech'} aria-pressed={isMuted}
                 title={isMuted ? 'Unmute speech' : 'Mute speech'} style={keyboardCompact ? { ...headerBtn, padding: '5px 7px', fontSize: 11 } : headerBtn}>
                 {isMuted ? 'VOICE OFF' : 'VOICE ON'}
               </button>
@@ -4393,7 +4396,13 @@ function WebbPageInner() {
                   </svg>
                 </button>
               )}
-
+              <WebbBackgroundMusicControl compact={keyboardCompact} playTimerActive={!!activePlayBreak} writingToolbarTarget={isChatting && (writingMode || essayMode) ? writingAudioTarget : null} />
+              <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={keyboardCompact ? { ...overlayBtnStyle, width: 34, height: 34 } : overlayBtnStyle}>
+                {isMuted
+                  ? <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>
+                  : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M19 8a5 5 0 010 8" /><path d="M15 11a2 2 0 010 2" /></svg>
+                }
+              </button>
             </div>
 
             {/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
