@@ -24,10 +24,11 @@ function assertOrdered(source, markers) {
   }
 }
 
-test('passive Sonoma page initialization cannot start canonical tracking', () => {
+test('passive initialization waits for authorized, loaded lesson before canonical tracking', () => {
   assert.match(sessionPage, /useSessionTracking\(\s*learnerProfile\?\.id \|\| null,\s*goldenKeyLessonKey \|\| null,\s*false,/)
-  assert.doesNotMatch(sessionPage, /Auto-start the session as soon as the page is ready/)
-  assert.doesNotMatch(sessionPage, /useEffect\(\(\) => \{[\s\S]{0,500}handleStartSessionClick\(/)
+  assert.match(sessionPage, /executionAuthorization !== 'allowed'[\s\S]{0,500}!snapshotLoaded \|\| !audioReady/)
+  assert.match(sessionPage, /\(resumePhase && resumePhase !== 'idle'\)\) return/)
+  assert.match(sessionPage, /autoStartedLessonRef\.current === identity/)
 
   const snapshotInitialization = between(
     sessionPage,
@@ -37,8 +38,12 @@ test('passive Sonoma page initialization cannot start canonical tracking', () =>
   assert.doesNotMatch(snapshotInitialization, /startTrackedSession|startLessonSession|\/execution\/start/)
 })
 
-test('fresh Begin and Resume are the deliberate canonical start boundary', () => {
-  assert.match(sessionPage, /offerResume \? \([\s\S]*?'Resume'[\s\S]*?\) : \([\s\S]*?onClick=\{\(\) => handleStartSessionClick\(\)\}[\s\S]*?'Begin'/)
+test('fresh lesson starts automatically while saved progress retains Resume and Start Over', () => {
+  assert.ok(sessionPage.includes('offerResume ? ('))
+  assert.ok(sessionPage.includes('Resume'))
+  assert.ok(sessionPage.includes('Start Over'))
+  assert.match(sessionPage, /autoStartedLessonRef\.current = identity;\s*void handleStartSessionClick\(\)/)
+  assert.doesNotMatch(sessionPage, />\s*Begin (?:Discussion|Comprehension|Exercise|Worksheet|Test)\s*</)
 
   const startSession = between(sessionPage, 'const startSession = async', 'const handleStartSessionClick = useCallback')
   assertOrdered(startSession, [
@@ -60,20 +65,21 @@ test('baseline and retention remain behind canonical identity and ahead of instr
   assert.match(startSession, /target && target !== 'idle'[\s\S]*?RESUME_AFTER_INSTRUCTION/)
 })
 
-test('resume reuses tracking identity and Start Over waits at the fresh Begin gate', () => {
+test('resume reuses tracking identity and Start Over restarts immediately', () => {
   assert.ok(trackingHook.includes('return sessionStartResultRef.current || { id: sessionIdRef.current };'))
   assert.ok(trackingHook.includes('sessionStartResultRef.current = result'))
-  assert.match(sessionPage, /startOverInProgressRef\.current = true[\s\S]*?resumePhaseRef\.current = null[\s\S]*?Start Over only resets durable progress[\s\S]*?setCurrentPhase\('idle'\)/)
+  assert.match(sessionPage, /startOverInProgressRef\.current = true[\s\S]*?resumePhaseRef\.current = null[\s\S]*?Restart immediately after the educator chooses Start Over.[\s\S]*?setCurrentPhase\('idle'\)/)
 
   const startOver = between(
     sessionPage,
     'startOverInProgressRef.current = true',
     'disabled={!(audioReady && snapshotLoaded) || startSessionLoading}'
   )
-  assert.doesNotMatch(startOver, /startTrackedSession|handleStartSessionClick/)
+  assert.match(startOver, /await handleStartSessionClick\(\{ ignoreResume: true \}\)/)
+  assert.doesNotMatch(startOver, /startTrackedSession/)
 })
 
-test('pre-Begin conflict checks are read-only while start and takeover stay protected', () => {
+test('pre-start conflict checks are read-only while start and takeover stay protected', () => {
   const preBegin = between(sessionPage, '// Pre-Begin conflict watch:', '// Initialize TimerService')
   assert.match(preBegin, /checkLessonSessionConflict/)
   assert.doesNotMatch(preBegin, /startTrackedSession|\/execution\/start/)
@@ -83,7 +89,7 @@ test('pre-Begin conflict checks are read-only while start and takeover stay prot
   assert.match(sessionPage, /startTrackedSession\([\s\S]{0,500}true,[\s\S]{0,500}expectedConflict\.id/)
 })
 
-test('SESSION_STARTED evidence is emitted only after deliberate canonical start succeeds', () => {
+test('SESSION_STARTED evidence is emitted only after protected canonical start succeeds', () => {
   const startSession = between(sessionPage, 'const startSession = async', 'const handleStartSessionClick = useCallback')
   assertOrdered(startSession, [
     'const sessionResult = await requireProtectedSessionCreation',
@@ -92,4 +98,15 @@ test('SESSION_STARTED evidence is emitted only after deliberate canonical start 
     'recordSessionStarted({ initialPhase })',
   ])
   assert.doesNotMatch(sessionPage.slice(0, sessionPage.indexOf('const startSession = async')), /recordSessionStarted\(/)
+})
+
+test('new question phases and Discussion start without obsolete Begin controls', () => {
+  for (const phase of ['comprehension', 'exercise', 'worksheet', 'test']) {
+    const segmentStart = sessionPage.indexOf('const start' + phase[0].toUpperCase() + phase.slice(1) + 'Phase = () => {')
+    assert.notEqual(segmentStart, -1)
+    const segment = sessionPage.slice(segmentStart, segmentStart + 30000)
+    assert.ok(segment.includes("if (!shouldAutoStart && phase.start)"))
+    assert.ok(segment.includes("void handleBeginPhase('" + phase + "')"))
+  }
+  assert.match(sessionPage, /data\.state === 'ready' && currentPhaseRef\.current === 'discussion'/)
 })

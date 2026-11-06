@@ -956,7 +956,6 @@ function SessionPageV2Inner() {
   const [closingMessage, setClosingMessage] = useState('');
   
   const [discussionState, setDiscussionState] = useState('idle');
-  const [discussionResuming, setDiscussionResuming] = useState(false); // true while auto-starting on resume (hides Begin button)
   const [discussionRestoreWarning, setDiscussionRestoreWarning] = useState('');
   const [discussionActivity, setDiscussionActivity] = useState(null);
   const [discussionPrompt, setDiscussionPrompt] = useState('');
@@ -1576,7 +1575,7 @@ function SessionPageV2Inner() {
     });
   }, [activeCaptionIndex, persistTranscriptState]);
 
-  // Idle "Begin" / "Resume" CTA loading state
+  // Idle lesson entry / recovery loading state
   const [startSessionLoading, setStartSessionLoading] = useState(false);
   const startSessionLoadingRef = useRef(false);
   const [startSessionError, setStartSessionError] = useState('');
@@ -3153,7 +3152,7 @@ function SessionPageV2Inner() {
     return map[phaseName] || null;
   };
 
-  // Begin button handler: ensure phase exists, then start; start pending timer if queued.
+  // Enter a prepared phase automatically; preserve its play/work timer transition.
   const handleBeginPhase = async (phaseName) => {
     ensurePhaseInitialized(phaseName);
 
@@ -3786,7 +3785,7 @@ function SessionPageV2Inner() {
     setShowGames(false);
     setShowFullscreenPlayTimer(false);
 
-    // Timeline jumps should enter the destination phase fresh (Begin -> Opening Actions -> Go)
+    // Timeline jumps should enter the destination phase fresh (Opening Actions -> Go)
     // even if snapshot phaseData exists. Mark the target so phase init ignores resumeState.
     timelineJumpForceFreshPhaseRef.current = targetPhase;
     
@@ -5470,15 +5469,13 @@ function SessionPageV2Inner() {
         keyboardServiceRef.current.setPhase(data.phase);
       }
       
-      // For discussion and test phases, initialize them but DON'T auto-start them
-      // after a timeline jump. They should show the "Begin" button first.
+      // Initialize the destination phase; fresh entries start automatically.
       const isTimelineJump = timelineJumpInProgressRef.current;
       
       // Start phase-specific controller
       if (data.phase === 'discussion') {
         startDiscussionPhase();
-        // Do NOT auto-start: prefetch() fires in startDiscussionPhase();
-        // user must click Begin Discussion to call start().
+        // Discussion starts when its prefetched objectives and audio are ready.
         // Timer mode is set in greetingPlaying once playback actually begins.
       } else if (data.phase === 'teaching') {
         startTeachingPhase();
@@ -5862,7 +5859,6 @@ function SessionPageV2Inner() {
     console.log('[SessionPageV2] Creating DiscussionPhase with learnerName:', learnerName, 'lessonTitle:', lessonTitle);
     
     const isDiscussionResume = resumePhaseRef.current === 'discussion' && transcriptLinesRef.current.length > 0;
-    if (isDiscussionResume) setDiscussionResuming(true);
     const savedDiscData = snapshotServiceRef.current?.snapshot?.phaseData?.discussion;
     const savedGoalPlan = restoreDiscussionObjectivePlan(isDiscussionResume ? savedDiscData : null);
     // Only credits from the exact saved goal plan can be restored. Legacy snapshots
@@ -5959,15 +5955,12 @@ function SessionPageV2Inner() {
           legacyUnmappedObjectiveAnnouncements: [...(savedDiscData?.legacyUnmappedObjectiveAnnouncements || []), ...unmappedAwards],
         })?.catch?.(error => console.warn('[SessionPageV2] Unable to save Discussion goal plan:', error));
       }
-      // Auto-start on resume: skip the 'Begin Discussion' button when prefetch completes
-      if (data.state === 'ready' && (isDiscussionResume || startDiscussionAfterBaselineRef.current)) {
+      // Every prepared Discussion begins automatically, including timeline jumps.
+      // The session start and baseline already enforced authorization and ordering.
+      if (data.state === 'ready' && currentPhaseRef.current === 'discussion') {
         startDiscussionAfterBaselineRef.current = false;
         audioEngineRef.current?.initialize().catch(() => {});
         discussionPhaseRef.current?.start();
-      }
-      // Clear the resuming flag once the phase is actively playing (button can show normally if needed)
-      if (data.state !== 'idle' && data.state !== 'prefetching' && data.state !== 'loading-objectives' && data.state !== 'ready') {
-        setDiscussionResuming(false);
       }
     });
 
@@ -6410,15 +6403,8 @@ function SessionPageV2Inner() {
     const workExpiredAutoStart = workExpiredAutoStartRef.current;
     if (workExpiredAutoStart) workExpiredAutoStartRef.current = false;
     const shouldAutoStart = resumeMatch || !!savedComp || workExpiredAutoStart;
-    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.comprehension !== false;
-    if (
-      shouldStartPlayAtBeginGate
-      && timerServiceRef.current
-      && timelineJumpTimerStartedRef.current !== 'comprehension'
-    ) {
-      timerServiceRef.current.startPlayTimer('comprehension');
-    }
-    
+    // The phase starts immediately after initialization. Its controller owns the
+    // play timer; there is no longer a separate Begin gate to wait at.
     // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.comprehension === false) {
@@ -6443,6 +6429,12 @@ function SessionPageV2Inner() {
           }
         }
       }
+    }
+
+    // Fresh entries and facilitator timeline jumps start without a Begin click.
+    // Resume/work-expiry paths have already started in the branch above.
+    if (!shouldAutoStart && phase.start) {
+      void handleBeginPhase('comprehension');
     }
 
     if (forceFresh) {
@@ -6666,15 +6658,8 @@ function SessionPageV2Inner() {
     const workExpiredAutoStart = workExpiredAutoStartRef.current;
     if (workExpiredAutoStart) workExpiredAutoStartRef.current = false;
     const shouldAutoStart = resumeMatch || !!savedExercise || workExpiredAutoStart;
-    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.exercise !== false;
-    if (
-      shouldStartPlayAtBeginGate
-      && timerServiceRef.current
-      && timelineJumpTimerStartedRef.current !== 'exercise'
-    ) {
-      timerServiceRef.current.startPlayTimer('exercise');
-    }
-    
+    // The phase starts immediately after initialization. Its controller owns the
+    // play timer; there is no longer a separate Begin gate to wait at.
     // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.exercise === false) {
@@ -6698,6 +6683,12 @@ function SessionPageV2Inner() {
           }
         }
       }
+    }
+
+    // Fresh entries and facilitator timeline jumps start without a Begin click.
+    // Resume/work-expiry paths have already started in the branch above.
+    if (!shouldAutoStart && phase.start) {
+      void handleBeginPhase('exercise');
     }
 
     if (forceFresh) {
@@ -6927,15 +6918,8 @@ function SessionPageV2Inner() {
     const workExpiredAutoStart = workExpiredAutoStartRef.current;
     if (workExpiredAutoStart) workExpiredAutoStartRef.current = false;
     const shouldAutoStart = resumeMatch || !!savedWorksheet || workExpiredAutoStart;
-    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.worksheet !== false;
-    if (
-      shouldStartPlayAtBeginGate
-      && timerServiceRef.current
-      && timelineJumpTimerStartedRef.current !== 'worksheet'
-    ) {
-      timerServiceRef.current.startPlayTimer('worksheet');
-    }
-    
+    // The phase starts immediately after initialization. Its controller owns the
+    // play timer; there is no longer a separate Begin gate to wait at.
     // Auto-start when resuming into this phase so refreshes do not surface the Begin button.
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.worksheet === false) {
@@ -6959,6 +6943,12 @@ function SessionPageV2Inner() {
           }
         }
       }
+    }
+
+    // Fresh entries and facilitator timeline jumps start without a Begin click.
+    // Resume/work-expiry paths have already started in the branch above.
+    if (!shouldAutoStart && phase.start) {
+      void handleBeginPhase('worksheet');
     }
 
     if (forceFresh) {
@@ -7272,17 +7262,10 @@ function SessionPageV2Inner() {
     const workExpiredAutoStart = workExpiredAutoStartRef.current;
     if (workExpiredAutoStart) workExpiredAutoStartRef.current = false;
     const shouldAutoStart = !isTimelineJump && (resumeMatch || !!savedTest || workExpiredAutoStart);
-    const shouldStartPlayAtBeginGate = !shouldAutoStart && playPortionsEnabledRef.current?.test !== false;
-    if (
-      shouldStartPlayAtBeginGate
-      && timerServiceRef.current
-      && timelineJumpTimerStartedRef.current !== 'test'
-    ) {
-      timerServiceRef.current.startPlayTimer('test');
-    }
-    
+    // The phase starts immediately after initialization. Its controller owns the
+    // play timer; there is no longer a separate Begin gate to wait at.
     // Auto-start only when resuming into this phase so refreshes do not surface the Begin button.
-    // Timeline jumps should ALWAYS show the Begin button first, even if savedTest exists.
+    // Timeline jumps start a fresh Test phase rather than reusing the saved Test.
     if (shouldAutoStart && phase.start) {
       if (playPortionsEnabledRef.current?.test === false) {
         transitionToWorkTimer('test');
@@ -7305,6 +7288,12 @@ function SessionPageV2Inner() {
           }
         }
       }
+    }
+
+    // Fresh entries and facilitator timeline jumps start without a Begin click.
+    // Resume/work-expiry paths have already started in the branch above.
+    if (!shouldAutoStart && phase.start) {
+      void handleBeginPhase('test');
     }
 
     if (forceFresh) {
@@ -8174,6 +8163,24 @@ function SessionPageV2Inner() {
       setStartSessionLoading(false);
     }
   }, [startSession]);
+
+  // Fresh authorized lessons begin once the lesson, learner, audio, and persisted
+  // checkpoint are ready. Saved progress retains the explicit Resume/Start Over choice.
+  const autoStartedLessonRef = useRef(null);
+  useEffect(() => {
+    if (executionAuthorization !== 'allowed' || !lessonData || !learnerProfile ||
+        !browserSessionId || !lessonKey || !snapshotLoaded || !audioReady ||
+        !orchestratorRef.current || currentPhase !== 'idle' || !!startSessionError ||
+        !!error || showTakeoverDialog || startSessionLoading ||
+        executionFencedRef.current || (resumePhase && resumePhase !== 'idle')) return;
+
+    const identity = `${learnerProfile.id || 'demo'}:${lessonKey}:${authorizedOccurrenceId || ''}`;
+    if (autoStartedLessonRef.current === identity) return;
+    autoStartedLessonRef.current = identity;
+    void handleStartSessionClick();
+  }, [executionAuthorization, lessonData, learnerProfile, browserSessionId, lessonKey,
+      snapshotLoaded, audioReady, currentPhase, startSessionError, error, showTakeoverDialog,
+      startSessionLoading, resumePhase, authorizedOccurrenceId, handleStartSessionClick]);
 
   const canShowDiscussionAwardNotice = Boolean(newlyCompletedDiscussionObj &&
     ['awaiting-next', 'awaiting-facilitator-next', 'chatting', 'reply-unavailable', 'awaiting-objective-ack'].includes(discussionState) &&
@@ -10364,17 +10371,12 @@ function SessionPageV2Inner() {
             </div>
           )}
           
-          {/* Phase-specific Begin buttons */}
+          {/* Lesson recovery actions; fresh lessons start without a Begin click. */}
           {(() => {
-            const needBeginDiscussion = (currentPhase === 'idle') || (currentPhase === 'discussion' && !discussionResuming && (!discussionState || discussionState === 'idle' || discussionState === 'ready' || discussionState === 'loading'));
-            const needBeginComp = (currentPhase === 'comprehension' && (!comprehensionState || comprehensionState === 'idle'));
-            const needBeginExercise = (currentPhase === 'exercise' && (!exerciseState || exerciseState === 'idle'));
-            const needBeginWorksheet = (currentPhase === 'worksheet' && (!worksheetState || worksheetState === 'idle'));
-            const needBeginTest = (currentPhase === 'test' && (!testState || testState === 'idle'));
-            if (!(needBeginDiscussion || needBeginComp || needBeginExercise || needBeginWorksheet || needBeginTest) || openingActionActive || showWords) return null;
+            const needLessonEntry = currentPhase === 'idle';
+            if (!needLessonEntry || openingActionActive || showWords) return null;
             if (baselineState === 'greeting' || baselineState === 'awaiting-response' || retentionState === 'awaiting-response') return null;
-            // Hide Begin while the play-time-expired countdown is running — clicking Begin
-            // at this point would restart the play timer and give double time.
+            // Keep recovery controls hidden during the play-expiry countdown.
             if (showPlayTimeExpired) return null;
 
             const offerResume = !!snapshotLoaded && !!resumePhase && resumePhase !== 'idle';
@@ -10401,17 +10403,7 @@ function SessionPageV2Inner() {
                 paddingRight: 12,
                 marginBottom: 4
               }}>
-                {needBeginDiscussion && currentPhase === 'discussion' && (
-                  <button 
-                    type="button" 
-                    style={{...ctaStyle, opacity: discussionState === 'loading' ? 0.7 : 1}} 
-                    onClick={() => handleBeginPhase('discussion')}
-                    disabled={discussionState === 'loading'}
-                  >
-                    {discussionState === 'loading' ? 'Loading...' : 'Begin Discussion'}
-                  </button>
-                )}
-                {needBeginDiscussion && currentPhase === 'idle' && (
+                {needLessonEntry && (
                   offerResume ? (
                     <>
                       <button
@@ -10468,10 +10460,12 @@ function SessionPageV2Inner() {
                             masteryAssistanceByExposureRef.current = new Map();
                             masteryPriorNeedsRecoveryRef.current = false;
                             masteryUsedIdentityKeysRef.current = new Set();
-                            // Start Over only resets durable progress. The learner must
-                            // deliberately click Begin before canonical history is reused.
+                            // Restart immediately after the educator chooses Start Over.
+                            // Both the saved checkpoint and all baseline state were reset above.
                             setCurrentPhase('idle');
                             setDiscussionState('idle');
+                            autoStartedLessonRef.current = `${learnerProfile?.id || 'demo'}:${lessonKey}:${authorizedOccurrenceId || ''}`;
+                            await handleStartSessionClick({ ignoreResume: true });
                           } finally {
                             startOverInProgressRef.current = false;
                           }
@@ -10482,20 +10476,19 @@ function SessionPageV2Inner() {
                       </button>
                     </>
                   ) : (
-                    <button
-                      type="button"
-                      style={{...ctaStyle, opacity: (audioReady && snapshotLoaded) ? 1 : 0.5}}
-                      onClick={() => handleStartSessionClick()}
-                      disabled={!(audioReady && snapshotLoaded) || startSessionLoading}
-                    >
-                      {(audioReady && snapshotLoaded)
-                        ? (startSessionLoading ? 'Loading...' : 'Begin')
-                        : (!snapshotLoaded ? 'Loading session...' : 'Preparing audio...')
-                      }
-                    </button>
+                    startSessionError ? (
+                      <button type="button" style={ctaStyle} onClick={() => handleStartSessionClick()}
+                        disabled={startSessionLoading || !audioReady || !snapshotLoaded}>
+                        Retry Lesson
+                      </button>
+                    ) : (
+                      <span role="status" style={{ color: '#4b5563', fontWeight: 600 }}>
+                        {!snapshotLoaded ? 'Loading session...' : !audioReady ? 'Preparing audio...' : 'Preparing lesson...'}
+                      </span>
+                    )
                   )
                 )}
-                {needBeginDiscussion && currentPhase === 'idle' && startSessionError ? (
+                {needLessonEntry && startSessionError ? (
                   <div style={{
                     width: '100%',
                     maxWidth: 520,
@@ -10514,26 +10507,6 @@ function SessionPageV2Inner() {
                     {startSessionError}
                   </div>
                 ) : null}
-                {needBeginComp && (
-                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('comprehension')}>
-                    Begin Comprehension
-                  </button>
-                )}
-                {needBeginExercise && (
-                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('exercise')}>
-                    Begin Exercise
-                  </button>
-                )}
-                {needBeginWorksheet && (
-                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('worksheet')}>
-                    Begin Worksheet
-                  </button>
-                )}
-                {needBeginTest && (
-                  <button type="button" style={ctaStyle} onClick={() => handleBeginPhase('test')}>
-                    Begin Test
-                  </button>
-                )}
               </div>
             );
           })()}
@@ -10563,9 +10536,7 @@ function SessionPageV2Inner() {
                   boxShadow: '0 4px 16px rgba(34,197,94,0.4)',
                 }}
               >
-                {discussionSentenceInfo.type === 'transition'
-                  ? 'Begin Discussion'
-                  : 'Next'}
+                Next
               </button>
             </div>
           )}
