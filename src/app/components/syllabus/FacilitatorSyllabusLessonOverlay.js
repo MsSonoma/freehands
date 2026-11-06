@@ -25,6 +25,7 @@ import { requestRephrasedAssessmentTest } from '@/app/session/assessment/testRep
 import { loadLesson } from '@/app/session/v2/services'
 import { getSupabaseClient } from '@/app/lib/supabaseClient'
 import styles from './FacilitatorSyllabusLessonOverlay.module.css'
+import WebbMediaApprovalPanel from './WebbMediaApprovalPanel'
 
 function dateOnly(value) {
   return String(value || '').slice(0, 10)
@@ -982,6 +983,7 @@ export default function FacilitatorSyllabusLessonOverlay({
             {actualKind !== 'completed' && selection.currentLesson?.hasProgress && <div><dt>Progress</dt><dd>In progress</dd></div>}
             {isSlateAssignment && <><div><dt>Type</dt><dd>Daily Review</dd></div><div><dt>Review teacher</dt><dd>{reviewTeacherSelectionIcon(slateTeacher)} {reviewTeacherSelectionLabel(slateTeacher)}</dd></div></>}
           </dl>
+          {displayTeacher === 'webb' && isLesson && item.lesson_key && coreAuthority && <WebbMediaApprovalPanel key={`${learnerId}:${item.lesson_key}`} learnerId={learnerId} lessonKey={item.lesson_key} lesson={{ title: item.title, subject: item.subject, grade: item.grade }} />}
           {displayTeacher === 'slate' && isLesson && item.lesson_key && <section className={styles.detailSection}>
             <h3>Mr. Slate objectives</h3>
             {(liftoffProgressLoading || liftoffRecordLoading) && !displayedLiftoffProgress ? <p>Loading objectives...</p> : displayedLiftoffProgress ? <>

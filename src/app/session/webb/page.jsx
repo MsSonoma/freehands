@@ -8,6 +8,9 @@ import useResponseIntervalClock from '../hooks/useResponseIntervalClock'
 import WebbDictationButton from './WebbDictationButton'
 import { isMicrophoneCapturing } from '../utils/microphoneSession'
 import WebbPlayBreakOverlay from './WebbPlayBreakOverlay'
+import { WebbVideoSearch } from './WebbPlayMedia'
+import { webbMediaList, webbMediaRequest } from '@/app/components/syllabus/WebbMediaApprovalPanel'
+import { approvedWebbMedia, workVideoChoices, videoEmbedUrl } from '@/app/lib/webbMedia.mjs'
 import TimerControlOverlay from '../components/TimerControlOverlay'
 import { shouldAutoFocusTextInput } from '../hooks/useTypingViewport'
 import { useSonomaKeyboard } from '@/app/components/SonomaKeyboard'
@@ -349,6 +352,11 @@ function WebbPageInner() {
   })
 
   // ── Media resources ──────────────────────────────────────────────────
+  const [mediaRows, setMediaRows] = useState([])
+  const [videoSearchOpen, setVideoSearchOpen] = useState(false)
+  const [workVideoUsed, setWorkVideoUsed] = useState(false)
+  const [workVideoMenuOpen, setWorkVideoMenuOpen] = useState(false)
+  const [mediaApprovalError, setMediaApprovalError] = useState('')
   const [videoResource, setVideoResource]       = useState(null) // {videoId,embedUrl,title,channel} or {unavailable:true}
   const [articleResource, setArticleResource]   = useState(null) // {html, source, title} — HTML fetched server-side
   const [articleKey,      setArticleKey]        = useState(0)   // increments to force iframe remount on new article
@@ -454,6 +462,13 @@ function WebbPageInner() {
   const [webbOwnershipEndedReason, setWebbOwnershipEndedReason] = useState(null)
   const webbExecutionFencedRef = useRef(false)
   const currentWebbLessonKey = selectedLesson?.lessonKey || selectedLesson?.lesson_id || selectedLesson?.id || null
+  const workVideoPeriodSignature = [routeLearnerId || learnerId || '', currentWebbLessonKey || '', responseTurn?.stage || (writingMode ? 'writing' : 'research'), Object.keys(playMilestones || {}).filter(key => playMilestones[key]).sort().join(',')].join(':')
+  const workVideoStorageKey = `webb_work_video_used:${routeLearnerId || learnerId || ''}:${currentWebbLessonKey || ''}`
+  useEffect(() => {
+    if (phase !== PHASE.CHATTING || !currentWebbLessonKey || activePlayBreak) return
+    try { setWorkVideoUsed(localStorage.getItem(workVideoStorageKey) === workVideoPeriodSignature) }
+    catch { setWorkVideoUsed(false) }
+  }, [phase, currentWebbLessonKey, activePlayBreak, workVideoStorageKey, workVideoPeriodSignature])
   const webbGoldenKeysEntitled = !!webbPlanEnt?.goldenKeyFeatures
   const webbGoldenKeysEnabled = webbGoldenKeysEntitled && learnerProfile?.golden_keys_enabled !== false
   const webbGoldenKeyApplied = webbGoldenKeysEnabled
@@ -1473,6 +1488,9 @@ function WebbPageInner() {
     skipTTS()
     setWebbPlayActivity('')
     setWebbPlayActivityBusy(false)
+    setWorkVideoUsed(false)
+    setVideoResource(null)
+    setMediaOverlay(null)
     emitWebbPacingEvent('play_break_completed', `play:${current.milestone}:completed`, {
       metadata: {
         milestone: current.milestone,
@@ -1865,37 +1883,26 @@ function WebbPageInner() {
   }
 
   // Open/close the video overlay with tier-aware Mrs. Webb messages.
+  function openApprovedWorkVideo(resource) {
+    const choices = workVideoChoices(mediaRows, workVideoUsed)
+    if (!choices.some((item) => item.id === resource?.id) || activePlayBreakRef.current) return
+    setVideoResource({
+      ...resource, videoId: resource.id, embedUrl: videoEmbedUrl(resource.id),
+      relevanceTier: 'high', hasChapters: false, hasCaptions: false,
+    })
+    setWorkVideoUsed(true)
+    try { localStorage.setItem(workVideoStorageKey, workVideoPeriodSignature) } catch {}
+    setWorkVideoMenuOpen(false)
+    setVideoSearchOpen(false)
+    setMediaOverlay('video')
+  }
+
   function handleVideoButtonClick() {
     if (mediaOverlay === 'video') { setMediaOverlay(null); return }
-    // Still loading or resource not yet resolved — open overlay to show spinner
-    if (videoLoading || !videoResource) { setMediaOverlay('video'); return }
-    // No relevant video was found — say something once, then don't open
-    if (videoResource.unavailable) {
-      if (!noVideoMsgSentRef.current) {
-        noVideoMsgSentRef.current = true
-        addMsg("I searched for a video to go with this lesson but the results just weren't helpful — nothing came up that would actually teach the material. Let's keep talking — there's plenty we can dig into together!")
-      }
-      return
-    }
-    // Video rate limit: first watch is free; each additional watch requires 2 more completed objectives.
-    // maxAllowed = 1 + floor(understoodObj.length / 2)
-    const maxVideos  = 1 + Math.floor(understoodObj.length / 2)
-    if (videosWatchedRef.current >= maxVideos) {
-      const objsNeeded = videosWatchedRef.current * 2 - understoodObj.length
-      addMsg(
-        objsNeeded === 1
-          ? `I love that you want to keep watching! Here's our deal — I open the video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll open it right back up!`
-          : `I love that you want to keep watching! Here's our deal — I open the video once for every two objectives we work through together. Show me you understand ${objsNeeded} more objectives and I'll open it right back up!`
-      )
-      return
-    }
-    // Low-relevance video — say something once, then open
-    if (videoResource.relevanceTier === 'low' && !lowTierMsgSentRef.current) {
-      lowTierMsgSentRef.current = true
-      addMsg("I searched hard but couldn't find a perfect video for this lesson. I found one that covers some related ideas — it might still be worth watching!")
-    }
-    videosWatchedRef.current += 1
-    setMediaOverlay('video')
+    const choices = workVideoChoices(mediaRows, workVideoUsed)
+    if (!choices.length || activePlayBreakRef.current) return
+    if (choices.length === 1) { openApprovedWorkVideo(choices[0]); return }
+    setWorkVideoMenuOpen(true)
   }
 
   async function interpretVideo() {
@@ -2091,51 +2098,73 @@ function WebbPageInner() {
   // Video and article are fetched in parallel but independently so each
   // resolves as soon as it's ready (video ~3s, article ~4s).
   // `objContext` is a hint string of remaining objectives used to shape the search.
-  const preloadResources = useCallback((lesson, objContext = '', objectives = []) => {
+  // Facilitator approvals, not automatic ranking, determine what media can be used.
+  // This call retrieves only approved sources. Search never grants playback.
+  const preloadResources = useCallback((lesson) => {
+    const lessonKey = lesson?.lessonKey || lesson?.lesson_id || lesson?.id || ''
+    const id = routeLearnerId || learnerId
     setVideoResource(null)
     setArticleResource(null)
-    setVideoLoading(true)
-    setArticleLoading(true)
-    shownVideoIdsRef.current   = []
-    lowTierMsgSentRef.current  = false
-    noVideoMsgSentRef.current  = false
-    videosWatchedRef.current   = 0
-
-    const post = (type) => fetch('/api/webb-resources', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ lesson, type, context: objContext, preferredSources: articleSources, objectives }),
-    })
-
-    // Video
-    post('video')
-      .then(r => r.json())
-      .then(data => {
-        if (data.video) {
-          setVideoResource(data.video)
-          if (data.video.videoId) shownVideoIdsRef.current = [data.video.videoId]
+    setMediaRows([])
+    setVideoLoading(false)
+    setArticleLoading(false)
+    if (!id || !lessonKey) return
+    let active = true
+    const load = async () => {
+      try {
+        const rows = await webbMediaList(id, lessonKey)
+        if (!active) return
+        setMediaRows(rows)
+        const approvedArticle = approvedWebbMedia(rows, 'article')[0]
+        if (approvedArticle) {
+          setArticleLoading(true)
+          try {
+            const data = await webbMediaRequest({
+              action: 'article', learnerId: id, lessonKey, id: approvedArticle.id,
+            })
+            if (active && data.article?.html) setArticleResource(data.article)
+          } finally { if (active) setArticleLoading(false) }
         }
-      })
-      .catch(() => {})
-      .finally(() => setVideoLoading(false))
+      } catch (cause) {
+        if (active) setMediaApprovalError(cause.message || 'Approved media could not be loaded.')
+      }
+    }
+    void load()
+    // The facilitator may approve a request from another browser while this lesson is open.
+    // Keep the list in sync but do not replace currently playing resources.
+    return () => { active = false }
+  }, [learnerId, routeLearnerId])
 
-    // Article
-    post('article')
-      .then(r => r.json())
-      .then(data => {
-        if (data.article?.html) {
-          setArticleResource(data.article)
-        } else {
-          // Retry once after a short pause (handles transient Wikipedia timeouts)
-          return new Promise(res => setTimeout(res, 2000))
-            .then(() => post('article'))
-            .then(r => r.json())
-            .then(data2 => { if (data2.article?.html) setArticleResource(data2.article) })
+  // Synchronize facilitator media decisions made while a learner session is open.
+  // A revoked work video is closed immediately on the next approval sync.
+  useEffect(() => {
+    const id = routeLearnerId || learnerId
+    if (!id || !currentWebbLessonKey || phase !== PHASE.CHATTING) return undefined
+    let alive = true
+    const sync = async () => {
+      try {
+        const rows = await webbMediaList(id, currentWebbLessonKey)
+        if (!alive) return
+        setMediaRows(rows)
+        if (videoResource?.videoId && !rows.some((row) =>
+          row.status === 'approved' && row.work_allowed === true &&
+          row.resource?.kind === 'video' && row.resource?.id === videoResource.videoId)) {
+          setMediaOverlay((current) => current === 'video' ? null : current)
+          setVideoResource(null)
         }
-      })
-      .catch(() => {})
-      .finally(() => setArticleLoading(false))
-  }, [])
+        const approvedArticle = approvedWebbMedia(rows, 'article')[0]
+        const currentApproved = rows.some((row) => row.status === 'approved' && row.resource?.id === articleResource?.sourceId)
+        if (!currentApproved && articleResource) setArticleResource(null)
+        if (approvedArticle && !currentApproved) {
+          const result = await webbMediaRequest({ action: 'article', learnerId: id, lessonKey: currentWebbLessonKey, id: approvedArticle.id })
+          if (alive && result.article?.html) { setArticleResource(result.article); setArticleKey((n) => n + 1) }
+        }
+        setMediaApprovalError('')
+      } catch (cause) { if (alive) setMediaApprovalError(cause.message || 'Media approvals could not be refreshed.') }
+    }
+    const interval = setInterval(() => { void sync() }, 10000)
+    return () => { alive = false; clearInterval(interval) }
+  }, [phase, routeLearnerId, learnerId, currentWebbLessonKey, videoResource?.videoId, articleResource?.sourceId])
 
   // ── Objectives: generate when lesson starts ──────────────────────────
   // Generate objectives from the lesson question bank (fired once per lesson).
@@ -2515,6 +2544,11 @@ function WebbPageInner() {
     setFacilitatorNextError('')
     setVideoResource(null)
     setArticleResource(null)
+    setMediaRows([])
+    setWorkVideoUsed(false)
+    try { localStorage.removeItem(`webb_work_video_used:${routeLearnerId || learnerId || ''}:${lesson?.lessonKey || lesson?.lesson_id || lesson?.id || ''}`) } catch {}
+    setMediaApprovalError('')
+    setVideoSearchOpen(false)
     setMediaOverlay(null)
     setPageError('')
     setObjectives([])
@@ -3039,69 +3073,31 @@ function WebbPageInner() {
   }
 
   async function refreshMedia(type) {
-    // Video refreshes count the same as opens — one per two objectives completed.
     if (type === 'video') {
-      const maxVideos = 1 + Math.floor(understoodObj.length / 2)
-      if (videosWatchedRef.current >= maxVideos) {
-        const objsNeeded = videosWatchedRef.current * 2 - understoodObj.length
-        addMsg(
-          objsNeeded === 1
-            ? `I love that you want to explore more! Here's our deal — I show a new video once for every two objectives we work through together. You're almost there: show me you understand just one more objective and I'll find a fresh one!`
-            : `I love that you want to explore more! Here's our deal — I show a new video once for every two objectives we work through together. Show me you understand ${objsNeeded} more objectives and I'll find a fresh one!`
-        )
-        return
-      }
-      videosWatchedRef.current += 1
+      // Refresh now restarts the current approved video. Searching is a separate action.
+      setVideoEnded(false)
+      setVideoCurrentTime(0)
+      ytCmd('seekTo', [0, true])
+      ytCmd('playVideo')
+      return
     }
+    const articles = approvedWebbMedia(mediaRows, 'article')
+    if (!articles.length || refreshingMedia) return
+    const currentIndex = articles.findIndex((item) => item.id === articleResource?.sourceId)
+    const next = articles[(currentIndex + 1) % articles.length]
+    if (!next) return
     setRefreshingMedia(true)
-    // Reset tier-message flags so a newly fetched video can say its own message
-    if (type === 'video') { lowTierMsgSentRef.current = false; noVideoMsgSentRef.current = false }
-    // Save current article so we can restore it if the refresh fails/returns nothing
-    const savedArticle = articleResource
-    // Clear immediately so the "Finding an article…" spinner appears while loading
-    if (type === 'article') setArticleResource(null)
-    const recentContext = chatMessages.slice(-6)
-      .filter(m => m.role === 'user')
-      .map(m => m.content)
-      .join('. ')
-    // Narrow search to remaining (incomplete) objectives
-    const remaining = objectives
-      .filter((_, i) => !learningStateRef.current.understoodObj.includes(i))
-      .join('; ')
-    const contextWithObj = [remaining, recentContext].filter(Boolean).join('. ')
     try {
-      const res = await fetch('/api/webb-resources', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          lesson: selectedLesson,
-          type,
-          context: contextWithObj,
-          objectives:             objectives.filter((_, i) => !learningStateRef.current.understoodObj.includes(i)),
-          excludeSourceId:        type === 'article' ? (articleResource?.sourceId || '') : undefined,
-          preferredSources:       type === 'article' ? articleSources : undefined,
-          excludeVideoIds:        type === 'video'   ? shownVideoIdsRef.current      : [],
-        }),
+      const data = await webbMediaRequest({
+        action: 'article', learnerId: routeLearnerId || learnerId,
+        lessonKey: currentWebbLessonKey, id: next.id,
       })
-      const data = await res.json()
-      if (type === 'video' && data.video) {
-        setVideoResource(data.video)
-        if (data.video.videoId)
-          shownVideoIdsRef.current = [...new Set([...shownVideoIdsRef.current, data.video.videoId])]
+      if (data.article?.html) {
+        setArticleResource(data.article)
+        setArticleKey((key) => key + 1)
       }
-      if (type === 'article') {
-        if (data.article?.html) {
-          setArticleKey(k => k + 1)
-          setArticleResource(data.article)
-        } else {
-          // Nothing usable came back — restore the old article so it doesn't disappear
-          setArticleResource(savedArticle)
-        }
-      }
-    } catch {
-      if (type === 'article') setArticleResource(savedArticle)
-    }
-    setRefreshingMedia(false)
+    } catch (cause) { setMediaApprovalError(cause.message) }
+    finally { setRefreshingMedia(false) }
   }
 
   // ── Close objectives panel ─────────────────────────────────────────────
@@ -4212,6 +4208,10 @@ function WebbPageInner() {
         playBreak={activePlayBreak}
         onComplete={finishWebbPlayBreak}
         lessonKey={currentWebbLessonKey}
+        learnerId={routeLearnerId || learnerId || ''}
+        lesson={selectedLesson}
+        mediaRows={mediaRows}
+        onMediaApproved={setMediaRows}
         gamesEnabled={!!webbPlanEnt?.games}
         goldenKeysEntitled={webbGoldenKeysEntitled}
         goldenKeysEnabled={webbGoldenKeysEnabled}
@@ -4408,13 +4408,13 @@ function WebbPageInner() {
             {/* Overlay buttons — bottom left: Video + Article (chatting phase) */}
             {isChatting && (
               <div style={{ position: 'absolute', bottom: keyboardCompact ? 6 : 14, left: keyboardCompact ? 6 : 14, display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: keyboardCompact ? 3 : 6, zIndex: 10 }}>
-                {(videoLoading || articleLoading) && (
+                {articleLoading && (
                   <span style={{ fontSize: 10, color: 'rgba(255,255,255,0.75)', background: 'rgba(0,0,0,0.45)', borderRadius: 6, padding: '2px 7px', letterSpacing: '0.02em' }}>
                     Searching the web…
                   </span>
                 )}
                 <div style={{ display: 'flex', gap: 10 }}>
-                <button
+                {workVideoChoices(mediaRows, workVideoUsed).length > 0 && <button
                   type="button"
                   onClick={handleVideoButtonClick}
                   aria-label="Watch a video"
@@ -4425,8 +4425,8 @@ function WebbPageInner() {
                     ? <svg style={{ width: '55%', height: '55%', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
                     : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><polygon points="5 3 19 12 5 21 5 3" /></svg>
                   }
-                </button>
-                <button
+                </button>}
+                {approvedWebbMedia(mediaRows, 'article').length > 0 && <button
                   type="button"
                   onClick={() => { setMediaOverlay(v => v === 'article' ? null : 'article') }}
                   aria-label="Read Wikipedia article"
@@ -4437,7 +4437,7 @@ function WebbPageInner() {
                     ? <svg style={{ width: '55%', height: '55%', animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
                     : <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20" /><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" /></svg>
                   }
-                </button>
+                </button>}
                 </div>
               </div>
             )}
@@ -4690,6 +4690,13 @@ function WebbPageInner() {
       )}
 
       {/* ── Portaled media overlay — position:fixed, moves between video/chat cols ── */}
+      {isChatting && workVideoMenuOpen && workVideoChoices(mediaRows, workVideoUsed).length > 0 && createPortal(
+        <div role="dialog" aria-modal="true" aria-label="Choose approved work video" style={{ position: 'fixed', inset: 0, zIndex: 1800, background: 'rgba(15,23,42,.94)', color: '#fff', padding: 24, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 12 }}>
+          <strong>Approved work-time videos</strong>
+          {workVideoChoices(mediaRows, workVideoUsed).map((resource) => <button key={resource.id} type="button" onClick={() => openApprovedWorkVideo(resource)} style={{ padding: 12, background: '#0d9488', color: '#fff', border: 'none', borderRadius: 8, cursor: 'pointer' }}>{resource.title}</button>)}
+          <button type="button" onClick={() => setWorkVideoMenuOpen(false)}>Back</button>
+        </div>, document.body
+      )}
       {isChatting && mediaOverlay && overlayPanelStyle && createPortal(
         <div ref={mediaOverlayRef} style={overlayPanelStyle}>
 
@@ -4703,15 +4710,15 @@ function WebbPageInner() {
             </span>
             <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
               {/* Refresh */}
-              <button type="button" onClick={() => refreshMedia(mediaOverlay)} disabled={refreshingMedia} title="Load a different one"
+              <button type="button" onClick={() => refreshMedia(mediaOverlay)} disabled={refreshingMedia} title={mediaOverlay === 'video' ? 'Restart this video' : 'Next approved article'}
                 style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 10px', fontSize: 16, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
                 {refreshingMedia ? '\u2026' : '\u21BB'}
               </button>
               {/* Interpret: play key moments (video only) — magnifying glass icon only */}
               {mediaOverlay === 'video' && videoResource?.videoId && !videoResource?.unavailable && (
-                <button type="button" onClick={interpretVideo} disabled={interpretingVideo} title="Key part — play key moments"
+                <button type="button" onClick={() => setVideoSearchOpen(true)} title="Search lesson videos"
                   style={{ background: 'rgba(255,255,255,0.15)', border: 'none', color: '#fff', borderRadius: 6, minWidth: 36, minHeight: 36, padding: '6px 8px', cursor: interpretingVideo ? 'wait' : 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-                  {interpretingVideo
+                  {false
                     ? <svg style={{ width: 16, height: 16, animation: 'spin 1s linear infinite' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2"><circle cx="12" cy="12" r="9" strokeDasharray="28 8" /></svg>
                     : <svg style={{ width: 16, height: 16 }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round"><circle cx="11" cy="11" r="7"/><line x1="16.5" y1="16.5" x2="21" y2="21"/></svg>
                   }
@@ -4795,7 +4802,7 @@ function WebbPageInner() {
                         >&#8635; Replay</button>
                         <button type="button" onClick={() => { setVideoEnded(false); refreshMedia('video') }} disabled={refreshingMedia}
                           style={{ background: C.accent, border: 'none', color: '#fff', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 600, cursor: refreshingMedia ? 'wait' : 'pointer', fontFamily: 'inherit' }}
-                        >{refreshingMedia ? '\u2026' : '\u25B6 Watch another'}</button>
+                        >{refreshingMedia ? '\u2026' : '\u21BB Restart video'}</button>
                         <button type="button" onClick={() => setMediaOverlay(null)}
                           style={{ background: 'rgba(255,255,255,0.1)', border: 'none', color: '#9ca3af', borderRadius: 8, padding: '10px 20px', fontSize: 14, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit' }}
                         >&#10005; Close</button>
@@ -4868,6 +4875,14 @@ function WebbPageInner() {
           </div>
         </div>,
         document.body
+      )}
+
+      {isChatting && videoSearchOpen && currentWebbLessonKey && createPortal(
+        <div role="dialog" aria-modal="true" aria-label="Search videos and request permission" style={{ position: 'fixed', inset: 0, zIndex: 2200, background: 'rgba(15,23,42,.85)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 12 }}>
+          <div style={{ width: 'min(720px, 96vw)', maxHeight: '90vh', overflow: 'auto', borderRadius: 14 }}>
+            <WebbVideoSearch learnerId={routeLearnerId || learnerId || ''} lessonKey={currentWebbLessonKey} lesson={selectedLesson} approvedRows={mediaRows} onApproved={setMediaRows} onClose={() => setVideoSearchOpen(false)} />
+          </div>
+        </div>, document.body
       )}
 
       {/* ── Settings overlay (tabbed: Settings | Article) ───────────── */}

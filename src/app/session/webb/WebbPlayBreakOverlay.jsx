@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import GamesOverlay from '../components/games/GamesOverlay'
+import WebbPlayMedia from './WebbPlayMedia'
 import TimerControlOverlay from '../components/TimerControlOverlay'
 import FullscreenPlayTimerOverlay from '../v2/FullscreenPlayTimerOverlay'
 import PlayTimeExpiredOverlay from '../v2/PlayTimeExpiredOverlay'
@@ -12,6 +13,10 @@ export default function WebbPlayBreakOverlay({
   playBreak,
   onComplete,
   lessonKey,
+  learnerId = '',
+  lesson = null,
+  mediaRows = [],
+  onMediaApproved,
   gamesEnabled = true,
   goldenKeysEntitled = true,
   goldenKeysEnabled = true,
@@ -29,6 +34,7 @@ export default function WebbPlayBreakOverlay({
 }) {
   const [nowMs, setNowMs] = useState(Date.now())
   const [showGames, setShowGames] = useState(false)
+  const [showMedia, setShowMedia] = useState(false)
   const [showFullscreenTimer, setShowFullscreenTimer] = useState(false)
   const [showTimerControls, setShowTimerControls] = useState(false)
   const [showPlayWithWebbMenu, setShowPlayWithWebbMenu] = useState(false)
@@ -40,6 +46,7 @@ export default function WebbPlayBreakOverlay({
     finishedRef.current = false
     setNowMs(Date.now())
     setShowGames(false)
+    setShowMedia(false)
     setShowFullscreenTimer(false)
     setShowTimerControls(false)
     setShowPlayWithWebbMenu(false)
@@ -59,11 +66,13 @@ export default function WebbPlayBreakOverlay({
   const finish = (reason) => {
     if (finishedRef.current) return
     finishedRef.current = true
+    setShowMedia(false)
     onComplete?.(reason)
   }
 
   useEffect(() => {
     if (playBreak && !playBreak.isPaused && remainingSeconds <= 0 && !finishedRef.current) {
+      setShowMedia(false)
       setShowExpiredCountdown(true)
     }
   }, [playBreak, remainingSeconds]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -186,6 +195,10 @@ export default function WebbPlayBreakOverlay({
         >
           Games
         </button>
+        <button type="button" onClick={() => setShowMedia(true)}
+          style={{ padding: '10px 18px', fontSize: 16, background: '#334155', color: '#fff', border: 'none', borderRadius: 9, cursor: 'pointer', fontWeight: 800 }}>
+          Media
+        </button>
 
         <button
           type="button"
@@ -269,6 +282,7 @@ export default function WebbPlayBreakOverlay({
   return (
     <>
       {mainSurface}
+      {showMedia && <WebbPlayMedia learnerId={learnerId} lessonKey={lessonKey} lesson={lesson} rows={mediaRows} onApproved={onMediaApproved} onClose={() => setShowMedia(false)} />}
 
       <PlayTimeExpiredOverlay
         isOpen={showExpiredCountdown}
