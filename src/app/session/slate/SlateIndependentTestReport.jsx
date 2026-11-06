@@ -61,8 +61,8 @@ export default function SlateIndependentTestReport({ items = [], percentage = nu
                 <p style={{ margin: '5px 0' }}><strong>Why:</strong> {reason || 'No grading explanation was saved for this earlier attempt; facilitator review is recommended.'}</p>
                 {entry?.expected && <p style={{ margin: '5px 0', opacity: 0.85 }}><strong>Reference answer:</strong> {String(entry.expected)}</p>}
                 {(onGradeReview || onQuestionReview) && <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginTop: 9 }}>
-                  {onGradeReview && <button type="button" onClick={() => onGradeReview(entry, index)} style={{ minHeight: 36, padding: '6px 10px', cursor: 'pointer' }}>FacOR: Correct grade</button>}
-                  {onQuestionReview && <button type="button" onClick={() => onQuestionReview(entry, index)} style={{ minHeight: 36, padding: '6px 10px', cursor: 'pointer' }}>FacOR: Bad question</button>}
+                  {onGradeReview && <button type="button" onClick={() => onGradeReview(entry, index)} style={{ minHeight: 36, padding: '6px 10px', cursor: 'pointer' }}>Facilitator: Correct grade</button>}
+                  {onQuestionReview && <button type="button" onClick={() => onQuestionReview(entry, index)} style={{ minHeight: 36, padding: '6px 10px', cursor: 'pointer' }}>Facilitator: Review question</button>}
                 </div>}
               </li>
             )

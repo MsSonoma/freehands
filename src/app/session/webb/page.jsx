@@ -4299,7 +4299,7 @@ function WebbPageInner() {
               webbWorkReward.stalls.some(row => !webbWorkReward.corrections.some(c => c.turnId === row.turnId)) && (
               <button type="button" onClick={() => setWebbStallOverrideOpen(true)}
                 style={{ padding: '6px 8px', border: '1px solid #94a3b8', borderRadius: 7, background: '#fff', color: '#334155', fontSize: 11, fontWeight: 700 }}>
-                FacOR: Correct stall
+                Facilitator: Correct work time
               </button>
             )}
             {isChatting && objectives.length > 0 && (

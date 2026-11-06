@@ -9221,7 +9221,7 @@ function SessionPageV2Inner() {
               {sonomaWorkReward?.settings?.style === 'countup' && sonomaWorkReward.stalls.some(row => !sonomaWorkReward.corrections.some(c => c.turnId === row.turnId)) && (
                 <button type="button" onClick={() => setSonomaStallOverrideOpen(true)}
                   style={{ display: 'block', marginTop: 5, padding: '6px 8px', background: '#fff', color: '#334155', border: '1px solid #94a3b8', borderRadius: 7, fontSize: 11, fontWeight: 700 }}>
-                  FacOR: Correct stall
+                  Facilitator: Correct work time
                 </button>
               )}
             </div>
