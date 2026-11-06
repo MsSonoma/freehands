@@ -9151,7 +9151,7 @@ function SessionPageV2Inner() {
             gap: 12,
             zIndex: 10
           }}>
-            <SonomaBackgroundMusicControl />
+            <SonomaBackgroundMusicControl playTimerActive={currentTimerMode[getCurrentPhaseName()] === 'play'} />
 
             <button
               type="button"

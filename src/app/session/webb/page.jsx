@@ -4386,7 +4386,7 @@ function WebbPageInner() {
                   </svg>
                 </button>
               )}
-              <WebbBackgroundMusicControl compact={keyboardCompact} />
+              <WebbBackgroundMusicControl compact={keyboardCompact} playTimerActive={!!activePlayBreak} />
               <button type="button" onClick={toggleMute} aria-label={isMuted ? 'Unmute' : 'Mute'} style={keyboardCompact ? { ...overlayBtnStyle, width: 34, height: 34 } : overlayBtnStyle}>
                 {isMuted
                   ? <svg style={{ width: '60%', height: '60%' }} viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M11 5L6 9H2v6h4l5 4V5z" /><path d="M23 9l-6 6" /><path d="M17 9l6 6" /></svg>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { lessonMusicTrackSrc, switchLessonMusicTrack } from '../utils/lessonMusic.mjs';
 
 const TRACK_SRC = '/media/Almost%20There.wav';
 const DEFAULT_VOLUME = 0.18;
@@ -15,7 +16,9 @@ function clampVolume(value) {
   return Math.min(1, Math.max(0, number));
 }
 
-export default function WebbBackgroundMusicControl({ compact = false }) {
+export default function WebbBackgroundMusicControl({ compact = false, playTimerActive = false }) {
+  const trackSrc = lessonMusicTrackSrc(TRACK_SRC, playTimerActive);
+  const activeTrackSrcRef = useRef(trackSrc);
   const audioRef = useRef(null);
   const controlRef = useRef(null);
   const longPressTimerRef = useRef(null);
@@ -51,7 +54,7 @@ export default function WebbBackgroundMusicControl({ compact = false }) {
     setVolume(storedVolume);
     setIsMuted(storedMuted);
 
-    const audio = new Audio(TRACK_SRC);
+    const audio = new Audio(activeTrackSrcRef.current);
     audio.loop = true;
     audio.preload = 'auto';
     audio.volume = storedVolume;
@@ -79,6 +82,16 @@ export default function WebbBackgroundMusicControl({ compact = false }) {
       if (audioRef.current === audio) audioRef.current = null;
     };
   }, []);
+
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || activeTrackSrcRef.current === trackSrc) return;
+    activeTrackSrcRef.current = trackSrc;
+    switchLessonMusicTrack(audio, trackSrc, {
+      muted: mutedRef.current,
+      volume: volumeRef.current,
+    });
+  }, [trackSrc]);
 
   useEffect(() => () => clearLongPress(), [clearLongPress]);
 
