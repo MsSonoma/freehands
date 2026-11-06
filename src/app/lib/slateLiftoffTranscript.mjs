@@ -45,6 +45,11 @@ export function restoreSlateLiftoffAdvance(saved, liftoff) {
   if (!saved || typeof saved !== 'object' || !liftoff) return null
   const turn = liftoff.turnNumber
   if (!Number.isSafeInteger(turn) || saved.turnNumber !== turn) return null
+  if (saved.kind === 'facilitator') {
+    return typeof saved.componentId === 'string' && liftoff.facilitatorFulfillments?.[saved.componentId]
+      ? { kind: 'facilitator', turnNumber: turn, componentId: saved.componentId }
+      : null
+  }
   if (saved.kind === 'test') {
     return liftoff.procedureReleased === true ? { kind: 'test', turnNumber: turn } : null
   }

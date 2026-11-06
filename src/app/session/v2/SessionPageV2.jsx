@@ -81,6 +81,7 @@ import useTypingViewport, { shouldAutoFocusTextInput } from '../hooks/useTypingV
 import { useSonomaKeyboard } from '../../components/SonomaKeyboard';
 import TeacherKeyboardMathWorkspace from '../../components/TeacherKeyboardMathWorkspace';
 import { restoreDiscussionAwards, queueDiscussionAwards, acknowledgeDiscussionAward } from './discussionObjectiveAwards.mjs';
+import { restoreDiscussionObjectivePlan } from './restoreDiscussionObjectivePlan.mjs';
 import AutoGrowingSonomaTextarea from '../../components/AutoGrowingSonomaTextarea';
 import { isMicrophoneCapturing } from '../utils/microphoneSession';
 import { measureSonomaLandscapeRoom, resolveSonomaKeyboardClearance } from './sonomaKeyboardLayout.mjs';
@@ -954,6 +955,7 @@ function SessionPageV2Inner() {
   
   const [discussionState, setDiscussionState] = useState('idle');
   const [discussionResuming, setDiscussionResuming] = useState(false); // true while auto-starting on resume (hides Begin button)
+  const [discussionRestoreWarning, setDiscussionRestoreWarning] = useState('');
   const [discussionActivity, setDiscussionActivity] = useState(null);
   const [discussionPrompt, setDiscussionPrompt] = useState('');
   const [discussionResponse, setDiscussionResponse] = useState('');
@@ -962,6 +964,7 @@ function SessionPageV2Inner() {
   const [discussionObjectivesInfo, setDiscussionObjectivesInfo] = useState({ completed: 0, total: 0 });
   const [discussionObjectivesList, setDiscussionObjectivesList] = useState([]);
   const [discussionFacilitatorOverrides, setDiscussionFacilitatorOverrides] = useState({});
+  const [discussionFacilitatorNextError, setDiscussionFacilitatorNextError] = useState("");
   const [discussionOverrideBusy, setDiscussionOverrideBusy] = useState(false);
   const [discussionUniversalOverride, setDiscussionUniversalOverride] = useState(-1);
   const [discussionOverrideError, setDiscussionOverrideError] = useState('');
@@ -5852,7 +5855,17 @@ function SessionPageV2Inner() {
     const isDiscussionResume = resumePhaseRef.current === 'discussion' && transcriptLinesRef.current.length > 0;
     if (isDiscussionResume) setDiscussionResuming(true);
     const savedDiscData = snapshotServiceRef.current?.snapshot?.phaseData?.discussion;
-    const pendingAwards = isDiscussionResume ? restoreDiscussionAwards(savedDiscData?.objectiveAnnouncements) : [];
+    const savedGoalPlan = restoreDiscussionObjectivePlan(isDiscussionResume ? savedDiscData : null);
+    // Only credits from the exact saved goal plan can be restored. Legacy snapshots
+    // keep their historical indexes for facilitator review, not automatic reassignment.
+    discussionCompletedIndicesRef.current = [...savedGoalPlan.completedObjectiveIndices];
+    setDiscussionCompletedIndices([...savedGoalPlan.completedObjectiveIndices]);
+    setDiscussionRestoreWarning(isDiscussionResume && savedGoalPlan.legacyUnmappedCompletedObjectiveIndices.length
+      ? 'Earlier objective credit could not be matched to its original goals. The transcript is retained; review objective fulfillment with your facilitator.'
+      : '');
+    const savedAwards = isDiscussionResume ? restoreDiscussionAwards(savedDiscData?.objectiveAnnouncements) : [];
+    const pendingAwards = savedGoalPlan.objectives.length ? savedAwards : [];
+    const unmappedAwards = savedGoalPlan.objectives.length ? [] : savedAwards;
     setDiscussionFacilitatorOverrides(isDiscussionResume ? (savedDiscData?.facilitatorObjectiveOverrides || {}) : {});
     discussionAwardQueueRef.current = pendingAwards;
     discussionAwardVisibleLogRef.current.clear();
@@ -5874,22 +5887,24 @@ function SessionPageV2Inner() {
       resumeHistory: isDiscussionResume
         ? transcriptLinesRef.current.map(l => ({ role: l.role, content: l.text, ...(l.kind ? { kind: l.kind } : {}), ...(l.featureId ? { featureId: l.featureId } : {}) }))
         : [],
+      resumeObjectives: savedGoalPlan.objectives,
+      resumeObjectiveClues: savedGoalPlan.objectiveClues,
       resumeCompletedIndices: isDiscussionResume
-        ? discussionCompletedIndicesRef.current
+        ? savedGoalPlan.completedObjectiveIndices
         : [],
       // Sentence-level resume: replay at the exact sentence that was active on refresh
       resumeSentenceKey: resumeSentenceKey,
       resumeReplyCheckpoint: isDiscussionResume ? savedDiscData?.replyCheckpoint : null,
       resumePendingObjectiveAnnouncements: pendingAwards,
       resumeFacilitatorObjectiveOverrides: isDiscussionResume ? savedDiscData?.facilitatorObjectiveOverrides : null,
+      resumeFacilitatorNextPending: isDiscussionResume ? savedDiscData?.facilitatorNextPending : false,
     });
     
 
     discussionPhaseRef.current = phase;
 
-    // Begin background prefetch immediately so data is ready when user clicks Begin
-    phase.prefetch();
-    
+    // Wire listeners before prefetch: a saved chat can become ready synchronously.
+    // Starting prefetch earlier loses the ready event and strands the resumed input.
     console.log('[SessionPageV2] Setting up event listeners');
 
     let didComplete = false;
@@ -5907,6 +5922,8 @@ function SessionPageV2Inner() {
         'awaiting-response':  'awaiting-response',
         'playing-reply-feedback': 'playing-reply-feedback',
         'awaiting-next': 'awaiting-next',
+        'awaiting-facilitator-next': 'awaiting-facilitator-next',
+        'generating-facilitator-next': 'generating-facilitator-next',
         'playing-reply-question': 'playing-reply-question',
         'awaiting-objective-ack': 'awaiting-objective-ack',
         'complete':           'complete',
@@ -5920,6 +5937,19 @@ function SessionPageV2Inner() {
       if (Array.isArray(data.objectiveClues))  setDiscussionObjectiveClues(data.objectiveClues);
       if (Array.isArray(data.completedIndices)) setDiscussionCompletedIndices(data.completedIndices);
       if (data.facilitatorOverrides) setDiscussionFacilitatorOverrides(data.facilitatorOverrides);
+      if (data.state === 'ready' && Array.isArray(data.objectives) && data.objectives.length > 0) {
+        // Save the goal text and hints that belong to earned indexes. Later resumes
+        // can restore this same plan without new generation or introductory TTS.
+        void snapshotServiceRef.current?.saveProgress('discussion-objective-plan', {
+          phaseOverride: 'discussion',
+          objectives: [...data.objectives],
+          objectiveClues: [...(data.objectiveClues || [])],
+          completedObjectiveIndices: [...(data.completedIndices || [])],
+          legacyUnmappedCompletedObjectiveIndices: savedGoalPlan.legacyUnmappedCompletedObjectiveIndices,
+          objectiveAnnouncements: pendingAwards,
+          legacyUnmappedObjectiveAnnouncements: [...(savedDiscData?.legacyUnmappedObjectiveAnnouncements || []), ...unmappedAwards],
+        })?.catch?.(error => console.warn('[SessionPageV2] Unable to save Discussion goal plan:', error));
+      }
       // Auto-start on resume: skip the 'Begin Discussion' button when prefetch completes
       if (data.state === 'ready' && (isDiscussionResume || startDiscussionAfterBaselineRef.current)) {
         startDiscussionAfterBaselineRef.current = false;
@@ -5945,6 +5975,7 @@ function SessionPageV2Inner() {
           // Returns null when in chat/awaiting state — indicating chat-level resume instead.
           sentenceKey: discussionPhaseRef.current?.currentSentenceKey ?? null,
           replyCheckpoint: discussionPhaseRef.current?.replyCheckpoint ?? null,
+          facilitatorNextPending: discussionPhaseRef.current?.facilitatorNextPending ?? false,
         }).catch(() => {});
       }
     });
@@ -5993,8 +6024,11 @@ function SessionPageV2Inner() {
           snapshotServiceRef.current.saveProgress('discussion-objective', {
             phaseOverride: 'discussion',
             completedObjectiveIndices: [...data.completedIndices],
+            ...phase.objectivePlan,
+            legacyUnmappedCompletedObjectiveIndices: savedGoalPlan.legacyUnmappedCompletedObjectiveIndices,
             objectiveAnnouncements: queue,
             facilitatorObjectiveOverrides: data.facilitatorOverrides || discussionPhaseRef.current?.facilitatorOverrides || {},
+            facilitatorNextPending: discussionPhaseRef.current?.facilitatorNextPending ?? false,
             sentenceKey: null,
           }).catch(() => { if (data.source === 'facilitator') setDiscussionOverrideError('The award was recorded but could not be saved. Do not refresh.'); });
         }
@@ -6052,8 +6086,10 @@ function SessionPageV2Inner() {
       }
     });
     
-    // Don't auto-start - let handleBeginPhase call start() when user clicks Begin
-    // This ensures Begin button shows after timeline jumps
+    // Prefetch after registering listeners. Chat resumes without a sentence
+    // checkpoint become ready immediately if their saved goal plan is present.
+    void phase.prefetch();
+    // New lessons and timeline jumps still wait for Begin.
   };
   
   // Start teaching phase
@@ -8113,7 +8149,7 @@ function SessionPageV2Inner() {
   }, [startSession]);
 
   const canShowDiscussionAwardNotice = Boolean(newlyCompletedDiscussionObj &&
-    ['awaiting-next', 'chatting', 'reply-unavailable', 'awaiting-objective-ack'].includes(discussionState) &&
+    ['awaiting-next', 'awaiting-facilitator-next', 'chatting', 'reply-unavailable', 'awaiting-objective-ack'].includes(discussionState) &&
     !openingActionActive && !showWords && !showDiscussionObjectives && !sonomaHelpHoldActive &&
     !showTakeoverDialog && !showGames && !showVisualAids);
 
@@ -8136,6 +8172,7 @@ function SessionPageV2Inner() {
     if (currentPhaseRef.current !== 'discussion' || !discussionObjectivesList[index] || executionFencedRef.current) return false;
     const phase = discussionPhaseRef.current;
     const ok = phase?.fulfillObjectiveByFacilitator(index);
+    if (ok) { setDiscussionResponse(''); setDiscussionFacilitatorNextError(''); }
     if (!ok) {
       setDiscussionOverrideError('The objective could not be updated. Please try again.');
       return false;
@@ -8143,6 +8180,7 @@ function SessionPageV2Inner() {
     const saved = await snapshotServiceRef.current?.saveProgress('facilitator-discussion-goal', {
       phaseOverride: 'discussion', completedObjectiveIndices: [...discussionCompletedIndicesRef.current],
       facilitatorObjectiveOverrides: phase?.facilitatorOverrides || {},
+      facilitatorNextPending: phase?.facilitatorNextPending ?? false,
       objectiveAnnouncements: [...discussionAwardQueueRef.current],
     });
     if (!saved || saved.success === false || saved.blocked === true) {
@@ -8152,6 +8190,25 @@ function SessionPageV2Inner() {
     setDiscussionOverrideError('');
     return true;
   }, [discussionObjectivesList]);
+  const advanceDiscussionFacilitatorNext = async () => {
+    const phase = discussionPhaseRef.current;
+    if (currentPhaseRef.current !== 'discussion' || !phase?.facilitatorNextPending ||
+        executionFencedRef.current) return;
+    setDiscussionFacilitatorNextError('');
+    const ok = await phase.nextFacilitatorObjective();
+    if (!ok) {
+      setDiscussionFacilitatorNextError('The next question is not ready. Press Next to try again.');
+      return;
+    }
+    const saved = await snapshotServiceRef.current?.saveProgress('discussion-facilitator-next', {
+      phaseOverride: 'discussion',
+      facilitatorNextPending: phase.facilitatorNextPending,
+      replyCheckpoint: phase.replyCheckpoint,
+    });
+    if (!saved || saved.success === false || saved.blocked === true) {
+      setDiscussionFacilitatorNextError('The next step was shown, but its save is unconfirmed. Do not refresh.');
+    }
+  };
   const questionOverrideContext = {
     comprehension: { phase: comprehensionPhaseRef.current, question: currentComprehensionQuestion },
     exercise: { phase: exercisePhaseRef.current, question: currentExerciseQuestion },
@@ -10486,6 +10543,23 @@ function SessionPageV2Inner() {
             </div>
           )}
 
+          {currentPhase === 'discussion' && discussionState === 'awaiting-facilitator-next' &&
+            !newlyCompletedDiscussionObj && !openingActionActive && !showWords && (
+            <div style={{ display: 'grid', justifyItems: 'center', gap: 6, padding: '8px 12px' }}>
+              <button type="button" onClick={() => { void advanceDiscussionFacilitatorNext(); }}
+                aria-label="Next objective question"
+                style={{ padding: '12px 28px', background: '#c7442e', color: '#fff',
+                  border: 'none', borderRadius: 10, fontSize: '1rem', fontWeight: 700, cursor: 'pointer' }}>
+                Next
+              </button>
+              {discussionFacilitatorNextError && <p role="alert" style={{ color: '#991b1b', margin: 0 }}>{discussionFacilitatorNextError}</p>}
+            </div>
+          )}
+          {currentPhase === 'discussion' && discussionState === 'generating-facilitator-next' && (
+            <div role="status" style={{ textAlign: 'center', padding: '12px', color: '#475569' }}>
+              Preparing the next question...
+            </div>
+          )}
           {/* Feedback is a complete learner-controlled moment. Next reveals the
               follow-up question; raising a hand stays available before and after. */}
           {currentPhase === 'discussion' && discussionState === 'awaiting-next' && !newlyCompletedDiscussionObj && !openingActionActive && !showWords && (
@@ -10655,6 +10729,12 @@ function SessionPageV2Inner() {
             </div>
           )}
 
+          {currentPhase === 'discussion' && discussionRestoreWarning && (
+            <div role="status" style={{ padding: '8px 12px', color: '#92400e', fontSize: 13,
+              background: '#fffbeb', borderRadius: 8, margin: '0 12px 8px' }}>
+              {discussionRestoreWarning}
+            </div>
+          )}
           {/* Discussion chat input — shown when in the Socratic conversation */}
           {currentPhase === 'discussion' &&
            (discussionState === 'chatting' || discussionState === 'awaiting-response') &&

@@ -259,6 +259,8 @@ function WebbPageInner() {
   const [webbUniversalOverride, setWebbUniversalOverride] = useState(-1)
   const [webbQuestionOverrideOpen, setWebbQuestionOverrideOpen] = useState(false)
   const [objectiveOverrideError, setObjectiveOverrideError] = useState('')
+  const [facilitatorNextPending, setFacilitatorNextPending] = useState(false)
+  const [facilitatorNextError, setFacilitatorNextError] = useState('')
   const [showFullObjectives, setShowFullObjectives] = useState(false) // facilitator-only full objective reveal
   const [showSourceSettings, setShowSourceSettings] = useState(false) // settings overlay
   const [settingsTab,        setSettingsTab]        = useState('settings') // 'settings' | 'article'
@@ -682,6 +684,8 @@ function WebbPageInner() {
       startWebbSessionPolling()
       webbSessionStartRef.current = saved.webbSessionStartedAt || new Date().toISOString()
       await initializeWebbEvidence(canonicalSessionRef.current, selectedLesson)
+      setFacilitatorNextPending(saved.facilitatorNextPending === true)
+      setFacilitatorNextError('')
       setChatMessages(saved.chatMessages || [])
       setTranscript(saved.transcript || [])
       setObjectives(saved.objectives || [])
@@ -809,6 +813,7 @@ function WebbPageInner() {
     snapshotVersion: WEBB_SNAPSHOT_VERSION,
     webbSessionStartedAt: webbSessionStartRef.current,
     selectedLesson, chatMessages, transcript, objectives, objectiveClues, compositionBlueprint,
+    facilitatorNextPending,
     objectiveTargetIndex: objectiveTargetRef.current,
     ...learningStateRef.current,
     webbStage: webbStageRef.current,
@@ -824,7 +829,7 @@ function WebbPageInner() {
   useEffect(() => {
     if (webbExecutionFencedRef.current || offerResume || phase !== PHASE.CHATTING || !selectedLesson) return
     snapshotSaveRef.current()
-  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, objectiveClues, compositionBlueprint, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, compositionPlan, essay, essayMode, responseTurn, playMilestones, activePlayBreak, webbGoldenKeySuspended])
+  }, [phase, selectedLesson, offerResume, chatMessages, transcript, objectives, objectiveClues, compositionBlueprint, facilitatorNextPending, learningState, writingMode, writingIndex, writingSubphase, writingDraft, writingAttempts, acceptedSentences, compositionPlan, essay, essayMode, responseTurn, playMilestones, activePlayBreak, webbGoldenKeySuspended])
 
   submitWritingAttemptRef.current = submitWritingAttempt
   useEffect(() => {
@@ -2505,6 +2510,8 @@ function WebbPageInner() {
     webbResponseClock.clear()
     setActiveIndex(-1)
     setChatMessages([])
+    setFacilitatorNextPending(false)
+    setFacilitatorNextError('')
     setVideoResource(null)
     setArticleResource(null)
     setMediaOverlay(null)
@@ -2919,7 +2926,7 @@ function WebbPageInner() {
   // Normal research/chat dispatcher. Writing Studio submissions bypass every UI-intent intercept.
   async function sendMessage(text) {
     if (webbExecutionFencedRef.current || phase !== PHASE.CHATTING || !objectives.length || checkError || writingMode || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH) return
-    if (!text.trim() || chatLoading) return
+    if (!text.trim() || chatLoading || facilitatorNextPending) return
     finishWebbResponseTurn(text, 'research-submitted')
     const replay = featureHelpReplayRef.current?.message === text ? featureHelpReplayRef.current : null
     if (replay) featureHelpReplayRef.current = null
@@ -3106,7 +3113,8 @@ function WebbPageInner() {
 
   async function facilitatorFulfillWebbObjective(index) {
     if (!showObjectives || webbExecutionFencedRef.current) return false
-    if (phase !== PHASE.CHATTING || !selectedLesson || !objectives[index]) return false
+    if (phase !== PHASE.CHATTING || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || writingMode ||
+        !selectedLesson || !objectives[index]) return false
     if (chatLoading || writingEvaluating) {
       setObjectiveOverrideError('Wait for Mrs. Webb to finish the current response before approving a goal.')
       return false
@@ -3115,16 +3123,74 @@ function WebbPageInner() {
     const next = fulfillWebbObjectiveByFacilitator(objectives, learningStateRef.current, index)
     if (!next) return false
     commitLearningState(next)
-    const saved = saveLearningSnapshot({ objectives, selectedLesson })
+    const saved = saveLearningSnapshot({ objectives, selectedLesson, facilitatorNextPending: true })
     if (!saved) {
       setObjectiveOverrideError('The override could not be saved. Keep this session open.')
       return false
     }
     objectiveTargetRef.current = objectives.findIndex((_, i) => !next.understoodObj.includes(i))
+    skipTTS()
+    commitResponseTurn(null)
+    setCheckError('')
+    setFacilitatorNextPending(true)
+    setFacilitatorNextError('')
+    setShowObjectives(false)
     console.info('[Webb] facilitator objective fulfillment', { index, saved: Boolean(saved) })
     return true
   }
+  async function advanceWebbFacilitatorObjective() {
+    if (!facilitatorNextPending || chatLoading || writingEvaluating ||
+        webbExecutionFencedRef.current || phase !== PHASE.CHATTING ||
+        webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || !selectedLesson) return
+    const run = ++runGenerationRef.current
+    setChatLoading(true)
+    setFacilitatorNextError('')
+    try {
+      const progress = webbObjectiveProgress(objectives, learningStateRef.current)
+      const missingNoteIndex = progress.missingNoteIndices[0] ?? null
+      const targetIndex = progress.remainingIndices[0] ?? missingNoteIndex
+      objectiveTargetRef.current = Number.isInteger(targetIndex) ? targetIndex : null
+      const response = await fetch('/api/webb-chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          messages: chatMessages, lesson: selectedLesson, facilitatorAdvance: true,
+          media: { video: videoResource || null, article: articleResource
+            ? { title: articleResource.title, source: articleResource.source } : null },
+          remainingObjectives: progress.remainingObjectives,
+          completedObjectives: progress.completedObjectives,
+          allObjectivesMet: progress.allObjectivesMet,
+          writingReady: progress.writingReady,
+          noteCaptureIndex: missingNoteIndex,
+          noteCaptureObjective: Number.isInteger(missingNoteIndex) ? objectives[missingNoteIndex] : '',
+          noteCaptureBodyUnit: Number.isInteger(missingNoteIndex) ? compositionBlueprint?.bodyUnits?.[missingNoteIndex] || null : null,
+        }),
+      })
+      if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
+      const data = await response.json().catch(() => null)
+      if (!response.ok || !data?.reply?.trim()) throw new Error('Mrs. Webb could not prepare the next question. Press Next to retry.')
+      const reply = data.reply.trim()
+      const msg = objectivePromptMessage(reply, targetIndex, Number.isInteger(targetIndex) ? objectives[targetIndex] : '', data.objectivePrompt, {
+        id: crypto.randomUUID(), createdAt: new Date().toISOString(),
+      })
+      const finalHistory = [...chatMessages, msg]
+      const finalTranscript = [...transcript, { role: 'assistant', text: reply, kind: 'facilitator_next_question' }]
+      if (!saveLearningSnapshot({ chatMessages: finalHistory, transcript: finalTranscript, facilitatorNextPending: false })) {
+        throw new Error('The next question was not saved. Press Next to retry.')
+      }
+      setFacilitatorNextPending(false)
+      setChatMessages(finalHistory)
+      addMsg(reply, { kind: 'facilitator_next_question' })
+    } catch (error) {
+      if (run === runGenerationRef.current && !webbExecutionFencedRef.current) {
+        setFacilitatorNextError(error?.message || 'The next question is unavailable. Press Next to retry.')
+      }
+    } finally {
+      if (run === runGenerationRef.current && !webbExecutionFencedRef.current) setChatLoading(false)
+    }
+  }
   const activeWebbResearchQuestion = (() => {
+    if (facilitatorNextPending) return null
     if (phase !== PHASE.CHATTING || webbStageRef.current !== WEBB_SESSION_STAGES.RESEARCH || writingMode) return null
     const lastIndex = chatMessages.length - 1
     const last = chatMessages[lastIndex]
@@ -4592,7 +4658,17 @@ function WebbPageInner() {
               </button>
             </div>
           )}
-          {webbStageRef.current === WEBB_SESSION_STAGES.RESEARCH && (
+          {webbStageRef.current === WEBB_SESSION_STAGES.RESEARCH && facilitatorNextPending && (
+            <div data-webb-facilitator-next style={{ display: 'grid', justifyItems: 'center', gap: 8, padding: 12 }}>
+              <button type="button" onClick={() => { void advanceWebbFacilitatorObjective() }}
+                disabled={chatLoading || writingEvaluating || webbExecutionFencedRef.current}
+                style={{ background: '#0d9488', color: '#fff', padding: '12px 28px',
+                  border: 'none', borderRadius: 10, fontSize: 16, fontWeight: 800,
+                  cursor: chatLoading ? 'wait' : 'pointer' }}>Next</button>
+              {facilitatorNextError && <p role="alert" style={{ color: '#fca5a5', margin: 0 }}>{facilitatorNextError}</p>}
+            </div>
+          )}
+          {webbStageRef.current === WEBB_SESSION_STAGES.RESEARCH && !facilitatorNextPending && (
             <StudentInput
               onSend={sendMessage}
               onActivity={noteWebbLearnerActivity}

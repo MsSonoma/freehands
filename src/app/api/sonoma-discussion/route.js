@@ -197,8 +197,15 @@ export async function POST(request) {
     learnerName || 'student',
     objectiveStatus || null,
   )
-  const system = `${baseSystem}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}`
+  let system = `${baseSystem}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}`
 
+  const facilitatorNext = action === 'facilitator-next'
+  if (facilitatorNext) {
+    if (!Array.isArray(remainingObjectives) || remainingObjectives.length === 0 || allObjectivesMet === true) {
+      return NextResponse.json({ error: 'No remaining discussion objective.' }, { status: 409 })
+    }
+    system += '\n\nThe facilitator authoritatively completed the earlier learning goal. The old unanswered question is retired. Do not grade, repeat, paraphrase, or answer it. Ask ONLY one short, age-appropriate question about the FIRST remaining checkpoint. This reply must contain the new question only: no feedback, praise, or introduction. End with a question mark.'
+  }
   try {
     const result = await requestSonomaTextReply({
       endpoint: OPENAI_URL,

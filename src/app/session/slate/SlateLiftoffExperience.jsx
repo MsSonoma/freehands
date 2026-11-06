@@ -52,6 +52,7 @@ import {
   LIFTOFF_PROTOCOL_VERSION,
   liftoffReleaseReady,
   facilitatorFulfillLiftoffComponent,
+  advanceLiftoffAfterFacilitator,
   normalizeLiftoffProblem,
   isLiftoffProblemFresh,
 } from '@/app/lib/slateLiftoff.mjs'
@@ -1620,19 +1621,33 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     await persistLiftoffSnapshot({ phase: 'active', liftoff: next })
   }, [persistLiftoffSnapshot, phase])
   const fulfillSlateObjective = async (index) => {
-    if (phase !== 'active' || busy || lineHelpBusy || snapshotServiceRef.current?.writesFenced) return false
+    if (phase !== 'active' || busy || lineHelpBusy || introTeachingRef.current ||
+        submitLockRef.current || snapshotServiceRef.current?.writesFenced) return false
     const current = liftoffRef.current
     const selected = (current?.components || []).filter(row => row.essential !== false)[index]
     if (!selected) return false
     const next = facilitatorFulfillLiftoffComponent(current, selected.id)
     if (!next) return false
-    const saved = await persistLiftoffSnapshot({ phase: 'active', liftoff: next })
+    const pending = { kind: 'facilitator', turnNumber: next.turnNumber, componentId: selected.id }
+    const notice = 'The facilitator approved that learning goal. Press Next to continue.'
+    const saved = await persistLiftoffSnapshot({ phase: 'active', liftoff: next,
+      pendingAdvance: pending, slateText: notice })
     if (!saved || saved?.success === false || snapshotServiceRef.current?.writesFenced) {
       setSlateOverrideError('The approval could not be saved. No credit was applied.')
       return false
     }
     liftoffRef.current = next
     setLiftoff(next)
+    pendingAdvanceRef.current = pending
+    setPendingAdvance(pending)
+    setAdvanceError('')
+    setQuestionPending(true)
+    setAnswer('')
+    setSlateText(notice)
+    stopReminderSpeech()
+    speechRequestRef.current += 1
+    try { audioRef.current?.pause?.() } catch {}
+    appendTranscript('assistant', notice, { kind: 'facilitator_objective_approved' })
     setSlateOverrideError('')
     return true
   }
@@ -2024,7 +2039,60 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     setBusy(true)
     setAdvanceError('')
     try {
-      if (advance.kind === 'question') {
+      if (advance.kind === 'facilitator') {
+        if (!current.facilitatorFulfillments?.[advance.componentId]) {
+          throw new Error('This facilitator approval is no longer current.')
+        }
+        if (liftoffReleaseReady(current)) {
+          const released = { ...current, procedureReleased: true,
+            currentAction: { type: 'release', targetComponentIds: [], withheldComponentIds: [],
+              supportedComponentIds: [], problem: null, reason: 'All release gates are satisfied.' } }
+          const saved = await persistLiftoffSnapshot({ phase: 'active', liftoff: released,
+            pendingAdvance: { kind: 'test', turnNumber: released.turnNumber } })
+          if (!saved || saved?.success === false) throw new Error('The independent test transition was not saved. Press Next again.')
+          liftoffRef.current = released
+          setLiftoff(released)
+          pendingAdvanceRef.current = null
+          setPendingAdvance(null)
+          setQuestionPending(false)
+          await beginIndependentAssessment(lesson, released)
+        } else {
+          const response = await fetch('/api/slate-liftoff', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ mode: 'facilitator_next', lesson, state: current }),
+          })
+          const data = await response.json().catch(() => null)
+          if (!response.ok || !data?.ok || !data.nextAction) {
+            throw new Error(data?.error || 'Mr. Slate could not prepare the next objective question. Press Next again.')
+          }
+          if (!componentActiveRef.current || snapshotServiceRef.current?.writesFenced ||
+              liftoffRef.current?.turnNumber !== advance.turnNumber ||
+              pendingAdvanceRef.current?.kind !== 'facilitator') return
+          const next = advanceLiftoffAfterFacilitator(current, data.nextAction)
+          if (!next) throw new Error('The next question did not pass Liftoff checks. Press Next again.')
+          const question = String(next.currentAction.problem.prompt).trim()
+          const intro = String(data.learnerMessage || '').trim()
+          const saved = await persistLiftoffSnapshot({ phase: 'active', liftoff: next,
+            pendingAdvance: null, slateText: intro || question })
+          if (!saved || saved?.success === false) throw new Error('The next question was not saved. Press Next again.')
+          if (!componentActiveRef.current || snapshotServiceRef.current?.writesFenced) return
+          liftoffRef.current = next
+          setLiftoff(next)
+          pendingAdvanceRef.current = null
+          setPendingAdvance(null)
+          setQuestionPending(false)
+          mathSessionRef.current = null
+          setMathSession(null)
+          mathWorkingNotesRef.current = null
+          setMathWorkingNotes(null)
+          mathActivityKeyRef.current = ''
+          setAnswer('')
+          setSlateText(intro || question)
+          if (intro) appendTranscript('assistant', intro, { kind: 'liftoff_teaching' })
+          appendTranscript('assistant', question, { kind: 'liftoff_question', turnNumber: next.turnNumber })
+          void speak([intro, question].filter(Boolean).join(' '))
+        }
+      } else if (advance.kind === 'question') {
         // Persist the learner's choice before revealing the question. If the
         // browser closes between the save and render, legacy restore can still
         // reveal the same current question without skipping a turn.

@@ -226,7 +226,7 @@ function buildDirectTeachSystem(lesson, targetObjective) {
 
 export async function POST(req) {
   try {
-    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, noteCaptureObjective = '', noteCaptureBodyUnit = null, deferTransitionForPlay = false, deferQuestionForPlay = false, resumeAfterPlay = false } = await req.json()
+    const { messages = [], lesson = {}, media = {}, remainingObjectives = [], assessmentPush = false, allObjectivesMet = false, seekRequest = null, researchMode = false, researchDirect = false, targetObjective = '', masteryStatus = null, writingMode = false, writingNote = '', writingEvaluation = null, writingObjective = '', writingObjectiveIndex = null, writingTotalObjectives = null, writingPriorSentences = [], writingSlot = null, writingControllingIdea = '', writingSourceNotes = [], completedObjectives = [], writingReady = null, noteCaptureObjective = '', noteCaptureBodyUnit = null, deferTransitionForPlay = false, deferQuestionForPlay = false, resumeAfterPlay = false, facilitatorAdvance = false } = await req.json()
 
     // ── Seek request: "show me the part where..." ─────────────────────────
     // Client sends { seekRequest: { momentList }, messages } instead of going through
@@ -305,10 +305,15 @@ export async function POST(req) {
       return NextResponse.json({ error: 'OpenAI not configured' }, { status: 503 })
     }
 
+    const facilitatorInstruction = facilitatorAdvance === true
+      ? 'A facilitator has authoritatively completed the previously active learning objective. The last unanswered question in the transcript is retired, not an unanswered learner turn. Do not evaluate it, ask about it again, or claim learner evidence. Ask ONE short, child-comprehensible question about the FIRST remaining objective, without repeating any completed objective. If all mastery objectives are fulfilled but a research note is missing, ask only for that learner-authored note, not another comprehension answer. If all goals and notes are complete, follow the normal research-to-writing transition. Do not pretend the learner said anything.'
+      : ''
+
     const oaiMessages = [
       { role: 'system', content: `${buildSystem(lesson, media, remainingObjectives, assessmentPush, allObjectivesMet, masteryStatus, writingMode, writingNote, writingEvaluation, writingObjective, writingObjectiveIndex, writingTotalObjectives, writingPriorSentences, writingSlot, writingControllingIdea, writingSourceNotes, completedObjectives, writingReady, noteCaptureObjective, noteCaptureBodyUnit, deferTransitionForPlay, deferQuestionForPlay, resumeAfterPlay)}\n\n${buildConversationSafetyContext(safetyClassification, { lessonTopic: lesson?.title || 'this lesson', audience: 'learner' })}` },
       { role: 'system', content: structuredObjectiveReplyInstruction() },
       ...messages.map(m => ({ role: m.role, content: String(m.content || '') })),
+      ...(facilitatorInstruction ? [{ role: 'system', content: facilitatorInstruction }] : []),
     ]
 
     const result = await requestWebbStructuredReply({

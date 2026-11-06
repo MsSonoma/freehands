@@ -72,6 +72,9 @@ async function withFakeApis({ replies, check = { newlyCompleted: [], evaluationS
     lessonData: { title: 'The main idea', subject: 'Language Arts', grade: 4 },
     learnerName: 'Test Learner',
     resumeHistory: history,
+    // Existing objective credit must be accompanied by the saved objective plan.
+    resumeObjectives: objectives,
+    resumeObjectiveClues: objectives.map((_, i) => 'Goal ' + (i + 1)),
     resumeCompletedIndices,
     resumePendingObjectiveAnnouncements,
   })
@@ -244,15 +247,39 @@ test('facilitator award is distinct from AI credit, survives duplicate actions, 
     assert.equal(phase.completedObjectives, 1)
     assert.equal(getChecks(), 0, 'facilitator credit is not an AI grading call')
     assert.equal(phase.fulfillObjectiveByFacilitator(1), true)
-    assert.equal(phase.state, 'awaiting-objective-ack')
+    assert.equal(phase.state, 'awaiting-facilitator-next')
     assert.equal(events.filter(e => e.name === 'discussionComplete').length, 0)
     phase.acknowledgeObjectiveAward(0)
-    assert.equal(phase.state, 'awaiting-objective-ack')
+    assert.equal(phase.state, 'awaiting-facilitator-next')
     phase.acknowledgeObjectiveAward(1)
+    assert.equal(phase.state, 'awaiting-facilitator-next')
+    assert.equal(await phase.nextFacilitatorObjective(), true)
     assert.equal(phase.state, 'complete')
   })
 })
 
+test('FacOR Next rejects stale grading, retries generation, and advances to the remaining goal', async () => {
+  await withFakeApis({
+    objectives: ['First idea', 'Second idea'],
+    history: [{ role: 'assistant', content: 'Old unanswered question?' }],
+    replies: [failed, ok('How does the second idea work?')],
+  }, async ({ phase, requests, events, getChecks }) => {
+    assert.equal(phase.fulfillObjectiveByFacilitator(0), true)
+    assert.equal(phase.state, 'awaiting-facilitator-next')
+    assert.equal(await phase.nextFacilitatorObjective(), false, 'acknowledge the approval before Next')
+    phase.acknowledgeObjectiveAward(0)
+    assert.equal(await phase.nextFacilitatorObjective(), false)
+    assert.equal(phase.state, 'awaiting-facilitator-next')
+    assert.equal(await phase.nextFacilitatorObjective(), true)
+    await new Promise(resolve => setImmediate(resolve))
+    assert.equal(phase.state, 'chatting')
+    assert.equal(getChecks(), 0, 'facilitator Next is not a graded learner answer')
+    assert.equal(requests.length, 2)
+    assert.equal(requests[1].action, 'facilitator-next')
+    assert.deepEqual(requests[1].remainingObjectives, ['Second idea'])
+    assert.equal(events.filter(event => event.name === 'discussionMessage' && event.data.kind === 'facilitator_next_question').length, 1)
+  })
+})
 test('a stale objective-check response cannot remove facilitator credit', async () => {
   let resolveBody
   const delayedBody = new Promise(resolve => { resolveBody = resolve })

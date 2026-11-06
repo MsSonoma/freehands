@@ -242,6 +242,29 @@ export function facilitatorFulfillLiftoffComponent(state, componentId, approvedA
     trace: [...(state?.trace || []), { turn: Number(state?.turnNumber || 0), event: 'facilitator_objective_fulfilled', componentId }].slice(-80),
   }
 }
+/** Retire a facilitator-approved question without asserting any learner evidence. */
+export function advanceLiftoffAfterFacilitator(state, nextAction) {
+  const ids = (state?.components || []).map(component => component.id)
+  const action = normalizeLiftoffAction(nextAction, ids)
+  if (!state || !action.problem?.prompt || !action.problem?.instanceKey ||
+      action.targetComponentIds.length !== 1 || !action.problem.responseContract ||
+      action.problem.responseContract.targetComponentId !== action.targetComponentIds[0]) return null
+  const previousProblem = normalizeLiftoffProblem(state.currentAction?.problem)
+  const history = [...(state.problemHistory || []), ...(previousProblem ? [previousProblem] : [])]
+  if (!isLiftoffProblemFresh(action.problem, history)) return null
+  const turnNumber = Number(state.turnNumber || 0) + 1
+  return {
+    ...state,
+    currentAction: action,
+    problemHistory: history.slice(-40),
+    turnNumber,
+    trace: [...(state.trace || []), {
+      turn: turnNumber, event: 'facilitator_superseded_question',
+      retiredQuestion: previousProblem?.prompt || null,
+      action, observations: [],
+    }].slice(-80),
+  }
+}
 export function liftoffReleaseReady(state) {
   const essential = (state?.components || []).filter((component) => component.essential !== false)
   if (!essential.length) return false

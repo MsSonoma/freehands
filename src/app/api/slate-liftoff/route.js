@@ -363,6 +363,24 @@ ${mathWorking ? `OPTIONAL LEARNER SCRATCH WORK (not a separately graded answer; 
 `
 }
 
+function facilitatorNextPrompt(lesson, state, targetId) {
+  const remaining = (state.components || []).filter(component =>
+    component.essential !== false &&
+    !state.facilitatorFulfillments?.[component.id] &&
+    !['independent', 'retained'].includes(component.evidenceState))
+  return [
+    baseMethod(),
+    buildLearnerLanguageGuidance({ grade: lesson?.grade || lesson?.gradeLevel }),
+    'FACILITATOR-AUTHORED PROGRESSION: The adult approved an objective, retiring the old question. No new learner answer was provided. Do not assess, invent evidence, reverse an approval, or ask the old question again.',
+    'Generate the next learner-facing Liftoff problem for exactly this component: ' + JSON.stringify(targetId),
+    'Remaining undemonstrated components: ' + JSON.stringify(remaining.map(c => ({ id: c.id, name: c.name, description: c.description }))),
+    'If there are no remaining undemonstrated components, the application still needs independent integration or variation evidence before release. Ask one concise integrated or varied probe without challenging the facilitator-approved component.',
+    'Briefly introduce a newly targeted skill if instruction is needed, otherwise use learnerMessage as a short transition. Put the single next problem ONLY in nextAction.problem.prompt, not learnerMessage.',
+    'Return JSON only in the shape {"learnerMessage":"optional brief teaching without question","nextAction":{"type":"probe|isolate|reprobe|integrate","targetComponentIds":["one exact id"],"withheldComponentIds":[],"supportedComponentIds":[],"problem":{"prompt":"single focused question","instanceKey":"deterministic instance identity","responseContract":{"targetComponentId":"same exact id","demandType":"single operation","criterion":"single response target"}},"reason":"short rationale"}}',
+    'Current application-owned state: ' + JSON.stringify(liftoffStateForModel(state)),
+    'Lesson: ' + JSON.stringify(compactLesson(lesson)),
+  ].join('\n')
+}
 function capMathObservations(payload, evidence, state) {
   if (!evidence) return payload
   const targets = new Set(state?.currentAction?.targetComponentIds || [])
@@ -637,7 +655,7 @@ export async function POST(request) {
   try {
     const body = await request.json().catch(() => null)
     const requestedMode = clean(body?.mode, 40)
-    const mode = requestedMode === 'turn' ? 'turn' : (requestedMode === 'line_help' ? 'line_help' : (requestedMode === 'prepare_test' ? 'prepare_test' : 'initialize'))
+    const mode = requestedMode === 'facilitator_next' ? 'facilitator_next' : requestedMode === 'turn' ? 'turn' : (requestedMode === 'line_help' ? 'line_help' : (requestedMode === 'prepare_test' ? 'prepare_test' : 'initialize'))
     const lesson = body?.lesson
     if (!lesson || typeof lesson !== 'object') {
       return NextResponse.json({ error: 'Lesson data is required.' }, { status: 400 })
@@ -714,6 +732,41 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Mr. Slate could not find a different explanation this time. You can try again or ask a more specific question.' }, { status: 503 })
     }
 
+    if (mode === 'facilitator_next') {
+      const state = body?.state
+      if (!state || typeof state !== 'object' || !state.facilitatorFulfillments ||
+          !Object.keys(state.facilitatorFulfillments).length || state.procedureReleased) {
+        return NextResponse.json({ error: 'An approved, active Liftoff state is required.' }, { status: 409 })
+      }
+      const essential = (state.components || []).filter(row => row?.essential !== false)
+      const remaining = essential.filter(row => !state.facilitatorFulfillments?.[row.id] &&
+        !['independent', 'retained'].includes(row.evidenceState))
+      const targetId = (remaining[0] || essential[0])?.id
+      if (!targetId) return NextResponse.json({ error: 'No Liftoff component is available.' }, { status: 409 })
+      const prompt = hardenInstructions(facilitatorNextPrompt(lesson, state, targetId),
+        clean(lesson.title || lesson.subject, 200) || 'educational content', [],
+        classifyConversationSafety('', { educational: true }).classification)
+      const ids = (state.components || []).map(row => row.id)
+      const priorProblems = problemHistoryForState(state)
+      let reason = 'invalid_problem'
+      for (let attempt = 0; attempt < 3; attempt += 1) {
+        const text = await callModel(attempt === 0 ? prompt : prompt +
+          '\n\nThe previous question failed application validation: ' + reason +
+          '. Return a different, valid, one-target problem. Do not repeat an earlier problem. Prior problems: ' +
+          JSON.stringify(priorProblems.slice(-12).map(row => ({ prompt: row.prompt, instanceKey: row.instanceKey }))))
+        const result = await parseSafeModelResponse(text)
+        if (result.error === 'unsafe') return NextResponse.json({ error: 'Mr. Slate could not produce a safe next problem.' }, { status: 502 })
+        if (result.error) { reason = result.error; continue }
+        const action = normalizeActionForValidation(result.parsed.nextAction, ids)
+        const validation = validateProblemActionFreshness(action, priorProblems)
+        if (PROBLEM_ACTIONS.has(action.type) && validation.ok && action.targetComponentIds[0] === targetId) {
+          return NextResponse.json({ ok: true, mode, nextAction: action,
+            learnerMessage: clean(result.parsed.learnerMessage, 1500) })
+        }
+        reason = validation.reason || 'wrong_objective_or_action'
+      }
+      return NextResponse.json({ error: 'Mr. Slate could not prepare a valid next objective question.' }, { status: 502 })
+    }
     const learnerText = clean(body?.learnerResponse, 4000)
     let learnerResponse = learnerText
     let verifiedMath = null

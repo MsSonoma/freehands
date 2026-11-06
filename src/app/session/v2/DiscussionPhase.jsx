@@ -62,6 +62,7 @@ export class DiscussionPhase {
   #pendingReply      = null; // learner turn and mastery context retained until reply
   #replyCheckpoint   = null; // feedback -> Next -> question, restored across refresh
   #resumeReplyCheckpoint = null; // checkpoint restored after prefetch
+  #facilitatorNextPending = false; // a facilitator retired the old question; the learner must choose Next
 
   // Sentence-by-sentence playback
   #prefetchDone       = false;
@@ -87,7 +88,18 @@ export class DiscussionPhase {
     if (!this.#audioEngine) throw new Error('DiscussionPhase requires audioEngine');
     if (!this.#eventBus)    throw new Error('DiscussionPhase requires eventBus');
 
-    // Resume: pre-populate chat history and completed indices so #startPlaying() skips the overview
+    // Resume requires the exact saved objective plan. Re-generated goals must never
+    // inherit old index-based mastery credit from an unrelated plan.
+    const savedObjectives = Array.isArray(options.resumeObjectives) && options.resumeObjectives.length > 0 &&
+      options.resumeObjectives.every(value => typeof value === 'string' && value.trim())
+      ? options.resumeObjectives : null;
+    if (savedObjectives) {
+      this.#objectives = [...savedObjectives];
+      this.#objectiveClues = Array.isArray(options.resumeObjectiveClues) &&
+        options.resumeObjectiveClues.length === savedObjectives.length
+        ? [...options.resumeObjectiveClues] : savedObjectives.map((_, index) => `Goal ${index + 1}`);
+    }
+    // Resume: pre-populate chat history and only credits tied to the saved objective plan.
     const resumeHistory = Array.isArray(options.resumeHistory) ? options.resumeHistory : [];
     if (resumeHistory.length > 0) {
       this.#chatHistory = resumeHistory.map(l => ({
@@ -96,10 +108,11 @@ export class DiscussionPhase {
         ...(l.kind ? { kind: l.kind } : {}),
         ...(l.featureId ? { featureId: l.featureId } : {}),
       }));
-      this.#completedIndices = Array.isArray(options.resumeCompletedIndices)
-        ? [...options.resumeCompletedIndices]
+      this.#completedIndices = savedObjectives && Array.isArray(options.resumeCompletedIndices)
+        ? [...new Set(options.resumeCompletedIndices.filter(index => Number.isInteger(index) && index >= 0 && index < savedObjectives.length))]
         : [];
     }
+    this.#facilitatorNextPending = Boolean(savedObjectives && options.resumeFacilitatorNextPending === true);
     this.#facilitatorOverrides = options.resumeFacilitatorObjectiveOverrides && typeof options.resumeFacilitatorObjectiveOverrides === 'object'
       ? { ...options.resumeFacilitatorObjectiveOverrides } : {};
     const pendingAwards = Array.isArray(options.resumePendingObjectiveAnnouncements)
@@ -121,6 +134,8 @@ export class DiscussionPhase {
   get completedObjectives() { return this.#completedIndices.length; }
   get totalObjectives()     { return this.#objectives.length; }
   get facilitatorOverrides() { return { ...this.#facilitatorOverrides }; }
+  get facilitatorNextPending() { return this.#facilitatorNextPending; }
+  get objectivePlan() { return { objectives: [...this.#objectives], objectiveClues: [...this.#objectiveClues] }; }
   get learnerName()         { return this.#learnerName; }
   get lessonTitle()         { return this.#lessonTitle; }
   get replyCheckpoint()     { return this.#replyCheckpoint ? { ...this.#replyCheckpoint } : null; }
@@ -144,9 +159,22 @@ export class DiscussionPhase {
     this.#state = 'prefetching';
     this.#emitStateChange();
 
-    // Fetch objectives + overview text in parallel
+    // A restored chat or feedback/Next checkpoint needs no introductory overview,
+    // vocabulary audio, or TTS prefetch. Only legacy snapshots without saved goals
+    // need a new objective request; those goals receive no historical index credit.
+    if (this.#chatHistory.length > 0 && !this.#resumeSentenceKey) {
+      if (!this.#objectives.length) await this.#fetchObjectives();
+      if (this.#destroyed) return;
+      this.#prefetchDone = true;
+      this.#state = 'ready';
+      this.#emitStateChange();
+      if (this.#playRequested && this.#state === 'ready') this.#startPlaying();
+      return;
+    }
+
+    // Fresh introductions and sentence-level playback resumes still need their audio.
     const [, overviewText] = await Promise.all([
-      this.#fetchObjectives(),
+      this.#objectives.length ? Promise.resolve() : this.#fetchObjectives(),
       this.#fetchOverviewText(),
     ]);
 
@@ -241,6 +269,7 @@ export class DiscussionPhase {
     try { this.#audioEngine.stop(); } catch {}
     this.#replyCheckpoint = null;
     this.#eventBus.emit('discussionReplyStage', null);
+    this.#facilitatorNextPending = true;
     const record = { source: 'facilitator', objective: this.#objectives[index], approvedAt: new Date().toISOString() };
     this.#facilitatorOverrides[index] = record;
     this.#completedIndices = [...new Set([...this.#completedIndices, index])].sort((a, b) => a - b);
@@ -251,10 +280,56 @@ export class DiscussionPhase {
       objectiveText: this.#objectives[index], objectives: [...this.#objectives],
       source: 'facilitator', facilitatorOverrides: { ...this.#facilitatorOverrides },
     });
-    this.#state = this.#completedIndices.length >= this.#objectives.length ? 'awaiting-objective-ack' : 'chatting';
+    this.#state = 'awaiting-facilitator-next';
     this.#emitStateChange();
-    if (this.#state === 'chatting') this.#emitLearnerTurnReady('discussion');
     return true;
+  }
+
+  /** A facilitator's credit supersedes the old question, not the learner's answer. */
+  async nextFacilitatorObjective() {
+    if (this.#destroyed || this.#state !== 'awaiting-facilitator-next' ||
+        !this.#facilitatorNextPending || this.#unacknowledgedObjectiveIndices.size) return false;
+    const remainingObjectives = this.#objectives.filter((_, i) => !this.#completedIndices.includes(i));
+    if (!remainingObjectives.length) {
+      this.#facilitatorNextPending = false;
+      this.#finishDiscussion();
+      return true;
+    }
+    const gen = ++this.#submitGen;
+    this.#state = 'generating-facilitator-next';
+    this.#emitStateChange();
+    try {
+      const res = await fetch(SONOMA_DISCUSSION_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'facilitator-next',
+          lesson: this.#lessonData,
+          learnerName: this.#learnerName,
+          messages: this.#instructionalChatHistory(),
+          remainingObjectives,
+          allObjectivesMet: false,
+        }),
+      });
+      if (gen !== this.#submitGen || this.#destroyed) return false;
+      const data = res.ok ? await res.json() : null;
+      if (gen !== this.#submitGen || this.#destroyed) return false;
+      const question = typeof data?.text === 'string' ? data.text.trim() : '';
+      if (!question || !question.endsWith('?')) throw new Error('A focused next question was not returned.');
+      this.#facilitatorNextPending = false;
+      this.#replyCheckpoint = { stage: 'question', feedback: '', question };
+      this.#eventBus.emit('discussionReplyStage', this.replyCheckpoint);
+      this.#chatHistory.push({ role: 'assistant', content: question, kind: 'facilitator_next_question' });
+      this.#eventBus.emit('discussionMessage', { role: 'assistant', text: question, kind: 'facilitator_next_question' });
+      void this.#playReplyPart(question, gen, 'question');
+      return true;
+    } catch (error) {
+      if (gen !== this.#submitGen || this.#destroyed) return false;
+      console.warn('[DiscussionPhase] Facilitator Next question unavailable:', error?.message || 'unknown');
+      this.#state = 'awaiting-facilitator-next';
+      this.#emitStateChange();
+      return false;
+    }
   }
 
   acknowledgeObjectiveAward(index) {
@@ -611,6 +686,7 @@ export class DiscussionPhase {
       objectiveClues:      [...this.#objectiveClues],
       completedIndices:    [...this.#completedIndices],
       facilitatorOverrides: { ...this.#facilitatorOverrides },
+      facilitatorNextPending: this.#facilitatorNextPending,
     });
   }
 
@@ -679,6 +755,15 @@ export class DiscussionPhase {
       this.#emitStateChange();
       this.#eventBus.emit('greetingPlaying', { greetingText: '' });
       this.#playSentence(key, { addToHistory: false });
+      return;
+    }
+
+    // Preserve facilitator Next even when the obsolete question was the last transcript line.
+    if (this.#facilitatorNextPending) {
+      this.#state = 'awaiting-facilitator-next';
+      this.#eventBus.emit('greetingPlaying', { greetingText: '' });
+      this.#eventBus.emit('greetingComplete', {});
+      this.#emitStateChange();
       return;
     }
 
