@@ -75,3 +75,36 @@ export function blueprintMatchesObjectives(raw = {}, objectives = []) {
   if (blueprint.bodyUnits.length !== list.length) return false
   return blueprint.bodyUnits.every((unit, index) => unit.objective === list[index])
 }
+
+/** Shared invariants for fresh generation and locally persisted startup plans. */
+export function isWebbSafeObjectiveClue(value) {
+  const clue = String(value || '').trim()
+  const words = clue.split(/\s+/).filter(Boolean)
+  if (!clue || words.length > 6 || clue.length > 80) return false
+  if (/[.!?]/.test(clue)) return false
+  if (/^(?:the learner|explain|describe|identify|compare|state|name|summarize|how|why|what|when|where|who)\b/i.test(clue)) return false
+  if (/\b(?:is|are|was|were|because|therefore|thus|caused|led|resulted|became|meant|made|allowed|prevented|showed|proved)\b/i.test(clue)) return false
+  return true
+}
+
+export function webbAtomicObjectiveViolations(rows = []) {
+  const violations = []
+  rows.forEach((row, index) => {
+    const objective = String(row?.objective || '')
+    const asksTwoQuestionTypes = /\b(?:who|what|why|how|when|where)\b[\s\S]{0,220}\band\s+(?:who|what|why|how|when|where)\b/i.test(objective)
+    const joinsSecondTask = /\b(?:explain|describe|identify|compare|show|state|name|summarize)\b[\s\S]{0,260}\band\s+(?:identify|explain|describe|compare|show|state|name|summarize)\b/i.test(objective)
+    if (asksTwoQuestionTypes || joinsSecondTask) violations.push(`row ${index + 1} combines more than one independently gradable task`)
+  })
+  return [...new Set(violations)]
+}
+
+export function webbStartupBlueprintViolations(raw = {}) {
+  const blueprint = normalizeWebbCompositionBlueprint(raw)
+  return [
+    ...webbCompositionBlueprintViolations(blueprint),
+    ...webbAtomicObjectiveViolations(blueprint.bodyUnits),
+    ...blueprint.bodyUnits
+      .map((unit, index) => !isWebbSafeObjectiveClue(unit.clue) ? `body unit ${index + 1} has an unsafe retrieval clue` : null)
+      .filter(Boolean),
+  ]
+}

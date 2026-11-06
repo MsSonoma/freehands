@@ -20,31 +20,52 @@ import {
   normalizeWebbCompositionBlueprint,
   objectivesFromWebbBlueprint,
   webbCompositionBlueprintViolations,
+  isWebbSafeObjectiveClue,
+  webbAtomicObjectiveViolations,
 } from '../../lib/webbCompositionBlueprint.mjs'
 
 const OPENAI_URL = 'https://api.openai.com/v1/chat/completions'
 import { AI_MODEL, aiModelTemperature } from '../../lib/aiModel.js'
 const OPENAI_MODEL = AI_MODEL
 
-// Allow objective generation and its validation repair time to finish.
+// A single generation step must finish before Vercel's 60-second limit.
 export const maxDuration = 60
+const WEBB_PREPARATION_REQUEST_BUDGET_MS = 48_000
 
-async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3, responseFormat = null) {
+class WebbPreparationTimeoutError extends Error {
+  constructor() {
+    super('Webb preparation exceeded its model request budget')
+    this.name = 'WebbPreparationTimeoutError'
+  }
+}
+
+async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3, responseFormat = null, deadlineMs = null) {
   const isLuna = /^gpt-5\.6-luna$/i.test(OPENAI_MODEL)
   // Avoid a guaranteed second full model request after an undersized Luna attempt.
   const tokenLimits = [isLuna ? Math.max(maxTokens * 3, 2400) : maxTokens]
   for (const tokenLimit of tokenLimits) {
-    const res = await fetch(OPENAI_URL, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify({
-        model: OPENAI_MODEL,
-        messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
-        max_completion_tokens: tokenLimit,
-        ...aiModelTemperature(temperature, OPENAI_MODEL),
-        ...(responseFormat ? { response_format: responseFormat } : {}),
-      }),
-    })
+    const remainingMs = deadlineMs === null ? null : deadlineMs - Date.now()
+    if (remainingMs !== null && remainingMs < 1000) throw new WebbPreparationTimeoutError()
+    let res
+    try {
+      res = await fetch(OPENAI_URL, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${apiKey}` },
+        body: JSON.stringify({
+          model: OPENAI_MODEL,
+          messages: [{ role: 'system', content: system }, { role: 'user', content: user }],
+          max_completion_tokens: tokenLimit,
+          ...aiModelTemperature(temperature, OPENAI_MODEL),
+          ...(responseFormat ? { response_format: responseFormat } : {}),
+        }),
+        ...(remainingMs !== null ? { signal: AbortSignal.timeout(remainingMs) } : {}),
+      })
+    } catch (error) {
+      if (deadlineMs !== null && (error?.name === 'TimeoutError' || error?.name === 'AbortError')) {
+        throw new WebbPreparationTimeoutError()
+      }
+      throw error
+    }
     if (!res.ok) throw new Error('Learning evaluator unavailable (' + res.status + ')')
     const json = await res.json()
     const choice = json.choices?.[0]
@@ -55,15 +76,7 @@ async function callGPT(apiKey, system, user, maxTokens = 500, temperature = 0.3,
   throw new Error('Learning evaluator returned an incomplete response')
 }
 
-function isSafeObjectiveClue(value) {
-  const clue = String(value || '').trim()
-  const words = clue.split(/\s+/).filter(Boolean)
-  if (!clue || words.length > 6 || clue.length > 80) return false
-  if (/[.!?]/.test(clue)) return false
-  if (/^(?:the learner|explain|describe|identify|compare|state|name|summarize|how|why|what|when|where|who)\b/i.test(clue)) return false
-  if (/\b(?:is|are|was|were|because|therefore|thus|caused|led|resulted|became|meant|made|allowed|prevented|showed|proved)\b/i.test(clue)) return false
-  return true
-}
+const isSafeObjectiveClue = isWebbSafeObjectiveClue
 
 function parseGeneratedBlueprint(raw) {
   let parsed
@@ -94,18 +107,9 @@ function parseGeneratedBlueprint(raw) {
   return blueprint
 }
 
-function objectivePlanViolations(rows) {
-  const violations = []
-  rows.forEach((row, index) => {
-    const objective = String(row?.objective || '')
-    const asksTwoQuestionTypes = /\b(?:who|what|why|how|when|where)\b[\s\S]{0,220}\band\s+(?:who|what|why|how|when|where)\b/i.test(objective)
-    const joinsSecondTask = /\b(?:explain|describe|identify|compare|show|state|name|summarize)\b[\s\S]{0,260}\band\s+(?:identify|explain|describe|compare|show|state|name|summarize)\b/i.test(objective)
-    if (asksTwoQuestionTypes || joinsSecondTask) violations.push(`row ${index + 1} combines more than one independently gradable task`)
-  })
-  return [...new Set(violations)]
-}
+const objectivePlanViolations = webbAtomicObjectiveViolations
 
-async function generateObjectives(apiKey, lesson, callModel = null) {
+async function generateObjectives(apiKey, lesson, callModel = null, options = {}) {
   const title = lesson?.title || 'this topic'
   const subject = lesson?.subject || 'general'
   const grade = lesson?.grade ? `Grade ${lesson.grade}` : 'elementary'
@@ -150,6 +154,39 @@ async function generateObjectives(apiKey, lesson, callModel = null) {
     } catch (error) {
       return { ok: false, plan: null, violations: [String(error?.message || 'Blueprint planner output was invalid')] }
     }
+  }
+
+  // Staged preparation performs at most ONE model request per HTTP request.
+  // A failed draft is repaired on a fresh invocation, avoiding Vercel's 60s
+  // cutoff when multiple (otherwise valid) generation requests run sequentially.
+  if (options?.stage) {
+    const stage = options.stage
+    let raw
+    if (stage === 'initial') {
+      raw = await invoke(system, user, 900, 0.15, responseFormat)
+    } else if (stage === 'repair') {
+      const previousRaw = String(options.previousDraft || '').slice(0, 32000)
+      const previous = validate(previousRaw)
+      if (previous.ok) return { blueprint: previous.plan }
+      const repairSystem = [
+        system,
+        `You are repairing a draft that failed the atomic mastery-objective validator. Return the COMPLETE corrected composition blueprint, not commentary.`,
+        `The draft may have malformed JSON, the wrong number of body units, duplicate objectives, non-atomic objectives, or broken rhetorical relationships.`,
+        `Do not preserve a bad row merely because its facts are true. One row must equal one independently gradable comprehension target.`,
+      ].join(' ')
+      raw = await invoke(repairSystem, JSON.stringify({
+        lesson: { title, subject, grade }, assessment_questions: allQ,
+        raw_draft: previousRaw, draft_plan: previous.plan,
+        validator_violations: previous.violations,
+      }), 900, 0.05, responseFormat)
+    } else if (stage === 'fresh') {
+      raw = await invoke(`${system} Previous attempts failed deterministic validation. Start over and return one fresh complete composition blueprint.`, user, 900, 0.05, responseFormat)
+    } else {
+      throw new Error('Unknown preparation stage')
+    }
+    const checked = validate(raw)
+    if (checked.ok) return { blueprint: checked.plan }
+    return { nextStage: stage === 'initial' ? 'repair' : (stage === 'repair' ? 'fresh' : null), draft: raw, violations: checked.violations }
   }
 
   let raw = await invoke(system, user, 900, 0.15, responseFormat)
@@ -381,6 +418,59 @@ export async function POST(req, deps = {}) {
     const body = await req.json()
     const apiKey = deps.apiKey || process.env.OPENAI_API_KEY
     if (!apiKey) return NextResponse.json({ error: 'Not configured' }, { status: 503 })
+
+    if (body.action === 'generate-step') {
+      const startedAt = Date.now()
+      const stage = String(body.stage || 'initial')
+      if (!['initial', 'repair', 'fresh'].includes(stage)) {
+        return NextResponse.json({ error: 'Unknown preparation stage' }, { status: 400 })
+      }
+      try {
+        const boundedModel = deps.callModel || ((...args) => callGPT(apiKey, ...args, startedAt + WEBB_PREPARATION_REQUEST_BUDGET_MS))
+        const pendingObjectives = Array.isArray(body.pendingObjectives)
+          ? body.pendingObjectives.map(value => String(value || '').trim()).filter(Boolean).slice(0, 8)
+          : []
+        if (pendingObjectives.length) {
+          const objectives = [...new Set(pendingObjectives)]
+          const lesson = buildInstructionalLessonView(body.lesson || {})
+          const clues = await generateObjectiveClues(apiKey, lesson, objectives, boundedModel)
+          return NextResponse.json({ objectives, clues, revisit: true })
+        }
+        const preparation = await generateObjectives(
+          apiKey, buildInstructionalLessonView(body.lesson || {}), boundedModel,
+          { stage, previousDraft: body.draft },
+        )
+        if (preparation.blueprint) {
+          console.info('[webb-objectives] preparation completed', { stage, elapsedMs: Date.now() - startedAt })
+          return NextResponse.json({
+            blueprint: preparation.blueprint,
+            objectives: objectivesFromWebbBlueprint(preparation.blueprint),
+            clues: cluesFromWebbBlueprint(preparation.blueprint),
+          })
+        }
+        if (!preparation.nextStage) {
+          console.warn('[webb-objectives] preparation validation exhausted', {
+            stage, elapsedMs: Date.now() - startedAt, violationCount: preparation.violations?.length || 0,
+          })
+          return NextResponse.json({
+            error: 'Mrs. Webb could not validate the lesson goals.', code: 'WEBB_BLUEPRINT_INVALID',
+          }, { status: 422 })
+        }
+        console.info('[webb-objectives] preparation needs repair', {
+          stage, nextStage: preparation.nextStage, elapsedMs: Date.now() - startedAt,
+          violationCount: preparation.violations?.length || 0,
+        })
+        return NextResponse.json({ nextStage: preparation.nextStage, draft: preparation.draft })
+      } catch (error) {
+        console.error('[webb-objectives] preparation step failed', {
+          stage, elapsedMs: Date.now() - startedAt, reason: error?.name || 'Error', message: error?.message || '',
+        })
+        return NextResponse.json({
+          error: 'Mrs. Webb lesson preparation is temporarily unavailable.',
+          code: error instanceof WebbPreparationTimeoutError ? 'WEBB_PREPARATION_TIMEOUT' : 'WEBB_PREPARATION_UNAVAILABLE',
+        }, { status: 503 })
+      }
+    }
 
     if (body.action === 'generate') {
       const pendingObjectives = Array.isArray(body.pendingObjectives) ? body.pendingObjectives.map(value => String(value || '').trim()).filter(Boolean).slice(0, 8) : []

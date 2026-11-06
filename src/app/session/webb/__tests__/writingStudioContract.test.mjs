@@ -157,7 +157,7 @@ test('Mrs. Webb cannot expose first-turn input before objective tracking is read
   const end = page.indexOf('async function submitWritingAttempt', start)
   assert.ok(start >= 0 && end > start)
   const startup = page.slice(start, end)
-  const prepareObjectives = startup.indexOf('startupObjectives = await generateObjectives(lesson)')
+  const prepareObjectives = startup.indexOf('startupObjectives = await generateObjectives(lesson,')
   const startSession = startup.indexOf('await startProtectedInstructionalSession({')
   const loadExposure = startup.indexOf('await loadPriorObjectiveExposure(startupObjectives, lesson)')
   const openChat = startup.indexOf('setPhase(PHASE.CHATTING)')
@@ -166,7 +166,8 @@ test('Mrs. Webb cannot expose first-turn input before objective tracking is read
   assert.ok(loadExposure > startSession, 'prior exposure must be loaded after evidence/session initialization')
   assert.ok(openChat > loadExposure, 'chat input must remain closed until objective tracking is ready')
   assert.doesNotMatch(startup.slice(openChat), /generateObjectives\(lesson\)/)
-  assert.match(page, /if \(!res\.ok\) throw new Error\('Mrs\. Webb could not prepare the learning goals for this lesson\.'\)/)
+  assert.match(page, /prepareWebbStartupObjectives\(/)
+  assert.match(page, /shouldContinue: \(\) => run === runGenerationRef\.current/)
 })
 
 

@@ -24,6 +24,7 @@ import {
   webbObjectiveProgress, shouldRecoverWebbNotes, createWebbObjectiveQueue, applyWebbNoteReadiness, fulfillWebbObjectiveByFacilitator,
 } from '@/app/lib/webbObjectiveState.mjs'
 import { updateTranscriptLiveSegment } from '@/app/lib/transcriptsClient'
+import { prepareWebbStartupObjectives } from '@/app/lib/webbStartupPreparation.mjs'
 import { getWebbCompletionForLearner, saveWebbCompletion } from '@/app/lib/webbCompletionClient'
 import { saveWebbComposition } from '@/app/lib/webbCompositionClient'
 import { getLearner } from '@/app/facilitator/learners/clientApi'
@@ -241,6 +242,7 @@ function WebbPageInner() {
   const [checkError, setCheckError] = useState('')
   const [storageError, setStorageError] = useState('')
   const [startupError, setStartupError] = useState('')
+  const [startupStatus, setStartupStatus] = useState('')
   const retryTurnRef = useRef(null)
   const pendingWritingReviewRef = useRef(null)
   const writingResumeReplayRef = useRef(false)
@@ -657,6 +659,7 @@ function WebbPageInner() {
     const run = ++runGenerationRef.current
     objectiveQueueRef.current.invalidate()
     setStartupError('')
+    setStartupStatus('')
     setCheckError('')
     setChatLoading(true)
     retryTurnRef.current = null
@@ -2169,27 +2172,20 @@ function WebbPageInner() {
   // ── Objectives: generate when lesson starts ──────────────────────────
   // Generate objectives from the lesson question bank (fired once per lesson).
   // This is a startup barrier: Webb chat must not open without a usable objective map.
-  const generateObjectives = useCallback(async (lesson) => {
+  const generateObjectives = useCallback(async (lesson, { onRetry, shouldContinue } = {}) => {
     const lessonKey = lesson?.lessonKey || lesson?.lesson_id || lesson?.id
     const currentLearnerId = (() => { try { return localStorage.getItem('learner_id') || null } catch { return null } })()
-    const pendingObjectives = getWebbCompletionForLearner(currentLearnerId)?.[lessonKey]?.masterySummary?.masteryPending || []
-    const res = await fetch('/api/webb-objectives', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ action: 'generate', lesson, pendingObjectives }),
+    const id = routeLearnerId || learnerId || currentLearnerId
+    const pendingObjectives = getWebbCompletionForLearner(id)?.[lessonKey]?.masterySummary?.masteryPending || []
+    const storage = (() => { try { return window.localStorage } catch { return null } })()
+    const prepared = await prepareWebbStartupObjectives({
+      lesson, learnerId: id, pendingObjectives, fetchImpl: fetch, storage, onRetry, shouldContinue,
     })
-    if (!res.ok) throw new Error('Mrs. Webb could not prepare the learning goals for this lesson.')
-    const data = await res.json()
-    if (!Array.isArray(data.objectives) || !data.objectives.length || data.objectives.some(value => typeof value !== 'string' || !value.trim())) {
-      throw new Error('Mrs. Webb could not prepare the learning goals for this lesson.')
-    }
-    const result = data.objectives
-    result.clues = Array.isArray(data.clues) && data.clues.length === result.length
-      ? data.clues
-      : result.map((_, index) => `Goal ${index + 1}`)
-    result.blueprint = data.blueprint && typeof data.blueprint === 'object' ? data.blueprint : null
+    const result = prepared.objectives
+    result.clues = prepared.clues
+    result.blueprint = prepared.blueprint
     return result
-  }, [])
+  }, [learnerId, routeLearnerId])
 
   const generateCluesForObjectives = useCallback(async (objectiveList, lesson) => {
     const fallback = (objectiveList || []).map((_, index) => `Goal ${index + 1}`)
@@ -2532,6 +2528,7 @@ function WebbPageInner() {
     announcedNotesRef.current = new Set()
     retryTurnRef.current = null
     setStartupError('')
+    setStartupStatus('Preparing the lesson...')
     setCheckError('')
     setStorageError('')
     setPhase(PHASE.STARTING)
@@ -2595,12 +2592,19 @@ function WebbPageInner() {
     let startupObjectiveClues
     let startupCompositionBlueprint
     try {
-      startupObjectives = await generateObjectives(lesson)
+      startupObjectives = await generateObjectives(lesson, {
+        shouldContinue: () => run === runGenerationRef.current,
+        onRetry: () => {
+          if (run === runGenerationRef.current) setStartupStatus('Still preparing the lesson...')
+        },
+      })
       startupObjectiveClues = startupObjectives.clues || startupObjectives.map((_, index) => `Goal ${index + 1}`)
       startupCompositionBlueprint = startupObjectives.blueprint || null
       if (run !== runGenerationRef.current) return
+      setStartupStatus('Opening the lesson...')
     } catch (cause) {
       if (run !== runGenerationRef.current) return
+      console.error('[webb-startup] lesson preparation failed', cause)
       setStartupError('Mrs. Webb could not prepare this lesson yet. Please retry.')
       return
     }
@@ -2663,6 +2667,7 @@ function WebbPageInner() {
 
     if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
     setPhase(PHASE.CHATTING)
+    setStartupStatus('')
     // Record the active lesson key so a page refresh brings the user back to the
     // resume/restart prompt rather than redirecting to /learn.
     const activeLk = lesson.lessonKey || lesson.lesson_id || lesson.id
@@ -4506,15 +4511,20 @@ function WebbPageInner() {
           {/* STARTING phase: show a loading indicator while the opening greeting is being fetched */}
           {phase === PHASE.STARTING && (
             <div style={{ flex: '1 1 0', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#f9fafb' }}>
-              <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7 }}>
-                <span style={{ fontSize: 24, lineHeight: 1 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
-                <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px 18px 18px 18px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.09)' }}>
-                  <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                    {[0, 160, 320].map(d => (
-                      <span key={d} style={{ display: 'block', width: 7, height: 7, borderRadius: '50%', background: '#9ca3af', animation: `webb-bounce 1s ease-in-out ${d}ms infinite` }} />
-                    ))}
+              <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
+                <div style={{ display: 'flex', alignItems: 'flex-end', gap: 7 }}>
+                  <span style={{ fontSize: 24, lineHeight: 1 }} aria-hidden>&#128105;&#127995;&#8205;&#127979;</span>
+                  <div style={{ background: '#fff', border: '1px solid #e5e7eb', borderRadius: '4px 18px 18px 18px', padding: '10px 14px', boxShadow: '0 1px 3px rgba(0,0,0,0.09)' }}>
+                    <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                      {[0, 160, 320].map(d => (
+                        <span key={d} style={{ display: 'block', width: 7, height: 7, borderRadius: '50%', background: '#9ca3af', animation: `webb-bounce 1s ease-in-out ${d}ms infinite` }} />
+                      ))}
+                    </div>
                   </div>
                 </div>
+                <span role="status" aria-live="polite" style={{ fontSize: 12, color: '#6b7280' }}>
+                  {startupStatus || 'Preparing the lesson...'}
+                </span>
               </div>
             </div>
           )}

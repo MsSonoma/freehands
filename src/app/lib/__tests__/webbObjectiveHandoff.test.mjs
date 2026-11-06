@@ -706,3 +706,48 @@ test('legacy preflight rejects bear-detail and paraphrasing-example notes withou
   assert.equal(repaired.objectiveEvidence[0].attempts[0].noteReady, false)
   assert.equal(repaired.objectiveEvidence[1].attempts[0].noteReady, false)
 })
+
+test('staged Webb preparation runs exactly one AI call per request, retaining validator repair semantics', async () => {
+  let calls = 0
+  const malformed = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
+  const inputs = [
+    { stage: 'initial' },
+    { stage: 'repair', draft: JSON.stringify(malformed) },
+    { stage: 'fresh', draft: JSON.stringify(malformed) },
+  ]
+  for (let index = 0; index < inputs.length; index += 1) {
+    const request = new Request('http://localhost/api/webb-objectives', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ action: 'generate-step', lesson: GENERATION_LESSON, ...inputs[index] }),
+    })
+    const response = await POST(request, {
+      apiKey: 'offline-test',
+      callModel: async () => {
+        calls += 1
+        return JSON.stringify(index === 2 ? VALID_GENERATED_PLAN : malformed)
+      },
+    })
+    assert.equal(response.status, 200)
+    const data = await response.json()
+    if (index === 0) assert.deepEqual({ nextStage: data.nextStage }, { nextStage: 'repair' })
+    if (index === 1) assert.deepEqual({ nextStage: data.nextStage }, { nextStage: 'fresh' })
+    if (index === 2) assert.deepEqual(data.objectives, VALID_GENERATED_PLAN.objectives.map(row => row.objective))
+    assert.equal(calls, index + 1)
+  }
+})
+
+test('staged Webb preparation reports a validation error without inventing objectives', async () => {
+  const malformed = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'generate-step', stage: 'fresh', lesson: GENERATION_LESSON }),
+  }), {
+    apiKey: 'offline-test',
+    callModel: async () => JSON.stringify(malformed),
+  })
+  assert.equal(response.status, 422)
+  assert.deepEqual(await response.json(), {
+    error: 'Mrs. Webb could not validate the lesson goals.',
+    code: 'WEBB_BLUEPRINT_INVALID',
+  })
+})
