@@ -38,6 +38,7 @@ export default function WebbDictationButton({
   const [error, setError] = useState('')
   const recorderRef = useRef(null)
   const streamRef = useRef(null)
+  const micRequestControllerRef = useRef(null)
   const chunksRef = useRef([])
   const stopTimerRef = useRef(null)
   const abortRef = useRef(null)
@@ -95,6 +96,8 @@ export default function WebbDictationButton({
   const stopRecording = useCallback(() => {
     // Cancels microphone permission requests that have not resolved yet.
     requestTokenRef.current += 1
+    micRequestControllerRef.current?.abort()
+    micRequestControllerRef.current = null
     if (stopTimerRef.current) {
       clearTimeout(stopTimerRef.current)
       stopTimerRef.current = null
@@ -110,6 +113,8 @@ export default function WebbDictationButton({
     if (disabled || recording || uploading || startingRef.current || recorderRef.current) return
     startingRef.current = true
     const requestToken = ++requestTokenRef.current
+    const controller = new AbortController()
+    micRequestControllerRef.current = controller
     setStarting(true)
     setError('')
     try {
@@ -119,8 +124,9 @@ export default function WebbDictationButton({
       }
       const mimeType = chooseWebbSpeechMimeType(MediaRecorder)
       if (!mimeType) throw new Error('Voice input unavailable')
-      const stream = await getReusableMicrophoneStream()
-      if (!mountedRef.current || disabledRef.current || requestToken !== requestTokenRef.current) {
+      const stream = await getReusableMicrophoneStream({ signal: controller.signal })
+      if (micRequestControllerRef.current === controller) micRequestControllerRef.current = null
+      if (controller.signal.aborted || !mountedRef.current || disabledRef.current || requestToken !== requestTokenRef.current) {
         pauseReusableMicrophoneStream(stream)
         return
       }
@@ -167,8 +173,9 @@ export default function WebbDictationButton({
       recorderRef.current = null
       cleanupStream()
       setRecording(false)
-      if (mountedRef.current) setError(['NotAllowedError', 'SecurityError'].includes(cause?.name) ? 'Mic permission denied' : 'Voice input unavailable')
+      if (mountedRef.current && !controller.signal.aborted) setError(['NotAllowedError', 'SecurityError'].includes(cause?.name) ? 'Mic permission denied' : 'Voice input unavailable')
     } finally {
+      if (micRequestControllerRef.current === controller) micRequestControllerRef.current = null
       startingRef.current = false
       if (mountedRef.current) setStarting(false)
     }
@@ -190,6 +197,8 @@ export default function WebbDictationButton({
     return () => {
       mountedRef.current = false
       requestTokenRef.current += 1
+      micRequestControllerRef.current?.abort()
+      micRequestControllerRef.current = null
       if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
       try { abortRef.current?.abort() } catch {}
       const recorder = recorderRef.current

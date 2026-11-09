@@ -59,3 +59,21 @@ test('a queued pause event from the previous clip cannot finish new speech that 
   audio.dispatchEvent(new Event('ended'))
   assert.equal(await pending, 'ended')
 })
+
+
+test('Slate voice restores the speaker route when no microphone is active', async t => {
+  const previous = Object.getOwnPropertyDescriptor(globalThis, 'navigator')
+  const audioSession = { type: 'play-and-record' }
+  Object.defineProperty(globalThis, 'navigator', {
+    configurable: true, value: { audioSession },
+  })
+  t.after(() => {
+    if (previous) Object.defineProperty(globalThis, 'navigator', previous)
+    else delete globalThis.navigator
+  })
+  const audio = new FakeAudio()
+  const playing = playSlateSpeechUntilEnd(audio)
+  assert.equal(audioSession.type, 'playback')
+  audio.dispatchEvent(new Event('ended'))
+  assert.equal(await playing, 'ended')
+})

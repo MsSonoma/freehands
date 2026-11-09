@@ -21,7 +21,7 @@ test('Mrs. Webb dictation records a supported Opus container and uses the shared
   assert.match(dictation, /audio\/webm;codecs=opus/)
   assert.match(dictation, /audio\/ogg;codecs=opus/)
   assert.match(dictation, /MediaRecorderCtor\.isTypeSupported/)
-  assert.match(dictation, /getReusableMicrophoneStream\(\)/)
+  assert.match(dictation, /getReusableMicrophoneStream\(\{ signal: controller\.signal \}\)/)
   assert.match(dictation, /pauseReusableMicrophoneStream\(streamRef\.current\)/)
   assert.match(micSession, /navigator\.mediaDevices\.getUserMedia/)
   assert.match(micSession, /track\.enabled = enabled/)

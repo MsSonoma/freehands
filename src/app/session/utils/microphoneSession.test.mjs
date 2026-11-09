@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 
 const moduleUrl = new URL('./microphoneSession.js', import.meta.url)
 
@@ -148,4 +149,93 @@ test('microphone handling tolerates browsers without the AudioSession API', asyn
   assert.equal(acquired, stream)
   mic.pauseReusableMicrophoneStream(acquired)
   assert.equal(stream.stops, 1)
+})
+
+
+test('abandoning a pending microphone request restores speaker routing and stops late permission grants', async t => {
+  const pendingPermission = deferred()
+  const lateStream = fakeStream()
+  const { mic, audioSession } = await setup(t, () => pendingPermission.promise)
+  const controller = new AbortController()
+  const incoming = mic.getReusableMicrophoneStream({ signal: controller.signal })
+  assert.equal(audioSession.type, 'play-and-record')
+  controller.abort()
+  await assert.rejects(incoming, { name: 'AbortError' })
+  assert.equal(audioSession.type, 'playback')
+  pendingPermission.resolve(lateStream)
+  await new Promise(resolve => setTimeout(resolve, 0))
+  assert.equal(lateStream.stops, 1)
+  assert.equal(mic.isMicrophoneCapturing(), false)
+  assert.equal(audioSession.type, 'playback')
+})
+
+test('cancelling one of two microphone requesters does not interrupt the survivor', async t => {
+  const permission = deferred()
+  const stream = fakeStream()
+  const { mic, audioSession } = await setup(t, () => permission.promise)
+  const firstController = new AbortController()
+  const secondController = new AbortController()
+  const first = mic.getReusableMicrophoneStream({ signal: firstController.signal })
+  const second = mic.getReusableMicrophoneStream({ signal: secondController.signal })
+  firstController.abort()
+  await assert.rejects(first, { name: 'AbortError' })
+  assert.equal(audioSession.type, 'play-and-record')
+  permission.resolve(stream)
+  assert.equal(await second, stream)
+  assert.equal(mic.isMicrophoneCapturing(), true)
+  mic.pauseReusableMicrophoneStream(stream)
+  assert.equal(audioSession.type, 'playback')
+})
+
+test('a new audio screen restores speaker routing when no microphone session owns it', async t => {
+  const { mic, audioSession } = await setup(t, () => Promise.reject(new Error('unused')))
+  audioSession.type = 'play-and-record'
+  mic.ensurePlaybackAudioSession()
+  assert.equal(audioSession.type, 'playback')
+})
+
+
+test('ensuring playback cannot steal the audio route from an active recorder', async t => {
+  const stream = fakeStream()
+  const { mic, audioSession } = await setup(t, () => Promise.resolve(stream))
+  await mic.getReusableMicrophoneStream()
+  mic.ensurePlaybackAudioSession()
+  assert.equal(audioSession.type, 'play-and-record')
+  mic.pauseReusableMicrophoneStream(stream)
+  assert.equal(audioSession.type, 'playback')
+})
+
+test('Slate and Webb input screens cancel pending microphone access on teardown', () => {
+  const standard = readFileSync('src/app/session/components/InputPanel.js', 'utf8')
+  const webb = readFileSync('src/app/session/webb/WebbDictationButton.jsx', 'utf8')
+  for (const file of [standard, webb]) {
+    assert.match(file, /getReusableMicrophoneStream\(\{ signal: controller\.signal \}\)/)
+    assert.match(file, /micRequestControllerRef\.current\?\.abort\(\)/)
+  }
+})
+test('page release clears old permission waiters so a later cancelled screen restores playback', async t => {
+  const firstGrant = deferred()
+  const secondGrant = deferred()
+  const firstStream = fakeStream()
+  const secondStream = fakeStream()
+  let count = 0
+  const { mic, audioSession } = await setup(t, () => (++count === 1 ? firstGrant.promise : secondGrant.promise))
+
+  const old = mic.getReusableMicrophoneStream()
+  const oldRejected = assert.rejects(old, /cancelled/)
+  mic.releaseReusableMicrophoneStream()
+  const controller = new AbortController()
+  const newest = mic.getReusableMicrophoneStream({ signal: controller.signal })
+  assert.equal(audioSession.type, 'play-and-record')
+  controller.abort()
+  await assert.rejects(newest, { name: 'AbortError' })
+  assert.equal(audioSession.type, 'playback')
+
+  firstGrant.resolve(firstStream)
+  secondGrant.resolve(secondStream)
+  await oldRejected
+  await new Promise(resolve => setTimeout(resolve, 0))
+  assert.equal(firstStream.stops, 1)
+  assert.equal(secondStream.stops, 1)
+  assert.equal(audioSession.type, 'playback')
 })

@@ -1,3 +1,5 @@
+import { ensurePlaybackAudioSession } from '../session/utils/microphoneSession.js'
+
 /**
  * Resolve only when a Slate speech clip ends or actually fails.
  *
@@ -17,6 +19,9 @@ export function playSlateSpeechUntilEnd(audio, {
     return Promise.resolve('unavailable')
   }
 
+  // The music may be disabled, but Slate's voice must still restore the
+  // speaker route when a previous mic session has already ended.
+  ensurePlaybackAudioSession()
   return new Promise((resolve) => {
     let finished = false
     let started = false

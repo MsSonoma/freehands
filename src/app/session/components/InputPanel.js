@@ -11,6 +11,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   const [errorMsg, setErrorMsg] = useState('');
   const mediaRecorderRef = useRef(null);
   const streamRef = useRef(null);
+  const micRequestControllerRef = useRef(null);
   const chunksRef = useRef([]);
   const autoStopRef = useRef(null);
   const inputRef = useRef(null);
@@ -56,10 +57,17 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   }, []);
 
   const startRecording = useCallback(async () => {
-    if (isRecording || uploading) return;
+    if (isRecording || uploading || micRequestControllerRef.current) return;
     setErrorMsg('');
+    const controller = new AbortController();
+    micRequestControllerRef.current = controller;
     try {
-      const stream = await getReusableMicrophoneStream();
+      const stream = await getReusableMicrophoneStream({ signal: controller.signal });
+      if (controller.signal.aborted) {
+        pauseReusableMicrophoneStream(stream);
+        return;
+      }
+      micRequestControllerRef.current = null;
       streamRef.current = stream;
       try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'true'); } catch {}
       const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
@@ -92,6 +100,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       mr.start();
       autoStopRef.current = setTimeout(() => { try { mr.state !== 'inactive' && mr.stop(); } catch {} }, 30000);
     } catch (e) {
+      if (controller.signal.aborted) return;
       pauseReusableMicrophoneStream(streamRef.current);
       streamRef.current = null;
       // Mic permission denied
@@ -101,10 +110,15 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'false');
         }
       } catch {}
+    } finally {
+      if (micRequestControllerRef.current === controller) micRequestControllerRef.current = null;
     }
   }, [isRecording, uploading, transcribeBlob, learnerInput, setLearnerInput]);
 
   const stopRecording = useCallback(() => {
+    const pendingMic = micRequestControllerRef.current;
+    micRequestControllerRef.current = null;
+    pendingMic?.abort();
     const mr = mediaRecorderRef.current;
     if (autoStopRef.current) { clearTimeout(autoStopRef.current); autoStopRef.current = null; }
     if (mr && mr.state !== 'inactive') {
@@ -133,7 +147,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       if (!micCode || code !== micCode) return;
       e.preventDefault();
       hotkeyDownRef.current = false;
-      if (isRecording) {
+      if (isRecording || micRequestControllerRef.current) {
         stopRecording();
       }
     };
@@ -146,14 +160,26 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   }, [isRecording, uploading, sendDisabled, startRecording, stopRecording, hotkeys]);
 
   useEffect(() => () => {
+    micRequestControllerRef.current?.abort();
+    micRequestControllerRef.current = null;
     try { mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive' && mediaRecorderRef.current.stop(); } catch {}
     if (autoStopRef.current) clearTimeout(autoStopRef.current);
     pauseReusableMicrophoneStream(streamRef.current);
     streamRef.current = null;
   }, []);
 
+  // A disabled input cannot retain an unresolved microphone permission prompt.
+  useEffect(() => {
+    if (!sendDisabled) return
+    micRequestControllerRef.current?.abort();
+    micRequestControllerRef.current = null;
+  }, [sendDisabled]);
+
   // Stop any in-progress mic/STT when abortKey changes (skip pressed)
   useEffect(() => {
+    // Cancel microphone permissions still pending on skip or phase change.
+    micRequestControllerRef.current?.abort();
+    micRequestControllerRef.current = null;
     // Abort STT fetch
     try { if (sttAbortRef.current) sttAbortRef.current.abort('skip'); } catch {}
     // Stop recording if active
@@ -171,7 +197,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
 
   // If user hits Enter or Send while recording, stop first
   const handleSend = useCallback(() => {
-    if (isRecording) stopRecording();
+    if (isRecording || micRequestControllerRef.current) stopRecording();
     onSend();
   }, [isRecording, stopRecording, onSend]);
   // Auto-focus when the field becomes actionable (enabled and allowed to send)
@@ -265,20 +291,20 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           e.preventDefault();
           if (!touchActiveRef.current) return;
           touchActiveRef.current = false;
-          if (isRecording) {
+          if (isRecording || micRequestControllerRef.current) {
             stopRecording();
           }
         }}
         onTouchCancel={(e) => {
           e.preventDefault();
           touchActiveRef.current = false;
-          if (isRecording) {
+          if (isRecording || micRequestControllerRef.current) {
             stopRecording();
           }
         }}
         onClick={() => {
           if (sendDisabled) return;
-          if (isRecording) {
+          if (isRecording || micRequestControllerRef.current) {
             stopRecording();
           } else {
             startRecording();

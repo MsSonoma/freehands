@@ -47,6 +47,8 @@ import SlateLiftoffExperience from './SlateLiftoffExperience'
 import ReviewTeacherVideoStage from './ReviewTeacherVideoStage'
 import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
 import { startSlateVideoDuringSpeech, requestSlateSpeechSource } from '@/app/lib/slateMediaRecovery.mjs'
+import { startSlateMusicPlayback } from '@/app/lib/slateMusicPlayback.mjs'
+import { ensurePlaybackAudioSession } from '@/app/session/utils/microphoneSession.js'
 import { MasteryEvidenceClient } from '@/app/lib/masteryEvidence/client.js'
 import { STAGE_6_EVIDENCE_EVENT_TYPES } from '@/app/lib/masteryEvidence/constants.js'
 import { buildItemIdentity } from '@/app/lib/masteryEvidence/identity.js'
@@ -476,6 +478,7 @@ function SlateDrillInner() {
   const [slateMusicMuted, setSlateMusicMuted] = useState(false)
   const [slateMusicVolume, setSlateMusicVolume] = useState(SLATE_MUSIC_DEFAULT_VOLUME)
   const [slateMusicVolumeOpen, setSlateMusicVolumeOpen] = useState(false)
+  const [slateMusicPlaybackError, setSlateMusicPlaybackError] = useState('')
   const [learnerId, setLearnerId] = useState(null)
   const [masteryMap, setMasteryMap] = useState({})
   const [errorMsg, setErrorMsg] = useState('')
@@ -577,6 +580,17 @@ function SlateDrillInner() {
     }
   }, [])
 
+  const attemptSlateMusic = useCallback((audio) => {
+    startSlateMusicPlayback(audio, {
+      ensureOutput: ensurePlaybackAudioSession,
+      onStatus: (message) => {
+        if (slateMusicAudioRef.current === audio && !slateMusicMutedRef.current) {
+          setSlateMusicPlaybackError(message)
+        }
+      },
+    })
+  }, [])
+
   useEffect(() => {
     if (reviewTeacherId !== 'slate') {
       setSlateMusicVolumeOpen(false)
@@ -596,6 +610,7 @@ function SlateDrillInner() {
     slateMusicMutedRef.current = storedMuted
     setSlateMusicVolume(storedVolume)
     setSlateMusicMuted(storedMuted)
+    setSlateMusicPlaybackError('')
 
     const audio = new Audio(SLATE_MUSIC_SRC)
     audio.loop = true
@@ -605,10 +620,7 @@ function SlateDrillInner() {
 
     const ensurePlayback = () => {
       if (slateMusicAudioRef.current !== audio || slateMusicMutedRef.current || !audio.paused) return
-      try {
-        const playPromise = audio.play()
-        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {})
-      } catch {}
+      attemptSlateMusic(audio)
     }
 
     document.addEventListener('pointerdown', ensurePlayback, true)
@@ -622,7 +634,7 @@ function SlateDrillInner() {
       try { audio.src = '' } catch {}
       if (slateMusicAudioRef.current === audio) slateMusicAudioRef.current = null
     }
-  }, [reviewTeacherId])
+  }, [reviewTeacherId, attemptSlateMusic])
 
   useEffect(() => () => clearSlateMusicLongPress(), [clearSlateMusicLongPress])
 
@@ -649,10 +661,18 @@ function SlateDrillInner() {
       slateMusicSuppressClickRef.current = false
       return
     }
+    // A failed "MUSIC ON" button retries the enabled track instead of
+    // requiring the learner to switch music off and then on again.
+    if (slateMusicPlaybackError && !slateMusicMutedRef.current) {
+      const audio = slateMusicAudioRef.current
+      if (audio) attemptSlateMusic(audio)
+      return
+    }
 
     const nextMuted = !slateMusicMutedRef.current
     slateMusicMutedRef.current = nextMuted
     setSlateMusicMuted(nextMuted)
+    setSlateMusicPlaybackError('')
     try { window.localStorage.setItem(SLATE_MUSIC_MUTED_KEY, nextMuted ? '1' : '0') } catch {}
 
     const audio = slateMusicAudioRef.current
@@ -664,11 +684,8 @@ function SlateDrillInner() {
     }
 
     audio.volume = slateMusicVolumeRef.current
-    try {
-      const playPromise = audio.play()
-      if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {})
-    } catch {}
-  }, [])
+    attemptSlateMusic(audio)
+  }, [attemptSlateMusic, slateMusicPlaybackError])
 
   const handleSlateMusicVolumeChange = useCallback(event => {
     const nextVolume = clampSlateMusicVolume(event.target.value)
@@ -680,13 +697,8 @@ function SlateDrillInner() {
     if (!audio) return
     audio.volume = nextVolume
 
-    if (!slateMusicMutedRef.current && audio.paused) {
-      try {
-        const playPromise = audio.play()
-        if (playPromise && typeof playPromise.catch === 'function') playPromise.catch(() => {})
-      } catch {}
-    }
-  }, [])
+    if (!slateMusicMutedRef.current && audio.paused) attemptSlateMusic(audio)
+  }, [attemptSlateMusic])
 
   const handleSlateMusicContextMenu = useCallback(event => {
     event.preventDefault()
@@ -2167,8 +2179,8 @@ ${rows}
                 aria-pressed={slateMusicMuted}
                 aria-haspopup="dialog"
                 aria-expanded={slateMusicVolumeOpen}
-                aria-label={slateMusicMuted ? 'Turn Mr. Slate background music on' : 'Turn Mr. Slate background music off'}
-                title={slateMusicMuted ? 'Unmute music. Right-click or hold for volume.' : 'Mute music. Right-click or hold for volume.'}
+                aria-label={slateMusicPlaybackError ? 'Retry Mr. Slate background music' : slateMusicMuted ? 'Turn Mr. Slate background music on' : 'Turn Mr. Slate background music off'}
+                title={slateMusicPlaybackError || (slateMusicMuted ? 'Unmute music. Right-click or hold for volume.' : 'Mute music. Right-click or hold for volume.')}
                 style={{
                   ...themedSoundBtn,
                   display: 'grid',
@@ -2195,6 +2207,9 @@ ${rows}
                   {slateMusicMuted ? <line x1="3" y1="3" x2="21" y2="21" /> : null}
                 </svg>
               </button>
+              {slateMusicPlaybackError && <span role="status" style={{ fontSize: 11, maxWidth: 170, lineHeight: 1.3, color: reviewDesign.text }}>
+                {slateMusicPlaybackError}
+              </span>}
             </div>
           )}
           <button

@@ -28,6 +28,8 @@ import { resolveSlateLineHelpTarget, slateLineHelpHistory } from '@/app/lib/slat
 import { advanceSlateIntroTeaching, createSlateIntroTeaching, restoreSlateIntroTeaching } from '@/app/lib/slateIntroTeaching.mjs'
 import { playSlateSpeechUntilEnd } from '@/app/lib/slateSpeechPlayback.mjs'
 import { startSlateVideoDuringSpeech, requestSlateSpeechSource } from '@/app/lib/slateMediaRecovery.mjs'
+import { startSlateMusicPlayback } from '@/app/lib/slateMusicPlayback.mjs'
+import { ensurePlaybackAudioSession } from '@/app/session/utils/microphoneSession.js'
 import { formatSlateMathTranscript } from '@/app/lib/slateMathTranscript.mjs'
 import { slateMathWorkspaceResult, insertSlateMathResult } from '@/app/lib/slateMathDraft.mjs'
 import { slateScratchSpec, slateScratchUiForQuestion } from '@/app/lib/slateMathScratch.mjs'
@@ -314,6 +316,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
   const [musicMuted, setMusicMuted] = useState(false)
   const [musicVolume, setMusicVolume] = useState(SLATE_MUSIC_DEFAULT_VOLUME)
   const [musicVolumeOpen, setMusicVolumeOpen] = useState(false)
+  const [musicPlaybackError, setMusicPlaybackError] = useState('')
   const [transcriptLines, setTranscriptLines] = useState([])
   const [lineHelpTarget, setLineHelpTarget] = useState(null)
   const [lineHelpInput, setLineHelpInput] = useState('')
@@ -575,6 +578,15 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     }
   }, [])
 
+  const attemptMusic = useCallback((audio) => {
+    startSlateMusicPlayback(audio, {
+      ensureOutput: ensurePlaybackAudioSession,
+      onStatus: (message) => {
+        if (musicAudioRef.current === audio && !musicMutedRef.current) setMusicPlaybackError(message)
+      },
+    })
+  }, [])
+
   useEffect(() => {
     if (typeof window === 'undefined') return undefined
     let storedVolume = SLATE_MUSIC_DEFAULT_VOLUME
@@ -588,6 +600,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     musicMutedRef.current = storedMuted
     setMusicVolume(storedVolume)
     setMusicMuted(storedMuted)
+    setMusicPlaybackError('')
 
     const audio = new Audio(SLATE_MUSIC_SRC)
     audio.loop = true
@@ -596,10 +609,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     musicAudioRef.current = audio
     const ensurePlayback = () => {
       if (musicAudioRef.current !== audio || musicMutedRef.current || !audio.paused) return
-      try {
-        const promise = audio.play()
-        if (promise && typeof promise.catch === 'function') promise.catch(() => {})
-      } catch {}
+      attemptMusic(audio)
     }
     document.addEventListener('pointerdown', ensurePlayback, true)
     document.addEventListener('keydown', ensurePlayback, true)
@@ -611,7 +621,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       try { audio.src = '' } catch {}
       if (musicAudioRef.current === audio) musicAudioRef.current = null
     }
-  }, [])
+  }, [attemptMusic])
 
   useEffect(() => () => clearMusicLongPress(), [clearMusicLongPress])
 
@@ -636,9 +646,14 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       musicSuppressClickRef.current = false
       return
     }
+    if (musicPlaybackError && !musicMutedRef.current) {
+      if (musicAudioRef.current) attemptMusic(musicAudioRef.current)
+      return
+    }
     const nextMuted = !musicMutedRef.current
     musicMutedRef.current = nextMuted
     setMusicMuted(nextMuted)
+    setMusicPlaybackError('')
     try { window.localStorage.setItem(SLATE_MUSIC_MUTED_KEY, nextMuted ? '1' : '0') } catch {}
     const audio = musicAudioRef.current
     if (!audio) return
@@ -647,11 +662,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
       return
     }
     audio.volume = musicVolumeRef.current
-    try {
-      const promise = audio.play()
-      if (promise && typeof promise.catch === 'function') promise.catch(() => {})
-    } catch {}
-  }, [])
+    attemptMusic(audio)
+  }, [attemptMusic, musicPlaybackError])
 
   const changeMusicVolume = useCallback((event) => {
     const nextVolume = clampSlateMusicVolume(event.target.value)
@@ -661,13 +673,8 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     const audio = musicAudioRef.current
     if (!audio) return
     audio.volume = nextVolume
-    if (!musicMutedRef.current && audio.paused) {
-      try {
-        const promise = audio.play()
-        if (promise && typeof promise.catch === 'function') promise.catch(() => {})
-      } catch {}
-    }
-  }, [])
+    if (!musicMutedRef.current && audio.paused) attemptMusic(audio)
+  }, [attemptMusic])
 
   const openMusicVolume = useCallback((event) => {
     event.preventDefault()
@@ -2952,9 +2959,12 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
                 <div style={{ marginTop: 6, color: C.muted, fontSize: 10 }}>RIGHT-CLICK OR HOLD FOR VOLUME</div>
               </div>
             )}
-            <button type="button" onClick={toggleMusic} onContextMenu={openMusicVolume} onPointerDown={beginMusicLongPress} onPointerUp={clearMusicLongPress} onPointerCancel={clearMusicLongPress} onPointerLeave={clearMusicLongPress} aria-pressed={musicMuted} aria-haspopup="dialog" aria-expanded={musicVolumeOpen} title={musicMuted ? 'Unmute music. Right-click or hold for volume.' : 'Mute music. Right-click or hold for volume.'} style={{ padding: '7px 10px', cursor: 'pointer' }}>
+            <button type="button" onClick={toggleMusic} onContextMenu={openMusicVolume} onPointerDown={beginMusicLongPress} onPointerUp={clearMusicLongPress} onPointerCancel={clearMusicLongPress} onPointerLeave={clearMusicLongPress} aria-pressed={musicMuted} aria-haspopup="dialog" aria-expanded={musicVolumeOpen} title={musicPlaybackError || (musicMuted ? 'Unmute music. Right-click or hold for volume.' : 'Mute music. Right-click or hold for volume.')} style={{ padding: '7px 10px', cursor: 'pointer' }}>
               {musicMuted ? 'MUSIC OFF' : 'MUSIC ON'}
             </button>
+            {musicPlaybackError && <span role="status" style={{ fontSize: 11, lineHeight: 1.3, maxWidth: 170 }}>
+              {musicPlaybackError}
+            </span>}
           </div>
           <button type="button" onClick={toggleSpeech} aria-pressed={!soundOn} style={{ padding: '7px 10px', cursor: 'pointer' }}>{soundOn ? 'SPEECH ON' : 'SPEECH OFF'}</button>
           {speechRecoveryNeeded && soundOn && <button type="button" onClick={retrySpeech} aria-label="Replay Mr. Slate's voice" style={{ padding: '7px 10px', cursor: 'pointer', fontWeight: 800, color: C.accent }}>REPLAY VOICE</button>}
