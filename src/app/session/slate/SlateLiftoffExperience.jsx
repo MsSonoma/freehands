@@ -22,6 +22,7 @@ import { postSlateJudgmentWithRetry } from '@/app/lib/slateJudgmentRetry.mjs'
 import { summarizeSlateTestResults, slateTestResultStatus } from '@/app/lib/slateTestGradeReport.mjs'
 import SlateIndependentTestReport from './SlateIndependentTestReport'
 import { buildSlateLiftoffTestItems, slateLiftoffPrintableTestItems } from '@/app/lib/slateLiftoffTest.mjs'
+import { printAssessmentWindow } from '@/app/session/assessment/printHtml.mjs'
 import { validateSlateTestAlignment } from '@/app/lib/slateTestAlignment.mjs'
 import { separateLiftoffTranscriptQuestion, prepareSlateLiftoffAdvance, restoreSlateLiftoffAdvance } from '@/app/lib/slateLiftoffTranscript.mjs'
 import { resolveSlateLineHelpTarget, slateLineHelpHistory } from '@/app/lib/slateLineHelp.mjs'
@@ -1996,18 +1997,16 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     if (phase !== 'test' || !testItems.length || testPrintBusy) return
     const previewWin = typeof window !== 'undefined' ? window.open('about:blank', '_blank') : null
     if (!previewWin) {
-      setTestPrintError('Allow the PDF preview window to open so your test stays on screen.')
+      setTestPrintError('Allow the print window to open so your test stays on screen.')
       return
     }
     setTestPrintBusy(true)
     setTestPrintError('')
     try {
-      const { createAssessmentPdf } = await import('@/app/session/assessment/printPdf')
-      await createAssessmentPdf({
+      printAssessmentWindow({
         items: slateLiftoffPrintableTestItems(testItems),
         label: 'test',
         lessonTitle: lesson?.title || lessonKey,
-        fileBase: String(lessonKey || 'lesson').replace(/[\\/]/g, '-'),
         previewWin,
       })
     } catch (cause) {
@@ -2832,7 +2831,7 @@ export default function SlateLiftoffExperience({ learnerId, lessonKey, occurrenc
     <div data-slate-test-transcript-tail style={{ marginTop: 12, paddingTop: 8 }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 10, marginBottom: 8 }}>
                 <div style={{ color: C.muted, fontSize: 12 }}>TEST {assessmentIndex + 1}/{currentAssessmentItems.length}</div>
-                {phase === 'test' && <button type="button" onClick={() => void printIndependentTest()} disabled={testPrintBusy || busy} style={{ padding: '7px 10px', background: C.surface2, color: C.accent, border: '1px solid ' + C.border, borderRadius: 6, fontFamily: C.font, fontWeight: 800, cursor: testPrintBusy ? 'wait' : 'pointer' }}>{testPrintBusy ? 'PREPARING PDF...' : 'PRINT TEST'}</button>}
+                {phase === 'test' && <button type="button" onClick={() => void printIndependentTest()} disabled={testPrintBusy || busy} style={{ padding: '7px 10px', background: C.surface2, color: C.accent, border: '1px solid ' + C.border, borderRadius: 6, fontFamily: C.font, fontWeight: 800, cursor: testPrintBusy ? 'wait' : 'pointer' }}>{testPrintBusy ? 'PREPARING PRINT...' : 'PRINT TEST'}</button>}
               </div>
               {testPrintError && <div role="alert" style={{ color: C.red, fontSize: 12, marginBottom: 8 }}>{testPrintError}</div>}
               {assessmentMathResolution.kind === 'invalid' && questionType(currentAssessment) === 'shortanswer' ? null : assessmentMathResolution.kind === 'math' ? (

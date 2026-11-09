@@ -787,14 +787,24 @@ export default function FacilitatorSyllabusLessonOverlay({
         throw new Error(`${kind === 'worksheet' ? 'Worksheet' : 'Test'} content is unavailable for this lesson.`)
       }
 
-      const { createAssessmentPdf } = await import('@/app/session/assessment/printPdf')
-      await createAssessmentPdf({
-        items: slateTest ? slateLiftoffPrintableTestItems(source) : source.map((question, index) => ({ ...question, number: question.number || index + 1 })),
-        label: kind,
-        lessonTitle: lesson?.title || item.title || 'Lesson',
-        fileBase: slateTest ? String(item.lesson_key).replace(/[\\/]/g, '-') : item.lesson_key,
-        previewWin,
-      })
+      if (slateTest) {
+        const { printAssessmentWindow } = await import('@/app/session/assessment/printHtml.mjs')
+        printAssessmentWindow({
+          items: slateLiftoffPrintableTestItems(source),
+          label: kind,
+          lessonTitle: lesson?.title || item.title || 'Lesson',
+          previewWin,
+        })
+      } else {
+        const { createAssessmentPdf } = await import('@/app/session/assessment/printPdf')
+        await createAssessmentPdf({
+          items: source.map((question, index) => ({ ...question, number: question.number || index + 1 })),
+          label: kind,
+          lessonTitle: lesson?.title || item.title || 'Lesson',
+          fileBase: item.lesson_key,
+          previewWin,
+        })
+      }
     } catch (cause) {
       try {
         if (previewWin && !previewWin.closed && previewWin.location?.href === 'about:blank') previewWin.close()
