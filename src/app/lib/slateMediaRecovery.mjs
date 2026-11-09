@@ -79,24 +79,49 @@ export function startSlateVideoDuringSpeech(video, {
  * audio source arrives must surface a retry instead of silently waiting.
  */
 export async function requestSlateSpeechSource(ttsUrl, text, {
-  timeoutMs = 15000,
+  timeoutMs = 30000,
+  maxAttempts = 2,
+  retryDelayMs = 350,
   fetcher = fetch,
 } = {}) {
-  const controller = new AbortController()
-  const timeout = setTimeout(() => controller.abort(), timeoutMs)
-  try {
-    const response = await fetcher(ttsUrl, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text }),
-      signal: controller.signal,
+  const totalAttempts = Math.max(1, Math.floor(Number(maxAttempts) || 1))
+  for (let attempt = 0; attempt < totalAttempts; attempt += 1) {
+    const controller = new AbortController()
+    let timeout = null
+    const expires = new Promise((_, reject) => {
+      timeout = setTimeout(() => {
+        controller.abort()
+        reject(new Error('tts_timeout'))
+      }, timeoutMs)
     })
-    if (!response?.ok) throw new Error('tts_request_failed')
-    const payload = await response.json()
-    const audio = String(payload?.audio || '').trim()
-    if (!audio) throw new Error('tts_empty')
-    return /^(data:|blob:|https?:)/i.test(audio) ? audio : `data:audio/mp3;base64,${audio}`
-  } finally {
-    clearTimeout(timeout)
+    try {
+      // Race the request and its JSON body against the same deadline. Some
+      // mobile fetch implementations do not reject when abort() is called.
+      const response = await Promise.race([
+        Promise.resolve().then(() => fetcher(ttsUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text }),
+          signal: controller.signal,
+        })),
+        expires,
+      ])
+      if (!response?.ok) {
+        const failure = new Error('tts_request_failed')
+        failure.retryable = !response?.status || response.status === 408 ||
+          response.status === 429 || response.status >= 500
+        throw failure
+      }
+      const payload = await Promise.race([response.json(), expires])
+      const audio = String(payload?.audio || '').trim()
+      if (!audio) throw new Error('tts_empty')
+      return /^(data:|blob:|https?:)/i.test(audio) ? audio : 'data:audio/mp3;base64,' + audio
+    } catch (error) {
+      if (attempt + 1 >= totalAttempts || error?.retryable === false) throw error
+    } finally {
+      if (timeout !== null) clearTimeout(timeout)
+    }
+    if (retryDelayMs > 0) await new Promise((resolve) => setTimeout(resolve, retryDelayMs))
   }
+  throw new Error('tts_unavailable')
 }

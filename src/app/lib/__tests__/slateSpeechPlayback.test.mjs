@@ -45,3 +45,17 @@ test('TTS error and rejected autoplay release the wait', async () => {
 test('missing player does not block question availability', async () => {
   assert.equal(await playSlateSpeechUntilEnd(null), 'unavailable')
 })
+
+
+test('a queued pause event from the previous clip cannot finish new speech that is playing', async () => {
+  const audio = new FakeAudio()
+  audio.paused = false
+  const pending = playSlateSpeechUntilEnd(audio, { checkIntervalMs: 5, startTimeoutMs: 100, stallTimeoutMs: 100 })
+  let settled = false
+  pending.then(() => { settled = true })
+  audio.dispatchEvent(new Event('pause'))
+  await Promise.resolve()
+  assert.equal(settled, false)
+  audio.dispatchEvent(new Event('ended'))
+  assert.equal(await pending, 'ended')
+})
