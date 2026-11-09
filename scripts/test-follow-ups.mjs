@@ -37,6 +37,7 @@ import {
 const migrationSource = readFileSync(new URL('../supabase/migrations/20260812090000_add_daily_followups_weekly_reviews.sql', import.meta.url), 'utf8')
 const reviewTeacherPreferenceMigrationSource = readFileSync(new URL('../supabase/migrations/20260927013425_add_weekly_review_teacher_preferences.sql', import.meta.url), 'utf8')
 const dailyReviewTeacherPreferenceMigrationSource = readFileSync(new URL('../supabase/migrations/20261109134643_allow_daily_review_teacher_preferences.sql', import.meta.url), 'utf8')
+const learnerChoiceMigrationSource = readFileSync(new URL('../supabase/migrations/20261109140640_allow_delegated_review_teacher_choice.sql', import.meta.url), 'utf8')
 const generatorSource = readFileSync(new URL('../src/app/api/facilitator/lessons/generate/route.js', import.meta.url), 'utf8')
 const incrementalSource = readFileSync(new URL('../src/app/api/ai/lesson-generate/route.js', import.meta.url), 'utf8')
 const learnSource = readFileSync(new URL('../src/app/learn/LearnerHome.js', import.meta.url), 'utf8')
@@ -261,6 +262,25 @@ test('weekly review teacher preference is available before the run and becomes t
   assert.equal(run.metadata.instructional_teacher, 'webb')
 })
 
+test('a learner-delegated review requires a concrete teacher before its run is created', async () => {
+  const repository = createRepository({ settings: { daily_followups_enabled: false } })
+  let availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
+  const initial = availability.cards.find((card) => card.review_type === REVIEW_TYPES.WEEKLY_REVIEW)
+  repository.data.preferences.push({
+    facilitator_id: userId,
+    learner_id: learnerId,
+    review_type: REVIEW_TYPES.WEEKLY_REVIEW,
+    cycle_key: initial.cycle_key,
+    instructional_teacher: 'learner',
+  })
+  availability = await buildFollowUpAvailability({ repository, userId, learnerId, loadLesson, now, includePrivate: true })
+  const card = availability.cards.find((entry) => entry.review_type === REVIEW_TYPES.WEEKLY_REVIEW)
+  assert.equal(card.instructional_teacher, 'learner')
+  await assert.rejects(() => startFollowUpRun({ repository, userId, learnerId, card, now }), /choose a review teacher/i)
+  assert.equal(repository.data.runs.length, 0)
+  const run = await startFollowUpRun({ repository, userId, learnerId, card, instructionalTeacher: 'sonoma', now })
+  assert.equal(run.metadata.instructional_teacher, 'sonoma')
+})
 test('review quiz length scales with contributing lessons instead of a fixed total', async () => {
   const lessonFor = (name) => ({
     ...lesson,
@@ -488,6 +508,7 @@ test('migration is additive, secure by default, and exposes no authenticated wri
   assert.match(reviewTeacherPreferenceMigrationSource, /review_type = 'weekly_review'/i)
   assert.match(dailyReviewTeacherPreferenceMigrationSource, /drop constraint if exists learning_review_teacher_preferences_type_check/i)
   assert.match(dailyReviewTeacherPreferenceMigrationSource, /review_type in \('daily_review', 'weekly_review'\)/i)
+  assert.match(learnerChoiceMigrationSource, /instructional_teacher in \('sonoma', 'webb', 'slate', 'learner'\)/)
   assert.match(reviewTeacherPreferenceMigrationSource, /instructional_teacher in \('sonoma', 'webb', 'slate'\)/i)
   assert.match(reviewTeacherPreferenceMigrationSource, /revoke all on table public\.learning_review_teacher_preferences from public, anon, authenticated/i)
   assert.match(migrationSource, /learning_review_runs_unique_cycle/)
@@ -512,14 +533,17 @@ test('generation, learner cards, focused flow, and reporting are wired without l
   assert.match(learnSource, /\/session\/slate\?reviewRunId=/)
   assert.match(learnSource, /startFollowUp\(learnerId, card\.id, instructionalTeacher \|\| card\?\.instructional_teacher \|\| 'slate'\)/)
   assert.match(learnSource, /onStart=\{\(item, instructionalTeacher\) => void startSyllabusReview\(item, instructionalTeacher\)\}/)
-  assert.match(syllabusReviewOverlaySource, /\['daily_review', 'weekly_review'\]\.includes\(item\.review_type\) && typeof onTeacherChange === 'function'/)
+  assert.match(syllabusReviewOverlaySource, /\['daily_review', 'weekly_review'\]\.includes\(item\.review_type\)/)
   assert.match(syllabusReviewOverlaySource, /const canStart = !isHistory && item\.review_ready === true && item\.review_status !== 'completed'/)
-  assert.match(syllabusReviewOverlaySource, /allowPreReadyTeacherChange && \['daily_review', 'weekly_review'\]\.includes\(item\.review_type\)/)
+  assert.match(syllabusReviewOverlaySource, /&& allowPreReadyTeacherChange/)
   assert.match(facilitatorSyllabusSource, /allowPreReadyTeacherChange/)
   assert.match(syllabusReviewOverlaySource, /busy = false,/)
   assert.match(syllabusReviewOverlaySource, /disabled=\{!canChooseTeacher \|\| busy \|\| teacherSaving\}/)
   assert.match(facilitatorSyllabusSource, /onTeacherChange=\{\(item, instructionalTeacher\) => saveReviewTeacher\(item, instructionalTeacher\)\}/)
-  assert.match(learnSource, /onTeacherChange=\{\(item, instructionalTeacher\) => saveReviewTeacher\(item, instructionalTeacher\)\}/)
+  assert.doesNotMatch(learnSource, /onTeacherChange=\{\(item, instructionalTeacher\) => saveReviewTeacher\(item, instructionalTeacher\)\}/)
+  assert.match(learnSource, /card\.instructional_teacher === 'learner' && !isReviewTeacher\(instructionalTeacher\)/)
+  assert.match(syllabusReviewOverlaySource, /REVIEW_TEACHER_SELECTION_IDS\.map/)
+  assert.match(syllabusReviewOverlaySource, /Choose your review teacher/)
   assert.match(followUpsClientSource, /action: 'set_review_teacher'/)
   assert.match(legacyLearnSource, /redirect\(['"]\/learn['"]\)/)
   assert.doesNotMatch(legacyLearnSource, /followUpCards\.map|reviewRunId|getFollowUpRun|actOnFollowUp|useEffect/)

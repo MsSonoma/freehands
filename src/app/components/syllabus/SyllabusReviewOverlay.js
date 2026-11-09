@@ -1,10 +1,11 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { REVIEW_TEACHER_IDS, REVIEW_TEACHERS, reviewTeacherIcon, reviewTeacherLabel } from '@/app/lib/reviewTeacher.js'
+import { REVIEW_TEACHER_IDS, REVIEW_TEACHER_SELECTION_IDS, REVIEW_TEACHERS, isReviewTeacher, normalizeReviewTeacherSelection, reviewTeacherIcon, reviewTeacherLabel, reviewTeacherSelectionIcon } from '@/app/lib/reviewTeacher.js'
 import styles from './FacilitatorSyllabusLessonOverlay.module.css'
 
-const REVIEW_TEACHER_OPTIONS = REVIEW_TEACHER_IDS.map((id) => REVIEW_TEACHERS[id])
+const REVIEW_TEACHER_OPTIONS = REVIEW_TEACHER_SELECTION_IDS.map((id) => REVIEW_TEACHERS[id])
+const CONCRETE_TEACHER_OPTIONS = REVIEW_TEACHER_IDS.map((id) => REVIEW_TEACHERS[id])
 
 function prettyDate(value) {
   const day = String(value || '').slice(0, 10)
@@ -76,10 +77,12 @@ export default function SyllabusReviewOverlay({
   busy = false,
 } = {}) {
   const [teacher, setTeacher] = useState('slate')
+  const [learnerTeacher, setLearnerTeacher] = useState('')
   const [teacherSaving, setTeacherSaving] = useState(false)
   useEffect(() => {
-    setTeacher(['sonoma', 'webb', 'slate'].includes(item?.review_teacher) ? item.review_teacher : 'slate')
-  }, [item?.review_teacher, item?.review_run_id, item?.review_card_id])
+    setTeacher(normalizeReviewTeacherSelection(item?.review_teacher))
+    setLearnerTeacher('')
+  }, [item?.review_teacher, item?.cycle_key, item?.review_run_id, item?.review_card_id])
 
   if (!item) return null
 
@@ -92,20 +95,25 @@ export default function SyllabusReviewOverlay({
   const historySubjects = [...new Set([...historyReviews, ...historySlateCompletions].map((entry) => String(entry?.subject || '').trim()).filter(Boolean))]
   const headerSubject = isHistory ? (historySubjects.join(' · ') || 'Review') : (item.subject || 'Review')
   const headerTitle = isHistory ? historyLabel : (item.title || 'Review')
-  const headerIcon = isHistory ? [...new Set([...historyReviews, ...historySlateCompletions].map((entry) => reviewTeacherIcon(entry?.review_teacher)))].join(' ') : reviewTeacherIcon(teacher)
+  const headerIcon = isHistory ? [...new Set([...historyReviews, ...historySlateCompletions].map((entry) => reviewTeacherIcon(entry?.review_teacher)))].join(' ') : reviewTeacherSelectionIcon(teacher)
   const progress = item.review_progress || {}
   const lessons = Array.isArray(progress.lessons) ? progress.lessons : []
   const canStart = !isHistory && item.review_ready === true && item.review_status !== 'completed'
   const canChooseTeacher = !isHistory
+    && allowPreReadyTeacherChange
     && !['in_progress', 'completed'].includes(item.review_status)
-    && (canStart || (allowPreReadyTeacherChange && ['daily_review', 'weekly_review'].includes(item.review_type) && typeof onTeacherChange === 'function'))
+    && ['daily_review', 'weekly_review'].includes(item.review_type)
+    && typeof onTeacherChange === 'function'
+  const learnerChooses = !allowPreReadyTeacherChange && teacher === 'learner'
+  const launchTeacher = learnerChooses ? learnerTeacher : teacher
+  const canLaunch = canStart && isReviewTeacher(launchTeacher)
   const completedCount = Number(progress.completed_count || 0)
   const totalCount = Number(progress.total_count || 0)
 
   async function handleTeacherChange(nextTeacher) {
+    if (!canChooseTeacher) return
     const previousTeacher = teacher
     setTeacher(nextTeacher)
-    if (!['daily_review', 'weekly_review'].includes(item.review_type) || typeof onTeacherChange !== 'function') return
     setTeacherSaving(true)
     try {
       await onTeacherChange(item, nextTeacher)
@@ -161,26 +169,43 @@ export default function SyllabusReviewOverlay({
               <dl className={styles.meta}>
                 <div><dt>Status</dt><dd>{statusLabel(item)}</dd></div>
                 {item.planned_date && <div><dt>Date</dt><dd>{prettyDate(item.planned_date)}</dd></div>}
-                <div><dt>Lessons</dt><dd>{completedCount} of {totalCount} complete</dd></div>
+                {totalCount > 0 && <div><dt>Lessons</dt><dd>{completedCount} of {totalCount} complete</dd></div>}
                 {Number.isFinite(Number(item.review_question_count)) && Number(item.review_question_count) > 0 && <div><dt>Questions</dt><dd>{Number(item.review_question_count)}</dd></div>}
               </dl>
               <section className={styles.detailSection}>
                 <h3>Teacher for this quiz</h3>
                 {item.review_status === 'in_progress' ? (
                   <p>{reviewTeacherIcon(teacher)} This review will continue with <strong>{reviewTeacherLabel(teacher)}</strong>.</p>
+                ) : allowPreReadyTeacherChange ? (
+                  <>
+                    <label style={{ display: 'grid', gap: 6, maxWidth: 280 }}>
+                      <span>Choose who will give the quiz</span>
+                      <select value={teacher} onChange={(event) => void handleTeacherChange(event.target.value)} disabled={!canChooseTeacher || busy || teacherSaving}>
+                        {REVIEW_TEACHER_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.icon} {option.label}</option>)}
+                      </select>
+                    </label>
+                    {teacher === 'learner' && <p>The learner will choose Ms. Sonoma, Mrs. Webb, or Mr. Slate when starting the review.</p>}
+                  </>
+                ) : learnerChooses ? (
+                  canStart ? (
+                    <label style={{ display: 'grid', gap: 6, maxWidth: 280 }}>
+                      <span>Choose your review teacher</span>
+                      <select value={learnerTeacher} onChange={(event) => setLearnerTeacher(event.target.value)} disabled={busy}>
+                        <option value="">Choose a teacher</option>
+                        {CONCRETE_TEACHER_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.icon} {option.label}</option>)}
+                      </select>
+                    </label>
+                  ) : <p>You can choose your review teacher after the lessons are complete.</p>
                 ) : (
-                  <label style={{ display: 'grid', gap: 6, maxWidth: 280 }}>
-                    <span>Choose who will give the quiz</span>
-                    <select value={teacher} onChange={(event) => void handleTeacherChange(event.target.value)} disabled={!canChooseTeacher || busy || teacherSaving}>
-                      {REVIEW_TEACHER_OPTIONS.map((option) => <option key={option.id} value={option.id}>{option.icon} {option.label}</option>)}
-                    </select>
-                  </label>
+                  <p>{reviewTeacherIcon(teacher)} Your facilitator chose <strong>{reviewTeacherLabel(teacher)}</strong> for this review.</p>
                 )}
               </section>
-              <section className={styles.detailSection}>
-                <h3>Lessons in this review</h3>
-                <LessonChecklist lessons={lessons} />
-              </section>
+              {lessons.length > 0 && (
+                <section className={styles.detailSection}>
+                  <h3>Lessons in this review</h3>
+                  <LessonChecklist lessons={lessons} />
+                </section>
+              )}
               {item.review_status === 'pending_lessons' && (
                 <section className={styles.detailSection}>
                   <h3>When this becomes available</h3>
@@ -199,10 +224,12 @@ export default function SyllabusReviewOverlay({
             <button
               type="button"
               className={styles.primary}
-              disabled={!canStart || busy || teacherSaving}
-              onClick={() => canStart && onStart?.(item, teacher)}
+              disabled={!canLaunch || busy || teacherSaving}
+              onClick={() => canLaunch && onStart?.(item, launchTeacher)}
             >
-              {actionLabel(item, busy)}
+              {canStart && !busy && teacher === 'learner'
+                ? (allowPreReadyTeacherChange ? 'Learner will choose' : (canLaunch ? 'Start review' : 'Choose a teacher first'))
+                : actionLabel(item, busy)}
             </button>
           )}
         </footer>

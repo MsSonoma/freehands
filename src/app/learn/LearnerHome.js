@@ -12,7 +12,7 @@ import { applyGoldenKeyToLesson } from '@/app/lib/goldenKeyClient'
 import { useLessonHistory } from '@/app/hooks/useLessonHistory'
 import LessonHistoryModal from '@/app/components/LessonHistoryModal'
 import { subscribeLearnerSettingsPatches } from '@/app/lib/learnerSettingsBus'
-import { getFollowUps, startFollowUp, updateReviewTeacherPreference } from '@/app/lib/followUpsClient'
+import { getFollowUps, startFollowUp } from '@/app/lib/followUpsClient'
 import { getCanonicalMasteryForLearner, slateEmojiForTier } from '@/app/lib/masteryClient'
 import { getWebbCompletionForLearner } from '@/app/lib/webbCompletionClient'
 import PageTutorialOverlay from '@/app/components/PageTutorialOverlay'
@@ -178,6 +178,22 @@ function LessonsPageInner(){
 
   const openFollowUp = async (card, instructionalTeacher = null) => {
     if (!card || followUpStarting) return
+    if (['daily_review', 'weekly_review'].includes(card.review_type)
+      && !card.run_id && card.instructional_teacher === 'learner' && !isReviewTeacher(instructionalTeacher)) {
+      setSelectedSyllabusReview({
+        item_type: 'review',
+        review_type: card.review_type,
+        cycle_key: card.cycle_key,
+        title: card.title,
+        description: card.subtitle,
+        review_status: 'available',
+        review_ready: true,
+        review_teacher: 'learner',
+        review_card_id: card.id,
+        review_question_count: card.item_count,
+      })
+      return
+    }
     setFollowUpStarting(card.id)
     try {
       if (card.run_id) {
@@ -196,25 +212,9 @@ function LessonsPageInner(){
   const startSyllabusReview = (item, instructionalTeacher) => openFollowUp({
     id: item?.review_card_id || item?.id,
     run_id: item?.review_run_id || null,
+    review_type: item?.review_type || null,
     instructional_teacher: item?.review_teacher || null,
   }, instructionalTeacher)
-
-  const saveReviewTeacher = async (item, instructionalTeacher) => {
-    if (!['daily_review', 'weekly_review'].includes(item?.review_type) || !item?.cycle_key) return
-    await updateReviewTeacherPreference(learnerId, item.review_type, item.cycle_key, instructionalTeacher)
-    setSelectedSyllabusReview((current) => current?.cycle_key === item.cycle_key ? { ...current, review_teacher: instructionalTeacher } : current)
-    setFollowUpCards((current) => current.map((card) => card?.cycle_key === item.cycle_key && card?.review_type === item.review_type
-      ? { ...card, instructional_teacher: instructionalTeacher }
-      : card))
-    setSyllabusPayload((current) => current && Array.isArray(current.timeline_items)
-      ? {
-          ...current,
-          timeline_items: current.timeline_items.map((entry) => entry?.cycle_key === item.cycle_key && entry?.review_type === item.review_type
-            ? { ...entry, review_teacher: instructionalTeacher }
-            : entry),
-        }
-      : current)
-  }
 
   const lessonTitleLookup = useMemo(() => {
     const map = {}
@@ -1230,7 +1230,6 @@ function LessonsPageInner(){
           busy={Boolean(followUpStarting)}
           onClose={() => setSelectedSyllabusReview(null)}
           onStart={(item, instructionalTeacher) => void startSyllabusReview(item, instructionalTeacher)}
-          onTeacherChange={(item, instructionalTeacher) => saveReviewTeacher(item, instructionalTeacher)}
         />}
         {syllabusPresentation.showFallbackMessage && (
           <div style={{ padding: '28px 30px', border: '1px solid #ded8cb', background: '#fffdf8', boxShadow: '0 12px 36px rgba(65,52,36,.08)' }}>

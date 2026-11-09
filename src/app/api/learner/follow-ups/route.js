@@ -22,6 +22,7 @@ export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
 const REVIEW_TEACHERS = new Set(['sonoma', 'webb', 'slate']);
+const REVIEW_TEACHER_SELECTIONS = new Set([...REVIEW_TEACHERS, 'learner']);
 
 function reviewTeacher(value) {
   const teacher = String(value || 'slate').trim().toLowerCase();
@@ -145,6 +146,9 @@ export async function POST(request, deps = {}) {
     if (!card) {
       return NextResponse.json({ ok: false, error: 'Follow-Up is no longer available' }, { status: 409 });
     }
+    if (card.instructional_teacher === 'learner' && !instructionalTeacher && !card.run_id) {
+      return NextResponse.json({ ok: false, error: 'Choose a review teacher before starting.' }, { status: 400 });
+    }
     const run = await startFollowUpRun({
       repository: ctx.repository,
       userId: ctx.auth.user.id,
@@ -184,10 +188,10 @@ export async function PATCH(request, deps = {}) {
         return NextResponse.json({ ok: false, error: 'cycle_key is required' }, { status: 400 });
       }
       const instructionalTeacher = typeof body?.instructional_teacher === 'string'
-        ? reviewTeacher(body.instructional_teacher)
+        ? body.instructional_teacher.trim().toLowerCase()
         : null;
-      if (!instructionalTeacher) {
-        return NextResponse.json({ ok: false, error: 'instructional_teacher must be sonoma, webb, or slate' }, { status: 400 });
+      if (!REVIEW_TEACHER_SELECTIONS.has(instructionalTeacher)) {
+        return NextResponse.json({ ok: false, error: 'instructional_teacher must be sonoma, webb, slate, or learner' }, { status: 400 });
       }
       const learner = await ctx.repository.findOwnedLearner({
         userId: ctx.auth.user.id,

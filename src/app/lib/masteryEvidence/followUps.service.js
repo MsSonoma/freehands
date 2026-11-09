@@ -497,6 +497,9 @@ export async function startFollowUpRun({
   const firstSelection = selections[0];
   const requestedTeacher = String(instructionalTeacher || '').toLowerCase();
   const preferredTeacher = String(card?.instructional_teacher || '').toLowerCase();
+  if (preferredTeacher === 'learner' && !['sonoma', 'webb', 'slate'].includes(requestedTeacher)) {
+    throw new Error('Choose a review teacher before starting.');
+  }
   const resolvedTeacher = ['sonoma', 'webb', 'slate'].includes(requestedTeacher)
     ? requestedTeacher
     : ['sonoma', 'webb', 'slate'].includes(preferredTeacher)

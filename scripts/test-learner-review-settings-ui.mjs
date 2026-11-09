@@ -305,6 +305,22 @@ test('Daily Review teacher is saved before lessons complete and locked when revi
   assert.equal(response.status, 400)
   assert.equal(repository.preferences.length, 1)
 })
+test('facilitator can save Learner chooses for Daily and Weekly reviews before launch', async () => {
+  const repository = createSettingsRepository()
+  for (const reviewType of ['daily_review', 'weekly_review']) {
+    const cycleKey = 'America/New_York:2026-11-09'
+    const response = await callSettingsPatch(repository, {
+      action: 'set_review_teacher',
+      learner_id: LEARNER_A,
+      review_type: reviewType,
+      cycle_key: cycleKey,
+      instructional_teacher: 'learner',
+    })
+    assert.equal(response.status, 200)
+    assert.equal((await response.json()).preference.instructional_teacher, 'learner')
+  }
+  assert.deepEqual(repository.preferences.map((entry) => entry.review_type), ['daily_review', 'weekly_review'])
+})
 test('settings API rejects cross-account learners and failed writes do not report success', async () => {
   let repository = createSettingsRepository()
   let response = await callSettingsPatch(repository, {
