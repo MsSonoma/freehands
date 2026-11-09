@@ -994,8 +994,8 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
     setHistoryOccurrenceId(occurrenceId)
   }
 
-  async function saveWeeklyReviewTeacher(item, instructionalTeacher) {
-    if (item?.review_type !== 'weekly_review' || !item?.cycle_key) return
+  async function saveReviewTeacher(item, instructionalTeacher) {
+    if (!['daily_review', 'weekly_review'].includes(item?.review_type) || !item?.cycle_key) return
     await updateReviewTeacherPreference(learnerId, item.review_type, item.cycle_key, instructionalTeacher)
     setSelectedSyllabusReview((current) => current?.cycle_key === item.cycle_key ? { ...current, review_teacher: instructionalTeacher } : current)
     await loadCurrent()
@@ -1163,7 +1163,8 @@ export default function FacilitatorPage({ onNavigate = null, embeddedHref = '' }
             busy={reviewStarting}
             onClose={() => setSelectedSyllabusReview(null)}
             onStart={(item, instructionalTeacher) => void startSyllabusReview(item, instructionalTeacher)}
-            onTeacherChange={(item, instructionalTeacher) => saveWeeklyReviewTeacher(item, instructionalTeacher)}
+            onTeacherChange={(item, instructionalTeacher) => saveReviewTeacher(item, instructionalTeacher)}
+            allowPreReadyTeacherChange
           />}
 
           {resolvedSyllabusLesson && <FacilitatorSyllabusLessonOverlay

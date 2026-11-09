@@ -54,6 +54,7 @@ function repositoryFor(evidenceEvents = [anchor()]) {
     runs: [],
     items: [],
     events: [],
+    preferences: [],
   }
   return {
     data,
@@ -65,6 +66,7 @@ function repositoryFor(evidenceEvents = [anchor()]) {
     async listReviewRuns() { return [...data.runs] },
     async listReviewItems() { return [...data.items] },
     async listReviewEvents() { return [...data.events] },
+    async listReviewTeacherPreferences() { return [...data.preferences] },
     async insertRun(run) { data.runs.push({ ...run }); return { ...run } },
     async findRunByCycle({ learnerId, reviewType, cycleKey }) {
       return data.runs.find((run) => run.learner_id === learnerId && run.review_type === reviewType && run.cycle_key === cycleKey) || null
@@ -196,6 +198,74 @@ test('pending Weekly Review projects its saved teacher before all lessons are co
   assert.equal(projection.items[0].review_teacher, 'webb')
 })
 
+test('pending Daily Review projects its saved teacher before every lesson is completed', () => {
+  const projection = buildSyllabusReviewProjection({
+    timelineItems: [completedLesson({ readiness_state: 'available' })],
+    settings: { daily_followups_enabled: true, weekly_reviews_enabled: false, weekly_review_day: 'friday' },
+    today: '2026-09-24',
+    timeZone: 'America/New_York',
+    availability: {
+      cards: [],
+      completed_cycles: [],
+      review_teacher_preferences: [{
+        review_type: REVIEW_TYPES.DAILY_REVIEW,
+        cycle_key: 'America/New_York:2026-09-24',
+        instructional_teacher: 'webb',
+      }],
+    },
+  })
+  assert.equal(projection.items.length, 1)
+  assert.equal(projection.items[0].review_status, 'pending_lessons')
+  assert.equal(projection.items[0].review_ready, false)
+  assert.equal(projection.items[0].review_teacher, 'webb')
+})
+
+test('ready Daily Review uses the saved teacher for its card and newly started run', async () => {
+  const repository = repositoryFor()
+  const cycleKey = 'America/New_York:2026-09-24'
+  repository.data.preferences.push({
+    review_type: REVIEW_TYPES.DAILY_REVIEW,
+    cycle_key: cycleKey,
+    instructional_teacher: 'webb',
+  })
+  const availability = await buildFollowUpAvailability({
+    repository,
+    userId: 'user-1',
+    learnerId: repository.data.learner.id,
+    loadLesson: async () => lesson,
+    now: '2026-09-24T20:00:00.000Z',
+    includePrivate: true,
+    dailyReviewCycles: [{
+      review_type: REVIEW_TYPES.DAILY_REVIEW,
+      cycleKey,
+      reviewDate: '2026-09-24',
+      timeZone: 'America/New_York',
+      lessonKeys: ['generated/fractions.json'],
+      lessonCount: 1,
+      completedCount: 1,
+      ready: true,
+    }],
+  })
+  const card = availability.cards.find((entry) => entry.review_type === REVIEW_TYPES.DAILY_REVIEW)
+  assert.equal(card?.instructional_teacher, 'webb')
+  const projection = buildSyllabusReviewProjection({
+    timelineItems: [completedLesson()],
+    settings: { daily_followups_enabled: true, weekly_reviews_enabled: false, weekly_review_day: 'friday' },
+    today: '2026-09-24',
+    timeZone: 'America/New_York',
+    availability,
+  })
+  assert.equal(projection.items[0].review_teacher, 'webb')
+  assert.equal(projection.items[0].review_ready, true)
+  const run = await startFollowUpRun({
+    repository,
+    userId: 'user-1',
+    learnerId: repository.data.learner.id,
+    card,
+    now: '2026-09-24T20:00:00.000Z',
+  })
+  assert.equal(run.metadata.instructional_teacher, 'webb')
+})
 test('Same-day Daily Review starts under its own protocol without changing delayed Daily Follow-Up semantics', async () => {
   const repository = repositoryFor()
   const cycle = {

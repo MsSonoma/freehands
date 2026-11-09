@@ -72,6 +72,7 @@ export default function SyllabusReviewOverlay({
   onClose,
   onStart,
   onTeacherChange,
+  allowPreReadyTeacherChange = false,
   busy = false,
 } = {}) {
   const [teacher, setTeacher] = useState('slate')
@@ -97,14 +98,14 @@ export default function SyllabusReviewOverlay({
   const canStart = !isHistory && item.review_ready === true && item.review_status !== 'completed'
   const canChooseTeacher = !isHistory
     && !['in_progress', 'completed'].includes(item.review_status)
-    && (canStart || (item.review_type === 'weekly_review' && typeof onTeacherChange === 'function'))
+    && (canStart || (allowPreReadyTeacherChange && ['daily_review', 'weekly_review'].includes(item.review_type) && typeof onTeacherChange === 'function'))
   const completedCount = Number(progress.completed_count || 0)
   const totalCount = Number(progress.total_count || 0)
 
   async function handleTeacherChange(nextTeacher) {
     const previousTeacher = teacher
     setTeacher(nextTeacher)
-    if (item.review_type !== 'weekly_review' || typeof onTeacherChange !== 'function') return
+    if (!['daily_review', 'weekly_review'].includes(item.review_type) || typeof onTeacherChange !== 'function') return
     setTeacherSaving(true)
     try {
       await onTeacherChange(item, nextTeacher)

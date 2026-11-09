@@ -176,8 +176,8 @@ export async function PATCH(request, deps = {}) {
     }
 
     if (body?.action === 'set_review_teacher') {
-      if (body?.review_type !== 'weekly_review') {
-        return NextResponse.json({ ok: false, error: 'review_type must be weekly_review' }, { status: 400 });
+      if (!['daily_review', 'weekly_review'].includes(body?.review_type)) {
+        return NextResponse.json({ ok: false, error: 'review_type must be daily_review or weekly_review' }, { status: 400 });
       }
       const cycleKey = String(body?.cycle_key || '').trim();
       if (!cycleKey || cycleKey.length > 255) {

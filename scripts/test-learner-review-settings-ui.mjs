@@ -269,6 +269,42 @@ test('Weekly Review teacher can be saved before unlock and becomes fixed after t
   assert.equal(repository.preferences[0].instructional_teacher, 'webb')
 })
 
+test('Daily Review teacher is saved before lessons complete and locked when review starts', async () => {
+  const repository = createSettingsRepository()
+  const cycleKey = 'America/New_York:2026-11-09'
+  const selection = {
+    action: 'set_review_teacher',
+    learner_id: LEARNER_A,
+    review_type: 'daily_review',
+    cycle_key: cycleKey,
+    instructional_teacher: 'sonoma',
+  }
+  let response = await callSettingsPatch(repository, selection)
+  assert.equal(response.status, 200)
+  assert.equal((await response.json()).preference.instructional_teacher, 'sonoma')
+  assert.equal(repository.preferences.length, 1)
+
+  response = await callSettingsPatch(repository, { ...selection, instructional_teacher: 'webb' })
+  assert.equal(response.status, 200)
+  assert.equal(repository.preferences.length, 1)
+  assert.equal(repository.preferences[0].instructional_teacher, 'webb')
+
+  repository.runs.push({
+    id: '33333333-3333-4333-8333-333333333333',
+    learner_id: LEARNER_A,
+    review_type: 'daily_review',
+    cycle_key: cycleKey,
+    status: 'active',
+  })
+  response = await callSettingsPatch(repository, { ...selection, instructional_teacher: 'slate' })
+  assert.equal(response.status, 409)
+  assert.match((await response.json()).error, /already started/i)
+  assert.equal(repository.preferences[0].instructional_teacher, 'webb')
+
+  response = await callSettingsPatch(repository, { ...selection, review_type: 'daily_followup' })
+  assert.equal(response.status, 400)
+  assert.equal(repository.preferences.length, 1)
+})
 test('settings API rejects cross-account learners and failed writes do not report success', async () => {
   let repository = createSettingsRepository()
   let response = await callSettingsPatch(repository, {

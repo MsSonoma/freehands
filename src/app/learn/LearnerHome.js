@@ -199,8 +199,8 @@ function LessonsPageInner(){
     instructional_teacher: item?.review_teacher || null,
   }, instructionalTeacher)
 
-  const saveWeeklyReviewTeacher = async (item, instructionalTeacher) => {
-    if (item?.review_type !== 'weekly_review' || !item?.cycle_key) return
+  const saveReviewTeacher = async (item, instructionalTeacher) => {
+    if (!['daily_review', 'weekly_review'].includes(item?.review_type) || !item?.cycle_key) return
     await updateReviewTeacherPreference(learnerId, item.review_type, item.cycle_key, instructionalTeacher)
     setSelectedSyllabusReview((current) => current?.cycle_key === item.cycle_key ? { ...current, review_teacher: instructionalTeacher } : current)
     setFollowUpCards((current) => current.map((card) => card?.cycle_key === item.cycle_key && card?.review_type === item.review_type
@@ -1230,7 +1230,7 @@ function LessonsPageInner(){
           busy={Boolean(followUpStarting)}
           onClose={() => setSelectedSyllabusReview(null)}
           onStart={(item, instructionalTeacher) => void startSyllabusReview(item, instructionalTeacher)}
-          onTeacherChange={(item, instructionalTeacher) => saveWeeklyReviewTeacher(item, instructionalTeacher)}
+          onTeacherChange={(item, instructionalTeacher) => saveReviewTeacher(item, instructionalTeacher)}
         />}
         {syllabusPresentation.showFallbackMessage && (
           <div style={{ padding: '28px 30px', border: '1px solid #ded8cb', background: '#fffdf8', boxShadow: '0 12px 36px rgba(65,52,36,.08)' }}>

@@ -311,6 +311,7 @@ export async function buildFollowUpAvailability({
           cycle_key: dailyCycle.cycleKey,
           title: 'Daily Review',
           subtitle: 'Review today\'s completed lessons',
+          instructional_teacher: teacherPreferenceByCycle.get(`${REVIEW_TYPES.DAILY_REVIEW}:${dailyCycle.cycleKey}`)?.instructional_teacher || 'slate',
           item_count: selections.length,
           remaining_count: selections.length,
           resume: false,
