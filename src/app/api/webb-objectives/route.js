@@ -1,9 +1,9 @@
 /**
  * /api/webb-objectives
  *
- * Mrs. Webb objectives are the authoritative essay-body blueprint. Each mastered objective
- * yields one learner-authored note and one learner-authored body sentence in the same order.
- * Topic and conclusion sentences are additional composition structure, not mastery targets.
+ * Mrs. Webb records mastery objectives and learner notes independently of the writing
+ * plan. Related research notes may support one learner-authored body thought.
+ * Topic and conclusion are structural writing roles, not mastery targets.
  */
 import { NextResponse } from 'next/server.js'
 import { buildInstructionalLessonView } from '../../lib/masteryEvidence/assessmentIsolation.js'
@@ -14,6 +14,7 @@ import {
   normalizeAcceptedCompositionSentences,
   normalizeWebbCompositionPlan,
   writingSentenceSimilarity,
+  fallbackWebbWritingGroups,
 } from '../../lib/webbCompositionModel.mjs'
 import {
   cluesFromWebbBlueprint,
@@ -127,11 +128,11 @@ async function generateObjectives(apiKey, lesson, callModel = null, options = {}
     "First design one coherent private composition blueprint ABOUT what this lesson teaches. Choose the discourse pattern that fits the content, such as explanation, chronology, cause and effect, compare and contrast, process, literary response, report, or argument. This blueprint is instructional architecture only and is never shown to the learner as prose.",
     "Current Mrs. Webb always writes from mastered lesson notes. She does not switch into a separate composition assignment that requires a new topic, opinion, story, example, or other content that was not learned and saved during research.",
     "If the source lesson asks the learner to produce a different kind of writing, such as an opinion paragraph or narrative, observe the knowledge and skill the lesson teaches and make the hidden essay ABOUT that learned material. For example, a lesson about opinion paragraphs can produce an essay explaining how opinion paragraphs work. Do not invent an unrelated opinion for the learner to write.",
-    "Then derive 5 to 8 ATOMIC core comprehension objectives from that blueprint. Each objective must represent exactly one sentence-worth of essential BODY content and must assess ONE central idea, relationship, process, or skill only.",
-    "The returned objective order is authoritative for later writing. The learner will earn exactly one learner-authored note for each objective and later turn exactly that note into exactly one BODY sentence in the same order. A separate topic sentence and a separate concluding sentence will be added around those body sentences. The later planner will not merge, omit, reorder, or invent objective content.",
+    "Derive only the genuinely distinct ATOMIC comprehension objectives supported by the lesson, between 1 and 8. Do not invent, split, reword, or repeat an idea merely to reach a count. A short set of distinct objectives is better than a long set of echoes. Each objective must assess ONE central idea, relationship, process, or skill.",
+    "The returned objective order is authoritative for comprehension and learner-authored research notes. The later writing plan may group related notes into fewer distinct BODY thoughts. Do not repeat comprehension questions or writing requests to satisfy a count. A separate topic and conclusion frame the writing.",
     "Objective 1 is the first substantive body idea after the separate topic sentence. It must contribute learned content rather than merely announce what the paragraph will discuss.",
-    "Every later objective must intentionally advance the essay body from the objectives before it. Put prerequisites before dependent ideas, causes before consequences, events in meaningful chronology when chronology matters, supporting evidence before interpretation, and explanation before significance. Avoid conceptual ricochet.",
-    "The final objective is the final substantive body idea before the separate conclusion. It must contribute learned content that can support the paragraph's ending, but it must not be reduced to a conclusion or summary sentence.",
+    "Every later objective must represent genuinely distinct comprehension, not another way of demanding the same relationship. Organize prerequisite and dependent ideas meaningfully. Avoid conceptual ricochet. When there is no distinct further objective, stop.",
+    "The final objective must be substantive comprehension, not a forced summary or near-duplicate of an earlier objective.",
     "Topic and conclusion are composition structure, not mastery objectives. Do not sacrifice the first or final content objective to make either structural sentence.",
     "An objective may describe one relationship involving multiple things, but it must never require two independently gradable answers. Do not combine identification plus explanation, definition plus cause, cause plus effect, fact plus example, or two separate functions.",
     "Each objective should be answerable by one focused comprehension question. Before returning a row containing \"and\", self-check whether the words after \"and\" create a second question, second verb task, or separately gradable fact. If they do, split, reorder, or omit the lower-priority idea.",
@@ -139,7 +140,7 @@ async function generateObjectives(apiKey, lesson, callModel = null, options = {}
     "Keep objective text content-focused and student-facing, normally as \"The learner can explain...\", \"The learner can describe...\", \"The learner can compare...\", or \"The learner understands...\". Do not put later writing instructions inside the objective text.",
     "For each row, atomic_focus is also the learner-facing retrieval clue. It must be a short 2 to 6 word concept label, not a sentence and not a proposition that can be lightly rewritten into the answer.",
     "A retrieval clue may name the territory (for example, a person, event, process, theme, category, or broad concept), but it must not state the tested relationship, cause, effect, definition, comparison result, sequence result, or other answer-bearing predicate.",
-    "For every body unit, rhetorical_job must state what that idea contributes to the whole composition, and connection_from_previous must state WHY this unit follows what came before. Mere ordering language such as next objective, next goal, or continues the essay is invalid.",
+    "For every objective, rhetorical_job must describe its real contribution to the topic. connection_from_previous must describe a meaningful conceptual relationship, not count-driven sequencing. With one objective, explain why it anchors the writing.",
     "Return the blueprint itself. controlling_idea is the coherent proposition or explanation the whole composition develops. discourse_mode names the organizational pattern. closing_goal states what the conclusion should synthesize without supplying learner prose.",
     "Return only valid JSON in this exact shape: {\"controlling_idea\":\"...\",\"discourse_mode\":\"explanation\",\"closing_goal\":\"...\",\"body_units\":[{\"id\":\"body-1\",\"atomic_focus\":\"short retrieval clue\",\"objective\":\"The learner can explain...\",\"rhetorical_job\":\"...\",\"connection_from_previous\":\"...\"}]}.",
   ].join(' ')
@@ -251,8 +252,41 @@ async function generateObjectiveClues(apiKey, lesson, objectives, callModel = nu
   }
 }
 
-function generateCompositionPlan(_apiKey, _lesson, objectives, learnerNotes, blueprint = null, _callModel = null) {
-  return buildWebbCompositionPlan(objectives, learnerNotes, blueprint)
+async function generateCompositionPlan(apiKey, lesson, objectives, learnerNotes, blueprint = null, callModel = null, existingPlan = null, acceptedSentences = {}) {
+  // Mastery and notes remain intact. Only the writing jobs are consolidated.
+  let groups = fallbackWebbWritingGroups(objectives, learnerNotes)
+  if (objectives.length > 1) {
+    const system = [
+      'Group learner research into DISTINCT writing thoughts, not fixed sentence counts.',
+      'Return only JSON: {"groups":[[0],[1,2],[3]]}. Include every objective index exactly once, in original source order.',
+      'Group notes that express essentially the SAME underlying idea, relationship or evidence even when the objectives differ in wording.',
+      'Do not force a second explanation of a thought already communicated. One body sentence is enough if notes support just one distinct thought.',
+      'Preserve genuinely different writing ideas even if about the same topic. Do not introduce facts not in learner notes.',
+      'If an accepted sentence already expresses the content of later notes, group those notes with that accepted sentence source to avoid another request.',
+      'A group becomes one coherent learner-authored thought, not a checklist to explain every grouped learning objective.',
+    ].join(' ')
+    const user = JSON.stringify({
+      lesson: { title: lesson?.title || '', subject: lesson?.subject || '' },
+      research: objectives.map((objective, index) => ({
+        index, objective, note: String(learnerNotes?.[index]?.text || ''),
+      })),
+      previouslyAccepted: Object.entries(acceptedSentences || {})
+        .filter(([, value]) => value?.provenance === 'learner-message')
+        .map(([rawIndex, value]) => ({
+          slotIndex: Number(rawIndex), text: String(value?.text || ''),
+          sourceObjectiveIndices: existingPlan?.slots?.[Number(rawIndex)]?.sourceObjectiveIndices || [],
+        })),
+    })
+    try {
+      const invoke = callModel || ((...args) => callGPT(apiKey, ...args))
+      const response = await invoke(system, user, 400, 0, { type: 'json_object' }, Date.now() + 22_000)
+      const parsed = JSON.parse(String(response || '{}'))
+      if (Array.isArray(parsed.groups)) groups = parsed.groups
+    } catch {
+      // A failed grouping call must never strand a learner at the writing handoff.
+    }
+  }
+  return buildWebbCompositionPlan(objectives, learnerNotes, blueprint, groups, existingPlan, acceptedSentences)
 }
 async function validateLearnerNotes(apiKey, { objectives = [], learnerNotes = {}, blueprint = null }, callModel = null) {
   const rows = (Array.isArray(objectives) ? objectives : [])
@@ -335,15 +369,15 @@ async function checkWriting(apiKey, input, callModel = null) {
   const priorSentences = Array.isArray(input?.priorSentences) ? input.priorSentences.map(value => String(value || '').trim()).filter(Boolean) : []
   const duplicate = role === 'body' ? deterministicDuplicate(input?.text, priorSentences) : null
   const system = [
-    "You evaluate exactly one learner-authored essay sentence for its role in this paragraph. Judge five facts independently.",
-    "(1) CONCEPT_FIT: correct, partial, or incorrect. For a body sentence, the assigned body-unit focus/objective defines the idea this sentence must express; the learner-authored research note is evidence and a wording source, not a replacement objective. The sentence must accurately express the body-unit idea while remaining supported by that learner note. For a topic sentence, judge whether it accurately introduces the overall subject and big idea of the lesson/paragraph; it does not need to restate the first research note. For a conclusion, judge whether it accurately closes or synthesizes the ideas already developed in the accepted paragraph; it does not need to restate the final research note and must not add a new unsupported fact.",
-    "(2) SENTENCE_OK: yes only when the learner submitted exactly one complete coherent sentence usable verbatim. Two or more sentences must be no.",
-    "(3) SLOT_FIT: yes only when the sentence performs its exact rhetorical role. A topic sentence should tell the reader what the paragraph will be about. A body sentence must develop its assigned research note. A conclusion should bring the paragraph's established ideas to a clear ending without starting a new topic.",
-    "(4) ADDS_NEW_INFORMATION: for a body slot, yes only when it advances the paragraph instead of restating an accepted sentence. For a topic or conclusion, framing or synthesis is allowed and does not need to add a new fact.",
-    "(5) PARAGRAPH_FIT: yes only when accepting it makes the paragraph more coherent overall rather than causing a topic jump, contradiction, orphaned example, or unnecessary repetition.",
-    "A simple child-written sentence can be excellent. Do not require a transition word, sophisticated style, or adult-level polish.",
+    "Evaluate one learner-authored essay sentence for its writing purpose and accuracy. Return five fields; information novelty is advisory and never a rejection gate.",
+    "(1) CONCEPT_FIT: correct if the sentence expresses ONE accurate coherent thought grounded in the learner's notes and the writing purpose. Multiple source objectives are provenance, not separate tasks to be fulfilled. Do not require exact private objective wording, a different example, or new evidence not researched. A topic introduces the big idea; a conclusion closes the previously accepted ideas. Reject only material factual mistakes or unsupported new claims.",
+    "(2) SENTENCE_OK: yes for one understandable, coherent sentence. A minor verb-tense, punctuation, spelling, or child-grammar imperfection MUST NOT fail a thought whose meaning is clear. Two or more separate sentences must be no.",
+    "(3) SLOT_FIT: yes when the sentence performs its role: introducing, turning the attached learner research note(s) into ONE coherent body thought, or concluding. Do NOT require every grouped learning objective to receive an independent explanation.",
+    "(4) ADDS_NEW_INFORMATION: advisory only. Reusing one story example to explain a relationship or significance is legitimate and does not require inventing a different fact. Do not reject the sentence because this field is no.",
+    "(5) PARAGRAPH_FIT: yes if the sentence relates intelligibly to the paragraph. Reject actual contradictions, wholly unrelated ideas, or unintelligibility, not mere thematic overlap or a repeated story detail taught by the lesson.",
+    "A simple child-written sentence can be excellent. Do not require a transition word, polished grammar, adult style, or new factual content beyond the saved notes.",
     "Never reward a sentence merely because it is a good example of the writing skill being studied. Judge whether it belongs in THIS essay and performs THIS role.",
-    "Research notes are learner-authored evidence for body sentences, not wording to copy and not permission to change the planned body-unit idea. Never rewrite, correct, complete, or suggest wording.",
+    "Research notes are the learner-authored content boundary for body thoughts. The private focus defines the writing purpose, not extra material to demand. Never rewrite, correct, complete, or suggest learner wording.",
     "Reply exactly CONCEPT_FIT|SENTENCE_OK|SLOT_FIT|ADDS_NEW_INFORMATION|PARAGRAPH_FIT where CONCEPT_FIT is correct, partial, or incorrect and all other fields are yes or no.",
   ].join(' ')
   const user = JSON.stringify({
@@ -372,7 +406,8 @@ async function checkWriting(apiKey, input, callModel = null) {
   const slotFit = slotFitRaw === 'yes' && !hasIncompatibleEssayPositionCue(input?.text, role)
   const addsNewInformation = addsRawValue === 'yes' && !duplicate
   const paragraphFit = paragraphRawValue === 'yes'
-  const positionFit = slotFit && (role === 'body' ? addsNewInformation : true) && paragraphFit
+  // Novelty is only diagnostic. Prevent count-driven demands for new evidence.
+  const positionFit = slotFit && paragraphFit
   return {
     accuracy,
     conceptFit: accuracy,
@@ -518,7 +553,7 @@ export async function POST(req, deps = {}) {
 
     if (body.action === 'plan-writing') {
       const objectives = Array.isArray(body.objectives) ? body.objectives.map(value => String(value || '').trim()).filter(Boolean).slice(0, 12) : []
-      const compositionPlan = await generateCompositionPlan(apiKey, buildInstructionalLessonView(body.lesson || {}), objectives, body.learnerNotes || {}, body.blueprint || null, deps.callModel || null)
+      const compositionPlan = await generateCompositionPlan(apiKey, buildInstructionalLessonView(body.lesson || {}), objectives, body.learnerNotes || {}, body.blueprint || null, deps.callModel || null, body.existingPlan || null, body.acceptedSentences || {})
       return NextResponse.json({ compositionPlan })
     }
 

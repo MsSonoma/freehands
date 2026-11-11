@@ -67,8 +67,8 @@ test('topic and conclusion explain their paragraph jobs without pretending they 
   assert.match(studio, /You are not turning a research note into a sentence here\./)
   assert.match(studio, /You are not turning one research note into a sentence here/)
   assert.match(studio, /Concluding sentence/)
-  assert.match(route, /does not need to restate the first research note/)
-  assert.match(route, /does not need to restate the final research note/)
+  assert.match(route, /A topic introduces the big idea/)
+  assert.match(route, /a conclusion closes the previously accepted ideas/)
   assert.match(model, /A topic sentence is a structural opening, not a conversion of one research note/)
   assert.match(model, /A conclusion is a structural ending, not a conversion of one research note/)
   assert.doesNotMatch(model, /shape the first note as opening content|shape the final note as closing content/)
@@ -94,16 +94,16 @@ test('writing evaluation is aware of ordered essay position without taking learn
   assert.match(page, /positionFit: evaluation\.positionFit, slotFit: evaluation\.slotFit/)
   assert.match(model, /accepted: accuracy === 'correct' && sentenceOk === true && fitsSlot && addsForAcceptance && fitsParagraph/)
   assert.match(route, /Do not require a transition word/)
-  assert.match(route, /authoritative content boundary/)
+  assert.match(route, /research notes are the learner-authored content boundary/i)
   assert.match(page, /slot\.role === 'body' && slot\.sourceObjectiveIndices\?\.length && !slotSource\.notes\.length/)
 })
 
 test('writing resume restores the durable composition stage instead of re-entering research', () => {
-  assert.match(model, /WEBB_SNAPSHOT_VERSION = 9/)
-  assert.match(model, /PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION/)
+  assert.match(model, /WEBB_SNAPSHOT_VERSION = 10/)
+  assert.match(model, /OBJECTIVE_BLUEPRINT_WEBB_COMPOSITION_PROTOCOL_VERSION/)
   assert.match(model, /upgradePreviousCompositionSnapshot/)
   assert.match(model, /restoreWebbCompositionState/)
-  assert.match(page, /const composition = restoreWebbCompositionState/)
+  assert.match(page, /let composition = restoreWebbCompositionState/)
   assert.match(page, /composition\.webbStage === WEBB_SESSION_STAGES\.RESEARCH/)
   assert.match(page, /pendingWritingReviewRef\.current = composition\.pendingWritingReview/)
   assert.match(page, /submitWritingAttemptRef\.current/)
@@ -221,4 +221,19 @@ test('draft and final composition saves are ordered so a late draft cannot overw
   assert.match(persist, /compositionSaveQueueRef\.current = pending\.catch\(\(\) => \{\}\)/)
   assert.match(persist, /await pending/)
   assert.match(persist, /const browserSessionId = getProtectedBrowserSessionId\(\)/)
+})
+
+
+test('new grouped writing shows a writing goal rather than re-testing the earlier comprehension question', () => {
+  assert.match(page, /const currentWritingGoal = currentWritingSlot\?\.role === 'body'/)
+  assert.match(page, /Turn the shared idea in these research notes into one clear, connected thought/)
+  assert.match(page, /writingGoal=\{!!currentWritingGoal\}/)
+  assert.match(studio, /writingGoal \? 'Writing goal' : objectivePromptCaptured/)
+})
+
+
+test('a consolidated essay focus does not show a retired slot rejection as the current writing instruction', () => {
+  assert.match(page, /activeWritingPlan\?\.protocolVersion === WEBB_COMPOSITION_PROTOCOL_VERSION/)
+  assert.match(page, /writingSubphase === WEBB_WRITING_SUBPHASES\.FOCUS\s*\? writingFallbackGuidance/)
+  assert.match(page, /REVIEW still shows the current evaluator's specific feedback/)
 })

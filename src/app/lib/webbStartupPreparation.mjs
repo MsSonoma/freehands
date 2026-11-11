@@ -6,7 +6,7 @@ import {
 } from './webbCompositionBlueprint.mjs'
 
 // Increment this version if the blueprint-generation contract changes.
-const PREPARATION_CACHE_VERSION = 'webb-preparation-2026-11-06-v1'
+const PREPARATION_CACHE_VERSION = 'webb-preparation-2026-11-11-v2-note-thought'
 const PREPARATION_CACHE_MAX_AGE_MS = 7 * 24 * 60 * 60 * 1000
 const RETRYABLE_HTTP_STATUSES = new Set([408, 425, 429, 500, 502, 503, 504])
 const GENERATION_STAGES = new Set(['repair', 'fresh'])

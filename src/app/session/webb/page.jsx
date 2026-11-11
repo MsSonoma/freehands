@@ -56,11 +56,15 @@ import {
   migrateWebbSnapshot,
   nextWritingObjectiveIndex,
   restoreWebbCompositionState,
+  alignWebbWritingPlanOnResume,
   sanitizeWritingGuidance,
 } from '@/app/lib/webbLearningModel.mjs'
 import {
   assembleWebbCompositionEssay,
   compositionSlotSource,
+  compositionPlanViolations,
+  WEBB_COMPOSITION_PROTOCOL_VERSION,
+  ONE_TO_ONE_WEBB_COMPOSITION_PROTOCOL_VERSION,
   nextCompositionSlotIndex,
 } from '@/app/lib/webbCompositionModel.mjs'
 import {
@@ -714,7 +718,41 @@ function WebbPageInner() {
       await loadPriorObjectiveExposure(saved.objectives || [], selectedLesson)
       if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
       let restored = reconcileWebbObjectiveState(saved.objectives, saved, saved.chatMessages || [])
-      let composition = restoreWebbCompositionState({ ...saved, ...restored }, saved.objectives)
+      let compositionSnapshot = { ...saved, ...restored }
+      // Keep accepted prose at its original indexes, but retire unstarted,
+      // overlapping v4 writing jobs when the learner resumes the essay.
+      const oldPlan = compositionSnapshot.compositionPlan
+      const canConsolidate = oldPlan?.protocolVersion === ONE_TO_ONE_WEBB_COMPOSITION_PROTOCOL_VERSION
+        && compositionSnapshot.writingMode === true
+        && !compositionSnapshot.essayMode && !String(compositionSnapshot.essay || '').trim()
+        && !String(compositionSnapshot.writingDraft || '').trim()
+        && !String(compositionSnapshot.pendingWritingReview?.text || '').trim()
+      if (canConsolidate) {
+        try {
+          const planningRes = await fetch('/api/webb-objectives', {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              action: 'plan-writing', lesson: selectedLesson, objectives: saved.objectives,
+              learnerNotes: restored.learnerNotes,
+              blueprint: saved.compositionBlueprint || {
+                controllingIdea: oldPlan.controllingIdea, discourseMode: oldPlan.discourseMode,
+                closingGoal: oldPlan.closingGoal, bodyUnits: oldPlan.bodyUnits,
+              },
+              existingPlan: oldPlan, acceptedSentences: compositionSnapshot.acceptedSentences || {},
+            }),
+          })
+          if (planningRes.ok && run === runGenerationRef.current && !webbExecutionFencedRef.current) {
+            const { compositionPlan: nextPlan } = await planningRes.json()
+            if (nextPlan?.protocolVersion === WEBB_COMPOSITION_PROTOCOL_VERSION
+              && nextPlan.slots?.length <= oldPlan.slots.length
+              && !compositionPlanViolations(nextPlan, saved.objectives.length).length) {
+              compositionSnapshot = alignWebbWritingPlanOnResume(compositionSnapshot, nextPlan)
+            }
+          }
+        } catch { /* Preserve the original plan rather than risking learner work on a failed conversion. */ }
+      }
+      if (run !== runGenerationRef.current || webbExecutionFencedRef.current) return
+      let composition = restoreWebbCompositionState(compositionSnapshot, saved.objectives)
       restored = await validateLegacyWritingNotes(
         saved.objectives,
         restored,
@@ -3482,7 +3520,9 @@ function WebbPageInner() {
   function writingPromptForSlot(slot) {
     if (slot?.role === 'topic') return "This is your topic sentence. Its job is to tell the reader what your whole paragraph will be about. Think about the lesson and the big idea that connects what you learned, then say that idea in one complete sentence in your own words."
     if (slot?.role === 'conclusion') return "This is your concluding sentence. Its job is to bring your paragraph to a clear ending. Look back at the ideas you already explained, then close that same thought in one complete sentence without adding a brand-new fact."
-    return "Use this research note to add one complete, connected sentence in your own words."
+    return slot?.sourceObjectiveIndices?.length > 1
+      ? "These research notes support the same idea. Turn them into ONE complete, connected thought in your own words. You do not need to repeat each note."
+      : "Use this research note to add one complete, connected sentence in your own words."
   }
   // Each sentence has already passed concept, role, and paragraph-fit checks.
   // A separate final AI review must not revoke accepted learner writing.
@@ -4142,10 +4182,16 @@ function WebbPageInner() {
   const currentWritingNote = currentWritingSource.notes?.[0] || (!activeWritingPlan ? learnerNotes[writingIndex] : null) || null
   const currentWritingObjective = currentWritingSource.objectives?.[0]?.objective || (!activeWritingPlan ? objectives[writingIndex] : '') || ''
   const currentWritingUsesResearchNote = !currentWritingSlot || currentWritingSlot.role === 'body'
-  const currentWritingObjectivePrompt = currentWritingUsesResearchNote
-    ? (String(currentWritingNote?.objectivePrompt || '').trim() || currentWritingObjective)
-    : ''
-  const currentWritingObjectivePromptCaptured = currentWritingUsesResearchNote && !!String(currentWritingNote?.objectivePrompt || '').trim()
+  const currentWritingGoal = currentWritingSlot?.role === 'body'
+    && activeWritingPlan?.protocolVersion === WEBB_COMPOSITION_PROTOCOL_VERSION
+  const currentWritingObjectivePrompt = currentWritingGoal
+    ? (currentWritingSource.notes?.length > 1
+      ? 'Turn the shared idea in these research notes into one clear, connected thought. Do not repeat each note.'
+      : 'Turn the idea in your research note into one complete thought that fits the paragraph.')
+    : currentWritingUsesResearchNote
+      ? (String(currentWritingNote?.objectivePrompt || '').trim() || currentWritingObjective)
+      : ''
+  const currentWritingObjectivePromptCaptured = !currentWritingGoal && currentWritingUsesResearchNote && !!String(currentWritingNote?.objectivePrompt || '').trim()
   const nextWritingIndex = activeWritingPlan
     ? nextCompositionSlotIndex(activeWritingPlan, acceptedSentences)
     : nextWritingObjectiveIndex(objectives, acceptedSentences)
@@ -4163,8 +4209,12 @@ function WebbPageInner() {
       : writingSubphase === WEBB_WRITING_SUBPHASES.REVIEW
         ? sanitizeWritingGuidance('', {}, { slot: currentWritingSlot })
         : (currentWritingSlot ? writingPromptForSlot(currentWritingSlot) : "Let's work with just this note. Turn it into one complete sentence in your own words.")
+  // A consolidated v5 writing job must not inherit a rejection from a retired v4 slot.
+  // REVIEW still shows the current evaluator's specific feedback.
   const writingGuidance = writingMode
-    ? (latestWritingGuidance || writingFallbackGuidance)
+    ? (activeWritingPlan?.protocolVersion === WEBB_COMPOSITION_PROTOCOL_VERSION
+        && writingSubphase === WEBB_WRITING_SUBPHASES.FOCUS
+      ? writingFallbackGuidance : (latestWritingGuidance || writingFallbackGuidance))
     : ([...transcript].reverse().find(message => message?.role === 'assistant')?.text || '')
 
   // ── Guard: never show the retired lesson-selection shell while loading ─
@@ -5275,6 +5325,7 @@ function WebbPageInner() {
         objective={currentWritingObjective}
         objectivePrompt={currentWritingObjectivePrompt}
         objectivePromptCaptured={currentWritingObjectivePromptCaptured}
+        writingGoal={!!currentWritingGoal}
         slot={essayMode ? null : currentWritingSlot}
         sourceNotes={essayMode ? [] : (currentWritingSource.notes || [])}
         lessonTitle={selectedLesson?.title || ''}

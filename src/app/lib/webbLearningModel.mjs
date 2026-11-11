@@ -88,9 +88,8 @@ export function createWritingAttempt({ objectiveIndex = null, slotIndex = object
   const fitsSlot = slotFit !== false && positionFit !== false
   const adds = addsNewInformation !== false
   const fitsParagraph = paragraphFit !== false
-  const normalizedRole = String(slotRole || '').trim().toLowerCase()
-  const requiresDistinctInformation = !['topic', 'conclusion'].includes(normalizedRole)
-  const addsForAcceptance = requiresDistinctInformation ? adds : true
+  // Distinct factual novelty is not a condition for accepting learner writing.
+  const addsForAcceptance = true
   return {
     objectiveIndex,
     slotIndex,
@@ -253,6 +252,48 @@ function inferPendingWritingReview(snapshot, objectiveIndex) {
  * This prevents a stale writingMode flag or an interrupted sentence request from
  * dropping Mrs. Webb back into research while the writing UI restores correctly.
  */
+/**
+ * Bridge a v4 in-progress essay to a shorter v5 writing plan.
+ * The plan retains every accepted slot at its original index. Rejected attempts
+ * for a retired writing job remain in the transcript, but cannot be replayed
+ * as attempts for an unrelated new slot (such as the conclusion).
+ */
+export function alignWebbWritingPlanOnResume(snapshot = {}, nextPlan = null) {
+  const oldPlan = snapshot?.compositionPlan
+  if (!Array.isArray(oldPlan?.slots) || !Array.isArray(nextPlan?.slots)) return snapshot
+  const accepted = snapshot?.acceptedSentences || {}
+  for (const [rawIndex, sentence] of Object.entries(accepted)) {
+    if (sentence?.provenance !== 'learner-message' || !String(sentence?.text || '').trim()) continue
+    const index = Number(rawIndex)
+    if (!Number.isInteger(index) || oldPlan.slots[index]?.id !== nextPlan.slots[index]?.id) return snapshot
+  }
+  const indicesById = new Map(nextPlan.slots.map((slot, index) => [slot.id, index]))
+  const attempts = {}
+  for (const [rawIndex, records] of Object.entries(snapshot?.writingAttempts || {})) {
+    const oldSlot = oldPlan.slots[Number(rawIndex)]
+    const newIndex = indicesById.get(oldSlot?.id)
+    if (newIndex === undefined || !Array.isArray(records)) continue
+    attempts[newIndex] = records.map(record => ({
+      ...record, slotIndex: newIndex, slotId: nextPlan.slots[newIndex].id,
+    }))
+  }
+  const currentId = oldPlan.slots[Number(snapshot?.writingIndex)]?.id
+  const retainedIndex = indicesById.get(currentId)
+  const nextUnaccepted = nextCompositionSlotIndex(nextPlan, accepted)
+  const writingIndex = retainedIndex === undefined ? Math.max(0, nextUnaccepted) : retainedIndex
+  const sameSlot = retainedIndex !== undefined
+  return {
+    ...snapshot,
+    compositionPlan: nextPlan,
+    writingAttempts: attempts,
+    writingIndex,
+    writingSubphase: sameSlot ? snapshot.writingSubphase : WEBB_WRITING_SUBPHASES.FOCUS,
+    // Never move a draft or an in-flight evaluation onto a different writing task.
+    writingDraft: sameSlot ? snapshot.writingDraft : '',
+    pendingWritingReview: sameSlot ? snapshot.pendingWritingReview : null,
+  }
+}
+
 export function restoreWebbCompositionState(snapshot = {}, objectives = snapshot?.objectives || []) {
   const list = Array.isArray(objectives) ? objectives : []
   snapshot = upgradePreviousCompositionSnapshot(snapshot, list)
@@ -355,9 +396,6 @@ function safeWritingRetry(evaluation = {}, context = {}) {
   if (evaluation.sentenceOk === false) {
     return 'You have the idea. Now make just that idea one complete sentence in your own words.'
   }
-  if (evaluation.addsNewInformation === false) {
-    return 'This sentence repeats something you already said. What new idea does this part add? Try only that idea again.'
-  }
   if (evaluation.slotFit === false || evaluation.positionFit === false) {
     if (role === 'topic') return "Your sentence is complete, but the opening needs to tell the reader the big idea of the whole paragraph. Try only that job again."
     if (role === 'conclusion') return "Your sentence is complete, but the ending needs to close the paragraph's big idea. Try only that job again."
@@ -390,17 +428,17 @@ export function buildWritingGuidanceInstructions(note, evaluation = {}, context 
     slot?.rhetoricalJob ? `Its private rhetorical job is: "${String(slot.rhetoricalJob)}".` : '',
     slot?.connection ? `Its private connection to the preceding composition is: "${String(slot.connection)}".` : '',
     role === 'body'
-      ? (sourceNotes.length ? `The planned body-unit focus is authoritative for WHAT this sentence needs to express. The learner-authored research note supplies the learner's evidence and wording source: ${JSON.stringify(sourceNotes)}. Do not substitute a different idea merely because the note contains an example.` : `This body slot has no bound learner note; do not invent factual content.`)
+      ? (sourceNotes.length ? `The learner-authored research notes are the CONTENT boundary: ${JSON.stringify(sourceNotes)}. Help the learner make ONE coherent thought for this writing purpose. Do not treat multiple source objectives as separate writing requirements or demand new examples.` : `This body slot has no bound learner note; do not invent factual content.`)
       : role === 'topic'
         ? `A topic sentence is a structural opening, not a conversion of one research note. Use the lesson context and paragraph's big idea to judge whether it tells the reader what the paragraph will explain.`
         : role === 'conclusion'
           ? `A conclusion is a structural ending, not a conversion of one research note. Use the accepted paragraph ideas to judge whether it closes the same thought without adding a new fact.`
           : (sourceNotes.length ? `The learner-authored research for this legacy writing slot is the authoritative content boundary: ${JSON.stringify(sourceNotes)}.` : `This legacy writing slot has no bound learner note; do not invent factual content.`),
-    `The evaluator found concept fit: ${evaluation.accuracy || evaluation.conceptFit || 'unknown'}; sentence readiness: ${evaluation.sentenceOk === false ? 'no' : 'yes'}; slot fit: ${evaluation.slotFit === false || evaluation.positionFit === false ? 'no' : 'yes'}; adds distinct information: ${evaluation.addsNewInformation === false ? 'no' : 'yes'}; paragraph fit: ${evaluation.paragraphFit === false ? 'no' : 'yes'}. Treat those judgments as authoritative.`,
-    `Choose exactly ONE problem to discuss, using this priority: concept accuracy first; then sentence completeness; then repetition; then rhetorical-role fit; then paragraph connection. Stop at the first failing item. Do not mention, hint at, or ask the learner to repair any lower-priority issue in the same response.`,
+    `The evaluator found concept fit: ${evaluation.accuracy || evaluation.conceptFit || 'unknown'}; sentence readiness: ${evaluation.sentenceOk === false ? 'no' : 'yes'}; writing role fit: ${evaluation.slotFit === false || evaluation.positionFit === false ? 'no' : 'yes'}; paragraph fit: ${evaluation.paragraphFit === false ? 'no' : 'yes'}. Only those criteria determine acceptance. Novelty and minor grammatical imperfections are not separate failure conditions.`,
+    `Choose exactly ONE real issue: accuracy, clarity of the thought, writing role, or connection to the paragraph. Never change the requirement after the learner corrects it. Do not demand extra facts, new evidence, or a different example to avoid repetition.`,
     Number.isInteger(index) && Number.isInteger(total) && total > 0 ? `This is sentence ${index + 1} of ${total}.` : '',
     priorSentences.length ? `The accepted learner-written sentences before this one are context only: ${JSON.stringify(priorSentences)}.` : '',
-    `Guide the learner to notice only that one selected problem, then ask for another attempt in their own words. Ask for one thing only. For a topic sentence, help them identify the big idea the whole paragraph will explain; do not refer to a first research note. For a body sentence, keep the sentence anchored to its assigned learner note. For a conclusion, help them close the ideas already developed in the paragraph without introducing a new fact; do not refer to a final research note.`,
+    `Guide the learner to notice only that selected problem, then ask for another attempt in their own words. A topic sentence frames the paragraph; a body sentence turns the learner's notes into one thought; a conclusion closes the accepted ideas. Do not add separate content requirements.`,
     `Never write, dictate, complete, rewrite, or offer a model sentence for the learner. Do not say "write" followed by suggested prose. The words accepted into the essay must come from the learner.`,
     `Use 2-3 short, warm sentences, no markdown.`,
   ].filter(Boolean).join('\n')
@@ -411,6 +449,8 @@ export function sanitizeWritingGuidance(reply, evaluation = {}, context = {}) {
   const fallback = safeWritingRetry(evaluation, context)
   const text = String(reply || '').trim()
   if (!text) return fallback
+  const demandsNewEvidence = /\b(?:another|different|new)\s+(?:idea|detail|fact|evidence|example|reason)\b/i.test(text)
+    || /\b(?:repeats?|already (?:said|explained))\b/i.test(text)
   const suppliesWording =
     /\b(?:you could|you can|try to|please)\s+(?:write|say|use)\b/i.test(text) ||
     /\b(?:write|say|try|use)\s*:\s*/i.test(text) ||
@@ -421,7 +461,7 @@ export function sanitizeWritingGuidance(reply, evaluation = {}, context = {}) {
   const privatePhrases = [context?.controllingIdea, context?.slot?.focus]
     .map(normalizePrivate).filter(value => value.split(/\s+/).length >= 4)
   const leaksPrivatePlan = privatePhrases.some(value => normalizedReply.includes(value))
-  return suppliesWording || leaksPrivatePlan ? fallback : text
+  return suppliesWording || leaksPrivatePlan || demandsNewEvidence ? fallback : text
 }
 
 function findLegacySource(chatMessages, response) {

@@ -276,21 +276,14 @@ test('objective generation repairs bundled draft rows and exposes only the order
   assert.deepEqual(data.blueprint.bodyUnits.map(unit => unit.objective), repaired.objectives.map(row => row.objective))
 })
 
-test('objective generation repairs an initial plan with too few objectives', async () => {
-  const tooFew = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
-  const { response, calls } = await generateThroughRoute([tooFew, VALID_GENERATED_PLAN], ({ index, system, user, responseFormat }) => {
+test('objective generation accepts a shorter distinct mastery map without padding it', async () => {
+  const four = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
+  const { response, calls } = await generateThroughRoute([four], ({ responseFormat }) => {
     assert.equal(responseFormat?.type, 'json_object')
-    if (index === 1) {
-      assert.match(system, /failed the atomic mastery-objective validator/i)
-      const repairInput = JSON.parse(user)
-      assert.match(repairInput.validator_violations.join(' '), /5 to 8 body units/i)
-      assert.equal(repairInput.draft_plan, null)
-      assert.equal(typeof repairInput.raw_draft, 'string')
-    }
   })
   assert.equal(response.status, 200)
-  assert.equal(calls, 2)
-  assert.deepEqual((await response.json()).objectives, VALID_GENERATED_PLAN.objectives.map(row => row.objective))
+  assert.equal(calls, 1)
+  assert.deepEqual((await response.json()).objectives, four.body_units.map(row => row.objective))
 })
 
 test('objective generation repairs an initial plan with too many objectives', async () => {
@@ -320,7 +313,7 @@ test('objective generation repairs malformed JSON before failing lesson startup'
 })
 
 test('objective generation makes one fresh regeneration after a failed repair', async () => {
-  const tooFew = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
+  const tooFew = blueprintFor([])
   const { response, calls } = await generateThroughRoute([tooFew, '{still invalid', VALID_GENERATED_PLAN], ({ index, system }) => {
     if (index === 2) assert.match(system, /Start over and return one fresh complete composition blueprint/i)
   })
@@ -330,7 +323,7 @@ test('objective generation makes one fresh regeneration after a failed repair', 
 })
 
 test('objective generation fails cleanly only after generation, repair, and fresh regeneration are all invalid', async () => {
-  const tooFew = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
+  const tooFew = blueprintFor([])
   const { response, calls } = await generateThroughRoute([tooFew, '{still invalid', tooFew])
   assert.equal(response.status, 500)
   assert.equal(calls, 3)
@@ -709,7 +702,7 @@ test('legacy preflight rejects bear-detail and paraphrasing-example notes withou
 
 test('staged Webb preparation runs exactly one AI call per request, retaining validator repair semantics', async () => {
   let calls = 0
-  const malformed = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
+  const malformed = blueprintFor([])
   const inputs = [
     { stage: 'initial' },
     { stage: 'repair', draft: JSON.stringify(malformed) },
@@ -737,7 +730,7 @@ test('staged Webb preparation runs exactly one AI call per request, retaining va
 })
 
 test('staged Webb preparation reports a validation error without inventing objectives', async () => {
-  const malformed = blueprintFor(VALID_GENERATED_PLAN.objectives.slice(0, 4))
+  const malformed = blueprintFor([])
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'generate-step', stage: 'fresh', lesson: GENERATION_LESSON }),

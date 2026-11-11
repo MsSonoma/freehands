@@ -116,7 +116,7 @@ test('writing attempts preserve exact text and require accuracy, sentence form, 
   assert.equal(conclusion.accepted, true, 'a valid conclusion may synthesize prior ideas without adding new factual information')
   assert.equal(conclusion.positionFit, true)
   const repetitiveBody = createWritingAttempt({ slotRole: 'body', text: 'This repeats the earlier point.', message: { id: 'm5' }, accuracy: 'correct', sentenceOk: true, slotFit: true, addsNewInformation: false, paragraphFit: true })
-  assert.equal(repetitiveBody.accepted, false, 'body sentences still have to add a distinct idea')
+  assert.equal(repetitiveBody.accepted, true, 'novelty is diagnostic; a valid note-based thought is not denied just to fill a count')
   assert.equal(nextWritingObjectiveIndex(['one', 'two'], { 0: good }), 1)
   assert.equal(nextWritingObjectiveIndex(['one', 'two'], { 0: good, 1: good }), -1)
 })
@@ -133,10 +133,10 @@ test('writing guidance contract asks for learner retry and forbids supplied pros
   const positionContext = { objective: 'The learner can explain the next consequence.', objectiveIndex: 1, totalObjectives: 3, priorSentences: ['The first learner sentence.'] }
   const positionEvaluation = { accuracy: 'correct', sentenceOk: true, positionFit: false }
   const positionInstructions = buildWritingGuidanceInstructions('the next consequence', positionEvaluation, positionContext)
-  assert.match(positionInstructions, /slot fit: no/i)
+  assert.match(positionInstructions, /writing role fit: no/i)
   assert.match(positionInstructions, /sentence 2 of 3/i)
   assert.match(positionInstructions, /accepted learner-written sentences before this one are context only/i)
-  assert.match(positionInstructions, /exactly ONE problem|one selected problem/i)
+  assert.match(positionInstructions, /exactly ONE real issue/i)
   const positionFallback = sanitizeWritingGuidance('', positionEvaluation, positionContext)
   assert.match(positionFallback, /wrong job|new idea|research note/i)
   const privateContext = { slot: { role: 'topic', focus: 'how historians compare evidence to understand the past' }, controllingIdea: 'Historians compare evidence to understand the past' }

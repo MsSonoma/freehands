@@ -4,7 +4,8 @@ import {
   webbCompositionBlueprintViolations,
 } from './webbCompositionBlueprint.mjs'
 
-export const WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v4-blueprint'
+export const WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v5-note-thought'
+export const ONE_TO_ONE_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v4-blueprint'
 export const PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v3-structural-frame'
 export const OBJECTIVE_BLUEPRINT_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v2-objective-blueprint'
 export const LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION = 'webb-composition-v1'
@@ -25,6 +26,7 @@ export function normalizeWebbCompositionPlan(raw, objectiveCount = 0) {
     LEGACY_WEBB_COMPOSITION_PROTOCOL_VERSION,
     OBJECTIVE_BLUEPRINT_WEBB_COMPOSITION_PROTOCOL_VERSION,
     PREVIOUS_WEBB_COMPOSITION_PROTOCOL_VERSION,
+    ONE_TO_ONE_WEBB_COMPOSITION_PROTOCOL_VERSION,
     WEBB_COMPOSITION_PROTOCOL_VERSION,
   ].includes(requestedProtocol) ? requestedProtocol : WEBB_COMPOSITION_PROTOCOL_VERSION
   const controllingIdea = clean(input.controllingIdea || input.controlling_idea).slice(0, 700)
@@ -53,44 +55,116 @@ export function normalizeWebbCompositionPlan(raw, objectiveCount = 0) {
   return { protocolVersion, controllingIdea, discourseMode, closingGoal, bodyUnits, slots }
 }
 
-export function buildWebbCompositionPlan(objectives = [], learnerNotes = {}, blueprint = null) {
+
+/**
+ * Writing groups are a separate planning decision from mastered objectives.
+ * Every source objective stays in the research record. A group needs one
+ * learner-written thought, not one new fact per source objective.
+ */
+export function normalizeWebbWritingGroups(proposedGroups, objectiveCount) {
+  const total = Number(objectiveCount)
+  if (!Number.isInteger(total) || total < 1) return []
+  const groups = []
+  const assigned = new Set()
+  for (const proposed of Array.isArray(proposedGroups) ? proposedGroups : []) {
+    const values = Array.isArray(proposed) ? proposed : (proposed?.objectiveIndices || proposed?.sourceObjectiveIndices || [])
+    if (!Array.isArray(values)) continue
+    const indices = [...new Set(values.map(asIndex).filter(i => i !== null && i < total && !assigned.has(i)))].sort((a, b) => a - b)
+    if (!indices.length) continue
+    indices.forEach(i => assigned.add(i))
+    groups.push(indices)
+  }
+  for (let index = 0; index < total; index += 1) {
+    if (!assigned.has(index)) groups.push([index])
+  }
+  // Order by first source; do not change the learner's research chronology.
+  return groups.sort((a, b) => a[0] - b[0])
+}
+
+/** Conservative fallback when semantic grouping is unavailable. */
+export function fallbackWebbWritingGroups(objectives = [], learnerNotes = {}) {
+  const groups = []
+  for (let index = 0; index < objectives.length; index += 1) {
+    const note = clean(learnerNotes?.[index]?.text)
+    const match = note && groups.find(group => {
+      const prior = clean(learnerNotes?.[group[0]]?.text)
+      return prior && writingSentenceSimilarity(note, prior) >= 0.65
+    })
+    if (match) match.push(index)
+    else groups.push([index])
+  }
+  return groups
+}
+
+export function buildWebbCompositionPlan(objectives = [], learnerNotes = {}, blueprint = null, writingGroups = null, existingPlan = null, acceptedSentences = {}) {
   const list = Array.isArray(objectives) ? objectives.map(value => clean(value)).filter(Boolean) : []
-  if (list.length < 2) throw new Error('Composition planning requires at least two mastery objectives')
+  if (list.length < 1) throw new Error('Composition planning requires a mastery objective')
   const missingNotes = list
     .map((_, objectiveIndex) => objectiveIndex)
     .filter(objectiveIndex => learnerNotes?.[objectiveIndex]?.provenance !== 'learner-message' || !clean(learnerNotes?.[objectiveIndex]?.text))
   if (missingNotes.length) throw new Error('Composition planning requires one learner-authored note for every mastery objective')
 
   const normalizedBlueprint = normalizeWebbCompositionBlueprint(blueprint || {})
-  const blueprintViolations = webbCompositionBlueprintViolations(normalizedBlueprint)
+  const blueprintViolations = webbCompositionBlueprintViolations(normalizedBlueprint, {
+    allowNearDuplicates: existingPlan?.protocolVersion === ONE_TO_ONE_WEBB_COMPOSITION_PROTOCOL_VERSION,
+  })
   const useBlueprint = blueprintViolations.length === 0 && blueprintMatchesObjectives(normalizedBlueprint, list)
 
   if (useBlueprint) {
+    const groups = normalizeWebbWritingGroups(writingGroups, list.length)
+    const base = normalizedBlueprint.bodyUnits
+    const oldSlots = Array.isArray(existingPlan?.slots) ? existingPlan.slots : []
+    const acceptedIndices = Object.entries(acceptedSentences || {})
+      .filter(([rawIndex, sentence]) => Number.isInteger(Number(rawIndex))
+        && Number(rawIndex) >= 0 && Number(rawIndex) < oldSlots.length - 1
+        && sentence?.provenance === 'learner-message' && clean(sentence?.text))
+      .map(([rawIndex]) => Number(rawIndex))
+    // Never remove or shift an accepted sentence. Preserve all prior slots up to
+    // the last accepted index, even if a partially saved older plan has gaps.
+    const lockedThrough = acceptedIndices.length ? Math.max(...acceptedIndices) : -1
+    const retained = lockedThrough >= 0
+      ? oldSlots.slice(0, lockedThrough + 1).map(slot => ({
+        ...slot, sourceObjectiveIndices: [...(slot.sourceObjectiveIndices || [])],
+      }))
+      : [{
+        id: 'topic', role: 'topic',
+        focus: normalizedBlueprint.controllingIdea,
+        connection: 'frames the composition before the learner develops the planned body sequence',
+        sourceObjectiveIndices: [],
+      }]
+    const covered = new Set(retained.filter(slot => slot.role === 'body').flatMap(slot => slot.sourceObjectiveIndices || []))
+    const bodies = []
+    for (const group of groups) {
+      const anchor = retained.find(slot => slot.role === 'body'
+        && (slot.sourceObjectiveIndices || []).some(index => group.includes(index)))
+      const uncovered = group.filter(index => !covered.has(index))
+      if (anchor) {
+        anchor.sourceObjectiveIndices = [...new Set([...anchor.sourceObjectiveIndices, ...uncovered])].sort((a, b) => a - b)
+      } else if (uncovered.length) {
+        const unit = base[uncovered[0]]
+        bodies.push({
+          id: unit.id || ('objective-' + (uncovered[0] + 1)),
+          role: 'body',
+          focus: unit.objective,
+          connection: unit.connection,
+          rhetoricalJob: unit.rhetoricalJob,
+          sourceObjectiveIndices: uncovered,
+        })
+      }
+      uncovered.forEach(index => covered.add(index))
+    }
     return {
       protocolVersion: WEBB_COMPOSITION_PROTOCOL_VERSION,
       controllingIdea: normalizedBlueprint.controllingIdea,
       discourseMode: normalizedBlueprint.discourseMode,
       closingGoal: normalizedBlueprint.closingGoal,
-      bodyUnits: normalizedBlueprint.bodyUnits,
+      bodyUnits: base,
       slots: [
-        {
-          id: 'topic',
-          role: 'topic',
-          focus: normalizedBlueprint.controllingIdea,
-          connection: 'frames the composition before the learner develops the planned body sequence',
-          sourceObjectiveIndices: [],
-        },
-        ...normalizedBlueprint.bodyUnits.map((unit, index) => ({
-          id: unit.id || ('objective-' + (index + 1)),
-          role: 'body',
-          focus: unit.objective,
-          connection: unit.connection,
-          rhetoricalJob: unit.rhetoricalJob,
-          sourceObjectiveIndices: [index],
-        })),
-        {
-          id: 'conclusion',
-          role: 'conclusion',
+        ...retained, ...bodies,
+        oldSlots.length && lockedThrough >= 0 ? {
+          ...oldSlots.at(-1), sourceObjectiveIndices: [],
+        } : {
+          id: 'conclusion', role: 'conclusion',
           focus: normalizedBlueprint.closingGoal,
           connection: 'synthesizes the body sequence without replacing a mastery objective',
           sourceObjectiveIndices: [],
@@ -176,15 +250,47 @@ export function compositionPlanViolations(plan, objectiveCount = 0) {
     if (new Set(slots.map(slot => slot.id)).size !== slots.length) violations.push('slot ids must be unique')
     return [...new Set(violations)]
   }
+  if (normalized.protocolVersion === WEBB_COMPOSITION_PROTOCOL_VERSION) {
+    const violations = webbCompositionBlueprintViolations({
+      controllingIdea: normalized.controllingIdea,
+      discourseMode: normalized.discourseMode,
+      closingGoal: normalized.closingGoal,
+      bodyUnits: normalized.bodyUnits,
+    }, { allowNearDuplicates: true })
+    const { slots } = normalized
+    if (normalized.bodyUnits.length !== objectiveCount) violations.push('source blueprint must match recorded mastery objectives')
+    if (slots.length < 3 || slots.length > objectiveCount + 2) violations.push('composition needs framing and at least one distinct body thought')
+    const usedSources = new Set()
+    for (let index = 0; index < slots.length; index += 1) {
+      const slot = slots[index]
+      const expected = index === 0 ? 'topic' : index === slots.length - 1 ? 'conclusion' : 'body'
+      if (slot.role !== expected) violations.push('slot ' + (index + 1) + ' has invalid role')
+      if (!slot.id || !slot.focus || !slot.connection) violations.push('slot ' + (index + 1) + ' is incomplete')
+      if (expected === 'body') {
+        if (!slot.sourceObjectiveIndices.length) violations.push('body slot ' + (index + 1) + ' has no research source')
+        for (const sourceIndex of slot.sourceObjectiveIndices) {
+          if (usedSources.has(sourceIndex)) violations.push('mastery note ' + sourceIndex + ' assigned to multiple writing thoughts')
+          usedSources.add(sourceIndex)
+        }
+      } else if (slot.sourceObjectiveIndices.length) {
+        violations.push(slot.role + ' cannot replace a mastery objective')
+      }
+    }
+    for (let index = 0; index < objectiveCount; index += 1) {
+      if (!usedSources.has(index)) violations.push('mastery note ' + index + ' lacks provenance in the writing plan')
+    }
+    if (new Set(slots.map(slot => slot.id)).size !== slots.length) violations.push('slot ids must be unique')
+    return [...new Set(violations)]
+  }
   const violations = []
   const { slots } = normalized
-  if (normalized.protocolVersion === WEBB_COMPOSITION_PROTOCOL_VERSION) {
+  if (normalized.protocolVersion === ONE_TO_ONE_WEBB_COMPOSITION_PROTOCOL_VERSION) {
     violations.push(...webbCompositionBlueprintViolations({
       controllingIdea: normalized.controllingIdea,
       discourseMode: normalized.discourseMode,
       closingGoal: normalized.closingGoal,
       bodyUnits: normalized.bodyUnits,
-    }))
+    }, { allowNearDuplicates: true }))
     if (normalized.bodyUnits.length !== objectiveCount) violations.push('blueprint body-unit count must match mastery objectives')
   }
   if (!normalized.controllingIdea) violations.push('missing controlling idea')

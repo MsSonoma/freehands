@@ -35,18 +35,19 @@ function genericConnection(value) {
     || /^continues? (?:the )?(?:essay|paragraph|body)(?: in order)?\.?$/.test(text)
 }
 
-export function webbCompositionBlueprintViolations(raw = {}) {
+export function webbCompositionBlueprintViolations(raw = {}, { allowNearDuplicates = false } = {}) {
   const blueprint = normalizeWebbCompositionBlueprint(raw)
   const violations = []
   if (!blueprint.controllingIdea) violations.push('missing controlling idea')
   if (!blueprint.discourseMode) violations.push('missing discourse mode')
   if (!blueprint.closingGoal) violations.push('missing closing goal')
-  if (blueprint.bodyUnits.length < 5 || blueprint.bodyUnits.length > 8) {
-    violations.push('blueprint must contain 5 to 8 body units')
+  if (blueprint.bodyUnits.length < 1 || blueprint.bodyUnits.length > 8) {
+    violations.push('blueprint must contain at least one meaningful body unit (maximum 8 for safety)')
   }
 
   const seenIds = new Set()
   const seenObjectives = new Set()
+  const previousObjectives = []
   blueprint.bodyUnits.forEach((unit, index) => {
     if (!unit.id || seenIds.has(unit.id)) violations.push(`body unit ${index + 1} has a missing or duplicate id`)
     seenIds.add(unit.id)
@@ -57,6 +58,15 @@ export function webbCompositionBlueprintViolations(raw = {}) {
     const objectiveKey = unit.objective.toLowerCase()
     if (objectiveKey && seenObjectives.has(objectiveKey)) violations.push(`body unit ${index + 1} duplicates an objective`)
     if (objectiveKey) seenObjectives.add(objectiveKey)
+    // Obvious paraphrases of a prior objective should not be added just to fill a count.
+    const keywords = new Set(objectiveKey.replace(/^the learner (can |understands? )?(explain|describe|identify|compare|show|how|why|that)\s*/i, '').replace(/[^a-z0-9 ]/g, ' ').split(/\s+/).filter(word => word.length > 3 && !['that', 'this', 'from', 'with', 'because', 'which', 'about', 'their', 'where'].includes(word)))
+    for (const earlier of previousObjectives) {
+      const shared = [...keywords].filter(word => earlier.has(word)).length
+      const overlap = Math.max(keywords.size, earlier.size) ? shared / Math.max(keywords.size, earlier.size) : 0
+      // A heuristic cannot safely invalidate short, distinct learning targets.
+      if (!allowNearDuplicates && keywords.size >= 5 && earlier.size >= 5 && overlap >= 0.93) violations.push(`body unit ${index + 1} restates an earlier objective`)
+    }
+    if (keywords.size) previousObjectives.push(keywords)
   })
   return [...new Set(violations)]
 }

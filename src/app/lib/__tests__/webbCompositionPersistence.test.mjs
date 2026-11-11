@@ -184,3 +184,43 @@ test('Emma composition persists every objective sentence plus separate topic and
   assert.equal(stored.accepted_sentences[3].text, sentences[3])
   assert.ok(stored.finalized_at)
 })
+
+
+test('v5 short grouped composition persists every research note without fabricating additional sentences', async () => {
+  const objectives = ['Explain an honest choice.', 'Explain trust after the choice.', 'Explain the ending theme.']
+  const notes = Object.fromEntries(objectives.map((_, i) => [i, {
+    text: ['Maya returns the wallet.', 'The owner trusts Maya later.', 'Honesty builds trust.'][i],
+    sourceMessageId: 'research-' + i, provenance: 'learner-message',
+  }]))
+  const blueprint = {
+    controllingIdea: 'The honest choice in the story shows how trust grows.',
+    discourseMode: 'explanation',
+    closingGoal: 'close by connecting honesty and trust',
+    bodyUnits: objectives.map((objective, i) => ({
+      id: 'body-' + (i + 1), objective, clue: 'story idea ' + i,
+      rhetoricalJob: 'develop an aspect of honesty and trust ' + i,
+      connection: 'build on the story theme in the lesson ' + i,
+    })),
+  }
+  const plan = buildWebbCompositionPlan(objectives, notes, blueprint, [[0, 1, 2]])
+  assert.equal(plan.slots.length, 3)
+  let stored
+  const response = await POST(new Request('http://localhost/api/webb-compositions', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(requestBody({
+      objectives, learnerNotes: notes, compositionPlan: plan,
+      acceptedSentences: {
+        0: { text: 'Honest choices can reveal the theme of a story.', provenance: 'learner-message', sourceMessageId: 'write-0' },
+        1: { text: 'Returning the wallet helped Maya earn the owner’s trust.', provenance: 'learner-message', sourceMessageId: 'write-1' },
+        2: { text: 'The story shows how honesty can build trust.', provenance: 'learner-message', sourceMessageId: 'write-2' },
+      },
+    })),
+  }), deps(fakeAdmin(row => { stored = row })))
+  assert.equal(response.status, 200)
+  assert.equal(stored.protocol_version, plan.protocolVersion)
+  assert.equal(stored.composition_plan.slots.length, 3)
+  assert.deepEqual(stored.composition_plan.slots[1].sourceObjectiveIndices, [0, 1, 2])
+  assert.equal(stored.research_notes.length, 3)
+  assert.equal(stored.accepted_sentences[1].sourceMessageId, 'write-1')
+  assert.equal(stored.essay, 'Honest choices can reveal the theme of a story. Returning the wallet helped Maya earn the owner’s trust. The story shows how honesty can build trust.')
+})

@@ -56,6 +56,7 @@ export default function WebbWritingStudio({
   objective,
   objectivePrompt = '',
   objectivePromptCaptured = false,
+  writingGoal = false,
   slot = null,
   sourceNotes = [],
   lessonTitle = '',
@@ -273,7 +274,7 @@ export default function WebbWritingStudio({
               )}
               {currentObjectivePrompt && currentRole !== 'topic' && currentRole !== 'conclusion' && (
                 <div style={{ marginBottom: keyboardCompact ? 8 : 20, paddingBottom: keyboardCompact ? 8 : 18, borderBottom: '1px solid #e7e0d2' }}>
-                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 10 : 11, fontWeight: 900, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>{objectivePromptCaptured ? 'Mrs. Webb asked' : 'Learning objective'}</div>
+                  <div style={{ color: '#64748b', fontSize: keyboardCompact ? 10 : 11, fontWeight: 900, letterSpacing: 1.2, textTransform: 'uppercase', marginBottom: 6 }}>{writingGoal ? 'Writing goal' : objectivePromptCaptured ? 'Mrs. Webb asked' : 'Learning objective'}</div>
                   <div style={{ color: '#334155', fontSize: keyboardCompact ? 14 : 17, lineHeight: 1.5, fontWeight: 650 }}>{currentObjectivePrompt}</div>
                 </div>
               )}

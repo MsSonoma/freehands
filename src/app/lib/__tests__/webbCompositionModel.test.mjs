@@ -8,11 +8,12 @@ import {
   compositionPlanViolations,
   compositionSlotSource,
   findNearDuplicateAcceptedSentence,
+  normalizeWebbWritingGroups,
   nextCompositionSlotIndex,
   normalizeWebbCompositionPlan,
 } from '../webbCompositionModel.mjs'
 import { POST } from '../../api/webb-objectives/route.js'
-import { restoreWebbCompositionState, WEBB_SESSION_STAGES } from '../webbLearningModel.mjs'
+import { alignWebbWritingPlanOnResume, createWritingAttempt, restoreWebbCompositionState, WEBB_SESSION_STAGES } from '../webbLearningModel.mjs'
 
 const OBJECTIVES = [
   'The learner can explain that historical evidence comes from documents, photographs, and artifacts.',
@@ -218,22 +219,23 @@ test('completed v2 essays remain historical artifacts and are not rewritten by t
   assert.equal(Object.keys(restored.acceptedSentences).length, OBJECTIVES.length)
 })
 
-test('plan-writing no longer calls a second planner or merges, omits, or reorders learner notes', async () => {
+test('plan-writing can fall back safely if the optional semantic grouping call fails', async () => {
   let modelCalls = 0
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ action: 'plan-writing', lesson: { title: 'Questioning Historical Evidence', subject: 'social studies', grade: 5 }, objectives: OBJECTIVES, learnerNotes, blueprint: BLUEPRINT }),
   }), { apiKey: 'offline-test', callModel: async () => { modelCalls += 1; throw new Error('composition planning must be deterministic') } })
   assert.equal(response.status, 200)
-  assert.equal(modelCalls, 0)
+  assert.equal(modelCalls, 1)
   const data = await response.json()
   assert.equal(data.compositionPlan.protocolVersion, WEBB_COMPOSITION_PROTOCOL_VERSION)
-  assert.equal(data.compositionPlan.slots.length, OBJECTIVES.length + 2)
+  assert.equal(data.compositionPlan.slots.length, OBJECTIVES.length + 1)
   assert.deepEqual(data.compositionPlan.slots[0].sourceObjectiveIndices, [])
-  assert.deepEqual(data.compositionPlan.slots.slice(1, -1).map(slot => slot.sourceObjectiveIndices), OBJECTIVES.map((_, index) => [index]))
+  assert.deepEqual(data.compositionPlan.slots.slice(1, -1).map(slot => slot.sourceObjectiveIndices), [[0],[1],[2],[3],[4],[5,6]])
+  assert.deepEqual(compositionPlanViolations(data.compositionPlan, OBJECTIVES.length), [])
   assert.deepEqual(data.compositionPlan.slots.at(-1).sourceObjectiveIndices, [])
 })
-test('writing evaluation deterministically rejects today-style repetition even if semantic evaluator says yes', async () => {
+test('writing evaluation records near-repetition without making novelty a rejection condition', async () => {
   const response = await POST(new Request('http://localhost/api/webb-objectives', {
     method: 'POST', headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
@@ -250,7 +252,7 @@ test('writing evaluation deterministically rejects today-style repetition even i
   assert.equal(response.status, 200)
   const result = await response.json()
   assert.equal(result.addsNewInformation, false)
-  assert.equal(result.positionFit, false)
+  assert.equal(result.positionFit, true)
   assert.equal(result.duplicateOfIndex, 1)
 })
 
@@ -285,8 +287,8 @@ test('writing evaluation treats topic and conclusion as structural roles rather 
         lesson: { title: 'Questioning Historical Evidence', subject: 'social studies', grade: 5 }, priorSentences: ['Historians examine evidence.', 'They compare sources to check what happened.'],
       }),
     }), { apiKey: 'offline-test', callModel: async (system, user) => {
-      assert.match(system, /does not need to restate the first research note/i)
-      assert.match(system, /does not need to restate the final research note/i)
+      assert.match(system, /A topic introduces the big idea/i)
+      assert.match(system, /a conclusion closes the previously accepted ideas/i)
       const input = JSON.parse(user)
       assert.deepEqual(input.learner_research_notes, [])
       assert.deepEqual(input.source_objectives, [])
@@ -389,4 +391,138 @@ test('Emma regression: every mastered objective remains a body sentence between 
   delete missingFinalObjectiveSentence[7]
   assert.equal(nextCompositionSlotIndex(plan, missingFinalObjectiveSentence), 7)
   assert.equal(assembleWebbCompositionEssay(plan, missingFinalObjectiveSentence), '')
+})
+
+
+test('one distinct idea may produce a short complete composition without padding to five body objectives', () => {
+  const objectives = ['The learner can explain how choices reveal a theme.']
+  const notes = { 0: { text: "Returning the wallet built trust.", provenance: 'learner-message' } }
+  const blueprint = {
+    controllingIdea: 'A character choice can reveal a story theme.',
+    discourseMode: 'explanation',
+    closingGoal: 'close the established connection between choice and message',
+    bodyUnits: [{ id: 'body-1', objective: objectives[0], clue: 'character choice',
+      rhetoricalJob: 'show what the choice communicates', connection: 'establishes the evidence for the theme' }],
+  }
+  const plan = buildWebbCompositionPlan(objectives, notes, blueprint, [[0]])
+  assert.equal(plan.slots.length, 3)
+  assert.deepEqual(compositionPlanViolations(plan, objectives.length), [])
+  const accepted = Object.fromEntries(plan.slots.map((slot, index) => [index, {
+    text: ['Choices can show what a story means.', 'Returning the wallet builds trust.', 'That choice helps show the message.'][index],
+    provenance: 'learner-message', slotId: slot.id,
+  }]))
+  assert.equal(assembleWebbCompositionEssay(plan, accepted).split('.').length, 4)
+})
+
+test('grouped source notes remain traceable but create one learner writing job', () => {
+  const objectives = ['Choice shows honesty.', 'The owner trusts Maya.', 'The ending reinforces the theme.']
+  const notes = Object.fromEntries(objectives.map((_, i) => [i, {
+    text: ['Maya returned the wallet.', 'Maya was trusted after returning the wallet.', 'Honesty built trust.'][i],
+    provenance: 'learner-message', sourceMessageId: 'note-' + i,
+  }]))
+  const blueprint = {
+    controllingIdea: 'Maya shows that honesty builds trust.',
+    discourseMode: 'explanation',
+    closingGoal: 'synthesize the meaning of the honest choice',
+    bodyUnits: objectives.map((objective, i) => ({
+      id: 'body-' + (i + 1), objective, clue: 'theme part ' + i,
+      rhetoricalJob: 'one aspect of the example ' + i,
+      connection: 'grounds a related theme idea in the story ' + i,
+    })),
+  }
+  const groups = normalizeWebbWritingGroups([[0, 1, 2]], objectives.length)
+  const plan = buildWebbCompositionPlan(objectives, notes, blueprint, groups)
+  assert.equal(plan.slots.length, 3)
+  assert.deepEqual(plan.slots[1].sourceObjectiveIndices, [0, 1, 2])
+  assert.deepEqual(compositionSlotSource(plan.slots[1], objectives, notes).notes.map(n => n.sourceMessageId), ['note-0', 'note-1', 'note-2'])
+  assert.deepEqual(compositionPlanViolations(plan, objectives.length), [])
+})
+
+test('resuming a v4 lesson can retire duplicate future writing jobs without moving accepted prose', () => {
+  const original = buildWebbCompositionPlan(OBJECTIVES, learnerNotes, BLUEPRINT)
+  const old = { ...original, protocolVersion: 'webb-composition-v4-blueprint' }
+  const accepted = {
+    0: { text: 'Character choices can reveal a story theme.', provenance: 'learner-message' },
+    1: { text: 'A theme is a message about life.', provenance: 'learner-message' },
+    2: { text: 'An honest wallet return builds trust and shows the theme.', provenance: 'learner-message' },
+  }
+  const shorter = buildWebbCompositionPlan(OBJECTIVES, learnerNotes, BLUEPRINT,
+    [[0], [1, 2, 3, 4, 5, 6]], old, accepted)
+  assert.equal(shorter.slots.length, 4)
+  assert.deepEqual(shorter.slots[2].sourceObjectiveIndices, [1, 2, 3, 4, 5, 6])
+  assert.deepEqual(compositionPlanViolations(shorter, OBJECTIVES.length), [])
+  const resumed = alignWebbWritingPlanOnResume({
+    webbStage: 'writing', writingMode: true, writingIndex: 3, writingSubphase: 'review',
+    writingDraft: '', acceptedSentences: accepted, compositionPlan: old,
+    writingAttempts: { 3: [{ text: 'Rejected but valid attempt.', accepted: false }] },
+    chatMessages: [{ role: 'assistant', content: 'Try again.' }],
+  }, shorter)
+  assert.deepEqual(resumed.acceptedSentences, accepted)
+  assert.equal(resumed.writingIndex, 3)
+  assert.equal(resumed.writingSubphase, 'focus')
+  assert.equal(resumed.writingAttempts[3], undefined, 'old rejected body attempt cannot become a conclusion attempt')
+  const restored = restoreWebbCompositionState(resumed, OBJECTIVES)
+  assert.equal(restored.writingIndex, 3)
+  assert.equal(restored.compositionPlan.slots[3].role, 'conclusion')
+  assert.equal(nextCompositionSlotIndex(restored.compositionPlan, accepted), 3)
+  assert.equal(assembleWebbCompositionEssay(shorter, accepted), '', 'unfinished essay must never be fabricated')
+})
+
+test('plan-writing groups repeated research into one writing thought while preserving all objective notes', async () => {
+  let calls = 0
+  const response = await POST(new Request('http://localhost/api/webb-objectives', {
+    method: 'POST', headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ action: 'plan-writing', objectives: OBJECTIVES, learnerNotes, blueprint: BLUEPRINT }),
+  }), { apiKey: 'offline-test', callModel: async () => {
+    calls += 1
+    return '{"groups":[[0],[1,2,3,4,5,6]]}'
+  } })
+  assert.equal(response.status, 200)
+  assert.equal(calls, 1)
+  const { compositionPlan: plan } = await response.json()
+  assert.equal(plan.slots.length, 4)
+  assert.deepEqual(plan.slots[2].sourceObjectiveIndices, [1, 2, 3, 4, 5, 6])
+  assert.deepEqual(compositionPlanViolations(plan, OBJECTIVES.length), [])
+})
+
+
+test('November 11 wallet theme submissions do not fail for a repeated note or correctable verb tense', async () => {
+  const priorSentences = [
+    'The choices a character makes can help the reader trace the theme of a story.',
+    'In writing, the theme is the full message about life and the topic is a subject.',
+    "If the theme was that honesty builds trust and a character returned a wallet and earned the owner's trust, her choice supported the theme.",
+  ]
+  const note = "Maya's honest choice leads to the owner's trust, which supports the theme of the story."
+  const attempts = [
+    "Returning the wallet lead to the wallet's owner's trust, which supports the theme of the story.",
+    "Returning the wallet leads to the wallet's owner's trust, which supports the theme of the story.",
+  ]
+  for (const text of attempts) {
+    const response = await POST(new Request('http://localhost/api/webb-objectives', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'check-writing', slot: { id: 'body-3', role: 'body',
+          focus: 'Explain how a story detail supports the theme.', sourceObjectiveIndices: [2, 3] },
+        controllingIdea: 'Honest choices can build trust.',
+        sourceObjectives: [{ objectiveIndex: 2, objective: 'Explain how a story detail supports the theme.' }],
+        sourceNotes: [{ objectiveIndex: 2, text: note, provenance: 'learner-message' }],
+        priorSentences, text,
+      }),
+    }), { apiKey: 'offline-test', callModel: async (system) => {
+      assert.match(system, /minor verb-tense/i)
+      assert.match(system, /ADDS_NEW_INFORMATION: advisory only/i)
+      return 'correct|yes|yes|no|yes'
+    } })
+    assert.equal(response.status, 200)
+    const evaluation = await response.json()
+    assert.equal(evaluation.positionFit, true)
+    assert.equal(evaluation.sentenceOk, true)
+    assert.equal(evaluation.addsNewInformation, false)
+    const record = createWritingAttempt({
+      slotIndex: 3, slotRole: 'body', text, message: { id: 'learner-submission' },
+      ...evaluation,
+    })
+    assert.equal(record.accepted, true)
+    assert.equal(record.text, text)
+  }
 })
