@@ -45,9 +45,9 @@ test('shared typing context is bounded to the most recent conversation instead o
 })
 
 test('Webb writing studio follows the visible viewport without switching to a second mini interface', () => {
-  assert.match(studio, /top: typingViewport\.offsetTop/)
+  assert.match(studio, /top: Math\.max\(headerBottom, typingViewport\.offsetTop\)/)
   assert.match(studio, /width: typingViewport\.visualWidth/)
-  assert.match(studio, /height: typingViewport\.visualHeight/)
+  assert.match(studio, /height: Math\.max\(0, typingViewport\.visualHeight/)
   assert.match(studio, /data-ms-webb-writing-reference/)
   assert.match(studio, /overflowY: 'auto'/)
   assert.doesNotMatch(studio, /<TypingConversationContext/)
@@ -60,7 +60,8 @@ test('Mrs. Webb compresses the same discussion and writing surfaces into the key
   assert.match(webb, /data-ms-webb-transcript/)
   assert.match(webb, /fontSize: keyboardCompact \? 13\.5 : 14/)
   assert.match(webb, /rows=\{compact \? 1 : 2\}/)
-  assert.match(studio, /const keyboardCompact = typingViewport\.typing/)
+  assert.match(studio, /const keyboardCompact = typingViewport\.keyboardVisible && !sonomaKeyboard\.active/)
+  assert.doesNotMatch(studio, /typingViewport\.typing \|\| sonomaKeyboard\.keyboardHeight > 0/)
   assert.match(studio, /fontSize: keyboardCompact \? 14 : 17/)
   assert.match(studio, /fontSize: keyboardCompact \? 16 : 'clamp\(19px, 3\.4vw, 30px\)'/)
   assert.match(studio, /rows=\{keyboardCompact \? 2 : 4\}/)
@@ -75,7 +76,8 @@ test('Mrs. Webb compresses the same discussion and writing surfaces into the key
 test('Mrs. Webb uses custom keyboard geometry while the writing studio retains its own layout', () => {
   assert.doesNotMatch(sonoma, /const keyboardCompact = typingViewport\.typing/)
   assert.match(webb, /const keyboardCompact = sonomaKeyboard\.keyboardHeight > 0/)
-  assert.match(studio, /const keyboardCompact = typingViewport\.typing/)
+  assert.match(studio, /const keyboardCompact = typingViewport\.keyboardVisible && !sonomaKeyboard\.active/)
+  assert.doesNotMatch(studio, /typingViewport\.typing \|\| sonomaKeyboard\.keyboardHeight > 0/)
   assert.doesNotMatch(webb, /useTypingViewport\(\{ preserveTouchFocus: true, blurDelayMs: 350 \}\)/)
   assert.match(studio, /useTypingViewport\(\{ preserveTouchFocus: true, blurDelayMs: 350 \}\)/)
 })

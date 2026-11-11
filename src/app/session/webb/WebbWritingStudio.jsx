@@ -89,7 +89,8 @@ export default function WebbWritingStudio({
   const [essayPeek, setEssayPeek] = useState(false)
   const [headerBottom, setHeaderBottom] = useState(64)
   const typingViewport = useTypingViewport({ preserveTouchFocus: true, blurDelayMs: 350 })
-  const keyboardCompact = typingViewport.typing || sonomaKeyboard.keyboardHeight > 0
+  // Only the native keyboard should compact writing. The Sonoma keyboard docks separately.
+  const keyboardCompact = typingViewport.keyboardVisible && !sonomaKeyboard.active
   const keyboardTight = keyboardCompact && typingViewport.visualHeight > 0 && typingViewport.visualHeight < 280
   const blankCompleteRef = useRef(onBlankComplete)
 
@@ -162,11 +163,11 @@ export default function WebbWritingStudio({
   return createPortal(
     <div style={{
       position: 'fixed',
-      ...(typingViewport.typing && typingViewport.visualHeight ? {
+      ...(keyboardCompact && typingViewport.visualHeight ? {
         top: Math.max(headerBottom, typingViewport.offsetTop), left: typingViewport.offsetLeft,
         width: typingViewport.visualWidth || '100%', height: Math.max(0, typingViewport.visualHeight - Math.max(headerBottom, typingViewport.offsetTop)),
         right: 'auto', bottom: 'auto',
-      } : { top: headerBottom, left: 0, right: 0, bottom: 0 }),
+      } : { top: headerBottom, left: 0, right: 0, bottom: sonomaKeyboard.keyboardHeight || 0 }),
       zIndex: 1400,
       background: '#f1eee7',
       overflowY: keyboardCompact && !keyboardTight ? 'hidden' : 'auto',
