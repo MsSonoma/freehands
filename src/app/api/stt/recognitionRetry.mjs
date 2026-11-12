@@ -1,5 +1,5 @@
 ﻿// Keep synchronous Google recognition bounded; retry only errors that can recover.
-export const STT_RECOGNITION_TIMEOUT_MS = 20000;
+export const STT_RECOGNITION_TIMEOUT_MS = 26000;
 const RETRYABLE_CODES = new Set(['2', '4', '8', '10', '13', '14', 'UNKNOWN', 'DEADLINE_EXCEEDED', 'RESOURCE_EXHAUSTED', 'ABORTED', 'INTERNAL', 'UNAVAILABLE']);
 
 export function speechErrorCode(error) {

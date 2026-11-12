@@ -14,7 +14,7 @@ test('recovers a transient Google Speech failure without rerecording', async () 
   assert.equal(response[0].results[0].alternatives[0].transcript, 'Hello');
   assert.equal(calls.length, 2);
   assert.strictEqual(calls[0].request, calls[1].request);
-  assert.equal(calls[0].settings.timeout, 20000);
+  assert.equal(calls[0].settings.timeout, 26000);
 });
 
 test('does not retry invalid audio or permissions/configuration failures', async () => {

@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { getReusableMicrophoneStream, pauseReusableMicrophoneStream } from '../utils/microphoneSession'
+import { createSegmentedSpeechRecording } from '../utils/segmentedSpeechRecording.mjs'
+import { transcribeSpeechSegments, replaySpeechSegments } from '../utils/speechTranscription.mjs'
 
 const WEBB_STT_MIME_TYPES = [
   'audio/webm;codecs=opus',
@@ -29,94 +31,112 @@ export default function WebbDictationButton({
 }) {
   const [recording, setRecording] = useState(false)
   const [starting, setStarting] = useState(false)
+  const [uploading, setUploading] = useState(false)
+  const [playing, setPlaying] = useState(false)
+  const [error, setError] = useState('')
+  const [progress, setProgress] = useState('')
+  const [hasSavedAudio, setHasSavedAudio] = useState(false)
   const startingRef = useRef(false)
   const mountedRef = useRef(true)
   const requestTokenRef = useRef(0)
   const disabledRef = useRef(disabled)
   disabledRef.current = disabled
-  const [uploading, setUploading] = useState(false)
-  const [error, setError] = useState('')
-  const recorderRef = useRef(null)
+  const recordingSessionRef = useRef(null)
   const streamRef = useRef(null)
   const micRequestControllerRef = useRef(null)
-  const chunksRef = useRef([])
-  const stopTimerRef = useRef(null)
   const abortRef = useRef(null)
+  const playbackAbortRef = useRef(null)
+  const savedSegmentsRef = useRef(null)
+  const transcriptCacheRef = useRef([])
 
   const cleanupStream = useCallback(() => {
     pauseReusableMicrophoneStream(streamRef.current)
     streamRef.current = null
   }, [])
 
-  const transcribe = useCallback(async (blob) => {
-    if (!mountedRef.current) return
-    if (!blob?.size) {
-      setError('No speech detected')
+  const transcribe = useCallback(async (segments) => {
+    if (!mountedRef.current || !segments?.length) {
+      if (mountedRef.current) setError('No speech recorded. Please try again.')
       return
     }
+    savedSegmentsRef.current = segments
+    setHasSavedAudio(true)
     setUploading(true)
     setError('')
+    setProgress('Transcribing...')
+    const controller = new AbortController()
+    abortRef.current = controller
     try {
-      const type = String(blob.type || '').toLowerCase()
-      const extension = type.includes('ogg') ? 'ogg' : 'webm'
-      const body = new FormData()
-      body.append('audio', blob, `webb-dictation.${extension}`)
-      body.append('language', 'en-US')
-      const controller = new AbortController()
-      abortRef.current = controller
-      // A bounded request prevents the microphone from appearing stuck forever.
-      const timeout = setTimeout(() => controller.abort(), 50000)
-      let response
-      try { response = await fetch('/api/stt', { method: 'POST', body, signal: controller.signal }) }
-      finally { clearTimeout(timeout) }
-      if (!mountedRef.current) return
-      if (!response.ok) {
-        const temporary = response.status === 503 || response.status === 504 || response.status === 429
-        setError(temporary ? 'Speech service busy. Tap mic to retry.' : 'Could not transcribe. Tap mic to retry.')
-        return
-      }
-      const data = await response.json()
-      if (!mountedRef.current) return
-      const transcript = String(data?.transcript || '').trim()
-      if (!transcript) {
-        setError('No speech detected')
-        return
-      }
+      const transcript = await transcribeSpeechSegments(segments, {
+        transcripts: transcriptCacheRef.current,
+        signal: controller.signal,
+        onProgress: (count, total) => {
+          if (mountedRef.current) setProgress('Transcribing ' + count + ' of ' + total + ' parts')
+        },
+      })
+      if (!mountedRef.current || disabledRef.current || controller.signal.aborted) return
+      savedSegmentsRef.current = null
+      transcriptCacheRef.current = []
+      setHasSavedAudio(false)
+      setProgress('')
       onActivity?.()
       onTranscript?.(transcript)
     } catch (cause) {
-      if (!mountedRef.current) return
-      setError(cause?.name === 'AbortError' ? 'Transcription timed out. Tap mic to retry.' : 'Could not transcribe. Tap mic to retry.')
+      if (!mountedRef.current || controller.signal.aborted) return
+      setProgress('')
+      setError(cause?.message === 'No speech detected'
+        ? 'Speech was not recognized. Retry saved audio.'
+        : 'Transcription interrupted. Retry saved audio.')
     } finally {
-      abortRef.current = null
+      if (abortRef.current === controller) abortRef.current = null
       if (mountedRef.current) setUploading(false)
     }
   }, [onActivity, onTranscript])
 
+  const retrySavedAudio = useCallback(() => {
+    if (!uploading && savedSegmentsRef.current?.length) {
+      void transcribe(savedSegmentsRef.current)
+    }
+  }, [transcribe, uploading])
+
+  const replaySavedAudio = useCallback(async () => {
+    if (playing || !savedSegmentsRef.current?.length) return
+    const controller = new AbortController()
+    playbackAbortRef.current = controller
+    setPlaying(true)
+    try {
+      await replaySpeechSegments(savedSegmentsRef.current, { signal: controller.signal })
+    } catch (cause) {
+      if (mountedRef.current && !controller.signal.aborted) setError('Playback unavailable. You can still retry transcription.')
+    } finally {
+      if (playbackAbortRef.current === controller) playbackAbortRef.current = null
+      if (mountedRef.current) setPlaying(false)
+    }
+  }, [playing])
+
   const stopRecording = useCallback(() => {
-    // Cancels microphone permission requests that have not resolved yet.
     requestTokenRef.current += 1
     micRequestControllerRef.current?.abort()
     micRequestControllerRef.current = null
-    if (stopTimerRef.current) {
-      clearTimeout(stopTimerRef.current)
-      stopTimerRef.current = null
-    }
-    const recorder = recorderRef.current
-    if (recorder && recorder.state !== 'inactive') {
-      try { recorder.stop() } catch {}
-    }
+    recordingSessionRef.current?.stop()
     setRecording(false)
   }, [])
 
   const startRecording = useCallback(async () => {
-    if (disabled || recording || uploading || startingRef.current || recorderRef.current) return
+    if (disabled || recording || uploading || startingRef.current || recordingSessionRef.current) return
     startingRef.current = true
     const requestToken = ++requestTokenRef.current
     const controller = new AbortController()
     micRequestControllerRef.current = controller
     setStarting(true)
     setError('')
+    setProgress('')
+    playbackAbortRef.current?.abort()
+    // Starting a new recording deliberately replaces the old one. A failed
+    // transcription never clears the saved recording.
+    savedSegmentsRef.current = null
+    transcriptCacheRef.current = []
+    setHasSavedAudio(false)
     try {
       onBeforeRecord?.()
       if (!navigator.mediaDevices || typeof navigator.mediaDevices.getUserMedia !== 'function' || typeof MediaRecorder === 'undefined') {
@@ -135,62 +155,61 @@ export default function WebbDictationButton({
         if (streamRef.current === stream) streamRef.current = null
         pauseReusableMicrophoneStream(stream)
       }
-      const recorder = new MediaRecorder(stream, { mimeType })
-      recorderRef.current = recorder
-      let recorderFailed = false
-      chunksRef.current = []
-      recorder.ondataavailable = event => {
-        if (event.data?.size) chunksRef.current.push(event.data)
-      }
-      recorder.onstart = () => {
-        if (!mountedRef.current || disabledRef.current || requestToken !== requestTokenRef.current) {
-          try { recorder.stop() } catch {}
-          return
-        }
-        onActivity?.()
-        setRecording(true)
-      }
-      recorder.onerror = () => {
-        recorderFailed = true
-        if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
-        stopTimerRef.current = null
-        if (recorderRef.current === recorder) recorderRef.current = null
-        setRecording(false)
-        setError('Recording failed. Tap mic to retry.')
-        releaseStream()
-      }
-      recorder.onstop = async () => {
-        if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
-        stopTimerRef.current = null
-        const blob = new Blob(chunksRef.current, { type: recorder.mimeType || mimeType })
-        if (recorderRef.current === recorder) recorderRef.current = null
-        releaseStream()
-        if (!recorderFailed && mountedRef.current && !disabledRef.current) await transcribe(blob)
-      }
-      recorder.start()
-      stopTimerRef.current = setTimeout(stopRecording, 30000)
+      const session = createSegmentedSpeechRecording({
+        stream,
+        mimeType,
+        onStart: () => {
+          if (!mountedRef.current || disabledRef.current) {
+            recordingSessionRef.current?.cancel()
+            return
+          }
+          onActivity?.()
+          setRecording(true)
+        },
+        onStopped: () => {
+          if (recordingSessionRef.current === session) recordingSessionRef.current = null
+          releaseStream()
+          if (mountedRef.current) setRecording(false)
+        },
+        onFailure: () => {
+          if (mountedRef.current) setError('Recording failed. Please try again.')
+        },
+        onComplete: segments => {
+          if (mountedRef.current && !disabledRef.current) void transcribe(segments)
+        },
+      })
+      recordingSessionRef.current = session
+      session.start()
     } catch (cause) {
-      recorderRef.current = null
+      recordingSessionRef.current = null
       cleanupStream()
       setRecording(false)
-      if (mountedRef.current && !controller.signal.aborted) setError(['NotAllowedError', 'SecurityError'].includes(cause?.name) ? 'Mic permission denied' : 'Voice input unavailable')
+      if (mountedRef.current && !controller.signal.aborted) setError(
+        ['NotAllowedError', 'SecurityError'].includes(cause?.name)
+          ? 'Mic permission denied' : 'Voice input unavailable'
+      )
     } finally {
       if (micRequestControllerRef.current === controller) micRequestControllerRef.current = null
       startingRef.current = false
       if (mountedRef.current) setStarting(false)
     }
-  }, [cleanupStream, disabled, onActivity, onBeforeRecord, recording, stopRecording, transcribe, uploading])
+  }, [cleanupStream, disabled, onActivity, onBeforeRecord, recording, transcribe, uploading])
 
   const toggleRecording = useCallback(() => {
     if (recording) stopRecording()
     else void startRecording()
   }, [recording, startRecording, stopRecording])
 
-  // Disabling input (e.g. while judging an answer) must not leave the mic
-  // recording or allow a late permission grant to turn it back on.
   useEffect(() => {
-    if (disabled) stopRecording()
-  }, [disabled, stopRecording])
+    if (disabled) {
+      // A phase change cancels recording, but temporary STT errors preserve it.
+      micRequestControllerRef.current?.abort()
+      micRequestControllerRef.current = null
+      recordingSessionRef.current?.cancel()
+      setRecording(false)
+      abortRef.current?.abort()
+    }
+  }, [disabled])
 
   useEffect(() => {
     mountedRef.current = true
@@ -199,12 +218,9 @@ export default function WebbDictationButton({
       requestTokenRef.current += 1
       micRequestControllerRef.current?.abort()
       micRequestControllerRef.current = null
-      if (stopTimerRef.current) clearTimeout(stopTimerRef.current)
       try { abortRef.current?.abort() } catch {}
-      const recorder = recorderRef.current
-      if (recorder && recorder.state !== 'inactive') {
-        try { recorder.stop() } catch {}
-      }
+      try { playbackAbortRef.current?.abort() } catch {}
+      recordingSessionRef.current?.cancel()
       cleanupStream()
     }
   }, [cleanupStream])
@@ -239,10 +255,22 @@ export default function WebbDictationButton({
       >
         {uploading || starting ? '…' : recording ? '■' : '🎤'}
       </button>
-      {error && !compact && (
-        <span role="status" style={{ maxWidth: 120, fontSize: 10, lineHeight: 1.15, color: '#b91c1c' }}>
-          {error}
+      {(error || progress) && (
+        <span role="status" style={{ maxWidth: compact ? 96 : 160, fontSize: 11, lineHeight: 1.15, color: error ? '#b91c1c' : '#0f766e' }}>
+          {error || progress}
         </span>
+      )}
+      {hasSavedAudio && !uploading && (
+        <>
+          <button type="button" disabled={disabled} onClick={retrySavedAudio} title="Retry the saved answer without speaking again"
+            style={{ fontSize: 11, padding: '4px 6px', cursor: 'pointer' }}>
+            Retry audio
+          </button>
+          <button type="button" disabled={disabled || playing} onClick={replaySavedAudio} title="Listen to the saved answer"
+            style={{ fontSize: 11, padding: '4px 6px', cursor: 'pointer' }}>
+            {playing ? 'Playing...' : 'Listen'}
+          </button>
+        </>
       )}
     </span>
   )

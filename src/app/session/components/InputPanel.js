@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { getReusableMicrophoneStream, pauseReusableMicrophoneStream } from "../utils/microphoneSession";
+import { createSegmentedSpeechRecording, chooseSpeechMimeType } from "../utils/segmentedSpeechRecording.mjs";
+import { transcribeSpeechSegments, replaySpeechSegments } from "../utils/speechTranscription.mjs";
 import { useSonomaKeyboard, shouldUseSonomaKeyboard } from "../../components/SonomaKeyboard";
 
 const DEFAULT_HOTKEYS = { micHold: 'NumpadAdd', beginSend: 'Enter' };
@@ -8,124 +10,148 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   const [focused, setFocused] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [playing, setPlaying] = useState(false);
+  const [progress, setProgress] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
-  const mediaRecorderRef = useRef(null);
+  const [hasSavedAudio, setHasSavedAudio] = useState(false);
+  const recordingSessionRef = useRef(null);
+  const requestTokenRef = useRef(0);
   const streamRef = useRef(null);
   const micRequestControllerRef = useRef(null);
-  const chunksRef = useRef([]);
-  const autoStopRef = useRef(null);
   const inputRef = useRef(null);
   const sonomaKeyboard = useSonomaKeyboard();
-  // Track whether Numpad+ is currently held to avoid repeat triggers
   const hotkeyDownRef = useRef(false);
-  // Track touch-hold lifecycle so we can start on touchstart and stop on touchend without triggering synthetic clicks
   const touchActiveRef = useRef(false);
-
-  // Abort controller for STT fetch
   const sttAbortRef = useRef(null);
+  const playbackAbortRef = useRef(null);
+  const savedSegmentsRef = useRef(null);
+  const transcriptCacheRef = useRef([]);
+  const inputAtRecordingRef = useRef('');
 
-  const transcribeBlob = useCallback(async (blob) => {
-    if (!blob) return;
+  const transcribeSegments = useCallback(async (segments) => {
+    if (!segments?.length) {
+      setErrorMsg('No speech recorded. Please try again.');
+      return;
+    }
+    savedSegmentsRef.current = segments;
+    setHasSavedAudio(true);
     setUploading(true);
     setErrorMsg('');
+    setProgress('Transcribing...');
+    const controller = new AbortController();
+    sttAbortRef.current = controller;
     try {
-      const fd = new FormData();
-      fd.append('audio', blob, 'input.webm');
-      fd.append('language', 'en-US');
-      const ctrl = new AbortController();
-      sttAbortRef.current = ctrl;
-      const res = await fetch('/api/stt', { method: 'POST', body: fd, signal: ctrl.signal });
-      if (!res.ok) throw new Error(`STT failed ${res.status}`);
-      const data = await res.json();
-      const text = (data?.transcript || '').trim();
-      if (text) {
-        // Populate the input with the transcript; facilitator can edit/press Send
-        setLearnerInput(text);
-      } else {
-        setErrorMsg('No speech detected');
-      }
-    } catch (e) {
-      if (e?.name === 'AbortError') {
-        // STT aborted
-        return;
-      }
-      // Transcription failed
-      setErrorMsg('Transcription failed');
+      const transcript = await transcribeSpeechSegments(segments, {
+        transcripts: transcriptCacheRef.current,
+        signal: controller.signal,
+        onProgress: (count, total) => setProgress('Transcribing ' + count + ' of ' + total + ' parts'),
+      });
+      if (controller.signal.aborted) return;
+      // Keep any text the learner typed while the recording was processing.
+      setLearnerInput(current => {
+        if (current && current !== inputAtRecordingRef.current) {
+          return current.trim() + ' ' + transcript;
+        }
+        return transcript;
+      });
+      savedSegmentsRef.current = null;
+      transcriptCacheRef.current = [];
+      setHasSavedAudio(false);
+      setProgress('');
+    } catch (error) {
+      if (controller.signal.aborted) return;
+      setProgress('');
+      setErrorMsg(error?.message === 'No speech detected'
+        ? 'Speech was not recognized. Retry saved audio.'
+        : 'Transcription interrupted. Retry saved audio.');
     } finally {
+      if (sttAbortRef.current === controller) sttAbortRef.current = null;
       setUploading(false);
     }
+  }, [setLearnerInput]);
+
+  const retrySavedAudio = useCallback(() => {
+    if (!uploading && savedSegmentsRef.current?.length) {
+      void transcribeSegments(savedSegmentsRef.current);
+    }
+  }, [transcribeSegments, uploading]);
+
+  const replaySavedAudio = useCallback(async () => {
+    if (playing || !savedSegmentsRef.current?.length) return;
+    const controller = new AbortController();
+    playbackAbortRef.current = controller;
+    setPlaying(true);
+    try {
+      await replaySpeechSegments(savedSegmentsRef.current, { signal: controller.signal });
+    } catch (error) {
+      if (!controller.signal.aborted) setErrorMsg('Playback unavailable. You can still retry transcription.');
+    } finally {
+      if (playbackAbortRef.current === controller) playbackAbortRef.current = null;
+      setPlaying(false);
+    }
+  }, [playing]);
+
+  const stopRecording = useCallback(() => {
+    requestTokenRef.current += 1;
+    micRequestControllerRef.current?.abort();
+    micRequestControllerRef.current = null;
+    recordingSessionRef.current?.stop();
+    setIsRecording(false);
   }, []);
 
   const startRecording = useCallback(async () => {
-    if (isRecording || uploading || micRequestControllerRef.current) return;
-    setErrorMsg('');
+    if (sendDisabled || isRecording || uploading || micRequestControllerRef.current || recordingSessionRef.current) return;
+    const requestToken = ++requestTokenRef.current;
     const controller = new AbortController();
     micRequestControllerRef.current = controller;
+    setErrorMsg('');
+    setProgress('');
+    playbackAbortRef.current?.abort();
+    // Only a deliberate new recording discards a previous, saved answer.
+    savedSegmentsRef.current = null;
+    transcriptCacheRef.current = [];
+    setHasSavedAudio(false);
+    inputAtRecordingRef.current = learnerInput;
     try {
+      if (typeof MediaRecorder === 'undefined') throw new Error('Voice input unavailable');
+      const mimeType = chooseSpeechMimeType(MediaRecorder);
+      if (!mimeType) throw new Error('Voice input unavailable');
       const stream = await getReusableMicrophoneStream({ signal: controller.signal });
-      if (controller.signal.aborted) {
+      if (controller.signal.aborted || requestToken !== requestTokenRef.current || sendDisabled) {
         pauseReusableMicrophoneStream(stream);
         return;
       }
       micRequestControllerRef.current = null;
       streamRef.current = stream;
-      try { if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'true'); } catch {}
-      const mr = new MediaRecorder(stream, { mimeType: 'audio/webm' });
-      chunksRef.current = [];
-      mr.ondataavailable = (e) => { if (e.data && e.data.size > 0) chunksRef.current.push(e.data); };
-      // When recording actually starts, clear any existing typed text so mic can be used to retry without manual delete
-      mr.onstart = () => {
-        setIsRecording(true);
-        try {
-          if (typeof learnerInput === 'string' && learnerInput.trim().length > 0) {
-            setLearnerInput('');
-          }
-        } catch {}
-      };
-      mr.onerror = (e) => {
-        setIsRecording(false);
-        setErrorMsg('Recording error');
+      const releaseStream = () => {
+        if (streamRef.current === stream) streamRef.current = null;
         pauseReusableMicrophoneStream(stream);
-        streamRef.current = null;
       };
-      mr.onstop = async () => {
-        if (streamRef.current === stream) {
-          pauseReusableMicrophoneStream(stream);
-          streamRef.current = null;
-        }
-        const out = new Blob(chunksRef.current, { type: 'audio/webm' });
-        await transcribeBlob(out);
-      };
-      mediaRecorderRef.current = mr;
-      mr.start();
-      autoStopRef.current = setTimeout(() => { try { mr.state !== 'inactive' && mr.stop(); } catch {} }, 30000);
-    } catch (e) {
-      if (controller.signal.aborted) return;
+      const session = createSegmentedSpeechRecording({
+        stream,
+        mimeType,
+        onStart: () => setIsRecording(true),
+        onStopped: () => {
+          if (recordingSessionRef.current === session) recordingSessionRef.current = null;
+          releaseStream();
+          setIsRecording(false);
+        },
+        onFailure: () => setErrorMsg('Recording failed. Please try again.'),
+        onComplete: segments => { void transcribeSegments(segments); },
+      });
+      recordingSessionRef.current = session;
+      session.start();
+    } catch (error) {
+      recordingSessionRef.current = null;
       pauseReusableMicrophoneStream(streamRef.current);
       streamRef.current = null;
-      // Mic permission denied
-      setErrorMsg(e?.name === 'NotAllowedError' || e?.name === 'SecurityError' ? 'Mic permission denied' : 'Voice input unavailable');
-      try {
-        if (e && (e.name === 'NotAllowedError' || e.name === 'SecurityError' || e.name === 'NotFoundError')) {
-          if (typeof window !== 'undefined') localStorage.setItem('ms_micAllowed', 'false');
-        }
-      } catch {}
+      if (controller.signal.aborted) return;
+      setErrorMsg(['NotAllowedError', 'SecurityError'].includes(error?.name)
+        ? 'Mic permission denied' : 'Voice input unavailable');
     } finally {
       if (micRequestControllerRef.current === controller) micRequestControllerRef.current = null;
     }
-  }, [isRecording, uploading, transcribeBlob, learnerInput, setLearnerInput]);
-
-  const stopRecording = useCallback(() => {
-    const pendingMic = micRequestControllerRef.current;
-    micRequestControllerRef.current = null;
-    pendingMic?.abort();
-    const mr = mediaRecorderRef.current;
-    if (autoStopRef.current) { clearTimeout(autoStopRef.current); autoStopRef.current = null; }
-    if (mr && mr.state !== 'inactive') {
-      try { mr.stop(); } catch {}
-    }
-    setIsRecording(false);
-  }, []);
+  }, [isRecording, uploading, sendDisabled, transcribeSegments, learnerInput]);
 
   // Global hotkey: Hold configured key (default NumpadPlus) to record (keydown starts, keyup stops)
   useEffect(() => {
@@ -147,7 +173,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
       if (!micCode || code !== micCode) return;
       e.preventDefault();
       hotkeyDownRef.current = false;
-      if (isRecording || micRequestControllerRef.current) {
+      if (isRecording || recordingSessionRef.current || micRequestControllerRef.current) {
         stopRecording();
       }
     };
@@ -160,46 +186,51 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
   }, [isRecording, uploading, sendDisabled, startRecording, stopRecording, hotkeys]);
 
   useEffect(() => () => {
+    requestTokenRef.current += 1;
     micRequestControllerRef.current?.abort();
     micRequestControllerRef.current = null;
-    try { mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive' && mediaRecorderRef.current.stop(); } catch {}
-    if (autoStopRef.current) clearTimeout(autoStopRef.current);
+    sttAbortRef.current?.abort();
+    playbackAbortRef.current?.abort();
+    recordingSessionRef.current?.cancel();
     pauseReusableMicrophoneStream(streamRef.current);
     streamRef.current = null;
   }, []);
 
-  // A disabled input cannot retain an unresolved microphone permission prompt.
   useEffect(() => {
-    if (!sendDisabled) return
+    if (!sendDisabled) return;
+    requestTokenRef.current += 1;
     micRequestControllerRef.current?.abort();
     micRequestControllerRef.current = null;
+    recordingSessionRef.current?.cancel();
+    setIsRecording(false);
   }, [sendDisabled]);
 
-  // Stop any in-progress mic/STT when abortKey changes (skip pressed)
+  // Skip and phase changes intentionally cancel recording and transcription.
   useEffect(() => {
-    // Cancel microphone permissions still pending on skip or phase change.
+    requestTokenRef.current += 1;
     micRequestControllerRef.current?.abort();
     micRequestControllerRef.current = null;
-    // Abort STT fetch
-    try { if (sttAbortRef.current) sttAbortRef.current.abort('skip'); } catch {}
-    // Stop recording if active
-    try {
-      // Clear any pending auto-stop timer so it doesn't try to stop again later
-      if (autoStopRef.current) { clearTimeout(autoStopRef.current); autoStopRef.current = null; }
-      if (mediaRecorderRef.current && mediaRecorderRef.current.state !== 'inactive') {
-        mediaRecorderRef.current.stop();
-      }
-    } catch {}
+    sttAbortRef.current?.abort();
+    playbackAbortRef.current?.abort();
+    recordingSessionRef.current?.cancel();
     setIsRecording(false);
     setUploading(false);
+    setPlaying(false);
     setErrorMsg('');
+    setProgress('');
+    savedSegmentsRef.current = null;
+    transcriptCacheRef.current = [];
+    setHasSavedAudio(false);
   }, [abortKey]);
 
-  // If user hits Enter or Send while recording, stop first
+  // Wait for recorded speech before submitting an answer.
   const handleSend = useCallback(() => {
-    if (isRecording || micRequestControllerRef.current) stopRecording();
-    onSend();
-  }, [isRecording, stopRecording, onSend]);
+    if (isRecording || recordingSessionRef.current || micRequestControllerRef.current) {
+      stopRecording();
+      return;
+    }
+    if (!uploading) onSend();
+  }, [isRecording, stopRecording, onSend, uploading]);
   // Auto-focus when the field becomes actionable (enabled and allowed to send)
   // Add a tiny retry window to avoid races right after TTS ends or layout settles
   useEffect(() => {
@@ -254,7 +285,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
     return '';
   };
   return (
-  <div style={{ display: "flex", alignItems: "center", gap: (typeof compact !== 'undefined' && compact) ? 6 : 8, marginBottom: 0, width: '100%', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto', boxSizing: 'border-box', paddingLeft: (typeof compact !== 'undefined' && compact) ? 8 : (compact ? 12 : '4%'), paddingRight: (typeof compact !== 'undefined' && compact) ? 8 : (compact ? 12 : '4%') }}>
+  <div style={{ display: "flex", flexWrap: 'wrap', alignItems: "center", gap: (typeof compact !== 'undefined' && compact) ? 6 : 8, marginBottom: 0, width: '100%', maxWidth: '100%', marginLeft: 'auto', marginRight: 'auto', boxSizing: 'border-box', paddingLeft: (typeof compact !== 'undefined' && compact) ? 8 : (compact ? 12 : '4%'), paddingRight: (typeof compact !== 'undefined' && compact) ? 8 : (compact ? 12 : '4%') }}>
       <button
         style={{
           background: (sendDisabled) ? "#4b5563" : '#c7442e',
@@ -275,7 +306,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           touchAction: 'manipulation'
         }}
         aria-label={isRecording ? 'Stop recording' : 'Start recording'}
-  disabled={sendDisabled}
+  disabled={sendDisabled || uploading}
         onContextMenu={(e) => { e.preventDefault(); }}
         onDragStart={(e) => { e.preventDefault(); }}
         onTouchStart={(e) => {
@@ -291,20 +322,20 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           e.preventDefault();
           if (!touchActiveRef.current) return;
           touchActiveRef.current = false;
-          if (isRecording || micRequestControllerRef.current) {
+          if (isRecording || recordingSessionRef.current || micRequestControllerRef.current) {
             stopRecording();
           }
         }}
         onTouchCancel={(e) => {
           e.preventDefault();
           touchActiveRef.current = false;
-          if (isRecording || micRequestControllerRef.current) {
+          if (isRecording || recordingSessionRef.current || micRequestControllerRef.current) {
             stopRecording();
           }
         }}
         onClick={() => {
           if (sendDisabled) return;
-          if (isRecording || micRequestControllerRef.current) {
+          if (isRecording || recordingSessionRef.current || micRequestControllerRef.current) {
             stopRecording();
           } else {
             startRecording();
@@ -379,7 +410,7 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           transition: "background 0.2s, opacity 0.2s",
         }}
         aria-label="Send response"
-  disabled={sendDisabled}
+  disabled={sendDisabled || uploading}
   data-sonoma-submit onClick={handleSend}
       >
         <svg width="20" height="20" fill="none" viewBox="0 0 24 24">
@@ -412,8 +443,16 @@ function InputPanel({ learnerInput, setLearnerInput, sendDisabled, canSend, load
           filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
         }
       `}</style>
-    {errorMsg && (
-  <div style={{ position:'absolute', bottom:-18, left:4, fontSize:'clamp(0.7rem, 1.2vw, 0.8rem)', color:'#c7442e' }}>{errorMsg}</div>
+    {(errorMsg || progress || hasSavedAudio) && (
+      <div style={{ width:'100%', display:'flex', alignItems:'center', flexWrap:'wrap', gap:6, fontSize:'clamp(0.7rem, 1.2vw, 0.8rem)', color:errorMsg ? '#c7442e' : '#374151', zIndex:2 }}>
+        <span role="status">{errorMsg || progress}</span>
+        {hasSavedAudio && !uploading && (
+          <>
+            <button type="button" disabled={sendDisabled} onClick={retrySavedAudio} style={{ fontSize:12, padding:'3px 6px', cursor:'pointer' }}>Retry audio</button>
+            <button type="button" disabled={sendDisabled || playing} onClick={replaySavedAudio} style={{ fontSize:12, padding:'3px 6px', cursor:'pointer' }}>{playing ? 'Playing...' : 'Listen'}</button>
+          </>
+        )}
+      </div>
     )}
     </div>
   );
