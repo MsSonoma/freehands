@@ -1,4 +1,5 @@
 import { getBaselineItems } from './baseline.js';
+import { resolveLessonKeyAgainst } from '../lessonKeyNormalization.js';
 import { getReservedAssessmentItems } from './assessmentIsolation.js';
 import { buildItemIdentity, hashCanonicalValue } from './identity.js';
 import {
@@ -521,26 +522,40 @@ export function selectDailyReviewAnchors({
   cycle = null,
 } = {}) {
   if (!cycle?.reviewDate) return [];
-  const lessonKeys = new Set((cycle.lessonKeys || []).map((value) => String(value || '').trim()).filter(Boolean));
+  const lessonKeys = [...new Set((cycle.lessonKeys || []).map((value) => String(value || '').trim()).filter(Boolean))];
+  const allowedKeys = new Set(lessonKeys);
   const zone = validTimeZone(cycle.timeZone || 'UTC');
-  // Limit to this review's own lessons before concept-level deduplication.
-  // Different source-day reviews can land on the same destination day and
-  // legitimately cover the same concept without swallowing one another.
-  const sourceEvents = (evidenceEvents || []).filter((anchor) => {
-    if (lessonKeys.size && !lessonKeys.has(String(anchor.lesson_key || '').trim())) return false;
-    const occurred = new Date(anchor.occurred_at || '');
-    if (Number.isNaN(occurred.getTime())) return false;
+
+  // Session-v2 historically persisted the filename stem while Syllabus stores
+  // the full generated/...json key. Resolve only unambiguous keys from this
+  // completed review cycle; never merge different lessons with the same name.
+  const byLesson = new Map();
+  for (const event of evidenceEvents || []) {
+    const canonicalKey = resolveLessonKeyAgainst(String(event?.lesson_key || '').trim(), lessonKeys);
+    if (!canonicalKey || (allowedKeys.size && !allowedKeys.has(canonicalKey))) continue;
+    const occurred = new Date(event?.occurred_at || '');
+    if (Number.isNaN(occurred.getTime())) continue;
     const local = zonedParts(occurred, zone);
-    return dateKey({ year: local.year, month: local.month, day: local.day }) === cycle.reviewDate;
-  });
-  const eligible = groupLatestEligibleAnchors(sourceEvents);
-  const seenLessons = new Set();
-  return eligible.filter((anchor) => {
-    const key = String(anchor.lesson_key || anchor.session_id || anchor.mastery_check_id || '').trim();
-    if (!key || seenLessons.has(key)) return false;
-    seenLessons.add(key);
-    return true;
-  });
+    if (dateKey({ year: local.year, month: local.month, day: local.day }) !== cycle.reviewDate) continue;
+    const row = canonicalKey === event.lesson_key ? event : { ...event, lesson_key: canonicalKey };
+    if (!byLesson.has(canonicalKey)) byLesson.set(canonicalKey, []);
+    byLesson.get(canonicalKey).push(row);
+  }
+
+  const anchors = [];
+  for (const lessonKey of lessonKeys.length ? lessonKeys : byLesson.keys()) {
+    const events = byLesson.get(lessonKey) || [];
+    const qualified = groupLatestEligibleAnchors(events)[0] || null;
+    // Same-day review may use a real but unqualified test check. Its original
+    // outcome remains intact; an unqualified anchor never becomes independent
+    // mastery or delayed-retention evidence merely by taking the review.
+    const unqualified = !qualified
+      ? events.filter((event) => event.event_type === 'mastery_check_result' && event.mastery_check_id)
+        .sort((left, right) => Date.parse(right.occurred_at) - Date.parse(left.occurred_at))[0]
+      : null;
+    if (qualified || unqualified) anchors.push(qualified || unqualified);
+  }
+  return anchors;
 }
 
 export function selectWeeklyReviewAnchors({ evidenceEvents = [], cycle } = {}) {

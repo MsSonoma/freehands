@@ -317,6 +317,21 @@ function LessonsPageInner(){
       }
     })()
     return () => { cancelled = true }
+  }, [learnerId, refreshTrigger])
+
+  // Revalidate the Syllabus when returning from a completed lesson or another tab.
+  // Daily Review readiness is a server projection, not cached browser progress.
+  useEffect(() => {
+    if (!learnerId) return
+    const onReturn = () => {
+      if (document.visibilityState !== 'hidden') setRefreshTrigger((current) => current + 1)
+    }
+    window.addEventListener('focus', onReturn)
+    document.addEventListener('visibilitychange', onReturn)
+    return () => {
+      window.removeEventListener('focus', onReturn)
+      document.removeEventListener('visibilitychange', onReturn)
+    }
   }, [learnerId])
 
   // Poll for newly scheduled lessons every 30 seconds
@@ -899,6 +914,11 @@ function LessonsPageInner(){
     return map
   }, [allLessons, allGeneratedLessons, historyLessons])
   const syllabusModel = useMemo(() => resolveSyllabusReadModel(syllabusPayload), [syllabusPayload])
+  const selectedCurrentSyllabusReview = useMemo(() => {
+    if (!selectedSyllabusReview) return null
+    return syllabusModel.timeline_items.find((item) => item.item_type === 'review' && item.id === selectedSyllabusReview.id)
+      || selectedSyllabusReview
+  }, [selectedSyllabusReview, syllabusModel.timeline_items])
   const syllabusPresentation = resolveLearnerSyllabusPresentation({
     learnerId,
     demoLearner: isDemoLearnerId(learnerId),
@@ -1225,8 +1245,8 @@ function LessonsPageInner(){
             today={syllabusModel.resolved_today}
           />
         )}
-        {selectedSyllabusReview && <SyllabusReviewOverlay
-          item={selectedSyllabusReview}
+        {selectedCurrentSyllabusReview && <SyllabusReviewOverlay
+          item={selectedCurrentSyllabusReview}
           busy={Boolean(followUpStarting)}
           onClose={() => setSelectedSyllabusReview(null)}
           onStart={(item, instructionalTeacher) => void startSyllabusReview(item, instructionalTeacher)}

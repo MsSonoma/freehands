@@ -4397,7 +4397,7 @@ function SessionPageV2Inner() {
     const index = Number.isFinite(Number(questionIndex)) ? Number(questionIndex) : 0;
     const assessmentRole = roleForPhase(phase);
     const legacyItemFingerprint = createLegacyItemFingerprint({
-      lessonKey,
+      lessonKey: goldenKeyLessonKey || lessonKey,
       lessonId,
       phase,
       item,
@@ -4420,7 +4420,7 @@ function SessionPageV2Inner() {
       identityItem: item || null,
       item: summarizeEvidenceItem(item),
     };
-  }, [ensureEvidencePhaseRun, lessonId, lessonKey]);
+  }, [ensureEvidencePhaseRun, goldenKeyLessonKey, lessonId, lessonKey]);
 
   const getActiveEvidenceItemContext = useCallback(() => {
     const phase = normalizePhaseAlias(currentPhaseRef.current || currentPhase);
@@ -4458,7 +4458,7 @@ function SessionPageV2Inner() {
     try {
       const identities = [];
       for (const item of questions || []) {
-        identities.push(await buildItemIdentity({ lessonKey, lessonId, lessonData, item }));
+        identities.push(await buildItemIdentity({ lessonKey: goldenKeyLessonKey || lessonKey, lessonId, lessonData, item }));
       }
       const prior = await masteryEvidenceClientRef.current?.checkPriorExposure?.({
         learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
@@ -4477,7 +4477,7 @@ function SessionPageV2Inner() {
         return;
       }
       const context = await buildMasteryEligibilityContext({
-        lessonKey,
+        lessonKey: goldenKeyLessonKey || lessonKey,
         lessonId,
         lessonData,
         phaseSets,
@@ -4500,7 +4500,7 @@ function SessionPageV2Inner() {
         instructionalExposureKeys: new Set(),
       };
     }
-  }, [learnerProfile, lessonData, lessonId, lessonKey]);
+  }, [goldenKeyLessonKey, learnerProfile, lessonData, lessonId, lessonKey]);
 
   const recordMasteryCheckResult = useCallback((phaseName, data = {}) => {
     if (normalizePhaseAlias(phaseName) !== 'test' || data.judgmentStatus === 'ungraded') return;
@@ -8051,7 +8051,7 @@ function SessionPageV2Inner() {
           sessionId: trackedSessionIdForEvidence,
           browserSessionId,
           learnerId: sessionLearnerIdRef.current || learnerProfile?.id || null,
-          lessonKey: lessonKey || null,
+          lessonKey: goldenKeyLessonKey || lessonKey || null,
           lessonId,
           lessonData,
           assessmentIsolation,

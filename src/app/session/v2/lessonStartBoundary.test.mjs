@@ -110,3 +110,15 @@ test('new question phases and Discussion start without obsolete Begin controls',
   }
   assert.match(sessionPage, /data\.state === 'ready' && currentPhaseRef\.current === 'discussion'/)
 })
+
+test('Sonoma evidence uses the Syllabus lesson key consistently', () => {
+  const itemContext = between(sessionPage, 'const getEvidenceItemContext = useCallback', 'const getActiveEvidenceItemContext = useCallback')
+  assert.ok(itemContext.includes('lessonKey: goldenKeyLessonKey || lessonKey'))
+
+  const eligibility = between(sessionPage, 'const prepareMasteryEligibility = useCallback', 'const recordMasteryCheckResult = useCallback')
+  assert.ok(eligibility.includes('buildItemIdentity({ lessonKey: goldenKeyLessonKey || lessonKey'))
+  assert.ok(eligibility.includes('lessonKey: goldenKeyLessonKey || lessonKey,'))
+
+  const tracking = between(sessionPage, 'let evidenceClientForBaseline = null', 'const markBaselineUnavailableAndBegin = async')
+  assert.ok(tracking.includes('lessonKey: goldenKeyLessonKey || lessonKey || null'))
+})

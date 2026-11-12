@@ -5,6 +5,8 @@ import { MASTERY_OUTCOMES } from '../src/app/lib/masteryEvidence/mastery.js'
 import {
   DAILY_REVIEW_PROTOCOL_VERSION,
   REVIEW_TYPES,
+  selectDailyReviewAnchors,
+  qualifyWeeklyReviewOpportunity,
 } from '../src/app/lib/masteryEvidence/followUps.js'
 import {
   buildFollowUpAvailability,
@@ -94,6 +96,82 @@ const completedLesson = (overrides = {}) => ({
   title: 'Fractions',
   readiness_state: 'completed',
   ...overrides,
+})
+
+test('same-day review can use real unavailable mastery checks without claiming mastery', async () => {
+  const evidence = anchor({
+    lesson_key: 'fractions',
+    occurred_at: '2026-09-24T18:00:00.000Z',
+    mastery_outcome: MASTERY_OUTCOMES.UNAVAILABLE,
+  })
+  const cycle = {
+    review_type: REVIEW_TYPES.DAILY_REVIEW,
+    cycleKey: 'America/New_York:2026-09-24',
+    reviewDate: '2026-09-24',
+    timeZone: 'America/New_York',
+    lessonKeys: ['generated/fractions.json'],
+    ready: true,
+    lessonCount: 1,
+    completedCount: 1,
+    lessons: [{ lesson_key: 'generated/fractions.json', completed: true }],
+  }
+  const repository = repositoryFor([evidence])
+  const availability = await buildFollowUpAvailability({
+    repository,
+    userId: 'user-1',
+    learnerId: repository.data.learner.id,
+    loadLesson: async (lessonKey) => lessonKey === 'generated/fractions.json' ? lesson : null,
+    now: '2026-09-24T19:00:00.000Z',
+    includePrivate: true,
+    dailyReviewCycles: [cycle],
+  })
+  const card = availability.cards.find((entry) => entry.review_type === REVIEW_TYPES.DAILY_REVIEW)
+  assert.ok(card, 'completed lesson should unlock a review even if the test identity was unavailable')
+  const projection = buildSyllabusReviewProjection({
+    timelineItems: [completedLesson()],
+    settings: repository.data.learner,
+    today: cycle.reviewDate,
+    timeZone: cycle.timeZone,
+    availability,
+  })
+  assert.equal(projection.items[0].review_status, 'available')
+  assert.equal(projection.items[0].review_progress.completed_count, 1)
+  const run = await startFollowUpRun({
+    repository, userId: 'user-1', learnerId: repository.data.learner.id, card,
+    now: '2026-09-24T19:00:00.000Z',
+  })
+  assert.equal(run.review_type, REVIEW_TYPES.DAILY_REVIEW)
+  const [stored] = repository.data.items
+  assert.equal(stored.lesson_key, 'generated/fractions.json')
+  assert.equal(stored.anchor_mastery_check_id, 'mastery-check-1')
+  assert.equal(qualifyWeeklyReviewOpportunity({
+    anchor: evidence,
+    itemIdentity: { stableItemId: stored.stable_item_id },
+    itemExposureId: stored.item_exposure_id,
+  }).eligible, false, 'review must not certify independent mastery from an unavailable check')
+})
+
+test('daily review keeps real eligible anchors preferred and rejects ambiguous filename matches', () => {
+  const cycle = {
+    reviewDate: '2026-09-24',
+    timeZone: 'America/New_York',
+    lessonKeys: ['generated/fractions.json'],
+  }
+  const valid = anchor({ event_id: 'valid', mastery_check_id: 'qualified-check', occurred_at: '2026-09-24T14:00:00Z' })
+  const laterUnavailable = anchor({
+    event_id: 'unavailable', mastery_check_id: 'unqualified-check',
+    lesson_key: 'fractions', mastery_outcome: MASTERY_OUTCOMES.UNAVAILABLE,
+    occurred_at: '2026-09-24T18:00:00Z',
+  })
+  assert.equal(selectDailyReviewAnchors({ cycle, evidenceEvents: [valid, laterUnavailable] })[0].mastery_check_id, 'qualified-check')
+  assert.equal(selectDailyReviewAnchors({
+    cycle: { ...cycle, lessonKeys: ['math/fractions.json', 'generated/fractions.json'] },
+    evidenceEvents: [laterUnavailable],
+  }).length, 0, 'two distinct lessons with the same basename cannot be merged')
+  assert.equal(selectDailyReviewAnchors({
+    cycle,
+    evidenceEvents: [laterUnavailable, anchor({ lesson_key: 'fractions', occurred_at: '2026-09-23T18:00:00Z' })],
+  }).length, 1, 'the review cannot import yesterday\'s checks')
 })
 
 test('Daily Review groups all lessons on a Syllabus day and waits for every lesson', () => {
